@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Union
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
-from reflex.ivars.base import is_computed_var
+from reflex.ivars.base import LiteralVar, is_computed_var
 from reflex.utils import types
 from reflex.utils.imports import ImportDict
 from reflex.utils.serializers import serialize
@@ -126,8 +126,8 @@ class DataTable(Gridjs):
             # If given a pandas df break up the data and columns
             data = serialize(self.data)
             assert isinstance(data, dict), "Serialized dataframe should be a dict."
-            self.columns = Var.create_safe(data["columns"])
-            self.data = Var.create_safe(data["data"])
+            self.columns = LiteralVar.create(data["columns"])
+            self.data = LiteralVar.create(data["data"])
 
         # Render the table.
         return super()._render()

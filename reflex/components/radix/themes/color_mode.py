@@ -17,7 +17,7 @@ rx.text(
 
 from __future__ import annotations
 
-from typing import Literal, get_args
+from typing import Dict, List, Literal, get_args
 
 from reflex.components.component import BaseComponent
 from reflex.components.core.cond import Cond, color_mode_cond, cond
@@ -25,6 +25,7 @@ from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.dropdown_menu import dropdown_menu
 from reflex.components.radix.themes.components.switch import Switch
 from reflex.ivars.base import ImmutableVar
+from reflex.ivars.sequence import LiteralArrayVar
 from reflex.style import (
     LIGHT_COLOR_MODE,
     color_mode,
@@ -66,9 +67,9 @@ class ColorModeIcon(Cond):
 
 LiteralPosition = Literal["top-left", "top-right", "bottom-left", "bottom-right"]
 
-position_values = get_args(LiteralPosition)
+position_values: List[str] = list(get_args(LiteralPosition))
 
-position_map = {
+position_map: Dict[str, List[str]] = {
     "position": position_values,
     "left": ["top-left", "bottom-left"],
     "right": ["top-right", "bottom-right"],
@@ -78,8 +79,8 @@ position_map = {
 
 
 # needed to inverse contains for find
-def _find(const, var):
-    return Var.create_safe(const, _var_is_string=False).contains(var)
+def _find(const: List[str], var):
+    return LiteralArrayVar.create(const).contains(var)
 
 
 def _set_var_default(props, position, prop, default1, default2=""):

@@ -14,7 +14,7 @@ from reflex.event import (
     EventSpec,
     call_script,
 )
-from reflex.ivars.base import LiteralVar
+from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
@@ -30,7 +30,7 @@ LiteralPosition = Literal[
     "bottom-right",
 ]
 
-toast_ref = Var.create_safe("refs['__toast']", _var_is_string=False)
+toast_ref = ImmutableVar.create_safe("refs['__toast']")
 
 
 class ToastAction(Base):
@@ -66,9 +66,8 @@ def _toast_callback_signature(toast: Var) -> list[Var]:
         A function call stripping non-serializable members of the toast object.
     """
     return [
-        Var.create_safe(
-            f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {toast}; return rest}})()",
-            _var_is_string=False,
+        ImmutableVar.create_safe(
+            f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {str(toast)}; return rest}})()"
         )
     ]
 
@@ -248,10 +247,8 @@ class Toaster(Component):
         Returns:
             The hooks for the toaster component.
         """
-        hook = Var.create_safe(
+        hook = ImmutableVar.create_safe(
             f"{toast_ref} = toast",
-            _var_is_local=True,
-            _var_is_string=False,
             _var_data=VarData(
                 imports={
                     "/utils/state": [ImportVar(tag="refs")],
@@ -289,7 +286,7 @@ class Toaster(Component):
         else:
             toast = f"{toast_command}(`{message}`)"
 
-        toast_action = Var.create_safe(toast, _var_is_string=False, _var_is_local=True)
+        toast_action = ImmutableVar.create_safe(toast)
         return call_script(toast_action)
 
     @staticmethod
@@ -363,10 +360,8 @@ class Toaster(Component):
             dismiss = f"{toast_ref}.dismiss('{id}')"
         else:
             dismiss = f"{toast_ref}.dismiss()"
-        dismiss_action = Var.create_safe(
+        dismiss_action = ImmutableVar.create_safe(
             dismiss,
-            _var_is_string=False,
-            _var_is_local=True,
             _var_data=VarData.merge(dismiss_var_data),
         )
         return call_script(dismiss_action)

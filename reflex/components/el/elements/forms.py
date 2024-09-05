@@ -625,19 +625,15 @@ class Textarea(BaseHTML):
                     "Cannot combine `enter_key_submit` with `on_key_down`.",
                 )
             tag.add_props(
-                on_key_down=Var.create_safe(
+                on_key_down=ImmutableVar.create_safe(
                     f"(e) => enterKeySubmitOnKeyDown(e, {self.enter_key_submit._var_name_unwrapped})",
-                    _var_is_local=False,
-                    _var_is_string=False,
                     _var_data=VarData.merge(self.enter_key_submit._get_all_var_data()),
                 )
             )
         if self.auto_height is not None:
             tag.add_props(
-                on_input=Var.create_safe(
+                on_input=ImmutableVar.create_safe(
                     f"(e) => autoHeightOnInput(e, {self.auto_height._var_name_unwrapped})",
-                    _var_is_local=False,
-                    _var_is_string=False,
                     _var_data=VarData.merge(self.auto_height._get_all_var_data()),
                 )
             )

@@ -8,7 +8,7 @@ from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.utils import console
 from reflex.vars import Var
 
@@ -31,7 +31,7 @@ def _event_data_signature(e0: Var) -> List[Any]:
     Returns:
         The event key extracted from the event data (if defined).
     """
-    return [Var.create_safe(f"{e0}?.event", _var_is_string=False)]
+    return [ImmutableVar.create_safe(f"{e0}?.event")]
 
 
 def _event_points_data_signature(e0: Var) -> List[Any]:
@@ -44,11 +44,8 @@ def _event_points_data_signature(e0: Var) -> List[Any]:
         The event data and the extracted points.
     """
     return [
-        Var.create_safe(f"{e0}?.event", _var_is_string=False),
-        Var.create_safe(
-            f"extractPoints({e0}?.points)",
-            _var_is_string=False,
-        ),
+        ImmutableVar.create_safe(f"{e0}?.event"),
+        ImmutableVar.create_safe(f"extractPoints({e0}?.points)"),
     ]
 
 
@@ -117,7 +114,7 @@ class Plotly(NoSSRComponent):
     config: Var[Dict]
 
     # If true, the graph will resize when the window is resized.
-    use_resize_handler: Var[bool] = Var.create_safe(True)
+    use_resize_handler: Var[bool] = LiteralVar.create(True)
 
     # Fired after the plot is redrawn.
     on_after_plot: EventHandler[_passthrough_signature]

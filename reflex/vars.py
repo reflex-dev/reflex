@@ -1881,43 +1881,9 @@ class Var:
         Raises:
             VarTypeError: If the var is not an int.
         """
-        if not isinstance(v1, Var):
-            v1 = Var.create_safe(v1)
-        if v1._var_type != int:
-            raise VarTypeError(f"Cannot get range on non-int var {v1._var_full_name}.")
-        if not isinstance(v2, Var):
-            v2 = Var.create(v2)
-        if v2 is None:
-            v2 = Var.create_safe("undefined", _var_is_string=False)
-        elif v2._var_type != int:
-            raise VarTypeError(f"Cannot get range on non-int var {v2._var_full_name}.")
+        from reflex.ivars import ArrayVar
 
-        if not isinstance(step, Var):
-            step = Var.create(step)
-        if step is None:
-            step = Var.create_safe(1)
-        elif step._var_type != int:
-            raise VarTypeError(
-                f"Cannot get range on non-int var {step._var_full_name}."
-            )
-
-        return BaseVar(
-            _var_name=f"Array.from(range({v1._var_full_name}, {v2._var_full_name}, {step._var_name}))",
-            _var_type=List[int],
-            _var_is_local=False,
-            _var_data=VarData.merge(
-                v1._var_data,
-                v2._var_data,
-                step._var_data,
-                VarData(
-                    imports={
-                        "/utils/helpers/range.js": [
-                            ImportVar(tag="range", is_default=True),
-                        ],
-                    },
-                ),
-            ),
-        )
+        return ArrayVar.range(v1, v2, step)
 
     def to(self, type_: Type) -> Var:
         """Convert the type of the var.

@@ -19,7 +19,7 @@ from reflex.event import (
     call_script,
     parse_args_spec,
 )
-from reflex.ivars.base import ImmutableCallableVar, ImmutableVar
+from reflex.ivars.base import ImmutableCallableVar, ImmutableVar, LiteralVar
 from reflex.ivars.sequence import LiteralStringVar
 from reflex.utils.imports import ImportVar
 from reflex.vars import ImmutableVarData, Var, VarData
@@ -113,7 +113,7 @@ def cancel_upload(upload_id: str) -> EventSpec:
         An event spec that cancels the upload when triggered.
     """
     return call_script(
-        f"upload_controllers[{Var.create_safe(upload_id, _var_is_string=True)._var_name_unwrapped}]?.abort()"
+        f"upload_controllers[{str(LiteralVar.create(upload_id))}]?.abort()"
     )
 
 
@@ -132,16 +132,15 @@ def get_upload_dir() -> Path:
     return uploaded_files_dir
 
 
-uploaded_files_url_prefix: Var = Var.create_safe(
-    "${getBackendURL(env.UPLOAD)}",
-    _var_is_string=False,
-    _var_data=VarData(
+uploaded_files_url_prefix = ImmutableVar(
+    _var_name="getBackendURL(env.UPLOAD)",
+    _var_data=ImmutableVarData(
         imports={
             f"/{Dirs.STATE_PATH}": "getBackendURL",
             "/env.json": ImportVar(tag="env", is_default=True),
         }
     ),
-)
+).to(str)
 
 
 def get_upload_url(file_path: str) -> Var[str]:
@@ -155,9 +154,7 @@ def get_upload_url(file_path: str) -> Var[str]:
     """
     Upload.is_used = True
 
-    return Var.create_safe(
-        f"{uploaded_files_url_prefix}/{file_path}", _var_is_string=True
-    )
+    return uploaded_files_url_prefix + "/" + file_path
 
 
 def _on_drop_spec(files: Var):

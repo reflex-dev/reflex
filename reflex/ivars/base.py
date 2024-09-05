@@ -299,12 +299,18 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         return f"{constants.REFLEX_VAR_OPENING_TAG}{hashed_var}{constants.REFLEX_VAR_CLOSING_TAG}{self._var_name}"
 
     @overload
-    def to(
-        self, output: Type[NumberVar], var_type: type[int] | type[float] = float
-    ) -> ToNumberVarOperation: ...
+    def to(self, output: Type[StringVar]) -> ToStringOperation: ...
+
+    @overload
+    def to(self, output: Type[str]) -> ToStringOperation: ...
 
     @overload
     def to(self, output: Type[BooleanVar]) -> ToBooleanVarOperation: ...
+
+    @overload
+    def to(
+        self, output: Type[NumberVar], var_type: type[int] | type[float] = float
+    ) -> ToNumberVarOperation: ...
 
     @overload
     def to(
@@ -312,9 +318,6 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         output: Type[ArrayVar],
         var_type: type[list] | type[tuple] | type[set] = list,
     ) -> ToArrayOperation: ...
-
-    @overload
-    def to(self, output: Type[StringVar]) -> ToStringOperation: ...
 
     @overload
     def to(
