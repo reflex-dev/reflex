@@ -9,7 +9,7 @@ from reflex.components.component import BaseComponent, Component, MemoizationLea
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
 from reflex.ivars.base import ImmutableVar, LiteralVar
-from reflex.ivars.number import TernaryOperator
+from reflex.ivars.number import ternary_operation
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var, VarData
@@ -163,11 +163,12 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | ImmutableVar:
     c2 = create_var(c2)
 
     # Create the conditional var.
-    return TernaryOperator.create(
-        condition=cond_var.to(bool),  # type: ignore
-        if_true=c1,
-        if_false=c2,
-        _var_data=VarData(imports=_IS_TRUE_IMPORT),
+    return ternary_operation(
+        cond_var.bool()._replace(  # type: ignore
+            merge_var_data=VarData(imports=_IS_TRUE_IMPORT),
+        ),  # type: ignore
+        c1,
+        c2,
     )
 
 

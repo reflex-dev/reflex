@@ -501,7 +501,7 @@ AUTO_HEIGHT_JS = """
 const autoHeightOnInput = (e, is_enabled) => {
     if (is_enabled) {
         const el = e.target;
-        el.style.overflowY = "hidden";
+        el.style.overflowY = "scroll";
         el.style.height = "auto";
         el.style.height = (e.target.scrollHeight) + "px";
         if (el.form && !el.form.data_resize_on_reset) {

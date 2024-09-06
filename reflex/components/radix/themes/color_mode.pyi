@@ -102,10 +102,6 @@ class ColorModeIconButton(IconButton):
     def create(  # type: ignore
         cls,
         *children,
-        position: Optional[
-            Literal["top-left", "top-right", "bottom-left", "bottom-right"]
-        ] = None,
-        allow_system: Optional[bool] = False,
         as_child: Optional[Union[Var[bool], bool]] = None,
         size: Optional[
             Union[
@@ -280,7 +276,6 @@ class ColorModeIconButton(IconButton):
         """Create a icon button component that calls toggle_color_mode on click.
 
         Args:
-            *children: The children of the component.
             position: The position of the icon button. Follow document flow if None.
             allow_system: Allow picking the "system" value for the color mode.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.

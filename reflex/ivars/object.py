@@ -19,12 +19,10 @@ from typing import (
     overload,
 )
 
-from typing_extensions import get_origin
-
 from reflex.base import UsedSerialization
 from reflex.utils import types
 from reflex.utils.exceptions import VarAttributeError
-from reflex.utils.types import GenericType, get_attribute_access_type
+from reflex.utils.types import GenericType, get_attribute_access_type, get_origin
 from reflex.vars import ImmutableVarData, Var, VarData
 
 from .base import (
@@ -33,6 +31,8 @@ from .base import (
     LiteralVar,
     cached_property_no_lock,
     figure_out_type,
+    var_operation,
+    var_operation_return,
 )
 from .number import BooleanVar, NumberVar
 from .sequence import ArrayVar, StringVar
@@ -59,7 +59,9 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
         return str
 
     @overload
-    def _value_type(self: ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]]) -> VALUE_TYPE: ...
+    def _value_type(
+        self: ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]],
+    ) -> Type[VALUE_TYPE]: ...
 
     @overload
     def _value_type(self) -> Type: ...
@@ -82,7 +84,7 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
         Returns:
             The keys of the object.
         """
-        return ObjectKeysOperation.create(self)
+        return object_keys_operation(self)
 
     @overload
     def values(
@@ -98,7 +100,7 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
         Returns:
             The values of the object.
         """
-        return ObjectValuesOperation.create(self)
+        return object_values_operation(self)
 
     @overload
     def entries(
@@ -114,9 +116,9 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
         Returns:
             The entries of the object.
         """
-        return ObjectEntriesOperation.create(self)
+        return object_entries_operation(self)
 
-    def merge(self, other: ObjectVar) -> ObjectMergeOperation:
+    def merge(self, other: ObjectVar):
         """Merge two objects.
 
         Args:
@@ -125,7 +127,7 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
         Returns:
             The merged object.
         """
-        return ObjectMergeOperation.create(self, other)
+        return object_merge_operation(self, other)
 
     # NoReturn is used here to catch when key value is Any
     @overload
@@ -278,7 +280,7 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
         Returns:
             The result of the check.
         """
-        return ObjectHasOwnProperty.create(self, key)
+        return object_has_own_property_operation(self, key)
 
 
 @dataclasses.dataclass(
@@ -395,207 +397,72 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
         )
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ObjectToArrayOperation(CachedVarOperation, ArrayVar):
-    """Base class for object to array operations."""
+@var_operation
+def object_keys_operation(value: ObjectVar):
+    """Get the keys of an object.
 
-    _value: ObjectVar = dataclasses.field(
-        default_factory=lambda: LiteralObjectVar.create({})
+    Args:
+        value: The object to get the keys from.
+
+    Returns:
+        The keys of the object.
+    """
+    return var_operation_return(
+        js_expression=f"Object.keys({value})",
+        var_type=List[str],
     )
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the operation.
 
-        Raises:
-            NotImplementedError: Must implement _cached_var_name.
-        """
-        raise NotImplementedError(
-            "ObjectToArrayOperation must implement _cached_var_name"
-        )
+@var_operation
+def object_values_operation(value: ObjectVar):
+    """Get the values of an object.
 
-    @classmethod
-    def create(
-        cls,
-        value: ObjectVar,
-        _var_type: GenericType | None = None,
-        _var_data: VarData | None = None,
-    ) -> ObjectToArrayOperation:
-        """Create the object to array operation.
+    Args:
+        value: The object to get the values from.
 
-        Args:
-            value: The value of the operation.
-            _var_data: Additional hooks and imports associated with the operation.
-
-        Returns:
-            The object to array operation.
-        """
-        return cls(
-            _var_name="",
-            _var_type=list if _var_type is None else _var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _value=value,
-        )
-
-
-class ObjectKeysOperation(ObjectToArrayOperation):
-    """Operation to get the keys of an object."""
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the operation.
-
-        Returns:
-            The name of the operation.
-        """
-        return f"Object.keys({str(self._value)})"
-
-    @classmethod
-    def create(
-        cls,
-        value: ObjectVar,
-        _var_data: VarData | None = None,
-    ) -> ObjectKeysOperation:
-        """Create the object keys operation.
-
-        Args:
-            value: The value of the operation.
-            _var_data: Additional hooks and imports associated with the operation.
-
-        Returns:
-            The object keys operation.
-        """
-        return cls(
-            _var_name="",
-            _var_type=List[str],
-            _var_data=ImmutableVarData.merge(_var_data),
-            _value=value,
-        )
-
-
-class ObjectValuesOperation(ObjectToArrayOperation):
-    """Operation to get the values of an object."""
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the operation.
-
-        Returns:
-            The name of the operation.
-        """
-        return f"Object.values({str(self._value)})"
-
-    @classmethod
-    def create(
-        cls,
-        value: ObjectVar,
-        _var_data: VarData | None = None,
-    ) -> ObjectValuesOperation:
-        """Create the object values operation.
-
-        Args:
-            value: The value of the operation.
-            _var_data: Additional hooks and imports associated with the operation.
-
-        Returns:
-            The object values operation.
-        """
-        return cls(
-            _var_name="",
-            _var_type=List[value._value_type()],
-            _var_data=ImmutableVarData.merge(_var_data),
-            _value=value,
-        )
-
-
-class ObjectEntriesOperation(ObjectToArrayOperation):
-    """Operation to get the entries of an object."""
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the operation.
-
-        Returns:
-            The name of the operation.
-        """
-        return f"Object.entries({str(self._value)})"
-
-    @classmethod
-    def create(
-        cls,
-        value: ObjectVar,
-        _var_data: VarData | None = None,
-    ) -> ObjectEntriesOperation:
-        """Create the object entries operation.
-
-        Args:
-            value: The value of the operation.
-            _var_data: Additional hooks and imports associated with the operation.
-
-        Returns:
-            The object entries operation.
-        """
-        return cls(
-            _var_name="",
-            _var_type=List[Tuple[str, value._value_type()]],
-            _var_data=ImmutableVarData.merge(_var_data),
-            _value=value,
-        )
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ObjectMergeOperation(CachedVarOperation, ObjectVar):
-    """Operation to merge two objects."""
-
-    _lhs: ObjectVar = dataclasses.field(
-        default_factory=lambda: LiteralObjectVar.create({})
-    )
-    _rhs: ObjectVar = dataclasses.field(
-        default_factory=lambda: LiteralObjectVar.create({})
+    Returns:
+        The values of the object.
+    """
+    return var_operation_return(
+        js_expression=f"Object.values({value})",
+        var_type=List[value._value_type()],
     )
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the operation.
 
-        Returns:
-            The name of the operation.
-        """
-        return f"({{...{str(self._lhs)}, ...{str(self._rhs)}}})"
+@var_operation
+def object_entries_operation(value: ObjectVar):
+    """Get the entries of an object.
 
-    @classmethod
-    def create(
-        cls,
-        lhs: ObjectVar,
-        rhs: ObjectVar,
-        _var_data: VarData | None = None,
-    ) -> ObjectMergeOperation:
-        """Create the object merge operation.
+    Args:
+        value: The object to get the entries from.
 
-        Args:
-            lhs: The left object to merge.
-            rhs: The right object to merge.
-            _var_data: Additional hooks and imports associated with the operation.
+    Returns:
+        The entries of the object.
+    """
+    return var_operation_return(
+        js_expression=f"Object.entries({value})",
+        var_type=List[Tuple[str, value._value_type()]],
+    )
 
-        Returns:
-            The object merge operation.
-        """
-        # TODO: Figure out how to merge the types
-        return cls(
-            _var_name="",
-            _var_type=lhs._var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _lhs=lhs,
-            _rhs=rhs,
-        )
+
+@var_operation
+def object_merge_operation(lhs: ObjectVar, rhs: ObjectVar):
+    """Merge two objects.
+
+    Args:
+        lhs: The first object to merge.
+        rhs: The second object to merge.
+
+    Returns:
+        The merged object.
+    """
+    return var_operation_return(
+        js_expression=f"({{...{lhs}, ...{rhs}}})",
+        var_type=Dict[
+            Union[lhs._key_type(), rhs._key_type()],
+            Union[lhs._value_type(), rhs._value_type()],
+        ],
+    )
 
 
 @dataclasses.dataclass(
@@ -696,49 +563,18 @@ class ToObjectOperation(CachedVarOperation, ObjectVar):
         )
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ObjectHasOwnProperty(CachedVarOperation, BooleanVar):
-    """Operation to check if an object has a property."""
+@var_operation
+def object_has_own_property_operation(object: ObjectVar, key: Var):
+    """Check if an object has a key.
 
-    _object: ObjectVar = dataclasses.field(
-        default_factory=lambda: LiteralObjectVar.create({})
+    Args:
+        object: The object to check.
+        key: The key to check.
+
+    Returns:
+        The result of the check.
+    """
+    return var_operation_return(
+        js_expression=f"{object}.hasOwnProperty({key})",
+        var_type=bool,
     )
-    _key: Var | Any = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the operation.
-
-        Returns:
-            The name of the operation.
-        """
-        return f"{str(self._object)}.hasOwnProperty({str(self._key)})"
-
-    @classmethod
-    def create(
-        cls,
-        object: ObjectVar,
-        key: Var | Any,
-        _var_data: VarData | None = None,
-    ) -> ObjectHasOwnProperty:
-        """Create the object has own property operation.
-
-        Args:
-            object: The object to check.
-            key: The key to check.
-            _var_data: Additional hooks and imports associated with the operation.
-
-        Returns:
-            The object has own property operation.
-        """
-        return cls(
-            _var_name="",
-            _var_type=bool,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _object=object,
-            _key=key if isinstance(key, Var) else LiteralVar.create(key),
-        )

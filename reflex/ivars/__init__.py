@@ -12,7 +12,6 @@ from .number import LiteralNumberVar as LiteralNumberVar
 from .number import NumberVar as NumberVar
 from .object import LiteralObjectVar as LiteralObjectVar
 from .object import ObjectVar as ObjectVar
-from .sequence import ArrayJoinOperation as ArrayJoinOperation
 from .sequence import ArrayVar as ArrayVar
 from .sequence import ConcatVarOperation as ConcatVarOperation
 from .sequence import LiteralArrayVar as LiteralArrayVar

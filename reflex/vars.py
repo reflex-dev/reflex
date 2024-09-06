@@ -6,7 +6,6 @@ import contextlib
 import dataclasses
 import datetime
 import dis
-import functools
 import inspect
 import json
 import random
@@ -29,7 +28,6 @@ from typing import (
     _GenericAlias,  # type: ignore
     cast,
     get_args,
-    get_origin,
     get_type_hints,
 )
 
@@ -51,7 +49,7 @@ from reflex.utils.imports import (
     ParsedImportDict,
     parse_imports,
 )
-from reflex.utils.types import override
+from reflex.utils.types import get_origin, override
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -182,15 +180,14 @@ class VarData(Base):
                 var_data.interpolations if isinstance(var_data, VarData) else []
             )
 
-        return (
-            cls(
+        if state or _imports or hooks or interpolations:
+            return cls(
                 state=state,
                 imports=_imports,
                 hooks=hooks,
                 interpolations=interpolations,
             )
-            or None
-        )
+        return None
 
     def __bool__(self) -> bool:
         """Check if the var data is non-empty.
@@ -302,14 +299,13 @@ class ImmutableVarData:
                 else {k: None for k in var_data.hooks}
             )
 
-        return (
-            ImmutableVarData(
+        if state or _imports or hooks:
+            return ImmutableVarData(
                 state=state,
                 imports=_imports,
                 hooks=hooks,
             )
-            or None
-        )
+        return None
 
     def __bool__(self) -> bool:
         """Check if the var data is non-empty.
@@ -2535,7 +2531,6 @@ def computed_var(
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
     backend: bool | None = None,
-    _deprecated_cached_var: bool = False,
     **kwargs,
 ) -> ComputedVar | Callable[[Callable[[BaseState], Any]], ComputedVar]:
     """A ComputedVar decorator with or without kwargs.
@@ -2548,7 +2543,6 @@ def computed_var(
         auto_deps: Whether var dependencies should be auto-determined.
         interval: Interval at which the computed var should be updated.
         backend: Whether the computed var is a backend var.
-        _deprecated_cached_var: Indicate usage of deprecated cached_var partial function.
         **kwargs: additional attributes to set on the instance
 
     Returns:
@@ -2558,14 +2552,6 @@ def computed_var(
         ValueError: If caching is disabled and an update interval is set.
         VarDependencyError: If user supplies dependencies without caching.
     """
-    if _deprecated_cached_var:
-        console.deprecate(
-            feature_name="cached_var",
-            reason=("Use @rx.var(cache=True) instead of @rx.cached_var."),
-            deprecation_version="0.5.6",
-            removal_version="0.6.0",
-        )
-
     if cache is False and interval is not None:
         raise ValueError("Cannot set update interval without caching.")
 
@@ -2588,10 +2574,6 @@ def computed_var(
         )
 
     return wrapper
-
-
-# Partial function of computed_var with cache=True
-cached_var = functools.partial(computed_var, cache=True, _deprecated_cached_var=True)
 
 
 class CallableVar(BaseVar):

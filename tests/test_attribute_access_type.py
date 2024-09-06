@@ -94,6 +94,15 @@ class SQLAClass(SQLABase):
         """
         return self.name
 
+    @hybrid_property
+    def first_label(self) -> Optional[SQLALabel]:
+        """First label property.
+
+        Returns:
+            First label
+        """
+        return self.labels[0] if self.labels else None
+
 
 class ModelClass(rx.Model):
     """Test reflex model."""
@@ -124,6 +133,15 @@ class ModelClass(rx.Model):
             Name attribute
         """
         return self.name
+
+    @property
+    def first_label(self) -> Optional[SQLALabel]:
+        """First label property.
+
+        Returns:
+            First label
+        """
+        return self.labels[0] if self.labels else None
 
 
 class BaseClass(rx.Base):
@@ -156,6 +174,15 @@ class BaseClass(rx.Base):
         """
         return self.name
 
+    @property
+    def first_label(self) -> Optional[SQLALabel]:
+        """First label property.
+
+        Returns:
+            First label
+        """
+        return self.labels[0] if self.labels else None
+
 
 class BareClass:
     """Bare python class."""
@@ -186,6 +213,15 @@ class BareClass:
             Name attribute
         """
         return self.name
+
+    @property
+    def first_label(self) -> Optional[SQLALabel]:
+        """First label property.
+
+        Returns:
+            First label
+        """
+        return self.labels[0] if self.labels else None
 
 
 @attrs.define
@@ -218,6 +254,15 @@ class AttrClass:
             Name attribute
         """
         return self.name
+
+    @property
+    def first_label(self) -> Optional[SQLALabel]:
+        """First label property.
+
+        Returns:
+            First label
+        """
+        return self.labels[0] if self.labels else None
 
 
 @pytest.fixture(
@@ -254,6 +299,7 @@ def cls(request: pytest.FixtureRequest) -> type:
         pytest.param("dict_str_str", Dict[str, str], id="Dict[str, str]"),
         pytest.param("str_property", str, id="str_property"),
         pytest.param("str_or_int_property", Union[str, int], id="str_or_int_property"),
+        pytest.param("first_label", Optional[SQLALabel], id="first_label"),
     ],
 )
 def test_get_attribute_access_type(cls: type, attr: str, expected: GenericType) -> None:
