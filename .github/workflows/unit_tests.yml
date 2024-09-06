@@ -69,7 +69,6 @@ jobs:
       - name: Run unit tests
         run: |
           export PYTHONUNBUFFERED=1
-          ls .
           poetry run pytest tests --cov --no-cov-on-fail --cov-report=
       - name: Run unit tests w/ redis
         if: ${{ matrix.os == 'ubuntu-latest' }}
