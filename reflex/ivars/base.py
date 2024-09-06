@@ -412,7 +412,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             return ToArrayOperation.create(self, var_type or list)
 
         if issubclass(output, StringVar):
-            return ToStringOperation.create(self)
+            return ToStringOperation.create(self, var_type or str)
 
         if issubclass(output, (ObjectVar, Base)):
             return ToObjectOperation.create(self, var_type or dict)
@@ -480,7 +480,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         if issubclass(fixed_type, (list, tuple, set)):
             return self.to(ArrayVar, self._var_type)
         if issubclass(fixed_type, str):
-            return self.to(StringVar)
+            return self.to(StringVar, self._var_type)
         if issubclass(fixed_type, Base):
             return self.to(ObjectVar, self._var_type)
         return self
@@ -1041,27 +1041,6 @@ def unionize(*args: Type) -> Type:
     if not rest:
         return first
     return Union[first, unionize(*rest)]
-
-
-def original_var_type_or_target_type(original_var: Var, target_type: type) -> type:
-    """Inherit the original var type if possible, i.e. the original var is a subclass of the target type.
-        When the original var is a LiteralVar, the target type is always target_type.
-        When the original var is a subclass of the target type, the original var type is returned.
-
-    Args:
-        original_var: The original var of the operation.
-        target_type: The target type of the operation.
-
-    Returns:
-        The inherited type.
-    """
-    if isinstance(original_var, LiteralVar):
-        return target_type
-    if isinstance(original_var._var_type, type) and issubclass(
-        original_var._var_type, target_type
-    ):
-        return original_var._var_type
-    return target_type
 
 
 def figure_out_type(value: Any) -> types.GenericType:

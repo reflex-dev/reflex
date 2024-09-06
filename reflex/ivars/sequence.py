@@ -39,7 +39,6 @@ from .base import (
     LiteralVar,
     cached_property_no_lock,
     figure_out_type,
-    original_var_type_or_target_type,
     unionize,
     var_operation,
     var_operation_return,
@@ -1050,12 +1049,14 @@ class ToStringOperation(CachedVarOperation, StringVar):
     def create(
         cls,
         original_var: Var,
+        var_type: type[str] | type[LiteralStringVar] | type[StringVar] | None = None,
         _var_data: VarData | None = None,
     ) -> ToStringOperation:
         """Create a var from a string value.
 
         Args:
             original_var: The original var.
+            var_type: The type of the var.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -1063,7 +1064,7 @@ class ToStringOperation(CachedVarOperation, StringVar):
         """
         return cls(
             _var_name="",
-            _var_type=original_var_type_or_target_type(original_var, str),
+            _var_type=var_type or str,
             _var_data=ImmutableVarData.merge(_var_data),
             _original_var=original_var,
         )
