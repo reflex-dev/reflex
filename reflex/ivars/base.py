@@ -693,7 +693,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         """
         return ~self.bool()
 
-    def to_string(self) -> ImmutableVar:
+    def to_string(self):
         """Convert the var to a string.
 
         Returns:

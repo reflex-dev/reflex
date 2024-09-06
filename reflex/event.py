@@ -724,7 +724,7 @@ def download(
             # If it's a data: URI, use it as is, otherwise convert the Var to JSON in a data: URI.
             url = cond(  # type: ignore
                 is_data_url,
-                data,
+                data.to(str),
                 "data:text/plain," + data.to_string(),  # type: ignore
             )
         elif isinstance(data, bytes):
