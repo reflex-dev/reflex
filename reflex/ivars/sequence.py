@@ -25,12 +25,14 @@ from typing import (
 
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
+from reflex.utils.exceptions import VarTypeError
 from reflex.utils.types import GenericType, get_origin
 from reflex.vars import (
     ImmutableVarData,
     Var,
     VarData,
     _global_vars,
+    get_unique_variable_name,
 )
 
 from .base import (
@@ -1088,6 +1090,50 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
 
         return array_ge_operation(self, other)
 
+    def foreach(self, fn: Any):
+        """Apply a function to each element of the array.
+
+        Args:
+            fn: The function to apply.
+
+        Returns:
+            The array after applying the function.
+
+        Raises:
+            VarTypeError: If the function takes more than one argument.
+        """
+        from .function import ArgsFunctionOperation
+
+        if not callable(fn):
+            raise_unsupported_operand_types("foreach", (type(self), type(fn)))
+        # get the number of arguments of the function
+        num_args = len(inspect.signature(fn).parameters)
+        if num_args > 1:
+            raise VarTypeError(
+                "The function passed to foreach should take at most one argument."
+            )
+
+        if num_args == 0:
+            return_value = fn()
+            function_var = ArgsFunctionOperation.create(tuple(), return_value)
+        else:
+            # generic number var
+            number_var = ImmutableVar("").to(NumberVar)
+
+            first_arg_type = self[number_var]._var_type
+
+            arg_name = get_unique_variable_name()
+
+            # get first argument type
+            first_arg = ImmutableVar(
+                _var_name=arg_name,
+                _var_type=first_arg_type,
+            ).guess_type()
+
+            function_var = ArgsFunctionOperation.create((arg_name,), fn(first_arg))
+
+        return map_array_operation(self, function_var)
+
 
 LIST_ELEMENT = TypeVar("LIST_ELEMENT")
 
@@ -1622,6 +1668,29 @@ def repeat_array_operation(
     return var_operation_return(
         js_expression=f"Array.from({{ length: {count} }}).flatMap(() => {array})",
         var_type=array._var_type,
+    )
+
+
+if TYPE_CHECKING:
+    from .function import FunctionVar
+
+
+@var_operation
+def map_array_operation(
+    array: ArrayVar[ARRAY_VAR_TYPE],
+    function: FunctionVar,
+):
+    """Map a function over an array.
+
+    Args:
+        array: The array.
+        function: The function to map.
+
+    Returns:
+        The mapped array.
+    """
+    return var_operation_return(
+        js_expression=f"{array}.map({function})", var_type=List[Any]
     )
 
 
