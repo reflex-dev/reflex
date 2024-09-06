@@ -760,8 +760,8 @@ class Var:
     def _get_all_var_data(self) -> ImmutableVarData | None:
         """Get all the var data.
 
-        Returns:
-            The var data.
+        Raises:
+            NotImplementedError: If the method is not implemented.
         """
         raise NotImplementedError(
             "Var subclasses must implement the _get_all_var_data method."
