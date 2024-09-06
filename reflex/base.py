@@ -10,7 +10,14 @@ if TYPE_CHECKING:
 else:
 
     def override(fn):
-        """Decorator to indicate that a method is meant to override a parent method."""
+        """Decorator to indicate that a method is meant to override a parent method.
+
+        Args:
+            fn: The method to override.
+
+        Returns:
+            The unmodified method.
+        """
         return fn
 
 
@@ -194,6 +201,9 @@ class SlimBase(Base, UsedSerialization):
             exclude_unset: Whether to exclude unset values.
             exclude_defaults: Whether to exclude default values.
             exclude_none: Whether to exclude None values.
+
+        Returns:
+            The object as a dict.
         """
         if not include and isinstance(self, UsedSerialization):
             include = self.__class__.__used_fields__
