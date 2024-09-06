@@ -46,7 +46,7 @@ def DynamicRoute():
                 is_read_only=True,
                 id="token",
             ),
-            rc.input(value=rx.State.page_id, is_read_only=True, id="page_id"),
+            rc.input(value=rx.State.page_id, is_read_only=True, id="page_id"),  # type: ignore
             rc.input(
                 value=DynamicState.router.page.raw_path,
                 is_read_only=True,
