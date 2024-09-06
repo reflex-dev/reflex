@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Any, Callable, Optional, Type, Union
+from typing import Any, Callable, Union
 
 from reflex import constants
 from reflex.event import EventChain, EventHandler, EventSpec, call_script
@@ -35,35 +35,18 @@ def _client_state_ref(var_name: str) -> str:
 
 @dataclasses.dataclass(
     eq=False,
+    frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ClientStateVar(Var):
+class ClientStateVar(ImmutableVar):
     """A Var that exists on the client via useState."""
 
-    # The name of the var.
-    _var_name: str = dataclasses.field()
-
     # Track the names of the getters and setters
-    _setter_name: str = dataclasses.field()
-    _getter_name: str = dataclasses.field()
+    _setter_name: str = dataclasses.field(default="")
+    _getter_name: str = dataclasses.field(default="")
 
     # Whether to add the var and setter to the global `refs` object for use in any Component.
     _global_ref: bool = dataclasses.field(default=True)
-
-    # The type of the var.
-    _var_type: Type = dataclasses.field(default=Any)
-
-    # Whether this is a local javascript variable.
-    _var_is_local: bool = dataclasses.field(default=False)
-
-    # Whether the var is a string literal.
-    _var_is_string: bool = dataclasses.field(default=False)
-
-    # _var_full_name should be prefixed with _var_state
-    _var_full_name_needs_state_prefix: bool = dataclasses.field(default=False)
-
-    # Extra metadata associated with the Var
-    _var_data: Optional[VarData] = dataclasses.field(default=None)
 
     def __hash__(self) -> int:
         """Define a hash function for a var.
@@ -134,12 +117,10 @@ class ClientStateVar(Var):
             _setter_name=setter_name,
             _getter_name=var_name,
             _global_ref=global_ref,
-            _var_is_local=False,
-            _var_is_string=False,
             _var_type=default_var._var_type,
-            _var_data=VarData.merge(
+            _var_data=ImmutableVarData.merge(
                 default_var._var_data,
-                VarData(  # type: ignore
+                VarData(
                     hooks=hooks,
                     imports=imports,
                 ),

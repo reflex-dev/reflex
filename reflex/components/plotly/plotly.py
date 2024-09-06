@@ -270,13 +270,11 @@ const extractPoints = (points) => {
             tag.special_props.add(
                 # Merge all dictionaries and spread the result over props.
                 ImmutableVar.create_safe(
-                    f"{{...mergician({figure._var_name_unwrapped},"
-                    f"{','.join(md._var_name_unwrapped for md in merge_dicts)})}}",
+                    f"{{...mergician({str(figure)},"
+                    f"{','.join(str(md) for md in merge_dicts)})}}",
                 ),
             )
         else:
             # Spread the figure dict over props, nothing to merge.
-            tag.special_props.add(
-                ImmutableVar.create_safe(f"{{...{figure._var_name_unwrapped}}}")
-            )
+            tag.special_props.add(ImmutableVar.create_safe(f"{{...{str(figure)}}}"))
         return tag
