@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Any, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, ClassVar, List, Optional, Type, Union
 
 if TYPE_CHECKING:
     from reflex.utils.types import override
@@ -70,11 +70,12 @@ pydantic_main.validate_field_name = validate_field_name  # type: ignore
 
 
 class UsedSerialization:
-    """A mixin to slim down the BaseModel class.
-    Only used fields will be included in the dict for serialization.
+    """A mixin which allows tracking of fields used in the frontend.
+    You can subclass this and add a @rx.serializer which uses the __used_fields__ attribute to only serialize used fields.
+    Take a look at SlimBase for an example implementation.
     """
 
-    __used_fields__: set[str] = set()
+    __used_fields__: ClassVar[set[str]] = set()
 
 
 class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
@@ -193,6 +194,8 @@ class SlimBase(Base, UsedSerialization):
     ) -> dict[str, Any]:
         """Convert the object to a dict.
 
+        We override the default dict method to only include fields that are used.
+
         Args:
             include: The fields to include.
             exclude: The fields to exclude.
@@ -206,7 +209,7 @@ class SlimBase(Base, UsedSerialization):
             The object as a dict.
         """
         if not include and isinstance(self, UsedSerialization):
-            include = self.__class__.__used_fields__
+            include = self.__used_fields__
         return super().dict(
             include=include,
             exclude=exclude,

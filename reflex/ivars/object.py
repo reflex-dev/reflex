@@ -268,7 +268,6 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
 
             return ObjectItemOperation.create(self, name, attribute_type).guess_type()
         else:
-            print(f"I'm here {name}")
             return ObjectItemOperation.create(self, name).guess_type()
 
     def contains(self, key: Var | Any) -> BooleanVar:
