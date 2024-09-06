@@ -1358,9 +1358,9 @@ class Component(BaseComponent, ABC):
         if on_mount is not None or on_unmount is not None:
             return f"""
                 useEffect(() => {{
-                    {on_mount or ""}
+                    ({on_mount or ""}())
                     return () => {{
-                        {on_unmount or ""}
+                        ({on_unmount or ""}())
                     }}
                 }}, []);"""
 

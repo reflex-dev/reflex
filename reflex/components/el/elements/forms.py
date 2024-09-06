@@ -23,9 +23,9 @@ HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {
         const $form = ev.target
         ev.preventDefault()
-        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}}
+        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}};
 
-        {{ on_submit_event_chain }}
+        ({{ on_submit_event_chain }}());
 
         if ({{ reset_on_submit }}) {
             $form.reset()

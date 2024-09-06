@@ -468,7 +468,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         if fixed_type is Union:
             inner_types = get_args(var_type)
 
-            if all(issubclass(t, (int, float)) for t in inner_types):
+            if all(
+                inspect.isclass(t) and issubclass(t, (int, float)) for t in inner_types
+            ):
                 return self.to(NumberVar, self._var_type)
 
             if all(inspect.isclass(t) and issubclass(t, Base) for t in inner_types):
