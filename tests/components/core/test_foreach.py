@@ -12,6 +12,8 @@ from reflex.components.core.foreach import (
 )
 from reflex.components.radix.themes.layout.box import box
 from reflex.components.radix.themes.typography.text import text
+from reflex.ivars.number import NumberVar
+from reflex.ivars.sequence import ArrayVar
 from reflex.state import BaseState, ComponentState
 from reflex.vars import Var
 
@@ -113,7 +115,7 @@ def display_colors_set(color):
     return box(text(color))
 
 
-def display_nested_list_element(element: Var[str], index: Var[int]):
+def display_nested_list_element(element: ArrayVar[List[str]], index: NumberVar[int]):
     assert element._var_type == List[str]
     assert index._var_type == int
     return box(text(element[index]))

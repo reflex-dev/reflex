@@ -243,7 +243,7 @@ const extractPoints = (points) => {
             light=LiteralVar.create(templates["plotly"]),
             dark=LiteralVar.create(templates["plotly_dark"]),
         )
-        if isinstance(responsive_template, Var):
+        if isinstance(responsive_template, ImmutableVar):
             # Mark the conditional Var as a Template to avoid type mismatch
             responsive_template = responsive_template.to(Template)
         props.setdefault("template", responsive_template)
@@ -255,7 +255,7 @@ const extractPoints = (points) => {
 
     def _render(self):
         tag = super()._render()
-        figure = self.data.to(dict)
+        figure = self.data.upcast().to(dict)
         merge_dicts = []  # Data will be merged and spread from these dict Vars
         if self.layout is not None:
             # Why is this not a literal dict? Great question... it didn't work

@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Union
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
-from reflex.ivars.base import LiteralVar, is_computed_var
+from reflex.ivars.base import ImmutableVar, LiteralVar, is_computed_var
 from reflex.utils import types
 from reflex.utils.imports import ImportDict
 from reflex.utils.serializers import serialize
@@ -113,7 +113,9 @@ class DataTable(Gridjs):
         return {"": "gridjs/dist/theme/mermaid.css"}
 
     def _render(self) -> Tag:
-        if isinstance(self.data, Var) and types.is_dataframe(self.data._var_type):
+        if isinstance(self.data, ImmutableVar) and types.is_dataframe(
+            self.data._var_type
+        ):
             self.columns = self.data._replace(
                 _var_name=f"{self.data._var_name}.columns",
                 _var_type=List[Any],

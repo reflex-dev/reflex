@@ -166,7 +166,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
         else:
             default_value = ImmutableVar.create_safe(default_value).to_string()
 
-        def radio_group_item(value: Var) -> Component:
+        def radio_group_item(value: ImmutableVar) -> Component:
             item_value = rx.cond(
                 value.js_type() == "string",
                 value,

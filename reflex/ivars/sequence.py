@@ -38,6 +38,7 @@ from .base import (
     CustomVarOperationReturn,
     ImmutableVar,
     LiteralVar,
+    ToOperation,
     cached_property_no_lock,
     figure_out_type,
     unionize,
@@ -609,6 +610,7 @@ class LiteralStringVar(LiteralVar, StringVar):
                             var_content[0] == "{"
                             and var_content[-1] == "}"
                             and strings_and_vals
+                            and isinstance(strings_and_vals[-1], str)
                             and strings_and_vals[-1][-1] == "$"
                         ):
                             strings_and_vals[-1] = strings_and_vals[-1][:-1]
@@ -1466,93 +1468,16 @@ def array_contains_operation(haystack: ArrayVar, needle: Any | Var):
     )
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ToStringOperation(CachedVarOperation, StringVar):
+class ToStringOperation(ToOperation, StringVar):
     """Base class for immutable string vars that are the result of a to string operation."""
 
-    _original_var: Var = dataclasses.field(
-        default_factory=lambda: LiteralStringVar.create("")
-    )
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return str(self._original_var)
-
-    @classmethod
-    def create(
-        cls,
-        original_var: Var,
-        _var_data: VarData | None = None,
-    ) -> ToStringOperation:
-        """Create a var from a string value.
-
-        Args:
-            original_var: The original var.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=str,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _original_var=original_var,
-        )
+    _default_var_type = str
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ToArrayOperation(CachedVarOperation, ArrayVar):
+class ToArrayOperation(ToOperation, ArrayVar):
     """Base class for immutable array vars that are the result of a to array operation."""
 
-    _original_var: Var = dataclasses.field(
-        default_factory=lambda: LiteralArrayVar.create([])
-    )
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return str(self._original_var)
-
-    @classmethod
-    def create(
-        cls,
-        original_var: Var,
-        _var_type: type[list] | type[set] | type[tuple] | None = None,
-        _var_data: VarData | None = None,
-    ) -> ToArrayOperation:
-        """Create a var from a string value.
-
-        Args:
-            original_var: The original var.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=list if _var_type is None else _var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _original_var=original_var,
-        )
+    _default_var_type = list
 
 
 @var_operation

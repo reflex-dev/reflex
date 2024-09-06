@@ -54,8 +54,8 @@ def create_color_var(color):
     ],
 )
 def test_color(color, expected):
-    assert color._var_is_string or color._var_type is str
-    assert color._var_full_name == expected
+    assert color._var_type is str
+    assert str(color) == expected
     if color._var_type == Color:
         assert str(color) == f"{{`{expected}`}}"
     else:

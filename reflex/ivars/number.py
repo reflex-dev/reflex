@@ -11,11 +11,10 @@ from reflex.utils.exceptions import VarTypeError
 from reflex.vars import ImmutableVarData, Var, VarData
 
 from .base import (
-    CachedVarOperation,
     CustomVarOperationReturn,
     ImmutableVar,
     LiteralVar,
-    cached_property_no_lock,
+    ToOperation,
     unionize,
     var_operation,
     var_operation_return,
@@ -1062,94 +1061,16 @@ number_types = Union[NumberVar, int, float]
 boolean_types = Union[BooleanVar, bool]
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ToNumberVarOperation(CachedVarOperation, NumberVar):
+class ToNumberVarOperation(ToOperation, NumberVar):
     """Base class for immutable number vars that are the result of a number operation."""
 
-    _original_value: Var = dataclasses.field(
-        default_factory=lambda: LiteralNumberVar.create(0)
-    )
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return str(self._original_value)
-
-    @classmethod
-    def create(
-        cls,
-        value: Var,
-        _var_type: type[int] | type[float] = float,
-        _var_data: VarData | None = None,
-    ):
-        """Create the number var.
-
-        Args:
-            value: The value of the var.
-            _var_type: The type of the Var.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The number var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=_var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _original_value=value,
-        )
+    _default_var_type = float
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ToBooleanVarOperation(CachedVarOperation, BooleanVar):
+class ToBooleanVarOperation(ToOperation, BooleanVar):
     """Base class for immutable boolean vars that are the result of a boolean operation."""
 
-    _original_value: Var = dataclasses.field(
-        default_factory=lambda: LiteralBooleanVar.create(False)
-    )
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return str(self._original_value)
-
-    @classmethod
-    def create(
-        cls,
-        value: Var,
-        _var_data: VarData | None = None,
-    ):
-        """Create the boolean var.
-
-        Args:
-            value: The value of the var.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The boolean var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=bool,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _original_value=value,
-        )
+    _default_var_type = bool
 
 
 @var_operation

@@ -28,8 +28,6 @@ class Bare(Component):
         """
         if isinstance(contents, ImmutableVar):
             return cls(contents=contents)
-        if isinstance(contents, Var):
-            contents = contents.to(str)
         else:
             contents = str(contents) if contents is not None else ""
         return cls(contents=contents)  # type: ignore

@@ -136,7 +136,7 @@ def test_match_vars(cases, expected):
     """
     match_comp = Match.create(MatchState.value, *cases)
     assert isinstance(match_comp, Var)
-    assert match_comp._var_full_name == expected
+    assert str(match_comp) == expected
 
 
 def test_match_on_component_without_default():

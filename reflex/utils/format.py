@@ -272,13 +272,7 @@ def format_var(var: Var) -> str:
     Returns:
         The formatted Var.
     """
-    if not var._var_is_local or var._var_is_string:
-        return str(var)
-    if types._issubclass(var._var_type, str):
-        return format_string(var._var_full_name)
-    if is_wrapped(var._var_full_name, "{"):
-        return var._var_full_name
-    return json_dumps(var._var_full_name)
+    return str(var)
 
 
 def format_route(route: str, format_case=True) -> str:
@@ -303,7 +297,7 @@ def format_route(route: str, format_case=True) -> str:
     return route
 
 
-def format_match(cond: str | Var, match_cases: List[Var], default: Var) -> str:
+def format_match(cond: str | Var, match_cases: List[List[Var]], default: Var) -> str:
     """Format a match expression whose return type is a Var.
 
     Args:
@@ -494,7 +488,7 @@ def format_event(event_spec: EventSpec) -> str:
                             "`",
                         )
                         if val._var_is_string
-                        else val._var_full_name
+                        else str(val)
                     ),
                 )
             )

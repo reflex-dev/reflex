@@ -120,7 +120,7 @@ class ClientStateVar(Var):
             default_var = default
         setter_name = f"set{var_name.capitalize()}"
         hooks = {
-            f"const [{var_name}, {setter_name}] = useState({default_var._var_name_unwrapped})": None,
+            f"const [{var_name}, {setter_name}] = useState({str(default_var)})": None,
         }
         imports = {
             "react": [ImportVar(tag="useState")],

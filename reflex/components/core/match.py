@@ -234,8 +234,8 @@ class Match(MemoizationLeaf):
 
         return ImmutableVar(
             _var_name=format.format_match(
-                cond=match_cond_var._var_name_unwrapped,
-                match_cases=match_cases,  # type: ignore
+                cond=str(match_cond_var),
+                match_cases=match_cases,
                 default=default,  # type: ignore
             ),
             _var_type=default._var_type,  # type: ignore

@@ -714,7 +714,7 @@ def download(
         if isinstance(data, str):
             # Caller provided a plain text string to download.
             url = "data:text/plain," + urllib.parse.quote(data)
-        elif isinstance(data, Var):
+        elif isinstance(data, ImmutableVar):
             # Need to check on the frontend if the Var already looks like a data: URI.
 
             is_data_url = (data.js_type() == "string") & (

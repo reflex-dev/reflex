@@ -354,7 +354,7 @@ class Toaster(Component):
         dismiss_var_data = None
 
         if isinstance(id, Var):
-            dismiss = f"{toast_ref}.dismiss({id._var_name_unwrapped})"
+            dismiss = f"{toast_ref}.dismiss({str(id)})"
             dismiss_var_data = id._get_all_var_data()
         elif isinstance(id, str):
             dismiss = f"{toast_ref}.dismiss('{id}')"

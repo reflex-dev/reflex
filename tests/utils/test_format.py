@@ -9,6 +9,7 @@ import pytest
 from reflex.components.tags.tag import Tag
 from reflex.event import EventChain, EventHandler, EventSpec, FrontendEvent
 from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.object import ObjectVar
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.serializers import serialize_figure
@@ -282,7 +283,7 @@ def test_format_string(input: str, output: str):
     ],
 )
 def test_format_var(input: Var, output: str):
-    assert format.format_var(input) == output
+    assert str(input) == output
 
 
 @pytest.mark.parametrize(
@@ -336,7 +337,7 @@ def test_format_route(route: str, format_case: bool, expected: bool):
     ],
 )
 def test_format_match(
-    condition: str, match_cases: List[Var], default: Var, expected: str
+    condition: str, match_cases: List[List[Var]], default: Var, expected: str
 ):
     """Test formatting a match statement.
 
@@ -386,9 +387,8 @@ def test_format_match(
                                 LiteralVar.create("arg"),
                                 ImmutableVar(
                                     _var_name="_e",
-                                    _var_type=FrontendEvent,
                                 )
-                                .guess_type()
+                                .to(ObjectVar, FrontendEvent)
                                 .target.value,
                             ),
                         ),
@@ -522,11 +522,14 @@ def test_format_event_handler(input, output):
 @pytest.mark.parametrize(
     "input,output",
     [
-        (EventSpec(handler=EventHandler(fn=mock_event)), 'Event("mock_event", {})'),
+        (
+            EventSpec(handler=EventHandler(fn=mock_event)),
+            '(Event("mock_event", ({  })))',
+        ),
     ],
 )
 def test_format_event(input, output):
-    assert format.format_event(input) == output
+    assert str(LiteralVar.create(input)) == output
 
 
 @pytest.mark.parametrize(

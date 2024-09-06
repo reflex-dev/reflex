@@ -36,10 +36,16 @@ from typing_extensions import ParamSpec, TypeGuard, deprecated, get_type_hints, 
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, imports, serializers, types
-from reflex.utils.exceptions import VarDependencyError, VarTypeError, VarValueError
+from reflex.utils.exceptions import (
+    VarAttributeError,
+    VarDependencyError,
+    VarTypeError,
+    VarValueError,
+)
 from reflex.utils.format import format_state_name
-from reflex.utils.types import get_origin
+from reflex.utils.types import GenericType, get_origin
 from reflex.vars import (
+    REPLACED_NAMES,
     ImmutableVarData,
     Var,
     VarData,
@@ -102,15 +108,6 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
     @property
     def _var_is_string(self) -> bool:
         """Whether the var is a string literal.
-
-        Returns:
-            False
-        """
-        return False
-
-    @property
-    def _var_full_name_needs_state_prefix(self) -> bool:
-        """Whether the full name of the var needs a _var_state prefix.
 
         Returns:
             False
@@ -188,7 +185,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         _var_is_local: bool | None = None,
         _var_is_string: bool | None = None,
         _var_data: VarData | None = None,
-    ) -> ImmutableVar | Var | None:
+    ) -> ImmutableVar | None:
         """Create a var from a value.
 
         Args:
@@ -221,7 +218,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             return None
 
         # If the value is already a var, do nothing.
-        if isinstance(value, Var):
+        if isinstance(value, ImmutableVar):
             return value
 
         # Try to pull the imports and hooks from contained values.
@@ -261,7 +258,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         _var_is_local: bool | None = None,
         _var_is_string: bool | None = None,
         _var_data: VarData | None = None,
-    ) -> Var | ImmutableVar:
+    ) -> ImmutableVar:
         """Create a var from a value, asserting that it is not None.
 
         Args:
@@ -545,11 +542,12 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         """
         var_name_parts = self._var_name.split(".")
         setter = constants.SETTER_PREFIX + var_name_parts[-1]
-        if self._var_data is None:
+        var_data = self._get_all_var_data()
+        if var_data is None:
             return setter
-        if not include_state or self._var_data.state == "":
+        if not include_state or var_data.state == "":
             return setter
-        return ".".join((self._var_data.state, setter))
+        return ".".join((var_data.state, setter))
 
     def get_setter(self) -> Callable[[BaseState, Any], None]:
         """Get the var's setter function.
@@ -581,17 +579,26 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
 
         return setter
 
-    def _var_set_state(self, state: type[BaseState] | str) -> ImmutableVar:
+    def _var_set_state(self, state: type[BaseState] | str):
+        """Set the state of the var.
+
+        Args:
+            state: The state to set.
+
+        Returns:
+            The var with the state set.
+        """
         formatted_state_name = (
             state
             if isinstance(state, str)
             else format_state_name(state.get_full_name())
         )
 
-        return self._replace(
-            _var_name=formatted_state_name + "." + self._var_name,
-            merge_var_data=ImmutableVarData.from_state(state),
-        )
+        return StateOperation.create(
+            formatted_state_name,
+            self,
+            _var_data=VarData.merge(ImmutableVarData.from_state(state), self._var_data),
+        ).guess_type()
 
     def __eq__(self, other: Var | Any) -> BooleanVar:
         """Check if the current variable is equal to the given variable.
@@ -745,6 +752,57 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         """
         return dataclasses.replace(self, _var_data=None)
 
+    def contains(self, value: Any = None, field: Any = None):
+        """Get an attribute of the var.
+
+        Args:
+            value: The value to check for.
+            field: The field to check for.
+
+        Raises:
+            TypeError: If the var does not support contains check.
+        """
+        raise TypeError(
+            f"Var var of type {self._var_type} does not support contains check."
+        )
+
+    def reverse(self):
+        """Reverse the var.
+
+        Raises:
+            TypeError: If the var does not support reverse.
+        """
+        raise TypeError("Cannot reverse non-list var var.")
+
+    def __getattr__(self, name: str):
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute.
+
+        Raises:
+            VarAttributeError: If the attribute does not exist.
+            TypeError: If the var type is Any.
+        """
+        if name.startswith("_"):
+            return super(ImmutableVar, self).__getattribute__(name)
+        if self._var_type is Any:
+            raise TypeError(
+                f"You must provide an annotation for the state var `{str(self)}`. Annotation cannot be `{self._var_type}`."
+            )
+
+        if name in REPLACED_NAMES:
+            raise VarAttributeError(
+                f"Field {name!r} was renamed to {REPLACED_NAMES[name]!r}"
+            )
+
+        raise VarAttributeError(
+            f"The State var has no attribute '{name}' or may have been annotated wrongly.",
+        )
+
 
 OUTPUT = TypeVar("OUTPUT", bound=ImmutableVar)
 
@@ -757,7 +815,7 @@ class LiteralVar(ImmutableVar):
         cls,
         value: Any,
         _var_data: VarData | None = None,
-    ) -> Var:
+    ) -> ImmutableVar:
         """Create a var from a value.
 
         Args:
@@ -774,7 +832,7 @@ class LiteralVar(ImmutableVar):
         from .object import LiteralObjectVar
         from .sequence import LiteralArrayVar, LiteralStringVar
 
-        if isinstance(value, Var):
+        if isinstance(value, ImmutableVar):
             if _var_data is None:
                 return value
             return value._replace(merge_var_data=_var_data)
@@ -1041,9 +1099,9 @@ class CachedVarOperation:
 
         parent_classes = inspect.getmro(self.__class__)
 
-        return parent_classes[parent_classes.index(CachedVarOperation) + 1].__getattr__(  # type: ignore
-            self, name
-        )
+        next_class = parent_classes[parent_classes.index(CachedVarOperation) + 1]
+
+        return next_class.__getattr__(self, name)  # type: ignore
 
     def _get_all_var_data(self) -> ImmutableVarData | None:
         """Get all VarData associated with the Var.
@@ -1088,6 +1146,74 @@ class CachedVarOperation:
                     if field.name not in ["_var_name", "_var_data", "_var_type"]
                 ],
             )
+        )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ToOperation(CachedVarOperation, ImmutableVar):
+    """Base class for to operations."""
+
+    _original_value: Var = dataclasses.field(
+        default_factory=lambda: LiteralNoneVar.create()
+    )
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """Get the cached var name.
+
+        Returns:
+            The cached var name.
+        """
+        return str(self._original_value)
+
+    def __hash__(self) -> int:
+        """Calculate the hash of the object.
+
+        Returns:
+            The hash of the object.
+        """
+        return hash(self._original_value)
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+
+        return getattr(self._original_value, name)
+
+    @classmethod
+    def create(
+        cls,
+        value: Var,
+        _var_type: GenericType | None = None,
+        _var_data: VarData | None = None,
+    ):
+        """Create the number var.
+
+        Args:
+            value: The value of the var.
+            _var_type: The type of the Var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The number var.
+        """
+        return cls(
+            _var_name="",
+            _var_data=ImmutableVarData.merge(_var_data),
+            _var_type=_var_type or cls._default_var_type,  # type: ignore
+            _original_value=value,
         )
 
 
@@ -1591,7 +1717,7 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
                     ref_obj = None
                 if instruction.argval in invalid_names:
                     raise VarValueError(
-                        f"Cached var {self._var_full_name} cannot access arbitrary state via `{instruction.argval}`."
+                        f"Cached var {str(self)} cannot access arbitrary state via `{instruction.argval}`."
                     )
                 if callable(ref_obj):
                     # recurse into callable attributes
@@ -1945,4 +2071,64 @@ class ToNoneOperation(CachedVarOperation, NoneVar):
             _var_type=None,
             _var_data=ImmutableVarData.merge(_var_data),
             _original_var=var,
+        )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class StateOperation(CachedVarOperation, ImmutableVar):
+    """A var operation that accesses a field on an object."""
+
+    _state_name: str = dataclasses.field(default="")
+    _field: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """Get the cached var name.
+
+        Returns:
+            The cached var name.
+        """
+        return f"{str(self._state_name)}.{str(self._field)}"
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute.
+        """
+        if name == "_var_name":
+            return self._cached_var_name
+
+        return getattr(self._field, name)
+
+    @classmethod
+    def create(
+        cls,
+        state_name: str,
+        field: Var,
+        _var_data: VarData | None = None,
+    ) -> StateOperation:
+        """Create a DotOperation.
+
+        Args:
+            state_name: The name of the state.
+            field: The field of the state.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The DotOperation.
+        """
+        return StateOperation(
+            _var_name="",
+            _var_type=field._var_type,
+            _var_data=ImmutableVarData.merge(_var_data),
+            _state_name=state_name,
+            _field=field,
         )

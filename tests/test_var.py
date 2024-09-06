@@ -22,7 +22,7 @@ from reflex.ivars.number import (
     LiteralNumberVar,
     NumberVar,
 )
-from reflex.ivars.object import LiteralObjectVar
+from reflex.ivars.object import LiteralObjectVar, ObjectVar
 from reflex.ivars.sequence import (
     ArrayVar,
     ConcatVarOperation,
@@ -185,7 +185,7 @@ def test_full_name(prop, expected):
         prop: The var to test.
         expected: The expected full name.
     """
-    assert prop._var_full_name == expected
+    assert str(prop) == expected
 
 
 @pytest.mark.parametrize(
@@ -302,21 +302,24 @@ def test_basic_operations(TestObj):
     """
     assert str(v(1) == v(2)) == "(1 === 2)"
     assert str(v(1) != v(2)) == "(1 !== 2)"
-    assert str(v(1) < v(2)) == "(1 < 2)"
-    assert str(v(1) <= v(2)) == "(1 <= 2)"
-    assert str(v(1) > v(2)) == "(1 > 2)"
-    assert str(v(1) >= v(2)) == "(1 >= 2)"
-    assert str(v(1) + v(2)) == "(1 + 2)"
-    assert str(v(1) - v(2)) == "(1 - 2)"
-    assert str(v(1) * v(2)) == "(1 * 2)"
-    assert str(v(1) / v(2)) == "(1 / 2)"
-    assert str(v(1) // v(2)) == "Math.floor(1 / 2)"
-    assert str(v(1) % v(2)) == "(1 % 2)"
-    assert str(v(1) ** v(2)) == "(1 ** 2)"
-    assert str(v(1) & v(2)) == "(1 && 2)"
-    assert str(v(1) | v(2)) == "(1 || 2)"
-    assert str(v([1, 2, 3])[v(0)]) == "[1, 2, 3].at(0)"
-    assert str(v({"a": 1, "b": 2})["a"]) == '({ ["a"] : 1, ["b"] : 2 })["a"]'
+    assert str(LiteralNumberVar.create(1) < 2) == "(1 < 2)"
+    assert str(LiteralNumberVar.create(1) <= 2) == "(1 <= 2)"
+    assert str(LiteralNumberVar.create(1) > 2) == "(1 > 2)"
+    assert str(LiteralNumberVar.create(1) >= 2) == "(1 >= 2)"
+    assert str(LiteralNumberVar.create(1) + 2) == "(1 + 2)"
+    assert str(LiteralNumberVar.create(1) - 2) == "(1 - 2)"
+    assert str(LiteralNumberVar.create(1) * 2) == "(1 * 2)"
+    assert str(LiteralNumberVar.create(1) / 2) == "(1 / 2)"
+    assert str(LiteralNumberVar.create(1) // 2) == "Math.floor(1 / 2)"
+    assert str(LiteralNumberVar.create(1) % 2) == "(1 % 2)"
+    assert str(LiteralNumberVar.create(1) ** 2) == "(1 ** 2)"
+    assert str(LiteralNumberVar.create(1) & v(2)) == "(1 && 2)"
+    assert str(LiteralNumberVar.create(1) | v(2)) == "(1 || 2)"
+    assert str(LiteralArrayVar.create([1, 2, 3])[0]) == "[1, 2, 3].at(0)"
+    assert (
+        str(LiteralObjectVar.create({"a": 1, "b": 2})["a"])
+        == '({ ["a"] : 1, ["b"] : 2 })["a"]'
+    )
     assert str(v("foo") == v("bar")) == '("foo" === "bar")'
     assert (
         str(ImmutableVar.create("foo") == ImmutableVar.create("bar")) == "(foo === bar)"
@@ -324,31 +327,42 @@ def test_basic_operations(TestObj):
     assert (
         str(LiteralVar.create("foo") == LiteralVar.create("bar")) == '("foo" === "bar")'
     )
+    print(ImmutableVar(_var_name="foo").to(ObjectVar, TestObj)._var_set_state("state"))
     assert (
         str(
-            ImmutableVar(
-                _var_name="foo",
-                _var_type=TestObj,
-            )
+            ImmutableVar(_var_name="foo")
+            .to(ObjectVar, TestObj)
             ._var_set_state("state")
             .bar
             == LiteralVar.create("bar")
         )
-        == '("bar" === state.foo.bar)'
+        == '(state.foo["bar"] === "bar")'
     )
     assert (
         str(
-            ImmutableVar(_var_name="foo", _var_type=TestObj)._var_set_state("state").bar
+            ImmutableVar(_var_name="foo")
+            .to(ObjectVar, TestObj)
+            ._var_set_state("state")
+            .bar
         )
-        == "state.foo.bar"
+        == 'state.foo["bar"]'
     )
-    assert str(abs(v(1))) == "Math.abs(1)"
-    assert str(v([1, 2, 3]).length()) == "[1, 2, 3].length"
-    assert str(v([1, 2]) + v([3, 4])) == "[...[1, 2], ...[3, 4]]"
+    assert str(abs(LiteralNumberVar.create(1))) == "Math.abs(1)"
+    assert str(LiteralArrayVar.create([1, 2, 3]).length()) == "[1, 2, 3].length"
+    assert (
+        str(LiteralArrayVar.create([1, 2]) + LiteralArrayVar.create([3, 4]))
+        == "[...[1, 2], ...[3, 4]]"
+    )
 
     # Tests for reverse operation
-    assert str(v([1, 2, 3]).reverse()) == "[1, 2, 3].slice().reverse()"
-    assert str(v(["1", "2", "3"]).reverse()) == '["1", "2", "3"].slice().reverse()'
+    assert (
+        str(LiteralArrayVar.create([1, 2, 3]).reverse())
+        == "[1, 2, 3].slice().reverse()"
+    )
+    assert (
+        str(LiteralArrayVar.create(["1", "2", "3"]).reverse())
+        == '["1", "2", "3"].slice().reverse()'
+    )
     assert (
         str(ImmutableVar(_var_name="foo")._var_set_state("state").to(list).reverse())
         == "state.foo.slice().reverse()"
@@ -482,7 +496,7 @@ def test_var_indexing_types(var, type_):
 
 def test_var_indexing_str():
     """Test that we can index into str vars."""
-    str_var = ImmutableVar(_var_name="str", _var_type=str).guess_type()
+    str_var = ImmutableVar(_var_name="str").to(str)
 
     # Test that indexing gives a type of Var[str].
     assert isinstance(str_var[0], Var)
@@ -615,7 +629,7 @@ def test_var_list_slicing(var):
 
 def test_str_var_slicing():
     """Test that we can slice into str vars."""
-    str_var = ImmutableVar(_var_name="str", _var_type=str).guess_type()
+    str_var = ImmutableVar(_var_name="str").to(str)
 
     # Test that slicing gives a type of Var[str].
     assert isinstance(str_var[:1], Var)
@@ -636,7 +650,7 @@ def test_str_var_slicing():
 
 def test_dict_indexing():
     """Test that we can index into dict vars."""
-    dct = ImmutableVar(_var_name="dct", _var_type=Dict[str, int]).guess_type()
+    dct = ImmutableVar(_var_name="dct").to(ObjectVar, Dict[str, str])
 
     # Check correct indexing.
     assert str(dct["a"]) == 'dct["a"]'
@@ -1038,7 +1052,9 @@ def nested_base():
         bar: Boo
         baz: int
 
-    parent_obj = LiteralVar.create(Foo(bar=Boo(foo="bar", bar=5), baz=5))
+    parent_obj = LiteralObjectVar.create(
+        Foo(bar=Boo(foo="bar", bar=5), baz=5).dict(), Foo
+    )
 
     assert (
         str(parent_obj.bar.foo)
@@ -1179,8 +1195,7 @@ def test_fstring_roundtrip(value):
     var = ImmutableVar.create_safe(value)._var_set_state("state")
     rt_var = LiteralVar.create(f"{var}")
     assert var._var_state == rt_var._var_state
-    assert not rt_var._var_full_name_needs_state_prefix
-    assert rt_var._var_name == var._var_full_name
+    assert str(rt_var) == str(var)
 
 
 @pytest.mark.parametrize(
@@ -1242,7 +1257,7 @@ def test_unsupported_types_for_contains(var):
 )
 def test_unsupported_types_for_string_contains(other):
     with pytest.raises(TypeError) as err:
-        assert ImmutableVar(_var_name="var", _var_type=str).guess_type().contains(other)
+        assert ImmutableVar(_var_name="var").to(str).contains(other)
     assert (
         err.value.args[0]
         == f"Unsupported Operand type(s) for contains: ToStringOperation, {type(other).__name__}"
@@ -1671,7 +1686,7 @@ def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List
     ],
 )
 def test_var_name_unwrapped(var, expected):
-    assert var._var_name_unwrapped == expected
+    assert str(var) == expected
 
 
 def cv_fget(state: BaseState) -> int:

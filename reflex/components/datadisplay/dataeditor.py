@@ -10,6 +10,7 @@ from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
 from reflex.event import EventHandler
 from reflex.ivars.base import ImmutableVar
+from reflex.ivars.sequence import ArrayVar
 from reflex.utils import console, format, types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
@@ -298,8 +299,8 @@ class DataEditor(NoSSRComponent):
 
         code = [f"function {data_callback}([col, row])" "{"]
 
-        columns_path = f"{self.columns._var_full_name}"
-        data_path = f"{self.data._var_full_name}"
+        columns_path = str(self.columns)
+        data_path = str(self.data)
 
         code.extend(
             [
@@ -332,6 +333,10 @@ class DataEditor(NoSSRComponent):
 
         # If rows is not provided, determine from data.
         if rows is None:
+            if isinstance(data, Var) and not isinstance(data, ArrayVar):
+                raise ValueError(
+                    "DataEditor data must be an ArrayVar if rows is not provided."
+                )
             props["rows"] = data.length() if isinstance(data, Var) else len(data)
 
         if not isinstance(columns, Var) and len(columns):

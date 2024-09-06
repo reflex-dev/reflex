@@ -12,7 +12,6 @@ from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
 from reflex.event import EventChain, EventHandler
 from reflex.ivars.base import ImmutableVar, LiteralVar
-from reflex.utils.format import format_event_chain
 from reflex.utils.imports import ImportDict
 from reflex.vars import Var, VarData
 
@@ -186,8 +185,8 @@ class Form(BaseHTML):
                 handle_submit_unique_name=self.handle_submit_unique_name,
                 form_data=FORM_DATA,
                 field_ref_mapping=str(LiteralVar.create(self._get_form_refs())),
-                on_submit_event_chain=format_event_chain(
-                    self.event_triggers[EventTriggers.ON_SUBMIT]
+                on_submit_event_chain=str(
+                    LiteralVar.create(self.event_triggers[EventTriggers.ON_SUBMIT])
                 ),
                 reset_on_submit=self.reset_on_submit,
             )
@@ -626,14 +625,14 @@ class Textarea(BaseHTML):
                 )
             tag.add_props(
                 on_key_down=ImmutableVar.create_safe(
-                    f"(e) => enterKeySubmitOnKeyDown(e, {self.enter_key_submit._var_name_unwrapped})",
+                    f"(e) => enterKeySubmitOnKeyDown(e, {str(self.enter_key_submit)})",
                     _var_data=VarData.merge(self.enter_key_submit._get_all_var_data()),
                 )
             )
         if self.auto_height is not None:
             tag.add_props(
                 on_input=ImmutableVar.create_safe(
-                    f"(e) => autoHeightOnInput(e, {self.auto_height._var_name_unwrapped})",
+                    f"(e) => autoHeightOnInput(e, {str(self.auto_height)})",
                     _var_data=VarData.merge(self.auto_height._get_all_var_data()),
                 )
             )

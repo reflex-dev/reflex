@@ -534,7 +534,7 @@ class CodeBlock(Component):
     def _render(self):
         out = super()._render()
 
-        theme = self.theme._replace(
+        theme = self.theme.upcast()._replace(
             _var_name=replace_quotes_with_camel_case(str(self.theme))
         )
 

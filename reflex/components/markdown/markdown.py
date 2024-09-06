@@ -227,7 +227,7 @@ class Markdown(Component):
         """
         return str(self.get_component(tag, **props)).replace("\n", "")
 
-    def format_component_map(self) -> dict[str, Var]:
+    def format_component_map(self) -> dict[str, ImmutableVar]:
         """Format the component map for rendering.
 
         Returns:
@@ -286,7 +286,7 @@ class Markdown(Component):
         function {self._get_component_map_name()} () {{
             {formatted_hooks}
             return (
-                {str(ImmutableVar.create_safe(self.format_component_map()))}
+                {str(LiteralVar.create(self.format_component_map()))}
             )
         }}
         """
