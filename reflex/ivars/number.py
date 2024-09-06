@@ -8,13 +8,14 @@ import sys
 from typing import TYPE_CHECKING, Any, Callable, NoReturn, TypeVar, Union, overload
 
 from reflex.utils.exceptions import VarTypeError
+from reflex.utils.types import GenericType
 from reflex.vars import ImmutableVarData, Var, VarData
 
 from .base import (
     CustomVarOperationReturn,
     ImmutableVar,
+    LiteralNoneVar,
     LiteralVar,
-    ToOperation,
     unionize,
     var_operation,
     var_operation_return,
@@ -1061,16 +1062,142 @@ number_types = Union[NumberVar, int, float]
 boolean_types = Union[BooleanVar, bool]
 
 
-class ToNumberVarOperation(ToOperation, NumberVar):
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ToNumberVarOperation(NumberVar):
     """Base class for immutable number vars that are the result of a number operation."""
 
-    _default_var_type = float
+    _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
+
+    def __getattr__(self, name: str) -> Any:
+        """Get the attribute of the original value.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute of the original value.
+        """
+        return getattr(object.__getattribute__(self, "_original"), name)
+
+    def __post_init__(self):
+        """Post initialization."""
+        object.__delattr__(self, "_var_name")
+
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash(object.__getattribute__(self, "_original"))
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all the var data.
+
+        Returns:
+            The var data.
+        """
+        return ImmutableVarData.merge(
+            object.__getattribute__(self, "_original")._get_all_var_data(),
+            self._var_data,
+        )
+
+    @classmethod
+    def create(
+        cls,
+        value: Var,
+        _var_type: GenericType | None = None,
+        _var_data: VarData | None = None,
+    ):
+        """Create the number var.
+
+        Args:
+            value: The value of the var.
+            _var_type: The type of the Var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The number var.
+        """
+        return ToNumberVarOperation(
+            _var_name="",
+            _var_data=ImmutableVarData.merge(_var_data),
+            _var_type=_var_type or float,
+            _original=value,
+        )
 
 
-class ToBooleanVarOperation(ToOperation, BooleanVar):
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ToBooleanVarOperation(BooleanVar):
     """Base class for immutable boolean vars that are the result of a boolean operation."""
 
-    _default_var_type = bool
+    _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
+
+    def __getattr__(self, name: str) -> Any:
+        """Get the attribute of the original value.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute of the original value.
+        """
+        return getattr(object.__getattribute__(self, "_original"), name)
+
+    def __post_init__(self):
+        """Post initialization hook."""
+        object.__delattr__(self, "_var_name")
+
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash(object.__getattribute__(self, "_original"))
+
+    def _get_all_var_data(self) -> ImmutableVarData | None:
+        """Get all the var data.
+
+        Returns:
+            The var data.
+        """
+        return ImmutableVarData.merge(
+            object.__getattribute__(self, "_original")._get_all_var_data(),
+            self._var_data,
+        )
+
+    @classmethod
+    def create(
+        cls,
+        value: Var,
+        _var_type: GenericType | None = None,
+        _var_data: VarData | None = None,
+    ):
+        """Create the number var.
+
+        Args:
+            value: The value of the var.
+            _var_type: The type of the Var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The number var.
+        """
+        return ToBooleanVarOperation(
+            _var_name="",
+            _var_data=ImmutableVarData.merge(_var_data),
+            _var_type=bool,
+            _original=value,
+        )
 
 
 @var_operation

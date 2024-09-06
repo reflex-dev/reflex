@@ -43,7 +43,7 @@ from reflex.utils.exceptions import (
     VarValueError,
 )
 from reflex.utils.format import format_state_name
-from reflex.utils.types import GenericType, get_origin
+from reflex.utils.types import get_origin
 from reflex.vars import (
     REPLACED_NAMES,
     ImmutableVarData,
@@ -1146,74 +1146,6 @@ class CachedVarOperation:
                     if field.name not in ["_var_name", "_var_data", "_var_type"]
                 ],
             )
-        )
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ToOperation(CachedVarOperation, ImmutableVar):
-    """Base class for to operations."""
-
-    _original_value: Var = dataclasses.field(
-        default_factory=lambda: LiteralNoneVar.create()
-    )
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """Get the cached var name.
-
-        Returns:
-            The cached var name.
-        """
-        return str(self._original_value)
-
-    def __hash__(self) -> int:
-        """Calculate the hash of the object.
-
-        Returns:
-            The hash of the object.
-        """
-        return hash(self._original_value)
-
-    def __getattr__(self, name: str) -> Any:
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute.
-        """
-        if name == "_var_name":
-            return self._cached_var_name
-
-        return getattr(self._original_value, name)
-
-    @classmethod
-    def create(
-        cls,
-        value: Var,
-        _var_type: GenericType | None = None,
-        _var_data: VarData | None = None,
-    ):
-        """Create the number var.
-
-        Args:
-            value: The value of the var.
-            _var_type: The type of the Var.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The number var.
-        """
-        return cls(
-            _var_name="",
-            _var_data=ImmutableVarData.merge(_var_data),
-            _var_type=_var_type or cls._default_var_type,  # type: ignore
-            _original_value=value,
         )
 
 

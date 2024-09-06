@@ -757,13 +757,15 @@ class Var:
         var_data = self._get_all_var_data()
         return var_data.state if var_data else ""
 
-    def _get_all_var_data(self) -> ImmutableVarData | VarData | None:
+    def _get_all_var_data(self) -> ImmutableVarData | None:
         """Get all the var data.
 
         Returns:
             The var data.
         """
-        return self._var_data
+        raise NotImplementedError(
+            "Var subclasses must implement the _get_all_var_data method."
+        )
 
     def upcast(self) -> ImmutableVar:
         """Upcast a Var to an ImmutableVar.
