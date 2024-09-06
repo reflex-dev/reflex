@@ -15,6 +15,7 @@ import alembic.runtime.environment
 import alembic.script
 import alembic.util
 import sqlalchemy
+import sqlalchemy.exc
 import sqlalchemy.orm
 
 from reflex import constants
@@ -49,6 +50,27 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     # Needed for the admin dash on sqlite.
     connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
     return sqlmodel.create_engine(url, echo=echo_db_query, connect_args=connect_args)
+
+
+async def get_db_status() -> bool:
+    """Checks the status of the database connection.
+
+    Attempts to connect to the database and execute a simple query to verify connectivity.
+
+    Returns:
+        bool: The status of the database connection:
+            - True: The database is accessible.
+            - False: The database is not accessible.
+    """
+    status = True
+    try:
+        engine = get_engine()
+        with engine.connect() as connection:
+            connection.execute(sqlalchemy.text("SELECT 1"))
+    except sqlalchemy.exc.OperationalError:
+        status = False
+
+    return status
 
 
 SQLModelOrSqlAlchemy = Union[

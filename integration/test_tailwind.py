@@ -109,7 +109,7 @@ def test_tailwind_app(tailwind_app: AppHarness, tailwind_disabled: bool):
     assert len(paragraphs) == 3
     for p in paragraphs:
         assert tailwind_app.poll_for_content(p, exp_not_equal="") == PARAGRAPH_TEXT
-        assert p.value_of_css_property("font-family") == "monospace"
+        assert p.value_of_css_property("font-family") == '"monospace"'
         if tailwind_disabled:
             # expect default color, not "text-red-500" from tailwind utility class
             assert p.value_of_css_property("color") not in TEXT_RED_500_COLOR
