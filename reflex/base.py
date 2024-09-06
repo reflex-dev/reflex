@@ -15,16 +15,19 @@ else:
 
 
 try:
+    if TYPE_CHECKING:
+        from pydantic.v1.typing import AbstractSetIntStr, MappingIntStrAny
     import pydantic.v1.main as pydantic_main
     from pydantic.v1 import BaseModel
     from pydantic.v1.fields import ModelField
 
 except ModuleNotFoundError:
-    if not TYPE_CHECKING:
+    if TYPE_CHECKING:
+        from pydantic.typing import AbstractSetIntStr, MappingIntStrAny
+    else:
         import pydantic.main as pydantic_main
         from pydantic import BaseModel
         from pydantic.fields import ModelField  # type: ignore
-        from pydantic.v1.typing import AbstractSetIntStr, MappingIntStrAny
 
 
 from reflex import constants
