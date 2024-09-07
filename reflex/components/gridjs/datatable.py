@@ -83,7 +83,7 @@ class DataTable(Gridjs):
         # If data is a pandas dataframe and columns are provided throw an error.
         if (
             types.is_dataframe(type(data))
-            or (isinstance(data, Var) and types.is_dataframe(data._var_type))
+            or (isinstance(data, ImmutableVar) and types.is_dataframe(data._var_type))
         ) and columns is not None:
             raise ValueError(
                 "Cannot pass in both a pandas dataframe and columns to the data_table component."
@@ -91,7 +91,7 @@ class DataTable(Gridjs):
 
         # If data is a list and columns are not provided, throw an error
         if (
-            (isinstance(data, Var) and types._issubclass(data._var_type, List))
+            (isinstance(data, ImmutableVar) and types._issubclass(data._var_type, List))
             or issubclass(type(data), List)
         ) and columns is None:
             raise ValueError(

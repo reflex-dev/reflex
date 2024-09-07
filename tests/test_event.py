@@ -7,10 +7,9 @@ from reflex.event import Event, EventHandler, EventSpec, call_event_handler, fix
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.state import BaseState
 from reflex.utils import format
-from reflex.vars import Var
 
 
-def make_var(value) -> Var:
+def make_var(value) -> ImmutableVar:
     """Make a variable.
 
     Args:

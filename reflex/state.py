@@ -64,10 +64,7 @@ from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
 from reflex.utils.types import override
-from reflex.vars import (
-    ImmutableVarData,
-    Var,
-)
+from reflex.vars import VarData
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
@@ -307,7 +304,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
     # A map from the var name to the var.
-    vars: ClassVar[Dict[str, Var]] = {}
+    vars: ClassVar[Dict[str, ImmutableVar]] = {}
 
     # The base vars of the class.
     base_vars: ClassVar[Dict[str, ImmutableVar]] = {}
@@ -316,7 +313,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     computed_vars: ClassVar[Dict[str, ImmutableComputedVar]] = {}
 
     # Vars inherited by the parent state.
-    inherited_vars: ClassVar[Dict[str, Var]] = {}
+    inherited_vars: ClassVar[Dict[str, ImmutableVar]] = {}
 
     # Backend base vars that are never sent to the client.
     backend_vars: ClassVar[Dict[str, Any]] = {}
@@ -535,13 +532,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             f.name: ImmutableVar(
                 _var_name=format.format_state_name(cls.get_full_name()) + "." + f.name,
                 _var_type=f.outer_type_,
-                _var_data=ImmutableVarData.from_state(cls),
+                _var_data=VarData.from_state(cls),
             ).guess_type()
             for f in cls.get_fields().values()
             if f.name not in cls.get_skip_vars()
         }
         cls.computed_vars = {
-            v._var_name: v._replace(merge_var_data=ImmutableVarData.from_state(cls))
+            v._var_name: v._replace(merge_var_data=VarData.from_state(cls))
             for v in computed_vars
         }
         cls.vars = {
@@ -566,9 +563,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for name, value in mixin.__dict__.items():
                 if is_computed_var(value):
                     fget = cls._copy_fn(value.fget)
-                    newcv = value._replace(
-                        fget=fget, _var_data=ImmutableVarData.from_state(cls)
-                    )
+                    newcv = value._replace(fget=fget, _var_data=VarData.from_state(cls))
                     # cleanup refs to mixin cls in var_data
                     setattr(cls, name, newcv)
                     cls.computed_vars[newcv._var_name] = newcv
@@ -909,7 +904,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         var = ImmutableVar(
             _var_name=format.format_state_name(cls.get_full_name()) + "." + name,
             _var_type=type_,
-            _var_data=ImmutableVarData.from_state(cls),
+            _var_data=VarData.from_state(cls),
         ).guess_type()
 
         # add the pydantic field dynamically (must be done before _init_var)

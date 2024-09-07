@@ -8,7 +8,7 @@ from reflex.components.component import Component
 from reflex.constants import EventTriggers
 from reflex.event import EventHandler
 from reflex.ivars.base import ImmutableVar
-from reflex.vars import ImmutableVarData, Var
+from reflex.vars import Var, VarData
 
 DEFAULT_DEBOUNCE_TIMEOUT = 300
 
@@ -116,7 +116,7 @@ class DebounceInput(Component):
             ImmutableVar(
                 _var_name=str(child.alias or child.tag),
                 _var_type=Type[Component],
-                _var_data=ImmutableVarData(
+                _var_data=VarData(
                     imports=child._get_imports(),
                     hooks=child._get_hooks_internal(),
                 ),

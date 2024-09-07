@@ -16,7 +16,7 @@ from reflex.event import (
 from reflex.ivars.base import ImmutableCallableVar, ImmutableVar
 from reflex.style import Style
 from reflex.utils.imports import ImportVar
-from reflex.vars import ImmutableVarData, Var, VarData
+from reflex.vars import Var, VarData
 
 DEFAULT_UPLOAD_ID: str
 upload_files_context_var_data: VarData
@@ -32,7 +32,7 @@ def get_upload_dir() -> Path: ...
 
 uploaded_files_url_prefix = ImmutableVar(
     _var_name="getBackendURL(env.UPLOAD)",
-    _var_data=ImmutableVarData(
+    _var_data=VarData(
         imports={
             f"/{Dirs.STATE_PATH}": "getBackendURL",
             "/env.json": ImportVar(tag="env", is_default=True),

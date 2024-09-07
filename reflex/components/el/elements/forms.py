@@ -226,7 +226,7 @@ class Form(BaseHTML):
         # print(repr(form_refs))
         return form_refs
 
-    def _get_vars(self, include_children: bool = True) -> Iterator[Var]:
+    def _get_vars(self, include_children: bool = True) -> Iterator[ImmutableVar]:
         yield from super()._get_vars(include_children=include_children)
         yield from self._get_form_refs().values()
 

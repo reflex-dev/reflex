@@ -146,11 +146,13 @@ class HighLevelRadioGroup(RadixThemesComponent):
         default_value = props.pop("default_value", "")
 
         if (
-            not isinstance(items, (list, Var))
-            or isinstance(items, Var)
+            not isinstance(items, (list, ImmutableVar))
+            or isinstance(items, ImmutableVar)
             and not types._issubclass(items._var_type, list)
         ):
-            items_type = type(items) if not isinstance(items, Var) else items._var_type
+            items_type = (
+                type(items) if not isinstance(items, ImmutableVar) else items._var_type
+            )
             raise TypeError(
                 f"The radio group component takes in a list, got {items_type} instead"
             )
@@ -160,7 +162,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
         # convert only non-strings to json(JSON.stringify) so quotes are not rendered
         # for string literal types.
         if isinstance(default_value, str) or (
-            isinstance(default_value, Var) and default_value._var_type is str
+            isinstance(default_value, ImmutableVar) and default_value._var_type is str
         ):
             default_value = LiteralVar.create(default_value)  # type: ignore
         else:

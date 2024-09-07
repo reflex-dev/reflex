@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Callable, NoReturn, TypeVar, Union, overl
 
 from reflex.utils.exceptions import VarTypeError
 from reflex.utils.types import GenericType
-from reflex.vars import ImmutableVarData, Var, VarData
+from reflex.vars import Var, VarData
 
 from .base import (
     CustomVarOperationReturn,
@@ -838,8 +838,8 @@ def boolean_to_number_operation(value: BooleanVar):
 
 
 def comparison_operator(
-    func: Callable[[Var, Var], str],
-) -> Callable[[Var | Any, Var | Any], BooleanVar]:
+    func: Callable[[ImmutableVar, ImmutableVar], str],
+) -> Callable[[ImmutableVar | Any, ImmutableVar | Any], BooleanVar]:
     """Decorator to create a comparison operation.
 
     Args:
@@ -850,13 +850,13 @@ def comparison_operator(
     """
 
     @var_operation
-    def operation(lhs: Var, rhs: Var):
+    def operation(lhs: ImmutableVar, rhs: ImmutableVar):
         return var_operation_return(
             js_expression=func(lhs, rhs),
             var_type=bool,
         )
 
-    def wrapper(lhs: Var | Any, rhs: Var | Any) -> BooleanVar:
+    def wrapper(lhs: ImmutableVar | Any, rhs: ImmutableVar | Any) -> BooleanVar:
         """Create the comparison operation.
 
         Args:
@@ -872,7 +872,7 @@ def comparison_operator(
 
 
 @comparison_operator
-def greater_than_operation(lhs: Var, rhs: Var):
+def greater_than_operation(lhs: ImmutableVar, rhs: ImmutableVar):
     """Greater than comparison.
 
     Args:
@@ -886,7 +886,7 @@ def greater_than_operation(lhs: Var, rhs: Var):
 
 
 @comparison_operator
-def greater_than_or_equal_operation(lhs: Var, rhs: Var):
+def greater_than_or_equal_operation(lhs: ImmutableVar, rhs: ImmutableVar):
     """Greater than or equal comparison.
 
     Args:
@@ -900,7 +900,7 @@ def greater_than_or_equal_operation(lhs: Var, rhs: Var):
 
 
 @comparison_operator
-def less_than_operation(lhs: Var, rhs: Var):
+def less_than_operation(lhs: ImmutableVar, rhs: ImmutableVar):
     """Less than comparison.
 
     Args:
@@ -914,7 +914,7 @@ def less_than_operation(lhs: Var, rhs: Var):
 
 
 @comparison_operator
-def less_than_or_equal_operation(lhs: Var, rhs: Var):
+def less_than_or_equal_operation(lhs: ImmutableVar, rhs: ImmutableVar):
     """Less than or equal comparison.
 
     Args:
@@ -928,7 +928,7 @@ def less_than_or_equal_operation(lhs: Var, rhs: Var):
 
 
 @comparison_operator
-def equal_operation(lhs: Var, rhs: Var):
+def equal_operation(lhs: ImmutableVar, rhs: ImmutableVar):
     """Equal comparison.
 
     Args:
@@ -942,7 +942,7 @@ def equal_operation(lhs: Var, rhs: Var):
 
 
 @comparison_operator
-def not_equal_operation(lhs: Var, rhs: Var):
+def not_equal_operation(lhs: ImmutableVar, rhs: ImmutableVar):
     """Not equal comparison.
 
     Args:
@@ -1008,7 +1008,7 @@ class LiteralBooleanVar(LiteralVar, BooleanVar):
         return cls(
             _var_name="true" if value else "false",
             _var_type=bool,
-            _var_data=ImmutableVarData.merge(_var_data),
+            _var_data=_var_data,
             _var_value=value,
         )
 
@@ -1053,7 +1053,7 @@ class LiteralNumberVar(LiteralVar, NumberVar):
         return cls(
             _var_name=str(value),
             _var_type=type(value),
-            _var_data=ImmutableVarData.merge(_var_data),
+            _var_data=_var_data,
             _var_value=value,
         )
 
@@ -1095,13 +1095,13 @@ class ToNumberVarOperation(NumberVar):
         """
         return hash(object.__getattribute__(self, "_original"))
 
-    def _get_all_var_data(self) -> ImmutableVarData | None:
+    def _get_all_var_data(self) -> VarData | None:
         """Get all the var data.
 
         Returns:
             The var data.
         """
-        return ImmutableVarData.merge(
+        return VarData.merge(
             object.__getattribute__(self, "_original")._get_all_var_data(),
             self._var_data,
         )
@@ -1125,7 +1125,7 @@ class ToNumberVarOperation(NumberVar):
         """
         return ToNumberVarOperation(
             _var_name="",
-            _var_data=ImmutableVarData.merge(_var_data),
+            _var_data=_var_data,
             _var_type=_var_type or float,
             _original=value,
         )
@@ -1164,13 +1164,13 @@ class ToBooleanVarOperation(BooleanVar):
         """
         return hash(object.__getattribute__(self, "_original"))
 
-    def _get_all_var_data(self) -> ImmutableVarData | None:
+    def _get_all_var_data(self) -> VarData | None:
         """Get all the var data.
 
         Returns:
             The var data.
         """
-        return ImmutableVarData.merge(
+        return VarData.merge(
             object.__getattribute__(self, "_original")._get_all_var_data(),
             self._var_data,
         )
@@ -1194,7 +1194,7 @@ class ToBooleanVarOperation(BooleanVar):
         """
         return ToBooleanVarOperation(
             _var_name="",
-            _var_data=ImmutableVarData.merge(_var_data),
+            _var_data=_var_data,
             _var_type=bool,
             _original=value,
         )
@@ -1217,7 +1217,9 @@ def boolify(value: Var):
 
 
 @var_operation
-def ternary_operation(condition: BooleanVar, if_true: Var, if_false: Var):
+def ternary_operation(
+    condition: BooleanVar, if_true: ImmutableVar, if_false: ImmutableVar
+):
     """Create a ternary operation.
 
     Args:

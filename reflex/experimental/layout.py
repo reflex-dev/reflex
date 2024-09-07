@@ -17,7 +17,6 @@ from reflex.experimental import hooks
 from reflex.ivars.base import ImmutableVar
 from reflex.state import ComponentState
 from reflex.style import Style
-from reflex.vars import Var
 
 
 class Sidebar(Box, MemoizationLeaf):
@@ -70,7 +69,7 @@ class Sidebar(Box, MemoizationLeaf):
             }
         )
 
-    def add_hooks(self) -> List[Var]:
+    def add_hooks(self) -> List[ImmutableVar]:
         """Get the hooks to render.
 
         Returns:

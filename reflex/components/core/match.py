@@ -11,7 +11,7 @@ from reflex.style import Style
 from reflex.utils import format, types
 from reflex.utils.exceptions import MatchTypeError
 from reflex.utils.imports import ImportDict
-from reflex.vars import ImmutableVarData, Var, VarData
+from reflex.vars import Var, VarData
 
 
 class Match(MemoizationLeaf):
@@ -27,7 +27,7 @@ class Match(MemoizationLeaf):
     default: Any
 
     @classmethod
-    def create(cls, cond: Any, *cases) -> Union[Component, Var]:
+    def create(cls, cond: Any, *cases) -> Union[Component, ImmutableVar]:
         """Create a Match Component.
 
         Args:
@@ -56,7 +56,7 @@ class Match(MemoizationLeaf):
         )
 
     @classmethod
-    def _create_condition_var(cls, cond: Any) -> Var:
+    def _create_condition_var(cls, cond: Any) -> ImmutableVar:
         """Convert the condition to a Var.
 
         Args:
@@ -77,7 +77,7 @@ class Match(MemoizationLeaf):
     @classmethod
     def _process_cases(
         cls, cases: List
-    ) -> Tuple[List, Optional[Union[Var, BaseComponent]]]:
+    ) -> Tuple[List, Optional[Union[ImmutableVar, BaseComponent]]]:
         """Process the list of match cases and the catchall default case.
 
         Args:
@@ -125,7 +125,7 @@ class Match(MemoizationLeaf):
         return case_element
 
     @classmethod
-    def _process_match_cases(cls, cases: List) -> List[List[Var]]:
+    def _process_match_cases(cls, cases: List) -> List[List[ImmutableVar]]:
         """Process the individual match cases.
 
         Args:
@@ -157,7 +157,7 @@ class Match(MemoizationLeaf):
                     if not isinstance(element, BaseComponent)
                     else element
                 )
-                if not isinstance(el, (Var, BaseComponent)):
+                if not isinstance(el, (ImmutableVar, BaseComponent)):
                     raise ValueError("Case element must be a var or component")
                 case_list.append(el)
 
@@ -166,7 +166,7 @@ class Match(MemoizationLeaf):
         return match_cases
 
     @classmethod
-    def _validate_return_types(cls, match_cases: List[List[Var]]) -> None:
+    def _validate_return_types(cls, match_cases: List[List[ImmutableVar]]) -> None:
         """Validate that match cases have the same return types.
 
         Args:
@@ -180,24 +180,24 @@ class Match(MemoizationLeaf):
 
         if types._isinstance(first_case_return, BaseComponent):
             return_type = BaseComponent
-        elif types._isinstance(first_case_return, Var):
-            return_type = Var
+        elif types._isinstance(first_case_return, ImmutableVar):
+            return_type = ImmutableVar
 
         for index, case in enumerate(match_cases):
             if not types._issubclass(type(case[-1]), return_type):
                 raise MatchTypeError(
                     f"Match cases should have the same return types. Case {index} with return "
-                    f"value `{case[-1]._var_name if isinstance(case[-1], Var) else textwrap.shorten(str(case[-1]), width=250)}`"
+                    f"value `{case[-1]._var_name if isinstance(case[-1], ImmutableVar) else textwrap.shorten(str(case[-1]), width=250)}`"
                     f" of type {type(case[-1])!r} is not {return_type}"
                 )
 
     @classmethod
     def _create_match_cond_var_or_component(
         cls,
-        match_cond_var: Var,
-        match_cases: List[List[Var]],
-        default: Optional[Union[Var, BaseComponent]],
-    ) -> Union[Component, Var]:
+        match_cond_var: ImmutableVar,
+        match_cases: List[List[ImmutableVar]],
+        default: Optional[Union[ImmutableVar, BaseComponent]],
+    ) -> Union[Component, ImmutableVar]:
         """Create and return the match condition var or component.
 
         Args:
@@ -239,7 +239,7 @@ class Match(MemoizationLeaf):
                 default=default,  # type: ignore
             ),
             _var_type=default._var_type,  # type: ignore
-            _var_data=ImmutableVarData.merge(
+            _var_data=VarData.merge(
                 match_cond_var._get_all_var_data(),
                 *[el._get_all_var_data() for case in match_cases for el in case],
                 default._get_all_var_data(),  # type: ignore

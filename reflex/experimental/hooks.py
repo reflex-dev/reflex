@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from reflex.ivars.base import ImmutableVar
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
 
 
 def _compose_react_imports(tags: list[str]) -> dict[str, list[ImportVar]]:
     return {"react": [ImportVar(tag=tag) for tag in tags]}
 
 
-def const(name, value) -> Var:
+def const(name, value) -> ImmutableVar:
     """Create a constant Var.
 
     Args:
@@ -26,7 +26,7 @@ def const(name, value) -> Var:
     return ImmutableVar.create_safe(f"const {name} = {value}")
 
 
-def useCallback(func, deps) -> Var:
+def useCallback(func, deps) -> ImmutableVar:
     """Create a useCallback hook with a function and dependencies.
 
     Args:
@@ -42,7 +42,7 @@ def useCallback(func, deps) -> Var:
     )
 
 
-def useContext(context) -> Var:
+def useContext(context) -> ImmutableVar:
     """Create a useContext hook with a context.
 
     Args:
@@ -57,7 +57,7 @@ def useContext(context) -> Var:
     )
 
 
-def useRef(default) -> Var:
+def useRef(default) -> ImmutableVar:
     """Create a useRef hook with a default value.
 
     Args:
@@ -72,7 +72,7 @@ def useRef(default) -> Var:
     )
 
 
-def useState(var_name, default=None) -> Var:
+def useState(var_name, default=None) -> ImmutableVar:
     """Create a useState hook with a variable name and setter name.
 
     Args:

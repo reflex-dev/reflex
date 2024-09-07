@@ -32,7 +32,6 @@ from reflex.ivars.sequence import (
 from reflex.state import BaseState
 from reflex.utils.imports import ImportVar
 from reflex.vars import (
-    ImmutableVarData,
     Var,
     VarData,
 )
@@ -290,7 +289,7 @@ def test_create_type_error():
         LiteralVar.create(value)
 
 
-def v(value) -> Var:
+def v(value) -> ImmutableVar:
     return LiteralVar.create(value)
 
 
@@ -499,7 +498,7 @@ def test_var_indexing_str():
     str_var = ImmutableVar(_var_name="str").to(str)
 
     # Test that indexing gives a type of Var[str].
-    assert isinstance(str_var[0], Var)
+    assert isinstance(str_var[0], ImmutableVar)
     assert str_var[0]._var_type == str
 
     # Test basic indexing.
@@ -632,7 +631,7 @@ def test_str_var_slicing():
     str_var = ImmutableVar(_var_name="str").to(str)
 
     # Test that slicing gives a type of Var[str].
-    assert isinstance(str_var[:1], Var)
+    assert isinstance(str_var[:1], ImmutableVar)
     assert str_var[:1]._var_type == str
 
     # Test basic slicing.
@@ -1090,12 +1089,12 @@ def test_retrival():
     assert (
         result_var_data.imports
         == result_immutable_var_data.imports
-        == tuple(((k, tuple(v)) for k, v in original_var_data.imports.items()))
+        == original_var_data.imports
     )
     assert (
         tuple(result_var_data.hooks)
         == tuple(result_immutable_var_data.hooks)
-        == tuple(original_var_data.hooks.keys())
+        == tuple(original_var_data.hooks)
     )
 
 
@@ -1125,7 +1124,7 @@ def test_fstring_concat():
 
     assert str(string_concat) == '("fooimaginationbar"+consequences+"baz")'
     assert isinstance(string_concat, ConcatVarOperation)
-    assert string_concat._get_all_var_data() == ImmutableVarData(
+    assert string_concat._get_all_var_data() == VarData(
         state="fear",
         imports={
             "react": [ImportVar(tag="useRef")],
@@ -1239,7 +1238,7 @@ def test_unsupported_types_for_contains(var):
         assert var.contains(1)
     assert (
         err.value.args[0]
-        == f"Var var of type {var._var_type} does not support contains check."
+        == f"Var of type {var._var_type} does not support contains check."
     )
 
 
@@ -1701,7 +1700,7 @@ def cv_fget(state: BaseState) -> int:
         ([ImmutableComputedVar(fget=cv_fget)], {"cv_fget"}),
     ],
 )
-def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
+def test_computed_var_deps(deps: List[Union[str, ImmutableVar]], expected: Set[str]):
     @immutable_computed_var(
         deps=deps,
         cache=True,

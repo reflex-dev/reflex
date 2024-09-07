@@ -17,7 +17,7 @@ from reflex.vars import Var
         ({"key": True, "key2": "value2"}, ["key={true}", 'key2={"value2"}']),
     ],
 )
-def test_format_props(props: Dict[str, Var], test_props: List):
+def test_format_props(props: Dict[str, ImmutableVar], test_props: List):
     """Test that the formatted props are correct.
 
     Args:

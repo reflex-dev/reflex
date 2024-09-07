@@ -42,7 +42,6 @@ from reflex.state import (
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
-from reflex.vars import Var
 from tests.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState
@@ -268,7 +267,7 @@ def test_base_class_vars(test_state):
         if field in test_state.get_skip_vars():
             continue
         prop = getattr(cls, field)
-        assert isinstance(prop, Var)
+        assert isinstance(prop, ImmutableVar)
         assert prop._var_name.split(".")[-1] == field
 
     assert cls.num1._var_type == int

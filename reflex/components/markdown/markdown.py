@@ -20,7 +20,6 @@ from reflex.components.tags.tag import Tag
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import Var
 
 # Special vars used in the component map.
 _CHILDREN = ImmutableVar.create_safe("children")
@@ -100,7 +99,8 @@ class Markdown(Component):
             The markdown component.
         """
         assert (
-            len(children) == 1 and types._isinstance(children[0], Union[str, Var])
+            len(children) == 1
+            and types._isinstance(children[0], Union[str, ImmutableVar])
         ), "Markdown component must have exactly one child containing the markdown source."
 
         # Update the base component map with the custom component map.

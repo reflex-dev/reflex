@@ -487,7 +487,7 @@ class CodeBlock(Component):
 
         # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
         # themes respectively to ensure code compatibility.
-        if "theme" in props and not isinstance(props["theme"], Var):
+        if "theme" in props and not isinstance(props["theme"], ImmutableVar):
             props["theme"] = cls.convert_theme_name(props["theme"])
 
         if can_copy:
@@ -513,7 +513,7 @@ class CodeBlock(Component):
         # Carry the children (code) via props
         if children:
             props["code"] = children[0]
-            if not isinstance(props["code"], Var):
+            if not isinstance(props["code"], ImmutableVar):
                 props["code"] = LiteralVar.create(props["code"])
 
         # Create the component.

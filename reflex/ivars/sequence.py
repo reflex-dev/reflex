@@ -28,7 +28,6 @@ from reflex.constants.base import REFLEX_VAR_OPENING_TAG
 from reflex.utils.exceptions import VarTypeError
 from reflex.utils.types import GenericType, get_origin
 from reflex.vars import (
-    ImmutableVarData,
     Var,
     VarData,
     _global_vars,
@@ -556,7 +555,7 @@ class LiteralStringVar(LiteralVar, StringVar):
         cls,
         value: str,
         _var_data: VarData | None = None,
-    ) -> LiteralStringVar | ConcatVarOperation:
+    ) -> StringVar:
         """Create a var from a string value.
 
         Args:
@@ -567,19 +566,8 @@ class LiteralStringVar(LiteralVar, StringVar):
             The var.
         """
         if REFLEX_VAR_OPENING_TAG in value:
-            strings_and_vals: list[Var | str] = []
+            strings_and_vals: list[ImmutableVar | str] = []
             offset = 0
-
-            # Initialize some methods for reading json.
-            var_data_config = VarData().__config__
-
-            def json_loads(s):
-                try:
-                    return var_data_config.json_loads(s)
-                except json.decoder.JSONDecodeError:
-                    return var_data_config.json_loads(
-                        var_data_config.json_loads(f'"{s}"')
-                    )
 
             # Find all tags
             while m := _decode_var_pattern.search(value):
@@ -596,42 +584,17 @@ class LiteralStringVar(LiteralVar, StringVar):
                     var = _global_vars[int(serialized_data)]
                     strings_and_vals.append(var)
                     value = value[(end + len(var._var_name)) :]
-                else:
-                    data = json_loads(serialized_data)
-                    string_length = data.pop("string_length", None)
-                    var_data = VarData.parse_obj(data)
-
-                    # Use string length to compute positions of interpolations.
-                    if string_length is not None:
-                        realstart = start + offset
-                        var_data.interpolations = [
-                            (realstart, realstart + string_length)
-                        ]
-                        var_content = value[end : (end + string_length)]
-                        if (
-                            var_content[0] == "{"
-                            and var_content[-1] == "}"
-                            and strings_and_vals
-                            and isinstance(strings_and_vals[-1], str)
-                            and strings_and_vals[-1][-1] == "$"
-                        ):
-                            strings_and_vals[-1] = strings_and_vals[-1][:-1]
-                            var_content = "(" + var_content[1:-1] + ")"
-                        strings_and_vals.append(
-                            ImmutableVar.create_safe(var_content, _var_data=var_data)
-                        )
-                        value = value[(end + string_length) :]
 
                 offset += end - start
 
             strings_and_vals.append(value)
 
             filtered_strings_and_vals = [
-                s for s in strings_and_vals if isinstance(s, Var) or s
+                s for s in strings_and_vals if isinstance(s, ImmutableVar) or s
             ]
 
             if len(filtered_strings_and_vals) == 1:
-                return filtered_strings_and_vals[0].to(StringVar)  # type: ignore
+                return LiteralVar.create(filtered_strings_and_vals[0]).to(StringVar)
 
             return ConcatVarOperation.create(
                 *filtered_strings_and_vals,
@@ -641,7 +604,7 @@ class LiteralStringVar(LiteralVar, StringVar):
         return LiteralStringVar(
             _var_name=json.dumps(value),
             _var_type=str,
-            _var_data=ImmutableVarData.merge(_var_data),
+            _var_data=_var_data,
             _var_value=value,
         )
 
@@ -670,7 +633,7 @@ class LiteralStringVar(LiteralVar, StringVar):
 class ConcatVarOperation(CachedVarOperation, StringVar):
     """Representing a concatenation of literal string vars."""
 
-    _var_value: Tuple[Var, ...] = dataclasses.field(default_factory=tuple)
+    _var_value: Tuple[ImmutableVar, ...] = dataclasses.field(default_factory=tuple)
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -679,7 +642,7 @@ class ConcatVarOperation(CachedVarOperation, StringVar):
         Returns:
             The name of the var.
         """
-        list_of_strs: List[Union[str, Var]] = []
+        list_of_strs: List[Union[str, ImmutableVar]] = []
         last_string = ""
         for var in self._var_value:
             if isinstance(var, LiteralStringVar):
@@ -694,7 +657,9 @@ class ConcatVarOperation(CachedVarOperation, StringVar):
             list_of_strs.append(last_string)
 
         list_of_strs_filtered = [
-            str(LiteralVar.create(s)) for s in list_of_strs if isinstance(s, Var) or s
+            str(LiteralVar.create(s))
+            for s in list_of_strs
+            if isinstance(s, ImmutableVar) or s
         ]
 
         if len(list_of_strs_filtered) == 1:
@@ -703,17 +668,17 @@ class ConcatVarOperation(CachedVarOperation, StringVar):
         return "(" + "+".join(list_of_strs_filtered) + ")"
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all the VarData associated with the Var.
+    def _cached_get_all_var_data(self) -> VarData | None:
+        """Get all the VarData asVarDatae Var.
 
         Returns:
             The VarData associated with the Var.
         """
-        return ImmutableVarData.merge(
+        return VarData.merge(
             *[
                 var._get_all_var_data()
                 for var in self._var_value
-                if isinstance(var, Var)
+                if isinstance(var, ImmutableVar)
             ],
             self._var_data,
         )
@@ -736,7 +701,7 @@ class ConcatVarOperation(CachedVarOperation, StringVar):
         return cls(
             _var_name="",
             _var_type=str,
-            _var_data=ImmutableVarData.merge(_var_data),
+            _var_data=_var_data,
             _var_value=tuple(map(LiteralVar.create, value)),
         )
 
@@ -1153,7 +1118,9 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
     """Base class for immutable literal array vars."""
 
     _var_value: Union[
-        List[Union[Var, Any]], Set[Union[Var, Any]], Tuple[Union[Var, Any], ...]
+        List[Union[ImmutableVar, Any]],
+        Set[Union[ImmutableVar, Any]],
+        Tuple[Union[ImmutableVar, Any], ...],
     ] = dataclasses.field(default_factory=list)
 
     @cached_property_no_lock
@@ -1172,13 +1139,13 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
         )
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
-        """Get all the VarData associated with the Var.
+    def _cached_get_all_var_data(self) -> VarData | None:
+        """Get all the VarData asVarDatae Var.
 
         Returns:
             The VarData associated with the Var.
         """
-        return ImmutableVarData.merge(
+        return VarData.merge(
             *[
                 LiteralVar.create(element)._get_all_var_data()
                 for element in self._var_value
@@ -1227,7 +1194,7 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
         return cls(
             _var_name="",
             _var_type=figure_out_type(value) if _var_type is None else _var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
+            _var_data=_var_data,
             _var_value=value,
         )
 
@@ -1287,7 +1254,7 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
         )
         if step is None:
             return f"{str(self._array)}.slice({str(normalized_start)}, {str(normalized_end)})"
-        if not isinstance(step, Var):
+        if not isinstance(step, ImmutableVar):
             if step < 0:
                 actual_start = end + 1 if end is not None else 0
                 actual_end = start + 1 if start is not None else self._array.length()
@@ -1321,7 +1288,7 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
         return cls(
             _var_name="",
             _var_type=array._var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
+            _var_data=_var_data,
             _array=array,
             _start=slice.start,
             _stop=slice.stop,
@@ -1547,13 +1514,13 @@ class ToStringOperation(StringVar):
         """
         return hash(object.__getattribute__(self, "_original"))
 
-    def _get_all_var_data(self) -> ImmutableVarData | None:
+    def _get_all_var_data(self) -> VarData | None:
         """Get all the var data.
 
         Returns:
             The var data.
         """
-        return ImmutableVarData.merge(
+        return VarData.merge(
             object.__getattribute__(self, "_original")._get_all_var_data(),
             self._var_data,
         )
@@ -1577,7 +1544,7 @@ class ToStringOperation(StringVar):
         """
         return ToStringOperation(
             _var_name="",
-            _var_data=ImmutableVarData.merge(_var_data),
+            _var_data=_var_data,
             _var_type=str,
             _original=value,
         )
@@ -1616,13 +1583,13 @@ class ToArrayOperation(ArrayVar):
         """
         return hash(object.__getattribute__(self, "_original"))
 
-    def _get_all_var_data(self) -> ImmutableVarData | None:
+    def _get_all_var_data(self) -> VarData | None:
         """Get all the var data.
 
         Returns:
             The var data.
         """
-        return ImmutableVarData.merge(
+        return VarData.merge(
             object.__getattribute__(self, "_original")._get_all_var_data(),
             self._var_data,
         )
@@ -1646,7 +1613,7 @@ class ToArrayOperation(ArrayVar):
         """
         return ToArrayOperation(
             _var_name="",
-            _var_data=ImmutableVarData.merge(_var_data),
+            _var_data=_var_data,
             _var_type=_var_type or List,
             _original=value,
         )

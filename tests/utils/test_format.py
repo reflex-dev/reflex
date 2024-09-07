@@ -337,7 +337,7 @@ def test_format_route(route: str, format_case: bool, expected: bool):
     ],
 )
 def test_format_match(
-    condition: str, match_cases: List[List[Var]], default: Var, expected: str
+    condition: str, match_cases: List[List[ImmutableVar]], default: Var, expected: str
 ):
     """Test formatting a match statement.
 
@@ -535,35 +535,6 @@ def test_format_event(input, output):
 @pytest.mark.parametrize(
     "input,output",
     [
-        (
-            EventChain(
-                events=[
-                    EventSpec(handler=EventHandler(fn=mock_event)),
-                    EventSpec(handler=EventHandler(fn=mock_event)),
-                ],
-                args_spec=None,
-            ),
-            'addEvents([Event("mock_event", {}),Event("mock_event", {})])',
-        ),
-        (
-            EventChain(
-                events=[
-                    EventSpec(handler=EventHandler(fn=mock_event)),
-                    EventSpec(handler=EventHandler(fn=mock_event)),
-                ],
-                args_spec=lambda e0: [e0],
-            ),
-            'addEvents([Event("mock_event", {}),Event("mock_event", {})])',
-        ),
-    ],
-)
-def test_format_event_chain(input, output):
-    assert format.format_event_chain(input) == output
-
-
-@pytest.mark.parametrize(
-    "input,output",
-    [
         ({"query": {"k1": 1, "k2": 2}}, {"k1": 1, "k2": 2}),
         ({"query": {"k1": 1, "k-2": 2}}, {"k1": 1, "k_2": 2}),
     ],
@@ -676,18 +647,6 @@ def test_format_ref(input, output):
         output: The expected formatted name.
     """
     assert format.format_ref(input) == output
-
-
-@pytest.mark.parametrize(
-    "input,output",
-    [
-        (("my_array", None), "refs_my_array"),
-        (("my_array", LiteralVar.create(0)), "refs_my_array[0]"),
-        (("my_array", LiteralVar.create(1)), "refs_my_array[1]"),
-    ],
-)
-def test_format_array_ref(input, output):
-    assert format.format_array_ref(input[0], input[1]) == output
 
 
 @pytest.mark.parametrize(

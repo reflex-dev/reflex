@@ -393,7 +393,7 @@ def test_create_component(component1):
 def test_create_component_prop_validation(
     component1: Type[Component],
     prop_name: str,
-    var: Union[Var, str, int],
+    var: Union[ImmutableVar, str, int],
     expected: Type[Exception],
 ):
     """Test that component props are validated correctly.
@@ -1175,7 +1175,6 @@ TEST_VAR = LiteralVar.create("test")._replace(
         hooks={"useTest": None},
         imports={"test": [ImportVar(tag="test")]},
         state="Test",
-        interpolations=[],
     )
 )
 FORMATTED_TEST_VAR = LiteralVar.create(f"foo{TEST_VAR}bar")

@@ -33,7 +33,6 @@ from reflex.style import (
     set_color_mode,
     toggle_color_mode,
 )
-from reflex.vars import Var
 
 from .components.icon_button import IconButton
 
@@ -115,7 +114,7 @@ class ColorModeIconButton(IconButton):
             The button component.
         """
         # position is used to set nice defaults for positioning the icon button
-        if isinstance(position, Var):
+        if isinstance(position, ImmutableVar):
             _set_var_default(props, position, "position", "fixed", position)
             _set_var_default(props, position, "bottom", "2rem")
             _set_var_default(props, position, "top", "2rem")

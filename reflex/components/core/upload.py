@@ -22,7 +22,7 @@ from reflex.event import (
 from reflex.ivars.base import ImmutableCallableVar, ImmutableVar, LiteralVar
 from reflex.ivars.sequence import LiteralStringVar
 from reflex.utils.imports import ImportVar
-from reflex.vars import ImmutableVarData, Var, VarData
+from reflex.vars import Var, VarData
 
 DEFAULT_UPLOAD_ID: str = "default"
 
@@ -61,7 +61,7 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> ImmutableVar:
     return ImmutableVar(
         _var_name=var_name,
         _var_type=EventChain,
-        _var_data=ImmutableVarData.merge(
+        _var_data=VarData.merge(
             upload_files_context_var_data, id_var._get_all_var_data()
         ),
     )
@@ -81,7 +81,7 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> ImmutableVar:
     return ImmutableVar(
         _var_name=f"(filesById[{str(id_var)}] ? filesById[{str(id_var)}].map((f) => (f.path || f.name)) : [])",
         _var_type=List[str],
-        _var_data=ImmutableVarData.merge(
+        _var_data=VarData.merge(
             upload_files_context_var_data, id_var._get_all_var_data()
         ),
     ).guess_type()
@@ -134,7 +134,7 @@ def get_upload_dir() -> Path:
 
 uploaded_files_url_prefix = ImmutableVar(
     _var_name="getBackendURL(env.UPLOAD)",
-    _var_data=ImmutableVarData(
+    _var_data=VarData(
         imports={
             f"/{Dirs.STATE_PATH}": "getBackendURL",
             "/env.json": ImportVar(tag="env", is_default=True),
@@ -287,7 +287,9 @@ class Upload(MemoizationLeaf):
         )
 
     @classmethod
-    def _update_arg_tuple_for_on_drop(cls, arg_value: tuple[Var, Var]):
+    def _update_arg_tuple_for_on_drop(
+        cls, arg_value: tuple[ImmutableVar, ImmutableVar]
+    ):
         """Helper to update caller-provided EventSpec args for direct use with on_drop.
 
         Args:

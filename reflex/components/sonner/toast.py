@@ -56,7 +56,7 @@ def serialize_action(action: ToastAction) -> dict:
     }
 
 
-def _toast_callback_signature(toast: Var) -> list[Var]:
+def _toast_callback_signature(toast: Var) -> list[ImmutableVar]:
     """The signature for the toast callback, stripping out unserializable keys.
 
     Args:
@@ -76,10 +76,10 @@ class ToastProps(PropsBase):
     """Props for the toast component."""
 
     # Toast's title, renders above the description.
-    title: Optional[Union[str, Var]]
+    title: Optional[Union[str, ImmutableVar]]
 
     # Toast's description, renders underneath the title.
-    description: Optional[Union[str, Var]]
+    description: Optional[Union[str, ImmutableVar]]
 
     # Whether to show the close button.
     close_button: Optional[bool]
@@ -111,7 +111,7 @@ class ToastProps(PropsBase):
     cancel: Optional[ToastAction]
 
     # Custom id for the toast.
-    id: Optional[Union[str, Var]]
+    id: Optional[Union[str, ImmutableVar]]
 
     # Removes the default styling, which allows for easier customization.
     unstyled: Optional[bool]
@@ -241,7 +241,7 @@ class Toaster(Component):
     # Marked True when any Toast component is created.
     is_used: ClassVar[bool] = False
 
-    def add_hooks(self) -> list[Var | str]:
+    def add_hooks(self) -> list[ImmutableVar | str]:
         """Add hooks for the toaster component.
 
         Returns:
@@ -353,7 +353,7 @@ class Toaster(Component):
         """
         dismiss_var_data = None
 
-        if isinstance(id, Var):
+        if isinstance(id, ImmutableVar):
             dismiss = f"{toast_ref}.dismiss({str(id)})"
             dismiss_var_data = id._get_all_var_data()
         elif isinstance(id, str):

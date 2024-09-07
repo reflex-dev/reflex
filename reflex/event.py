@@ -25,7 +25,7 @@ from reflex.ivars.object import ObjectVar
 from reflex.utils import format
 from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
 from reflex.utils.types import ArgsSpec
-from reflex.vars import ImmutableVarData, Var
+from reflex.vars import Var, VarData
 
 try:
     from typing import Annotated
@@ -229,7 +229,7 @@ class EventSpec(EventActionsMixin):
     client_handler_name: str = ""
 
     # The arguments to pass to the function.
-    args: Tuple[Tuple[Var, Var], ...] = ()
+    args: Tuple[Tuple[ImmutableVar, ImmutableVar], ...] = ()
 
     class Config:
         """The Pydantic config."""
@@ -237,7 +237,9 @@ class EventSpec(EventActionsMixin):
         # Required to allow tuple fields.
         frozen = True
 
-    def with_args(self, args: Tuple[Tuple[Var, Var], ...]) -> EventSpec:
+    def with_args(
+        self, args: Tuple[Tuple[ImmutableVar, ImmutableVar], ...]
+    ) -> EventSpec:
         """Copy the event spec, with updated args.
 
         Args:
@@ -253,7 +255,7 @@ class EventSpec(EventActionsMixin):
             event_actions=self.event_actions.copy(),
         )
 
-    def add_args(self, *args: Var) -> EventSpec:
+    def add_args(self, *args: ImmutableVar) -> EventSpec:
         """Add arguments to the event spec.
 
         Args:
@@ -397,7 +399,7 @@ class FileUpload(Base):
                 ImmutableVar(
                     _var_name="filesById",
                     _var_type=Dict[str, Any],
-                    _var_data=ImmutableVarData.merge(upload_files_context_var_data),
+                    _var_data=VarData.merge(upload_files_context_var_data),
                 ).to(ObjectVar)[LiteralVar.create(upload_id)],
             ),
             (
@@ -421,7 +423,7 @@ class FileUpload(Base):
                 )  # type: ignore
             else:
                 raise ValueError(f"{on_upload_progress} is not a valid event handler.")
-            if isinstance(events, Var):
+            if isinstance(events, ImmutableVar):
                 raise ValueError(f"{on_upload_progress} cannot return a var {events}.")
             on_upload_progress_chain = EventChain(
                 events=events,
@@ -676,9 +678,9 @@ def set_clipboard(content: str) -> EventSpec:
 
 
 def download(
-    url: str | Var | None = None,
-    filename: Optional[str | Var] = None,
-    data: str | bytes | Var | None = None,
+    url: str | ImmutableVar | None = None,
+    filename: Optional[str | ImmutableVar] = None,
+    data: str | bytes | ImmutableVar | None = None,
 ) -> EventSpec:
     """Download the file at a given path or with the specified data.
 
@@ -879,7 +881,7 @@ def parse_args_spec(arg_spec: ArgsSpec):
     )
 
 
-def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | Var:
+def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | ImmutableVar:
     """Call a function to a list of event specs.
 
     The function should return a single EventSpec, a list of EventSpecs, or a
@@ -920,7 +922,7 @@ def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | Var:
     out = fn(*parsed_args)
 
     # If the function returns a Var, assume it's an EventChain and render it directly.
-    if isinstance(out, Var):
+    if isinstance(out, ImmutableVar):
         return out
 
     # Convert the output to a list.
@@ -947,7 +949,9 @@ def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | Var:
     return events
 
 
-def get_handler_args(event_spec: EventSpec) -> tuple[tuple[Var, Var], ...]:
+def get_handler_args(
+    event_spec: EventSpec,
+) -> tuple[tuple[ImmutableVar, ImmutableVar], ...]:
     """Get the handler args for the given event spec.
 
     Args:

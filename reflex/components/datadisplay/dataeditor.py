@@ -333,16 +333,18 @@ class DataEditor(NoSSRComponent):
 
         # If rows is not provided, determine from data.
         if rows is None:
-            if isinstance(data, Var) and not isinstance(data, ArrayVar):
+            if isinstance(data, ImmutableVar) and not isinstance(data, ArrayVar):
                 raise ValueError(
                     "DataEditor data must be an ArrayVar if rows is not provided."
                 )
-            props["rows"] = data.length() if isinstance(data, Var) else len(data)
+            props["rows"] = (
+                data.length() if isinstance(data, ImmutableVar) else len(data)
+            )
 
-        if not isinstance(columns, Var) and len(columns):
+        if not isinstance(columns, ImmutableVar) and len(columns):
             if (
                 types.is_dataframe(type(data))
-                or isinstance(data, Var)
+                or isinstance(data, ImmutableVar)
                 and types.is_dataframe(data._var_type)
             ):
                 raise ValueError(

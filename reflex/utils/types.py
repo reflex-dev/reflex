@@ -95,7 +95,7 @@ PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
 StateVar = Union[PrimitiveType, Base, None]
 StateIterVar = Union[list, set, tuple]
 
-# ArgsSpec = Callable[[Var], list[Var]]
+# ArgsSpec = Callable[[ImmutableVar], list[ImmutableVar]]
 ArgsSpec = Callable
 
 
@@ -585,11 +585,11 @@ def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
     Raises:
         ValueError: When the value is not a valid literal.
     """
-    from reflex.vars import Var
+    from reflex.ivars import ImmutableVar
 
     if (
         is_literal(expected_type)
-        and not isinstance(value, Var)  # validating vars is not supported yet.
+        and not isinstance(value, ImmutableVar)  # validating vars is not supported yet.
         and not is_encoded_fstring(value)  # f-strings are not supported.
         and value not in expected_type.__args__
     ):

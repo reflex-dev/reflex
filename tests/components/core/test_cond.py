@@ -9,7 +9,6 @@ from reflex.components.radix.themes.typography.text import Text
 from reflex.ivars.base import ImmutableVar, LiteralVar, immutable_computed_var
 from reflex.state import BaseState, State
 from reflex.utils.format import format_state_name
-from reflex.vars import Var
 
 
 @pytest.fixture
@@ -92,10 +91,10 @@ def test_prop_cond(c1: Any, c2: Any):
         c2,
     )
 
-    assert isinstance(prop_cond, Var)
-    if not isinstance(c1, Var):
+    assert isinstance(prop_cond, ImmutableVar)
+    if not isinstance(c1, ImmutableVar):
         c1 = json.dumps(c1)
-    if not isinstance(c2, Var):
+    if not isinstance(c2, ImmutableVar):
         c2 = json.dumps(c2)
     assert str(prop_cond) == f"(true ? {str(c1)} : {str(c2)})"
 
