@@ -71,41 +71,51 @@ class Button(BaseHTML):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "Button":
@@ -188,41 +198,51 @@ class Datalist(BaseHTML):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "Datalist":
@@ -273,41 +293,51 @@ class Fieldset(Element):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "Fieldset":
@@ -381,42 +411,54 @@ class Form(BaseHTML):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_submit: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_submit: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "Form":
@@ -541,46 +583,60 @@ class Input(BaseHTML):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_change: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_change: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_key_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_key_up: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_key_up: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "Input":
@@ -687,41 +743,51 @@ class Label(BaseHTML):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "Label":
@@ -795,41 +861,51 @@ class Legend(BaseHTML):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "Legend":
@@ -908,41 +984,51 @@ class Meter(BaseHTML):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "Meter":
@@ -1023,41 +1109,51 @@ class Optgroup(BaseHTML):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "Optgroup":
@@ -1135,41 +1231,51 @@ class Option(BaseHTML):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "Option":
@@ -1248,41 +1354,51 @@ class Output(BaseHTML):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "Output":
@@ -1360,41 +1476,51 @@ class Progress(BaseHTML):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "Progress":
@@ -1479,42 +1605,54 @@ class Select(BaseHTML):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_change: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_change: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "Select":
@@ -1616,46 +1754,60 @@ class Textarea(BaseHTML):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_change: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_change: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_key_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_key_up: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_key_up: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+        ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "Textarea":

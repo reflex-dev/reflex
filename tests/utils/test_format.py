@@ -337,7 +337,10 @@ def test_format_route(route: str, format_case: bool, expected: bool):
     ],
 )
 def test_format_match(
-    condition: str, match_cases: List[List[ImmutableVar]], default: Var, expected: str
+    condition: str,
+    match_cases: List[List[ImmutableVar]],
+    default: ImmutableVar,
+    expected: str,
 ):
     """Test formatting a match statement.
 
@@ -454,7 +457,7 @@ def test_format_match(
         ),
     ],
 )
-def test_format_prop(prop: Var, formatted: str):
+def test_format_prop(prop: ImmutableVar, formatted: str):
     """Test that the formatted value of an prop is correct.
 
     Args:

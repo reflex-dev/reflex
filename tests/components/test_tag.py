@@ -4,7 +4,6 @@ import pytest
 
 from reflex.components.tags import CondTag, Tag, tagless
 from reflex.ivars.base import ImmutableVar, LiteralVar
-from reflex.vars import Var
 
 
 @pytest.mark.parametrize(
@@ -41,7 +40,7 @@ def test_format_props(props: Dict[str, ImmutableVar], test_props: List):
         (None, False),
     ],
 )
-def test_is_valid_prop(prop: Var, valid: bool):
+def test_is_valid_prop(prop: ImmutableVar, valid: bool):
     """Test that the prop is valid.
 
     Args:

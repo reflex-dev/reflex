@@ -73,6 +73,7 @@ DEFAULT_IMPORTS = {
     "reflex.components.core.breakpoints": ["Breakpoints"],
     "reflex.event": ["EventChain", "EventHandler", "EventSpec"],
     "reflex.style": ["Style"],
+    "reflex.ivars.base": ["ImmutableVar"],
 }
 
 
