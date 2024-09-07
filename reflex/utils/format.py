@@ -727,6 +727,23 @@ def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
     return collapsed
 
 
+def format_array_ref(refs: str, idx: ImmutableVar | None) -> str:
+    """Format a ref accessed by array.
+
+    Args:
+        refs : The ref array to access.
+        idx : The index of the ref in the array.
+
+    Returns:
+        The formatted ref.
+    """
+    clean_ref = re.sub(r"[^\w]+", "_", refs)
+    if idx is not None:
+        # idx._var_is_local = True
+        return f"refs_{clean_ref}[{str(idx)}]"
+    return f"refs_{clean_ref}"
+
+
 def format_data_editor_column(col: str | dict):
     """Format a given column into the proper format.
 

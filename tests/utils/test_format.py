@@ -653,6 +653,18 @@ def test_format_ref(input, output):
 
 
 @pytest.mark.parametrize(
+    "input,output",
+    [
+        (("my_array", None), "refs_my_array"),
+        (("my_array", LiteralVar.create(0)), "refs_my_array[0]"),
+        (("my_array", LiteralVar.create(1)), "refs_my_array[1]"),
+    ],
+)
+def test_format_array_ref(input, output):
+    assert format.format_array_ref(input[0], input[1]) == output
+
+
+@pytest.mark.parametrize(
     "input, output",
     [
         ("library@^0.1.2", "library"),
