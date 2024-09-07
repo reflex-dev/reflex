@@ -653,21 +653,6 @@ def test_format_ref(input, output):
 
 
 @pytest.mark.parametrize(
-    "input,output",
-    [
-        ("/foo", [("foo", "/foo")]),
-        ("/foo/bar", [("foo", "/foo"), ("bar", "/foo/bar")]),
-        (
-            "/foo/bar/baz",
-            [("foo", "/foo"), ("bar", "/foo/bar"), ("baz", "/foo/bar/baz")],
-        ),
-    ],
-)
-def test_format_breadcrumbs(input, output):
-    assert format.format_breadcrumbs(input) == output
-
-
-@pytest.mark.parametrize(
     "input, output",
     [
         ("library@^0.1.2", "library"),

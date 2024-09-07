@@ -675,24 +675,6 @@ def format_ref(ref: str) -> str:
     return f"ref_{clean_ref}"
 
 
-def format_breadcrumbs(route: str) -> list[tuple[str, str]]:
-    """Take a route and return a list of tuple for use in breadcrumb.
-
-    Args:
-        route: The route to transform.
-
-    Returns:
-        list[tuple[str, str]]: the list of tuples for the breadcrumb.
-    """
-    route_parts = route.lstrip("/").split("/")
-
-    # create and return breadcrumbs
-    return [
-        (part, "/".join(["", *route_parts[: i + 1]]))
-        for i, part in enumerate(route_parts)
-    ]
-
-
 def format_library_name(library_fullname: str):
     """Format the name of a library.
 
@@ -721,42 +703,6 @@ def json_dumps(obj: Any) -> str:
     from reflex.utils import serializers
 
     return json.dumps(obj, ensure_ascii=False, default=serializers.serialize)
-
-
-def unwrap_vars(value: str) -> str:
-    """Unwrap var values from a JSON string.
-
-    For example, "{var}" will be unwrapped to "var".
-
-    Args:
-        value: The JSON string to unwrap.
-
-    Returns:
-        The unwrapped JSON string.
-    """
-
-    def unescape_double_quotes_in_var(m: re.Match) -> str:
-        prefix = m.group(1) or ""
-        # Since the outer quotes are removed, the inner escaped quotes must be unescaped.
-        return prefix + re.sub('\\\\"', '"', m.group(2))
-
-    # This substitution is necessary to unwrap var values.
-    return (
-        re.sub(
-            pattern=r"""
-            (?<!\\)      # must NOT start with a backslash
-            "            # match opening double quote of JSON value
-            (<reflex.Var>.*?</reflex.Var>)?  # Optional encoded VarData (non-greedy)
-            {(.*?)}      # extract the value between curly braces (non-greedy)
-            "            # match must end with an unescaped double quote
-        """,
-            repl=unescape_double_quotes_in_var,
-            string=value,
-            flags=re.VERBOSE,
-        )
-        .replace('"`', "`")
-        .replace('`"', "`")
-    )
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:

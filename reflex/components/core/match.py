@@ -267,7 +267,8 @@ class Match(MemoizationLeaf):
         Returns:
             The import dict.
         """
-        return getattr(VarData.merge(self.cond._get_all_var_data()), "imports", {})
+        var_data = VarData.merge(self.cond._get_all_var_data())
+        return var_data.old_school_imports() if var_data else {}
 
 
 match = Match.create

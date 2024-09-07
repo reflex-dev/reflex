@@ -46,7 +46,13 @@ from reflex.event import (
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style, format_as_emotion
 from reflex.utils import format, imports, types
-from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
+from reflex.utils.imports import (
+    ImmutableParsedImportDict,
+    ImportDict,
+    ImportVar,
+    ParsedImportDict,
+    parse_imports,
+)
 from reflex.utils.serializers import serializer
 from reflex.vars import Var, VarData
 
@@ -1309,9 +1315,15 @@ class Component(BaseComponent, ABC):
 
         # Collect imports from Vars used directly by this component.
         var_datas = [var._get_all_var_data() for var in self._get_vars()]
-        var_imports = [
-            var_data.imports for var_data in var_datas if var_data is not None
-        ]
+        var_imports: List[ImmutableParsedImportDict] = list(
+            map(
+                lambda var_data: var_data.imports,
+                filter(
+                    None,
+                    var_datas,
+                ),
+            )
+        )
 
         added_import_dicts: list[ParsedImportDict] = []
         for clz in self._iter_parent_classes_with_method("add_imports"):
