@@ -57,7 +57,7 @@ def _compile_app(app_root: Component) -> str:
     )
 
 
-def _compile_theme(theme: dict) -> str:
+def _compile_theme(theme: str) -> str:
     """Compile the theme.
 
     Args:
@@ -377,7 +377,7 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
     theme = utils.create_theme(style)
 
     # Compile the theme.
-    code = _compile_theme(theme)
+    code = _compile_theme(str(LiteralVar.create(theme)))
     return output_path, code
 
 
