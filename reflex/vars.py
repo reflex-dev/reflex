@@ -263,6 +263,7 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
     Returns:
         The extracted VarDatas.
     """
+    from reflex.ivars import ImmutableVar
     from reflex.style import Style
 
     var_datas = []
