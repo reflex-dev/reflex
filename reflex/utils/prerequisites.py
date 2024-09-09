@@ -338,6 +338,7 @@ def parse_redis_url() -> str | dict | None:
             "REDIS_URL must start with 'redis://', 'rediss://', or 'unix://'."
         )
     return config.redis_url
+<<<<<<< HEAD
 
 
 async def get_redis_status() -> bool | None:
@@ -386,6 +387,8 @@ async def get_redis_status() -> bool | None:
         status = False
 
     return status
+=======
+>>>>>>> 43d79d3a ([REF-3570] Remove deprecated REDIS_URL syntax (#3892))
 
 
 async def get_redis_status() -> bool | None:
