@@ -649,7 +649,12 @@ def test_set_dirty_var(test_state):
     assert test_state.dirty_vars == set()
 
 
-def test_set_dirty_substate(test_state, child_state, child_state2, grandchild_state):
+def test_set_dirty_substate(
+    test_state: TestState,
+    child_state: ChildState,
+    child_state2: ChildState2,
+    grandchild_state: GrandchildState,
+):
     """Test changing substate vars marks the value as dirty.
 
     Args:
@@ -3077,6 +3082,51 @@ def test_potentially_dirty_substates():
     assert C1._potentially_dirty_substates() == set()
 
 
+def test_router_var_dep() -> None:
+    """Test that router var dependencies are correctly tracked."""
+
+    class RouterVarParentState(State):
+        """A parent state for testing router var dependency."""
+
+        pass
+
+    class RouterVarDepState(RouterVarParentState):
+        """A state with a router var dependency."""
+
+        @rx.var(cache=True)
+        def foo(self) -> str:
+            return self.router.page.params.get("foo", "")
+
+    foo = RouterVarDepState.computed_vars["foo"]
+    State._init_var_dependency_dicts()
+
+    assert foo._deps(objclass=RouterVarDepState) == {"router"}
+    assert RouterVarParentState._potentially_dirty_substates() == {RouterVarDepState}
+    assert RouterVarParentState._substate_var_dependencies == {
+        "router": {RouterVarDepState.get_name()}
+    }
+    assert RouterVarDepState._computed_var_dependencies == {
+        "router": {"foo"},
+    }
+
+    rx_state = State()
+    parent_state = RouterVarParentState()
+    state = RouterVarDepState()
+
+    # link states
+    rx_state.substates = {RouterVarParentState.get_name(): parent_state}
+    parent_state.parent_state = rx_state
+    state.parent_state = parent_state
+    parent_state.substates = {RouterVarDepState.get_name(): state}
+
+    assert state.dirty_vars == set()
+
+    # Reassign router var
+    state.router = state.router
+    assert state.dirty_vars == {"foo", "router"}
+    assert parent_state.dirty_substates == {RouterVarDepState.get_name()}
+
+
 @pytest.mark.asyncio
 async def test_setvar(mock_app: rx.App, token: str):
     """Test that setvar works correctly.
@@ -3161,9 +3211,24 @@ class MixinState(State, mixin=True):
     num: int = 0
     _backend: int = 0
 
+    @rx.var(cache=True)
+    def computed(self) -> str:
+        """A computed var on mixin state.
+
+        Returns:
+            A computed value.
+        """
+        return ""
+
 
 class UsesMixinState(MixinState, State):
     """A state that uses the mixin state."""
+
+    pass
+
+
+class ChildUsesMixinState(UsesMixinState):
+    """A child state that uses the mixin state."""
 
     pass
 
@@ -3173,3 +3238,15 @@ def test_mixin_state() -> None:
     assert "num" in UsesMixinState.base_vars
     assert "num" in UsesMixinState.vars
     assert UsesMixinState.backend_vars == {"_backend": 0}
+
+    assert "computed" in UsesMixinState.computed_vars
+    assert "computed" in UsesMixinState.vars
+
+
+def test_child_mixin_state() -> None:
+    """Test that mixin vars are only applied to the highest state in the hierarchy."""
+    assert "num" in ChildUsesMixinState.inherited_vars
+    assert "num" not in ChildUsesMixinState.base_vars
+
+    assert "computed" in ChildUsesMixinState.inherited_vars
+    assert "computed" not in ChildUsesMixinState.computed_vars

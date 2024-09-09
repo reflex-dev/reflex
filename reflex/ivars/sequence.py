@@ -707,6 +707,17 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         """
         return array_contains_operation(self, other)
 
+    def pluck(self, field: StringVar | str) -> ArrayVar:
+        """Pluck a field from the array.
+
+        Args:
+            field: The field to pluck from the array.
+
+        Returns:
+            The array pluck operation.
+        """
+        return array_pluck_operation(self, field)
+
     def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Multiply the sequence by a number or integer.
 
@@ -913,6 +924,26 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
             _stop=slice.stop,
             _step=slice.step,
         )
+
+
+@var_operation
+def array_pluck_operation(
+    array: ArrayVar[ARRAY_VAR_TYPE],
+    field: StringVar | str,
+) -> CustomVarOperationReturn[ARRAY_VAR_TYPE]:
+    """Pluck a field from an array of objects.
+
+    Args:
+        array: The array to pluck from.
+        field: The field to pluck from the objects in the array.
+
+    Returns:
+        The reversed array.
+    """
+    return var_operation_return(
+        js_expression=f"{array}.map(e=>e?.[{field}])",
+        var_type=array._var_type,
+    )
 
 
 @var_operation
