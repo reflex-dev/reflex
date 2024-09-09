@@ -1,5 +1,4 @@
 import pytest
-import reflex_chakra as rc
 
 import reflex as rx
 from reflex.components.markdown import Markdown
@@ -37,9 +36,7 @@ def test_get_component(tag, expected):
 def test_set_component_map():
     """Test setting the component map."""
     component_map = {
-        "h1": lambda value: rx.box(
-            rc.heading(value, as_="h1", size="2xl"), padding="1em"
-        ),
+        "h1": lambda value: rx.box(rx.heading(value, as_="h1"), padding="1em"),
         "p": lambda value: rx.box(rx.text(value), padding="1em"),
     }
     md = Markdown.create("# Hello", component_map=component_map)
