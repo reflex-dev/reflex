@@ -1507,47 +1507,15 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
             The value of the var for the given instance.
         """
         if instance is None:
-            from reflex.state import BaseState
-
-            path_to_function = self.fget.__qualname__.split(".")
-            class_name_where_defined = (
-                path_to_function[-2] if len(path_to_function) > 1 else owner.__name__
-            )
-
-            def contains_class_name(states: Sequence[Type]) -> bool:
-                return any(c.__name__ == class_name_where_defined for c in states)
-
-            def is_not_mixin(state: Type[BaseState]) -> bool:
-                return not state._mixin
-
-            def length_of_state(state: Type[BaseState]) -> int:
-                return len(inspect.getmro(state))
-
-            class_where_defined = cast(
-                Type[BaseState],
-                min(
-                    filter(
-                        lambda state: state.__module__ == self.fget.__module__,
-                        filter(
-                            is_not_mixin,
-                            filter(
-                                lambda state: contains_class_name(
-                                    inspect.getmro(state)
-                                ),
-                                inspect.getmro(owner),
-                            ),
-                        ),
-                    ),
-                    default=owner,
-                    key=length_of_state,
-                ),
-            )
+            state_where_defined = owner
+            while self.fget.__name__ in state_where_defined.inherited_vars:
+                state_where_defined = state_where_defined.get_parent_state()
 
             return self._replace(
-                _var_name=format_state_name(class_where_defined.get_full_name())
+                _var_name=format_state_name(state_where_defined.get_full_name())
                 + "."
                 + self._var_name,
-                merge_var_data=ImmutableVarData.from_state(class_where_defined),
+                merge_var_data=ImmutableVarData.from_state(state_where_defined),
             ).guess_type()
 
         if not self._cache:
