@@ -321,6 +321,14 @@ class Var:
         if isinstance(value, ImmutableVar):
             return value
 
+        # If the value is not a string, create a LiteralVar.
+        if not isinstance(value, str):
+            return LiteralVar.create(
+                value,
+                _var_data=_var_data,
+            )
+
+        # if _var_is_string is provided, use that
         if _var_is_string is False:
             return ImmutableVar.create(
                 value,
@@ -332,8 +340,8 @@ class Var:
                 _var_data=_var_data,
             )
 
-        # If the value is a string, create a LiteralVar.
-        if not isinstance(value, str) or _var_is_local is True:
+        # Otherwise, rely on _var_is_local
+        if _var_is_local is True:
             return LiteralVar.create(
                 value,
                 _var_data=_var_data,
