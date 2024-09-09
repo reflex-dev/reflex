@@ -28,13 +28,14 @@ import typer
 from alembic.util.exc import CommandError
 from packaging import version
 from redis import Redis as RedisSync
+from redis import exceptions
 from redis.asyncio import Redis
 
 from reflex import constants, model
 from reflex.base import Base
 from reflex.compiler import templates
 from reflex.config import Config, get_config
-from reflex.utils import console, path_ops, processes
+from reflex.utils import console, net, path_ops, processes
 from reflex.utils.format import format_library_name
 from reflex.utils.registry import _get_best_registry
 
@@ -80,7 +81,7 @@ def check_latest_package_version(package_name: str):
         # Get the latest version from PyPI
         current_version = importlib.metadata.version(package_name)
         url = f"https://pypi.org/pypi/{package_name}/json"
-        response = httpx.get(url)
+        response = net.get(url)
         latest_version = response.json()["info"]["version"]
         if (
             version.parse(current_version) < version.parse(latest_version)
@@ -324,24 +325,43 @@ def parse_redis_url() -> str | dict | None:
     """Parse the REDIS_URL in config if applicable.
 
     Returns:
-        If redis-py syntax, return the URL as it is. Otherwise, return the host/port/db as a dict.
+        If url is non-empty, return the URL as it is.
+
+    Raises:
+        ValueError: If the REDIS_URL is not a supported scheme.
     """
     config = get_config()
     if not config.redis_url:
         return None
-    if config.redis_url.startswith(("redis://", "rediss://", "unix://")):
-        return config.redis_url
-    console.deprecate(
-        feature_name="host[:port] style redis urls",
-        reason="redis-py url syntax is now being used",
-        deprecation_version="0.3.6",
-        removal_version="0.6.0",
-    )
-    redis_url, has_port, redis_port = config.redis_url.partition(":")
-    if not has_port:
-        redis_port = 6379
-    console.info(f"Using redis at {config.redis_url}")
-    return dict(host=redis_url, port=int(redis_port), db=0)
+    if not config.redis_url.startswith(("redis://", "rediss://", "unix://")):
+        raise ValueError(
+            "REDIS_URL must start with 'redis://', 'rediss://', or 'unix://'."
+        )
+    return config.redis_url
+
+
+async def get_redis_status() -> bool | None:
+    """Checks the status of the Redis connection.
+
+    Attempts to connect to Redis and send a ping command to verify connectivity.
+
+    Returns:
+        bool or None: The status of the Redis connection:
+            - True: Redis is accessible and responding.
+            - False: Redis is not accessible due to a connection error.
+            - None: Redis not used i.e redis_url is not set in rxconfig.
+    """
+    try:
+        status = True
+        redis_client = get_redis_sync()
+        if redis_client is not None:
+            redis_client.ping()
+        else:
+            status = None
+    except exceptions.RedisError:
+        status = False
+
+    return status
 
 
 def validate_app_name(app_name: str | None = None) -> str:
@@ -670,7 +690,7 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
     """
     # Download the script
     console.debug(f"Downloading {url}")
-    response = httpx.get(url)
+    response = net.get(url)
     if response.status_code != httpx.codes.OK:
         response.raise_for_status()
 
@@ -700,11 +720,11 @@ def download_and_extract_fnm_zip():
     try:
         # Download the FNM zip release.
         # TODO: show progress to improve UX
-        with httpx.stream("GET", url, follow_redirects=True) as response:
-            response.raise_for_status()
-            with open(fnm_zip_file, "wb") as output_file:
-                for chunk in response.iter_bytes():
-                    output_file.write(chunk)
+        response = net.get(url, follow_redirects=True)
+        response.raise_for_status()
+        with open(fnm_zip_file, "wb") as output_file:
+            for chunk in response.iter_bytes():
+                output_file.write(chunk)
 
         # Extract the downloaded zip file.
         with zipfile.ZipFile(fnm_zip_file, "r") as zip_ref:
@@ -1222,7 +1242,7 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
     """
 
     def get_release_by_tag(tag: str) -> dict | None:
-        response = httpx.get(constants.Reflex.RELEASES_URL)
+        response = net.get(constants.Reflex.RELEASES_URL)
         response.raise_for_status()
         releases = response.json()
         for release in releases:
@@ -1243,7 +1263,7 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
     else:
         templates_url = asset["browser_download_url"]
 
-    templates_data = httpx.get(templates_url, follow_redirects=True).json()["templates"]
+    templates_data = net.get(templates_url, follow_redirects=True).json()["templates"]
 
     for template in templates_data:
         if template["name"] == "blank":
@@ -1286,7 +1306,7 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
     zip_file_path = Path(temp_dir) / "template.zip"
     try:
         # Note: following redirects can be risky. We only allow this for reflex built templates at the moment.
-        response = httpx.get(template_url, follow_redirects=True)
+        response = net.get(template_url, follow_redirects=True)
         console.debug(f"Server responded download request: {response}")
         response.raise_for_status()
     except httpx.HTTPError as he:
@@ -1417,7 +1437,7 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
         generation_hash: The generation hash from reflex.build.
     """
     # Download the reflex code for the generation.
-    resp = httpx.get(
+    resp = net.get(
         constants.Templates.REFLEX_BUILD_CODE_URL.format(
             generation_hash=generation_hash
         )

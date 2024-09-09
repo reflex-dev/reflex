@@ -433,7 +433,7 @@ def _generate_component_create_functiondef(
             ast.arg(
                 arg=trigger,
                 annotation=ast.Name(
-                    id="Optional[Union[EventHandler, EventSpec, list, Callable, BaseVar]]"
+                    id="Optional[Union[EventHandler, EventSpec, list, Callable, Var]]"
                 ),
             ),
             ast.Constant(value=None),

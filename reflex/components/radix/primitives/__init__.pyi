@@ -6,4 +6,3 @@
 from .accordion import accordion as accordion
 from .drawer import drawer as drawer
 from .form import form as form
-from .progress import progress as progress

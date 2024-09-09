@@ -18,20 +18,9 @@ from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, path_ops
 from reflex.utils.prerequisites import get_web_dir
-from reflex.utils.watch import AssetFolderWatch
 
 # For uvicorn windows bug fix (#2335)
 frontend_process = None
-
-
-def start_watching_assets_folder(root):
-    """Start watching assets folder.
-
-    Args:
-        root: root path of the project.
-    """
-    asset_watch = AssetFolderWatch(root)
-    asset_watch.start()
 
 
 def detect_package_change(json_file_path: str) -> str:
@@ -149,8 +138,6 @@ def run_frontend(root: Path, port: str, backend_present=True):
     """
     from reflex.utils import prerequisites
 
-    # Start watching asset folder.
-    start_watching_assets_folder(root)
     # validate dependencies before run
     prerequisites.validate_frontend_dependencies(init=False)
 
@@ -215,7 +202,6 @@ def run_backend(
         log_level=loglevel.value,
         reload=True,
         reload_dirs=[config.app_name],
-        reload_excludes=[str(web_dir)],
     )
 
 

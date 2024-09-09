@@ -81,6 +81,18 @@ def mkdir(path: str | Path):
     Path(path).mkdir(parents=True, exist_ok=True)
 
 
+def ls(path: str | Path) -> list[Path]:
+    """List the contents of a directory.
+
+    Args:
+        path: The path to the directory.
+
+    Returns:
+        A list of paths to the contents of the directory.
+    """
+    return list(Path(path).iterdir())
+
+
 def ln(src: str | Path, dest: str | Path, overwrite: bool = False) -> bool:
     """Create a symbolic link.
 
@@ -197,4 +209,4 @@ def find_replace(directory: str | Path, find: str, replace: str):
             filepath = Path(root, file)
             text = filepath.read_text(encoding="utf-8")
             text = re.sub(find, replace, text)
-            filepath.write_text(text)
+            filepath.write_text(text, encoding="utf-8")
