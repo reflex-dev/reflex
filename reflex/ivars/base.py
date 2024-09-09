@@ -798,7 +798,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Raises:
             TypeError: If the var does not support reverse.
         """
-        raise TypeError("Cannot reverse non-list var var.")
+        raise TypeError("Cannot reverse non-list var.")
 
     def __getattr__(self, name: str):
         """Get an attribute of the var.
