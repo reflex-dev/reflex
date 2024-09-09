@@ -317,7 +317,6 @@ def test_state_inheritance(
     assert child1_computed_basevar.text == "computed_basevar1"
 
     child1_mixin = driver.find_element(By.ID, "child1-computed_mixin")
-    print(f">>>>>>>>: {child1_mixin.tag_name} | {child1_mixin.text}")
     assert child1_mixin.text == "computed_mixin"
 
     child1_computed_other_mixin = driver.find_element(By.ID, "child1-other-mixin")
