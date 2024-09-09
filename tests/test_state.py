@@ -31,6 +31,7 @@ from reflex.state import (
     RouterData,
     State,
     StateManager,
+    StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
     StateProxy,
@@ -40,7 +41,7 @@ from reflex.state import (
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
-from reflex.vars import BaseVar, ComputedVar
+from reflex.vars import BaseVar, ComputedVar, Var
 from tests.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState
@@ -266,8 +267,8 @@ def test_base_class_vars(test_state):
         if field in test_state.get_skip_vars():
             continue
         prop = getattr(cls, field)
-        assert isinstance(prop, BaseVar)
-        assert prop._var_name == field
+        assert isinstance(prop, Var)
+        assert prop._var_name.split(".")[-1] == field
 
     assert cls.num1._var_type == int
     assert cls.num2._var_type == float
@@ -395,30 +396,27 @@ def test_default_setters(test_state):
 def test_class_indexing_with_vars():
     """Test that we can index into a state var with another var."""
     prop = TestState.array[TestState.num1]
-    assert (
-        str(prop) == f"{{{TestState.get_name()}.array.at({TestState.get_name()}.num1)}}"
-    )
+    assert str(prop) == f"{TestState.get_name()}.array.at({TestState.get_name()}.num1)"
 
     prop = TestState.mapping["a"][TestState.num1]
     assert (
         str(prop)
-        == f'{{{TestState.get_name()}.mapping["a"].at({TestState.get_name()}.num1)}}'
+        == f'{TestState.get_name()}.mapping["a"].at({TestState.get_name()}.num1)'
     )
 
     prop = TestState.mapping[TestState.map_key]
     assert (
-        str(prop)
-        == f"{{{TestState.get_name()}.mapping[{TestState.get_name()}.map_key]}}"
+        str(prop) == f"{TestState.get_name()}.mapping[{TestState.get_name()}.map_key]"
     )
 
 
 def test_class_attributes():
     """Test that we can get class attributes."""
     prop = TestState.obj.prop1
-    assert str(prop) == f"{{{TestState.get_name()}.obj.prop1}}"
+    assert str(prop) == f'{TestState.get_name()}.obj["prop1"]'
 
     prop = TestState.complex[1].prop1
-    assert str(prop) == f"{{{TestState.get_name()}.complex[1].prop1}}"
+    assert str(prop) == f'{TestState.get_name()}.complex[1]["prop1"]'
 
 
 def test_get_parent_state():
@@ -651,7 +649,12 @@ def test_set_dirty_var(test_state):
     assert test_state.dirty_vars == set()
 
 
-def test_set_dirty_substate(test_state, child_state, child_state2, grandchild_state):
+def test_set_dirty_substate(
+    test_state: TestState,
+    child_state: ChildState,
+    child_state2: ChildState2,
+    grandchild_state: GrandchildState,
+):
     """Test changing substate vars marks the value as dirty.
 
     Args:
@@ -1064,7 +1067,8 @@ def test_dirty_computed_var_from_backend_var(
     Args:
         interdependent_state: A state with varying Var dependencies.
     """
-    assert InterdependentState._v3._backend is True
+    # Accessing ._v3 returns the immutable var it represents instead of the actual computed var
+    # assert InterdependentState._v3._backend is True
     interdependent_state._v2 = 2
     assert interdependent_state.get_delta() == {
         interdependent_state.get_full_name(): {"v2x2": 4, "v3x2": 4},
@@ -1588,7 +1592,7 @@ async def test_state_with_invalid_yield(capsys, mock_app):
     assert "must only return/yield: None, Events or other EventHandlers" in captured.out
 
 
-@pytest.fixture(scope="function", params=["in_process", "redis"])
+@pytest.fixture(scope="function", params=["in_process", "disk", "redis"])
 def state_manager(request) -> Generator[StateManager, None, None]:
     """Instance of state manager parametrized for redis and in-process.
 
@@ -1602,8 +1606,11 @@ def state_manager(request) -> Generator[StateManager, None, None]:
     if request.param == "redis":
         if not isinstance(state_manager, StateManagerRedis):
             pytest.skip("Test requires redis")
-    else:
+    elif request.param == "disk":
         # explicitly NOT using redis
+        state_manager = StateManagerDisk(state=TestState)
+        assert not state_manager._states_locks
+    else:
         state_manager = StateManagerMemory(state=TestState)
         assert not state_manager._states_locks
 
@@ -1641,7 +1648,7 @@ async def test_state_manager_modify_state(
     async with state_manager.modify_state(substate_token) as state:
         if isinstance(state_manager, StateManagerRedis):
             assert await state_manager.redis.get(f"{token}_lock")
-        elif isinstance(state_manager, StateManagerMemory):
+        elif isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
             assert token in state_manager._states_locks
             assert state_manager._states_locks[token].locked()
         # Should be able to write proxy objects inside mutables
@@ -1651,11 +1658,11 @@ async def test_state_manager_modify_state(
     # lock should be dropped after exiting the context
     if isinstance(state_manager, StateManagerRedis):
         assert (await state_manager.redis.get(f"{token}_lock")) is None
-    elif isinstance(state_manager, StateManagerMemory):
+    elif isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
         assert not state_manager._states_locks[token].locked()
 
         # separate instances should NOT share locks
-        sm2 = StateManagerMemory(state=TestState)
+        sm2 = state_manager.__class__(state=TestState)
         assert sm2._state_manager_lock is state_manager._state_manager_lock
         assert not sm2._states_locks
         if state_manager._states_locks:
@@ -1693,7 +1700,7 @@ async def test_state_manager_contend(
 
     if isinstance(state_manager, StateManagerRedis):
         assert (await state_manager.redis.get(f"{token}_lock")) is None
-    elif isinstance(state_manager, StateManagerMemory):
+    elif isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
         assert token in state_manager._states_locks
         assert not state_manager._states_locks[token].locked()
 
@@ -1833,7 +1840,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     assert child_state is not None
     parent_state = child_state.parent_state
     assert parent_state is not None
-    if isinstance(mock_app.state_manager, StateManagerMemory):
+    if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
         mock_app.state_manager.states[parent_state.router.session.client_token] = (
             parent_state
         )
@@ -1876,7 +1883,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
             # For in-process store, only one instance of the state exists
             assert sp.__wrapped__ is grandchild_state
         else:
-            # When redis is used, a new+updated instance is assigned to the proxy
+            # When redis or disk is used, a new+updated instance is assigned to the proxy
             assert sp.__wrapped__ is not grandchild_state
         sp.value2 = "42"
     assert not sp._self_mutable  # proxy is not mutable after exiting context
@@ -2604,15 +2611,23 @@ def test_state_union_optional():
         c3r: Custom3 = Custom3(c2r=Custom2(c1r=Custom1(foo="")))
         custom_union: Union[Custom1, Custom2, Custom3] = Custom1(foo="")
 
-    assert UnionState.c3.c2._var_name == "c3?.c2"  # type: ignore
-    assert UnionState.c3.c2.c1._var_name == "c3?.c2?.c1"  # type: ignore
-    assert UnionState.c3.c2.c1.foo._var_name == "c3?.c2?.c1?.foo"  # type: ignore
-    assert UnionState.c3.c2.c1r.foo._var_name == "c3?.c2?.c1r.foo"  # type: ignore
-    assert UnionState.c3.c2r.c1._var_name == "c3?.c2r.c1"  # type: ignore
-    assert UnionState.c3.c2r.c1.foo._var_name == "c3?.c2r.c1?.foo"  # type: ignore
-    assert UnionState.c3.c2r.c1r.foo._var_name == "c3?.c2r.c1r.foo"  # type: ignore
-    assert UnionState.c3i.c2._var_name == "c3i.c2"  # type: ignore
-    assert UnionState.c3r.c2._var_name == "c3r.c2"  # type: ignore
+    assert str(UnionState.c3.c2) == f'{str(UnionState.c3)}?.["c2"]'  # type: ignore
+    assert str(UnionState.c3.c2.c1) == f'{str(UnionState.c3)}?.["c2"]?.["c1"]'  # type: ignore
+    assert (
+        str(UnionState.c3.c2.c1.foo) == f'{str(UnionState.c3)}?.["c2"]?.["c1"]?.["foo"]'  # type: ignore
+    )
+    assert (
+        str(UnionState.c3.c2.c1r.foo) == f'{str(UnionState.c3)}?.["c2"]?.["c1r"]["foo"]'  # type: ignore
+    )
+    assert str(UnionState.c3.c2r.c1) == f'{str(UnionState.c3)}?.["c2r"]["c1"]'  # type: ignore
+    assert (
+        str(UnionState.c3.c2r.c1.foo) == f'{str(UnionState.c3)}?.["c2r"]["c1"]?.["foo"]'  # type: ignore
+    )
+    assert (
+        str(UnionState.c3.c2r.c1r.foo) == f'{str(UnionState.c3)}?.["c2r"]["c1r"]["foo"]'  # type: ignore
+    )
+    assert str(UnionState.c3i.c2) == f'{str(UnionState.c3i)}["c2"]'  # type: ignore
+    assert str(UnionState.c3r.c2) == f'{str(UnionState.c3r)}["c2"]'  # type: ignore
     assert UnionState.custom_union.foo is not None  # type: ignore
     assert UnionState.custom_union.c1 is not None  # type: ignore
     assert UnionState.custom_union.c1r is not None  # type: ignore
@@ -2831,7 +2846,7 @@ async def test_get_state(mock_app: rx.App, token: str):
         _substate_key(token, ChildState2)
     )
     assert isinstance(test_state, TestState)
-    if isinstance(mock_app.state_manager, StateManagerMemory):
+    if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
         # All substates are available
         assert tuple(sorted(test_state.substates)) == (
             ChildState.get_name(),
@@ -2902,6 +2917,15 @@ async def test_get_state(mock_app: rx.App, token: str):
         # In memory, it's the same instance
         assert new_test_state is test_state
         test_state._clean()
+        # All substates are available
+        assert tuple(sorted(new_test_state.substates)) == (
+            ChildState.get_name(),
+            ChildState2.get_name(),
+            ChildState3.get_name(),
+        )
+    elif isinstance(mock_app.state_manager, StateManagerDisk):
+        # On disk, it's a new instance
+        assert new_test_state is not test_state
         # All substates are available
         assert tuple(sorted(new_test_state.substates)) == (
             ChildState.get_name(),
@@ -3056,6 +3080,51 @@ def test_potentially_dirty_substates():
     assert C1._potentially_dirty_substates() == set()
 
 
+def test_router_var_dep() -> None:
+    """Test that router var dependencies are correctly tracked."""
+
+    class RouterVarParentState(State):
+        """A parent state for testing router var dependency."""
+
+        pass
+
+    class RouterVarDepState(RouterVarParentState):
+        """A state with a router var dependency."""
+
+        @rx.var(cache=True)
+        def foo(self) -> str:
+            return self.router.page.params.get("foo", "")
+
+    foo = RouterVarDepState.computed_vars["foo"]
+    State._init_var_dependency_dicts()
+
+    assert foo._deps(objclass=RouterVarDepState) == {"router"}
+    assert RouterVarParentState._potentially_dirty_substates() == {RouterVarDepState}
+    assert RouterVarParentState._substate_var_dependencies == {
+        "router": {RouterVarDepState.get_name()}
+    }
+    assert RouterVarDepState._computed_var_dependencies == {
+        "router": {"foo"},
+    }
+
+    rx_state = State()
+    parent_state = RouterVarParentState()
+    state = RouterVarDepState()
+
+    # link states
+    rx_state.substates = {RouterVarParentState.get_name(): parent_state}
+    parent_state.parent_state = rx_state
+    state.parent_state = parent_state
+    parent_state.substates = {RouterVarDepState.get_name(): state}
+
+    assert state.dirty_vars == set()
+
+    # Reassign router var
+    state.router = state.router
+    assert state.dirty_vars == {"foo", "router"}
+    assert parent_state.dirty_substates == {RouterVarDepState.get_name()}
+
+
 @pytest.mark.asyncio
 async def test_setvar(mock_app: rx.App, token: str):
     """Test that setvar works correctly.
@@ -3140,9 +3209,24 @@ class MixinState(State, mixin=True):
     num: int = 0
     _backend: int = 0
 
+    @rx.var(cache=True)
+    def computed(self) -> str:
+        """A computed var on mixin state.
+
+        Returns:
+            A computed value.
+        """
+        return ""
+
 
 class UsesMixinState(MixinState, State):
     """A state that uses the mixin state."""
+
+    pass
+
+
+class ChildUsesMixinState(UsesMixinState):
+    """A child state that uses the mixin state."""
 
     pass
 
@@ -3152,3 +3236,15 @@ def test_mixin_state() -> None:
     assert "num" in UsesMixinState.base_vars
     assert "num" in UsesMixinState.vars
     assert UsesMixinState.backend_vars == {"_backend": 0}
+
+    assert "computed" in UsesMixinState.computed_vars
+    assert "computed" in UsesMixinState.vars
+
+
+def test_child_mixin_state() -> None:
+    """Test that mixin vars are only applied to the highest state in the hierarchy."""
+    assert "num" in ChildUsesMixinState.inherited_vars
+    assert "num" not in ChildUsesMixinState.base_vars
+
+    assert "computed" in ChildUsesMixinState.inherited_vars
+    assert "computed" not in ChildUsesMixinState.computed_vars

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import types
 import urllib.parse
 from base64 import b64encode
 from typing import (
@@ -18,9 +19,13 @@ from typing import (
 
 from reflex import constants
 from reflex.base import Base
+from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.function import FunctionStringVar, FunctionVar
+from reflex.ivars.object import ObjectVar
 from reflex.utils import format
+from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
 from reflex.utils.types import ArgsSpec
-from reflex.vars import BaseVar, Var
+from reflex.vars import ImmutableVarData, Var
 
 try:
     from typing import Annotated
@@ -186,7 +191,7 @@ class EventHandler(EventActionsMixin):
 
         # Get the function args.
         fn_args = inspect.getfullargspec(self.fn).args[1:]
-        fn_args = (Var.create_safe(arg, _var_is_string=False) for arg in fn_args)
+        fn_args = (ImmutableVar.create_safe(arg) for arg in fn_args)
 
         # Construct the payload.
         values = []
@@ -197,7 +202,7 @@ class EventHandler(EventActionsMixin):
 
             # Otherwise, convert to JSON.
             try:
-                values.append(Var.create(arg, _var_is_string=isinstance(arg, str)))
+                values.append(LiteralVar.create(arg))
             except TypeError as e:
                 raise EventHandlerTypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
@@ -264,13 +269,13 @@ class EventSpec(EventActionsMixin):
 
         # Get the remaining unfilled function args.
         fn_args = inspect.getfullargspec(self.handler.fn).args[1 + len(self.args) :]
-        fn_args = (Var.create_safe(arg, _var_is_string=False) for arg in fn_args)
+        fn_args = (ImmutableVar.create_safe(arg) for arg in fn_args)
 
         # Construct the payload.
         values = []
         for arg in args:
             try:
-                values.append(Var.create(arg, _var_is_string=isinstance(arg, str)))
+                values.append(LiteralVar.create(arg))
             except TypeError as e:
                 raise EventHandlerTypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
@@ -388,15 +393,16 @@ class FileUpload(Base):
         upload_id = self.upload_id or DEFAULT_UPLOAD_ID
         spec_args = [
             (
-                Var.create_safe("files", _var_is_string=False),
-                Var.create_safe(
-                    f"filesById[{Var.create_safe(upload_id, _var_is_string=True)._var_name_unwrapped}]",
-                    _var_is_string=False,
-                )._replace(_var_data=upload_files_context_var_data),
+                ImmutableVar.create_safe("files"),
+                ImmutableVar(
+                    _var_name="filesById",
+                    _var_type=Dict[str, Any],
+                    _var_data=ImmutableVarData.merge(upload_files_context_var_data),
+                ).to(ObjectVar)[LiteralVar.create(upload_id)],
             ),
             (
-                Var.create_safe("upload_id", _var_is_string=False),
-                Var.create_safe(upload_id, _var_is_string=True),
+                ImmutableVar.create_safe("upload_id"),
+                LiteralVar.create(upload_id),
             ),
         ]
         if self.on_upload_progress is not None:
@@ -424,11 +430,10 @@ class FileUpload(Base):
             formatted_chain = str(format.format_prop(on_upload_progress_chain))
             spec_args.append(
                 (
-                    Var.create_safe("on_upload_progress", _var_is_string=False),
-                    BaseVar(
-                        _var_name=formatted_chain.strip("{}"),
-                        _var_type=EventChain,
-                    ),
+                    ImmutableVar.create_safe("on_upload_progress"),
+                    FunctionStringVar(
+                        formatted_chain.strip("{}"),
+                    ).to(FunctionVar, EventChain),
                 ),
             )
         return EventSpec(
@@ -465,8 +470,8 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
         handler=EventHandler(fn=fn),
         args=tuple(
             (
-                Var.create_safe(k, _var_is_string=False),
-                Var.create_safe(v, _var_is_string=isinstance(v, str)),
+                ImmutableVar.create_safe(k),
+                LiteralVar.create(v),
             )
             for k, v in kwargs.items()
         ),
@@ -542,7 +547,7 @@ def set_focus(ref: str) -> EventSpec:
     return server_side(
         "_set_focus",
         get_fn_signature(set_focus),
-        ref=Var.create_safe(format.format_ref(ref), _var_is_string=True),
+        ref=LiteralVar.create(format.format_ref(ref)),
     )
 
 
@@ -573,7 +578,7 @@ def set_value(ref: str, value: Any) -> EventSpec:
     return server_side(
         "_set_value",
         get_fn_signature(set_value),
-        ref=Var.create_safe(format.format_ref(ref), _var_is_string=True),
+        ref=LiteralVar.create(format.format_ref(ref)),
         value=value,
     )
 
@@ -711,15 +716,11 @@ def download(
             url = "data:text/plain," + urllib.parse.quote(data)
         elif isinstance(data, Var):
             # Need to check on the frontend if the Var already looks like a data: URI.
-            is_data_url = data._replace(
-                _var_name=(
-                    f"typeof {data._var_full_name} == 'string' && "
-                    f"{data._var_full_name}.startsWith('data:')"
-                ),
-                _var_type=bool,
-                _var_is_string=False,
-                _var_full_name_needs_state_prefix=False,
-            )
+
+            is_data_url = (data._type() == "string") & (
+                data.to(str).startswith("data:")
+            )  # type: ignore
+
             # If it's a data: URI, use it as is, otherwise convert the Var to JSON in a data: URI.
             url = cond(  # type: ignore
                 is_data_url,
@@ -757,11 +758,13 @@ def _callback_arg_spec(eval_result):
 
 def call_script(
     javascript_code: str | Var[str],
-    callback: EventSpec
-    | EventHandler
-    | Callable
-    | List[EventSpec | EventHandler | Callable]
-    | None = None,
+    callback: (
+        EventSpec
+        | EventHandler
+        | Callable
+        | List[EventSpec | EventHandler | Callable]
+        | None
+    ) = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -830,7 +833,7 @@ def call_event_handler(
         arg_spec: The lambda that define the argument(s) to pass to the event handler.
 
     Raises:
-        ValueError: if number of arguments expected by event_handler doesn't match the spec.
+        EventHandlerArgMismatch: if number of arguments expected by event_handler doesn't match the spec.
 
     Returns:
         The event spec from calling the event handler.
@@ -842,13 +845,16 @@ def call_event_handler(
         return event_handler.add_args(*parsed_args)
 
     args = inspect.getfullargspec(event_handler.fn).args
-    if len(args) == len(["self", *parsed_args]):
+    n_args = len(args) - 1  # subtract 1 for bound self arg
+    if n_args == len(parsed_args):
         return event_handler(*parsed_args)  # type: ignore
     else:
-        source = inspect.getsource(arg_spec)  # type: ignore
-        raise ValueError(
-            f"number of arguments in {event_handler.fn.__qualname__} "
-            f"doesn't match the definition of the event trigger '{source.strip().strip(',')}'"
+        raise EventHandlerArgMismatch(
+            "The number of arguments accepted by "
+            f"{event_handler.fn.__qualname__} ({n_args}) "
+            "does not match the arguments passed by the event trigger: "
+            f"{[str(v) for v in parsed_args]}\n"
+            "See https://reflex.dev/docs/events/event-arguments/"
         )
 
 
@@ -865,68 +871,68 @@ def parse_args_spec(arg_spec: ArgsSpec):
     annotations = get_type_hints(arg_spec)
     return arg_spec(
         *[
-            BaseVar(
-                _var_name=f"_{l_arg}",
-                _var_type=annotations.get(l_arg, FrontendEvent),
-                _var_is_local=True,
+            ImmutableVar(f"_{l_arg}").to(
+                ObjectVar, annotations.get(l_arg, FrontendEvent)
             )
             for l_arg in spec.args
         ]
     )
 
 
-def call_event_fn(fn: Callable, arg: Union[Var, ArgsSpec]) -> list[EventSpec] | Var:
+def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | Var:
     """Call a function to a list of event specs.
 
     The function should return a single EventSpec, a list of EventSpecs, or a
-    single Var. If the function takes in an arg, the arg will be passed to the
-    function. Otherwise, the function will be called with no args.
+    single Var. The function signature must match the passed arg_spec or
+    EventFnArgsMismatch will be raised.
 
     Args:
         fn: The function to call.
-        arg: The argument to pass to the function.
+        arg_spec: The argument spec for the event trigger.
 
     Returns:
         The event specs from calling the function or a Var.
 
     Raises:
-        EventHandlerValueError: If the lambda has an invalid signature.
+        EventFnArgMismatch: If the function signature doesn't match the arg spec.
+        EventHandlerValueError: If the lambda returns an unusable value.
     """
     # Import here to avoid circular imports.
     from reflex.event import EventHandler, EventSpec
     from reflex.utils.exceptions import EventHandlerValueError
 
-    # Get the args of the lambda.
-    args = inspect.getfullargspec(fn).args
+    # Check that fn signature matches arg_spec
+    fn_args = inspect.getfullargspec(fn).args
+    n_fn_args = len(fn_args)
+    if isinstance(fn, types.MethodType):
+        n_fn_args -= 1  # subtract 1 for bound self arg
+    parsed_args = parse_args_spec(arg_spec)
+    if len(parsed_args) != n_fn_args:
+        raise EventFnArgMismatch(
+            "The number of arguments accepted by "
+            f"{fn} ({n_fn_args}) "
+            "does not match the arguments passed by the event trigger: "
+            f"{[str(v) for v in parsed_args]}\n"
+            "See https://reflex.dev/docs/events/event-arguments/"
+        )
 
-    if isinstance(arg, ArgsSpec):
-        out = fn(*parse_args_spec(arg))  # type: ignore
-    else:
-        # Call the lambda.
-        if len(args) == 0:
-            out = fn()
-        elif len(args) == 1:
-            out = fn(arg)
-        else:
-            raise EventHandlerValueError(f"Lambda {fn} must have 0 or 1 arguments.")
+    # Call the function with the parsed args.
+    out = fn(*parsed_args)
 
     # If the function returns a Var, assume it's an EventChain and render it directly.
     if isinstance(out, Var):
         return out
 
     # Convert the output to a list.
-    if not isinstance(out, List):
+    if not isinstance(out, list):
         out = [out]
 
     # Convert any event specs to event specs.
     events = []
     for e in out:
-        # Convert handlers to event specs.
         if isinstance(e, EventHandler):
-            if len(args) == 0:
-                e = e()
-            elif len(args) == 1:
-                e = e(arg)  # type: ignore
+            # An un-called EventHandler gets all of the args of the event trigger.
+            e = call_event_handler(e, arg_spec)
 
         # Make sure the event spec is valid.
         if not isinstance(e, EventSpec):

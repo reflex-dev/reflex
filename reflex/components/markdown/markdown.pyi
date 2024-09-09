@@ -8,24 +8,21 @@ from typing import Any, Callable, Dict, Optional, Union, overload
 
 from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
+from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
-from reflex.vars import BaseVar, Var
+from reflex.vars import Var
 
-_CHILDREN = Var.create_safe("children", _var_is_local=False, _var_is_string=False)
-_PROPS = Var.create_safe("...props", _var_is_local=False, _var_is_string=False)
-_MOCK_ARG = Var.create_safe("", _var_is_string=False)
-_REMARK_MATH = Var.create_safe("remarkMath", _var_is_local=False, _var_is_string=False)
-_REMARK_GFM = Var.create_safe("remarkGfm", _var_is_local=False, _var_is_string=False)
-_REMARK_UNWRAP_IMAGES = Var.create_safe(
-    "remarkUnwrapImages", _var_is_local=False, _var_is_string=False
-)
-_REMARK_PLUGINS = Var.create_safe([_REMARK_MATH, _REMARK_GFM, _REMARK_UNWRAP_IMAGES])
-_REHYPE_KATEX = Var.create_safe(
-    "rehypeKatex", _var_is_local=False, _var_is_string=False
-)
-_REHYPE_RAW = Var.create_safe("rehypeRaw", _var_is_local=False, _var_is_string=False)
-_REHYPE_PLUGINS = Var.create_safe([_REHYPE_KATEX, _REHYPE_RAW])
+_CHILDREN = ImmutableVar.create_safe("children")
+_PROPS = ImmutableVar.create_safe("...props")
+_MOCK_ARG = ImmutableVar.create_safe("")
+_REMARK_MATH = ImmutableVar.create_safe("remarkMath")
+_REMARK_GFM = ImmutableVar.create_safe("remarkGfm")
+_REMARK_UNWRAP_IMAGES = ImmutableVar.create_safe("remarkUnwrapImages")
+_REMARK_PLUGINS = LiteralVar.create([_REMARK_MATH, _REMARK_GFM, _REMARK_UNWRAP_IMAGES])
+_REHYPE_KATEX = ImmutableVar.create_safe("rehypeKatex")
+_REHYPE_RAW = ImmutableVar.create_safe("rehypeRaw")
+_REHYPE_PLUGINS = LiteralVar.create([_REHYPE_KATEX, _REHYPE_RAW])
 NO_PROPS_TAGS = ("ul", "ol", "li")
 
 @lru_cache
@@ -45,50 +42,40 @@ class Markdown(Component):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Markdown":
