@@ -83,7 +83,11 @@ def ChildState(ParentState, TestObj):
     class ChildState(ParentState):
         @computed_var
         def var_without_annotation(self):
-            """This shadows ParentState.var_without_annotation."""
+            """This shadows ParentState.var_without_annotation.
+
+            Returns:
+                TestObj: Test object.
+            """
             return TestObj
 
     return ChildState
@@ -94,7 +98,11 @@ def GrandChildState(ChildState, TestObj):
     class GrandChildState(ChildState):
         @computed_var
         def var_without_annotation(self):
-            """This shadows ChildState.var_without_annotation."""
+            """This shadows ChildState.var_without_annotation.
+
+            Returns:
+                TestObj: Test object.
+            """
             return TestObj
 
     return GrandChildState
