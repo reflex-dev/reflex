@@ -101,7 +101,6 @@ class DataTable(Gridjs):
                 "column field should be specified when the data field is a list type"
             )
 
-        print("props", props)
 
         # Create the component.
         return super().create(
