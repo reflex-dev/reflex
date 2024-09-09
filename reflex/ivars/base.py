@@ -838,6 +838,8 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             The decoded value or the Var name.
         """
+        if isinstance(self, LiteralVar):
+            return self._var_value  # type: ignore
         try:
             return json.loads(str(self))
         except ValueError:
