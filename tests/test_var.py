@@ -1216,7 +1216,7 @@ def test_unsupported_types_for_reverse(var):
     """
     with pytest.raises(TypeError) as err:
         var.reverse()
-    assert err.value.args[0] == f"Cannot reverse non-list var var."
+    assert err.value.args[0] == f"Cannot reverse non-list var."
 
 
 @pytest.mark.parametrize(
