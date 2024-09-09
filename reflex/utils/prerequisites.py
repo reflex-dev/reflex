@@ -364,30 +364,6 @@ async def get_redis_status() -> bool | None:
     return status
 
 
-async def get_redis_status() -> bool | None:
-    """Checks the status of the Redis connection.
-
-    Attempts to connect to Redis and send a ping command to verify connectivity.
-
-    Returns:
-        bool or None: The status of the Redis connection:
-            - True: Redis is accessible and responding.
-            - False: Redis is not accessible due to a connection error.
-            - None: Redis not used i.e redis_url is not set in rxconfig.
-    """
-    try:
-        status = True
-        redis_client = get_redis_sync()
-        if redis_client is not None:
-            redis_client.ping()
-        else:
-            status = None
-    except exceptions.RedisError:
-        status = False
-
-    return status
-
-
 def validate_app_name(app_name: str | None = None) -> str:
     """Validate the app name.
 
