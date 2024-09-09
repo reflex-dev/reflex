@@ -8,6 +8,7 @@ import typing
 from inspect import isclass
 from typing import (
     Any,
+    ClassVar,
     Dict,
     List,
     NoReturn,
@@ -28,6 +29,7 @@ from .base import (
     CachedVarOperation,
     ImmutableVar,
     LiteralVar,
+    ToOperation,
     cached_property_no_lock,
     figure_out_type,
     var_operation,
@@ -522,45 +524,27 @@ class ObjectItemOperation(CachedVarOperation, ImmutableVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ToObjectOperation(CachedVarOperation, ObjectVar):
+class ToObjectOperation(ToOperation, ObjectVar):
     """Operation to convert a var to an object."""
 
-    _original_var: ImmutableVar = dataclasses.field(
+    _original: ImmutableVar = dataclasses.field(
         default_factory=lambda: LiteralObjectVar.create({})
     )
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the operation.
+    _default_var_type: ClassVar[GenericType] = dict
 
-        Returns:
-            The name of the operation.
-        """
-        return str(self._original_var)
-
-    @classmethod
-    def create(
-        cls,
-        original_var: ImmutableVar,
-        _var_type: GenericType | None = None,
-        _var_data: VarData | None = None,
-    ) -> ToObjectOperation:
-        """Create the to object operation.
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
 
         Args:
-            original_var: The original var to convert.
-            _var_type: The type of the var.
-            _var_data: Additional hooks and imports associated with the operation.
+            name: The name of the attribute.
 
         Returns:
-            The to object operation.
+            The attribute of the var.
         """
-        return cls(
-            _var_name="",
-            _var_type=dict if _var_type is None else _var_type,
-            _var_data=_var_data,
-            _original_var=original_var,
-        )
+        if name == "_var_name":
+            return self._original._var_name
+        return ObjectVar.__getattr__(self, name)
 
 
 @var_operation

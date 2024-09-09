@@ -44,7 +44,7 @@ from reflex.utils.exceptions import (
     VarValueError,
 )
 from reflex.utils.format import format_state_name
-from reflex.utils.types import get_origin
+from reflex.utils.types import GenericType, get_origin
 from reflex.vars import (
     REPLACED_NAMES,
     Var,
@@ -2142,4 +2142,66 @@ class StateOperation(CachedVarOperation, ImmutableVar):
             _var_data=_var_data,
             _state_name=state_name,
             _field=field,
+        )
+
+
+class ToOperation:
+    """A var operation that converts a var to another type."""
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute of the var.
+        """
+        return getattr(object.__getattribute__(self, "_original"), name)
+
+    def __post_init__(self):
+        """Post initialization."""
+        object.__delattr__(self, "_var_name")
+
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash(object.__getattribute__(self, "_original"))
+
+    def _get_all_var_data(self) -> VarData | None:
+        """Get all the var data.
+
+        Returns:
+            The var data.
+        """
+        return VarData.merge(
+            object.__getattribute__(self, "_original")._get_all_var_data(),
+            self._var_data,  # type: ignore
+        )
+
+    @classmethod
+    def create(
+        cls,
+        value: Var,
+        _var_type: GenericType | None = None,
+        _var_data: VarData | None = None,
+    ):
+        """Create a ToOperation.
+
+        Args:
+            value: The value of the var.
+            _var_type: The type of the Var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The ToOperation.
+        """
+        return cls(
+            _var_name="",  # type: ignore
+            _var_data=_var_data,  # type: ignore
+            _var_type=_var_type or cls._default_var_type,  # type: ignore
+            _original=value,  # type: ignore
         )

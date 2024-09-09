@@ -11,6 +11,7 @@ import typing
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Dict,
     List,
     Literal,
@@ -40,6 +41,7 @@ from .base import (
     ImmutableVar,
     LiteralNoneVar,
     LiteralVar,
+    ToOperation,
     cached_property_no_lock,
     figure_out_type,
     unionize,
@@ -1517,68 +1519,12 @@ def array_contains_operation(haystack: ArrayVar, needle: Any | Var):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ToStringOperation(StringVar):
+class ToStringOperation(ToOperation, StringVar):
     """Base class for immutable string vars that are the result of a to string operation."""
 
     _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
 
-    def __getattr__(self, name: str) -> Any:
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute of the var.
-        """
-        return getattr(object.__getattribute__(self, "_original"), name)
-
-    def __post_init__(self):
-        """Post initialization."""
-        object.__delattr__(self, "_var_name")
-
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash(object.__getattribute__(self, "_original"))
-
-    def _get_all_var_data(self) -> VarData | None:
-        """Get all the var data.
-
-        Returns:
-            The var data.
-        """
-        return VarData.merge(
-            object.__getattribute__(self, "_original")._get_all_var_data(),
-            self._var_data,
-        )
-
-    @classmethod
-    def create(
-        cls,
-        value: Var,
-        _var_type: GenericType | None = None,
-        _var_data: VarData | None = None,
-    ):
-        """Create the number var.
-
-        Args:
-            value: The value of the var.
-            _var_type: The type of the Var.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The number var.
-        """
-        return ToStringOperation(
-            _var_name="",
-            _var_data=_var_data,
-            _var_type=str,
-            _original=value,
-        )
+    _default_var_type: ClassVar[Type] = str
 
 
 @dataclasses.dataclass(
@@ -1586,68 +1532,12 @@ class ToStringOperation(StringVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ToArrayOperation(ArrayVar):
+class ToArrayOperation(ToOperation, ArrayVar):
     """Base class for immutable array vars that are the result of a to array operation."""
 
     _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
 
-    def __getattr__(self, name: str) -> Any:
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute of the var.
-        """
-        return getattr(object.__getattribute__(self, "_original"), name)
-
-    def __post_init__(self):
-        """Post initialization."""
-        object.__delattr__(self, "_var_name")
-
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash(object.__getattribute__(self, "_original"))
-
-    def _get_all_var_data(self) -> VarData | None:
-        """Get all the var data.
-
-        Returns:
-            The var data.
-        """
-        return VarData.merge(
-            object.__getattribute__(self, "_original")._get_all_var_data(),
-            self._var_data,
-        )
-
-    @classmethod
-    def create(
-        cls,
-        value: Var,
-        _var_type: GenericType | None = None,
-        _var_data: VarData | None = None,
-    ):
-        """Create the number var.
-
-        Args:
-            value: The value of the var.
-            _var_type: The type of the Var.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The number var.
-        """
-        return ToArrayOperation(
-            _var_name="",
-            _var_data=_var_data,
-            _var_type=_var_type or List,
-            _original=value,
-        )
+    _default_var_type: ClassVar[Type] = List[Any]
 
 
 @var_operation

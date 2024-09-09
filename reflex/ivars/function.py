@@ -4,12 +4,18 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Any, Callable, Optional, Tuple, Type, Union
+from typing import Any, Callable, ClassVar, Optional, Tuple, Type, Union
 
 from reflex.utils.types import GenericType
 from reflex.vars import VarData
 
-from .base import CachedVarOperation, ImmutableVar, LiteralVar, cached_property_no_lock
+from .base import (
+    CachedVarOperation,
+    ImmutableVar,
+    LiteralVar,
+    ToOperation,
+    cached_property_no_lock,
+)
 
 
 class FunctionVar(ImmutableVar[Callable]):
@@ -181,45 +187,14 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ToFunctionOperation(CachedVarOperation, FunctionVar):
+class ToFunctionOperation(ToOperation, FunctionVar):
     """Base class of converting a var to a function."""
 
-    _original_var: ImmutableVar = dataclasses.field(
+    _original: ImmutableVar = dataclasses.field(
         default_factory=lambda: LiteralVar.create(None)
     )
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return str(self._original_var)
-
-    @classmethod
-    def create(
-        cls,
-        original_var: ImmutableVar,
-        _var_type: GenericType = Callable,
-        _var_data: VarData | None = None,
-    ) -> ToFunctionOperation:
-        """Create a new function var.
-
-        Args:
-            original_var: The original var to convert to a function.
-            _var_type: The type of the function.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The function var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=_var_type,
-            _var_data=_var_data,
-            _original_var=original_var,
-        )
+    _default_var_type: ClassVar[GenericType] = Callable
 
 
 JSON_STRINGIFY = FunctionStringVar.create("JSON.stringify")
