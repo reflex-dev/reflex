@@ -10,30 +10,12 @@ FROM python:3.11
 ARG PORT=8080
 # Only set for local/direct access. When TLS is used, the API_URL is assumed to be the same as the frontend.
 ARG API_URL
-ENV PORT=$PORT API_URL=${API_URL:-http://localhost:$PORT}
+ENV PORT=$PORT API_URL=${API_URL:-http://localhost:$PORT} REDIS_URL=redis://localhost PYTHONUNBUFFERED=1
 
-# Install Caddy server inside image
-RUN apt-get update -y && apt-get install -y caddy && rm -rf /var/lib/apt/lists/*
+# Install Caddy and redis server inside image
+RUN apt-get update -y && apt-get install -y caddy redis-server && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
-# Create a simple Caddyfile to serve as reverse proxy
-RUN cat > Caddyfile <<EOF
-:{\$PORT}
-
-encode gzip
-
-@backend_routes path /_event/* /ping /_upload /_upload/*
-handle @backend_routes {
-	reverse_proxy localhost:8000
-}
-
-root * /srv
-route {
-	try_files {path} {path}/ /404.html
-	file_server
-}
-EOF
 
 # Copy local context to `/app` inside container (see .dockerignore)
 COPY . .
@@ -54,4 +36,6 @@ EXPOSE $PORT
 
 # Apply migrations before starting the backend.
 CMD [ -d alembic ] && reflex db migrate; \
-    caddy start && reflex run --env prod --backend-only --loglevel debug 
+    caddy start && \
+    redis-server --daemonize yes && \
+    exec reflex run --env prod --backend-only
