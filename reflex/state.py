@@ -11,6 +11,7 @@ import os
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import Iterator
 from pathlib import Path
 from types import FunctionType, MethodType
 from typing import (
@@ -2588,15 +2589,21 @@ class StateManagerDisk(StateManager):
         """
         return prerequisites.get_web_dir() / constants.Dirs.STATES
 
+    def _iter_pkl_files(self) -> Iterator[Path]:
+        """Iterate over the pkl files in the states directory.
+
+        Yields:
+            The pkl files.
+        """
+        for path in path_ops.ls(self.states_directory):
+            if path.suffix == ".pkl":
+                yield path
+
     def _purge_expired_states(self):
         """Purge expired states from the disk."""
         import time
 
-        for path in path_ops.ls(self.states_directory):
-            # check path is a pickle file
-            if path.suffix != ".pkl":
-                continue
-
+        for path in self._iter_pkl_files():
             # load last edited field from file
             last_edited = path.stat().st_mtime
 
@@ -2736,6 +2743,24 @@ class StateManagerDisk(StateManager):
             state = await self.get_state(token)
             yield state
             await self.set_state(token, state)
+
+    @override
+    async def iter_state_tokens(
+        self, substate_cls: Type[BaseState] | None = None
+    ) -> AsyncIterator[str]:
+        """Iterate over the state names.
+
+        Args:
+            substate_cls: The subclass of BaseState to filter by.
+
+        Yields:
+            The state names.
+        """
+        for path in self._iter_pkl_files():
+            token = path.stem
+            if substate_cls is not None and not token.endswith(substate_cls.get_name()):
+                continue
+            yield token
 
 
 # Workaround https://github.com/cloudpipe/cloudpickle/issues/408 for dynamic pydantic classes
