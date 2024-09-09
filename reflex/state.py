@@ -2499,6 +2499,14 @@ def state_to_schema(
     )
 
 
+def reset_disk_state_manager():
+    """Reset the disk state manager."""
+    states_directory = prerequisites.get_web_dir() / constants.Dirs.STATES
+    if states_directory.exists():
+        for path in states_directory.iterdir():
+            path.unlink()
+
+
 class StateManagerDisk(StateManager):
     """A state manager that stores states in memory."""
 
