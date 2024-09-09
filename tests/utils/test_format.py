@@ -831,3 +831,7 @@ def test_format_library_name(input: str, output: str):
 )
 def test_json_dumps(input, output):
     assert format.json_dumps(input) == output
+
+
+def test_remove_prefix():
+    assert format.remove_prefix("hello world", "hello ") == "world"

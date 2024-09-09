@@ -56,8 +56,8 @@ from reflex.event import (
 from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.utils.exec import is_testing_env
+from reflex.utils.format import remove_prefix
 from reflex.utils.serializers import SerializedType, serialize, serializer
-from reflex.utils.string import remove_prefix
 from reflex.utils.types import override
 from reflex.vars import BaseVar, ComputedVar, Var, computed_var
 
