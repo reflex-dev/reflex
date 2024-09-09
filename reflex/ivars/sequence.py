@@ -1151,7 +1151,7 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
 
     @cached_property_no_lock
     def _cached_get_all_var_data(self) -> VarData | None:
-        """Get all the VarData asVarDatae Var.
+        """Get all the VarData associated with the Var.
 
         Returns:
             The VarData associated with the Var.
