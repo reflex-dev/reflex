@@ -593,6 +593,16 @@ def VarOperations():
                 int_var2=VarOperationState.int_var2,
                 id="memo_comp_nested",
             ),
+            # foreach in a match
+            rx.box(
+                rx.match(
+                    VarOperationState.list3.length(),
+                    (0, rx.text("No choices")),
+                    (1, rx.text("One choice")),
+                    rx.foreach(VarOperationState.list3, lambda choice: rx.text(choice)),
+                ),
+                id="foreach_in_match",
+            ),
         )
 
 
@@ -790,6 +800,8 @@ def test_var_operations(driver, var_operations: AppHarness):
         # rx.memo component with state
         ("memo_comp", "1210"),
         ("memo_comp_nested", "345"),
+        # foreach in a match
+        ("foreach_in_match", "first\nsecond\nthird"),
     ]
 
     for tag, expected in tests:
