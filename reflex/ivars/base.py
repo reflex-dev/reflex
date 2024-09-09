@@ -22,7 +22,6 @@ from typing import (
     Literal,
     NoReturn,
     Optional,
-    Sequence,
     Set,
     Tuple,
     Type,
