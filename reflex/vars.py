@@ -7,10 +7,10 @@ import dataclasses
 import random
 import re
 import string
-from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     Iterable,
     Optional,
