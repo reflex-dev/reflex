@@ -625,7 +625,11 @@ def format_state(value: Any, key: Optional[str] = None) -> Any:
         return {k: format_state(v, k) for k, v in value.items()}
 
     # Hand dataclasses.
-    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+    if dataclasses.is_dataclass(value):
+        if isinstance(value, type):
+            raise TypeError(
+                f"Cannot format state of type {type(value)}. Please provide an instance of the dataclass."
+            )
         return {k: format_state(v, k) for k, v in dataclasses.asdict(value).items()}
 
     # Handle lists, sets, typles.
