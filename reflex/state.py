@@ -34,7 +34,12 @@ import dill
 from sqlalchemy.orm import DeclarativeBase
 
 from reflex.config import get_config
-from reflex.ivars.base import ImmutableComputedVar, ImmutableVar, immutable_computed_var
+from reflex.ivars.base import (
+    ImmutableComputedVar,
+    ImmutableVar,
+    immutable_computed_var,
+    is_computed_var,
+)
 
 try:
     import pydantic.v1 as pydantic
@@ -59,11 +64,7 @@ from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
 from reflex.utils.types import override
-from reflex.vars import (
-    ComputedVar,
-    ImmutableVarData,
-    Var,
-)
+from reflex.vars import VarData
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
@@ -303,16 +304,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
     # A map from the var name to the var.
-    vars: ClassVar[Dict[str, Var]] = {}
+    vars: ClassVar[Dict[str, ImmutableVar]] = {}
 
     # The base vars of the class.
     base_vars: ClassVar[Dict[str, ImmutableVar]] = {}
 
     # The computed vars of the class.
-    computed_vars: ClassVar[Dict[str, Union[ComputedVar, ImmutableComputedVar]]] = {}
+    computed_vars: ClassVar[Dict[str, ImmutableComputedVar]] = {}
 
     # Vars inherited by the parent state.
-    inherited_vars: ClassVar[Dict[str, Var]] = {}
+    inherited_vars: ClassVar[Dict[str, ImmutableVar]] = {}
 
     # Backend base vars that are never sent to the client.
     backend_vars: ClassVar[Dict[str, Any]] = {}
@@ -422,7 +423,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return f"{self.__class__.__name__}({self.dict()})"
 
     @classmethod
-    def _get_computed_vars(cls) -> list[Union[ComputedVar, ImmutableComputedVar]]:
+    def _get_computed_vars(cls) -> list[ImmutableComputedVar]:
         """Helper function to get all computed vars of a instance.
 
         Returns:
@@ -431,8 +432,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return [
             v
             for mixin in cls._mixins() + [cls]
-            for v in mixin.__dict__.values()
-            if isinstance(v, (ComputedVar, ImmutableComputedVar))
+            for name, v in mixin.__dict__.items()
+            if is_computed_var(v) and name not in cls.inherited_vars
         ]
 
     @classmethod
@@ -476,7 +477,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls._check_overridden_methods()
 
         # Computed vars should not shadow builtin state props.
-        cls._check_overriden_basevars()
+        cls._check_overridden_basevars()
 
         # Reset subclass tracking for this class.
         cls.class_subclasses = set()
@@ -494,26 +495,17 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if cls.get_name() in set(
                 c.get_name() for c in parent_state.class_subclasses
             ):
-                if is_testing_env():
-                    # Clear existing subclass with same name when app is reloaded via
-                    # utils.prerequisites.get_app(reload=True)
-                    parent_state.class_subclasses = set(
-                        c
-                        for c in parent_state.class_subclasses
-                        if c.get_name() != cls.get_name()
-                    )
-                else:
-                    # During normal operation, subclasses cannot have the same name, even if they are
-                    # defined in different modules.
-                    raise StateValueError(
-                        f"The substate class '{cls.get_name()}' has been defined multiple times. "
-                        "Shadowing substate classes is not allowed."
-                    )
+                # This should not happen, since we have added module prefix to state names in #3214
+                raise StateValueError(
+                    f"The substate class '{cls.get_name()}' has been defined multiple times. "
+                    "Shadowing substate classes is not allowed."
+                )
             # Track this new subclass in the parent state's subclasses set.
             parent_state.class_subclasses.add(cls)
 
         # Get computed vars.
         computed_vars = cls._get_computed_vars()
+        cls._check_overridden_computed_vars()
 
         new_backend_vars = {
             name: value
@@ -531,13 +523,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             f.name: ImmutableVar(
                 _var_name=format.format_state_name(cls.get_full_name()) + "." + f.name,
                 _var_type=f.outer_type_,
-                _var_data=ImmutableVarData.from_state(cls),
+                _var_data=VarData.from_state(cls),
             ).guess_type()
             for f in cls.get_fields().values()
             if f.name not in cls.get_skip_vars()
         }
         cls.computed_vars = {
-            v._var_name: v._replace(merge_var_data=ImmutableVarData.from_state(cls))
+            v._var_name: v._replace(merge_var_data=VarData.from_state(cls))
             for v in computed_vars
         }
         cls.vars = {
@@ -560,11 +552,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         for mixin in cls._mixins():
             for name, value in mixin.__dict__.items():
-                if isinstance(value, (ComputedVar, ImmutableComputedVar)):
+                if name in cls.inherited_vars:
+                    continue
+                if is_computed_var(value):
                     fget = cls._copy_fn(value.fget)
-                    newcv = value._replace(
-                        fget=fget, _var_data=ImmutableVarData.from_state(cls)
-                    )
+                    newcv = value._replace(fget=fget, _var_data=VarData.from_state(cls))
                     # cleanup refs to mixin cls in var_data
                     setattr(cls, name, newcv)
                     cls.computed_vars[newcv._var_name] = newcv
@@ -591,6 +583,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
 
+        # Initialize per-class var dependency tracking.
+        cls._computed_var_dependencies = defaultdict(set)
+        cls._substate_var_dependencies = defaultdict(set)
         cls._init_var_dependency_dicts()
 
     @staticmethod
@@ -660,10 +655,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Additional updates tracking dicts for vars and substates that always
         need to be recomputed.
         """
-        # Initialize per-class var dependency tracking.
-        cls._computed_var_dependencies = defaultdict(set)
-        cls._substate_var_dependencies = defaultdict(set)
-
         inherited_vars = set(cls.inherited_vars).union(
             set(cls.inherited_backend_vars),
         )
@@ -728,7 +719,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             )
 
     @classmethod
-    def _check_overriden_basevars(cls):
+    def _check_overridden_basevars(cls):
         """Check for shadow base vars and raise error if any.
 
         Raises:
@@ -738,6 +729,22 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if computed_var_._var_name in cls.__annotations__:
                 raise NameError(
                     f"The computed var name `{computed_var_._var_name}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
+                )
+
+    @classmethod
+    def _check_overridden_computed_vars(cls) -> None:
+        """Check for shadow computed vars and raise error if any.
+
+        Raises:
+            NameError: When a computed var shadows another.
+        """
+        for name, cv in cls.__dict__.items():
+            if not is_computed_var(cv):
+                continue
+            name = cv._var_name
+            if name in cls.inherited_vars or name in cls.inherited_backend_vars:
+                raise NameError(
+                    f"The computed var name `{cv._var_name}` shadows a var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 )
 
     @classmethod
@@ -905,7 +912,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         var = ImmutableVar(
             _var_name=format.format_state_name(cls.get_full_name()) + "." + name,
             _var_type=type_,
-            _var_data=ImmutableVarData.from_state(cls),
+            _var_data=VarData.from_state(cls),
         ).guess_type()
 
         # add the pydantic field dynamically (must be done before _init_var)
@@ -1013,20 +1020,20 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             args: a dict of args
         """
+        if not args:
+            return
 
         def argsingle_factory(param):
-            @ComputedVar
             def inner_func(self) -> str:
                 return self.router.page.params.get(param, "")
 
-            return inner_func
+            return ImmutableComputedVar(fget=inner_func, cache=True)
 
         def arglist_factory(param):
-            @ComputedVar
             def inner_func(self) -> List:
                 return self.router.page.params.get(param, [])
 
-            return inner_func
+            return ImmutableComputedVar(fget=inner_func, cache=True)
 
         for param, value in args.items():
             if value == constants.RouteArgType.SINGLE:
@@ -1035,13 +1042,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 func = arglist_factory(param)
             else:
                 continue
-            # to allow passing as a prop
-            func._var_name = param
+            # to allow passing as a prop, evade python frozen rules (bad practice)
+            object.__setattr__(func, "_var_name", param)
             cls.vars[param] = cls.computed_vars[param] = func._var_set_state(cls)  # type: ignore
             setattr(cls, param, func)
 
-            # Reinitialize dependency tracking dicts.
-            cls._init_var_dependency_dicts()
+        # Reinitialize dependency tracking dicts.
+        cls._init_var_dependency_dicts()
 
     def __getattribute__(self, name: str) -> Any:
         """Get the state var.
@@ -1792,12 +1799,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             prop_name: self.get_value(getattr(self, prop_name))
             for prop_name in self.base_vars
         }
-        if initial:
+        if initial and include_computed:
             computed_vars = {
                 # Include initial computed vars.
                 prop_name: (
                     cv._initial_value
-                    if isinstance(cv, (ComputedVar, ImmutableComputedVar))
+                    if is_computed_var(cv)
                     and not isinstance(cv._initial_value, types.Unset)
                     else self.get_value(getattr(self, prop_name))
                 )
@@ -2505,6 +2512,14 @@ def state_to_schema(
             for field_name, model_field in state.__fields__.items()
         )
     )
+
+
+def reset_disk_state_manager():
+    """Reset the disk state manager."""
+    states_directory = prerequisites.get_web_dir() / constants.Dirs.STATES
+    if states_directory.exists():
+        for path in states_directory.iterdir():
+            path.unlink()
 
 
 class StateManagerDisk(StateManager):
@@ -3607,5 +3622,7 @@ def reload_state_module(
         if subclass.__module__ == module and module is not None:
             state.class_subclasses.remove(subclass)
             state._always_dirty_substates.discard(subclass.get_name())
-    state._init_var_dependency_dicts()
+            state._computed_var_dependencies = defaultdict(set)
+            state._substate_var_dependencies = defaultdict(set)
+            state._init_var_dependency_dicts()
     state.get_class_substate.cache_clear()

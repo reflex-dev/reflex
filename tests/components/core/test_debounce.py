@@ -4,7 +4,7 @@ import pytest
 
 import reflex as rx
 from reflex.components.core.debounce import DEFAULT_DEBOUNCE_TIMEOUT
-from reflex.ivars.base import LiteralVar
+from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.state import BaseState
 
 
@@ -100,7 +100,7 @@ def test_render_with_key():
 
 
 def test_render_with_special_props():
-    special_prop = rx.Var.create_safe("{foo_bar}", _var_is_string=False)
+    special_prop = ImmutableVar.create_safe("{foo_bar}")
     tag = rx.debounce_input(
         rx.input(
             on_change=S.on_change,

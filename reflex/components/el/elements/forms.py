@@ -12,7 +12,6 @@ from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
 from reflex.event import EventChain, EventHandler
 from reflex.ivars.base import ImmutableVar, LiteralVar
-from reflex.utils.format import format_event_chain
 from reflex.utils.imports import ImportDict
 from reflex.vars import Var, VarData
 
@@ -24,9 +23,9 @@ HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {
         const $form = ev.target
         ev.preventDefault()
-        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}}
+        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}};
 
-        {{ on_submit_event_chain }}
+        ({{ on_submit_event_chain }}());
 
         if ({{ reset_on_submit }}) {
             $form.reset()
@@ -186,8 +185,8 @@ class Form(BaseHTML):
                 handle_submit_unique_name=self.handle_submit_unique_name,
                 form_data=FORM_DATA,
                 field_ref_mapping=str(LiteralVar.create(self._get_form_refs())),
-                on_submit_event_chain=format_event_chain(
-                    self.event_triggers[EventTriggers.ON_SUBMIT]
+                on_submit_event_chain=str(
+                    LiteralVar.create(self.event_triggers[EventTriggers.ON_SUBMIT])
                 ),
                 reset_on_submit=self.reset_on_submit,
             )
@@ -227,7 +226,7 @@ class Form(BaseHTML):
         # print(repr(form_refs))
         return form_refs
 
-    def _get_vars(self, include_children: bool = True) -> Iterator[Var]:
+    def _get_vars(self, include_children: bool = True) -> Iterator[ImmutableVar]:
         yield from super()._get_vars(include_children=include_children)
         yield from self._get_form_refs().values()
 
@@ -625,19 +624,15 @@ class Textarea(BaseHTML):
                     "Cannot combine `enter_key_submit` with `on_key_down`.",
                 )
             tag.add_props(
-                on_key_down=Var.create_safe(
-                    f"(e) => enterKeySubmitOnKeyDown(e, {self.enter_key_submit._var_name_unwrapped})",
-                    _var_is_local=False,
-                    _var_is_string=False,
+                on_key_down=ImmutableVar.create_safe(
+                    f"(e) => enterKeySubmitOnKeyDown(e, {str(self.enter_key_submit)})",
                     _var_data=VarData.merge(self.enter_key_submit._get_all_var_data()),
                 )
             )
         if self.auto_height is not None:
             tag.add_props(
-                on_input=Var.create_safe(
-                    f"(e) => autoHeightOnInput(e, {self.auto_height._var_name_unwrapped})",
-                    _var_is_local=False,
-                    _var_is_string=False,
+                on_input=ImmutableVar.create_safe(
+                    f"(e) => autoHeightOnInput(e, {str(self.auto_height)})",
                     _var_data=VarData.merge(self.auto_height._get_all_var_data()),
                 )
             )

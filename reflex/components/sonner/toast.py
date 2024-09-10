@@ -14,7 +14,7 @@ from reflex.event import (
     EventSpec,
     call_script,
 )
-from reflex.ivars.base import LiteralVar
+from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
@@ -30,7 +30,7 @@ LiteralPosition = Literal[
     "bottom-right",
 ]
 
-toast_ref = Var.create_safe("refs['__toast']", _var_is_string=False)
+toast_ref = ImmutableVar.create_safe("refs['__toast']")
 
 
 class ToastAction(Base):
@@ -56,7 +56,7 @@ def serialize_action(action: ToastAction) -> dict:
     }
 
 
-def _toast_callback_signature(toast: Var) -> list[Var]:
+def _toast_callback_signature(toast: Var) -> list[ImmutableVar]:
     """The signature for the toast callback, stripping out unserializable keys.
 
     Args:
@@ -66,9 +66,8 @@ def _toast_callback_signature(toast: Var) -> list[Var]:
         A function call stripping non-serializable members of the toast object.
     """
     return [
-        Var.create_safe(
-            f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {toast}; return rest}})()",
-            _var_is_string=False,
+        ImmutableVar.create_safe(
+            f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {str(toast)}; return rest}})()"
         )
     ]
 
@@ -77,10 +76,10 @@ class ToastProps(PropsBase):
     """Props for the toast component."""
 
     # Toast's title, renders above the description.
-    title: Optional[Union[str, Var]]
+    title: Optional[Union[str, ImmutableVar]]
 
     # Toast's description, renders underneath the title.
-    description: Optional[Union[str, Var]]
+    description: Optional[Union[str, ImmutableVar]]
 
     # Whether to show the close button.
     close_button: Optional[bool]
@@ -112,7 +111,7 @@ class ToastProps(PropsBase):
     cancel: Optional[ToastAction]
 
     # Custom id for the toast.
-    id: Optional[Union[str, Var]]
+    id: Optional[Union[str, ImmutableVar]]
 
     # Removes the default styling, which allows for easier customization.
     unstyled: Optional[bool]
@@ -242,16 +241,14 @@ class Toaster(Component):
     # Marked True when any Toast component is created.
     is_used: ClassVar[bool] = False
 
-    def add_hooks(self) -> list[Var | str]:
+    def add_hooks(self) -> list[ImmutableVar | str]:
         """Add hooks for the toaster component.
 
         Returns:
             The hooks for the toaster component.
         """
-        hook = Var.create_safe(
+        hook = ImmutableVar.create_safe(
             f"{toast_ref} = toast",
-            _var_is_local=True,
-            _var_is_string=False,
             _var_data=VarData(
                 imports={
                     "/utils/state": [ImportVar(tag="refs")],
@@ -289,7 +286,7 @@ class Toaster(Component):
         else:
             toast = f"{toast_command}(`{message}`)"
 
-        toast_action = Var.create_safe(toast, _var_is_string=False, _var_is_local=True)
+        toast_action = ImmutableVar.create_safe(toast)
         return call_script(toast_action)
 
     @staticmethod
@@ -356,17 +353,15 @@ class Toaster(Component):
         """
         dismiss_var_data = None
 
-        if isinstance(id, Var):
-            dismiss = f"{toast_ref}.dismiss({id._var_name_unwrapped})"
+        if isinstance(id, ImmutableVar):
+            dismiss = f"{toast_ref}.dismiss({str(id)})"
             dismiss_var_data = id._get_all_var_data()
         elif isinstance(id, str):
             dismiss = f"{toast_ref}.dismiss('{id}')"
         else:
             dismiss = f"{toast_ref}.dismiss()"
-        dismiss_action = Var.create_safe(
+        dismiss_action = ImmutableVar.create_safe(
             dismiss,
-            _var_is_string=False,
-            _var_is_local=True,
             _var_data=VarData.merge(dismiss_var_data),
         )
         return call_script(dismiss_action)
