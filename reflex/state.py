@@ -739,7 +739,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             NameError: When a computed var shadows another.
         """
         for name, cv in cls.__dict__.items():
-            if not isinstance(cv, (ComputedVar, ImmutableComputedVar)):
+            if not is_computed_var(cv):
                 continue
             name = cv._var_name
             if name in cls.inherited_vars or name in cls.inherited_backend_vars:
