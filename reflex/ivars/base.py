@@ -1420,7 +1420,7 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
             auto_deps: Whether var dependencies should be auto-determined.
             interval: Interval at which the computed var should be updated.
             backend: Whether the computed var is a backend var.
-            var_is_dynamic_route: Whether the var is a (automatically created) dynamic route var.
+            _var_is_dynamic_route: Whether the var is a (automatically created) dynamic route var.
             **kwargs: additional attributes to set on the instance
 
         Raises:
