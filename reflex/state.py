@@ -88,6 +88,7 @@ class HeaderData:
     origin: str = ""
     upgrade: str = ""
     connection: str = ""
+    cookie: str = ""
     pragma: str = ""
     cache_control: str = ""
     user_agent: str = ""
@@ -204,6 +205,19 @@ class RouterData:
             The JSON string.
         """
         return json.dumps(dataclasses.asdict(self))
+
+
+@serializer
+def serialize_routerdata(value: RouterData) -> str:
+    """Serialize a RouterData instance.
+
+    Args:
+        value: The RouterData to serialize.
+
+    Returns:
+        The serialized RouterData.
+    """
+    return value.toJson()
 
 
 def _no_chain_background_task(
@@ -1831,8 +1845,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self.dirty_vars.update(self._always_dirty_computed_vars)
             self._mark_dirty()
 
+        def dictify(value: Any):
+            if dataclasses.is_dataclass(value) and not isinstance(value, type):
+                return dataclasses.asdict(value)
+            return value
+
         base_vars = {
-            prop_name: self.get_value(getattr(self, prop_name))
+            prop_name: dictify(self.get_value(getattr(self, prop_name)))
             for prop_name in self.base_vars
         }
         if initial and include_computed:
