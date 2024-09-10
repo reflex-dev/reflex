@@ -9,7 +9,7 @@ from reflex.components.recharts.general import ResponsiveContainer
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
 from reflex.event import EventHandler
-from reflex.ivars.base import LiteralVar
+from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.vars import Var
 
 from .recharts import (
@@ -62,7 +62,7 @@ class ChartBase(RechartsCharts):
             return
         if isinstance(value, str) and value.endswith("%"):
             return
-        if isinstance(value, Var) and issubclass(value._var_type, int):
+        if isinstance(value, ImmutableVar) and issubclass(value._var_type, int):
             return
         raise ValueError(
             f"Chart {name} must be specified as int pixels or percentage, not {value!r}. "
@@ -324,7 +324,7 @@ class RadarChart(ChartBase):
         "Radar",
     ]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+    def get_event_triggers(self) -> dict[str, Union[ImmutableVar, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -413,7 +413,7 @@ class ScatterChart(ChartBase):
         "Scatter",
     ]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+    def get_event_triggers(self) -> dict[str, Union[ImmutableVar, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:

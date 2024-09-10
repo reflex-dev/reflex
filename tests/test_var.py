@@ -9,8 +9,10 @@ from pandas import DataFrame
 from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.ivars.base import (
+    ImmutableComputedVar,
     ImmutableVar,
     LiteralVar,
+    immutable_computed_var,
     var_operation,
     var_operation_return,
 )
@@ -20,7 +22,7 @@ from reflex.ivars.number import (
     LiteralNumberVar,
     NumberVar,
 )
-from reflex.ivars.object import LiteralObjectVar
+from reflex.ivars.object import LiteralObjectVar, ObjectVar
 from reflex.ivars.sequence import (
     ArrayVar,
     ConcatVarOperation,
@@ -30,22 +32,16 @@ from reflex.ivars.sequence import (
 from reflex.state import BaseState
 from reflex.utils.imports import ImportVar
 from reflex.vars import (
-    BaseVar,
-    ComputedVar,
-    ImmutableVarData,
     Var,
     VarData,
-    computed_var,
 )
 
 test_vars = [
-    BaseVar(_var_name="prop1", _var_type=int),
-    BaseVar(_var_name="key", _var_type=str),
-    BaseVar(_var_name="value", _var_type=str)._var_set_state("state"),
-    BaseVar(_var_name="local", _var_type=str, _var_is_local=True)._var_set_state(
-        "state"
-    ),
-    BaseVar(_var_name="local2", _var_type=str, _var_is_local=True),
+    ImmutableVar(_var_name="prop1", _var_type=int),
+    ImmutableVar(_var_name="key", _var_type=str),
+    ImmutableVar(_var_name="value", _var_type=str)._var_set_state("state"),
+    ImmutableVar(_var_name="local", _var_type=str)._var_set_state("state"),
+    ImmutableVar(_var_name="local2", _var_type=str),
 ]
 
 
@@ -71,7 +67,7 @@ def ParentState(TestObj):
         foo: int
         bar: int
 
-        @computed_var
+        @immutable_computed_var
         def var_without_annotation(self):
             return TestObj
 
@@ -81,7 +77,7 @@ def ParentState(TestObj):
 @pytest.fixture
 def ChildState(ParentState, TestObj):
     class ChildState(ParentState):
-        @computed_var
+        @immutable_computed_var
         def var_without_annotation(self):
             return TestObj
 
@@ -91,7 +87,7 @@ def ChildState(ParentState, TestObj):
 @pytest.fixture
 def GrandChildState(ChildState, TestObj):
     class GrandChildState(ChildState):
-        @computed_var
+        @immutable_computed_var
         def var_without_annotation(self):
             return TestObj
 
@@ -101,7 +97,7 @@ def GrandChildState(ChildState, TestObj):
 @pytest.fixture
 def StateWithAnyVar(TestObj):
     class StateWithAnyVar(BaseState):
-        @computed_var
+        @immutable_computed_var
         def var_without_annotation(self) -> typing.Any:
             return TestObj
 
@@ -111,7 +107,7 @@ def StateWithAnyVar(TestObj):
 @pytest.fixture
 def StateWithCorrectVarAnnotation():
     class StateWithCorrectVarAnnotation(BaseState):
-        @computed_var
+        @immutable_computed_var
         def var_with_annotation(self) -> str:
             return "Correct annotation"
 
@@ -121,7 +117,7 @@ def StateWithCorrectVarAnnotation():
 @pytest.fixture
 def StateWithWrongVarAnnotation(TestObj):
     class StateWithWrongVarAnnotation(BaseState):
-        @computed_var
+        @immutable_computed_var
         def var_with_annotation(self) -> str:
             return TestObj
 
@@ -131,7 +127,7 @@ def StateWithWrongVarAnnotation(TestObj):
 @pytest.fixture
 def StateWithInitialComputedVar():
     class StateWithInitialComputedVar(BaseState):
-        @computed_var(initial_value="Initial value")
+        @immutable_computed_var(initial_value="Initial value")
         def var_with_initial_value(self) -> str:
             return "Runtime value"
 
@@ -141,7 +137,7 @@ def StateWithInitialComputedVar():
 @pytest.fixture
 def ChildWithInitialComputedVar(StateWithInitialComputedVar):
     class ChildWithInitialComputedVar(StateWithInitialComputedVar):
-        @computed_var(initial_value="Initial value")
+        @immutable_computed_var(initial_value="Initial value")
         def var_with_initial_value_child(self) -> str:
             return "Runtime value"
 
@@ -151,7 +147,7 @@ def ChildWithInitialComputedVar(StateWithInitialComputedVar):
 @pytest.fixture
 def StateWithRuntimeOnlyVar():
     class StateWithRuntimeOnlyVar(BaseState):
-        @computed_var(initial_value=None)
+        @immutable_computed_var(initial_value=None)
         def var_raises_at_runtime(self) -> str:
             raise ValueError("So nicht, mein Freund")
 
@@ -161,7 +157,7 @@ def StateWithRuntimeOnlyVar():
 @pytest.fixture
 def ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
     class ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
-        @computed_var(initial_value="Initial value")
+        @immutable_computed_var(initial_value="Initial value")
         def var_raises_at_runtime_child(self) -> str:
             raise ValueError("So nicht, mein Freund")
 
@@ -188,14 +184,14 @@ def test_full_name(prop, expected):
         prop: The var to test.
         expected: The expected full name.
     """
-    assert prop._var_full_name == expected
+    assert str(prop) == expected
 
 
 @pytest.mark.parametrize(
     "prop,expected",
     zip(
         test_vars,
-        ["{prop1}", "{key}", "{state.value}", "state.local", "local2"],
+        ["prop1", "key", "state.value", "state.local", "local2"],
     ),
 )
 def test_str(prop, expected):
@@ -211,14 +207,14 @@ def test_str(prop, expected):
 @pytest.mark.parametrize(
     "prop,expected",
     [
-        (BaseVar(_var_name="p", _var_type=int), 0),
-        (BaseVar(_var_name="p", _var_type=float), 0.0),
-        (BaseVar(_var_name="p", _var_type=str), ""),
-        (BaseVar(_var_name="p", _var_type=bool), False),
-        (BaseVar(_var_name="p", _var_type=list), []),
-        (BaseVar(_var_name="p", _var_type=dict), {}),
-        (BaseVar(_var_name="p", _var_type=tuple), ()),
-        (BaseVar(_var_name="p", _var_type=set), set()),
+        (ImmutableVar(_var_name="p", _var_type=int), 0),
+        (ImmutableVar(_var_name="p", _var_type=float), 0.0),
+        (ImmutableVar(_var_name="p", _var_type=str), ""),
+        (ImmutableVar(_var_name="p", _var_type=bool), False),
+        (ImmutableVar(_var_name="p", _var_type=list), []),
+        (ImmutableVar(_var_name="p", _var_type=dict), {}),
+        (ImmutableVar(_var_name="p", _var_type=tuple), ()),
+        (ImmutableVar(_var_name="p", _var_type=set), set()),
     ],
 )
 def test_default_value(prop, expected):
@@ -257,14 +253,16 @@ def test_get_setter(prop, expected):
 @pytest.mark.parametrize(
     "value,expected",
     [
-        (None, None),
-        (1, BaseVar(_var_name="1", _var_type=int, _var_is_local=True)),
-        ("key", BaseVar(_var_name="key", _var_type=str, _var_is_local=True)),
-        (3.14, BaseVar(_var_name="3.14", _var_type=float, _var_is_local=True)),
-        ([1, 2, 3], BaseVar(_var_name="[1, 2, 3]", _var_type=list, _var_is_local=True)),
+        (None, ImmutableVar(_var_name="null", _var_type=None)),
+        (1, ImmutableVar(_var_name="1", _var_type=int)),
+        ("key", ImmutableVar(_var_name='"key"', _var_type=str)),
+        (3.14, ImmutableVar(_var_name="3.14", _var_type=float)),
+        ([1, 2, 3], ImmutableVar(_var_name="[1, 2, 3]", _var_type=List[int])),
         (
             {"a": 1, "b": 2},
-            BaseVar(_var_name='{"a": 1, "b": 2}', _var_type=dict, _var_is_local=True),
+            ImmutableVar(
+                _var_name='({ ["a"] : 1, ["b"] : 2 })', _var_type=Dict[str, int]
+            ),
         ),
     ],
 )
@@ -275,11 +273,8 @@ def test_create(value, expected):
         value: The value to create a var from.
         expected: The expected name of the setter function.
     """
-    prop = Var.create(value)
-    if value is None:
-        assert prop == expected
-    else:
-        assert prop.equals(expected)  # type: ignore
+    prop = LiteralVar.create(value)
+    assert prop.equals(expected)  # type: ignore
 
 
 def test_create_type_error():
@@ -291,17 +286,11 @@ def test_create_type_error():
     value = ErrorType()
 
     with pytest.raises(TypeError):
-        Var.create(value)
+        LiteralVar.create(value)
 
 
-def v(value) -> Var:
-    val = (
-        Var.create(json.dumps(value), _var_is_string=True, _var_is_local=False)
-        if isinstance(value, str)
-        else Var.create(value, _var_is_local=False)
-    )
-    assert val is not None
-    return val
+def v(value) -> ImmutableVar:
+    return LiteralVar.create(value)
 
 
 def test_basic_operations(TestObj):
@@ -310,129 +299,78 @@ def test_basic_operations(TestObj):
     Args:
         TestObj: The test object.
     """
-    assert str(v(1) == v(2)) == "{((1) === (2))}"
-    assert str(v(1) != v(2)) == "{((1) !== (2))}"
-    assert str(v(1) < v(2)) == "{((1) < (2))}"
-    assert str(v(1) <= v(2)) == "{((1) <= (2))}"
-    assert str(v(1) > v(2)) == "{((1) > (2))}"
-    assert str(v(1) >= v(2)) == "{((1) >= (2))}"
-    assert str(v(1) + v(2)) == "{((1) + (2))}"
-    assert str(v(1) - v(2)) == "{((1) - (2))}"
-    assert str(v(1) * v(2)) == "{((1) * (2))}"
-    assert str(v(1) / v(2)) == "{((1) / (2))}"
-    assert str(v(1) // v(2)) == "{Math.floor((1) / (2))}"
-    assert str(v(1) % v(2)) == "{((1) % (2))}"
-    assert str(v(1) ** v(2)) == "{Math.pow((1) , (2))}"
-    assert str(v(1) & v(2)) == "{((1) && (2))}"
-    assert str(v(1) | v(2)) == "{((1) || (2))}"
-    assert str(v([1, 2, 3])[v(0)]) == "{[1, 2, 3].at(0)}"
-    assert str(v({"a": 1, "b": 2})["a"]) == '{{"a": 1, "b": 2}["a"]}'
-    assert str(v("foo") == v("bar")) == '{(("foo") === ("bar"))}'
+    assert str(v(1) == v(2)) == "(1 === 2)"
+    assert str(v(1) != v(2)) == "(1 !== 2)"
+    assert str(LiteralNumberVar.create(1) < 2) == "(1 < 2)"
+    assert str(LiteralNumberVar.create(1) <= 2) == "(1 <= 2)"
+    assert str(LiteralNumberVar.create(1) > 2) == "(1 > 2)"
+    assert str(LiteralNumberVar.create(1) >= 2) == "(1 >= 2)"
+    assert str(LiteralNumberVar.create(1) + 2) == "(1 + 2)"
+    assert str(LiteralNumberVar.create(1) - 2) == "(1 - 2)"
+    assert str(LiteralNumberVar.create(1) * 2) == "(1 * 2)"
+    assert str(LiteralNumberVar.create(1) / 2) == "(1 / 2)"
+    assert str(LiteralNumberVar.create(1) // 2) == "Math.floor(1 / 2)"
+    assert str(LiteralNumberVar.create(1) % 2) == "(1 % 2)"
+    assert str(LiteralNumberVar.create(1) ** 2) == "(1 ** 2)"
+    assert str(LiteralNumberVar.create(1) & v(2)) == "(1 && 2)"
+    assert str(LiteralNumberVar.create(1) | v(2)) == "(1 || 2)"
+    assert str(LiteralArrayVar.create([1, 2, 3])[0]) == "[1, 2, 3].at(0)"
     assert (
-        str(
-            Var.create("foo", _var_is_local=False)
-            == Var.create("bar", _var_is_local=False)
-        )
-        == "{((foo) === (bar))}"
+        str(LiteralObjectVar.create({"a": 1, "b": 2})["a"])
+        == '({ ["a"] : 1, ["b"] : 2 })["a"]'
+    )
+    assert str(v("foo") == v("bar")) == '("foo" === "bar")'
+    assert (
+        str(ImmutableVar.create("foo") == ImmutableVar.create("bar")) == "(foo === bar)"
     )
     assert (
-        str(
-            BaseVar(
-                _var_name="foo", _var_type=str, _var_is_string=True, _var_is_local=True
-            )
-            == BaseVar(
-                _var_name="bar", _var_type=str, _var_is_string=True, _var_is_local=True
-            )
-        )
-        == "((`foo`) === (`bar`))"
+        str(LiteralVar.create("foo") == LiteralVar.create("bar")) == '("foo" === "bar")'
     )
+    print(ImmutableVar(_var_name="foo").to(ObjectVar, TestObj)._var_set_state("state"))
     assert (
         str(
-            BaseVar(
-                _var_name="foo",
-                _var_type=TestObj,
-                _var_is_string=True,
-                _var_is_local=False,
-            )
+            ImmutableVar(_var_name="foo")
+            .to(ObjectVar, TestObj)
             ._var_set_state("state")
             .bar
-            == BaseVar(
-                _var_name="bar", _var_type=str, _var_is_string=True, _var_is_local=True
-            )
+            == LiteralVar.create("bar")
         )
-        == "{((state.foo.bar) === (`bar`))}"
+        == '(state.foo["bar"] === "bar")'
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=TestObj)._var_set_state("state").bar)
-        == "{state.foo.bar}"
+        str(
+            ImmutableVar(_var_name="foo")
+            .to(ObjectVar, TestObj)
+            ._var_set_state("state")
+            .bar
+        )
+        == 'state.foo["bar"]'
     )
-    assert str(abs(v(1))) == "{Math.abs(1)}"
-    assert str(v([1, 2, 3]).length()) == "{[1, 2, 3].length}"
-    assert str(v([1, 2]) + v([3, 4])) == "{spreadArraysOrObjects(([1, 2]) , ([3, 4]))}"
+    assert str(abs(LiteralNumberVar.create(1))) == "Math.abs(1)"
+    assert str(LiteralArrayVar.create([1, 2, 3]).length()) == "[1, 2, 3].length"
+    assert (
+        str(LiteralArrayVar.create([1, 2]) + LiteralArrayVar.create([3, 4]))
+        == "[...[1, 2], ...[3, 4]]"
+    )
 
     # Tests for reverse operation
-    assert str(v([1, 2, 3]).reverse()) == "{[...[1, 2, 3]].reverse()}"
-    assert str(v(["1", "2", "3"]).reverse()) == '{[...["1", "2", "3"]].reverse()}'
     assert (
-        str(BaseVar(_var_name="foo", _var_type=list)._var_set_state("state").reverse())
-        == "{[...state.foo].reverse()}"
+        str(LiteralArrayVar.create([1, 2, 3]).reverse())
+        == "[1, 2, 3].slice().reverse()"
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=list).reverse())
-        == "{[...foo].reverse()}"
-    )
-    assert str(BaseVar(_var_name="foo", _var_type=str)._type()) == "{typeof foo}"  # type: ignore
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() == str)  # type: ignore
-        == "{((typeof foo) === (`string`))}"
+        str(LiteralArrayVar.create(["1", "2", "3"]).reverse())
+        == '["1", "2", "3"].slice().reverse()'
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() == str)  # type: ignore
-        == "{((typeof foo) === (`string`))}"
+        str(ImmutableVar(_var_name="foo")._var_set_state("state").to(list).reverse())
+        == "state.foo.slice().reverse()"
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() == int)  # type: ignore
-        == "{((typeof foo) === (`number`))}"
+        str(ImmutableVar(_var_name="foo").to(list).reverse()) == "foo.slice().reverse()"
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() == list)  # type: ignore
-        == "{((typeof foo) === (`Array`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() == float)  # type: ignore
-        == "{((typeof foo) === (`number`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() == tuple)  # type: ignore
-        == "{((typeof foo) === (`Array`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() == dict)  # type: ignore
-        == "{((typeof foo) === (`Object`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() != str)  # type: ignore
-        == "{((typeof foo) !== (`string`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() != int)  # type: ignore
-        == "{((typeof foo) !== (`number`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() != list)  # type: ignore
-        == "{((typeof foo) !== (`Array`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() != float)  # type: ignore
-        == "{((typeof foo) !== (`number`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() != tuple)  # type: ignore
-        == "{((typeof foo) !== (`Array`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() != dict)  # type: ignore
-        == "{((typeof foo) !== (`Object`))}"
+        str(ImmutableVar(_var_name="foo", _var_type=str).js_type()) == "(typeof(foo))"
     )
 
 
@@ -442,76 +380,81 @@ def test_basic_operations(TestObj):
         (v([1, 2, 3]), "[1, 2, 3]"),
         (v(set([1, 2, 3])), "[1, 2, 3]"),
         (v(["1", "2", "3"]), '["1", "2", "3"]'),
-        (BaseVar(_var_name="foo", _var_type=list)._var_set_state("state"), "state.foo"),
-        (BaseVar(_var_name="foo", _var_type=list), "foo"),
+        (
+            ImmutableVar(_var_name="foo")._var_set_state("state").to(list),
+            "state.foo",
+        ),
+        (ImmutableVar(_var_name="foo").to(list), "foo"),
         (v((1, 2, 3)), "[1, 2, 3]"),
         (v(("1", "2", "3")), '["1", "2", "3"]'),
         (
-            BaseVar(_var_name="foo", _var_type=tuple)._var_set_state("state"),
+            ImmutableVar(_var_name="foo")._var_set_state("state").to(tuple),
             "state.foo",
         ),
-        (BaseVar(_var_name="foo", _var_type=tuple), "foo"),
+        (ImmutableVar(_var_name="foo").to(tuple), "foo"),
     ],
 )
 def test_list_tuple_contains(var, expected):
-    assert str(var.contains(1)) == f"{{{expected}.includes(1)}}"
-    assert str(var.contains("1")) == f'{{{expected}.includes("1")}}'
-    assert str(var.contains(v(1))) == f"{{{expected}.includes(1)}}"
-    assert str(var.contains(v("1"))) == f'{{{expected}.includes("1")}}'
-    other_state_var = BaseVar(_var_name="other", _var_type=str)._var_set_state("state")
-    other_var = BaseVar(_var_name="other", _var_type=str)
-    assert str(var.contains(other_state_var)) == f"{{{expected}.includes(state.other)}}"
-    assert str(var.contains(other_var)) == f"{{{expected}.includes(other)}}"
+    assert str(var.contains(1)) == f"{expected}.includes(1)"
+    assert str(var.contains("1")) == f'{expected}.includes("1")'
+    assert str(var.contains(v(1))) == f"{expected}.includes(1)"
+    assert str(var.contains(v("1"))) == f'{expected}.includes("1")'
+    other_state_var = ImmutableVar(_var_name="other", _var_type=str)._var_set_state(
+        "state"
+    )
+    other_var = ImmutableVar(_var_name="other", _var_type=str)
+    assert str(var.contains(other_state_var)) == f"{expected}.includes(state.other)"
+    assert str(var.contains(other_var)) == f"{expected}.includes(other)"
 
 
 @pytest.mark.parametrize(
     "var, expected",
     [
         (v("123"), json.dumps("123")),
-        (BaseVar(_var_name="foo", _var_type=str)._var_set_state("state"), "state.foo"),
-        (BaseVar(_var_name="foo", _var_type=str), "foo"),
+        (ImmutableVar(_var_name="foo")._var_set_state("state").to(str), "state.foo"),
+        (ImmutableVar(_var_name="foo").to(str), "foo"),
     ],
 )
 def test_str_contains(var, expected):
-    assert str(var.contains("1")) == f'{{{expected}.includes("1")}}'
-    assert str(var.contains(v("1"))) == f'{{{expected}.includes("1")}}'
-    other_state_var = BaseVar(_var_name="other", _var_type=str)._var_set_state("state")
-    other_var = BaseVar(_var_name="other", _var_type=str)
-    assert str(var.contains(other_state_var)) == f"{{{expected}.includes(state.other)}}"
-    assert str(var.contains(other_var)) == f"{{{expected}.includes(other)}}"
+    assert str(var.contains("1")) == f'{expected}.includes("1")'
+    assert str(var.contains(v("1"))) == f'{expected}.includes("1")'
+    other_state_var = ImmutableVar(_var_name="other")._var_set_state("state").to(str)
+    other_var = ImmutableVar(_var_name="other").to(str)
+    assert str(var.contains(other_state_var)) == f"{expected}.includes(state.other)"
+    assert str(var.contains(other_var)) == f"{expected}.includes(other)"
     assert (
-        str(var.contains("1", "hello")) == f'{{{expected}.some(e=>e[`hello`]==="1")}}'
+        str(var.contains("1", "hello"))
+        == f'{expected}.some(obj => obj["hello"] === "1")'
     )
 
 
 @pytest.mark.parametrize(
     "var, expected",
     [
-        (v({"a": 1, "b": 2}), '{"a": 1, "b": 2}'),
-        (BaseVar(_var_name="foo", _var_type=dict)._var_set_state("state"), "state.foo"),
-        (BaseVar(_var_name="foo", _var_type=dict), "foo"),
+        (v({"a": 1, "b": 2}), '({ ["a"] : 1, ["b"] : 2 })'),
+        (ImmutableVar(_var_name="foo")._var_set_state("state").to(dict), "state.foo"),
+        (ImmutableVar(_var_name="foo").to(dict), "foo"),
     ],
 )
 def test_dict_contains(var, expected):
-    assert str(var.contains(1)) == f"{{{expected}.hasOwnProperty(1)}}"
-    assert str(var.contains("1")) == f'{{{expected}.hasOwnProperty("1")}}'
-    assert str(var.contains(v(1))) == f"{{{expected}.hasOwnProperty(1)}}"
-    assert str(var.contains(v("1"))) == f'{{{expected}.hasOwnProperty("1")}}'
-    other_state_var = BaseVar(_var_name="other", _var_type=str)._var_set_state("state")
-    other_var = BaseVar(_var_name="other", _var_type=str)
+    assert str(var.contains(1)) == f"{expected}.hasOwnProperty(1)"
+    assert str(var.contains("1")) == f'{expected}.hasOwnProperty("1")'
+    assert str(var.contains(v(1))) == f"{expected}.hasOwnProperty(1)"
+    assert str(var.contains(v("1"))) == f'{expected}.hasOwnProperty("1")'
+    other_state_var = ImmutableVar(_var_name="other")._var_set_state("state").to(str)
+    other_var = ImmutableVar(_var_name="other").to(str)
     assert (
-        str(var.contains(other_state_var))
-        == f"{{{expected}.hasOwnProperty(state.other)}}"
+        str(var.contains(other_state_var)) == f"{expected}.hasOwnProperty(state.other)"
     )
-    assert str(var.contains(other_var)) == f"{{{expected}.hasOwnProperty(other)}}"
+    assert str(var.contains(other_var)) == f"{expected}.hasOwnProperty(other)"
 
 
 @pytest.mark.parametrize(
     "var",
     [
-        BaseVar(_var_name="list", _var_type=List[int]),
-        BaseVar(_var_name="tuple", _var_type=Tuple[int, int]),
-        BaseVar(_var_name="str", _var_type=str),
+        ImmutableVar(_var_name="list", _var_type=List[int]).guess_type(),
+        ImmutableVar(_var_name="tuple", _var_type=Tuple[int, int]).guess_type(),
+        ImmutableVar(_var_name="str", _var_type=str).guess_type(),
     ],
 )
 def test_var_indexing_lists(var):
@@ -521,18 +464,21 @@ def test_var_indexing_lists(var):
         var : The str, list or tuple base var.
     """
     # Test basic indexing.
-    assert str(var[0]) == f"{{{var._var_name}.at(0)}}"
-    assert str(var[1]) == f"{{{var._var_name}.at(1)}}"
+    assert str(var[0]) == f"{var._var_name}.at(0)"
+    assert str(var[1]) == f"{var._var_name}.at(1)"
 
     # Test negative indexing.
-    assert str(var[-1]) == f"{{{var._var_name}.at(-1)}}"
+    assert str(var[-1]) == f"{var._var_name}.at(-1)"
 
 
 @pytest.mark.parametrize(
     "var, type_",
     [
-        (BaseVar(_var_name="list", _var_type=List[int]), [int, int]),
-        (BaseVar(_var_name="tuple", _var_type=Tuple[int, str]), [int, str]),
+        (ImmutableVar(_var_name="list", _var_type=List[int]).guess_type(), [int, int]),
+        (
+            ImmutableVar(_var_name="tuple", _var_type=Tuple[int, str]).guess_type(),
+            [int, str],
+        ),
     ],
 )
 def test_var_indexing_types(var, type_):
@@ -549,99 +495,105 @@ def test_var_indexing_types(var, type_):
 
 def test_var_indexing_str():
     """Test that we can index into str vars."""
-    str_var = BaseVar(_var_name="str", _var_type=str)
+    str_var = ImmutableVar(_var_name="str").to(str)
 
     # Test that indexing gives a type of Var[str].
-    assert isinstance(str_var[0], Var)
+    assert isinstance(str_var[0], ImmutableVar)
     assert str_var[0]._var_type == str
 
     # Test basic indexing.
-    assert str(str_var[0]) == "{str.at(0)}"
-    assert str(str_var[1]) == "{str.at(1)}"
+    assert str(str_var[0]) == "str.at(0)"
+    assert str(str_var[1]) == "str.at(1)"
 
     # Test negative indexing.
-    assert str(str_var[-1]) == "{str.at(-1)}"
+    assert str(str_var[-1]) == "str.at(-1)"
 
 
 @pytest.mark.parametrize(
     "var",
     [
-        (BaseVar(_var_name="foo", _var_type=int)),
-        (BaseVar(_var_name="bar", _var_type=float)),
+        (ImmutableVar(_var_name="foo", _var_type=int).guess_type()),
+        (ImmutableVar(_var_name="bar", _var_type=float).guess_type()),
     ],
 )
 def test_var_replace_with_invalid_kwargs(var):
     with pytest.raises(TypeError) as excinfo:
         var._replace(_this_should_fail=True)
-    assert "Unexpected keyword arguments" in str(excinfo.value)
+    assert "unexpected keyword argument" in str(excinfo.value)
 
 
 def test_computed_var_replace_with_invalid_kwargs():
-    @computed_var(initial_value=1)
+    @immutable_computed_var(initial_value=1)
     def test_var(state) -> int:
         return 1
 
     with pytest.raises(TypeError) as excinfo:
         test_var._replace(_random_kwarg=True)
-    assert "Unexpected keyword arguments" in str(excinfo.value)
+    assert "Unexpected keyword argument" in str(excinfo.value)
 
 
 @pytest.mark.parametrize(
     "var, index",
     [
-        (BaseVar(_var_name="lst", _var_type=List[int]), [1, 2]),
-        (BaseVar(_var_name="lst", _var_type=List[int]), {"name": "dict"}),
-        (BaseVar(_var_name="lst", _var_type=List[int]), {"set"}),
+        (ImmutableVar(_var_name="lst", _var_type=List[int]).guess_type(), [1, 2]),
         (
-            BaseVar(_var_name="lst", _var_type=List[int]),
+            ImmutableVar(_var_name="lst", _var_type=List[int]).guess_type(),
+            {"name": "dict"},
+        ),
+        (ImmutableVar(_var_name="lst", _var_type=List[int]).guess_type(), {"set"}),
+        (
+            ImmutableVar(_var_name="lst", _var_type=List[int]).guess_type(),
             (
                 1,
                 2,
             ),
         ),
-        (BaseVar(_var_name="lst", _var_type=List[int]), 1.5),
-        (BaseVar(_var_name="lst", _var_type=List[int]), "str"),
+        (ImmutableVar(_var_name="lst", _var_type=List[int]).guess_type(), 1.5),
+        (ImmutableVar(_var_name="lst", _var_type=List[int]).guess_type(), "str"),
         (
-            BaseVar(_var_name="lst", _var_type=List[int]),
-            BaseVar(_var_name="string_var", _var_type=str),
+            ImmutableVar(_var_name="lst", _var_type=List[int]).guess_type(),
+            ImmutableVar(_var_name="string_var", _var_type=str).guess_type(),
         ),
         (
-            BaseVar(_var_name="lst", _var_type=List[int]),
-            BaseVar(_var_name="float_var", _var_type=float),
+            ImmutableVar(_var_name="lst", _var_type=List[int]).guess_type(),
+            ImmutableVar(_var_name="float_var", _var_type=float).guess_type(),
         ),
         (
-            BaseVar(_var_name="lst", _var_type=List[int]),
-            BaseVar(_var_name="list_var", _var_type=List[int]),
+            ImmutableVar(_var_name="lst", _var_type=List[int]).guess_type(),
+            ImmutableVar(_var_name="list_var", _var_type=List[int]).guess_type(),
         ),
         (
-            BaseVar(_var_name="lst", _var_type=List[int]),
-            BaseVar(_var_name="set_var", _var_type=Set[str]),
+            ImmutableVar(_var_name="lst", _var_type=List[int]).guess_type(),
+            ImmutableVar(_var_name="set_var", _var_type=Set[str]).guess_type(),
         ),
         (
-            BaseVar(_var_name="lst", _var_type=List[int]),
-            BaseVar(_var_name="dict_var", _var_type=Dict[str, str]),
+            ImmutableVar(_var_name="lst", _var_type=List[int]).guess_type(),
+            ImmutableVar(_var_name="dict_var", _var_type=Dict[str, str]).guess_type(),
         ),
-        (BaseVar(_var_name="str", _var_type=str), [1, 2]),
-        (BaseVar(_var_name="lst", _var_type=str), {"name": "dict"}),
-        (BaseVar(_var_name="lst", _var_type=str), {"set"}),
+        (ImmutableVar(_var_name="str", _var_type=str).guess_type(), [1, 2]),
+        (ImmutableVar(_var_name="lst", _var_type=str).guess_type(), {"name": "dict"}),
+        (ImmutableVar(_var_name="lst", _var_type=str).guess_type(), {"set"}),
         (
-            BaseVar(_var_name="lst", _var_type=str),
-            BaseVar(_var_name="string_var", _var_type=str),
-        ),
-        (
-            BaseVar(_var_name="lst", _var_type=str),
-            BaseVar(_var_name="float_var", _var_type=float),
-        ),
-        (BaseVar(_var_name="str", _var_type=Tuple[str]), [1, 2]),
-        (BaseVar(_var_name="lst", _var_type=Tuple[str]), {"name": "dict"}),
-        (BaseVar(_var_name="lst", _var_type=Tuple[str]), {"set"}),
-        (
-            BaseVar(_var_name="lst", _var_type=Tuple[str]),
-            BaseVar(_var_name="string_var", _var_type=str),
+            ImmutableVar(_var_name="lst", _var_type=str).guess_type(),
+            ImmutableVar(_var_name="string_var", _var_type=str).guess_type(),
         ),
         (
-            BaseVar(_var_name="lst", _var_type=Tuple[str]),
-            BaseVar(_var_name="float_var", _var_type=float),
+            ImmutableVar(_var_name="lst", _var_type=str).guess_type(),
+            ImmutableVar(_var_name="float_var", _var_type=float).guess_type(),
+        ),
+        (ImmutableVar(_var_name="str", _var_type=Tuple[str]).guess_type(), [1, 2]),
+        (
+            ImmutableVar(_var_name="lst", _var_type=Tuple[str]).guess_type(),
+            {"name": "dict"},
+        ),
+        (ImmutableVar(_var_name="lst", _var_type=Tuple[str]).guess_type(), {"set"}),
+        (
+            ImmutableVar(_var_name="lst", _var_type=Tuple[str]).guess_type(),
+            ImmutableVar(_var_name="string_var", _var_type=str).guess_type(),
+        ),
+        (
+            ImmutableVar(_var_name="lst", _var_type=Tuple[str]).guess_type(),
+            ImmutableVar(_var_name="float_var", _var_type=float).guess_type(),
         ),
     ],
 )
@@ -659,9 +611,8 @@ def test_var_unsupported_indexing_lists(var, index):
 @pytest.mark.parametrize(
     "var",
     [
-        BaseVar(_var_name="lst", _var_type=List[int]),
-        BaseVar(_var_name="tuple", _var_type=Tuple[int, int]),
-        BaseVar(_var_name="str", _var_type=str),
+        ImmutableVar(_var_name="lst", _var_type=List[int]).guess_type(),
+        ImmutableVar(_var_name="tuple", _var_type=Tuple[int, int]).guess_type(),
     ],
 )
 def test_var_list_slicing(var):
@@ -670,84 +621,105 @@ def test_var_list_slicing(var):
     Args:
         var : The str, list or tuple base var.
     """
-    assert str(var[:1]) == f"{{{var._var_name}.slice(0, 1)}}"
-    assert str(var[:1]) == f"{{{var._var_name}.slice(0, 1)}}"
-    assert str(var[:]) == f"{{{var._var_name}.slice(0, undefined)}}"
+    assert str(var[:1]) == f"{var._var_name}.slice(undefined, 1)"
+    assert str(var[1:]) == f"{var._var_name}.slice(1, undefined)"
+    assert str(var[:]) == f"{var._var_name}.slice(undefined, undefined)"
+
+
+def test_str_var_slicing():
+    """Test that we can slice into str vars."""
+    str_var = ImmutableVar(_var_name="str").to(str)
+
+    # Test that slicing gives a type of Var[str].
+    assert isinstance(str_var[:1], ImmutableVar)
+    assert str_var[:1]._var_type == str
+
+    # Test basic slicing.
+    assert str(str_var[:1]) == 'str.split("").slice(undefined, 1).join("")'
+    assert str(str_var[1:]) == 'str.split("").slice(1, undefined).join("")'
+    assert str(str_var[:]) == 'str.split("").slice(undefined, undefined).join("")'
+    assert str(str_var[1:2]) == 'str.split("").slice(1, 2).join("")'
+
+    # Test negative slicing.
+    assert str(str_var[:-1]) == 'str.split("").slice(undefined, -1).join("")'
+    assert str(str_var[-1:]) == 'str.split("").slice(-1, undefined).join("")'
+    assert str(str_var[:-2]) == 'str.split("").slice(undefined, -2).join("")'
+    assert str(str_var[-2:]) == 'str.split("").slice(-2, undefined).join("")'
 
 
 def test_dict_indexing():
     """Test that we can index into dict vars."""
-    dct = BaseVar(_var_name="dct", _var_type=Dict[str, int])
+    dct = ImmutableVar(_var_name="dct").to(ObjectVar, Dict[str, str])
 
     # Check correct indexing.
-    assert str(dct["a"]) == '{dct["a"]}'
-    assert str(dct["asdf"]) == '{dct["asdf"]}'
+    assert str(dct["a"]) == 'dct["a"]'
+    assert str(dct["asdf"]) == 'dct["asdf"]'
 
 
 @pytest.mark.parametrize(
     "var, index",
     [
         (
-            BaseVar(_var_name="dict", _var_type=Dict[str, str]),
+            ImmutableVar(_var_name="dict", _var_type=Dict[str, str]).guess_type(),
             [1, 2],
         ),
         (
-            BaseVar(_var_name="dict", _var_type=Dict[str, str]),
+            ImmutableVar(_var_name="dict", _var_type=Dict[str, str]).guess_type(),
             {"name": "dict"},
         ),
         (
-            BaseVar(_var_name="dict", _var_type=Dict[str, str]),
+            ImmutableVar(_var_name="dict", _var_type=Dict[str, str]).guess_type(),
             {"set"},
         ),
         (
-            BaseVar(_var_name="dict", _var_type=Dict[str, str]),
+            ImmutableVar(_var_name="dict", _var_type=Dict[str, str]).guess_type(),
             (
                 1,
                 2,
             ),
         ),
         (
-            BaseVar(_var_name="lst", _var_type=Dict[str, str]),
-            BaseVar(_var_name="list_var", _var_type=List[int]),
+            ImmutableVar(_var_name="lst", _var_type=Dict[str, str]).guess_type(),
+            ImmutableVar(_var_name="list_var", _var_type=List[int]).guess_type(),
         ),
         (
-            BaseVar(_var_name="lst", _var_type=Dict[str, str]),
-            BaseVar(_var_name="set_var", _var_type=Set[str]),
+            ImmutableVar(_var_name="lst", _var_type=Dict[str, str]).guess_type(),
+            ImmutableVar(_var_name="set_var", _var_type=Set[str]).guess_type(),
         ),
         (
-            BaseVar(_var_name="lst", _var_type=Dict[str, str]),
-            BaseVar(_var_name="dict_var", _var_type=Dict[str, str]),
+            ImmutableVar(_var_name="lst", _var_type=Dict[str, str]).guess_type(),
+            ImmutableVar(_var_name="dict_var", _var_type=Dict[str, str]).guess_type(),
         ),
         (
-            BaseVar(_var_name="df", _var_type=DataFrame),
+            ImmutableVar(_var_name="df", _var_type=DataFrame).guess_type(),
             [1, 2],
         ),
         (
-            BaseVar(_var_name="df", _var_type=DataFrame),
+            ImmutableVar(_var_name="df", _var_type=DataFrame).guess_type(),
             {"name": "dict"},
         ),
         (
-            BaseVar(_var_name="df", _var_type=DataFrame),
+            ImmutableVar(_var_name="df", _var_type=DataFrame).guess_type(),
             {"set"},
         ),
         (
-            BaseVar(_var_name="df", _var_type=DataFrame),
+            ImmutableVar(_var_name="df", _var_type=DataFrame).guess_type(),
             (
                 1,
                 2,
             ),
         ),
         (
-            BaseVar(_var_name="df", _var_type=DataFrame),
-            BaseVar(_var_name="list_var", _var_type=List[int]),
+            ImmutableVar(_var_name="df", _var_type=DataFrame).guess_type(),
+            ImmutableVar(_var_name="list_var", _var_type=List[int]).guess_type(),
         ),
         (
-            BaseVar(_var_name="df", _var_type=DataFrame),
-            BaseVar(_var_name="set_var", _var_type=Set[str]),
+            ImmutableVar(_var_name="df", _var_type=DataFrame).guess_type(),
+            ImmutableVar(_var_name="set_var", _var_type=Set[str]).guess_type(),
         ),
         (
-            BaseVar(_var_name="df", _var_type=DataFrame),
-            BaseVar(_var_name="dict_var", _var_type=Dict[str, str]),
+            ImmutableVar(_var_name="df", _var_type=DataFrame).guess_type(),
+            ImmutableVar(_var_name="dict_var", _var_type=Dict[str, str]).guess_type(),
         ),
     ],
 )
@@ -1079,7 +1051,9 @@ def nested_base():
         bar: Boo
         baz: int
 
-    parent_obj = LiteralVar.create(Foo(bar=Boo(foo="bar", bar=5), baz=5))
+    parent_obj = LiteralObjectVar.create(
+        Foo(bar=Boo(foo="bar", bar=5), baz=5).dict(), Foo
+    )
 
     assert (
         str(parent_obj.bar.foo)
@@ -1104,7 +1078,7 @@ def test_retrival():
     assert REFLEX_VAR_OPENING_TAG in f_string
     assert REFLEX_VAR_CLOSING_TAG in f_string
 
-    result_var_data = Var.create_safe(f_string)._var_data
+    result_var_data = LiteralVar.create(f_string)._get_all_var_data()
     result_immutable_var_data = ImmutableVar.create_safe(f_string)._var_data
     assert result_var_data is not None and result_immutable_var_data is not None
     assert (
@@ -1114,30 +1088,18 @@ def test_retrival():
     )
     assert (
         result_var_data.imports
-        == (
-            result_immutable_var_data.imports
-            if isinstance(result_immutable_var_data.imports, dict)
-            else {
-                k: list(v)
-                for k, v in result_immutable_var_data.imports
-                if k in original_var_data.imports
-            }
-        )
+        == result_immutable_var_data.imports
         == original_var_data.imports
     )
     assert (
-        list(result_var_data.hooks.keys())
-        == (
-            list(result_immutable_var_data.hooks.keys())
-            if isinstance(result_immutable_var_data.hooks, dict)
-            else list(result_immutable_var_data.hooks)
-        )
-        == list(original_var_data.hooks.keys())
+        tuple(result_var_data.hooks)
+        == tuple(result_immutable_var_data.hooks)
+        == tuple(original_var_data.hooks)
     )
 
 
 def test_fstring_concat():
-    original_var_with_data = Var.create_safe(
+    original_var_with_data = LiteralVar.create(
         "imagination", _var_data=VarData(state="fear")
     )
 
@@ -1160,9 +1122,9 @@ def test_fstring_concat():
         ),
     )
 
-    assert str(string_concat) == '("foo"+imagination+"bar"+consequences+"baz")'
+    assert str(string_concat) == '("fooimaginationbar"+consequences+"baz")'
     assert isinstance(string_concat, ConcatVarOperation)
-    assert string_concat._get_all_var_data() == ImmutableVarData(
+    assert string_concat._get_all_var_data() == VarData(
         state="fear",
         imports={
             "react": [ImportVar(tag="useRef")],
@@ -1172,17 +1134,22 @@ def test_fstring_concat():
     )
 
 
+var = ImmutableVar(_var_name="var", _var_type=str)
+myvar = ImmutableVar(_var_name="myvar", _var_type=int)._var_set_state("state")
+x = ImmutableVar(_var_name="x", _var_type=str)
+
+
 @pytest.mark.parametrize(
     "out, expected",
     [
-        (f"{BaseVar(_var_name='var', _var_type=str)}", "${var}"),
+        (f"{var}", f"<reflex.Var>{hash(var)}</reflex.Var>var"),
         (
-            f"testing f-string with {BaseVar(_var_name='myvar', _var_type=int)._var_set_state('state')}",
-            'testing f-string with $<reflex.Var>{"state": "state", "interpolations": [], "imports": {"/utils/context": [{"tag": "StateContexts", "is_default": false, "alias": null, "install": true, "render": true, "transpile": false}], "react": [{"tag": "useContext", "is_default": false, "alias": null, "install": true, "render": true, "transpile": false}]}, "hooks": {"const state = useContext(StateContexts.state)": null}, "string_length": 13}</reflex.Var>{state.myvar}',
+            f"testing f-string with {myvar}",
+            f"testing f-string with <reflex.Var>{hash(myvar)}</reflex.Var>state.myvar",
         ),
         (
-            f"testing local f-string {BaseVar(_var_name='x', _var_is_local=True, _var_type=str)}",
-            "testing local f-string x",
+            f"testing local f-string {x}",
+            f"testing local f-string <reflex.Var>{hash(x)}</reflex.Var>x",
         ),
     ],
 )
@@ -1195,8 +1162,8 @@ def test_fstrings(out, expected):
     [
         ([1], ""),
         ({"a": 1}, ""),
-        ([Var.create_safe(1)._var_set_state("foo")], "foo"),
-        ({"a": Var.create_safe(1)._var_set_state("foo")}, "foo"),
+        ([LiteralVar.create(1)._var_set_state("foo")], "foo"),
+        ({"a": LiteralVar.create(1)._var_set_state("foo")}, "foo"),
     ],
 )
 def test_extract_state_from_container(value, expect_state):
@@ -1206,7 +1173,9 @@ def test_extract_state_from_container(value, expect_state):
         value: The value to create a var from.
         expect_state: The expected state.
     """
-    assert Var.create_safe(value)._var_state == expect_state
+    var_data = LiteralVar.create(value)._get_all_var_data()
+    var_state = var_data.state if var_data else ""
+    assert var_state == expect_state
 
 
 @pytest.mark.parametrize(
@@ -1222,25 +1191,21 @@ def test_fstring_roundtrip(value):
     Args:
         value: The value to create a Var from.
     """
-    var = BaseVar.create_safe(value)._var_set_state("state")
-    rt_var = Var.create_safe(f"{var}")
+    var = ImmutableVar.create_safe(value)._var_set_state("state")
+    rt_var = LiteralVar.create(f"{var}")
     assert var._var_state == rt_var._var_state
-    assert var._var_full_name_needs_state_prefix
-    assert not rt_var._var_full_name_needs_state_prefix
-    assert rt_var._var_name == var._var_full_name
+    assert str(rt_var) == str(var)
 
 
 @pytest.mark.parametrize(
     "var",
     [
-        BaseVar(_var_name="var", _var_type=int),
-        BaseVar(_var_name="var", _var_type=float),
-        BaseVar(_var_name="var", _var_type=str),
-        BaseVar(_var_name="var", _var_type=bool),
-        BaseVar(_var_name="var", _var_type=dict),
-        BaseVar(_var_name="var", _var_type=tuple),
-        BaseVar(_var_name="var", _var_type=set),
-        BaseVar(_var_name="var", _var_type=None),
+        ImmutableVar(_var_name="var", _var_type=int).guess_type(),
+        ImmutableVar(_var_name="var", _var_type=float).guess_type(),
+        ImmutableVar(_var_name="var", _var_type=str).guess_type(),
+        ImmutableVar(_var_name="var", _var_type=bool).guess_type(),
+        ImmutableVar(_var_name="var", _var_type=dict).guess_type(),
+        ImmutableVar(_var_name="var", _var_type=None).guess_type(),
     ],
 )
 def test_unsupported_types_for_reverse(var):
@@ -1251,16 +1216,16 @@ def test_unsupported_types_for_reverse(var):
     """
     with pytest.raises(TypeError) as err:
         var.reverse()
-    assert err.value.args[0] == f"Cannot reverse non-list var var."
+    assert err.value.args[0] == f"Cannot reverse non-list var."
 
 
 @pytest.mark.parametrize(
     "var",
     [
-        BaseVar(_var_name="var", _var_type=int),
-        BaseVar(_var_name="var", _var_type=float),
-        BaseVar(_var_name="var", _var_type=bool),
-        BaseVar(_var_name="var", _var_type=None),
+        ImmutableVar(_var_name="var", _var_type=int).guess_type(),
+        ImmutableVar(_var_name="var", _var_type=float).guess_type(),
+        ImmutableVar(_var_name="var", _var_type=bool).guess_type(),
+        ImmutableVar(_var_name="var", _var_type=None).guess_type(),
     ],
 )
 def test_unsupported_types_for_contains(var):
@@ -1273,34 +1238,34 @@ def test_unsupported_types_for_contains(var):
         assert var.contains(1)
     assert (
         err.value.args[0]
-        == f"Var var of type {var._var_type} does not support contains check."
+        == f"Var of type {var._var_type} does not support contains check."
     )
 
 
 @pytest.mark.parametrize(
     "other",
     [
-        BaseVar(_var_name="other", _var_type=int),
-        BaseVar(_var_name="other", _var_type=float),
-        BaseVar(_var_name="other", _var_type=bool),
-        BaseVar(_var_name="other", _var_type=list),
-        BaseVar(_var_name="other", _var_type=dict),
-        BaseVar(_var_name="other", _var_type=tuple),
-        BaseVar(_var_name="other", _var_type=set),
+        ImmutableVar(_var_name="other", _var_type=int).guess_type(),
+        ImmutableVar(_var_name="other", _var_type=float).guess_type(),
+        ImmutableVar(_var_name="other", _var_type=bool).guess_type(),
+        ImmutableVar(_var_name="other", _var_type=list).guess_type(),
+        ImmutableVar(_var_name="other", _var_type=dict).guess_type(),
+        ImmutableVar(_var_name="other", _var_type=tuple).guess_type(),
+        ImmutableVar(_var_name="other", _var_type=set).guess_type(),
     ],
 )
 def test_unsupported_types_for_string_contains(other):
     with pytest.raises(TypeError) as err:
-        assert BaseVar(_var_name="var", _var_type=str).contains(other)
+        assert ImmutableVar(_var_name="var").to(str).contains(other)
     assert (
         err.value.args[0]
-        == f"'in <string>' requires string as left operand, not {other._var_type}"
+        == f"Unsupported Operand type(s) for contains: ToStringOperation, {type(other).__name__}"
     )
 
 
 def test_unsupported_default_contains():
     with pytest.raises(TypeError) as err:
-        assert 1 in BaseVar(_var_name="var", _var_type=str)
+        assert 1 in ImmutableVar(_var_name="var", _var_type=str).guess_type()
     assert (
         err.value.args[0]
         == "'in' operator not supported for Var types, use Var.contains() instead."
@@ -1311,8 +1276,8 @@ def test_unsupported_default_contains():
     "operand1_var,operand2_var,operators",
     [
         (
-            Var.create(10),
-            Var.create(5),
+            LiteralVar.create(10),
+            LiteralVar.create(5),
             [
                 "+",
                 "-",
@@ -1330,13 +1295,13 @@ def test_unsupported_default_contains():
             ],
         ),
         (
-            Var.create(10.5),
-            Var.create(5),
+            LiteralVar.create(10.5),
+            LiteralVar.create(5),
             ["+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="],
         ),
         (
-            Var.create(5),
-            Var.create(True),
+            LiteralVar.create(5),
+            LiteralVar.create(True),
             [
                 "+",
                 "-",
@@ -1354,22 +1319,26 @@ def test_unsupported_default_contains():
             ],
         ),
         (
-            Var.create(10.5),
-            Var.create(5.5),
+            LiteralVar.create(10.5),
+            LiteralVar.create(5.5),
             ["+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="],
         ),
         (
-            Var.create(10.5),
-            Var.create(True),
+            LiteralVar.create(10.5),
+            LiteralVar.create(True),
             ["+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="],
         ),
-        (Var.create("10"), Var.create("5"), ["+", ">", "<", "<=", ">="]),
-        (Var.create([10, 20]), Var.create([5, 6]), ["+", ">", "<", "<=", ">="]),
-        (Var.create([10, 20]), Var.create(5), ["*"]),
-        (Var.create([10, 20]), Var.create(True), ["*"]),
+        (LiteralVar.create("10"), LiteralVar.create("5"), ["+", ">", "<", "<=", ">="]),
         (
-            Var.create(True),
-            Var.create(True),
+            LiteralVar.create([10, 20]),
+            LiteralVar.create([5, 6]),
+            ["+", ">", "<", "<=", ">="],
+        ),
+        (LiteralVar.create([10, 20]), LiteralVar.create(5), ["*"]),
+        (LiteralVar.create([10, 20]), LiteralVar.create(True), ["*"]),
+        (
+            LiteralVar.create(True),
+            LiteralVar.create(True),
             [
                 "+",
                 "-",
@@ -1397,16 +1366,28 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
         operators: list of supported operators.
     """
     for operator in operators:
-        operand1_var.operation(op=operator, other=operand2_var)
-        operand1_var.operation(op=operator, other=operand2_var, flip=True)
+        print(
+            "testing",
+            operator,
+            "on",
+            operand1_var,
+            operand2_var,
+            " of types",
+            type(operand1_var),
+            type(operand2_var),
+        )
+        eval(f"operand1_var {operator} operand2_var")
+        eval(f"operand2_var {operator} operand1_var")
+        # operand1_var.operation(op=operator, other=operand2_var)
+        # operand1_var.operation(op=operator, other=operand2_var, flip=True)
 
 
 @pytest.mark.parametrize(
     "operand1_var,operand2_var,operators",
     [
         (
-            Var.create(10),
-            Var.create(5),
+            LiteralVar.create(10),
+            LiteralVar.create(5),
             [
                 "^",
                 "<<",
@@ -1414,41 +1395,35 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
             ],
         ),
         (
-            Var.create(10.5),
-            Var.create(5),
+            LiteralVar.create(10.5),
+            LiteralVar.create(5),
             [
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create(10.5),
-            Var.create(True),
+            LiteralVar.create(10.5),
+            LiteralVar.create(True),
             [
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create(10.5),
-            Var.create(5.5),
+            LiteralVar.create(10.5),
+            LiteralVar.create(5.5),
             [
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create("10"),
-            Var.create("5"),
+            LiteralVar.create("10"),
+            LiteralVar.create("5"),
             [
                 "-",
                 "/",
@@ -1456,16 +1431,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "*",
                 "%",
                 "**",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create([5, 6]),
+            LiteralVar.create([10, 20]),
+            LiteralVar.create([5, 6]),
             [
                 "-",
                 "/",
@@ -1473,16 +1446,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "*",
                 "%",
                 "**",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create(5),
+            LiteralVar.create([10, 20]),
+            LiteralVar.create(5),
             [
                 "+",
                 "-",
@@ -1494,16 +1465,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create(True),
+            LiteralVar.create([10, 20]),
+            LiteralVar.create(True),
             [
                 "+",
                 "-",
@@ -1515,16 +1484,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create("5"),
+            LiteralVar.create([10, 20]),
+            LiteralVar.create("5"),
             [
                 "+",
                 "-",
@@ -1537,16 +1504,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create({"key": "value"}),
+            LiteralVar.create([10, 20]),
+            LiteralVar.create({"key": "value"}),
             [
                 "+",
                 "-",
@@ -1559,16 +1524,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create(5.5),
+            LiteralVar.create([10, 20]),
+            LiteralVar.create(5.5),
             [
                 "+",
                 "-",
@@ -1581,16 +1544,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create({"key": "value"}),
-            Var.create({"another_key": "another_value"}),
+            LiteralVar.create({"key": "value"}),
+            LiteralVar.create({"another_key": "another_value"}),
             [
                 "+",
                 "-",
@@ -1603,16 +1564,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create({"key": "value"}),
-            Var.create(5),
+            LiteralVar.create({"key": "value"}),
+            LiteralVar.create(5),
             [
                 "+",
                 "-",
@@ -1625,16 +1584,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create({"key": "value"}),
-            Var.create(True),
+            LiteralVar.create({"key": "value"}),
+            LiteralVar.create(True),
             [
                 "+",
                 "-",
@@ -1647,16 +1604,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create({"key": "value"}),
-            Var.create(5.5),
+            LiteralVar.create({"key": "value"}),
+            LiteralVar.create(5.5),
             [
                 "+",
                 "-",
@@ -1669,16 +1624,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create({"key": "value"}),
-            Var.create("5"),
+            LiteralVar.create({"key": "value"}),
+            LiteralVar.create("5"),
             [
                 "+",
                 "-",
@@ -1691,44 +1644,48 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
     ],
 )
 def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List[str]):
     for operator in operators:
+        print(f"testing {operator} on {str(operand1_var)} and {str(operand2_var)}")
         with pytest.raises(TypeError):
-            operand1_var.operation(op=operator, other=operand2_var)
+            print(eval(f"operand1_var {operator} operand2_var"))
+            # operand1_var.operation(op=operator, other=operand2_var)
 
         with pytest.raises(TypeError):
-            operand1_var.operation(op=operator, other=operand2_var, flip=True)
+            print(eval(f"operand2_var {operator} operand1_var"))
+            # operand1_var.operation(op=operator, other=operand2_var, flip=True)
 
 
 @pytest.mark.parametrize(
     "var, expected",
     [
-        (Var.create("string_value", _var_is_string=True), "`string_value`"),
-        (Var.create(1), "1"),
-        (Var.create([1, 2, 3]), "[1, 2, 3]"),
-        (Var.create({"foo": "bar"}), '{"foo": "bar"}'),
+        (LiteralVar.create("string_value"), '"string_value"'),
+        (LiteralVar.create(1), "1"),
+        (LiteralVar.create([1, 2, 3]), "[1, 2, 3]"),
+        (LiteralVar.create({"foo": "bar"}), '({ ["foo"] : "bar" })'),
         (
-            Var.create(ATestState.value, _var_is_string=True),
+            LiteralVar.create(ATestState.value),
             f"{ATestState.get_full_name()}.value",
         ),
         (
             LiteralVar.create(f"{ATestState.value} string"),
             f'({ATestState.get_full_name()}.value+" string")',
         ),
-        (Var.create(ATestState.dict_val), f"{ATestState.get_full_name()}.dict_val"),
+        (
+            LiteralVar.create(ATestState.dict_val),
+            f"{ATestState.get_full_name()}.dict_val",
+        ),
     ],
 )
 def test_var_name_unwrapped(var, expected):
-    assert var._var_name_unwrapped == expected
+    assert str(var) == expected
 
 
 def cv_fget(state: BaseState) -> int:
@@ -1740,11 +1697,11 @@ def cv_fget(state: BaseState) -> int:
     [
         (["a"], {"a"}),
         (["b"], {"b"}),
-        ([ComputedVar(fget=cv_fget)], {"cv_fget"}),
+        ([ImmutableComputedVar(fget=cv_fget)], {"cv_fget"}),
     ],
 )
-def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
-    @computed_var(
+def test_computed_var_deps(deps: List[Union[str, ImmutableVar]], expected: Set[str]):
+    @immutable_computed_var(
         deps=deps,
         cache=True,
     )
@@ -1765,7 +1722,7 @@ def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
 def test_invalid_computed_var_deps(deps: List):
     with pytest.raises(TypeError):
 
-        @computed_var(
+        @immutable_computed_var(
             deps=deps,
             cache=True,
         )

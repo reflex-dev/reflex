@@ -6,9 +6,8 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from reflex.base import Base
 from reflex.event import EventChain
-from reflex.ivars.base import LiteralVar
+from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.utils import format, types
-from reflex.vars import Var
 
 
 class Tag(Base):
@@ -27,7 +26,7 @@ class Tag(Base):
     args: Optional[Tuple[str, ...]] = None
 
     # Special props that aren't key value pairs.
-    special_props: Set[Var] = set()
+    special_props: Set[ImmutableVar] = set()
 
     # The children components.
     children: List[Any] = []
@@ -93,7 +92,7 @@ class Tag(Base):
         return self
 
     @staticmethod
-    def is_valid_prop(prop: Optional[Var]) -> bool:
+    def is_valid_prop(prop: Optional[ImmutableVar]) -> bool:
         """Check if the prop is valid.
 
         Args:

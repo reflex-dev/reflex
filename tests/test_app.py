@@ -35,6 +35,7 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import Event
+from reflex.ivars.base import immutable_computed_var
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
 from reflex.state import (
@@ -50,7 +51,6 @@ from reflex.state import (
 )
 from reflex.style import Style
 from reflex.utils import exceptions, format
-from reflex.vars import computed_var
 
 from .conftest import chdir
 from .states import (
@@ -906,7 +906,7 @@ class DynamicState(BaseState):
         """Increment the counter var."""
         self.counter = self.counter + 1
 
-    @computed_var(cache=True)
+    @immutable_computed_var(cache=True)
     def comp_dynamic(self) -> str:
         """A computed var that depends on the dynamic var.
 
@@ -1499,11 +1499,11 @@ def test_app_with_valid_var_dependencies(compilable_app: tuple[App, Path]):
         base: int = 0
         _backend: int = 0
 
-        @computed_var(cache=True)
+        @immutable_computed_var(cache=True)
         def foo(self) -> str:
             return "foo"
 
-        @computed_var(deps=["_backend", "base", foo], cache=True)
+        @immutable_computed_var(deps=["_backend", "base", foo], cache=True)
         def bar(self) -> str:
             return "bar"
 
@@ -1515,7 +1515,7 @@ def test_app_with_invalid_var_dependencies(compilable_app: tuple[App, Path]):
     app, _ = compilable_app
 
     class InvalidDepState(BaseState):
-        @computed_var(deps=["foolksjdf"], cache=True)
+        @immutable_computed_var(deps=["foolksjdf"], cache=True)
         def bar(self) -> str:
             return "bar"
 
