@@ -7,6 +7,7 @@ import dataclasses
 import random
 import re
 import string
+from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -32,7 +33,7 @@ from reflex.utils.imports import (
     ParsedImportDict,
     parse_imports,
 )
-from reflex.utils.types import Self, get_origin, override
+from reflex.utils.types import Self, override
 
 if TYPE_CHECKING:
     from reflex.ivars import ImmutableVar
@@ -500,6 +501,9 @@ def get_uuid_string_var() -> ImmutableVar:
         _var_type=str,
         _var_data=unique_uuid_var_data,
     )
+
+
+VAR_CALLABLE = Callable[[Any], Var]
 
 
 class HybridProperty(property):
