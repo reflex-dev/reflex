@@ -1773,7 +1773,7 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
         return self._fget
 
 
-class DynamicRouteVar(ImmutableComputedVar[str | List[str]]):
+class DynamicRouteVar(ImmutableComputedVar[Union[str, List[str]]]):
     """A ComputedVar that represents a dynamic route."""
 
     pass
