@@ -431,8 +431,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return [
             v
             for mixin in cls._mixins() + [cls]
-            for v in mixin.__dict__.values()
+            for name, v in mixin.__dict__.items()
             if isinstance(v, (ComputedVar, ImmutableComputedVar))
+            and name not in cls.inherited_vars
         ]
 
     @classmethod
@@ -494,21 +495,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if cls.get_name() in set(
                 c.get_name() for c in parent_state.class_subclasses
             ):
-                if is_testing_env():
-                    # Clear existing subclass with same name when app is reloaded via
-                    # utils.prerequisites.get_app(reload=True)
-                    parent_state.class_subclasses = set(
-                        c
-                        for c in parent_state.class_subclasses
-                        if c.get_name() != cls.get_name()
-                    )
-                else:
-                    # During normal operation, subclasses cannot have the same name, even if they are
-                    # defined in different modules.
-                    raise StateValueError(
-                        f"The substate class '{cls.get_name()}' has been defined multiple times. "
-                        "Shadowing substate classes is not allowed."
-                    )
+                # This should not happen, since we have added module prefix to state names in #3214
+                raise StateValueError(
+                    f"The substate class '{cls.get_name()}' has been defined multiple times. "
+                    "Shadowing substate classes is not allowed."
+                )
             # Track this new subclass in the parent state's subclasses set.
             parent_state.class_subclasses.add(cls)
 
@@ -560,6 +551,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         for mixin in cls._mixins():
             for name, value in mixin.__dict__.items():
+                if name in cls.inherited_vars:
+                    continue
                 if isinstance(value, (ComputedVar, ImmutableComputedVar)):
                     fget = cls._copy_fn(value.fget)
                     newcv = value._replace(
@@ -591,6 +584,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
 
+        # Initialize per-class var dependency tracking.
+        cls._computed_var_dependencies = defaultdict(set)
+        cls._substate_var_dependencies = defaultdict(set)
         cls._init_var_dependency_dicts()
 
     @staticmethod
@@ -660,10 +656,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Additional updates tracking dicts for vars and substates that always
         need to be recomputed.
         """
-        # Initialize per-class var dependency tracking.
-        cls._computed_var_dependencies = defaultdict(set)
-        cls._substate_var_dependencies = defaultdict(set)
-
         inherited_vars = set(cls.inherited_vars).union(
             set(cls.inherited_backend_vars),
         )
@@ -1013,20 +1005,20 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             args: a dict of args
         """
+        if not args:
+            return
 
         def argsingle_factory(param):
-            @ComputedVar
             def inner_func(self) -> str:
                 return self.router.page.params.get(param, "")
 
-            return inner_func
+            return ComputedVar(fget=inner_func, cache=True)
 
         def arglist_factory(param):
-            @ComputedVar
             def inner_func(self) -> List:
                 return self.router.page.params.get(param, [])
 
-            return inner_func
+            return ComputedVar(fget=inner_func, cache=True)
 
         for param, value in args.items():
             if value == constants.RouteArgType.SINGLE:
@@ -1040,8 +1032,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cls.vars[param] = cls.computed_vars[param] = func._var_set_state(cls)  # type: ignore
             setattr(cls, param, func)
 
-            # Reinitialize dependency tracking dicts.
-            cls._init_var_dependency_dicts()
+        # Reinitialize dependency tracking dicts.
+        cls._init_var_dependency_dicts()
 
     def __getattribute__(self, name: str) -> Any:
         """Get the state var.
@@ -1792,7 +1784,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             prop_name: self.get_value(getattr(self, prop_name))
             for prop_name in self.base_vars
         }
-        if initial:
+        if initial and include_computed:
             computed_vars = {
                 # Include initial computed vars.
                 prop_name: (
@@ -2295,11 +2287,12 @@ class StateProxy(wrapt.ObjectProxy):
         Returns:
             The state update.
         """
+        original_mutable = self._self_mutable
         self._self_mutable = True
         try:
             return self.__wrapped__._as_state_update(*args, **kwargs)
         finally:
-            self._self_mutable = False
+            self._self_mutable = original_mutable
 
 
 class StateUpdate(Base):
@@ -2457,6 +2450,20 @@ def _default_token_expiration() -> int:
     return get_config().redis_token_expiration
 
 
+def _serialize_type(type_: Any) -> str:
+    """Serialize a type.
+
+    Args:
+        type_: The type to serialize.
+
+    Returns:
+        The serialized type.
+    """
+    if not inspect.isclass(type_):
+        return f"{type_}"
+    return f"{type_.__module__}.{type_.__qualname__}"
+
+
 def state_to_schema(
     state: BaseState,
 ) -> List[
@@ -2480,7 +2487,7 @@ def state_to_schema(
             (
                 field_name,
                 model_field.name,
-                model_field.type_,
+                _serialize_type(model_field.type_),
                 (
                     model_field.required
                     if isinstance(model_field.required, bool)
@@ -2490,6 +2497,14 @@ def state_to_schema(
             for field_name, model_field in state.__fields__.items()
         )
     )
+
+
+def reset_disk_state_manager():
+    """Reset the disk state manager."""
+    states_directory = prerequisites.get_web_dir() / constants.Dirs.STATES
+    if states_directory.exists():
+        for path in states_directory.iterdir():
+            path.unlink()
 
 
 class StateManagerDisk(StateManager):
@@ -2643,7 +2658,7 @@ class StateManagerDisk(StateManager):
 
         self.states[substate_token] = substate
 
-        state_dilled = dill.dumps((state_to_schema(substate), substate), byref=True)
+        state_dilled = dill.dumps((state_to_schema(substate), substate))
         if not self.states_directory.exists():
             self.states_directory.mkdir(parents=True, exist_ok=True)
         self.token_path(substate_token).write_bytes(state_dilled)
@@ -3592,5 +3607,7 @@ def reload_state_module(
         if subclass.__module__ == module and module is not None:
             state.class_subclasses.remove(subclass)
             state._always_dirty_substates.discard(subclass.get_name())
-    state._init_var_dependency_dicts()
+            state._computed_var_dependencies = defaultdict(set)
+            state._substate_var_dependencies = defaultdict(set)
+            state._init_var_dependency_dicts()
     state.get_class_substate.cache_clear()

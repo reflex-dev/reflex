@@ -28,6 +28,7 @@ import typer
 from alembic.util.exc import CommandError
 from packaging import version
 from redis import Redis as RedisSync
+from redis import exceptions
 from redis.asyncio import Redis
 
 from reflex import constants, model
@@ -324,24 +325,43 @@ def parse_redis_url() -> str | dict | None:
     """Parse the REDIS_URL in config if applicable.
 
     Returns:
-        If redis-py syntax, return the URL as it is. Otherwise, return the host/port/db as a dict.
+        If url is non-empty, return the URL as it is.
+
+    Raises:
+        ValueError: If the REDIS_URL is not a supported scheme.
     """
     config = get_config()
     if not config.redis_url:
         return None
-    if config.redis_url.startswith(("redis://", "rediss://", "unix://")):
-        return config.redis_url
-    console.deprecate(
-        feature_name="host[:port] style redis urls",
-        reason="redis-py url syntax is now being used",
-        deprecation_version="0.3.6",
-        removal_version="0.6.0",
-    )
-    redis_url, has_port, redis_port = config.redis_url.partition(":")
-    if not has_port:
-        redis_port = 6379
-    console.info(f"Using redis at {config.redis_url}")
-    return dict(host=redis_url, port=int(redis_port), db=0)
+    if not config.redis_url.startswith(("redis://", "rediss://", "unix://")):
+        raise ValueError(
+            "REDIS_URL must start with 'redis://', 'rediss://', or 'unix://'."
+        )
+    return config.redis_url
+
+
+async def get_redis_status() -> bool | None:
+    """Checks the status of the Redis connection.
+
+    Attempts to connect to Redis and send a ping command to verify connectivity.
+
+    Returns:
+        bool or None: The status of the Redis connection:
+            - True: Redis is accessible and responding.
+            - False: Redis is not accessible due to a connection error.
+            - None: Redis not used i.e redis_url is not set in rxconfig.
+    """
+    try:
+        status = True
+        redis_client = get_redis_sync()
+        if redis_client is not None:
+            redis_client.ping()
+        else:
+            status = None
+    except exceptions.RedisError:
+        status = False
+
+    return status
 
 
 def validate_app_name(app_name: str | None = None) -> str:

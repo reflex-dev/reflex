@@ -33,7 +33,7 @@ from typing import (
 
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware import cors
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
@@ -65,7 +65,7 @@ from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
 from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec, window_alert
-from reflex.model import Model
+from reflex.model import Model, get_db_status
 from reflex.page import (
     DECORATED_PAGES,
 )
@@ -269,13 +269,12 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 "`connect_error_component` is deprecated, use `overlay_component` instead"
             )
         super().__init__(**kwargs)
-        base_state_subclasses = BaseState.__subclasses__()
 
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
-        if not is_testing_env() and len(base_state_subclasses) > 1:
-            # Only one Base State class is allowed.
+        if not is_testing_env() and BaseState.__subclasses__() != [State]:
+            # Only rx.State is allowed as Base State subclass.
             raise ValueError(
-                "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
+                "rx.BaseState cannot be subclassed directly. Use rx.State instead"
             )
 
         if "breakpoints" in self.style:
@@ -377,6 +376,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         """Add default api endpoints (ping)."""
         # To test the server.
         self.api.get(str(constants.Endpoint.PING))(ping)
+        self.api.get(str(constants.Endpoint.HEALTH))(health)
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
@@ -1317,6 +1317,38 @@ async def ping() -> str:
         The response.
     """
     return "pong"
+
+
+async def health() -> JSONResponse:
+    """Health check endpoint to assess the status of the database and Redis services.
+
+    Returns:
+        JSONResponse: A JSON object with the health status:
+            - "status" (bool): Overall health, True if all checks pass.
+            - "db" (bool or str): Database status - True, False, or "NA".
+            - "redis" (bool or str): Redis status - True, False, or "NA".
+    """
+    health_status = {"status": True}
+    status_code = 200
+
+    db_status, redis_status = await asyncio.gather(
+        get_db_status(), prerequisites.get_redis_status()
+    )
+
+    health_status["db"] = db_status
+
+    if redis_status is None:
+        health_status["redis"] = False
+    else:
+        health_status["redis"] = redis_status
+
+    if not health_status["db"] or (
+        not health_status["redis"] and redis_status is not None
+    ):
+        health_status["status"] = False
+        status_code = 503
+
+    return JSONResponse(content=health_status, status_code=status_code)
 
 
 def upload(app: App):
