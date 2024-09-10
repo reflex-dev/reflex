@@ -8,6 +8,7 @@ from typing import Dict, List, Literal, Optional, Union
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.event import EventHandler
+from reflex.ivars.base import ImmutableVar
 from reflex.utils.format import to_camel_case
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import Var
@@ -234,7 +235,7 @@ class Editor(NoSSRComponent):
             ValueError: If set_options is a state Var.
         """
         if set_options is not None:
-            if isinstance(set_options, Var):
+            if isinstance(set_options, ImmutableVar):
                 raise ValueError("EditorOptions cannot be a state Var")
             props["set_options"] = {
                 to_camel_case(k): v

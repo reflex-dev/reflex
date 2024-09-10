@@ -55,7 +55,7 @@ class Foreach(Component):
         iterable = ImmutableVar.create_safe(iterable)
         if iterable._var_type == Any:
             raise ForeachVarError(
-                f"Could not foreach over var `{iterable._var_full_name}` of type Any. "
+                f"Could not foreach over var `{str(iterable)}` of type Any. "
                 "(If you are trying to foreach over a state var, add a type annotation to the var). "
                 "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
             )
@@ -127,10 +127,10 @@ class Foreach(Component):
 
         return dict(
             tag,
-            iterable_state=tag.iterable._var_full_name,
+            iterable_state=str(tag.iterable),
             arg_name=tag.arg_var_name,
             arg_index=tag.get_index_var_arg(),
-            iterable_type=tag.iterable._var_type.mro()[0].__name__,
+            iterable_type=tag.iterable.upcast()._var_type.mro()[0].__name__,
         )
 
 

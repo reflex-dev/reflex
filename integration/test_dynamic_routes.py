@@ -23,7 +23,6 @@ def DynamicRoute():
 
     class DynamicState(rx.State):
         order: List[str] = []
-        page_id: str = ""
 
         def on_load(self):
             self.order.append(f"{self.router.page.path}-{self.page_id or 'no page id'}")
@@ -47,7 +46,7 @@ def DynamicRoute():
                 is_read_only=True,
                 id="token",
             ),
-            rc.input(value=DynamicState.page_id, is_read_only=True, id="page_id"),
+            rc.input(value=rx.State.page_id, is_read_only=True, id="page_id"),  # type: ignore
             rc.input(
                 value=DynamicState.router.page.raw_path,
                 is_read_only=True,
@@ -74,9 +73,9 @@ def DynamicRoute():
         return rx.fragment(rx.text("redirecting..."))
 
     app = rx.App(state=rx.State)
-    app.add_page(index)
     app.add_page(index, route="/page/[page_id]", on_load=DynamicState.on_load)  # type: ignore
     app.add_page(index, route="/static/x", on_load=DynamicState.on_load)  # type: ignore
+    app.add_page(index)
     app.add_custom_404_page(on_load=DynamicState.on_load)  # type: ignore
 
 

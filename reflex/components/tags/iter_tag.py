@@ -34,15 +34,16 @@ class IterTag(Tag):
         Returns:
             The type of the iterable var.
         """
+        iterable = self.iterable.upcast()
         try:
-            if self.iterable._var_type.mro()[0] == dict:
+            if iterable._var_type.mro()[0] == dict:
                 # Arg is a tuple of (key, value).
-                return Tuple[get_args(self.iterable._var_type)]  # type: ignore
-            elif self.iterable._var_type.mro()[0] == tuple:
+                return Tuple[get_args(iterable._var_type)]  # type: ignore
+            elif iterable._var_type.mro()[0] == tuple:
                 # Arg is a union of any possible values in the tuple.
-                return Union[get_args(self.iterable._var_type)]  # type: ignore
+                return Union[get_args(iterable._var_type)]  # type: ignore
             else:
-                return get_args(self.iterable._var_type)[0]
+                return get_args(iterable._var_type)[0]
         except Exception:
             return Any
 
