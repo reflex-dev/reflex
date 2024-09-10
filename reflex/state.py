@@ -513,7 +513,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls._check_overridden_methods()
 
         # Computed vars should not shadow builtin state props.
-        cls._check_overriden_basevars()
+        cls._check_overridden_basevars()
 
         # Reset subclass tracking for this class.
         cls.class_subclasses = set()
@@ -541,6 +541,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Get computed vars.
         computed_vars = cls._get_computed_vars()
+        cls._check_overridden_computed_vars()
 
         new_backend_vars = {
             name: value
@@ -754,7 +755,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             )
 
     @classmethod
-    def _check_overriden_basevars(cls):
+    def _check_overridden_basevars(cls):
         """Check for shadow base vars and raise error if any.
 
         Raises:
@@ -764,6 +765,22 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if computed_var_._var_name in cls.__annotations__:
                 raise NameError(
                     f"The computed var name `{computed_var_._var_name}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
+                )
+
+    @classmethod
+    def _check_overridden_computed_vars(cls) -> None:
+        """Check for shadow computed vars and raise error if any.
+
+        Raises:
+            NameError: When a computed var shadows another.
+        """
+        for name, cv in cls.__dict__.items():
+            if not isinstance(cv, (ComputedVar, ImmutableComputedVar)):
+                continue
+            name = cv._var_name
+            if name in cls.inherited_vars or name in cls.inherited_backend_vars:
+                raise NameError(
+                    f"The computed var name `{cv._var_name}` shadows a var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 )
 
     @classmethod

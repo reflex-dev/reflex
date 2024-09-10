@@ -79,6 +79,11 @@ def ChildState(ParentState, TestObj):
     class ChildState(ParentState):
         @immutable_computed_var
         def var_without_annotation(self):
+            """This shadows ParentState.var_without_annotation.
+
+            Returns:
+                TestObj: Test object.
+            """
             return TestObj
 
     return ChildState
@@ -89,6 +94,11 @@ def GrandChildState(ChildState, TestObj):
     class GrandChildState(ChildState):
         @immutable_computed_var
         def var_without_annotation(self):
+            """This shadows ChildState.var_without_annotation.
+
+            Returns:
+                TestObj: Test object.
+            """
             return TestObj
 
     return GrandChildState
@@ -738,8 +748,6 @@ def test_var_unsupported_indexing_dicts(var, index):
     "fixture",
     [
         "ParentState",
-        "ChildState",
-        "GrandChildState",
         "StateWithAnyVar",
     ],
 )
@@ -759,6 +767,26 @@ def test_computed_var_without_annotation_error(request, fixture):
             err.value.args[0]
             == f"You must provide an annotation for the state var `{full_name}`. Annotation cannot be `typing.Any`"
         )
+
+
+@pytest.mark.parametrize(
+    "fixture",
+    [
+        "ChildState",
+        "GrandChildState",
+    ],
+)
+def test_shadow_computed_var_error(request: pytest.FixtureRequest, fixture: str):
+    """Test that a name error is thrown when an attribute of a computed var is
+    shadowed by another attribute.
+
+    Args:
+        request: Fixture Request.
+        fixture: The state fixture.
+    """
+    with pytest.raises(NameError):
+        state = request.getfixturevalue(fixture)
+        state.var_without_annotation.foo
 
 
 @pytest.mark.parametrize(
