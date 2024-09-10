@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import inspect
 import json
 import os
@@ -622,6 +623,10 @@ def format_state(value: Any, key: Optional[str] = None) -> Any:
     # Handle dicts.
     if isinstance(value, dict):
         return {k: format_state(v, k) for k, v in value.items()}
+
+    # Hand dataclasses.
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        return {k: format_state(v, k) for k, v in dataclasses.asdict(value).items()}
 
     # Handle lists, sets, typles.
     if isinstance(value, types.StateIterBases):

@@ -32,6 +32,7 @@ try:
 except ImportError:
     from typing_extensions import Annotated
 
+
 @dataclasses.dataclass(
     init=True,
     frozen=True,
@@ -46,10 +47,10 @@ class Event:
     name: str
 
     # The routing data where event occurred
-    router_data: Dict[str, Any] = {}
+    router_data: Dict[str, Any] = dataclasses.field(default_factory=dict)
 
     # The event payload.
-    payload: Dict[str, Any] = {}
+    payload: Dict[str, Any] = dataclasses.field(default_factory=dict)
 
     @property
     def substate_token(self) -> str:
@@ -268,12 +269,6 @@ class EventSpec(EventActionsMixin):
         object.__setattr__(self, "client_handler_name", client_handler_name)
         object.__setattr__(self, "args", args or tuple())
 
-    class Config:
-        """The Pydantic config."""
-
-        # Required to allow tuple fields.
-        frozen = True
-
     def with_args(
         self, args: Tuple[Tuple[ImmutableVar, ImmutableVar], ...]
     ) -> EventSpec:
@@ -345,13 +340,13 @@ class CallableEventSpec(EventSpec):
         if fn is not None:
             default_event_spec = fn()
             super().__init__(
-                fn=fn,  # type: ignore
                 event_actions=default_event_spec.event_actions,
                 client_handler_name=default_event_spec.client_handler_name,
                 args=default_event_spec.args,
                 handler=default_event_spec.handler,
                 **kwargs,
             )
+            object.__setattr__(self, "fn", fn)
         else:
             super().__init__(**kwargs)
 
@@ -392,14 +387,22 @@ stop_propagation = EventChain(events=[], args_spec=lambda: []).stop_propagation
 prevent_default = EventChain(events=[], args_spec=lambda: []).prevent_default
 
 
-class Target(Base):
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
+class Target:
     """A Javascript event target."""
 
     checked: bool = False
     value: Any = None
 
 
-class FrontendEvent(Base):
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
+class FrontendEvent:
     """A Javascript event."""
 
     target: Target = Target()
@@ -407,7 +410,11 @@ class FrontendEvent(Base):
     value: Any = None
 
 
-class FileUpload(Base):
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
+class FileUpload:
     """Class to represent a file upload."""
 
     upload_id: Optional[str] = None

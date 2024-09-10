@@ -5,8 +5,10 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import copy
+import dataclasses
 import functools
 import inspect
+import json
 import os
 import uuid
 from abc import ABC, abstractmethod
@@ -78,7 +80,8 @@ var = immutable_computed_var
 TOO_LARGE_SERIALIZED_STATE = 100 * 1024  # 100kb
 
 
-class HeaderData(Base):
+@dataclasses.dataclass(frozen=True)
+class HeaderData:
     """An object containing headers data."""
 
     host: str = ""
@@ -100,13 +103,16 @@ class HeaderData(Base):
         Args:
             router_data: the router_data dict.
         """
-        super().__init__()
         if router_data:
             for k, v in router_data.get(constants.RouteVar.HEADERS, {}).items():
-                setattr(self, format.to_snake_case(k), v)
+                object.__setattr__(self, format.to_snake_case(k), v)
+        else:
+            for k in dataclasses.fields(self):
+                object.__setattr__(self, k.name, "")
 
 
-class PageData(Base):
+@dataclasses.dataclass(frozen=True)
+class PageData:
     """An object containing page data."""
 
     host: str = ""  # repeated with self.headers.origin (remove or keep the duplicate?)
@@ -114,7 +120,7 @@ class PageData(Base):
     raw_path: str = ""
     full_path: str = ""
     full_raw_path: str = ""
-    params: dict = {}
+    params: dict = dataclasses.field(default_factory=dict)
 
     def __init__(self, router_data: Optional[dict] = None):
         """Initalize the PageData object based on router_data.
@@ -122,17 +128,34 @@ class PageData(Base):
         Args:
             router_data: the router_data dict.
         """
-        super().__init__()
         if router_data:
-            self.host = router_data.get(constants.RouteVar.HEADERS, {}).get("origin")
-            self.path = router_data.get(constants.RouteVar.PATH, "")
-            self.raw_path = router_data.get(constants.RouteVar.ORIGIN, "")
-            self.full_path = f"{self.host}{self.path}"
-            self.full_raw_path = f"{self.host}{self.raw_path}"
-            self.params = router_data.get(constants.RouteVar.QUERY, {})
+            object.__setattr__(
+                self,
+                "host",
+                router_data.get(constants.RouteVar.HEADERS, {}).get("origin", ""),
+            )
+            object.__setattr__(
+                self, "path", router_data.get(constants.RouteVar.PATH, "")
+            )
+            object.__setattr__(
+                self, "raw_path", router_data.get(constants.RouteVar.ORIGIN, "")
+            )
+            object.__setattr__(self, "full_path", f"{self.host}{self.path}")
+            object.__setattr__(self, "full_raw_path", f"{self.host}{self.raw_path}")
+            object.__setattr__(
+                self, "params", router_data.get(constants.RouteVar.QUERY, {})
+            )
+        else:
+            object.__setattr__(self, "host", "")
+            object.__setattr__(self, "path", "")
+            object.__setattr__(self, "raw_path", "")
+            object.__setattr__(self, "full_path", "")
+            object.__setattr__(self, "full_raw_path", "")
+            object.__setattr__(self, "params", {})
 
 
-class SessionData(Base):
+@dataclasses.dataclass(frozen=True, init=False)
+class SessionData:
     """An object containing session data."""
 
     client_token: str = ""
@@ -145,19 +168,24 @@ class SessionData(Base):
         Args:
             router_data: the router_data dict.
         """
-        super().__init__()
         if router_data:
-            self.client_token = router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
-            self.client_ip = router_data.get(constants.RouteVar.CLIENT_IP, "")
-            self.session_id = router_data.get(constants.RouteVar.SESSION_ID, "")
+            client_token = router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
+            client_ip = router_data.get(constants.RouteVar.CLIENT_IP, "")
+            session_id = router_data.get(constants.RouteVar.SESSION_ID, "")
+        else:
+            client_token = client_ip = session_id = ""
+        object.__setattr__(self, "client_token", client_token)
+        object.__setattr__(self, "client_ip", client_ip)
+        object.__setattr__(self, "session_id", session_id)
 
 
-class RouterData(Base):
+@dataclasses.dataclass(frozen=True, init=False)
+class RouterData:
     """An object containing RouterData."""
 
-    session: SessionData = SessionData()
-    headers: HeaderData = HeaderData()
-    page: PageData = PageData()
+    session: SessionData = dataclasses.field(default_factory=SessionData)
+    headers: HeaderData = dataclasses.field(default_factory=HeaderData)
+    page: PageData = dataclasses.field(default_factory=PageData)
 
     def __init__(self, router_data: Optional[dict] = None):
         """Initialize the RouterData object.
@@ -165,10 +193,17 @@ class RouterData(Base):
         Args:
             router_data: the router_data dict.
         """
-        super().__init__()
-        self.session = SessionData(router_data)
-        self.headers = HeaderData(router_data)
-        self.page = PageData(router_data)
+        object.__setattr__(self, "session", SessionData(router_data))
+        object.__setattr__(self, "headers", HeaderData(router_data))
+        object.__setattr__(self, "page", PageData(router_data))
+
+    def toJson(self) -> str:
+        """Convert the object to a JSON string.
+
+        Returns:
+            The JSON string.
+        """
+        return json.dumps(dataclasses.asdict(self))
 
 
 def _no_chain_background_task(
@@ -244,10 +279,11 @@ def _split_substate_key(substate_key: str) -> tuple[str, str]:
     return token, state_name
 
 
+@dataclasses.dataclass(frozen=True, init=False)
 class EventHandlerSetVar(EventHandler):
     """A special event handler to wrap setvar functionality."""
 
-    state_cls: Type[BaseState]
+    state_cls: Type[BaseState] = dataclasses.field(init=False)
 
     def __init__(self, state_cls: Type[BaseState]):
         """Initialize the EventHandlerSetVar.
@@ -258,8 +294,8 @@ class EventHandlerSetVar(EventHandler):
         super().__init__(
             fn=type(self).setvar,
             state_full_name=state_cls.get_full_name(),
-            state_cls=state_cls,  # type: ignore
         )
+        object.__setattr__(self, "state_cls", state_cls)
 
     def setvar(self, var_name: str, value: Any):
         """Set the state variable to the value of the event.
@@ -1859,9 +1895,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return state
 
 
-EventHandlerSetVar.update_forward_refs()
-
-
 class State(BaseState):
     """The app Base State."""
 
@@ -2293,17 +2326,28 @@ class StateProxy(wrapt.ObjectProxy):
             self._self_mutable = original_mutable
 
 
-class StateUpdate(Base):
+@dataclasses.dataclass(
+    frozen=True,
+)
+class StateUpdate:
     """A state update sent to the frontend."""
 
     # The state delta.
-    delta: Delta = {}
+    delta: Delta = dataclasses.field(default_factory=dict)
 
     # Events to be added to the event queue.
-    events: List[Event] = []
+    events: List[Event] = dataclasses.field(default_factory=list)
 
     # Whether this is the final state update for the event.
     final: bool = True
+
+    def json(self) -> str:
+        """Convert the state update to a JSON string.
+
+        Returns:
+            The state update as a JSON string.
+        """
+        return json.dumps(dataclasses.asdict(self))
 
 
 class StateManager(Base, ABC):

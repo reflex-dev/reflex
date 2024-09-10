@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import dataclasses
 import datetime
 import functools
 import json
@@ -866,7 +867,7 @@ def test_get_headers(test_state, router_data, router_data_headers):
         router_data_headers: The expected headers.
     """
     test_state.router = RouterData(router_data)
-    assert test_state.router.headers.dict() == {
+    assert dataclasses.asdict(test_state.router.headers) == {
         format.to_snake_case(k): v for k, v in router_data_headers.items()
     }
 
