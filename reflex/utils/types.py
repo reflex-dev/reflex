@@ -111,6 +111,11 @@ RESERVED_BACKEND_VAR_NAMES = {
     "_was_touched",
 }
 
+if sys.version_info >= (3, 11):
+    from typing import Self as Self
+else:
+    Self = None
+
 
 class Unset:
     """A class to represent an unset value.

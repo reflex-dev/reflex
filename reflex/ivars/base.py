@@ -43,7 +43,7 @@ from reflex.utils.exceptions import (
     VarValueError,
 )
 from reflex.utils.format import format_state_name
-from reflex.utils.types import GenericType, get_origin
+from reflex.utils.types import GenericType, Self, get_origin
 from reflex.vars import (
     REPLACED_NAMES,
     Var,
@@ -1391,9 +1391,6 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
     # Interval at which the computed var should be updated
     _update_interval: Optional[datetime.timedelta] = dataclasses.field(default=None)
 
-    # Whether the var is a (automatically created) dynamic route var
-    _var_is_dynamic_route: bool = dataclasses.field(default=False)
-
     _fget: Callable[[BaseState], RETURN_TYPE] = dataclasses.field(
         default_factory=lambda: lambda _: None
     )  # type: ignore
@@ -1407,7 +1404,6 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
         auto_deps: bool = True,
         interval: Optional[Union[int, datetime.timedelta]] = None,
         backend: bool | None = None,
-        _var_is_dynamic_route: bool = False,
         **kwargs,
     ):
         """Initialize a ComputedVar.
@@ -1420,7 +1416,6 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
             auto_deps: Whether var dependencies should be auto-determined.
             interval: Interval at which the computed var should be updated.
             backend: Whether the computed var is a backend var.
-            _var_is_dynamic_route: Whether the var is a (automatically created) dynamic route var.
             **kwargs: additional attributes to set on the instance
 
         Raises:
@@ -1450,7 +1445,6 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
             interval = datetime.timedelta(seconds=interval)
 
         object.__setattr__(self, "_update_interval", interval)
-        object.__setattr__(self, "_var_is_dynamic_route", _var_is_dynamic_route)
 
         if deps is None:
             deps = []
@@ -1473,7 +1467,7 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
         object.__setattr__(self, "_fget", fget)
 
     @override
-    def _replace(self, merge_var_data=None, **kwargs: Any) -> ImmutableComputedVar:
+    def _replace(self, merge_var_data=None, **kwargs: Any) -> Self:
         """Replace the attributes of the ComputedVar.
 
         Args:
@@ -1505,7 +1499,7 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
             unexpected_kwargs = ", ".join(kwargs.keys())
             raise TypeError(f"Unexpected keyword arguments: {unexpected_kwargs}")
 
-        return ImmutableComputedVar(**field_values)
+        return type(self)(**field_values)
 
     @property
     def _cache_attr(self) -> str:
@@ -1777,6 +1771,12 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
             The getter function.
         """
         return self._fget
+
+
+class DynamicRouteVar(ImmutableComputedVar[str | List[str]]):
+    """A ComputedVar that represents a dynamic route."""
+
+    pass
 
 
 if TYPE_CHECKING:
