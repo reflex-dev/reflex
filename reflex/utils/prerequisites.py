@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 import glob
 import importlib
@@ -32,7 +33,6 @@ from redis import exceptions
 from redis.asyncio import Redis
 
 from reflex import constants, model
-from reflex.base import Base
 from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, net, path_ops, processes
@@ -42,7 +42,8 @@ from reflex.utils.registry import _get_best_registry
 CURRENTLY_INSTALLING_NODE = False
 
 
-class Template(Base):
+@dataclasses.dataclass(frozen=True)
+class Template:
     """A template for a Reflex app."""
 
     name: str
@@ -51,7 +52,8 @@ class Template(Base):
     demo_url: str
 
 
-class CpuInfo(Base):
+@dataclasses.dataclass(frozen=True)
+class CpuInfo:
     """Model to save cpu info."""
 
     manufacturer_id: Optional[str]

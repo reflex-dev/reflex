@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import multiprocessing
 import platform
 import warnings
@@ -144,7 +145,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
             "python_version": get_python_version(),
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
-            "cpu_info": dict(cpuinfo) if cpuinfo else {},
+            "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
             **additional_fields,
         },
         "timestamp": stamp,
