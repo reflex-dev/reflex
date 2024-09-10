@@ -85,8 +85,8 @@ class Clipboard(Fragment):
         return [
             "usePasteHandler(%s, %s, %s)"
             % (
-                self.targets._var_name_unwrapped,
-                self.on_paste_event_actions._var_name_unwrapped,
+                str(self.targets),
+                str(self.on_paste_event_actions),
                 on_paste,
             )
         ]

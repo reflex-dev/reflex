@@ -9,6 +9,7 @@ from reflex.components.core.foreach import Foreach
 from reflex.components.el.elements.typography import Li, Ol, Ul
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.typography.text import Text
+from reflex.ivars.base import ImmutableVar
 from reflex.vars import Var
 
 LiteralListStyleTypeUnordered = Literal[
@@ -50,7 +51,7 @@ class BaseList(Component):
     def create(
         cls,
         *children,
-        items: Optional[Var[Iterable]] = None,
+        items: Optional[ImmutableVar[Iterable]] = None,
         **props,
     ):
         """Create a list component.
@@ -66,7 +67,7 @@ class BaseList(Component):
         """
         list_style_type = props.pop("list_style_type", "none")
         if not children and items is not None:
-            if isinstance(items, Var):
+            if isinstance(items, ImmutableVar):
                 children = [Foreach.create(items, ListItem.create)]
             else:
                 children = [ListItem.create(item) for item in items]  # type: ignore
@@ -97,7 +98,7 @@ class UnorderedList(BaseList, Ul):
     def create(
         cls,
         *children,
-        items: Optional[Var[Iterable]] = None,
+        items: Optional[ImmutableVar[Iterable]] = None,
         list_style_type: LiteralListStyleTypeUnordered = "disc",
         **props,
     ):
@@ -128,7 +129,7 @@ class OrderedList(BaseList, Ol):
     def create(
         cls,
         *children,
-        items: Optional[Var[Iterable]] = None,
+        items: Optional[ImmutableVar[Iterable]] = None,
         list_style_type: LiteralListStyleTypeOrdered = "decimal",
         **props,
     ):

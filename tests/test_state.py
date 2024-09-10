@@ -22,6 +22,7 @@ from reflex.base import Base
 from reflex.components.sonner.toast import Toaster
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
+from reflex.ivars.base import ImmutableComputedVar, ImmutableVar
 from reflex.state import (
     BaseState,
     ImmutableStateError,
@@ -41,7 +42,6 @@ from reflex.state import (
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
-from reflex.vars import BaseVar, ComputedVar, Var
 from tests.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState
@@ -102,7 +102,7 @@ class TestState(BaseState):
     fig: Figure = Figure()
     dt: datetime.datetime = datetime.datetime.fromisoformat("1989-11-09T18:53:00+01:00")
 
-    @ComputedVar
+    @ImmutableComputedVar
     def sum(self) -> float:
         """Dynamically sum the numbers.
 
@@ -111,7 +111,7 @@ class TestState(BaseState):
         """
         return self.num1 + self.num2
 
-    @ComputedVar
+    @ImmutableComputedVar
     def upper(self) -> str:
         """Uppercase the key.
 
@@ -267,7 +267,7 @@ def test_base_class_vars(test_state):
         if field in test_state.get_skip_vars():
             continue
         prop = getattr(cls, field)
-        assert isinstance(prop, Var)
+        assert isinstance(prop, ImmutableVar)
         assert prop._var_name.split(".")[-1] == field
 
     assert cls.num1._var_type == int
@@ -518,10 +518,10 @@ def test_set_class_var():
     with pytest.raises(AttributeError):
         TestState.num3  # type: ignore
     TestState._set_var(
-        BaseVar(_var_name="num3", _var_type=int)._var_set_state(TestState)
+        ImmutableVar(_var_name="num3", _var_type=int)._var_set_state(TestState)
     )
     var = TestState.num3  # type: ignore
-    assert var._var_name == "num3"
+    assert var._var_name == TestState.get_full_name() + ".num3"
     assert var._var_type == int
     assert var._var_state == TestState.get_full_name()
 
@@ -1102,7 +1102,7 @@ def test_child_state():
         v: int = 2
 
     class ChildState(MainState):
-        @ComputedVar
+        @ImmutableComputedVar
         def rendered_var(self):
             return self.v
 
@@ -1121,7 +1121,7 @@ def test_conditional_computed_vars():
         t1: str = "a"
         t2: str = "b"
 
-        @ComputedVar
+        @ImmutableComputedVar
         def rendered_var(self) -> str:
             if self.flag:
                 return self.t1
@@ -3068,12 +3068,12 @@ def test_potentially_dirty_substates():
     """
 
     class State(RxState):
-        @ComputedVar
+        @ImmutableComputedVar
         def foo(self) -> str:
             return ""
 
     class C1(State):
-        @ComputedVar
+        @ImmutableComputedVar
         def bar(self) -> str:
             return ""
 

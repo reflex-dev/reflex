@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
+from reflex.ivars.base import ImmutableVar
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
 
 
 def _compose_react_imports(tags: list[str]) -> dict[str, list[ImportVar]]:
     return {"react": [ImportVar(tag=tag) for tag in tags]}
 
 
-def const(name, value) -> Var:
+def const(name, value) -> ImmutableVar:
     """Create a constant Var.
 
     Args:
@@ -21,13 +22,11 @@ def const(name, value) -> Var:
         The constant Var.
     """
     if isinstance(name, list):
-        return Var.create_safe(
-            f"const [{', '.join(name)}] = {value}", _var_is_string=False
-        )
-    return Var.create_safe(f"const {name} = {value}", _var_is_string=False)
+        return ImmutableVar.create_safe(f"const [{', '.join(name)}] = {value}")
+    return ImmutableVar.create_safe(f"const {name} = {value}")
 
 
-def useCallback(func, deps) -> Var:
+def useCallback(func, deps) -> ImmutableVar:
     """Create a useCallback hook with a function and dependencies.
 
     Args:
@@ -37,14 +36,13 @@ def useCallback(func, deps) -> Var:
     Returns:
         The useCallback hook.
     """
-    return Var.create_safe(
+    return ImmutableVar.create_safe(
         f"useCallback({func}, {deps})" if deps else f"useCallback({func})",
-        _var_is_string=False,
         _var_data=VarData(imports=_compose_react_imports(["useCallback"])),
     )
 
 
-def useContext(context) -> Var:
+def useContext(context) -> ImmutableVar:
     """Create a useContext hook with a context.
 
     Args:
@@ -53,14 +51,13 @@ def useContext(context) -> Var:
     Returns:
         The useContext hook.
     """
-    return Var.create_safe(
+    return ImmutableVar.create_safe(
         f"useContext({context})",
-        _var_is_string=False,
         _var_data=VarData(imports=_compose_react_imports(["useContext"])),
     )
 
 
-def useRef(default) -> Var:
+def useRef(default) -> ImmutableVar:
     """Create a useRef hook with a default value.
 
     Args:
@@ -69,14 +66,13 @@ def useRef(default) -> Var:
     Returns:
         The useRef hook.
     """
-    return Var.create_safe(
+    return ImmutableVar.create_safe(
         f"useRef({default})",
-        _var_is_string=False,
         _var_data=VarData(imports=_compose_react_imports(["useRef"])),
     )
 
 
-def useState(var_name, default=None) -> Var:
+def useState(var_name, default=None) -> ImmutableVar:
     """Create a useState hook with a variable name and setter name.
 
     Args:
@@ -88,9 +84,8 @@ def useState(var_name, default=None) -> Var:
     """
     return const(
         [var_name, f"set{var_name.capitalize()}"],
-        Var.create_safe(
+        ImmutableVar.create_safe(
             f"useState({default})",
-            _var_is_string=False,
             _var_data=VarData(imports=_compose_react_imports(["useState"])),
         ),
     )

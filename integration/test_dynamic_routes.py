@@ -23,13 +23,9 @@ def DynamicRoute():
 
     class DynamicState(rx.State):
         order: List[str] = []
-        input_page_id: str = ""
 
         def on_load(self):
-            self.input_page_id = self.page_id  # type: ignore
-            self.order.append(
-                f"{self.router.page.path}-{self.input_page_id or 'no page id'}"
-            )
+            self.order.append(f"{self.router.page.path}-{self.page_id or 'no page id'}")
 
         def on_load_redir(self):
             query_params = self.router.page.params
@@ -39,7 +35,7 @@ def DynamicRoute():
         @rx.var
         def next_page(self) -> str:
             try:
-                return str(int(self.input_page_id) + 1)
+                return str(int(self.page_id) + 1)
             except ValueError:
                 return "0"
 
@@ -50,7 +46,7 @@ def DynamicRoute():
                 is_read_only=True,
                 id="token",
             ),
-            rc.input(value=DynamicState.input_page_id, is_read_only=True, id="page_id"),
+            rc.input(value=rx.State.page_id, is_read_only=True, id="page_id"),  # type: ignore
             rc.input(
                 value=DynamicState.router.page.raw_path,
                 is_read_only=True,
@@ -77,9 +73,9 @@ def DynamicRoute():
         return rx.fragment(rx.text("redirecting..."))
 
     app = rx.App(state=rx.State)
-    app.add_page(index)
     app.add_page(index, route="/page/[page_id]", on_load=DynamicState.on_load)  # type: ignore
     app.add_page(index, route="/static/x", on_load=DynamicState.on_load)  # type: ignore
+    app.add_page(index)
     app.add_custom_404_page(on_load=DynamicState.on_load)  # type: ignore
 
 

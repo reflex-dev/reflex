@@ -9,7 +9,7 @@ from reflex import style
 from reflex.components.component import evaluate_style_namespaces
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style
-from reflex.vars import ImmutableVarData, Var, VarData
+from reflex.vars import VarData
 
 test_style = [
     ({"a": 1}, {"a": 1}),
@@ -81,7 +81,7 @@ def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
         assert key in d2
         if isinstance(value, dict):
             compare_dict_of_var(value, d2[key])
-        elif isinstance(value, Var):
+        elif isinstance(value, ImmutableVar):
             assert value.equals(d2[key])
         else:
             assert value == d2[key]
@@ -504,7 +504,7 @@ def test_style_via_component_with_state(
     comp = rx.el.div(**kwargs)
 
     assert (
-        ImmutableVarData.merge(comp.style._var_data)
+        VarData.merge(comp.style._var_data)
         == expected_get_style["css"]._get_all_var_data()
     )
     # Assert that style values are equal.

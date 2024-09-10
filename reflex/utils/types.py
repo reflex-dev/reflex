@@ -95,7 +95,7 @@ PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
 StateVar = Union[PrimitiveType, Base, None]
 StateIterVar = Union[list, set, tuple]
 
-# ArgsSpec = Callable[[Var], list[Var]]
+# ArgsSpec = Callable[[ImmutableVar], list[ImmutableVar]]
 ArgsSpec = Callable
 
 
@@ -509,14 +509,14 @@ def is_backend_base_variable(name: str, cls: Type) -> bool:
     if name in cls.inherited_backend_vars:
         return False
 
+    from reflex.ivars.base import is_computed_var
+
     if name in cls.__dict__:
         value = cls.__dict__[name]
         if type(value) == classmethod:
             return False
         if callable(value):
             return False
-        from reflex.ivars.base import ImmutableComputedVar
-        from reflex.vars import ComputedVar
 
         if isinstance(
             value,
@@ -524,10 +524,8 @@ def is_backend_base_variable(name: str, cls: Type) -> bool:
                 types.FunctionType,
                 property,
                 cached_property,
-                ComputedVar,
-                ImmutableComputedVar,
             ),
-        ):
+        ) or is_computed_var(value):
             return False
 
     return True
@@ -587,11 +585,11 @@ def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
     Raises:
         ValueError: When the value is not a valid literal.
     """
-    from reflex.vars import Var
+    from reflex.ivars import ImmutableVar
 
     if (
         is_literal(expected_type)
-        and not isinstance(value, Var)  # validating vars is not supported yet.
+        and not isinstance(value, ImmutableVar)  # validating vars is not supported yet.
         and not is_encoded_fstring(value)  # f-strings are not supported.
         and value not in expected_type.__args__
     ):

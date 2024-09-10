@@ -7,6 +7,7 @@ from typing import Any, Type, Union
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
 from reflex.event import EventHandler
+from reflex.ivars.base import ImmutableVar
 from reflex.vars import Var, VarData
 
 DEFAULT_DEBOUNCE_TIMEOUT = 300
@@ -106,23 +107,20 @@ class DebounceInput(Component):
                 props[field] = getattr(child, field)
         child_ref = child.get_ref()
         if props.get("input_ref") is None and child_ref:
-            props["input_ref"] = Var.create_safe(
-                child_ref, _var_is_local=False, _var_is_string=False
-            )
+            props["input_ref"] = ImmutableVar.create_safe(child_ref)
             props["id"] = child.id
 
         # Set the child element to wrap, including any imports/hooks from the child.
         props.setdefault(
             "element",
-            Var.create_safe(
-                "{%s}" % (child.alias or child.tag),
-                _var_is_local=False,
-                _var_is_string=False,
+            ImmutableVar(
+                _var_name=str(child.alias or child.tag),
+                _var_type=Type[Component],
                 _var_data=VarData(
                     imports=child._get_imports(),
                     hooks=child._get_hooks_internal(),
                 ),
-            ).to(Type[Component]),
+            ),
         )
 
         component = super().create(**props)

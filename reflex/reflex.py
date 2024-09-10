@@ -16,6 +16,7 @@ from reflex_cli.utils import dependency
 from reflex import constants
 from reflex.config import get_config
 from reflex.custom_components.custom_components import custom_components_cli
+from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
 
 # Disable typer+rich integration for help panels
@@ -179,6 +180,9 @@ def _run(
     # Check that the app is initialized.
     if prerequisites.needs_reinit(frontend=frontend):
         _init(name=config.app_name, loglevel=loglevel)
+
+    # Delete the states folder if it exists.
+    reset_disk_state_manager()
 
     # Find the next available open port if applicable.
     if frontend:

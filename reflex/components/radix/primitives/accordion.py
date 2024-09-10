@@ -11,7 +11,7 @@ from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
 from reflex.event import EventHandler
-from reflex.ivars.base import LiteralVar
+from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style
 from reflex.vars import Var, get_uuid_string_var
 
@@ -193,8 +193,8 @@ class AccordionItem(AccordionComponent):
     def create(
         cls,
         *children,
-        header: Optional[Component | Var] = None,
-        content: Optional[Component | Var] = None,
+        header: Optional[Component | ImmutableVar] = None,
+        content: Optional[Component | ImmutableVar] = None,
         **props,
     ) -> Component:
         """Create an accordion item.
