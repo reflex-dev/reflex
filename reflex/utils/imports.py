@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple, Union
+from typing import DefaultDict, Dict, List, Optional, Tuple, Union
 
 
 def merge_imports(
@@ -18,12 +18,22 @@ def merge_imports(
     Returns:
         The merged import dicts.
     """
-    all_imports = defaultdict(list)
+    all_imports: DefaultDict[str, List[ImportVar]] = defaultdict(list)
     for import_dict in imports:
         for lib, fields in (
             import_dict if isinstance(import_dict, tuple) else import_dict.items()
         ):
-            all_imports[lib].extend(fields)
+            if isinstance(fields, (list, tuple, set)):
+                all_imports[lib].extend(
+                    (
+                        ImportVar(field) if isinstance(field, str) else field
+                        for field in fields
+                    )
+                )
+            else:
+                all_imports[lib].append(
+                    ImportVar(fields) if isinstance(fields, str) else fields
+                )
     return all_imports
 
 

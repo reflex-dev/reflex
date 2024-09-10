@@ -1280,7 +1280,7 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
             None,
         )
     return {
-        tp["name"]: Template.parse_obj(tp)
+        tp["name"]: Template(**tp)
         for tp in templates_data
         if not tp["hidden"] and tp["code_url"] is not None
     }
