@@ -482,7 +482,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             if all(inspect.isclass(t) and issubclass(t, Base) for t in inner_types):
                 return self.to(ObjectVar, self._var_type)
 
-            return self
+            return self.to(ObjectVar, self._var_type)
 
         if not inspect.isclass(fixed_type):
             raise TypeError(f"Unsupported type {var_type} for guess_type.")

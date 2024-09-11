@@ -338,6 +338,12 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                 return hints[name]
         except exceptions as e:
             console.warn(f"Failed to resolve ForwardRefs for {cls}.{name} due to {e}")
+            # hardcoded fallbacks for forward ref issues
+            if is_dataframe(cls):
+                if name == "columns":
+                    return List[Any]
+                if name == "data":
+                    return List[List[Any]]
             pass
     return None  # Attribute is not accessible.
 

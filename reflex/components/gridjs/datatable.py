@@ -116,14 +116,8 @@ class DataTable(Gridjs):
         if isinstance(self.data, ImmutableVar) and types.is_dataframe(
             self.data._var_type
         ):
-            self.columns = self.data._replace(
-                _var_name=f"{self.data._var_name}.columns",
-                _var_type=List[Any],
-            )
-            self.data = self.data._replace(
-                _var_name=f"{self.data._var_name}.data",
-                _var_type=List[List[Any]],
-            )
+            self.columns = self.data.columns
+            self.data = self.data.data
         if types.is_dataframe(type(self.data)):
             # If given a pandas df break up the data and columns
             data = serialize(self.data)

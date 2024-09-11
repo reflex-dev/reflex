@@ -23,7 +23,7 @@ from reflex.utils.serializers import serialize, serialize_dataframe
     ],
     indirect=["data_table_state"],
 )
-def test_validate_data_table(data_table_state: rx.State, expected):
+def test_validate_data_table(data_table_state: rx.State, expected: str) -> None:
     """Test the str/render function.
 
     Args:
@@ -40,13 +40,13 @@ def test_validate_data_table(data_table_state: rx.State, expected):
 
     data_table_dict = data_table_component.render()
 
-    # prefix expected with state name
-    state_name = data_table_state.get_name()
-    expected = f"{state_name}.{expected}" if expected else state_name
+    var = data_table_state
+    if expected:
+        var = getattr(var, expected)
 
     assert data_table_dict["props"] == [
-        f"columns={{{expected}.columns}}",
-        f"data={{{expected}.data}}",
+        f"columns={{{var.columns._var_name}}}",
+        f"data={{{var.data._var_name}}}",
     ]
 
 
