@@ -43,11 +43,18 @@ from reflex.event import (
     call_event_handler,
     get_handler_args,
 )
+from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style, format_as_emotion
-from reflex.utils import console, format, imports, types
-from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
+from reflex.utils import format, imports, types
+from reflex.utils.imports import (
+    ImmutableParsedImportDict,
+    ImportDict,
+    ImportVar,
+    ParsedImportDict,
+    parse_imports,
+)
 from reflex.utils.serializers import serializer
-from reflex.vars import BaseVar, Var, VarData
+from reflex.vars import Var, VarData
 
 
 class BaseComponent(Base, ABC):
@@ -170,7 +177,7 @@ class Component(BaseComponent, ABC):
     style: Style = Style()
 
     # A mapping from event triggers to event chains.
-    event_triggers: Dict[str, Union[EventChain, Var]] = {}
+    event_triggers: Dict[str, Union[EventChain, ImmutableVar]] = {}
 
     # The alias for the tag.
     alias: Optional[str] = None
@@ -188,7 +195,7 @@ class Component(BaseComponent, ABC):
     class_name: Any = None
 
     # Special component props.
-    special_props: Set[Var] = set()
+    special_props: Set[ImmutableVar] = set()
 
     # Whether the component should take the focus once the page is loaded
     autofocus: bool = False
@@ -206,7 +213,7 @@ class Component(BaseComponent, ABC):
     _rename_props: Dict[str, str] = {}
 
     # custom attribute
-    custom_attrs: Dict[str, Union[Var, str]] = {}
+    custom_attrs: Dict[str, Union[ImmutableVar, str]] = {}
 
     # When to memoize this component and its children.
     _memoization_mode: MemoizationMode = MemoizationMode()
@@ -242,7 +249,7 @@ class Component(BaseComponent, ABC):
         """
         return {}
 
-    def add_hooks(self) -> list[str | Var]:
+    def add_hooks(self) -> list[str | ImmutableVar]:
         """Add hooks inside the component function.
 
         Hooks are pieces of literal Javascript code that is inserted inside the
@@ -320,9 +327,8 @@ class Component(BaseComponent, ABC):
             # Set default values for any props.
             if types._issubclass(field.type_, Var):
                 field.required = False
-                field.default = Var.create(
-                    field.default, _var_is_string=isinstance(field.default, str)
-                )
+                if field.default is not None:
+                    field.default = LiteralVar.create(field.default)
             elif types._issubclass(field.type_, EventHandler):
                 field.required = False
 
@@ -351,10 +357,7 @@ class Component(BaseComponent, ABC):
             "id": kwargs.get("id"),
             "children": children,
             **{
-                prop: Var.create(
-                    kwargs[prop],
-                    _var_is_string=False if isinstance(kwargs[prop], str) else None,
-                )
+                prop: LiteralVar.create(kwargs[prop])
                 for prop in self.get_initial_props()
                 if prop in kwargs
             },
@@ -401,10 +404,10 @@ class Component(BaseComponent, ABC):
                 passed_types = None
                 try:
                     # Try to create a var from the value.
-                    kwargs[key] = Var.create(
-                        value,
-                        _var_is_string=False if isinstance(value, str) else None,
-                    )
+                    if isinstance(value, ImmutableVar):
+                        kwargs[key] = value
+                    else:
+                        kwargs[key] = LiteralVar.create(value)
 
                     # Check that the var type is not None.
                     if kwargs[key] is None:
@@ -444,11 +447,12 @@ class Component(BaseComponent, ABC):
                     not passed_types
                     and not types._issubclass(passed_type, expected_type, value)
                 ):
-                    value_name = value._var_name if isinstance(value, Var) else value
+                    value_name = (
+                        value._var_name if isinstance(value, ImmutableVar) else value
+                    )
                     raise TypeError(
                         f"Invalid var passed for prop {type(self).__name__}.{key}, expected type {expected_type}, got value {value_name} of type {passed_types or passed_type}."
                     )
-
             # Check if the key is an event trigger.
             if key in component_specific_triggers:
                 # Temporarily disable full control for event triggers.
@@ -497,7 +501,7 @@ class Component(BaseComponent, ABC):
         value: Union[
             Var, EventHandler, EventSpec, List[Union[EventHandler, EventSpec]], Callable
         ],
-    ) -> Union[EventChain, Var]:
+    ) -> Union[EventChain, ImmutableVar]:
         """Create an event chain from a variety of input types.
 
         Args:
@@ -511,9 +515,11 @@ class Component(BaseComponent, ABC):
             ValueError: If the value is not a valid event chain.
         """
         # If it's an event chain var, return it.
-        if isinstance(value, Var):
+        if isinstance(value, ImmutableVar):
             if value._var_type is not EventChain:
-                raise ValueError(f"Invalid event chain: {value}")
+                raise ValueError(
+                    f"Invalid event chain: {repr(value)} of type {type(value)}"
+                )
             return value
         elif isinstance(value, EventChain):
             # Trust that the caller knows what they're doing passing an EventChain directly
@@ -529,19 +535,11 @@ class Component(BaseComponent, ABC):
             for v in value:
                 if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
-                    try:
-                        event = call_event_handler(v, args_spec)
-                    except ValueError as err:
-                        raise ValueError(
-                            f" {err} defined in the `{type(self).__name__}` component"
-                        ) from err
-
-                    # Add the event to the chain.
-                    events.append(event)
+                    events.append(call_event_handler(v, args_spec))
                 elif isinstance(v, Callable):
                     # Call the lambda to get the event chain.
                     result = call_event_fn(v, args_spec)
-                    if isinstance(result, Var):
+                    if isinstance(result, ImmutableVar):
                         raise ValueError(
                             f"Invalid event chain: {v}. Cannot use a Var-returning "
                             "lambda inside an EventChain list."
@@ -553,7 +551,7 @@ class Component(BaseComponent, ABC):
         # If the input is a callable, create an event chain.
         elif isinstance(value, Callable):
             result = call_event_fn(value, args_spec)
-            if isinstance(result, Var):
+            if isinstance(result, ImmutableVar):
                 # Recursively call this function if the lambda returned an EventChain Var.
                 return self._create_event_chain(args_spec, result)
             events = result
@@ -571,7 +569,7 @@ class Component(BaseComponent, ABC):
             event_actions.update(e.event_actions)
 
         # Return the event chain.
-        if isinstance(args_spec, Var):
+        if isinstance(args_spec, ImmutableVar):
             return EventChain(
                 events=events,
                 args_spec=None,
@@ -638,27 +636,6 @@ class Component(BaseComponent, ABC):
 
         return _compile_component(self)
 
-    def _apply_theme(self, theme: Optional[Component]):
-        """Apply the theme to this component.
-
-        Deprecated. Use add_style instead.
-
-        Args:
-            theme: The theme to apply.
-        """
-        pass
-
-    def apply_theme(self, theme: Optional[Component]):
-        """Apply a theme to the component and its children.
-
-        Args:
-            theme: The theme to apply.
-        """
-        self._apply_theme(theme)
-        for child in self.children:
-            if isinstance(child, Component):
-                child.apply_theme(theme)
-
     def _exclude_props(self) -> list[str]:
         """Props to exclude when adding the component props to the Tag.
 
@@ -692,9 +669,7 @@ class Component(BaseComponent, ABC):
             # Add ref to element if `id` is not None.
             ref = self.get_ref()
             if ref is not None:
-                props["ref"] = Var.create(
-                    ref, _var_is_local=False, _var_is_string=False
-                )
+                props["ref"] = ImmutableVar.create(ref)
         else:
             props = props.copy()
 
@@ -768,22 +743,6 @@ class Component(BaseComponent, ABC):
         from reflex.components.base.fragment import Fragment
         from reflex.utils.exceptions import ComponentTypeError
 
-        # Translate deprecated props to new names.
-        new_prop_names = [
-            prop for prop in cls.get_props() if prop in ["type", "min", "max"]
-        ]
-        for prop in new_prop_names:
-            under_prop = f"{prop}_"
-            if under_prop in props:
-                console.deprecate(
-                    f"Underscore suffix for prop `{under_prop}`",
-                    reason=f"for consistency. Use `{prop}` instead.",
-                    deprecation_version="0.4.0",
-                    removal_version="0.6.0",
-                    dedupe=False,
-                )
-                props[prop] = props.pop(under_prop)
-
         # Filter out None props
         props = {key: value for key, value in props.items() if value is not None}
 
@@ -809,7 +768,7 @@ class Component(BaseComponent, ABC):
                 else (
                     Fragment.create(*child)
                     if isinstance(child, tuple)
-                    else Bare.create(contents=Var.create(child, _var_is_string=True))
+                    else Bare.create(contents=LiteralVar.create(child))
                 )
             )
             for child in children
@@ -900,17 +859,6 @@ class Component(BaseComponent, ABC):
             new_style.update(component_style)
             style_vars.append(component_style._var_data)
 
-        # 3. User-defined style from `Component.style`.
-        # Apply theme for retro-compatibility with deprecated _apply_theme API
-        if type(self)._apply_theme != Component._apply_theme:
-            console.deprecate(
-                f"{self.__class__.__name__}._apply_theme",
-                reason="use add_style instead",
-                deprecation_version="0.5.0",
-                removal_version="0.6.0",
-            )
-            self._apply_theme(theme)
-
         # 4. style dict and css props passed to the component instance.
         new_style.update(self.style)
         style_vars.append(self.style._var_data)
@@ -934,9 +882,14 @@ class Component(BaseComponent, ABC):
         Returns:
             The dictionary of the component style as value and the style notation as key.
         """
-        if isinstance(self.style, Var):
+        if isinstance(self.style, ImmutableVar):
             return {"css": self.style}
-        return {"css": Var.create(format_as_emotion(self.style))}
+        emotion_style = format_as_emotion(self.style)
+        return (
+            {"css": LiteralVar.create(emotion_style)}
+            if emotion_style is not None
+            else {}
+        )
 
     def render(self) -> Dict:
         """Render the component.
@@ -1045,8 +998,8 @@ class Component(BaseComponent, ABC):
 
     @staticmethod
     def _get_vars_from_event_triggers(
-        event_triggers: dict[str, EventChain | Var],
-    ) -> Iterator[tuple[str, list[Var]]]:
+        event_triggers: dict[str, EventChain | ImmutableVar],
+    ) -> Iterator[tuple[str, list[ImmutableVar]]]:
         """Get the Vars associated with each event trigger.
 
         Args:
@@ -1056,7 +1009,7 @@ class Component(BaseComponent, ABC):
             tuple of (event_name, event_vars)
         """
         for event_trigger, event in event_triggers.items():
-            if isinstance(event, Var):
+            if isinstance(event, ImmutableVar):
                 yield event_trigger, [event]
             elif isinstance(event, EventChain):
                 event_args = []
@@ -1065,7 +1018,7 @@ class Component(BaseComponent, ABC):
                         event_args.extend(args)
                 yield event_trigger, event_args
 
-    def _get_vars(self, include_children: bool = False) -> list[Var]:
+    def _get_vars(self, include_children: bool = False) -> list[ImmutableVar]:
         """Walk all Vars used in this component.
 
         Args:
@@ -1085,16 +1038,20 @@ class Component(BaseComponent, ABC):
         # Get Vars associated with component props.
         for prop in self.get_props():
             prop_var = getattr(self, prop)
-            if isinstance(prop_var, Var):
+            if isinstance(prop_var, ImmutableVar):
                 vars.append(prop_var)
 
         # Style keeps track of its own VarData instance, so embed in a temp Var that is yielded.
-        if isinstance(self.style, dict) and self.style or isinstance(self.style, Var):
+        if (
+            isinstance(self.style, dict)
+            and self.style
+            or isinstance(self.style, ImmutableVar)
+        ):
             vars.append(
-                BaseVar(
+                ImmutableVar(
                     _var_name="style",
                     _var_type=str,
-                    _var_data=self.style._var_data,
+                    _var_data=VarData.merge(self.style._var_data),
                 )
             )
 
@@ -1109,14 +1066,12 @@ class Component(BaseComponent, ABC):
             self.autofocus,
             *self.custom_attrs.values(),
         ):
-            if isinstance(comp_prop, Var):
+            if isinstance(comp_prop, ImmutableVar):
                 vars.append(comp_prop)
             elif isinstance(comp_prop, str):
                 # Collapse VarData encoded in f-strings.
-                var = Var.create_safe(
-                    comp_prop, _var_is_string=isinstance(comp_prop, str)
-                )
-                if var._var_data is not None:
+                var = LiteralVar.create(comp_prop)
+                if var._get_all_var_data() is not None:
                     vars.append(var)
 
         # Get Vars associated with children.
@@ -1124,7 +1079,8 @@ class Component(BaseComponent, ABC):
             for child in self.children:
                 if not isinstance(child, Component):
                     continue
-                vars.extend(child._get_vars(include_children=include_children))
+                child_vars = child._get_vars(include_children=include_children)
+                vars.extend(child_vars)
 
         return vars
 
@@ -1139,7 +1095,7 @@ class Component(BaseComponent, ABC):
                 for event in trigger.events:
                     if event.handler.state_full_name:
                         return True
-            elif isinstance(trigger, Var) and trigger._var_state:
+            elif isinstance(trigger, ImmutableVar) and trigger._var_state:
                 return True
         return False
 
@@ -1329,13 +1285,13 @@ class Component(BaseComponent, ABC):
 
         other_imports = []
         user_hooks = self._get_hooks()
-        if (
-            user_hooks is not None
-            and isinstance(user_hooks, Var)
-            and user_hooks._var_data is not None
-            and user_hooks._var_data.imports
-        ):
-            other_imports.append(user_hooks._var_data.imports)
+        user_hooks_data = (
+            VarData.merge(user_hooks._get_all_var_data())
+            if user_hooks is not None and isinstance(user_hooks, ImmutableVar)
+            else None
+        )
+        if user_hooks_data is not None:
+            other_imports.append(user_hooks_data.imports)
         other_imports.extend(
             hook_imports for hook_imports in self._get_added_hooks().values()
         )
@@ -1358,9 +1314,16 @@ class Component(BaseComponent, ABC):
         event_imports = Imports.EVENTS if self.event_triggers else {}
 
         # Collect imports from Vars used directly by this component.
-        var_imports = [
-            var._var_data.imports for var in self._get_vars() if var._var_data
-        ]
+        var_datas = [var._get_all_var_data() for var in self._get_vars()]
+        var_imports: List[ImmutableParsedImportDict] = list(
+            map(
+                lambda var_data: var_data.imports,
+                filter(
+                    None,
+                    var_datas,
+                ),
+            )
+        )
 
         added_import_dicts: list[ParsedImportDict] = []
         for clz in self._iter_parent_classes_with_method("add_imports"):
@@ -1407,9 +1370,9 @@ class Component(BaseComponent, ABC):
         on_mount = self.event_triggers.get(EventTriggers.ON_MOUNT, None)
         on_unmount = self.event_triggers.get(EventTriggers.ON_UNMOUNT, None)
         if on_mount is not None:
-            on_mount = format.format_event_chain(on_mount)
+            on_mount = str(LiteralVar.create(on_mount)) + "()"
         if on_unmount is not None:
-            on_unmount = format.format_event_chain(on_unmount)
+            on_unmount = str(LiteralVar.create(on_unmount)) + "()"
         if on_mount is not None or on_unmount is not None:
             return f"""
                 useEffect(() => {{
@@ -1427,7 +1390,7 @@ class Component(BaseComponent, ABC):
         """
         ref = self.get_ref()
         if ref is not None:
-            return f"const {ref} = useRef(null); {str(Var.create_safe(ref, _var_is_string=False).as_ref())} = {ref};"
+            return f"const {ref} = useRef(null); {str(ImmutableVar.create_safe(ref).as_ref())} = {ref};"
 
     def _get_vars_hooks(self) -> dict[str, None]:
         """Get the hooks required by vars referenced in this component.
@@ -1437,8 +1400,13 @@ class Component(BaseComponent, ABC):
         """
         vars_hooks = {}
         for var in self._get_vars():
-            if var._var_data:
-                vars_hooks.update(var._var_data.hooks)
+            var_data = var._get_all_var_data()
+            if var_data is not None:
+                vars_hooks.update(
+                    var_data.hooks
+                    if isinstance(var_data.hooks, dict)
+                    else {k: None for k in var_data.hooks}
+                )
         return vars_hooks
 
     def _get_events_hooks(self) -> dict[str, None]:
@@ -1485,13 +1453,14 @@ class Component(BaseComponent, ABC):
         """
         code = {}
 
-        def extract_var_hooks(hook: Var):
+        def extract_var_hooks(hook: ImmutableVar):
             _imports = {}
-            if hook._var_data is not None:
-                for sub_hook in hook._var_data.hooks:
+            var_data = VarData.merge(hook._get_all_var_data())
+            if var_data is not None:
+                for sub_hook in var_data.hooks:
                     code[sub_hook] = {}
-                if hook._var_data.imports:
-                    _imports = hook._var_data.imports
+                if var_data.imports:
+                    _imports = var_data.imports
             if str(hook) in code:
                 code[str(hook)] = imports.merge_imports(code[str(hook)], _imports)
             else:
@@ -1501,10 +1470,11 @@ class Component(BaseComponent, ABC):
         # the order of the hooks in the final output)
         for clz in reversed(tuple(self._iter_parent_classes_with_method("add_hooks"))):
             for hook in clz.add_hooks(self):
-                if isinstance(hook, Var):
+                if isinstance(hook, ImmutableVar):
                     extract_var_hooks(hook)
                 else:
                     code[hook] = {}
+
         return code
 
     def _get_hooks(self) -> str | None:
@@ -1561,7 +1531,7 @@ class Component(BaseComponent, ABC):
             The ref name.
         """
         # do not create a ref if the id is dynamic or unspecified
-        if self.id is None or isinstance(self.id, BaseVar):
+        if self.id is None or isinstance(self.id, ImmutableVar):
             return None
         return format.format_ref(self.id)
 
@@ -1707,7 +1677,7 @@ class CustomComponent(Component):
 
             # Handle subclasses of Base.
             if isinstance(value, Base):
-                base_value = Var.create(value)
+                base_value = LiteralVar.create(value)
 
                 # Track hooks and imports associated with Component instances.
                 if base_value is not None and isinstance(value, Component):
@@ -1721,7 +1691,7 @@ class CustomComponent(Component):
                 else:
                     value = base_value
             else:
-                value = Var.create(value, _var_is_string=isinstance(value, str))
+                value = LiteralVar.create(value)
 
             # Set the prop.
             self.props[format.to_camel_case(key)] = value
@@ -1800,23 +1770,23 @@ class CustomComponent(Component):
         """
         return super()._render(props=self.props)
 
-    def get_prop_vars(self) -> List[BaseVar]:
+    def get_prop_vars(self) -> List[ImmutableVar]:
         """Get the prop vars.
 
         Returns:
             The prop vars.
         """
         return [
-            BaseVar(
+            ImmutableVar(
                 _var_name=name,
                 _var_type=(
                     prop._var_type if types._isinstance(prop, Var) else type(prop)
                 ),
-            )
+            ).guess_type()
             for name, prop in self.props.items()
         ]
 
-    def _get_vars(self, include_children: bool = False) -> list[Var]:
+    def _get_vars(self, include_children: bool = False) -> list[ImmutableVar]:
         """Walk all Vars used in this component.
 
         Args:
@@ -1825,9 +1795,11 @@ class CustomComponent(Component):
         Returns:
             Each var referenced by the component (props, styles, event handlers).
         """
-        return super()._get_vars(include_children=include_children) + [
-            prop for prop in self.props.values() if isinstance(prop, Var)
-        ]
+        return (
+            super()._get_vars(include_children=include_children)
+            + [prop for prop in self.props.values() if isinstance(prop, ImmutableVar)]
+            + self.get_component(self)._get_vars(include_children=include_children)
+        )
 
     @lru_cache(maxsize=None)  # noqa
     def get_component(self) -> Component:
@@ -1981,7 +1953,7 @@ class StatefulComponent(BaseComponent):
         if not should_memoize:
             # Determine if any Vars have associated data.
             for prop_var in component._get_vars():
-                if prop_var._var_data:
+                if prop_var._get_all_var_data():
                     should_memoize = True
                     break
 
@@ -1996,7 +1968,7 @@ class StatefulComponent(BaseComponent):
                     should_memoize = True
                     break
                 child = cls._child_var(child)
-                if isinstance(child, Var) and child._var_data:
+                if isinstance(child, ImmutableVar) and child._get_all_var_data():
                     should_memoize = True
                     break
 
@@ -2152,7 +2124,7 @@ class StatefulComponent(BaseComponent):
     def _get_memoized_event_triggers(
         cls,
         component: Component,
-    ) -> dict[str, tuple[Var, str]]:
+    ) -> dict[str, tuple[ImmutableVar, str]]:
         """Memoize event handler functions with useCallback to avoid unnecessary re-renders.
 
         Args:
@@ -2176,9 +2148,7 @@ class StatefulComponent(BaseComponent):
 
             # Get the actual EventSpec and render it.
             event = component.event_triggers[event_trigger]
-            rendered_chain = format.format_prop(event)
-            if isinstance(rendered_chain, str):
-                rendered_chain = rendered_chain.strip("{}")
+            rendered_chain = str(LiteralVar.create(event))
 
             # Hash the rendered EventChain to get a deterministic function name.
             chain_hash = md5(str(rendered_chain).encode("utf-8")).hexdigest()
@@ -2187,12 +2157,13 @@ class StatefulComponent(BaseComponent):
             # Calculate Var dependencies accessed by the handler for useCallback dep array.
             var_deps = ["addEvents", "Event"]
             for arg in event_args:
-                if arg._var_data is None:
+                var_data = arg._get_all_var_data()
+                if var_data is None:
                     continue
-                for hook in arg._var_data.hooks:
+                for hook in var_data.hooks:
                     var_deps.extend(cls._get_hook_deps(hook))
             memo_var_data = VarData.merge(
-                *[var._var_data for var in event_args],
+                *[var._get_all_var_data() for var in event_args],
                 VarData(
                     imports={"react": [ImportVar(tag="useCallback")]},
                 ),
@@ -2200,7 +2171,7 @@ class StatefulComponent(BaseComponent):
 
             # Store the memoized function name and hook code for this event trigger.
             trigger_memo[event_trigger] = (
-                Var.create_safe(memo_name, _var_is_string=False)._replace(
+                ImmutableVar.create_safe(memo_name)._replace(
                     _var_type=EventChain, merge_var_data=memo_var_data
                 ),
                 f"const {memo_name} = useCallback({rendered_chain}, [{', '.join(var_deps)}])",

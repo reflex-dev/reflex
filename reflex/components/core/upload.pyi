@@ -7,27 +7,38 @@ from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, List, Optional, Union, overload
 
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
+from reflex.constants import Dirs
 from reflex.event import (
     CallableEventSpec,
     EventHandler,
     EventSpec,
 )
+from reflex.ivars.base import ImmutableCallableVar, ImmutableVar
 from reflex.style import Style
-from reflex.vars import BaseVar, CallableVar, Var, VarData
+from reflex.utils.imports import ImportVar
+from reflex.vars import Var, VarData
 
 DEFAULT_UPLOAD_ID: str
 upload_files_context_var_data: VarData
 
-@CallableVar
-def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar: ...
-@CallableVar
-def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar: ...
+@ImmutableCallableVar
+def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> ImmutableVar: ...
+@ImmutableCallableVar
+def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> ImmutableVar: ...
 @CallableEventSpec
 def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec: ...
 def cancel_upload(upload_id: str) -> EventSpec: ...
 def get_upload_dir() -> Path: ...
 
-uploaded_files_url_prefix: Var
+uploaded_files_url_prefix = ImmutableVar(
+    _var_name="getBackendURL(env.UPLOAD)",
+    _var_data=VarData(
+        imports={
+            f"/{Dirs.STATE_PATH}": "getBackendURL",
+            "/env.json": ImportVar(tag="env", is_default=True),
+        }
+    ),
+).to(str)
 
 def get_upload_url(file_path: str) -> Var[str]: ...
 
@@ -42,51 +53,51 @@ class UploadFilesProvider(Component):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
         on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "UploadFilesProvider":
@@ -129,54 +140,54 @@ class Upload(MemoizationLeaf):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
         on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_drop: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "Upload":
@@ -226,54 +237,54 @@ class StyledUpload(Upload):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
         on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_drop: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "StyledUpload":
@@ -323,54 +334,54 @@ class UploadNamespace(ComponentNamespace):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
         on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_drop: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "StyledUpload":

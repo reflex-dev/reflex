@@ -6,8 +6,8 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from reflex.base import Base
 from reflex.event import EventChain
+from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.utils import format, types
-from reflex.vars import Var
 
 
 class Tag(Base):
@@ -26,7 +26,7 @@ class Tag(Base):
     args: Optional[Tuple[str, ...]] = None
 
     # Special props that aren't key value pairs.
-    special_props: Set[Var] = set()
+    special_props: Set[ImmutableVar] = set()
 
     # The children components.
     children: List[Any] = []
@@ -41,7 +41,7 @@ class Tag(Base):
         # Convert any props to vars.
         if "props" in kwargs:
             kwargs["props"] = {
-                name: Var.create(value, _var_is_string=False)
+                name: LiteralVar.create(value)
                 for name, value in kwargs["props"].items()
             }
         super().__init__(*args, **kwargs)
@@ -63,14 +63,12 @@ class Tag(Base):
         Returns:
             The tag with the props added.
         """
-        from reflex.components.core.colors import Color
-
         self.props.update(
             {
-                format.to_camel_case(name, allow_hyphens=True): prop
-                if types._isinstance(prop, Union[EventChain, dict])
-                else Var.create(
-                    prop, _var_is_string=isinstance(prop, Color)
+                format.to_camel_case(name, allow_hyphens=True): (
+                    prop
+                    if types._isinstance(prop, Union[EventChain, dict])
+                    else LiteralVar.create(prop)
                 )  # rx.color is always a string
                 for name, prop in kwargs.items()
                 if self.is_valid_prop(prop)
@@ -94,7 +92,7 @@ class Tag(Base):
         return self
 
     @staticmethod
-    def is_valid_prop(prop: Optional[Var]) -> bool:
+    def is_valid_prop(prop: Optional[ImmutableVar]) -> bool:
         """Check if the prop is valid.
 
         Args:

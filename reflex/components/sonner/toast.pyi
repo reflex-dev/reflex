@@ -10,9 +10,10 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
 from reflex.components.props import PropsBase
 from reflex.event import EventHandler, EventSpec
+from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
 from reflex.utils.serializers import serializer
-from reflex.vars import BaseVar, Var
+from reflex.vars import Var
 
 LiteralPosition = Literal[
     "top-left",
@@ -22,7 +23,7 @@ LiteralPosition = Literal[
     "bottom-center",
     "bottom-right",
 ]
-toast_ref = Var.create_safe("refs['__toast']", _var_is_string=False)
+toast_ref = ImmutableVar.create_safe("refs['__toast']")
 
 class ToastAction(Base):
     label: str
@@ -32,7 +33,8 @@ class ToastAction(Base):
 def serialize_action(action: ToastAction) -> dict: ...
 
 class ToastProps(PropsBase):
-    description: Optional[Union[str, Var]]
+    title: Optional[Union[str, ImmutableVar]]
+    description: Optional[Union[str, ImmutableVar]]
     close_button: Optional[bool]
     invert: Optional[bool]
     important: Optional[bool]
@@ -41,7 +43,7 @@ class ToastProps(PropsBase):
     dismissible: Optional[bool]
     action: Optional[ToastAction]
     cancel: Optional[ToastAction]
-    id: Optional[Union[str, Var]]
+    id: Optional[Union[str, ImmutableVar]]
     unstyled: Optional[bool]
     style: Optional[Style]
     action_button_styles: Optional[Style]
@@ -51,22 +53,27 @@ class ToastProps(PropsBase):
 
     def dict(self, *args, **kwargs) -> dict[str, Any]: ...
 
+    class Config:
+        arbitrary_types_allowed = True
+        use_enum_values = True
+        extra = "forbid"
+
 class Toaster(Component):
     is_used: ClassVar[bool] = False
 
-    def add_hooks(self) -> list[Var | str]: ...
+    def add_hooks(self) -> list[ImmutableVar | str]: ...
     @staticmethod
     def send_toast(
         message: str = "", level: str | None = None, **props
     ) -> EventSpec: ...
     @staticmethod
-    def toast_info(message: str, **kwargs): ...
+    def toast_info(message: str = "", **kwargs): ...
     @staticmethod
-    def toast_warning(message: str, **kwargs): ...
+    def toast_warning(message: str = "", **kwargs): ...
     @staticmethod
-    def toast_error(message: str, **kwargs): ...
+    def toast_error(message: str = "", **kwargs): ...
     @staticmethod
-    def toast_success(message: str, **kwargs): ...
+    def toast_success(message: str = "", **kwargs): ...
     @staticmethod
     def toast_dismiss(id: Var | str | None = None): ...
     @overload
@@ -114,51 +121,51 @@ class Toaster(Component):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
         on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
         ] = None,
         **props,
     ) -> "Toaster":

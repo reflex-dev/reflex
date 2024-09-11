@@ -19,8 +19,8 @@ from types import ModuleType, SimpleNamespace
 from typing import Any, Callable, Iterable, Type, get_args
 
 from reflex.components.component import Component
+from reflex.ivars.base import ImmutableVar
 from reflex.utils import types as rx_types
-from reflex.vars import Var
 
 logger = logging.getLogger("pyi_generator")
 
@@ -69,10 +69,11 @@ DEFAULT_TYPING_IMPORTS = {
 # TODO: fix import ordering and unused imports with ruff later
 DEFAULT_IMPORTS = {
     "typing": sorted(DEFAULT_TYPING_IMPORTS),
-    "reflex.vars": ["Var", "BaseVar", "ComputedVar"],
+    "reflex.vars": ["Var"],
     "reflex.components.core.breakpoints": ["Breakpoints"],
     "reflex.event": ["EventChain", "EventHandler", "EventSpec"],
     "reflex.style": ["Style"],
+    "reflex.ivars.base": ["ImmutableVar"],
 }
 
 
@@ -355,7 +356,7 @@ def _extract_class_props_as_ast_nodes(
                 with contextlib.suppress(AttributeError, KeyError):
                     # Try to get default from pydantic field definition.
                     default = target_class.__fields__[name].default
-                    if isinstance(default, Var):
+                    if isinstance(default, ImmutableVar):
                         default = default._decode()  # type: ignore
 
             kwargs.append(
@@ -433,7 +434,7 @@ def _generate_component_create_functiondef(
             ast.arg(
                 arg=trigger,
                 annotation=ast.Name(
-                    id="Optional[Union[EventHandler, EventSpec, list, Callable, BaseVar]]"
+                    id="Optional[Union[EventHandler, EventSpec, list, Callable, ImmutableVar]]"
                 ),
             ),
             ast.Constant(value=None),

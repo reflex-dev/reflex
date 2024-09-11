@@ -16,6 +16,7 @@ from reflex_cli.utils import dependency
 from reflex import constants
 from reflex.config import get_config
 from reflex.custom_components.custom_components import custom_components_cli
+from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
 
 # Disable typer+rich integration for help panels
@@ -84,10 +85,6 @@ def _init(
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
     prerequisites.initialize_reflex_user_directory()
     prerequisites.ensure_reflex_installation_id()
-
-    # When upgrading to 0.4, show migration instructions.
-    if prerequisites.should_show_rx_chakra_migration_instructions():
-        prerequisites.show_rx_chakra_migration_instructions()
 
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
@@ -183,6 +180,9 @@ def _run(
     # Check that the app is initialized.
     if prerequisites.needs_reinit(frontend=frontend):
         _init(name=config.app_name, loglevel=loglevel)
+
+    # Delete the states folder if it exists.
+    reset_disk_state_manager()
 
     # Find the next available open port if applicable.
     if frontend:
@@ -456,17 +456,6 @@ def makemigrations(
             console.error(
                 f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
             )
-
-
-@script_cli.command(
-    name="keep-chakra",
-    help="Change all rx.<component> references to rx.chakra.<component>, to preserve Chakra UI usage.",
-)
-def keep_chakra():
-    """Change all rx.<component> references to rx.chakra.<component>, to preserve Chakra UI usage."""
-    from reflex.utils import prerequisites
-
-    prerequisites.migrate_to_rx_chakra()
 
 
 @cli.command()

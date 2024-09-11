@@ -17,6 +17,8 @@ from . import utils
 
 def ClientSide():
     """App for testing client-side state."""
+    import reflex_chakra as rc
+
     import reflex as rx
 
     class ClientSideState(rx.State):
@@ -70,18 +72,18 @@ def ClientSide():
 
     def index():
         return rx.fragment(
-            rx.chakra.input(
+            rc.input(
                 value=ClientSideState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.chakra.input(
+            rc.input(
                 placeholder="state var",
                 value=ClientSideState.state_var,
                 on_change=ClientSideState.set_state_var,  # type: ignore
                 id="state_var",
             ),
-            rx.chakra.input(
+            rc.input(
                 placeholder="input value",
                 value=ClientSideState.input_value,
                 on_change=ClientSideState.set_input_value,  # type: ignore

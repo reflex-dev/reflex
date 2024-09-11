@@ -9,8 +9,8 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.tags import IterTag
 from reflex.constants import MemoizationMode
+from reflex.ivars.base import ImmutableVar
 from reflex.state import ComponentState
-from reflex.utils import console
 from reflex.vars import Var
 
 
@@ -38,14 +38,12 @@ class Foreach(Component):
         cls,
         iterable: Var[Iterable] | Iterable,
         render_fn: Callable,
-        **props,
     ) -> Foreach:
         """Create a foreach component.
 
         Args:
             iterable: The iterable to create components from.
             render_fn: A function from the render args to the component.
-            **props: The attributes to pass to each child component (deprecated).
 
         Returns:
             The foreach component.
@@ -54,17 +52,10 @@ class Foreach(Component):
             ForeachVarError: If the iterable is of type Any.
             TypeError: If the render function is a ComponentState.
         """
-        if props:
-            console.deprecate(
-                feature_name="Passing props to rx.foreach",
-                reason="it does not have the intended effect and may be confusing",
-                deprecation_version="0.5.0",
-                removal_version="0.6.0",
-            )
-        iterable = Var.create_safe(iterable, _var_is_string=False)
+        iterable = ImmutableVar.create_safe(iterable)
         if iterable._var_type == Any:
             raise ForeachVarError(
-                f"Could not foreach over var `{iterable._var_full_name}` of type Any. "
+                f"Could not foreach over var `{str(iterable)}` of type Any. "
                 "(If you are trying to foreach over a state var, add a type annotation to the var). "
                 "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
             )
@@ -136,10 +127,10 @@ class Foreach(Component):
 
         return dict(
             tag,
-            iterable_state=tag.iterable._var_full_name,
+            iterable_state=str(tag.iterable),
             arg_name=tag.arg_var_name,
             arg_index=tag.get_index_var_arg(),
-            iterable_type=tag.iterable._var_type.mro()[0].__name__,
+            iterable_type=tag.iterable.upcast()._var_type.mro()[0].__name__,
         )
 
 

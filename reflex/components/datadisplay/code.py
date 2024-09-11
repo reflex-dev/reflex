@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import re
 from typing import Dict, Literal, Optional, Union
+
+from typing_extensions import get_args
 
 from reflex.components.component import Component
 from reflex.components.core.cond import color_mode_cond
@@ -12,6 +13,7 @@ from reflex.components.radix.themes.components.button import Button
 from reflex.components.radix.themes.layout.box import Box
 from reflex.constants.colors import Color
 from reflex.event import set_clipboard
+from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.imports import ImportDict, ImportVar
@@ -349,6 +351,20 @@ LiteralCodeLanguage = Literal[
 ]
 
 
+def replace_quotes_with_camel_case(value: str) -> str:
+    """Replaces quotes in the given string with camel case format.
+
+    Args:
+        value (str): The string to be processed.
+
+    Returns:
+        str: The processed string with quotes replaced by camel case.
+    """
+    for theme in get_args(LiteralCodeBlockTheme):
+        value = value.replace(f'"{theme}"', format.to_camel_case(theme))
+    return value
+
+
 class CodeBlock(Component):
     """A code block."""
 
@@ -389,32 +405,42 @@ class CodeBlock(Component):
             The import dict.
         """
         imports_: ImportDict = {}
-        themes = re.findall(r"`(.*?)`", self.theme._var_name)
-        if not themes:
-            themes = [self.theme._var_name]
+
+        themeString = str(self.theme)
+
+        selected_themes = []
+
+        for possibleTheme in get_args(LiteralCodeBlockTheme):
+            if format.to_camel_case(possibleTheme) in themeString:
+                selected_themes.append(possibleTheme)
+            if possibleTheme in themeString:
+                selected_themes.append(possibleTheme)
+
+        selected_themes = sorted(set(map(self.convert_theme_name, selected_themes)))
 
         imports_.update(
             {
-                f"react-syntax-highlighter/dist/cjs/styles/prism/{self.convert_theme_name(theme)}": [
+                f"react-syntax-highlighter/dist/cjs/styles/prism/{theme}": [
                     ImportVar(
-                        tag=format.to_camel_case(self.convert_theme_name(theme)),
+                        tag=format.to_camel_case(theme),
                         is_default=True,
                         install=False,
                     )
                 ]
-                for theme in themes
+                for theme in selected_themes
             }
         )
 
         if (
             self.language is not None
-            and self.language._var_name in LiteralCodeLanguage.__args__  # type: ignore
+            and (language_without_quotes := str(self.language).replace('"', ""))
+            in LiteralCodeLanguage.__args__  # type: ignore
         ):
             imports_[
-                f"react-syntax-highlighter/dist/cjs/languages/prism/{self.language._var_name}"
+                f"react-syntax-highlighter/dist/cjs/languages/prism/{language_without_quotes}"
             ] = [
                 ImportVar(
-                    tag=format.to_camel_case(self.language._var_name),
+                    tag=format.to_camel_case(language_without_quotes),
                     is_default=True,
                     install=False,
                 )
@@ -425,9 +451,10 @@ class CodeBlock(Component):
     def _get_custom_code(self) -> Optional[str]:
         if (
             self.language is not None
-            and self.language._var_name in LiteralCodeLanguage.__args__  # type: ignore
+            and (language_without_quotes := str(self.language).replace('"', ""))
+            in LiteralCodeLanguage.__args__  # type: ignore
         ):
-            return f"{self.alias}.registerLanguage('{self.language._var_name}', {format.to_camel_case(self.language._var_name)})"
+            return f"{self.alias}.registerLanguage('{language_without_quotes}', {format.to_camel_case(language_without_quotes)})"
 
     @classmethod
     def create(
@@ -453,11 +480,14 @@ class CodeBlock(Component):
 
         if "theme" not in props:
             # Default color scheme responds to global color mode.
-            props["theme"] = color_mode_cond(light="one-light", dark="one-dark")
+            props["theme"] = color_mode_cond(
+                light=ImmutableVar.create_safe("oneLight"),
+                dark=ImmutableVar.create_safe("oneDark"),
+            )
 
         # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
         # themes respectively to ensure code compatibility.
-        if "theme" in props and not isinstance(props["theme"], Var):
+        if "theme" in props and not isinstance(props["theme"], ImmutableVar):
             props["theme"] = cls.convert_theme_name(props["theme"])
 
         if can_copy:
@@ -483,8 +513,8 @@ class CodeBlock(Component):
         # Carry the children (code) via props
         if children:
             props["code"] = children[0]
-            if not isinstance(props["code"], Var):
-                props["code"] = Var.create(props["code"], _var_is_string=True)
+            if not isinstance(props["code"], ImmutableVar):
+                props["code"] = LiteralVar.create(props["code"])
 
         # Create the component.
         code_block = super().create(
@@ -503,18 +533,15 @@ class CodeBlock(Component):
 
     def _render(self):
         out = super()._render()
-        predicate, qmark, value = self.theme._var_name.partition("?")
-        out.add_props(
-            style=Var.create(
-                format.to_camel_case(f"{predicate}{qmark}{value.replace('`', '')}"),
-                _var_is_local=False,
-                _var_is_string=False,
-            )
-        ).remove_props("theme", "code")
-        if self.code is not None:
-            out.special_props.add(
-                Var.create_safe(f"children={str(self.code)}", _var_is_string=False)
-            )
+
+        theme = self.theme.upcast()._replace(
+            _var_name=replace_quotes_with_camel_case(str(self.theme))
+        )
+
+        out.add_props(style=theme).remove_props("theme", "code").add_props(
+            children=self.code
+        )
+
         return out
 
     @staticmethod

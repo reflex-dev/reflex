@@ -45,6 +45,8 @@ import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.state import (
     BaseState,
+    StateManager,
+    StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
     reload_state_module,
@@ -115,7 +117,7 @@ class AppHarness:
 
     app_name: str
     app_source: Optional[
-        types.FunctionType | types.ModuleType | str | functools.partial
+        types.FunctionType | types.ModuleType | str | functools.partial[Any]
     ]
     app_path: pathlib.Path
     app_module_path: pathlib.Path
@@ -126,7 +128,7 @@ class AppHarness:
     frontend_output_thread: Optional[threading.Thread] = None
     backend_thread: Optional[threading.Thread] = None
     backend: Optional[uvicorn.Server] = None
-    state_manager: Optional[StateManagerMemory | StateManagerRedis] = None
+    state_manager: Optional[StateManager] = None
     _frontends: list["WebDriver"] = dataclasses.field(default_factory=list)
     _decorated_pages: list = dataclasses.field(default_factory=list)
 
@@ -134,7 +136,9 @@ class AppHarness:
     def create(
         cls,
         root: pathlib.Path,
-        app_source: Optional[types.FunctionType | types.ModuleType | str] = None,
+        app_source: Optional[
+            types.FunctionType | types.ModuleType | str | functools.partial[Any]
+        ] = None,
         app_name: Optional[str] = None,
     ) -> "AppHarness":
         """Create an AppHarness instance at root.
@@ -274,7 +278,10 @@ class AppHarness:
             before_decorated_pages = reflex.app.DECORATED_PAGES[self.app_name].copy()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
-            self.app_module = reflex.utils.prerequisites.get_compiled_app(reload=True)
+            self.app_module = reflex.utils.prerequisites.get_compiled_app(
+                # Do not reload the module for pre-existing apps (only apps generated from source)
+                reload=self.app_source is not None
+            )
             # Save the pages that were added during testing
             self._decorated_pages = [
                 p
@@ -285,6 +292,8 @@ class AppHarness:
         if isinstance(self.app_instance._state_manager, StateManagerRedis):
             # Create our own redis connection for testing.
             self.state_manager = StateManagerRedis.create(self.app_instance.state)
+        elif isinstance(self.app_instance._state_manager, StateManagerDisk):
+            self.state_manager = StateManagerDisk.create(self.app_instance.state)
         else:
             self.state_manager = self.app_instance._state_manager
 
@@ -322,7 +331,8 @@ class AppHarness:
             )
         )
         self.backend.shutdown = self._get_backend_shutdown_handler()
-        self.backend_thread = threading.Thread(target=self.backend.run)
+        with chdir(self.app_path):
+            self.backend_thread = threading.Thread(target=self.backend.run)
         self.backend_thread.start()
 
     async def _reset_backend_state_manager(self):
@@ -782,7 +792,7 @@ class AppHarness:
             raise RuntimeError("App is not running.")
         state_manager = self.app_instance.state_manager
         assert isinstance(
-            state_manager, StateManagerMemory
+            state_manager, (StateManagerMemory, StateManagerDisk)
         ), "Only works with memory state manager"
         if not self._poll_for(
             target=lambda: state_manager.states,

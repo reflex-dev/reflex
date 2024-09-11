@@ -17,11 +17,12 @@ def DynamicRoute():
     """App for testing dynamic routes."""
     from typing import List
 
+    import reflex_chakra as rc
+
     import reflex as rx
 
     class DynamicState(rx.State):
         order: List[str] = []
-        page_id: str = ""
 
         def on_load(self):
             self.order.append(f"{self.router.page.path}-{self.page_id or 'no page id'}")
@@ -40,15 +41,13 @@ def DynamicRoute():
 
     def index():
         return rx.fragment(
-            rx.chakra.input(
+            rc.input(
                 value=DynamicState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.chakra.input(
-                value=DynamicState.page_id, is_read_only=True, id="page_id"
-            ),
-            rx.chakra.input(
+            rc.input(value=rx.State.page_id, is_read_only=True, id="page_id"),  # type: ignore
+            rc.input(
                 value=DynamicState.router.page.raw_path,
                 is_read_only=True,
                 id="raw_path",
@@ -61,10 +60,10 @@ def DynamicRoute():
                 id="link_page_next",  # type: ignore
             ),
             rx.link("missing", href="/missing", id="link_missing"),
-            rx.chakra.list(
+            rc.list(
                 rx.foreach(
                     DynamicState.order,  # type: ignore
-                    lambda i: rx.chakra.list_item(rx.text(i)),
+                    lambda i: rc.list_item(rx.text(i)),
                 ),
             ),
         )
@@ -74,9 +73,9 @@ def DynamicRoute():
         return rx.fragment(rx.text("redirecting..."))
 
     app = rx.App(state=rx.State)
-    app.add_page(index)
     app.add_page(index, route="/page/[page_id]", on_load=DynamicState.on_load)  # type: ignore
     app.add_page(index, route="/static/x", on_load=DynamicState.on_load)  # type: ignore
+    app.add_page(index)
     app.add_custom_404_page(on_load=DynamicState.on_load)  # type: ignore
 
 

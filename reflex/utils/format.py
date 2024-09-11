@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
 from reflex import constants
 from reflex.utils import exceptions, types
-from reflex.vars import BaseVar, Var
+from reflex.vars import Var
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
@@ -263,32 +263,6 @@ def format_string(string: str) -> str:
     return _wrap_js_string(_escape_js_string(string))
 
 
-def format_f_string_prop(prop: BaseVar) -> str:
-    """Format the string in a given prop as an f-string.
-
-    Args:
-        prop: The prop to format.
-
-    Returns:
-        The formatted string.
-    """
-    s = prop._var_full_name
-    var_data = prop._var_data
-    interps = var_data.interpolations if var_data else []
-    parts: List[str] = []
-
-    if interps:
-        for i, (start, end) in enumerate(interps):
-            prev_end = interps[i - 1][1] if i > 0 else 0
-            parts.append(_escape_js_string(s[prev_end:start]))
-            parts.append(s[start:end])
-        parts.append(_escape_js_string(s[interps[-1][1] :]))
-    else:
-        parts.append(_escape_js_string(s))
-
-    return _wrap_js_string("".join(parts))
-
-
 def format_var(var: Var) -> str:
     """Format the given Var as a javascript value.
 
@@ -298,13 +272,7 @@ def format_var(var: Var) -> str:
     Returns:
         The formatted Var.
     """
-    if not var._var_is_local or var._var_is_string:
-        return str(var)
-    if types._issubclass(var._var_type, str):
-        return format_string(var._var_full_name)
-    if is_wrapped(var._var_full_name, "{"):
-        return var._var_full_name
-    return json_dumps(var._var_full_name)
+    return str(var)
 
 
 def format_route(route: str, format_case=True) -> str:
@@ -329,46 +297,11 @@ def format_route(route: str, format_case=True) -> str:
     return route
 
 
-def format_cond(
-    cond: str | Var,
-    true_value: str | Var,
-    false_value: str | Var = '""',
-    is_prop=False,
+def format_match(
+    cond: str | ImmutableVar,
+    match_cases: List[List[ImmutableVar]],
+    default: ImmutableVar,
 ) -> str:
-    """Format a conditional expression.
-
-    Args:
-        cond: The cond.
-        true_value: The value to return if the cond is true.
-        false_value: The value to return if the cond is false.
-        is_prop: Whether the cond is a prop
-
-    Returns:
-        The formatted conditional expression.
-    """
-    # Use Python truthiness.
-    cond = f"isTrue({cond})"
-
-    def create_var(cond_part):
-        return Var.create_safe(cond_part, _var_is_string=isinstance(cond_part, str))
-
-    # Format prop conds.
-    if is_prop:
-        true_value = create_var(true_value)
-        prop1 = true_value._replace(
-            _var_is_local=True,
-        )
-
-        false_value = create_var(false_value)
-        prop2 = false_value._replace(_var_is_local=True)
-        # unwrap '{}' to avoid f-string semantics for Var
-        return f"{cond} ? {prop1._var_name_unwrapped} : {prop2._var_name_unwrapped}"
-
-    # Format component conds.
-    return wrap(f"{cond} ? {true_value} : {false_value}", "{")
-
-
-def format_match(cond: str | Var, match_cases: List[BaseVar], default: Var) -> str:
     """Format a match expression whose return type is a Var.
 
     Args:
@@ -387,24 +320,19 @@ def format_match(cond: str | Var, match_cases: List[BaseVar], default: Var) -> s
         return_value = case[-1]
 
         case_conditions = " ".join(
-            [
-                f"case JSON.stringify({condition._var_name_unwrapped}):"
-                for condition in conditions
-            ]
+            [f"case JSON.stringify({str(condition)}):" for condition in conditions]
         )
-        case_code = (
-            f"{case_conditions}  return ({return_value._var_name_unwrapped});  break;"
-        )
+        case_code = f"{case_conditions}  return ({str(return_value)});  break;"
         switch_code += case_code
 
-    switch_code += f"default:  return ({default._var_name_unwrapped});  break;"
+    switch_code += f"default:  return ({str(default)});  break;"
     switch_code += "};})()"
 
     return switch_code
 
 
 def format_prop(
-    prop: Union[Var, EventChain, ComponentStyle, str],
+    prop: Union[ImmutableVar, EventChain, ComponentStyle, str],
 ) -> Union[int, float, str]:
     """Format a prop.
 
@@ -420,21 +348,16 @@ def format_prop(
     """
     # import here to avoid circular import.
     from reflex.event import EventChain
+    from reflex.ivars import ImmutableVar
     from reflex.utils import serializers
 
     try:
         # Handle var props.
-        if isinstance(prop, Var):
-            if not prop._var_is_local or prop._var_is_string:
-                return str(prop)
-            if isinstance(prop, BaseVar) and types._issubclass(prop._var_type, str):
-                if prop._var_data and prop._var_data.interpolations:
-                    return format_f_string_prop(prop)
-                return format_string(prop._var_full_name)
-            prop = prop._var_full_name
+        if isinstance(prop, ImmutableVar):
+            return str(prop)
 
         # Handle event props.
-        elif isinstance(prop, EventChain):
+        if isinstance(prop, EventChain):
             sig = inspect.signature(prop.args_spec)  # type: ignore
             if sig.parameters:
                 arg_def = ",".join(f"_{p}" for p in sig.parameters)
@@ -483,11 +406,26 @@ def format_props(*single_props, **key_value_props) -> list[str]:
         The formatted props list.
     """
     # Format all the props.
+    from reflex.ivars.base import ImmutableVar, LiteralVar
+
     return [
-        f"{name}={format_prop(prop)}"
+        (
+            f"{name}={format_prop(prop)}"
+            if isinstance(prop, ImmutableVar) and not isinstance(prop, ImmutableVar)
+            else (
+                f"{name}={{{format_prop(prop if isinstance(prop, ImmutableVar) else LiteralVar.create(prop))}}}"
+            )
+        )
         for name, prop in sorted(key_value_props.items())
         if prop is not None
-    ] + [str(prop) for prop in single_props]
+    ] + [
+        (
+            str(prop)
+            if isinstance(prop, ImmutableVar) and not isinstance(prop, ImmutableVar)
+            else f"{str(LiteralVar.create(prop))}"
+        )
+        for prop in single_props
+    ]
 
 
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
@@ -502,12 +440,12 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     # Get the class that defines the event handler.
     parts = handler.fn.__qualname__.split(".")
 
-    # If there's no enclosing class, just return the function name.
-    if len(parts) == 1:
-        return ("", parts[-1])
-
     # Get the state full name
     state_full_name = handler.state_full_name
+
+    # If there's no enclosing class, just return the function name.
+    if not state_full_name:
+        return ("", parts[-1])
 
     # Get the function name
     name = parts[-1]
@@ -555,7 +493,7 @@ def format_event(event_spec: EventSpec) -> str:
                             "`",
                         )
                         if val._var_is_string
-                        else val._var_full_name
+                        else str(val)
                     ),
                 )
             )
@@ -572,54 +510,20 @@ def format_event(event_spec: EventSpec) -> str:
     return f"Event({', '.join(event_args)})"
 
 
-def format_event_chain(
-    event_chain: EventChain | Var[EventChain],
-    event_arg: Var | None = None,
-) -> str:
-    """Format an event chain as a javascript invocation.
-
-    Args:
-        event_chain: The event chain to queue on the frontend.
-        event_arg: The browser-native event (only used to preventDefault).
-
-    Returns:
-        Compiled javascript code to queue the given event chain on the frontend.
-
-    Raises:
-        ValueError: When the given event chain is not a valid event chain.
-    """
-    if isinstance(event_chain, Var):
-        from reflex.event import EventChain
-
-        if event_chain._var_type is not EventChain:
-            raise ValueError(f"Invalid event chain: {event_chain}")
-        return "".join(
-            [
-                "(() => {",
-                format_var(event_chain),
-                f"; preventDefault({format_var(event_arg)})" if event_arg else "",
-                "})()",
-            ]
-        )
-
-    chain = ",".join([format_event(event) for event in event_chain.events])
-    return "".join(
-        [
-            f"addEvents([{chain}]",
-            f", {format_var(event_arg)}" if event_arg else "",
-            ")",
-        ]
-    )
+if TYPE_CHECKING:
+    from reflex.ivars import ImmutableVar
 
 
 def format_queue_events(
-    events: EventSpec
-    | EventHandler
-    | Callable
-    | List[EventSpec | EventHandler | Callable]
-    | None = None,
+    events: (
+        EventSpec
+        | EventHandler
+        | Callable
+        | List[EventSpec | EventHandler | Callable]
+        | None
+    ) = None,
     args_spec: Optional[ArgsSpec] = None,
-) -> Var[EventChain]:
+) -> ImmutableVar[EventChain]:
     """Format a list of event handler / event spec as a javascript callback.
 
     The resulting code can be passed to interfaces that expect a callback
@@ -645,11 +549,10 @@ def format_queue_events(
         call_event_fn,
         call_event_handler,
     )
+    from reflex.ivars import FunctionVar, ImmutableVar
 
     if not events:
-        return Var.create_safe(
-            "() => null", _var_is_string=False, _var_is_local=False
-        ).to(EventChain)
+        return ImmutableVar("(() => null)").to(FunctionVar, EventChain)  # type: ignore
 
     # If no spec is provided, the function will take no arguments.
     def _default_args_spec():
@@ -674,7 +577,7 @@ def format_queue_events(
             specs = [call_event_handler(spec, args_spec or _default_args_spec)]
         elif isinstance(spec, type(lambda: None)):
             specs = call_event_fn(spec, args_spec or _default_args_spec)  # type: ignore
-            if isinstance(specs, Var):
+            if isinstance(specs, ImmutableVar):
                 raise ValueError(
                     f"Invalid event spec: {specs}. Expected a list of EventSpecs."
                 )
@@ -682,12 +585,10 @@ def format_queue_events(
 
     # Return the final code snippet, expecting queueEvents, processEvent, and socket to be in scope.
     # Typically this snippet will _only_ run from within an rx.call_script eval context.
-    return Var.create_safe(
+    return ImmutableVar(
         f"{arg_def} => {{queueEvents([{','.join(payloads)}], {constants.CompileVars.SOCKET}); "
         f"processEvent({constants.CompileVars.SOCKET})}}",
-        _var_is_string=False,
-        _var_is_local=False,
-    ).to(EventChain)
+    ).to(FunctionVar, EventChain)  # type: ignore
 
 
 def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
@@ -774,41 +675,6 @@ def format_ref(ref: str) -> str:
     return f"ref_{clean_ref}"
 
 
-def format_array_ref(refs: str, idx: Var | None) -> str:
-    """Format a ref accessed by array.
-
-    Args:
-        refs : The ref array to access.
-        idx : The index of the ref in the array.
-
-    Returns:
-        The formatted ref.
-    """
-    clean_ref = re.sub(r"[^\w]+", "_", refs)
-    if idx is not None:
-        idx._var_is_local = True
-        return f"refs_{clean_ref}[{idx}]"
-    return f"refs_{clean_ref}"
-
-
-def format_breadcrumbs(route: str) -> list[tuple[str, str]]:
-    """Take a route and return a list of tuple for use in breadcrumb.
-
-    Args:
-        route: The route to transform.
-
-    Returns:
-        list[tuple[str, str]]: the list of tuples for the breadcrumb.
-    """
-    route_parts = route.lstrip("/").split("/")
-
-    # create and return breadcrumbs
-    return [
-        (part, "/".join(["", *route_parts[: i + 1]]))
-        for i, part in enumerate(route_parts)
-    ]
-
-
 def format_library_name(library_fullname: str):
     """Format the name of a library.
 
@@ -841,42 +707,6 @@ def json_dumps(obj: Any) -> str:
     return json.dumps(obj, ensure_ascii=False, default=serializers.serialize)
 
 
-def unwrap_vars(value: str) -> str:
-    """Unwrap var values from a JSON string.
-
-    For example, "{var}" will be unwrapped to "var".
-
-    Args:
-        value: The JSON string to unwrap.
-
-    Returns:
-        The unwrapped JSON string.
-    """
-
-    def unescape_double_quotes_in_var(m: re.Match) -> str:
-        prefix = m.group(1) or ""
-        # Since the outer quotes are removed, the inner escaped quotes must be unescaped.
-        return prefix + re.sub('\\\\"', '"', m.group(2))
-
-    # This substitution is necessary to unwrap var values.
-    return (
-        re.sub(
-            pattern=r"""
-            (?<!\\)      # must NOT start with a backslash
-            "            # match opening double quote of JSON value
-            (<reflex.Var>.*?</reflex.Var>)?  # Optional encoded VarData (non-greedy)
-            {(.*?)}      # extract the value between curly braces (non-greedy)
-            "            # match must end with an unescaped double quote
-        """,
-            repl=unescape_double_quotes_in_var,
-            string=value,
-            flags=re.VERBOSE,
-        )
-        .replace('"`', "`")
-        .replace('`"', "`")
-    )
-
-
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
     """Collapse keys with consecutive suffixes into a single list value.
 
@@ -899,6 +729,23 @@ def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
     return collapsed
 
 
+def format_array_ref(refs: str, idx: ImmutableVar | None) -> str:
+    """Format a ref accessed by array.
+
+    Args:
+        refs : The ref array to access.
+        idx : The index of the ref in the array.
+
+    Returns:
+        The formatted ref.
+    """
+    clean_ref = re.sub(r"[^\w]+", "_", refs)
+    if idx is not None:
+        # idx._var_is_local = True
+        return f"refs_{clean_ref}[{str(idx)}]"
+    return f"refs_{clean_ref}"
+
+
 def format_data_editor_column(col: str | dict):
     """Format a given column into the proper format.
 
@@ -911,6 +758,8 @@ def format_data_editor_column(col: str | dict):
     Returns:
         The formatted column.
     """
+    from reflex.ivars import ImmutableVar
+
     if isinstance(col, str):
         return {"title": col, "id": col.lower(), "type": "str"}
 
@@ -923,7 +772,7 @@ def format_data_editor_column(col: str | dict):
             col["overlayIcon"] = None
         return col
 
-    if isinstance(col, BaseVar):
+    if isinstance(col, ImmutableVar):
         return col
 
     raise ValueError(
@@ -940,7 +789,9 @@ def format_data_editor_cell(cell: Any):
     Returns:
         The formatted cell.
     """
+    from reflex.ivars.base import ImmutableVar
+
     return {
-        "kind": Var.create(value="GridCellKind.Text", _var_is_string=False),
+        "kind": ImmutableVar.create("GridCellKind.Text"),
         "data": cell,
     }

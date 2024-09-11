@@ -6,9 +6,9 @@ import pytest
 from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond, cond
 from reflex.components.radix.themes.typography.text import Text
+from reflex.ivars.base import ImmutableVar, LiteralVar, immutable_computed_var
 from reflex.state import BaseState, State
 from reflex.utils.format import format_state_name
-from reflex.vars import BaseVar, Var, computed_var
 
 
 @pytest.fixture
@@ -21,8 +21,8 @@ def cond_state(request):
 
 def test_f_string_cond_interpolation():
     # make sure backticks inside interpolation don't get escaped
-    var = Var.create(f"x {cond(True, 'a', 'b')}")
-    assert str(var) == "x ${isTrue(true) ? `a` : `b`}"
+    var = LiteralVar.create(f"x {cond(True, 'a', 'b')}")
+    assert str(var) == '("x "+(true ? "a" : "b"))'
 
 
 @pytest.mark.parametrize(
@@ -57,7 +57,7 @@ def test_validate_cond(cond_state: BaseState):
 
     [true_value_text] = true_value["children"]
     assert true_value_text["name"] == "RadixThemesText"
-    assert true_value_text["children"][0]["contents"] == "{`cond is True`}"
+    assert true_value_text["children"][0]["contents"] == '{"cond is True"}'
 
     # false value
     false_value = condition["false_value"]
@@ -65,7 +65,7 @@ def test_validate_cond(cond_state: BaseState):
 
     [false_value_text] = false_value["children"]
     assert false_value_text["name"] == "RadixThemesText"
-    assert false_value_text["children"][0]["contents"] == "{`cond is False`}"
+    assert false_value_text["children"][0]["contents"] == '{"cond is False"}'
 
 
 @pytest.mark.parametrize(
@@ -75,7 +75,7 @@ def test_validate_cond(cond_state: BaseState):
         (32, 0),
         ("hello", ""),
         (2.3, 0.0),
-        (Var.create("a"), Var.create("b")),
+        (LiteralVar.create("a"), LiteralVar.create("b")),
     ],
 )
 def test_prop_cond(c1: Any, c2: Any):
@@ -91,18 +91,18 @@ def test_prop_cond(c1: Any, c2: Any):
         c2,
     )
 
-    assert isinstance(prop_cond, Var)
-    if not isinstance(c1, Var):
-        c1 = json.dumps(c1).replace('"', "`")
-    if not isinstance(c2, Var):
-        c2 = json.dumps(c2).replace('"', "`")
-    assert str(prop_cond) == f"{{isTrue(true) ? {c1} : {c2}}}"
+    assert isinstance(prop_cond, ImmutableVar)
+    if not isinstance(c1, ImmutableVar):
+        c1 = json.dumps(c1)
+    if not isinstance(c2, ImmutableVar):
+        c2 = json.dumps(c2)
+    assert str(prop_cond) == f"(true ? {str(c1)} : {str(c2)})"
 
 
 def test_cond_no_mix():
     """Test if cond can't mix components and props."""
     with pytest.raises(ValueError):
-        cond(True, Var.create("hello"), Text.create("world"))
+        cond(True, LiteralVar.create("hello"), Text.create("world"))
 
 
 def test_cond_no_else():
@@ -125,23 +125,22 @@ def test_cond_computed_var():
     """Test if cond works with computed vars."""
 
     class CondStateComputed(State):
-        @computed_var
+        @immutable_computed_var
         def computed_int(self) -> int:
             return 0
 
-        @computed_var
+        @immutable_computed_var
         def computed_str(self) -> str:
             return "a string"
 
     comp = cond(True, CondStateComputed.computed_int, CondStateComputed.computed_str)
 
     # TODO: shouln't this be a ComputedVar?
-    assert isinstance(comp, BaseVar)
+    assert isinstance(comp, ImmutableVar)
 
     state_name = format_state_name(CondStateComputed.get_full_name())
     assert (
-        str(comp)
-        == f"{{isTrue(true) ? {state_name}.computed_int : {state_name}.computed_str}}"
+        str(comp) == f"(true ? {state_name}.computed_int : {state_name}.computed_str)"
     )
 
     assert comp._var_type == Union[int, str]

@@ -1,18 +1,19 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Dict
 
 import pytest
 
 import reflex as rx
 from reflex import style
 from reflex.components.component import evaluate_style_namespaces
+from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
 
 test_style = [
     ({"a": 1}, {"a": 1}),
-    ({"a": Var.create("abc")}, {"a": "abc"}),
+    ({"a": LiteralVar.create("abc")}, {"a": "abc"}),
     ({"test_case": 1}, {"testCase": 1}),
     ({"test_case": {"a": 1}}, {"testCase": {"a": 1}}),
     ({":test_case": {"a": 1}}, {":testCase": {"a": 1}}),
@@ -21,8 +22,8 @@ test_style = [
         {"::-webkit-scrollbar": {"display": "none"}},
         {"::-webkit-scrollbar": {"display": "none"}},
     ),
-    ({"margin_y": "2rem"}, {"marginBottom": "2rem", "marginTop": "2rem"}),
-    ({"marginY": "2rem"}, {"marginBottom": "2rem", "marginTop": "2rem"}),
+    ({"margin_y": "2rem"}, {"marginTop": "2rem", "marginBottom": "2rem"}),
+    ({"marginY": "2rem"}, {"marginTop": "2rem", "marginBottom": "2rem"}),
     (
         {"::-webkit-scrollbar": {"bgColor": "red"}},
         {"::-webkit-scrollbar": {"backgroundColor": "red"}},
@@ -49,7 +50,7 @@ def test_convert(style_dict, expected):
         expected: The expected formatted style.
     """
     converted_dict, _var_data = style.convert(style_dict)
-    assert converted_dict == expected
+    assert LiteralVar.create(converted_dict).equals(LiteralVar.create(expected))
 
 
 @pytest.mark.parametrize(
@@ -63,7 +64,9 @@ def test_create_style(style_dict, expected):
         style_dict: The style to check.
         expected: The expected formatted style.
     """
-    assert style.Style(style_dict) == expected
+    assert LiteralVar.create(style.Style(style_dict)).equals(
+        LiteralVar.create(expected)
+    )
 
 
 def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
@@ -78,7 +81,7 @@ def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
         assert key in d2
         if isinstance(value, dict):
             compare_dict_of_var(value, d2[key])
-        elif isinstance(value, Var):
+        elif isinstance(value, ImmutableVar):
             assert value.equals(d2[key])
         else:
             assert value == d2[key]
@@ -87,39 +90,47 @@ def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
 @pytest.mark.parametrize(
     ("kwargs", "style_dict", "expected_get_style"),
     [
-        ({}, {}, {"css": None}),
-        ({"color": "hotpink"}, {}, {"css": Var.create(Style({"color": "hotpink"}))}),
-        ({}, {"color": "red"}, {"css": Var.create(Style({"color": "red"}))}),
+        ({}, {}, {}),
+        (
+            {"color": "hotpink"},
+            {},
+            {"css": LiteralVar.create(Style({"color": "hotpink"}))},
+        ),
+        ({}, {"color": "red"}, {"css": LiteralVar.create(Style({"color": "red"}))}),
         (
             {"color": "hotpink"},
             {"color": "red"},
-            {"css": Var.create(Style({"color": "hotpink"}))},
+            {"css": LiteralVar.create(Style({"color": "hotpink"}))},
         ),
         (
             {"_hover": {"color": "hotpink"}},
             {},
-            {"css": Var.create(Style({"&:hover": {"color": "hotpink"}}))},
+            {"css": LiteralVar.create(Style({"&:hover": {"color": "hotpink"}}))},
         ),
         (
             {},
             {"_hover": {"color": "red"}},
-            {"css": Var.create(Style({"&:hover": {"color": "red"}}))},
+            {"css": LiteralVar.create(Style({"&:hover": {"color": "red"}}))},
         ),
         (
             {},
             {":hover": {"color": "red"}},
-            {"css": Var.create(Style({"&:hover": {"color": "red"}}))},
+            {"css": LiteralVar.create(Style({"&:hover": {"color": "red"}}))},
         ),
         (
             {},
             {"::-webkit-scrollbar": {"display": "none"}},
-            {"css": Var.create(Style({"&::-webkit-scrollbar": {"display": "none"}}))},
+            {
+                "css": LiteralVar.create(
+                    Style({"&::-webkit-scrollbar": {"display": "none"}})
+                )
+            },
         ),
         (
             {},
             {"::-moz-progress-bar": {"background_color": "red"}},
             {
-                "css": Var.create(
+                "css": LiteralVar.create(
                     Style({"&::-moz-progress-bar": {"backgroundColor": "red"}})
                 )
             },
@@ -128,7 +139,7 @@ def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
             {"color": ["#111", "#222", "#333", "#444", "#555"]},
             {},
             {
-                "css": Var.create(
+                "css": LiteralVar.create(
                     Style(
                         {
                             "@media screen and (min-width: 0)": {"color": "#111"},
@@ -148,7 +159,7 @@ def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
             },
             {},
             {
-                "css": Var.create(
+                "css": LiteralVar.create(
                     Style(
                         {
                             "@media screen and (min-width: 0)": {"color": "#111"},
@@ -169,7 +180,7 @@ def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
             },
             {},
             {
-                "css": Var.create(
+                "css": LiteralVar.create(
                     Style(
                         {
                             "@media screen and (min-width: 0)": {
@@ -209,7 +220,7 @@ def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
             },
             {},
             {
-                "css": Var.create(
+                "css": LiteralVar.create(
                     Style(
                         {
                             "&:hover": {
@@ -236,7 +247,7 @@ def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
             {"_hover": {"color": ["#111", "#222", "#333", "#444", "#555"]}},
             {},
             {
-                "css": Var.create(
+                "css": LiteralVar.create(
                     Style(
                         {
                             "&:hover": {
@@ -268,7 +279,7 @@ def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
             },
             {},
             {
-                "css": Var.create(
+                "css": LiteralVar.create(
                     Style(
                         {
                             "&:hover": {
@@ -307,7 +318,7 @@ def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
             },
             {},
             {
-                "css": Var.create(
+                "css": LiteralVar.create(
                     Style(
                         {
                             "&:hover": {
@@ -361,20 +372,20 @@ class StyleState(rx.State):
     [
         (
             {"color": StyleState.color},
-            {"css": Var.create(Style({"color": StyleState.color}))},
+            {"css": LiteralVar.create(Style({"color": StyleState.color}))},
         ),
         (
             {"color": f"dark{StyleState.color}"},
             {
-                "css": Var.create_safe(f'{{"color": `dark{StyleState.color}`}}').to(
-                    Style
-                )
+                "css": ImmutableVar.create_safe(
+                    f'({{ ["color"] : ("dark"+{StyleState.color}) }})'
+                ).to(Dict[str, str])
             },
         ),
         (
             {"color": StyleState.color, "_hover": {"color": StyleState.color2}},
             {
-                "css": Var.create(
+                "css": LiteralVar.create(
                     Style(
                         {
                             "color": StyleState.color,
@@ -387,7 +398,7 @@ class StyleState(rx.State):
         (
             {"color": [StyleState.color, "gray", StyleState.color2, "yellow", "blue"]},
             {
-                "css": Var.create(
+                "css": LiteralVar.create(
                     Style(
                         {
                             "@media screen and (min-width: 0)": {
@@ -415,7 +426,7 @@ class StyleState(rx.State):
                 ]
             },
             {
-                "css": Var.create(
+                "css": LiteralVar.create(
                     Style(
                         {
                             "&:hover": {
@@ -453,7 +464,7 @@ class StyleState(rx.State):
                 }
             },
             {
-                "css": Var.create(
+                "css": LiteralVar.create(
                     Style(
                         {
                             "&:hover": {
@@ -492,7 +503,10 @@ def test_style_via_component_with_state(
     """
     comp = rx.el.div(**kwargs)
 
-    assert comp.style._var_data == expected_get_style["css"]._var_data
+    assert (
+        VarData.merge(comp.style._var_data)
+        == expected_get_style["css"]._get_all_var_data()
+    )
     # Assert that style values are equal.
     compare_dict_of_var(comp._get_style(), expected_get_style)
 
@@ -507,10 +521,10 @@ def test_evaluate_style_namespaces():
 
 def test_style_update_with_var_data():
     """Test that .update with a Style containing VarData works."""
-    red_var = Var.create_safe("red")._replace(
+    red_var = LiteralVar.create("red")._replace(
         merge_var_data=VarData(hooks={"const red = true": None}),  # type: ignore
     )
-    blue_var = Var.create_safe("blue", _var_is_local=False)._replace(
+    blue_var = LiteralVar.create("blue")._replace(
         merge_var_data=VarData(hooks={"const blue = true": None}),  # type: ignore
     )
 
@@ -521,7 +535,9 @@ def test_style_update_with_var_data():
     )
     s2 = Style()
     s2.update(s1, background_color=f"{blue_var}ish")
-    assert s2 == {"color": "red", "backgroundColor": "`${blue}ish`"}
+    assert str(LiteralVar.create(s2)) == str(
+        LiteralVar.create({"color": "red", "backgroundColor": "blueish"})
+    )
     assert s2._var_data is not None
     assert "const red = true" in s2._var_data.hooks
     assert "const blue = true" in s2._var_data.hooks

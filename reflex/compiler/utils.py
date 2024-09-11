@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
 
+from reflex.ivars.base import ImmutableVar
 from reflex.utils.prerequisites import get_web_dir
 
 try:
@@ -32,7 +33,6 @@ from reflex.state import BaseState, Cookie, LocalStorage, SessionStorage
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
 from reflex.utils.imports import ImportVar, ParsedImportDict
-from reflex.vars import Var
 
 # To re-export this function.
 merge_imports = imports.merge_imports
@@ -152,7 +152,9 @@ def compile_state(state: Type[BaseState]) -> dict:
         console.warn(
             f"Failed to compile initial state with computed vars, excluding them: {e}"
         )
-        initial_state = state(_reflex_internal_init=True).dict(include_computed=False)
+        initial_state = state(_reflex_internal_init=True).dict(
+            initial=True, include_computed=False
+        )
     return format.format_state(initial_state)
 
 
@@ -284,7 +286,7 @@ def compile_custom_component(
 def create_document_root(
     head_components: list[Component] | None = None,
     html_lang: Optional[str] = None,
-    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+    html_custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
 ) -> Component:
     """Create the document root.
 

@@ -2,8 +2,8 @@ import pytest
 
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.icon_button import IconButton
+from reflex.ivars.base import LiteralVar
 from reflex.style import Style
-from reflex.vars import Var
 
 
 def test_icon_button():
@@ -26,5 +26,5 @@ def test_icon_button_size_prop():
     ib1 = IconButton.create("activity", size="2")
     assert isinstance(ib1, IconButton)
 
-    ib2 = IconButton.create("activity", size=Var.create("2"))
+    ib2 = IconButton.create("activity", size=LiteralVar.create("2"))
     assert isinstance(ib2, IconButton)

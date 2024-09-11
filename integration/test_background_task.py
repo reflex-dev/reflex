@@ -13,6 +13,7 @@ def BackgroundTask():
     import asyncio
 
     import pytest
+    import reflex_chakra as rc
 
     import reflex as rx
     from reflex.state import ImmutableStateError
@@ -86,6 +87,13 @@ def BackgroundTask():
             third_state = await self.get_state(ThirdState)
             await third_state._triple_count()
 
+        @rx.background
+        async def yield_in_async_with_self(self):
+            async with self:
+                self.counter += 1
+                yield
+                self.counter += 1
+
     class OtherState(rx.State):
         @rx.background
         async def get_other_state(self):
@@ -108,11 +116,11 @@ def BackgroundTask():
 
     def index() -> rx.Component:
         return rx.vstack(
-            rx.chakra.input(
+            rc.input(
                 id="token", value=State.router.session.client_token, is_read_only=True
             ),
             rx.heading(State.counter, id="counter"),
-            rx.chakra.input(
+            rc.input(
                 id="iterations",
                 placeholder="Iterations",
                 value=State.iterations.to_string(),  # type: ignore
@@ -153,6 +161,11 @@ def BackgroundTask():
                 "Increment from OtherState",
                 on_click=OtherState.get_other_state,
                 id="increment-from-other-state",
+            ),
+            rx.button(
+                "Yield in Async with Self",
+                on_click=State.yield_in_async_with_self,
+                id="yield-in-async-with-self",
             ),
             rx.button("Reset", on_click=State.reset_counter, id="reset"),
         )
@@ -333,3 +346,30 @@ def test_get_state(
 
     increment_button.click()
     assert background_task._poll_for(lambda: counter.text == "13", timeout=5)
+
+
+def test_yield_in_async_with_self(
+    background_task: AppHarness,
+    driver: WebDriver,
+    token: str,
+):
+    """Test that yielding inside async with self does not disable mutability.
+
+    Args:
+        background_task: harness for BackgroundTask app.
+        driver: WebDriver instance.
+        token: The token for the connected client.
+    """
+    assert background_task.app_instance is not None
+
+    # get a reference to all buttons
+    yield_in_async_with_self_button = driver.find_element(
+        By.ID, "yield-in-async-with-self"
+    )
+
+    # get a reference to the counter
+    counter = driver.find_element(By.ID, "counter")
+    assert background_task._poll_for(lambda: counter.text == "0", timeout=5)
+
+    yield_in_async_with_self_button.click()
+    assert background_task._poll_for(lambda: counter.text == "2", timeout=5)

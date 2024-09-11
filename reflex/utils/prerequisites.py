@@ -6,7 +6,6 @@ import functools
 import glob
 import importlib
 import importlib.metadata
-import inspect
 import json
 import os
 import platform
@@ -29,15 +28,16 @@ import typer
 from alembic.util.exc import CommandError
 from packaging import version
 from redis import Redis as RedisSync
+from redis import exceptions
 from redis.asyncio import Redis
 
-import reflex
 from reflex import constants, model
 from reflex.base import Base
 from reflex.compiler import templates
 from reflex.config import Config, get_config
-from reflex.utils import console, path_ops, processes
+from reflex.utils import console, net, path_ops, processes
 from reflex.utils.format import format_library_name
+from reflex.utils.registry import _get_best_registry
 
 CURRENTLY_INSTALLING_NODE = False
 
@@ -81,7 +81,7 @@ def check_latest_package_version(package_name: str):
         # Get the latest version from PyPI
         current_version = importlib.metadata.version(package_name)
         url = f"https://pypi.org/pypi/{package_name}/json"
-        response = httpx.get(url)
+        response = net.get(url)
         latest_version = response.json()["info"]["version"]
         if (
             version.parse(current_version) < version.parse(latest_version)
@@ -325,24 +325,43 @@ def parse_redis_url() -> str | dict | None:
     """Parse the REDIS_URL in config if applicable.
 
     Returns:
-        If redis-py syntax, return the URL as it is. Otherwise, return the host/port/db as a dict.
+        If url is non-empty, return the URL as it is.
+
+    Raises:
+        ValueError: If the REDIS_URL is not a supported scheme.
     """
     config = get_config()
     if not config.redis_url:
         return None
-    if config.redis_url.startswith(("redis://", "rediss://", "unix://")):
-        return config.redis_url
-    console.deprecate(
-        feature_name="host[:port] style redis urls",
-        reason="redis-py url syntax is now being used",
-        deprecation_version="0.3.6",
-        removal_version="0.6.0",
-    )
-    redis_url, has_port, redis_port = config.redis_url.partition(":")
-    if not has_port:
-        redis_port = 6379
-    console.info(f"Using redis at {config.redis_url}")
-    return dict(host=redis_url, port=int(redis_port), db=0)
+    if not config.redis_url.startswith(("redis://", "rediss://", "unix://")):
+        raise ValueError(
+            "REDIS_URL must start with 'redis://', 'rediss://', or 'unix://'."
+        )
+    return config.redis_url
+
+
+async def get_redis_status() -> bool | None:
+    """Checks the status of the Redis connection.
+
+    Attempts to connect to Redis and send a ping command to verify connectivity.
+
+    Returns:
+        bool or None: The status of the Redis connection:
+            - True: Redis is accessible and responding.
+            - False: Redis is not accessible due to a connection error.
+            - None: Redis not used i.e redis_url is not set in rxconfig.
+    """
+    try:
+        status = True
+        redis_client = get_redis_sync()
+        if redis_client is not None:
+            redis_client.ping()
+        else:
+            status = None
+    except exceptions.RedisError:
+        status = False
+
+    return status
 
 
 def validate_app_name(app_name: str | None = None) -> str:
@@ -577,6 +596,15 @@ def initialize_package_json():
     code = _compile_package_json()
     output_path.write_text(code)
 
+    best_registry = _get_best_registry()
+    bun_config_path = get_web_dir() / constants.Bun.CONFIG_PATH
+    bun_config_path.write_text(
+        f"""
+[install]
+registry = "{best_registry}"
+"""
+    )
+
 
 def init_reflex_json(project_hash: int | None):
     """Write the hash of the Reflex project to a REFLEX_JSON.
@@ -662,7 +690,7 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
     """
     # Download the script
     console.debug(f"Downloading {url}")
-    response = httpx.get(url)
+    response = net.get(url)
     if response.status_code != httpx.codes.OK:
         response.raise_for_status()
 
@@ -692,11 +720,11 @@ def download_and_extract_fnm_zip():
     try:
         # Download the FNM zip release.
         # TODO: show progress to improve UX
-        with httpx.stream("GET", url, follow_redirects=True) as response:
-            response.raise_for_status()
-            with open(fnm_zip_file, "wb") as output_file:
-                for chunk in response.iter_bytes():
-                    output_file.write(chunk)
+        response = net.get(url, follow_redirects=True)
+        response.raise_for_status()
+        with open(fnm_zip_file, "wb") as output_file:
+            for chunk in response.iter_bytes():
+                output_file.write(chunk)
 
         # Extract the downloaded zip file.
         with zipfile.ZipFile(fnm_zip_file, "r") as zip_ref:
@@ -1159,114 +1187,6 @@ def prompt_for_template(templates: list[Template]) -> str:
     return templates[int(template)].name
 
 
-def should_show_rx_chakra_migration_instructions() -> bool:
-    """Should we show the migration instructions for rx.chakra.* => rx.*?.
-
-    Returns:
-        bool: True if we should show the migration instructions.
-    """
-    if os.getenv("REFLEX_PROMPT_MIGRATE_TO_RX_CHAKRA") == "yes":
-        return True
-
-    if not Path(constants.Config.FILE).exists():
-        # They are running reflex init for the first time.
-        return False
-
-    existing_init_reflex_version = None
-    reflex_json = get_web_dir() / constants.Dirs.REFLEX_JSON
-    if reflex_json.exists():
-        with reflex_json.open("r") as f:
-            data = json.load(f)
-        existing_init_reflex_version = data.get("version", None)
-
-    if existing_init_reflex_version is None:
-        # They clone a reflex app from git for the first time.
-        # That app may or may not be 0.4 compatible.
-        # So let's just show these instructions THIS TIME.
-        return True
-
-    if constants.Reflex.VERSION < "0.4":
-        return False
-    else:
-        return existing_init_reflex_version < "0.4"
-
-
-def show_rx_chakra_migration_instructions():
-    """Show the migration instructions for rx.chakra.* => rx.*."""
-    console.log(
-        "Prior to reflex 0.4.0, rx.* components are based on Chakra UI. They are now based on Radix UI. To stick to Chakra UI, use rx.chakra.*."
-    )
-    console.log("")
-    console.log(
-        "[bold]Run `reflex script keep-chakra` to automatically update your app."
-    )
-    console.log("")
-    console.log(
-        "For more details, please see https://reflex.dev/blog/2024-02-16-reflex-v0.4.0/"
-    )
-
-
-def migrate_to_rx_chakra():
-    """Migrate rx.button => r.chakra.button, etc."""
-    file_pattern = os.path.join(get_config().app_name, "**/*.py")
-    file_list = glob.glob(file_pattern, recursive=True)
-
-    # Populate with all rx.<x> components that have been moved to rx.chakra.<x>
-    patterns = {
-        rf"\brx\.{name}\b": f"rx.chakra.{name}"
-        for name in _get_rx_chakra_component_to_migrate()
-    }
-
-    for file_path in file_list:
-        with FileInput(file_path, inplace=True) as file:
-            for _line_num, line in enumerate(file):
-                for old, new in patterns.items():
-                    line = re.sub(old, new, line)
-                print(line, end="")
-
-
-def _get_rx_chakra_component_to_migrate() -> set[str]:
-    from reflex.components.chakra import ChakraComponent
-
-    rx_chakra_names = set(dir(reflex.chakra))
-
-    names_to_migrate = set()
-
-    # whitelist names will always be rewritten as rx.chakra.<x>
-    whitelist = {
-        "ColorModeIcon",
-        "MultiSelect",
-        "MultiSelectOption",
-        "color_mode_icon",
-        "multi_select",
-        "multi_select_option",
-    }
-
-    for rx_chakra_name in sorted(rx_chakra_names):
-        if rx_chakra_name.startswith("_"):
-            continue
-
-        rx_chakra_object = getattr(reflex.chakra, rx_chakra_name)
-        try:
-            if (
-                (
-                    inspect.ismethod(rx_chakra_object)
-                    and inspect.isclass(rx_chakra_object.__self__)
-                    and issubclass(rx_chakra_object.__self__, ChakraComponent)
-                )
-                or (
-                    inspect.isclass(rx_chakra_object)
-                    and issubclass(rx_chakra_object, ChakraComponent)
-                )
-                or rx_chakra_name in whitelist
-            ):
-                names_to_migrate.add(rx_chakra_name)
-
-        except Exception:
-            raise
-    return names_to_migrate
-
-
 def migrate_to_reflex():
     """Migration from Pynecone to Reflex."""
     # Check if the old config file exists.
@@ -1311,9 +1231,6 @@ def migrate_to_reflex():
                 print(line, end="")
 
 
-RELEASES_URL = f"https://api.github.com/repos/reflex-dev/templates/releases"
-
-
 def fetch_app_templates(version: str) -> dict[str, Template]:
     """Fetch a dict of templates from the templates repo using github API.
 
@@ -1325,7 +1242,7 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
     """
 
     def get_release_by_tag(tag: str) -> dict | None:
-        response = httpx.get(RELEASES_URL)
+        response = net.get(constants.Reflex.RELEASES_URL)
         response.raise_for_status()
         releases = response.json()
         for release in releases:
@@ -1346,7 +1263,7 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
     else:
         templates_url = asset["browser_download_url"]
 
-    templates_data = httpx.get(templates_url, follow_redirects=True).json()["templates"]
+    templates_data = net.get(templates_url, follow_redirects=True).json()["templates"]
 
     for template in templates_data:
         if template["name"] == "blank":
@@ -1389,7 +1306,7 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
     zip_file_path = Path(temp_dir) / "template.zip"
     try:
         # Note: following redirects can be risky. We only allow this for reflex built templates at the moment.
-        response = httpx.get(template_url, follow_redirects=True)
+        response = net.get(template_url, follow_redirects=True)
         console.debug(f"Server responded download request: {response}")
         response.raise_for_status()
     except httpx.HTTPError as he:
@@ -1437,7 +1354,11 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         template_code_dir_name=template_name,
         template_dir=template_dir,
     )
-
+    req_file = Path("requirements.txt")
+    if req_file.exists() and len(req_file.read_text().splitlines()) > 1:
+        console.info(
+            "Run `pip install -r requirements.txt` to install the required python packages for this template."
+        )
     #  Clean up the temp directories.
     shutil.rmtree(temp_dir)
     shutil.rmtree(unzip_dir)
@@ -1516,7 +1437,7 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
         generation_hash: The generation hash from reflex.build.
     """
     # Download the reflex code for the generation.
-    resp = httpx.get(
+    resp = net.get(
         constants.Templates.REFLEX_BUILD_CODE_URL.format(
             generation_hash=generation_hash
         )

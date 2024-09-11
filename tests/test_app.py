@@ -13,6 +13,7 @@ from typing import Generator, List, Tuple, Type
 from unittest.mock import AsyncMock
 
 import pytest
+import reflex_chakra as rc
 import sqlmodel
 from fastapi import FastAPI, UploadFile
 from starlette_admin.auth import AuthProvider
@@ -34,6 +35,7 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import Event
+from reflex.ivars.base import immutable_computed_var
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
 from reflex.state import (
@@ -41,6 +43,7 @@ from reflex.state import (
     OnLoadInternalState,
     RouterData,
     State,
+    StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
     StateUpdate,
@@ -48,7 +51,6 @@ from reflex.state import (
 )
 from reflex.style import Style
 from reflex.utils import exceptions, format
-from reflex.vars import computed_var
 
 from .conftest import chdir
 from .states import (
@@ -67,7 +69,7 @@ class EmptyState(BaseState):
 
 
 @pytest.fixture
-def index_page():
+def index_page() -> ComponentCallable:
     """An index page.
 
     Returns:
@@ -81,7 +83,7 @@ def index_page():
 
 
 @pytest.fixture
-def about_page():
+def about_page() -> ComponentCallable:
     """An about page.
 
     Returns:
@@ -904,7 +906,7 @@ class DynamicState(BaseState):
         """Increment the counter var."""
         self.counter = self.counter + 1
 
-    @computed_var
+    @immutable_computed_var(cache=True)
     def comp_dynamic(self) -> str:
         """A computed var that depends on the dynamic var.
 
@@ -917,9 +919,62 @@ class DynamicState(BaseState):
     on_load_internal = OnLoadInternalState.on_load_internal.fn
 
 
+def test_dynamic_arg_shadow(
+    index_page: ComponentCallable,
+    windows_platform: bool,
+    token: str,
+    app_module_mock: unittest.mock.Mock,
+    mocker,
+):
+    """Create app with dynamic route var and try to add a page with a dynamic arg that shadows a state var.
+
+    Args:
+        index_page: The index page.
+        windows_platform: Whether the system is windows.
+        token: a Token.
+        app_module_mock: Mocked app module.
+        mocker: pytest mocker object.
+    """
+    arg_name = "counter"
+    route = f"/test/[{arg_name}]"
+    if windows_platform:
+        route.lstrip("/").replace("/", "\\")
+    app = app_module_mock.app = App(state=DynamicState)
+    assert app.state is not None
+    with pytest.raises(NameError):
+        app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
+
+
+def test_multiple_dynamic_args(
+    index_page: ComponentCallable,
+    windows_platform: bool,
+    token: str,
+    app_module_mock: unittest.mock.Mock,
+    mocker,
+):
+    """Create app with multiple dynamic route vars with the same name.
+
+    Args:
+        index_page: The index page.
+        windows_platform: Whether the system is windows.
+        token: a Token.
+        app_module_mock: Mocked app module.
+        mocker: pytest mocker object.
+    """
+    arg_name = "my_arg"
+    route = f"/test/[{arg_name}]"
+    route2 = f"/test2/[{arg_name}]"
+    if windows_platform:
+        route = route.lstrip("/").replace("/", "\\")
+        route2 = route2.lstrip("/").replace("/", "\\")
+    app = app_module_mock.app = App(state=EmptyState)
+    app.add_page(index_page, route=route)
+    app.add_page(index_page, route=route2)
+
+
 @pytest.mark.asyncio
 async def test_dynamic_route_var_route_change_completed_on_load(
-    index_page,
+    index_page: ComponentCallable,
     windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
@@ -1047,9 +1102,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         assert on_load_update == StateUpdate(
             delta={
                 state.get_name(): {
-                    # These computed vars _shouldn't_ be here, because they didn't change
-                    arg_name: exp_val,
-                    f"comp_{arg_name}": exp_val,
                     "loaded": exp_index + 1,
                 },
             },
@@ -1071,9 +1123,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         assert on_set_is_hydrated_update == StateUpdate(
             delta={
                 state.get_name(): {
-                    # These computed vars _shouldn't_ be here, because they didn't change
-                    arg_name: exp_val,
-                    f"comp_{arg_name}": exp_val,
                     "is_hydrated": True,
                 },
             },
@@ -1095,9 +1144,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         assert update == StateUpdate(
             delta={
                 state.get_name(): {
-                    # These computed vars _shouldn't_ be here, because they didn't change
-                    f"comp_{arg_name}": exp_val,
-                    arg_name: exp_val,
                     "counter": exp_index + 1,
                 }
             },
@@ -1251,7 +1297,7 @@ def test_app_wrap_compile_theme(compilable_app: tuple[App, Path]):
         "function AppWrap({children}) {"
         "return ("
         "<RadixThemesColorModeProvider>"
-        "<RadixThemesTheme accentColor={`plum`} css={{...theme.styles.global[':root'], ...theme.styles.global.body}}>"
+        "<RadixThemesTheme accentColor={\"plum\"} css={{...theme.styles.global[':root'], ...theme.styles.global.body}}>"
         "<Fragment>"
         "{children}"
         "</Fragment>"
@@ -1274,13 +1320,13 @@ def test_app_wrap_priority(compilable_app: tuple[App, Path]):
         tag = "Fragment1"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(99, "Box"): rx.chakra.box()}
+            return {(99, "Box"): rc.box()}
 
     class Fragment2(Component):
         tag = "Fragment2"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(50, "Text"): rx.chakra.text()}
+            return {(50, "Text"): rc.text()}
 
     class Fragment3(Component):
         tag = "Fragment3"
@@ -1394,7 +1440,9 @@ def test_app_state_manager():
         app.state_manager
     app._enable_state()
     assert app.state_manager is not None
-    assert isinstance(app.state_manager, (StateManagerMemory, StateManagerRedis))
+    assert isinstance(
+        app.state_manager, (StateManagerMemory, StateManagerDisk, StateManagerRedis)
+    )
 
 
 def test_generate_component():
@@ -1433,16 +1481,16 @@ def test_add_page_component_returning_tuple():
 
     assert isinstance((fragment_wrapper := app.pages["index"].children[0]), Fragment)
     assert isinstance((first_text := fragment_wrapper.children[0]), Text)
-    assert str(first_text.children[0].contents) == "{`first`}"  # type: ignore
+    assert str(first_text.children[0].contents) == '"first"'  # type: ignore
     assert isinstance((second_text := fragment_wrapper.children[1]), Text)
-    assert str(second_text.children[0].contents) == "{`second`}"  # type: ignore
+    assert str(second_text.children[0].contents) == '"second"'  # type: ignore
 
     # Test page with trailing comma.
     assert isinstance(
         (page2_fragment_wrapper := app.pages["page2"].children[0]), Fragment
     )
     assert isinstance((third_text := page2_fragment_wrapper.children[0]), Text)
-    assert str(third_text.children[0].contents) == "{`third`}"  # type: ignore
+    assert str(third_text.children[0].contents) == '"third"'  # type: ignore
 
 
 @pytest.mark.parametrize("export", (True, False))
@@ -1504,11 +1552,11 @@ def test_app_with_valid_var_dependencies(compilable_app: tuple[App, Path]):
         base: int = 0
         _backend: int = 0
 
-        @computed_var(cache=True)
+        @immutable_computed_var(cache=True)
         def foo(self) -> str:
             return "foo"
 
-        @computed_var(deps=["_backend", "base", foo], cache=True)
+        @immutable_computed_var(deps=["_backend", "base", foo], cache=True)
         def bar(self) -> str:
             return "bar"
 
@@ -1520,7 +1568,7 @@ def test_app_with_invalid_var_dependencies(compilable_app: tuple[App, Path]):
     app, _ = compilable_app
 
     class InvalidDepState(BaseState):
-        @computed_var(deps=["foolksjdf"], cache=True)
+        @immutable_computed_var(deps=["foolksjdf"], cache=True)
         def bar(self) -> str:
             return "bar"
 

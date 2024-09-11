@@ -12,6 +12,7 @@ from . import compiler as compiler
 from . import components as components
 from . import config as config
 from . import event as event
+from . import ivars as ivars
 from . import model as model
 from . import style as style
 from . import testing as testing
@@ -21,7 +22,6 @@ from .admin import AdminDash as AdminDash
 from .app import App as App
 from .app import UploadFile as UploadFile
 from .base import Base as Base
-from .components import chakra as chakra
 from .components import el as el
 from .components import lucide as lucide
 from .components import next as next
@@ -71,7 +71,6 @@ from .components.plotly import plotly as plotly
 from .components.radix.primitives.accordion import accordion as accordion
 from .components.radix.primitives.drawer import drawer as drawer
 from .components.radix.primitives.form import form as form
-from .components.radix.primitives.progress import progress as progress
 from .components.radix.themes.base import theme as theme
 from .components.radix.themes.base import theme_panel as theme_panel
 from .components.radix.themes.color_mode import color_mode as color_mode
@@ -106,6 +105,7 @@ from .components.radix.themes.components.hover_card import hover_card as hover_c
 from .components.radix.themes.components.icon_button import icon_button as icon_button
 from .components.radix.themes.components.inset import inset as inset
 from .components.radix.themes.components.popover import popover as popover
+from .components.radix.themes.components.progress import progress as progress
 from .components.radix.themes.components.radio_cards import radio_cards as radio_cards
 from .components.radix.themes.components.radio_group import radio as radio
 from .components.radix.themes.components.radio_group import radio_group as radio_group
@@ -190,7 +190,6 @@ from .style import toggle_color_mode as toggle_color_mode
 from .utils.imports import ImportVar as ImportVar
 from .utils.serializers import serializer as serializer
 from .vars import Var as Var
-from .vars import cached_var as cached_var
 
 del compat
 RADIX_THEMES_MAPPING: dict

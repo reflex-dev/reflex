@@ -9,6 +9,8 @@ from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
 from reflex.event import EventHandler
+from reflex.ivars.base import ImmutableVar
+from reflex.ivars.sequence import ArrayVar
 from reflex.utils import console, format, types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
@@ -293,14 +295,12 @@ class DataEditor(NoSSRComponent):
 
         # Define the name of the getData callback associated with this component and assign to get_cell_content.
         data_callback = f"getData_{editor_id}"
-        self.get_cell_content = Var.create(
-            data_callback, _var_is_local=False, _var_is_string=False
-        )  # type: ignore
+        self.get_cell_content = ImmutableVar.create(data_callback)  # type: ignore
 
         code = [f"function {data_callback}([col, row])" "{"]
 
-        columns_path = f"{self.columns._var_full_name}"
-        data_path = f"{self.data._var_full_name}"
+        columns_path = str(self.columns)
+        data_path = str(self.data)
 
         code.extend(
             [
@@ -333,12 +333,18 @@ class DataEditor(NoSSRComponent):
 
         # If rows is not provided, determine from data.
         if rows is None:
-            props["rows"] = data.length() if isinstance(data, Var) else len(data)
+            if isinstance(data, ImmutableVar) and not isinstance(data, ArrayVar):
+                raise ValueError(
+                    "DataEditor data must be an ArrayVar if rows is not provided."
+                )
+            props["rows"] = (
+                data.length() if isinstance(data, ImmutableVar) else len(data)
+            )
 
-        if not isinstance(columns, Var) and len(columns):
+        if not isinstance(columns, ImmutableVar) and len(columns):
             if (
                 types.is_dataframe(type(data))
-                or isinstance(data, Var)
+                or isinstance(data, ImmutableVar)
                 and types.is_dataframe(data._var_type)
             ):
                 raise ValueError(
@@ -403,9 +409,9 @@ def serialize_dataeditortheme(theme: DataEditorTheme):
     Returns:
         The serialized theme.
     """
-    return format.json_dumps(
-        {format.to_camel_case(k): v for k, v in theme.__dict__.items() if v is not None}
-    )
+    return {
+        format.to_camel_case(k): v for k, v in theme.__dict__.items() if v is not None
+    }
 
 
 data_editor = DataEditor.create

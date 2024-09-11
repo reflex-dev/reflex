@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "reflex"
-version = "0.5.8"
+version = "0.6.0a1"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [
@@ -28,8 +28,8 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.8"
 dill = ">=0.3.8,<0.4"
-fastapi = ">=0.96.0,<0.111.0"
-gunicorn = ">=20.1.0,<23.0"
+fastapi = ">=0.96.0,!=0.111.0,!=0.111.1"
+gunicorn = ">=20.1.0,<24.0"
 jinja2 = ">=3.1.2,<4.0"
 psutil = ">=5.9.4,<7.0"
 pydantic = ">=1.10.2,<3.0"
@@ -40,8 +40,6 @@ rich = ">=13.0.0,<14.0"
 sqlmodel = ">=0.0.14,<0.1"
 typer = ">=0.4.2,<1.0"
 uvicorn = ">=0.20.0"
-watchdog = ">=2.3.1,<5.0"
-watchfiles = ">=0.19.0,<1.0"
 starlette-admin = ">=0.11.0,<1.0"
 alembic = ">=1.11.1,<2.0"
 platformdirs = ">=3.10.0,<5.0"
@@ -61,6 +59,7 @@ httpx = ">=0.25.1,<1.0"
 twine = ">=4.0.0,<6.0"
 tomlkit = ">=0.12.4,<1.0"
 lazy_loader = ">=0.4"
+reflex-chakra = ">=0.6.0a"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.1.2,<8.0"
