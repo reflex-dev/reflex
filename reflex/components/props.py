@@ -29,6 +29,10 @@ class PropsBase(Base):
 
         Keys will be converted to camelCase.
 
+        Args:
+            *args: Arguments to pass to the parent class.
+            **kwargs: Keyword arguments to pass to the parent class.
+
         Returns:
             The object as a dictionary.
         """
