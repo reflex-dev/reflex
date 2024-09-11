@@ -69,7 +69,7 @@ else:
 if sys.version_info >= (3, 11):
     from typing import Self as Self
 else:
-    Self = None
+    from typing_extensions import Self as Self
 
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = [_GenericAlias]
