@@ -416,7 +416,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             return ToArrayOperation.create(self, var_type or list)
 
         if issubclass(output, StringVar):
-            return ToStringOperation.create(self)
+            return ToStringOperation.create(self, var_type or str)
 
         if issubclass(output, (ObjectVar, Base)):
             return ToObjectOperation.create(self, var_type or dict)
@@ -496,7 +496,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         if issubclass(fixed_type, (list, tuple, set)):
             return self.to(ArrayVar, self._var_type)
         if issubclass(fixed_type, str):
-            return self.to(StringVar)
+            return self.to(StringVar, self._var_type)
         if issubclass(fixed_type, Base):
             return self.to(ObjectVar, self._var_type)
         return self
