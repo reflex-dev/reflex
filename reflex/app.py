@@ -31,6 +31,7 @@ from typing import (
     get_type_hints,
 )
 
+import dill
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware import cors
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -1519,9 +1520,13 @@ class EventNamespace(AsyncNamespace):
             update: The state update to send.
             sid: The Socket.IO session id.
         """
+        payload = dill.dumps(
+            update.dict(),
+            byref=True,
+        )
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
+            self.emit(str(constants.SocketEvent.EVENT), payload, to=sid)
         )
 
     async def on_event(self, sid, data):
