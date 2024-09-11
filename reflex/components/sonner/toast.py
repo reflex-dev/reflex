@@ -171,12 +171,12 @@ class ToastProps(PropsBase):
             d["cancel"] = self.cancel
             if isinstance(self.cancel, dict):
                 d["cancel"] = ToastAction(**self.cancel)
-        if "on_dismiss" in d:
-            d["on_dismiss"] = format.format_queue_events(
+        if "onDismiss" in d:
+            d["onDismiss"] = format.format_queue_events(
                 self.on_dismiss, _toast_callback_signature
             )
-        if "on_auto_close" in d:
-            d["on_auto_close"] = format.format_queue_events(
+        if "onAutoClose" in d:
+            d["onAutoClose"] = format.format_queue_events(
                 self.on_auto_close, _toast_callback_signature
             )
         return d
