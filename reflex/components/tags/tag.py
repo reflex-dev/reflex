@@ -53,6 +53,9 @@ class Tag:
 
         Args:
             kwargs: The fields to set.
+
+        Returns:
+            The tag with the fields
         """
         for name, value in kwargs.items():
             setattr(self, name, value)
@@ -60,7 +63,11 @@ class Tag:
         return self
 
     def __iter__(self):
-        """Iterate over the tag's fields."""
+        """Iterate over the tag's fields.
+
+        Yields:
+            Tuple[str, Any]: The field name and value.
+        """
         for field in dataclasses.fields(self):
             yield field.name, getattr(self, field.name)
 
