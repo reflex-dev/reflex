@@ -268,8 +268,6 @@ def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
     app = App(state=EmptyState)
     assert app.state is not None
     route = "/test/[dynamic]"
-    if windows_platform:
-        route.lstrip("/").replace("/", "\\")
     assert app.pages == {}
     app.add_page(index_page, route=route)
     assert app.pages.keys() == {"test/[dynamic]"}
@@ -937,8 +935,6 @@ def test_dynamic_arg_shadow(
     """
     arg_name = "counter"
     route = f"/test/[{arg_name}]"
-    if windows_platform:
-        route.lstrip("/").replace("/", "\\")
     app = app_module_mock.app = App(state=DynamicState)
     assert app.state is not None
     with pytest.raises(NameError):
@@ -964,9 +960,6 @@ def test_multiple_dynamic_args(
     arg_name = "my_arg"
     route = f"/test/[{arg_name}]"
     route2 = f"/test2/[{arg_name}]"
-    if windows_platform:
-        route = route.lstrip("/").replace("/", "\\")
-        route2 = route2.lstrip("/").replace("/", "\\")
     app = app_module_mock.app = App(state=EmptyState)
     app.add_page(index_page, route=route)
     app.add_page(index_page, route=route2)
@@ -994,8 +987,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     """
     arg_name = "dynamic"
     route = f"/test/[{arg_name}]"
-    if windows_platform:
-        route.lstrip("/").replace("/", "\\")
     app = app_module_mock.app = App(state=DynamicState)
     assert app.state is not None
     assert arg_name not in app.state.vars
