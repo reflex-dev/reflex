@@ -20,6 +20,7 @@ from typing import (
     Type,
     Union,
 )
+import warnings
 
 import reflex.state
 from reflex.base import Base
@@ -168,6 +169,8 @@ ComponentStyle = Dict[
     Union[str, Type[BaseComponent], Callable, ComponentNamespace], Any
 ]
 ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
+
+warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
 
 class Component(BaseComponent, ABC):
