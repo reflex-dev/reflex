@@ -1080,7 +1080,7 @@ class ToStringOperation(CachedVarOperation, StringVar):
     def create(
         cls,
         original_var: Var,
-        var_type: type[str] | type[LiteralStringVar] | type[StringVar] | None = None,
+        var_type: Type = str,
         _var_data: VarData | None = None,
     ) -> ToStringOperation:
         """Create a var from a string value.
