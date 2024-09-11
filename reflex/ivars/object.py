@@ -20,6 +20,7 @@ from typing import (
     overload,
 )
 
+from reflex.base import UsedSerialization
 from reflex.utils import types
 from reflex.utils.exceptions import VarAttributeError
 from reflex.utils.types import GenericType, get_attribute_access_type, get_origin
@@ -267,6 +268,10 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
                     f"The State var `{str(self)}` has no attribute '{name}' or may have been annotated "
                     f"wrongly."
                 )
+
+            if issubclass(fixed_type, UsedSerialization):
+                fixed_type.__used_fields__.add(name)
+
             return ObjectItemOperation.create(self, name, attribute_type).guess_type()
         else:
             return ObjectItemOperation.create(self, name).guess_type()

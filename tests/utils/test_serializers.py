@@ -5,9 +5,10 @@ from typing import Any, Dict, Type
 
 import pytest
 
-from reflex.base import Base
+from reflex.base import Base, SlimBase
 from reflex.components.core.colors import Color
 from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.state import State
 from reflex.utils import serializers
 
 
@@ -119,6 +120,33 @@ class BaseSubclass(Base):
     ts: datetime.timedelta = datetime.timedelta(1, 1, 1)
 
 
+class SlimBaseSubclass(SlimBase):
+    """A class inheriting from SlimBase for testing."""
+
+    ts: datetime.timedelta = datetime.timedelta(1, 1, 1)
+
+
+def test_slim_base_subclass():
+    """Test that a SlimBase subclass is serialized correctly."""
+
+    class SlimState(State):
+        """A test state."""
+
+        slim: SlimBaseSubclass = SlimBaseSubclass(ts=datetime.timedelta(1, 1, 1))
+
+    state = SlimState()
+    assert SlimBaseSubclass.__used_fields__ == set()
+    assert serializers.serialize(state.slim) == "({  })"
+
+    # Access the field
+    SlimState.slim.ts
+    assert SlimBaseSubclass.__used_fields__ == {"ts"}
+    assert serializers.serialize(state.slim) == '({ ["ts"] : "1 day, 0:00:01.000001" })'
+
+    # Reset the used fields tracking set.
+    SlimBaseSubclass.__used_fields__ = set()
+
+
 @pytest.mark.parametrize(
     "value,expected",
     [
@@ -152,6 +180,10 @@ class BaseSubclass(Base):
         (
             BaseSubclass(ts=datetime.timedelta(1, 1, 1)),
             '({ ["ts"] : "1 day, 0:00:01.000001" })',
+        ),
+        (
+            SlimBaseSubclass(ts=datetime.timedelta(1, 1, 1)),
+            "({  })",
         ),
         (
             [1, LiteralVar.create("hi"), ImmutableVar.create("bye")],

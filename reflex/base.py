@@ -3,14 +3,35 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Any, List, Type
+from typing import TYPE_CHECKING, Any, ClassVar, List, Optional, Type, Union
+
+if TYPE_CHECKING:
+    from reflex.utils.types import override
+else:
+
+    def override(fn):
+        """Decorator to indicate that a method is meant to override a parent method.
+
+        Args:
+            fn: The method to override.
+
+        Returns:
+            The unmodified method.
+        """
+        return fn
+
 
 try:
+    if TYPE_CHECKING:
+        from pydantic.v1.typing import AbstractSetIntStr, MappingIntStrAny
     import pydantic.v1.main as pydantic_main
     from pydantic.v1 import BaseModel
     from pydantic.v1.fields import ModelField
+
 except ModuleNotFoundError:
-    if not TYPE_CHECKING:
+    if TYPE_CHECKING:
+        from pydantic.typing import AbstractSetIntStr, MappingIntStrAny
+    else:
         import pydantic.main as pydantic_main
         from pydantic import BaseModel
         from pydantic.fields import ModelField  # type: ignore
@@ -46,6 +67,15 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
 # monkeypatch pydantic validate_field_name method to skip validating
 # shadowed state vars when reloading app via utils.prerequisites.get_app(reload=True)
 pydantic_main.validate_field_name = validate_field_name  # type: ignore
+
+
+class UsedSerialization:
+    """A mixin which allows tracking of fields used in the frontend.
+    You can subclass this and add a @rx.serializer which uses the __used_fields__ attribute to only serialize used fields.
+    Take a look at SlimBase for an example implementation.
+    """
+
+    __used_fields__: ClassVar[set[str]] = set()
 
 
 class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
@@ -142,4 +172,50 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
             exclude_unset=False,
             exclude_defaults=False,
             exclude_none=False,
+        )
+
+
+class SlimBase(Base, UsedSerialization):
+    """A slimmed down version of the Base class.
+    Only used fields will be included in the dict for serialization.
+    """
+
+    @override
+    def dict(
+        self,
+        *,
+        include: Optional[Union[AbstractSetIntStr, MappingIntStrAny]] = None,
+        exclude: Optional[Union[AbstractSetIntStr, MappingIntStrAny]] = None,
+        by_alias: bool = False,
+        skip_defaults: Optional[bool] = None,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+    ) -> dict[str, Any]:
+        """Convert the object to a dict.
+
+        We override the default dict method to only include fields that are used.
+
+        Args:
+            include: The fields to include.
+            exclude: The fields to exclude.
+            by_alias: Whether to use the alias names.
+            skip_defaults: Whether to skip default values.
+            exclude_unset: Whether to exclude unset values.
+            exclude_defaults: Whether to exclude default values.
+            exclude_none: Whether to exclude None values.
+
+        Returns:
+            The object as a dict.
+        """
+        if not include and isinstance(self, UsedSerialization):
+            include = self.__used_fields__
+        return super().dict(
+            include=include,
+            exclude=exclude,
+            by_alias=by_alias,
+            skip_defaults=skip_defaults,
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
         )
