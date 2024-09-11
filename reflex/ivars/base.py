@@ -43,7 +43,7 @@ from reflex.utils.exceptions import (
     VarValueError,
 )
 from reflex.utils.format import format_state_name
-from reflex.utils.types import GenericType, get_origin
+from reflex.utils.types import GenericType, Self, get_origin
 from reflex.vars import (
     REPLACED_NAMES,
     Var,
@@ -1467,7 +1467,7 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
         object.__setattr__(self, "_fget", fget)
 
     @override
-    def _replace(self, merge_var_data=None, **kwargs: Any) -> ImmutableComputedVar:
+    def _replace(self, merge_var_data=None, **kwargs: Any) -> Self:
         """Replace the attributes of the ComputedVar.
 
         Args:
@@ -1499,7 +1499,7 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
             unexpected_kwargs = ", ".join(kwargs.keys())
             raise TypeError(f"Unexpected keyword arguments: {unexpected_kwargs}")
 
-        return ImmutableComputedVar(**field_values)
+        return type(self)(**field_values)
 
     @property
     def _cache_attr(self) -> str:
@@ -1771,6 +1771,12 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
             The getter function.
         """
         return self._fget
+
+
+class DynamicRouteVar(ImmutableComputedVar[Union[str, List[str]]]):
+    """A ComputedVar that represents a dynamic route."""
+
+    pass
 
 
 if TYPE_CHECKING:

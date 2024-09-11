@@ -35,6 +35,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 from reflex.config import get_config
 from reflex.ivars.base import (
+    DynamicRouteVar,
     ImmutableComputedVar,
     ImmutableVar,
     immutable_computed_var,
@@ -60,7 +61,11 @@ from reflex.event import (
     fix_events,
 )
 from reflex.utils import console, format, path_ops, prerequisites, types
-from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
+from reflex.utils.exceptions import (
+    DynamicRouteArgShadowsStateVar,
+    ImmutableStateError,
+    LockExpiredError,
+)
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
 from reflex.utils.types import override
@@ -1023,17 +1028,19 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if not args:
             return
 
+        cls._check_overwritten_dynamic_args(list(args.keys()))
+
         def argsingle_factory(param):
             def inner_func(self) -> str:
                 return self.router.page.params.get(param, "")
 
-            return ImmutableComputedVar(fget=inner_func, cache=True)
+            return DynamicRouteVar(fget=inner_func, cache=True)
 
         def arglist_factory(param):
-            def inner_func(self) -> List:
+            def inner_func(self) -> List[str]:
                 return self.router.page.params.get(param, [])
 
-            return ImmutableComputedVar(fget=inner_func, cache=True)
+            return DynamicRouteVar(fget=inner_func, cache=True)
 
         for param, value in args.items():
             if value == constants.RouteArgType.SINGLE:
@@ -1044,11 +1051,35 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 continue
             # to allow passing as a prop, evade python frozen rules (bad practice)
             object.__setattr__(func, "_var_name", param)
-            cls.vars[param] = cls.computed_vars[param] = func._var_set_state(cls)  # type: ignore
+            # cls.vars[param] = cls.computed_vars[param] = func._var_set_state(cls)  # type: ignore
+            cls.vars[param] = cls.computed_vars[param] = func._replace(
+                _var_data=VarData.from_state(cls)
+            )
             setattr(cls, param, func)
 
         # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
+
+    @classmethod
+    def _check_overwritten_dynamic_args(cls, args: list[str]):
+        """Check if dynamic args are shadowing existing vars. Recursively checks all child states.
+
+        Args:
+            args: a dict of args
+
+        Raises:
+            DynamicRouteArgShadowsStateVar: If a dynamic arg is shadowing an existing var.
+        """
+        for arg in args:
+            if (
+                arg in cls.computed_vars
+                and not isinstance(cls.computed_vars[arg], DynamicRouteVar)
+            ) or arg in cls.base_vars:
+                raise DynamicRouteArgShadowsStateVar(
+                    f"Dynamic route arg '{arg}' is shadowing an existing var in {cls.__module__}.{cls.__name__}"
+                )
+        for substate in cls.get_substates():
+            substate._check_overwritten_dynamic_args(args)
 
     def __getattribute__(self, name: str) -> Any:
         """Get the state var.

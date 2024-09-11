@@ -69,7 +69,7 @@ class EmptyState(BaseState):
 
 
 @pytest.fixture
-def index_page():
+def index_page() -> ComponentCallable:
     """An index page.
 
     Returns:
@@ -83,7 +83,7 @@ def index_page():
 
 
 @pytest.fixture
-def about_page():
+def about_page() -> ComponentCallable:
     """An about page.
 
     Returns:
@@ -919,9 +919,62 @@ class DynamicState(BaseState):
     on_load_internal = OnLoadInternalState.on_load_internal.fn
 
 
+def test_dynamic_arg_shadow(
+    index_page: ComponentCallable,
+    windows_platform: bool,
+    token: str,
+    app_module_mock: unittest.mock.Mock,
+    mocker,
+):
+    """Create app with dynamic route var and try to add a page with a dynamic arg that shadows a state var.
+
+    Args:
+        index_page: The index page.
+        windows_platform: Whether the system is windows.
+        token: a Token.
+        app_module_mock: Mocked app module.
+        mocker: pytest mocker object.
+    """
+    arg_name = "counter"
+    route = f"/test/[{arg_name}]"
+    if windows_platform:
+        route.lstrip("/").replace("/", "\\")
+    app = app_module_mock.app = App(state=DynamicState)
+    assert app.state is not None
+    with pytest.raises(NameError):
+        app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
+
+
+def test_multiple_dynamic_args(
+    index_page: ComponentCallable,
+    windows_platform: bool,
+    token: str,
+    app_module_mock: unittest.mock.Mock,
+    mocker,
+):
+    """Create app with multiple dynamic route vars with the same name.
+
+    Args:
+        index_page: The index page.
+        windows_platform: Whether the system is windows.
+        token: a Token.
+        app_module_mock: Mocked app module.
+        mocker: pytest mocker object.
+    """
+    arg_name = "my_arg"
+    route = f"/test/[{arg_name}]"
+    route2 = f"/test2/[{arg_name}]"
+    if windows_platform:
+        route = route.lstrip("/").replace("/", "\\")
+        route2 = route2.lstrip("/").replace("/", "\\")
+    app = app_module_mock.app = App(state=EmptyState)
+    app.add_page(index_page, route=route)
+    app.add_page(index_page, route=route2)
+
+
 @pytest.mark.asyncio
 async def test_dynamic_route_var_route_change_completed_on_load(
-    index_page,
+    index_page: ComponentCallable,
     windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
