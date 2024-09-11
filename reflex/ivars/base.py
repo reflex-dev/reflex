@@ -491,15 +491,12 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             return self.to(BooleanVar, self._var_type)
         if issubclass(fixed_type, (int, float)):
             return self.to(NumberVar, self._var_type)
-        if issubclass(fixed_type, dict):
-            return self.to(ObjectVar, self._var_type)
         if issubclass(fixed_type, (list, tuple, set)):
             return self.to(ArrayVar, self._var_type)
         if issubclass(fixed_type, str):
             return self.to(StringVar, self._var_type)
-        if issubclass(fixed_type, Base):
-            return self.to(ObjectVar, self._var_type)
-        return self
+
+        return self.to(ObjectVar, self._var_type)
 
     def get_default_value(self) -> Any:
         """Get the default value of the var.
