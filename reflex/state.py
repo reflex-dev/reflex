@@ -61,7 +61,11 @@ from reflex.event import (
     fix_events,
 )
 from reflex.utils import console, format, path_ops, prerequisites, types
-from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
+from reflex.utils.exceptions import (
+    DynamicRouteArgShadowsStateVar,
+    ImmutableStateError,
+    LockExpiredError,
+)
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
 from reflex.utils.types import override
@@ -1064,14 +1068,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             args: a dict of args
 
         Raises:
-            NameError: If a dynamic arg is shadowing an existing var.
+            DynamicRouteArgShadowsStateVar: If a dynamic arg is shadowing an existing var.
         """
         for arg in args:
             if (
                 arg in cls.computed_vars
                 and not isinstance(cls.computed_vars[arg], DynamicRouteVar)
             ) or arg in cls.base_vars:
-                raise NameError(
+                raise DynamicRouteArgShadowsStateVar(
                     f"Dynamic route arg '{arg}' is shadowing an existing var in {cls.__module__}.{cls.__name__}"
                 )
         for substate in cls.get_substates():

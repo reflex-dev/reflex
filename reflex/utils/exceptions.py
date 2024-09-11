@@ -87,3 +87,7 @@ class EventHandlerArgMismatch(ReflexError, TypeError):
 
 class EventFnArgMismatch(ReflexError, TypeError):
     """Raised when the number of args accepted by a lambda differs from that provided by the event trigger."""
+
+
+class DynamicRouteArgShadowsStateVar(ReflexError, NameError):
+    """Raised when a dynamic route arg shadows a state var."""
