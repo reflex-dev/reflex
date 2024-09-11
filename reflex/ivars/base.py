@@ -2178,3 +2178,16 @@ class ToOperation:
             _var_type=_var_type or cls._default_var_type,  # type: ignore
             _original=value,  # type: ignore
         )
+
+
+@var_operation
+def jsx_tag_operation(tag: ImmutableVar):
+    """Create a JSX tag operation.
+
+    Args:
+        tag: The tag name.
+
+    Returns:
+        The JSX tag operation.
+    """
+    return var_operation_return(js_expression=f"< {tag} />")

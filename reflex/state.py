@@ -33,6 +33,7 @@ from typing import (
 import dill
 from sqlalchemy.orm import DeclarativeBase
 
+from reflex.components.core import cond
 from reflex.config import get_config
 from reflex.ivars.base import (
     DynamicRouteVar,
@@ -40,6 +41,7 @@ from reflex.ivars.base import (
     ImmutableVar,
     immutable_computed_var,
     is_computed_var,
+    jsx_tag_operation,
 )
 
 try:
@@ -539,9 +541,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         }
         for var_name, computed_var in cls.computed_vars.items():
             if var_name.startswith("comp_"):
-                cls.computed_vars[var_name] = computed_var._replace(
-                    _var_name=f"(typeof {computed_var._var_full_name} === 'function' ? <{computed_var._var_full_name}/> : '')",
-                    _var_full_name_needs_state_prefix=False,
+                cls.computed_vars[var_name] = cond(  # type: ignore
+                    computed_var.js_type() == "function",
+                    jsx_tag_operation(computed_var),
+                    "",
                 )
                 setattr(cls, var_name, cls.computed_vars[var_name])
         cls.vars = {
