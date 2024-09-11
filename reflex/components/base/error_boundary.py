@@ -39,7 +39,7 @@ class ErrorBoundary(Component):
         """
         return Imports.EVENTS
 
-    def add_hooks(self) -> List[str | Var]:
+    def add_hooks(self) -> List[str | ImmutableVar]:
         """Add hooks for the component.
 
         Returns:

@@ -6,11 +6,11 @@ from typing import Any, Dict, List, Union
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
-from reflex.ivars.base import ImmutableComputedVar
+from reflex.ivars.base import ImmutableVar, LiteralVar, is_computed_var
 from reflex.utils import types
 from reflex.utils.imports import ImportDict
 from reflex.utils.serializers import serialize
-from reflex.vars import ComputedVar, Var
+from reflex.vars import Var
 
 
 class Gridjs(Component):
@@ -66,17 +66,14 @@ class DataTable(Gridjs):
 
         # The annotation should be provided if data is a computed var. We need this to know how to
         # render pandas dataframes.
-        if (
-            isinstance(data, (ComputedVar, ImmutableComputedVar))
-            and data._var_type == Any
-        ):
+        if is_computed_var(data) and data._var_type == Any:
             raise ValueError(
                 "Annotation of the computed var assigned to the data field should be provided."
             )
 
         if (
             columns is not None
-            and isinstance(columns, (ComputedVar, ImmutableComputedVar))
+            and is_computed_var(columns)
             and columns._var_type == Any
         ):
             raise ValueError(
@@ -86,7 +83,7 @@ class DataTable(Gridjs):
         # If data is a pandas dataframe and columns are provided throw an error.
         if (
             types.is_dataframe(type(data))
-            or (isinstance(data, Var) and types.is_dataframe(data._var_type))
+            or (isinstance(data, ImmutableVar) and types.is_dataframe(data._var_type))
         ) and columns is not None:
             raise ValueError(
                 "Cannot pass in both a pandas dataframe and columns to the data_table component."
@@ -94,14 +91,12 @@ class DataTable(Gridjs):
 
         # If data is a list and columns are not provided, throw an error
         if (
-            (isinstance(data, Var) and types._issubclass(data._var_type, List))
+            (isinstance(data, ImmutableVar) and types._issubclass(data._var_type, List))
             or issubclass(type(data), List)
         ) and columns is None:
             raise ValueError(
                 "column field should be specified when the data field is a list type"
             )
-
-        print("props", props)
 
         # Create the component.
         return super().create(
@@ -118,7 +113,9 @@ class DataTable(Gridjs):
         return {"": "gridjs/dist/theme/mermaid.css"}
 
     def _render(self) -> Tag:
-        if isinstance(self.data, Var) and types.is_dataframe(self.data._var_type):
+        if isinstance(self.data, ImmutableVar) and types.is_dataframe(
+            self.data._var_type
+        ):
             self.columns = self.data._replace(
                 _var_name=f"{self.data._var_name}.columns",
                 _var_type=List[Any],
@@ -131,8 +128,8 @@ class DataTable(Gridjs):
             # If given a pandas df break up the data and columns
             data = serialize(self.data)
             assert isinstance(data, dict), "Serialized dataframe should be a dict."
-            self.columns = Var.create_safe(data["columns"])
-            self.data = Var.create_safe(data["data"])
+            self.columns = LiteralVar.create(data["columns"])
+            self.data = LiteralVar.create(data["data"])
 
         # Render the table.
         return super()._render()

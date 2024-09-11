@@ -23,7 +23,7 @@ from reflex.ivars.function import FunctionStringVar
 from reflex.ivars.number import BooleanVar
 from reflex.ivars.sequence import LiteralArrayVar
 from reflex.utils.imports import ImportVar
-from reflex.vars import ImmutableVarData, Var, VarData
+from reflex.vars import Var, VarData
 
 connect_error_var_data: VarData = VarData(  # type: ignore
     imports=Imports.EVENTS,
@@ -68,7 +68,7 @@ class WebsocketTargetURL(ImmutableVar):
         """
         return ImmutableVar(
             _var_name="getBackendURL(env.EVENT).href",
-            _var_data=ImmutableVarData(
+            _var_data=VarData(
                 imports={
                     "/env.json": [ImportVar(tag="env", is_default=True)],
                     f"/{Dirs.STATE_PATH}": [ImportVar(tag="getBackendURL")],
@@ -95,7 +95,7 @@ def default_connection_error() -> list[str | Var | Component]:
 class ConnectionToaster(Toaster):
     """A connection toaster component."""
 
-    def add_hooks(self) -> list[str | Var]:
+    def add_hooks(self) -> list[str | ImmutableVar]:
         """Add the hooks for the connection toaster.
 
         Returns:

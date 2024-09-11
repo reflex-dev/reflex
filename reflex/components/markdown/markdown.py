@@ -20,11 +20,11 @@ from reflex.components.tags.tag import Tag
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import Var
 
 # Special vars used in the component map.
 _CHILDREN = ImmutableVar.create_safe("children")
 _PROPS = ImmutableVar.create_safe("...props")
+_PROPS_IN_TAG = ImmutableVar.create_safe("{...props}")
 _MOCK_ARG = ImmutableVar.create_safe("")
 
 # Special remark plugins.
@@ -99,7 +99,8 @@ class Markdown(Component):
             The markdown component.
         """
         assert (
-            len(children) == 1 and types._isinstance(children[0], Union[str, Var])
+            len(children) == 1
+            and types._isinstance(children[0], Union[str, ImmutableVar])
         ), "Markdown component must have exactly one child containing the markdown source."
 
         # Update the base component map with the custom component map.
@@ -194,7 +195,7 @@ class Markdown(Component):
         if tag not in self.component_map:
             raise ValueError(f"No markdown component found for tag: {tag}.")
 
-        special_props = {_PROPS}
+        special_props = {_PROPS_IN_TAG}
         children = [_CHILDREN]
 
         # For certain tags, the props from the markdown renderer are not actually valid for the component.
@@ -205,9 +206,7 @@ class Markdown(Component):
         children_prop = props.pop("children", None)
         if children_prop is not None:
             special_props.add(
-                Var.create_safe(
-                    f"children={{{str(children_prop)}}}", _var_is_string=False
-                )
+                ImmutableVar.create_safe(f"children={{{str(children_prop)}}}")
             )
             children = []
         # Get the component.
@@ -228,21 +227,22 @@ class Markdown(Component):
         """
         return str(self.get_component(tag, **props)).replace("\n", "")
 
-    def format_component_map(self) -> dict[str, str]:
+    def format_component_map(self) -> dict[str, ImmutableVar]:
         """Format the component map for rendering.
 
         Returns:
             The formatted component map.
         """
         components = {
-            tag: f"{{({{node, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => ({self.format_component(tag)})}}"
+            tag: ImmutableVar.create_safe(
+                f"(({{node, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => ({self.format_component(tag)}))"
+            )
             for tag in self.component_map
         }
 
         # Separate out inline code and code blocks.
-        components[
-            "code"
-        ] = f"""{{({{node, inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
+        components["code"] = ImmutableVar.create_safe(
+            f"""(({{node, inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
     const match = (className || '').match(/language-(?<lang>.*)/);
     const language = match ? match[1] : '';
     if (language) {{
@@ -260,7 +260,8 @@ class Markdown(Component):
     ) : (
         {self.format_component("codeblock", language=ImmutableVar.create_safe("language"))}
     );
-      }}}}""".replace("\n", " ")
+      }})""".replace("\n", " ")
+        )
 
         return components
 
@@ -285,7 +286,7 @@ class Markdown(Component):
         function {self._get_component_map_name()} () {{
             {formatted_hooks}
             return (
-                {str(ImmutableVar.create_safe(self.format_component_map()))}
+                {str(LiteralVar.create(self.format_component_map()))}
             )
         }}
         """

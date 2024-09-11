@@ -9,10 +9,11 @@ import pytest
 from reflex.components.tags.tag import Tag
 from reflex.event import EventChain, EventHandler, EventSpec, FrontendEvent
 from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.object import ObjectVar
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.serializers import serialize_figure
-from reflex.vars import BaseVar, Var
+from reflex.vars import Var
 from tests.test_state import (
     ChildState,
     ChildState2,
@@ -273,16 +274,16 @@ def test_format_string(input: str, output: str):
 @pytest.mark.parametrize(
     "input,output",
     [
-        (Var.create(value="test"), "{`test`}"),
-        (Var.create(value="test", _var_is_local=True), "{`test`}"),
-        (Var.create(value="test", _var_is_local=False), "{test}"),
-        (Var.create(value="test", _var_is_string=True), "{`test`}"),
-        (Var.create(value="test", _var_is_string=False), "{`test`}"),
-        (Var.create(value="test", _var_is_local=False, _var_is_string=False), "{test}"),
+        (Var.create(value="test"), '"test"'),
+        (Var.create(value="test", _var_is_local=True), '"test"'),
+        (Var.create(value="test", _var_is_local=False), "test"),
+        (Var.create(value="test", _var_is_string=True), '"test"'),
+        (Var.create(value='"test"', _var_is_string=False), '"test"'),
+        (Var.create(value="test", _var_is_local=False, _var_is_string=False), "test"),
     ],
 )
 def test_format_var(input: Var, output: str):
-    assert format.format_var(input) == output
+    assert str(input) == output
 
 
 @pytest.mark.parametrize(
@@ -314,110 +315,6 @@ def test_format_route(route: str, format_case: bool, expected: bool):
 
 
 @pytest.mark.parametrize(
-    "condition,true_value,false_value,is_prop,expected",
-    [
-        ("cond", "<C1>", '""', False, '{isTrue(cond) ? <C1> : ""}'),
-        ("cond", "<C1>", "<C2>", False, "{isTrue(cond) ? <C1> : <C2>}"),
-        (
-            "cond",
-            Var.create_safe("<C1>"),
-            "<C2>",
-            False,
-            "{isTrue(cond) ? <C1> : <C2>}",
-        ),
-        (
-            "cond",
-            Var.create_safe("<C1>"),
-            Var.create_safe("<C2>"),
-            False,
-            "{isTrue(cond) ? <C1> : <C2>}",
-        ),
-        (
-            "cond",
-            Var.create_safe("<C1>", _var_is_local=False),
-            Var.create_safe("<C2>"),
-            False,
-            "{isTrue(cond) ? ${<C1>} : <C2>}",
-        ),
-        (
-            "cond",
-            Var.create_safe("<C1>", _var_is_string=True),
-            Var.create_safe("<C2>"),
-            False,
-            "{isTrue(cond) ? {`<C1>`} : <C2>}",
-        ),
-        ("cond", "<C1>", '""', True, 'isTrue(cond) ? `<C1>` : `""`'),
-        ("cond", "<C1>", "<C2>", True, "isTrue(cond) ? `<C1>` : `<C2>`"),
-        (
-            "cond",
-            Var.create_safe("<C1>"),
-            "<C2>",
-            True,
-            "isTrue(cond) ? <C1> : `<C2>`",
-        ),
-        (
-            "cond",
-            Var.create_safe("<C1>"),
-            Var.create_safe("<C2>"),
-            True,
-            "isTrue(cond) ? <C1> : <C2>",
-        ),
-        (
-            "cond",
-            Var.create_safe("<C1>", _var_is_local=False),
-            Var.create_safe("<C2>"),
-            True,
-            "isTrue(cond) ? <C1> : <C2>",
-        ),
-        (
-            "cond",
-            Var.create_safe("<C1>"),
-            Var.create_safe("<C2>", _var_is_local=False),
-            True,
-            "isTrue(cond) ? <C1> : <C2>",
-        ),
-        (
-            "cond",
-            Var.create_safe("<C1>", _var_is_string=True),
-            Var.create_safe("<C2>"),
-            True,
-            "isTrue(cond) ? `<C1>` : <C2>",
-        ),
-    ],
-)
-def test_format_cond(
-    condition: str,
-    true_value: str | Var,
-    false_value: str | Var,
-    is_prop: bool,
-    expected: str,
-):
-    """Test formatting a cond.
-
-    Args:
-        condition: The condition to check.
-        true_value: The value to return if the condition is true.
-        false_value: The value to return if the condition is false.
-        is_prop: Whether the values are rendered as props or not.
-        expected: The expected output string.
-    """
-    orig_true_value = (
-        true_value._replace() if isinstance(true_value, Var) else Var.create_safe("")
-    )
-    orig_false_value = (
-        false_value._replace() if isinstance(false_value, Var) else Var.create_safe("")
-    )
-
-    assert format.format_cond(condition, true_value, false_value, is_prop) == expected
-
-    # Ensure the formatting operation didn't change the original Var
-    if isinstance(true_value, Var):
-        assert true_value.equals(orig_true_value)
-    if isinstance(false_value, Var):
-        assert false_value.equals(orig_false_value)
-
-
-@pytest.mark.parametrize(
     "condition, match_cases, default,expected",
     [
         (
@@ -440,7 +337,10 @@ def test_format_cond(
     ],
 )
 def test_format_match(
-    condition: str, match_cases: List[BaseVar], default: BaseVar, expected: str
+    condition: str,
+    match_cases: List[List[ImmutableVar]],
+    default: ImmutableVar,
+    expected: str,
 ):
     """Test formatting a match statement.
 
@@ -464,14 +364,14 @@ def test_format_match(
         (3.14, "{3.14}"),
         ([1, 2, 3], "{[1, 2, 3]}"),
         (["a", "b", "c"], '{["a", "b", "c"]}'),
-        ({"a": 1, "b": 2, "c": 3}, '{{"a": 1, "b": 2, "c": 3}}'),
-        ({"a": 'foo "bar" baz'}, r'{{"a": "foo \"bar\" baz"}}'),
+        ({"a": 1, "b": 2, "c": 3}, '{({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })}'),
+        ({"a": 'foo "bar" baz'}, r'{({ ["a"] : "foo \"bar\" baz" })}'),
         (
             {
                 "a": 'foo "{ "bar" }" baz',
-                "b": BaseVar(_var_name="val", _var_type="str"),
+                "b": ImmutableVar(_var_name="val", _var_type=str).guess_type(),
             },
-            r'{{"a": "foo \"{ \"bar\" }\" baz", "b": val}}',
+            r'{({ ["a"] : "foo \"{ \"bar\" }\" baz", ["b"] : val })}',
         ),
         (
             EventChain(
@@ -487,18 +387,19 @@ def test_format_match(
                         handler=EventHandler(fn=mock_event),
                         args=(
                             (
-                                Var.create_safe("arg"),
-                                BaseVar(
+                                LiteralVar.create("arg"),
+                                ImmutableVar(
                                     _var_name="_e",
-                                    _var_type=FrontendEvent,
-                                ).target.value,
+                                )
+                                .to(ObjectVar, FrontendEvent)
+                                .target.value,
                             ),
                         ),
                     )
                 ],
                 args_spec=lambda e: [e.target.value],
             ),
-            '{(_e) => addEvents([Event("mock_event", {arg:_e.target.value})], [_e], {})}',
+            '{(_e) => addEvents([Event("mock_event", {"arg":_e["target"]["value"]})], [_e], {})}',
         ),
         (
             EventChain(
@@ -516,37 +417,47 @@ def test_format_match(
             ),
             '{(...args) => addEvents([Event("mock_event", {})], args, {"preventDefault": true})}',
         ),
-        ({"a": "red", "b": "blue"}, '{{"a": "red", "b": "blue"}}'),
-        (BaseVar(_var_name="var", _var_type="int"), "{var}"),
+        ({"a": "red", "b": "blue"}, '{({ ["a"] : "red", ["b"] : "blue" })}'),
+        (ImmutableVar(_var_name="var", _var_type=int).guess_type(), "var"),
         (
-            BaseVar(
+            ImmutableVar(
                 _var_name="_",
                 _var_type=Any,
-                _var_is_local=True,
-                _var_is_string=False,
             ),
-            "{_}",
+            "_",
         ),
         (
-            BaseVar(_var_name='state.colors["a"]', _var_type="str"),
-            '{state.colors["a"]}',
+            ImmutableVar(_var_name='state.colors["a"]', _var_type=str).guess_type(),
+            'state.colors["a"]',
         ),
-        ({"a": BaseVar(_var_name="val", _var_type="str")}, '{{"a": val}}'),
-        ({"a": BaseVar(_var_name='"val"', _var_type="str")}, '{{"a": "val"}}'),
         (
-            {"a": BaseVar(_var_name='state.colors["val"]', _var_type="str")},
-            '{{"a": state.colors["val"]}}',
+            {"a": ImmutableVar(_var_name="val", _var_type=str).guess_type()},
+            '{({ ["a"] : val })}',
+        ),
+        (
+            {"a": ImmutableVar(_var_name='"val"', _var_type=str).guess_type()},
+            '{({ ["a"] : "val" })}',
+        ),
+        (
+            {
+                "a": ImmutableVar(
+                    _var_name='state.colors["val"]', _var_type=str
+                ).guess_type()
+            },
+            '{({ ["a"] : state.colors["val"] })}',
         ),
         # tricky real-world case from markdown component
         (
             {
-                "h1": f"{{({{node, ...props}}) => <Heading {{...props}} {''.join(Tag(name='', props=Style({'as_': 'h1'})).format_props())} />}}"
+                "h1": ImmutableVar.create_safe(
+                    f"(({{node, ...props}}) => <Heading {{...props}} {''.join(Tag(name='', props=Style({'as_': 'h1'})).format_props())} />)"
+                )
             },
-            '{{"h1": ({node, ...props}) => <Heading {...props} as={"h1"} />}}',
+            '{({ ["h1"] : (({node, ...props}) => <Heading {...props} as={"h1"} />) })}',
         ),
     ],
 )
-def test_format_prop(prop: Var, formatted: str):
+def test_format_prop(prop: ImmutableVar, formatted: str):
     """Test that the formatted value of an prop is correct.
 
     Args:
@@ -560,7 +471,7 @@ def test_format_prop(prop: Var, formatted: str):
     "single_props,key_value_props,output",
     [
         (
-            [ImmutableVar.create_safe("...props")],
+            [ImmutableVar.create_safe("{...props}")],
             {"key": 42},
             ["key={42}", "{...props}"],
         ),
@@ -614,40 +525,14 @@ def test_format_event_handler(input, output):
 @pytest.mark.parametrize(
     "input,output",
     [
-        (EventSpec(handler=EventHandler(fn=mock_event)), 'Event("mock_event", {})'),
+        (
+            EventSpec(handler=EventHandler(fn=mock_event)),
+            '(Event("mock_event", ({  })))',
+        ),
     ],
 )
 def test_format_event(input, output):
-    assert format.format_event(input) == output
-
-
-@pytest.mark.parametrize(
-    "input,output",
-    [
-        (
-            EventChain(
-                events=[
-                    EventSpec(handler=EventHandler(fn=mock_event)),
-                    EventSpec(handler=EventHandler(fn=mock_event)),
-                ],
-                args_spec=None,
-            ),
-            'addEvents([Event("mock_event", {}),Event("mock_event", {})])',
-        ),
-        (
-            EventChain(
-                events=[
-                    EventSpec(handler=EventHandler(fn=mock_event)),
-                    EventSpec(handler=EventHandler(fn=mock_event)),
-                ],
-                args_spec=lambda e0: [e0],
-            ),
-            'addEvents([Event("mock_event", {}),Event("mock_event", {})])',
-        ),
-    ],
-)
-def test_format_event_chain(input, output):
-    assert format.format_event_chain(input) == output
+    assert str(LiteralVar.create(input)) == output
 
 
 @pytest.mark.parametrize(
@@ -771,27 +656,12 @@ def test_format_ref(input, output):
     "input,output",
     [
         (("my_array", None), "refs_my_array"),
-        (("my_array", Var.create(0)), "refs_my_array[0]"),
-        (("my_array", Var.create(1)), "refs_my_array[1]"),
+        (("my_array", LiteralVar.create(0)), "refs_my_array[0]"),
+        (("my_array", LiteralVar.create(1)), "refs_my_array[1]"),
     ],
 )
 def test_format_array_ref(input, output):
     assert format.format_array_ref(input[0], input[1]) == output
-
-
-@pytest.mark.parametrize(
-    "input,output",
-    [
-        ("/foo", [("foo", "/foo")]),
-        ("/foo/bar", [("foo", "/foo"), ("bar", "/foo/bar")]),
-        (
-            "/foo/bar/baz",
-            [("foo", "/foo"), ("bar", "/foo/bar"), ("baz", "/foo/bar/baz")],
-        ),
-    ],
-)
-def test_format_breadcrumbs(input, output):
-    assert format.format_breadcrumbs(input) == output
 
 
 @pytest.mark.parametrize(

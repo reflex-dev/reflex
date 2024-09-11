@@ -8,6 +8,7 @@ import typing
 from inspect import isclass
 from typing import (
     Any,
+    ClassVar,
     Dict,
     List,
     NoReturn,
@@ -22,18 +23,19 @@ from typing import (
 from reflex.utils import types
 from reflex.utils.exceptions import VarAttributeError
 from reflex.utils.types import GenericType, get_attribute_access_type, get_origin
-from reflex.vars import ImmutableVarData, Var, VarData
+from reflex.vars import VarData
 
 from .base import (
     CachedVarOperation,
     ImmutableVar,
     LiteralVar,
+    ToOperation,
     cached_property_no_lock,
     figure_out_type,
     var_operation,
     var_operation_return,
 )
-from .number import BooleanVar, NumberVar
+from .number import BooleanVar, NumberVar, raise_unsupported_operand_types
 from .sequence import ArrayVar, StringVar
 
 OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Dict)
@@ -132,7 +134,7 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
     @overload
     def __getitem__(
         self: ObjectVar[Dict[KEY_TYPE, NoReturn]],
-        key: Var | Any,
+        key: ImmutableVar | Any,
     ) -> ImmutableVar: ...
 
     @overload
@@ -142,40 +144,40 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
             | ObjectVar[Dict[KEY_TYPE, float]]
             | ObjectVar[Dict[KEY_TYPE, int | float]]
         ),
-        key: Var | Any,
+        key: ImmutableVar | Any,
     ) -> NumberVar: ...
 
     @overload
     def __getitem__(
         self: ObjectVar[Dict[KEY_TYPE, str]],
-        key: Var | Any,
+        key: ImmutableVar | Any,
     ) -> StringVar: ...
 
     @overload
     def __getitem__(
         self: ObjectVar[Dict[KEY_TYPE, list[ARRAY_INNER_TYPE]]],
-        key: Var | Any,
+        key: ImmutableVar | Any,
     ) -> ArrayVar[list[ARRAY_INNER_TYPE]]: ...
 
     @overload
     def __getitem__(
         self: ObjectVar[Dict[KEY_TYPE, set[ARRAY_INNER_TYPE]]],
-        key: Var | Any,
+        key: ImmutableVar | Any,
     ) -> ArrayVar[set[ARRAY_INNER_TYPE]]: ...
 
     @overload
     def __getitem__(
         self: ObjectVar[Dict[KEY_TYPE, tuple[ARRAY_INNER_TYPE, ...]]],
-        key: Var | Any,
+        key: ImmutableVar | Any,
     ) -> ArrayVar[tuple[ARRAY_INNER_TYPE, ...]]: ...
 
     @overload
     def __getitem__(
         self: ObjectVar[Dict[KEY_TYPE, dict[OTHER_KEY_TYPE, VALUE_TYPE]]],
-        key: Var | Any,
+        key: ImmutableVar | Any,
     ) -> ObjectVar[dict[OTHER_KEY_TYPE, VALUE_TYPE]]: ...
 
-    def __getitem__(self, key: Var | Any) -> ImmutableVar:
+    def __getitem__(self, key: ImmutableVar | Any) -> ImmutableVar:
         """Get an item from the object.
 
         Args:
@@ -184,6 +186,10 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
         Returns:
             The item from the object.
         """
+        if not isinstance(key, (StringVar, str, int, NumberVar)) or (
+            isinstance(key, NumberVar) and key._is_strict_float()
+        ):
+            raise_unsupported_operand_types("[]", (type(self), type(key)))
         return ObjectItemOperation.create(self, key).guess_type()
 
     # NoReturn is used here to catch when key value is Any
@@ -265,7 +271,7 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
         else:
             return ObjectItemOperation.create(self, name).guess_type()
 
-    def contains(self, key: Var | Any) -> BooleanVar:
+    def contains(self, key: ImmutableVar | Any) -> BooleanVar:
         """Check if the object contains a key.
 
         Args:
@@ -285,8 +291,8 @@ class ObjectVar(ImmutableVar[OBJECT_TYPE]):
 class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
     """Base class for immutable literal object vars."""
 
-    _var_value: Dict[Union[Var, Any], Union[Var, Any]] = dataclasses.field(
-        default_factory=dict
+    _var_value: Dict[Union[ImmutableVar, Any], Union[ImmutableVar, Any]] = (
+        dataclasses.field(default_factory=dict)
     )
 
     def _key_type(self) -> Type:
@@ -351,13 +357,13 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
         return hash((self.__class__.__name__, self._var_name))
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+    def _cached_get_all_var_data(self) -> VarData | None:
         """Get all the var data.
 
         Returns:
             The var data.
         """
-        return ImmutableVarData.merge(
+        return VarData.merge(
             *[LiteralVar.create(var)._get_all_var_data() for var in self._var_value],
             *[
                 LiteralVar.create(var)._get_all_var_data()
@@ -386,7 +392,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
         return LiteralObjectVar(
             _var_name="",
             _var_type=(figure_out_type(_var_value) if _var_type is None else _var_type),
-            _var_data=ImmutableVarData.merge(_var_data),
+            _var_data=_var_data,
             _var_value=_var_value,
         )
 
@@ -470,7 +476,9 @@ class ObjectItemOperation(CachedVarOperation, ImmutableVar):
     _object: ObjectVar = dataclasses.field(
         default_factory=lambda: LiteralObjectVar.create({})
     )
-    _key: Var | Any = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
+    _key: ImmutableVar | Any = dataclasses.field(
+        default_factory=lambda: LiteralVar.create(None)
+    )
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -487,7 +495,7 @@ class ObjectItemOperation(CachedVarOperation, ImmutableVar):
     def create(
         cls,
         object: ObjectVar,
-        key: Var | Any,
+        key: ImmutableVar | Any,
         _var_type: GenericType | None = None,
         _var_data: VarData | None = None,
     ) -> ObjectItemOperation:
@@ -505,9 +513,9 @@ class ObjectItemOperation(CachedVarOperation, ImmutableVar):
         return cls(
             _var_name="",
             _var_type=object._value_type() if _var_type is None else _var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
+            _var_data=_var_data,
             _object=object,
-            _key=key if isinstance(key, Var) else LiteralVar.create(key),
+            _key=key if isinstance(key, ImmutableVar) else LiteralVar.create(key),
         )
 
 
@@ -516,49 +524,31 @@ class ObjectItemOperation(CachedVarOperation, ImmutableVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ToObjectOperation(CachedVarOperation, ObjectVar):
+class ToObjectOperation(ToOperation, ObjectVar):
     """Operation to convert a var to an object."""
 
-    _original_var: Var = dataclasses.field(
+    _original: ImmutableVar = dataclasses.field(
         default_factory=lambda: LiteralObjectVar.create({})
     )
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the operation.
+    _default_var_type: ClassVar[GenericType] = dict
 
-        Returns:
-            The name of the operation.
-        """
-        return str(self._original_var)
-
-    @classmethod
-    def create(
-        cls,
-        original_var: Var,
-        _var_type: GenericType | None = None,
-        _var_data: VarData | None = None,
-    ) -> ToObjectOperation:
-        """Create the to object operation.
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
 
         Args:
-            original_var: The original var to convert.
-            _var_type: The type of the var.
-            _var_data: Additional hooks and imports associated with the operation.
+            name: The name of the attribute.
 
         Returns:
-            The to object operation.
+            The attribute of the var.
         """
-        return cls(
-            _var_name="",
-            _var_type=dict if _var_type is None else _var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _original_var=original_var,
-        )
+        if name == "_var_name":
+            return self._original._var_name
+        return ObjectVar.__getattr__(self, name)
 
 
 @var_operation
-def object_has_own_property_operation(object: ObjectVar, key: Var):
+def object_has_own_property_operation(object: ObjectVar, key: ImmutableVar):
     """Check if an object has a key.
 
     Args:

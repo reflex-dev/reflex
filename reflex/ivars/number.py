@@ -5,28 +5,65 @@ from __future__ import annotations
 import dataclasses
 import json
 import sys
-from typing import Any, Callable, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    NoReturn,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
-from reflex.vars import ImmutableVarData, Var, VarData
+from reflex.utils.exceptions import VarTypeError
+from reflex.vars import Var, VarData
 
 from .base import (
-    CachedVarOperation,
     CustomVarOperationReturn,
     ImmutableVar,
+    LiteralNoneVar,
     LiteralVar,
-    cached_property_no_lock,
+    ToOperation,
     unionize,
     var_operation,
     var_operation_return,
 )
 
-NUMBER_T = TypeVar("NUMBER_T", int, float, Union[int, float])
+NUMBER_T = TypeVar("NUMBER_T", int, float, Union[int, float], bool)
+
+if TYPE_CHECKING:
+    from .sequence import ArrayVar
+
+
+def raise_unsupported_operand_types(
+    operator: str, operands_types: tuple[type, ...]
+) -> NoReturn:
+    """Raise an unsupported operand types error.
+
+    Args:
+        operator: The operator.
+        operands_types: The types of the operands.
+
+    Raises:
+        VarTypeError: The operand types are unsupported.
+    """
+    raise VarTypeError(
+        f"Unsupported Operand type(s) for {operator}: {', '.join(map(lambda t: t.__name__, operands_types))}"
+    )
 
 
 class NumberVar(ImmutableVar[NUMBER_T]):
     """Base class for immutable number vars."""
 
-    def __add__(self, other: number_types | boolean_types):
+    @overload
+    def __add__(self, other: number_types) -> NumberVar: ...
+
+    @overload
+    def __add__(self, other: NoReturn) -> NoReturn: ...
+
+    def __add__(self, other: Any):
         """Add two numbers.
 
         Args:
@@ -35,9 +72,17 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number addition operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("+", (type(self), type(other)))
         return number_add_operation(self, +other)
 
-    def __radd__(self, other: number_types | boolean_types):
+    @overload
+    def __radd__(self, other: number_types) -> NumberVar: ...
+
+    @overload
+    def __radd__(self, other: NoReturn) -> NoReturn: ...
+
+    def __radd__(self, other: Any):
         """Add two numbers.
 
         Args:
@@ -46,9 +91,17 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number addition operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("+", (type(other), type(self)))
         return number_add_operation(+other, self)
 
-    def __sub__(self, other: number_types | boolean_types):
+    @overload
+    def __sub__(self, other: number_types) -> NumberVar: ...
+
+    @overload
+    def __sub__(self, other: NoReturn) -> NoReturn: ...
+
+    def __sub__(self, other: Any):
         """Subtract two numbers.
 
         Args:
@@ -57,9 +110,18 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number subtraction operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("-", (type(self), type(other)))
+
         return number_subtract_operation(self, +other)
 
-    def __rsub__(self, other: number_types | boolean_types):
+    @overload
+    def __rsub__(self, other: number_types) -> NumberVar: ...
+
+    @overload
+    def __rsub__(self, other: NoReturn) -> NoReturn: ...
+
+    def __rsub__(self, other: Any):
         """Subtract two numbers.
 
         Args:
@@ -68,6 +130,9 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number subtraction operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("-", (type(other), type(self)))
+
         return number_subtract_operation(+other, self)
 
     def __abs__(self):
@@ -78,7 +143,13 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         """
         return number_abs_operation(self)
 
-    def __mul__(self, other: number_types | boolean_types):
+    @overload
+    def __mul__(self, other: number_types | boolean_types) -> NumberVar: ...
+
+    @overload
+    def __mul__(self, other: list | tuple | set | ArrayVar) -> ArrayVar: ...
+
+    def __mul__(self, other: Any):
         """Multiply two numbers.
 
         Args:
@@ -87,9 +158,25 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number multiplication operation.
         """
+        from .sequence import ArrayVar, LiteralArrayVar
+
+        if isinstance(other, (list, tuple, set, ArrayVar)):
+            if isinstance(other, ArrayVar):
+                return other * self
+            return LiteralArrayVar.create(other) * self
+
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("*", (type(self), type(other)))
+
         return number_multiply_operation(self, +other)
 
-    def __rmul__(self, other: number_types | boolean_types):
+    @overload
+    def __rmul__(self, other: number_types | boolean_types) -> NumberVar: ...
+
+    @overload
+    def __rmul__(self, other: list | tuple | set | ArrayVar) -> ArrayVar: ...
+
+    def __rmul__(self, other: Any):
         """Multiply two numbers.
 
         Args:
@@ -98,9 +185,25 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number multiplication operation.
         """
+        from .sequence import ArrayVar, LiteralArrayVar
+
+        if isinstance(other, (list, tuple, set, ArrayVar)):
+            if isinstance(other, ArrayVar):
+                return other * self
+            return LiteralArrayVar.create(other) * self
+
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("*", (type(other), type(self)))
+
         return number_multiply_operation(+other, self)
 
-    def __truediv__(self, other: number_types | boolean_types):
+    @overload
+    def __truediv__(self, other: number_types) -> NumberVar: ...
+
+    @overload
+    def __truediv__(self, other: NoReturn) -> NoReturn: ...
+
+    def __truediv__(self, other: Any):
         """Divide two numbers.
 
         Args:
@@ -109,9 +212,18 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number true division operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("/", (type(self), type(other)))
+
         return number_true_division_operation(self, +other)
 
-    def __rtruediv__(self, other: number_types | boolean_types):
+    @overload
+    def __rtruediv__(self, other: number_types) -> NumberVar: ...
+
+    @overload
+    def __rtruediv__(self, other: NoReturn) -> NoReturn: ...
+
+    def __rtruediv__(self, other: Any):
         """Divide two numbers.
 
         Args:
@@ -120,9 +232,18 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number true division operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("/", (type(other), type(self)))
+
         return number_true_division_operation(+other, self)
 
-    def __floordiv__(self, other: number_types | boolean_types):
+    @overload
+    def __floordiv__(self, other: number_types) -> NumberVar: ...
+
+    @overload
+    def __floordiv__(self, other: NoReturn) -> NoReturn: ...
+
+    def __floordiv__(self, other: Any):
         """Floor divide two numbers.
 
         Args:
@@ -131,9 +252,18 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number floor division operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("//", (type(self), type(other)))
+
         return number_floor_division_operation(self, +other)
 
-    def __rfloordiv__(self, other: number_types | boolean_types):
+    @overload
+    def __rfloordiv__(self, other: number_types) -> NumberVar: ...
+
+    @overload
+    def __rfloordiv__(self, other: NoReturn) -> NoReturn: ...
+
+    def __rfloordiv__(self, other: Any):
         """Floor divide two numbers.
 
         Args:
@@ -142,9 +272,18 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number floor division operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("//", (type(other), type(self)))
+
         return number_floor_division_operation(+other, self)
 
-    def __mod__(self, other: number_types | boolean_types):
+    @overload
+    def __mod__(self, other: number_types) -> NumberVar: ...
+
+    @overload
+    def __mod__(self, other: NoReturn) -> NoReturn: ...
+
+    def __mod__(self, other: Any):
         """Modulo two numbers.
 
         Args:
@@ -153,9 +292,18 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number modulo operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("%", (type(self), type(other)))
+
         return number_modulo_operation(self, +other)
 
-    def __rmod__(self, other: number_types | boolean_types):
+    @overload
+    def __rmod__(self, other: number_types) -> NumberVar: ...
+
+    @overload
+    def __rmod__(self, other: NoReturn) -> NoReturn: ...
+
+    def __rmod__(self, other: Any):
         """Modulo two numbers.
 
         Args:
@@ -164,9 +312,18 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number modulo operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("%", (type(other), type(self)))
+
         return number_modulo_operation(+other, self)
 
-    def __pow__(self, other: number_types | boolean_types):
+    @overload
+    def __pow__(self, other: number_types) -> NumberVar: ...
+
+    @overload
+    def __pow__(self, other: NoReturn) -> NoReturn: ...
+
+    def __pow__(self, other: Any):
         """Exponentiate two numbers.
 
         Args:
@@ -175,9 +332,18 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number exponent operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("**", (type(self), type(other)))
+
         return number_exponent_operation(self, +other)
 
-    def __rpow__(self, other: number_types | boolean_types):
+    @overload
+    def __rpow__(self, other: number_types) -> NumberVar: ...
+
+    @overload
+    def __rpow__(self, other: NoReturn) -> NoReturn: ...
+
+    def __rpow__(self, other: Any):
         """Exponentiate two numbers.
 
         Args:
@@ -186,6 +352,9 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The number exponent operation.
         """
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("**", (type(other), type(self)))
+
         return number_exponent_operation(+other, self)
 
     def __neg__(self):
@@ -244,6 +413,12 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         """
         return number_trunc_operation(self)
 
+    @overload
+    def __lt__(self, other: number_types) -> BooleanVar: ...
+
+    @overload
+    def __lt__(self, other: NoReturn) -> NoReturn: ...
+
     def __lt__(self, other: Any):
         """Less than comparison.
 
@@ -253,9 +428,15 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The result of the comparison.
         """
-        if isinstance(other, (NumberVar, BooleanVar, int, float, bool)):
-            return less_than_operation(self, +other)
-        return less_than_operation(self, other)
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("<", (type(self), type(other)))
+        return less_than_operation(self, +other)
+
+    @overload
+    def __le__(self, other: number_types) -> BooleanVar: ...
+
+    @overload
+    def __le__(self, other: NoReturn) -> NoReturn: ...
 
     def __le__(self, other: Any):
         """Less than or equal comparison.
@@ -266,9 +447,9 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The result of the comparison.
         """
-        if isinstance(other, (NumberVar, BooleanVar, int, float, bool)):
-            return less_than_or_equal_operation(self, +other)
-        return less_than_or_equal_operation(self, other)
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types("<=", (type(self), type(other)))
+        return less_than_or_equal_operation(self, +other)
 
     def __eq__(self, other: Any):
         """Equal comparison.
@@ -279,7 +460,7 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The result of the comparison.
         """
-        if isinstance(other, (NumberVar, BooleanVar, int, float, bool)):
+        if isinstance(other, NUMBER_TYPES):
             return equal_operation(self, +other)
         return equal_operation(self, other)
 
@@ -292,9 +473,15 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The result of the comparison.
         """
-        if isinstance(other, (NumberVar, BooleanVar, int, float, bool)):
+        if isinstance(other, NUMBER_TYPES):
             return not_equal_operation(self, +other)
         return not_equal_operation(self, other)
+
+    @overload
+    def __gt__(self, other: number_types) -> BooleanVar: ...
+
+    @overload
+    def __gt__(self, other: NoReturn) -> NoReturn: ...
 
     def __gt__(self, other: Any):
         """Greater than comparison.
@@ -305,9 +492,15 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The result of the comparison.
         """
-        if isinstance(other, (NumberVar, BooleanVar, int, float, bool)):
-            return greater_than_operation(self, +other)
-        return greater_than_operation(self, other)
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types(">", (type(self), type(other)))
+        return greater_than_operation(self, +other)
+
+    @overload
+    def __ge__(self, other: number_types) -> BooleanVar: ...
+
+    @overload
+    def __ge__(self, other: NoReturn) -> NoReturn: ...
 
     def __ge__(self, other: Any):
         """Greater than or equal comparison.
@@ -318,9 +511,9 @@ class NumberVar(ImmutableVar[NUMBER_T]):
         Returns:
             The result of the comparison.
         """
-        if isinstance(other, (NumberVar, BooleanVar, int, float, bool)):
-            return greater_than_or_equal_operation(self, +other)
-        return greater_than_or_equal_operation(self, other)
+        if not isinstance(other, NUMBER_TYPES):
+            raise_unsupported_operand_types(">=", (type(self), type(other)))
+        return greater_than_or_equal_operation(self, +other)
 
     def bool(self):
         """Boolean conversion.
@@ -329,6 +522,22 @@ class NumberVar(ImmutableVar[NUMBER_T]):
             The boolean value of the number.
         """
         return self != 0
+
+    def _is_strict_float(self) -> bool:
+        """Check if the number is a float.
+
+        Returns:
+            bool: True if the number is a float.
+        """
+        return issubclass(self._var_type, float)
+
+    def _is_strict_int(self) -> bool:
+        """Check if the number is an int.
+
+        Returns:
+            bool: True if the number is an int.
+        """
+        return issubclass(self._var_type, int)
 
 
 def binary_number_operation(
@@ -545,7 +754,7 @@ def number_trunc_operation(value: NumberVar):
     return var_operation_return(js_expression=f"Math.trunc({value})", var_type=int)
 
 
-class BooleanVar(ImmutableVar[bool]):
+class BooleanVar(NumberVar[bool]):
     """Base class for immutable boolean vars."""
 
     def __invert__(self):
@@ -580,7 +789,7 @@ class BooleanVar(ImmutableVar[bool]):
         """
         return self
 
-    def __lt__(self, other: boolean_types | number_types):
+    def __lt__(self, other: Any):
         """Less than comparison.
 
         Args:
@@ -589,9 +798,9 @@ class BooleanVar(ImmutableVar[bool]):
         Returns:
             The result of the comparison.
         """
-        return less_than_operation(+self, +other)
+        return +self < other
 
-    def __le__(self, other: boolean_types | number_types):
+    def __le__(self, other: Any):
         """Less than or equal comparison.
 
         Args:
@@ -600,31 +809,9 @@ class BooleanVar(ImmutableVar[bool]):
         Returns:
             The result of the comparison.
         """
-        return less_than_or_equal_operation(+self, +other)
+        return +self <= other
 
-    def __eq__(self, other: boolean_types | number_types):
-        """Equal comparison.
-
-        Args:
-            other: The other boolean.
-
-        Returns:
-            The result of the comparison.
-        """
-        return equal_operation(+self, +other)
-
-    def __ne__(self, other: boolean_types | number_types):
-        """Not equal comparison.
-
-        Args:
-            other: The other boolean.
-
-        Returns:
-            The result of the comparison.
-        """
-        return not_equal_operation(+self, +other)
-
-    def __gt__(self, other: boolean_types | number_types):
+    def __gt__(self, other: Any):
         """Greater than comparison.
 
         Args:
@@ -633,9 +820,9 @@ class BooleanVar(ImmutableVar[bool]):
         Returns:
             The result of the comparison.
         """
-        return greater_than_operation(+self, +other)
+        return +self > other
 
-    def __ge__(self, other: boolean_types | number_types):
+    def __ge__(self, other: Any):
         """Greater than or equal comparison.
 
         Args:
@@ -644,7 +831,7 @@ class BooleanVar(ImmutableVar[bool]):
         Returns:
             The result of the comparison.
         """
-        return greater_than_or_equal_operation(+self, +other)
+        return +self >= other
 
 
 @var_operation
@@ -661,8 +848,8 @@ def boolean_to_number_operation(value: BooleanVar):
 
 
 def comparison_operator(
-    func: Callable[[Var, Var], str],
-) -> Callable[[Var | Any, Var | Any], BooleanVar]:
+    func: Callable[[ImmutableVar, ImmutableVar], str],
+) -> Callable[[ImmutableVar | Any, ImmutableVar | Any], BooleanVar]:
     """Decorator to create a comparison operation.
 
     Args:
@@ -673,13 +860,13 @@ def comparison_operator(
     """
 
     @var_operation
-    def operation(lhs: Var, rhs: Var):
+    def operation(lhs: ImmutableVar, rhs: ImmutableVar):
         return var_operation_return(
             js_expression=func(lhs, rhs),
             var_type=bool,
         )
 
-    def wrapper(lhs: Var | Any, rhs: Var | Any) -> BooleanVar:
+    def wrapper(lhs: ImmutableVar | Any, rhs: ImmutableVar | Any) -> BooleanVar:
         """Create the comparison operation.
 
         Args:
@@ -695,7 +882,7 @@ def comparison_operator(
 
 
 @comparison_operator
-def greater_than_operation(lhs: Var, rhs: Var):
+def greater_than_operation(lhs: ImmutableVar, rhs: ImmutableVar):
     """Greater than comparison.
 
     Args:
@@ -709,7 +896,7 @@ def greater_than_operation(lhs: Var, rhs: Var):
 
 
 @comparison_operator
-def greater_than_or_equal_operation(lhs: Var, rhs: Var):
+def greater_than_or_equal_operation(lhs: ImmutableVar, rhs: ImmutableVar):
     """Greater than or equal comparison.
 
     Args:
@@ -723,7 +910,7 @@ def greater_than_or_equal_operation(lhs: Var, rhs: Var):
 
 
 @comparison_operator
-def less_than_operation(lhs: Var, rhs: Var):
+def less_than_operation(lhs: ImmutableVar, rhs: ImmutableVar):
     """Less than comparison.
 
     Args:
@@ -737,7 +924,7 @@ def less_than_operation(lhs: Var, rhs: Var):
 
 
 @comparison_operator
-def less_than_or_equal_operation(lhs: Var, rhs: Var):
+def less_than_or_equal_operation(lhs: ImmutableVar, rhs: ImmutableVar):
     """Less than or equal comparison.
 
     Args:
@@ -751,7 +938,7 @@ def less_than_or_equal_operation(lhs: Var, rhs: Var):
 
 
 @comparison_operator
-def equal_operation(lhs: Var, rhs: Var):
+def equal_operation(lhs: ImmutableVar, rhs: ImmutableVar):
     """Equal comparison.
 
     Args:
@@ -765,7 +952,7 @@ def equal_operation(lhs: Var, rhs: Var):
 
 
 @comparison_operator
-def not_equal_operation(lhs: Var, rhs: Var):
+def not_equal_operation(lhs: ImmutableVar, rhs: ImmutableVar):
     """Not equal comparison.
 
     Args:
@@ -831,7 +1018,7 @@ class LiteralBooleanVar(LiteralVar, BooleanVar):
         return cls(
             _var_name="true" if value else "false",
             _var_type=bool,
-            _var_data=ImmutableVarData.merge(_var_data),
+            _var_data=_var_data,
             _var_value=value,
         )
 
@@ -876,7 +1063,7 @@ class LiteralNumberVar(LiteralVar, NumberVar):
         return cls(
             _var_name=str(value),
             _var_type=type(value),
-            _var_data=ImmutableVarData.merge(_var_data),
+            _var_data=_var_data,
             _var_value=value,
         )
 
@@ -890,45 +1077,12 @@ boolean_types = Union[BooleanVar, bool]
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ToNumberVarOperation(CachedVarOperation, NumberVar):
+class ToNumberVarOperation(ToOperation, NumberVar):
     """Base class for immutable number vars that are the result of a number operation."""
 
-    _original_value: Var = dataclasses.field(
-        default_factory=lambda: LiteralNumberVar.create(0)
-    )
+    _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return str(self._original_value)
-
-    @classmethod
-    def create(
-        cls,
-        value: Var,
-        _var_type: type[int] | type[float] = float,
-        _var_data: VarData | None = None,
-    ):
-        """Create the number var.
-
-        Args:
-            value: The value of the var.
-            _var_type: The type of the Var.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The number var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=_var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _original_value=value,
-        )
+    _default_var_type: ClassVar[Type] = float
 
 
 @dataclasses.dataclass(
@@ -936,43 +1090,12 @@ class ToNumberVarOperation(CachedVarOperation, NumberVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ToBooleanVarOperation(CachedVarOperation, BooleanVar):
+class ToBooleanVarOperation(ToOperation, BooleanVar):
     """Base class for immutable boolean vars that are the result of a boolean operation."""
 
-    _original_value: Var = dataclasses.field(
-        default_factory=lambda: LiteralBooleanVar.create(False)
-    )
+    _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return str(self._original_value)
-
-    @classmethod
-    def create(
-        cls,
-        value: Var,
-        _var_data: VarData | None = None,
-    ):
-        """Create the boolean var.
-
-        Args:
-            value: The value of the var.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The boolean var.
-        """
-        return cls(
-            _var_name="",
-            _var_type=bool,
-            _var_data=ImmutableVarData.merge(_var_data),
-            _original_value=value,
-        )
+    _default_var_type: ClassVar[Type] = bool
 
 
 @var_operation
@@ -992,7 +1115,9 @@ def boolify(value: Var):
 
 
 @var_operation
-def ternary_operation(condition: BooleanVar, if_true: Var, if_false: Var):
+def ternary_operation(
+    condition: BooleanVar, if_true: ImmutableVar, if_false: ImmutableVar
+):
     """Create a ternary operation.
 
     Args:
@@ -1007,3 +1132,6 @@ def ternary_operation(condition: BooleanVar, if_true: Var, if_false: Var):
         js_expression=f"({condition} ? {if_true} : {if_false})",
         var_type=unionize(if_true._var_type, if_false._var_type),
     )
+
+
+NUMBER_TYPES = (int, float, NumberVar)
