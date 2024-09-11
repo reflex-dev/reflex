@@ -23,3 +23,16 @@ class PropsBase(Base):
         return LiteralObjectVar.create(
             {format.to_camel_case(key): value for key, value in self.dict().items()}
         ).json()
+
+    def dict(self, *args, **kwargs):
+        """Convert the object to a dictionary.
+
+        Keys will be converted to camelCase.
+
+        Returns:
+            The object as a dictionary.
+        """
+        return {
+            format.to_camel_case(key): value
+            for key, value in super().dict(*args, **kwargs).items()
+        }
