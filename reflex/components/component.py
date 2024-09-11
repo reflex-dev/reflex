@@ -195,7 +195,7 @@ class Component(BaseComponent, ABC):
     class_name: Any = None
 
     # Special component props.
-    special_props: Set[ImmutableVar] = set()
+    special_props: List[ImmutableVar] = []
 
     # Whether the component should take the focus once the page is loaded
     autofocus: bool = False

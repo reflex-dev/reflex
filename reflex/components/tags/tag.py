@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from reflex.event import EventChain
 from reflex.ivars.base import ImmutableVar, LiteralVar
@@ -27,7 +27,7 @@ class Tag:
     args: Optional[Tuple[str, ...]] = None
 
     # Special props that aren't key value pairs.
-    special_props: Set[ImmutableVar] = dataclasses.field(default_factory=set)
+    special_props: List[ImmutableVar] = dataclasses.field(default_factory=list)
 
     # The children components.
     children: List[Any] = dataclasses.field(default_factory=list)
