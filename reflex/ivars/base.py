@@ -1599,7 +1599,7 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
         """
         if instance is None:
             state_where_defined = owner
-            while self.fget.__name__ in state_where_defined.inherited_vars:
+            while self._var_name in state_where_defined.inherited_vars:
                 state_where_defined = state_where_defined.get_parent_state()
 
             return self._replace(
