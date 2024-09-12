@@ -6,7 +6,7 @@ from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 from ..base import RadixThemesComponent, RadixThemesTriggerComponent
 
@@ -19,7 +19,7 @@ class AlertDialogRoot(RadixThemesComponent):
     tag = "AlertDialog.Root"
 
     # The controlled open state of the dialog.
-    open: ImmutableVar[bool]
+    open: Var[bool]
 
     # Fired when the open state changes.
     on_open_change: EventHandler[lambda e0: [e0]]
@@ -37,10 +37,10 @@ class AlertDialogContent(elements.Div, RadixThemesComponent):
     tag = "AlertDialog.Content"
 
     # The size of the content.
-    size: ImmutableVar[Responsive[LiteralContentSize]]
+    size: Var[Responsive[LiteralContentSize]]
 
     # Whether to force mount the content on open.
-    force_mount: ImmutableVar[bool]
+    force_mount: Var[bool]
 
     # Fired when the dialog is opened.
     on_open_auto_focus: EventHandler[lambda e0: [e0]]

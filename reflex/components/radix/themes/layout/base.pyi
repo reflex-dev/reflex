@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Literal, Optional, Union, overload
 
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.style import Style
 
 from ..base import CommonMarginProps, RadixThemesComponent
@@ -22,7 +22,7 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
         *children,
         p: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Union[
                         Breakpoints[
                             str,
@@ -39,7 +39,7 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
         ] = None,
         px: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Union[
                         Breakpoints[
                             str,
@@ -56,7 +56,7 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
         ] = None,
         py: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Union[
                         Breakpoints[
                             str,
@@ -73,7 +73,7 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
         ] = None,
         pt: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Union[
                         Breakpoints[
                             str,
@@ -90,7 +90,7 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
         ] = None,
         pr: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Union[
                         Breakpoints[
                             str,
@@ -107,7 +107,7 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
         ] = None,
         pb: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Union[
                         Breakpoints[
                             str,
@@ -124,7 +124,7 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
         ] = None,
         pl: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Union[
                         Breakpoints[
                             str,
@@ -141,61 +141,57 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
         ] = None,
         flex_shrink: Optional[
             Union[
-                ImmutableVar[
-                    Union[Breakpoints[str, Literal["0", "1"]], Literal["0", "1"]]
-                ],
+                Var[Union[Breakpoints[str, Literal["0", "1"]], Literal["0", "1"]]],
                 Literal["0", "1"],
                 Breakpoints[str, Literal["0", "1"]],
             ]
         ] = None,
         flex_grow: Optional[
             Union[
-                ImmutableVar[
-                    Union[Breakpoints[str, Literal["0", "1"]], Literal["0", "1"]]
-                ],
+                Var[Union[Breakpoints[str, Literal["0", "1"]], Literal["0", "1"]]],
                 Literal["0", "1"],
                 Breakpoints[str, Literal["0", "1"]],
             ]
         ] = None,
         m: Optional[
             Union[
-                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mx: Optional[
             Union[
-                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         my: Optional[
             Union[
-                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mt: Optional[
             Union[
-                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mr: Optional[
             Union[
-                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mb: Optional[
             Union[
-                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         ml: Optional[
             Union[
-                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
@@ -204,51 +200,41 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "LayoutComponent":

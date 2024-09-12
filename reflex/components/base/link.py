@@ -1,7 +1,7 @@
 """Display the title of the current page."""
 
 from reflex.components.component import Component
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 
 class RawLink(Component):
@@ -10,10 +10,10 @@ class RawLink(Component):
     tag = "link"
 
     # The href.
-    href: ImmutableVar[str]
+    href: Var[str]
 
     # The type of link.
-    rel: ImmutableVar[str]
+    rel: Var[str]
 
 
 class ScriptTag(Component):
@@ -22,22 +22,22 @@ class ScriptTag(Component):
     tag = "script"
 
     # The type of script represented.
-    type_: ImmutableVar[str]
+    type_: Var[str]
 
     # The URI of an external script.
-    source: ImmutableVar[str]
+    source: Var[str]
 
     # Metadata to verify the content of the script.
-    integrity: ImmutableVar[str]
+    integrity: Var[str]
 
     # Whether to allow cross-origin requests.
-    crossorigin: ImmutableVar[str]
+    crossorigin: Var[str]
 
     # Indicates which referrer to send when fetching the script.
-    referrer_policy: ImmutableVar[str]
+    referrer_policy: Var[str]
 
     # Whether to asynchronously load the script.
-    is_async: ImmutableVar[bool]
+    is_async: Var[bool]
 
     # Whether to defer loading the script.
-    defer: ImmutableVar[bool]
+    defer: Var[bool]

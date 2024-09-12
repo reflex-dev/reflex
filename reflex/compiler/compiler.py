@@ -17,7 +17,7 @@ from reflex.components.component import (
     StatefulComponent,
 )
 from reflex.config import get_config
-from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.base import LiteralVar, Var
 from reflex.state import BaseState
 from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils.exec import is_prod_mode
@@ -320,7 +320,7 @@ def _compile_tailwind(
 def compile_document_root(
     head_components: list[Component],
     html_lang: Optional[str] = None,
-    html_custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
 ) -> tuple[str, str]:
     """Compile the document root.
 

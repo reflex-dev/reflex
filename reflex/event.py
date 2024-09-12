@@ -20,7 +20,7 @@ from typing import (
 from reflex import constants
 from reflex.base import Base
 from reflex.ivars import VarData
-from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.base import LiteralVar, Var
 from reflex.ivars.function import FunctionStringVar, FunctionVar
 from reflex.ivars.object import ObjectVar
 from reflex.utils import format
@@ -191,7 +191,7 @@ class EventHandler(EventActionsMixin):
 
         # Get the function args.
         fn_args = inspect.getfullargspec(self.fn).args[1:]
-        fn_args = (ImmutableVar.create_safe(arg) for arg in fn_args)
+        fn_args = (Var.create_safe(arg) for arg in fn_args)
 
         # Construct the payload.
         values = []
@@ -229,7 +229,7 @@ class EventSpec(EventActionsMixin):
     client_handler_name: str = ""
 
     # The arguments to pass to the function.
-    args: Tuple[Tuple[ImmutableVar, ImmutableVar], ...] = ()
+    args: Tuple[Tuple[Var, Var], ...] = ()
 
     class Config:
         """The Pydantic config."""
@@ -237,9 +237,7 @@ class EventSpec(EventActionsMixin):
         # Required to allow tuple fields.
         frozen = True
 
-    def with_args(
-        self, args: Tuple[Tuple[ImmutableVar, ImmutableVar], ...]
-    ) -> EventSpec:
+    def with_args(self, args: Tuple[Tuple[Var, Var], ...]) -> EventSpec:
         """Copy the event spec, with updated args.
 
         Args:
@@ -255,7 +253,7 @@ class EventSpec(EventActionsMixin):
             event_actions=self.event_actions.copy(),
         )
 
-    def add_args(self, *args: ImmutableVar) -> EventSpec:
+    def add_args(self, *args: Var) -> EventSpec:
         """Add arguments to the event spec.
 
         Args:
@@ -271,7 +269,7 @@ class EventSpec(EventActionsMixin):
 
         # Get the remaining unfilled function args.
         fn_args = inspect.getfullargspec(self.handler.fn).args[1 + len(self.args) :]
-        fn_args = (ImmutableVar.create_safe(arg) for arg in fn_args)
+        fn_args = (Var.create_safe(arg) for arg in fn_args)
 
         # Construct the payload.
         values = []
@@ -395,15 +393,15 @@ class FileUpload(Base):
         upload_id = self.upload_id or DEFAULT_UPLOAD_ID
         spec_args = [
             (
-                ImmutableVar.create_safe("files"),
-                ImmutableVar(
+                Var.create_safe("files"),
+                Var(
                     _var_name="filesById",
                     _var_type=Dict[str, Any],
                     _var_data=VarData.merge(upload_files_context_var_data),
                 ).to(ObjectVar)[LiteralVar.create(upload_id)],
             ),
             (
-                ImmutableVar.create_safe("upload_id"),
+                Var.create_safe("upload_id"),
                 LiteralVar.create(upload_id),
             ),
         ]
@@ -423,7 +421,7 @@ class FileUpload(Base):
                 )  # type: ignore
             else:
                 raise ValueError(f"{on_upload_progress} is not a valid event handler.")
-            if isinstance(events, ImmutableVar):
+            if isinstance(events, Var):
                 raise ValueError(f"{on_upload_progress} cannot return a var {events}.")
             on_upload_progress_chain = EventChain(
                 events=events,
@@ -432,7 +430,7 @@ class FileUpload(Base):
             formatted_chain = str(format.format_prop(on_upload_progress_chain))
             spec_args.append(
                 (
-                    ImmutableVar.create_safe("on_upload_progress"),
+                    Var.create_safe("on_upload_progress"),
                     FunctionStringVar(
                         formatted_chain.strip("{}"),
                     ).to(FunctionVar, EventChain),
@@ -472,7 +470,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
         handler=EventHandler(fn=fn),
         args=tuple(
             (
-                ImmutableVar.create_safe(k),
+                Var.create_safe(k),
                 LiteralVar.create(v),
             )
             for k, v in kwargs.items()
@@ -481,7 +479,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
 
 
 def redirect(
-    path: str | ImmutableVar[str],
+    path: str | Var[str],
     external: Optional[bool] = False,
     replace: Optional[bool] = False,
 ) -> EventSpec:
@@ -504,7 +502,7 @@ def redirect(
     )
 
 
-def console_log(message: str | ImmutableVar[str]) -> EventSpec:
+def console_log(message: str | Var[str]) -> EventSpec:
     """Do a console.log on the browser.
 
     Args:
@@ -525,7 +523,7 @@ def back() -> EventSpec:
     return call_script("window.history.back()")
 
 
-def window_alert(message: str | ImmutableVar[str]) -> EventSpec:
+def window_alert(message: str | Var[str]) -> EventSpec:
     """Create a window alert on the browser.
 
     Args:
@@ -678,9 +676,9 @@ def set_clipboard(content: str) -> EventSpec:
 
 
 def download(
-    url: str | ImmutableVar | None = None,
-    filename: Optional[str | ImmutableVar] = None,
-    data: str | bytes | ImmutableVar | None = None,
+    url: str | Var | None = None,
+    filename: Optional[str | Var] = None,
+    data: str | bytes | Var | None = None,
 ) -> EventSpec:
     """Download the file at a given path or with the specified data.
 
@@ -716,7 +714,7 @@ def download(
         if isinstance(data, str):
             # Caller provided a plain text string to download.
             url = "data:text/plain," + urllib.parse.quote(data)
-        elif isinstance(data, ImmutableVar):
+        elif isinstance(data, Var):
             # Need to check on the frontend if the Var already looks like a data: URI.
 
             is_data_url = (data.js_type() == "string") & (
@@ -759,7 +757,7 @@ def _callback_arg_spec(eval_result):
 
 
 def call_script(
-    javascript_code: str | ImmutableVar[str],
+    javascript_code: str | Var[str],
     callback: (
         EventSpec
         | EventHandler
@@ -873,15 +871,13 @@ def parse_args_spec(arg_spec: ArgsSpec):
     annotations = get_type_hints(arg_spec)
     return arg_spec(
         *[
-            ImmutableVar(f"_{l_arg}").to(
-                ObjectVar, annotations.get(l_arg, FrontendEvent)
-            )
+            Var(f"_{l_arg}").to(ObjectVar, annotations.get(l_arg, FrontendEvent))
             for l_arg in spec.args
         ]
     )
 
 
-def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | ImmutableVar:
+def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | Var:
     """Call a function to a list of event specs.
 
     The function should return a single EventSpec, a list of EventSpecs, or a
@@ -922,7 +918,7 @@ def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | Immutab
     out = fn(*parsed_args)
 
     # If the function returns a Var, assume it's an EventChain and render it directly.
-    if isinstance(out, ImmutableVar):
+    if isinstance(out, Var):
         return out
 
     # Convert the output to a list.
@@ -951,7 +947,7 @@ def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | Immutab
 
 def get_handler_args(
     event_spec: EventSpec,
-) -> tuple[tuple[ImmutableVar, ImmutableVar], ...]:
+) -> tuple[tuple[Var, Var], ...]:
     """Get the handler args for the given event spec.
 
     Args:

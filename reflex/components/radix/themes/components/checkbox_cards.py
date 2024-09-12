@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from typing import Literal, Union
 
 from reflex.components.core.breakpoints import Responsive
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -15,24 +15,24 @@ class CheckboxCardsRoot(RadixThemesComponent):
     tag = "CheckboxCards.Root"
 
     # The size of the checkbox cards: "1" | "2" | "3"
-    size: ImmutableVar[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # Variant of button: "classic" | "surface" | "soft"
-    variant: ImmutableVar[Literal["classic", "surface"]]
+    variant: Var[Literal["classic", "surface"]]
 
     # Override theme color for button
-    color_scheme: ImmutableVar[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Uses a higher contrast color for the component.
-    high_contrast: ImmutableVar[bool]
+    high_contrast: Var[bool]
 
     # The number of columns:
-    columns: ImmutableVar[
+    columns: Var[
         Responsive[Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
     ]
 
     # The gap between the checkbox cards:
-    gap: ImmutableVar[
+    gap: Var[
         Responsive[Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
     ]
 

@@ -7,7 +7,7 @@ from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.tags import MatchTag, Tag
 from reflex.ivars import VarData
-from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.base import LiteralVar, Var
 from reflex.style import Style
 from reflex.utils import format, types
 from reflex.utils.exceptions import MatchTypeError
@@ -18,7 +18,7 @@ class Match(MemoizationLeaf):
     """Match cases based on a condition."""
 
     # The condition to determine which case to match.
-    cond: ImmutableVar[Any]
+    cond: Var[Any]
 
     # The list of match cases to be matched.
     match_cases: List[Any] = []
@@ -27,7 +27,7 @@ class Match(MemoizationLeaf):
     default: Any
 
     @classmethod
-    def create(cls, cond: Any, *cases) -> Union[Component, ImmutableVar]:
+    def create(cls, cond: Any, *cases) -> Union[Component, Var]:
         """Create a Match Component.
 
         Args:
@@ -46,9 +46,7 @@ class Match(MemoizationLeaf):
 
         cls._validate_return_types(match_cases)
 
-        if default is None and types._issubclass(
-            type(match_cases[0][-1]), ImmutableVar
-        ):
+        if default is None and types._issubclass(type(match_cases[0][-1]), Var):
             raise ValueError(
                 "For cases with return types as Vars, a default case must be provided"
             )
@@ -58,7 +56,7 @@ class Match(MemoizationLeaf):
         )
 
     @classmethod
-    def _create_condition_var(cls, cond: Any) -> ImmutableVar:
+    def _create_condition_var(cls, cond: Any) -> Var:
         """Convert the condition to a Var.
 
         Args:
@@ -79,7 +77,7 @@ class Match(MemoizationLeaf):
     @classmethod
     def _process_cases(
         cls, cases: List
-    ) -> Tuple[List, Optional[Union[ImmutableVar, BaseComponent]]]:
+    ) -> Tuple[List, Optional[Union[Var, BaseComponent]]]:
         """Process the list of match cases and the catchall default case.
 
         Args:
@@ -127,7 +125,7 @@ class Match(MemoizationLeaf):
         return case_element
 
     @classmethod
-    def _process_match_cases(cls, cases: List) -> List[List[ImmutableVar]]:
+    def _process_match_cases(cls, cases: List) -> List[List[Var]]:
         """Process the individual match cases.
 
         Args:
@@ -159,7 +157,7 @@ class Match(MemoizationLeaf):
                     if not isinstance(element, BaseComponent)
                     else element
                 )
-                if not isinstance(el, (ImmutableVar, BaseComponent)):
+                if not isinstance(el, (Var, BaseComponent)):
                     raise ValueError("Case element must be a var or component")
                 case_list.append(el)
 
@@ -168,7 +166,7 @@ class Match(MemoizationLeaf):
         return match_cases
 
     @classmethod
-    def _validate_return_types(cls, match_cases: List[List[ImmutableVar]]) -> None:
+    def _validate_return_types(cls, match_cases: List[List[Var]]) -> None:
         """Validate that match cases have the same return types.
 
         Args:
@@ -182,24 +180,24 @@ class Match(MemoizationLeaf):
 
         if types._isinstance(first_case_return, BaseComponent):
             return_type = BaseComponent
-        elif types._isinstance(first_case_return, ImmutableVar):
-            return_type = ImmutableVar
+        elif types._isinstance(first_case_return, Var):
+            return_type = Var
 
         for index, case in enumerate(match_cases):
             if not types._issubclass(type(case[-1]), return_type):
                 raise MatchTypeError(
                     f"Match cases should have the same return types. Case {index} with return "
-                    f"value `{case[-1]._var_name if isinstance(case[-1], ImmutableVar) else textwrap.shorten(str(case[-1]), width=250)}`"
+                    f"value `{case[-1]._var_name if isinstance(case[-1], Var) else textwrap.shorten(str(case[-1]), width=250)}`"
                     f" of type {type(case[-1])!r} is not {return_type}"
                 )
 
     @classmethod
     def _create_match_cond_var_or_component(
         cls,
-        match_cond_var: ImmutableVar,
-        match_cases: List[List[ImmutableVar]],
-        default: Optional[Union[ImmutableVar, BaseComponent]],
-    ) -> Union[Component, ImmutableVar]:
+        match_cond_var: Var,
+        match_cases: List[List[Var]],
+        default: Optional[Union[Var, BaseComponent]],
+    ) -> Union[Component, Var]:
         """Create and return the match condition var or component.
 
         Args:
@@ -230,13 +228,11 @@ class Match(MemoizationLeaf):
 
         # Validate the match cases (as well as the default case) to have Var return types.
         if any(
-            case
-            for case in match_cases
-            if not types._isinstance(case[-1], ImmutableVar)
-        ) or not types._isinstance(default, ImmutableVar):
+            case for case in match_cases if not types._isinstance(case[-1], Var)
+        ) or not types._isinstance(default, Var):
             raise ValueError("Return types of match cases should be Vars.")
 
-        return ImmutableVar(
+        return Var(
             _var_name=format.format_match(
                 cond=str(match_cond_var),
                 match_cases=match_cases,

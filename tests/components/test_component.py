@@ -18,7 +18,7 @@ from reflex.components.radix.themes.layout.box import Box
 from reflex.constants import EventTriggers
 from reflex.event import EventChain, EventHandler, parse_args_spec
 from reflex.ivars import VarData
-from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.base import LiteralVar, Var
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
@@ -50,13 +50,13 @@ def component1() -> Type[Component]:
 
     class TestComponent1(Component):
         # A test string prop.
-        text: ImmutableVar[str]
+        text: Var[str]
 
         # A test number prop.
-        number: ImmutableVar[int]
+        number: Var[int]
 
         # A test string/number prop.
-        text_or_number: ImmutableVar[Union[int, str]]
+        text_or_number: Var[Union[int, str]]
 
         def _get_imports(self) -> ParsedImportDict:
             return {"react": [ImportVar(tag="Component")]}
@@ -77,7 +77,7 @@ def component2() -> Type[Component]:
 
     class TestComponent2(Component):
         # A test list prop.
-        arr: ImmutableVar[List[str]]
+        arr: Var[List[str]]
 
         on_prop_event: EventHandler[lambda e0: [e0]]
 
@@ -220,7 +220,7 @@ def my_component():
         A test component function.
     """
 
-    def my_component(prop1: ImmutableVar[str], prop2: ImmutableVar[int]):
+    def my_component(prop1: Var[str], prop2: Var[int]):
         return Box.create(prop1, prop2)
 
     return my_component
@@ -275,19 +275,19 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text",
-            ImmutableVar(_var_name="hello", _var_type=Optional[str]),
+            Var(_var_name="hello", _var_type=Optional[str]),
             None,
             id="text-optional",
         ),
         pytest.param(
             "text",
-            ImmutableVar(_var_name="hello", _var_type=Union[str, None]),
+            Var(_var_name="hello", _var_type=Union[str, None]),
             None,
             id="text-union-str-none",
         ),
         pytest.param(
             "text",
-            ImmutableVar(_var_name="hello", _var_type=Union[None, str]),
+            Var(_var_name="hello", _var_type=Union[None, str]),
             None,
             id="text-union-none-str",
         ),
@@ -305,19 +305,19 @@ def test_create_component(component1):
         ),
         pytest.param(
             "number",
-            ImmutableVar(_var_name="1", _var_type=Optional[int]),
+            Var(_var_name="1", _var_type=Optional[int]),
             None,
             id="number-optional",
         ),
         pytest.param(
             "number",
-            ImmutableVar(_var_name="1", _var_type=Union[int, None]),
+            Var(_var_name="1", _var_type=Union[int, None]),
             None,
             id="number-union-int-none",
         ),
         pytest.param(
             "number",
-            ImmutableVar(_var_name="1", _var_type=Union[None, int]),
+            Var(_var_name="1", _var_type=Union[None, int]),
             None,
             id="number-union-none-int",
         ),
@@ -341,37 +341,37 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text_or_number",
-            ImmutableVar(_var_name="hello", _var_type=Optional[str]),
+            Var(_var_name="hello", _var_type=Optional[str]),
             None,
             id="text_or_number-optional-str",
         ),
         pytest.param(
             "text_or_number",
-            ImmutableVar(_var_name="hello", _var_type=Union[str, None]),
+            Var(_var_name="hello", _var_type=Union[str, None]),
             None,
             id="text_or_number-union-str-none",
         ),
         pytest.param(
             "text_or_number",
-            ImmutableVar(_var_name="hello", _var_type=Union[None, str]),
+            Var(_var_name="hello", _var_type=Union[None, str]),
             None,
             id="text_or_number-union-none-str",
         ),
         pytest.param(
             "text_or_number",
-            ImmutableVar(_var_name="1", _var_type=Optional[int]),
+            Var(_var_name="1", _var_type=Optional[int]),
             None,
             id="text_or_number-optional-int",
         ),
         pytest.param(
             "text_or_number",
-            ImmutableVar(_var_name="1", _var_type=Union[int, None]),
+            Var(_var_name="1", _var_type=Union[int, None]),
             None,
             id="text_or_number-union-int-none",
         ),
         pytest.param(
             "text_or_number",
-            ImmutableVar(_var_name="1", _var_type=Union[None, int]),
+            Var(_var_name="1", _var_type=Union[None, int]),
             None,
             id="text_or_number-union-none-int",
         ),
@@ -383,7 +383,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text_or_number",
-            ImmutableVar(_var_name="hello", _var_type=Optional[Union[str, int]]),
+            Var(_var_name="hello", _var_type=Optional[Union[str, int]]),
             None,
             id="text_or_number-optional-union-str-int",
         ),
@@ -392,7 +392,7 @@ def test_create_component(component1):
 def test_create_component_prop_validation(
     component1: Type[Component],
     prop_name: str,
-    var: Union[ImmutableVar, str, int],
+    var: Union[Var, str, int],
     expected: Type[Exception],
 ):
     """Test that component props are validated correctly.
@@ -864,7 +864,7 @@ def test_custom_component_wrapper():
     """Test that the wrapper of a custom component is correct."""
 
     @custom_component
-    def my_component(width: ImmutableVar[int], color: ImmutableVar[str]):
+    def my_component(width: Var[int], color: Var[str]):
         return rx.box(
             width=width,
             color=color,
@@ -1179,7 +1179,7 @@ TEST_VAR = LiteralVar.create("test")._replace(
 FORMATTED_TEST_VAR = LiteralVar.create(f"foo{TEST_VAR}bar")
 STYLE_VAR = TEST_VAR._replace(_var_name="style")
 EVENT_CHAIN_VAR = TEST_VAR._replace(_var_type=EventChain)
-ARG_VAR = ImmutableVar.create_safe("arg")
+ARG_VAR = Var.create_safe("arg")
 
 TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "test"}})._replace(
     merge_var_data=TEST_VAR._var_data
@@ -1213,10 +1213,10 @@ FORMATTED_TEST_VAR_LIST_OF_DICT = LiteralVar.create([{"a": "footestbar"}])._repl
 class ComponentNestedVar(Component):
     """A component with nested Var types."""
 
-    dict_of_dict: ImmutableVar[Dict[str, Dict[str, str]]]
-    list_of_list: ImmutableVar[List[List[str]]]
-    list_of_list_of_list: ImmutableVar[List[List[List[str]]]]
-    list_of_dict: ImmutableVar[List[Dict[str, str]]]
+    dict_of_dict: Var[Dict[str, Dict[str, str]]]
+    list_of_list: Var[List[List[str]]]
+    list_of_list_of_list: Var[List[List[List[str]]]]
+    list_of_dict: Var[List[Dict[str, str]]]
 
 
 class EventState(rx.State):
@@ -1695,15 +1695,15 @@ def test_rename_props():
     class C1(Component):
         tag = "C1"
 
-        prop1: ImmutableVar[str]
-        prop2: ImmutableVar[str]
+        prop1: Var[str]
+        prop2: Var[str]
 
         _rename_props = {"prop1": "renamed_prop1", "prop2": "renamed_prop2"}
 
     class C2(C1):
         tag = "C2"
 
-        prop3: ImmutableVar[str]
+        prop3: Var[str]
 
         _rename_props = {"prop2": "subclass_prop2", "prop3": "renamed_prop3"}
 
@@ -1798,7 +1798,7 @@ def test_custom_component_declare_event_handlers_in_fields():
 
 def test_invalid_event_trigger():
     class TriggerComponent(Component):
-        on_push: ImmutableVar[bool]
+        on_push: Var[bool]
 
         def get_event_triggers(self) -> Dict[str, Any]:
             """Test controlled triggers.
@@ -2028,7 +2028,7 @@ def test_component_add_hooks_var():
             return [
                 "const hook3 = useRef(null)",
                 "const hook1 = 42",
-                ImmutableVar.create(
+                Var.create(
                     "useEffect(() => () => {}, [])",
                     _var_data=VarData(
                         hooks={
@@ -2038,7 +2038,7 @@ def test_component_add_hooks_var():
                         imports={"react": [ImportVar(tag="useEffect")]},
                     ),
                 ),
-                ImmutableVar.create(
+                Var.create(
                     "const hook3 = useRef(null)",
                     _var_data=VarData(
                         imports={"react": [ImportVar(tag="useRef")]},
@@ -2112,14 +2112,12 @@ def test_add_style_embedded_vars(test_state: BaseState):
 def test_add_style_foreach():
     class StyledComponent(Component):
         tag = "StyledComponent"
-        ix: ImmutableVar[int]
+        ix: Var[int]
 
         def add_style(self):
             return Style({"color": "red"})
 
-    page = rx.vstack(
-        rx.foreach(ImmutableVar.range(3), lambda i: StyledComponent.create(i))
-    )
+    page = rx.vstack(rx.foreach(Var.range(3), lambda i: StyledComponent.create(i)))
     page._add_style_recursive(Style())
 
     # Expect only a single child of the foreach on the python side
@@ -2153,9 +2151,7 @@ class TriggerState(rx.State):
                 rx.text("random text", on_click=TriggerState.do_something),
                 rx.text(
                     "random text",
-                    on_click=ImmutableVar(
-                        _var_name="toggleColorMode", _var_type=EventChain
-                    ),
+                    on_click=Var(_var_name="toggleColorMode", _var_type=EventChain),
                 ),
             ),
             True,
@@ -2165,9 +2161,7 @@ class TriggerState(rx.State):
                 rx.text("random text", on_click=rx.console_log("log")),
                 rx.text(
                     "random text",
-                    on_click=ImmutableVar(
-                        _var_name="toggleColorMode", _var_type=EventChain
-                    ),
+                    on_click=Var(_var_name="toggleColorMode", _var_type=EventChain),
                 ),
             ),
             False,

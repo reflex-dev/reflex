@@ -13,7 +13,7 @@ from reflex.components.radix.themes.components.button import Button
 from reflex.components.radix.themes.layout.box import Box
 from reflex.constants.colors import Color
 from reflex.event import set_clipboard
-from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.base import LiteralVar, Var
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.imports import ImportDict, ImportVar
@@ -374,28 +374,28 @@ class CodeBlock(Component):
     alias = "SyntaxHighlighter"
 
     # The theme to use ("light" or "dark").
-    theme: ImmutableVar[LiteralCodeBlockTheme] = "one-light"  # type: ignore
+    theme: Var[LiteralCodeBlockTheme] = "one-light"  # type: ignore
 
     # The language to use.
-    language: ImmutableVar[LiteralCodeLanguage] = "python"  # type: ignore
+    language: Var[LiteralCodeLanguage] = "python"  # type: ignore
 
     # The code to display.
-    code: ImmutableVar[str]
+    code: Var[str]
 
     # If this is enabled line numbers will be shown next to the code block.
-    show_line_numbers: ImmutableVar[bool]
+    show_line_numbers: Var[bool]
 
     # The starting line number to use.
-    starting_line_number: ImmutableVar[int]
+    starting_line_number: Var[int]
 
     # Whether to wrap long lines.
-    wrap_long_lines: ImmutableVar[bool]
+    wrap_long_lines: Var[bool]
 
     # A custom style for the code block.
-    custom_style: Dict[str, Union[str, ImmutableVar, Color]] = {}
+    custom_style: Dict[str, Union[str, Var, Color]] = {}
 
     # Props passed down to the code tag.
-    code_tag_props: ImmutableVar[Dict[str, str]]
+    code_tag_props: Var[Dict[str, str]]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the CodeBlock component.
@@ -480,13 +480,13 @@ class CodeBlock(Component):
         if "theme" not in props:
             # Default color scheme responds to global color mode.
             props["theme"] = color_mode_cond(
-                light=ImmutableVar.create_safe("oneLight"),
-                dark=ImmutableVar.create_safe("oneDark"),
+                light=Var.create_safe("oneLight"),
+                dark=Var.create_safe("oneDark"),
             )
 
         # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
         # themes respectively to ensure code compatibility.
-        if "theme" in props and not isinstance(props["theme"], ImmutableVar):
+        if "theme" in props and not isinstance(props["theme"], Var):
             props["theme"] = cls.convert_theme_name(props["theme"])
 
         if can_copy:
@@ -512,7 +512,7 @@ class CodeBlock(Component):
         # Carry the children (code) via props
         if children:
             props["code"] = children[0]
-            if not isinstance(props["code"], ImmutableVar):
+            if not isinstance(props["code"], Var):
                 props["code"] = LiteralVar.create(props["code"])
 
         # Create the component.

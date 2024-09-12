@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Optional, Type, Union, overload
 
 from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.style import Style
 
 DEFAULT_DEBOUNCE_TIMEOUT = 300
@@ -18,68 +18,54 @@ class DebounceInput(Component):
     def create(  # type: ignore
         cls,
         *children,
-        min_length: Optional[Union[ImmutableVar[int], int]] = None,
-        debounce_timeout: Optional[Union[ImmutableVar[int], int]] = None,
-        force_notify_by_enter: Optional[Union[ImmutableVar[bool], bool]] = None,
-        force_notify_on_blur: Optional[Union[ImmutableVar[bool], bool]] = None,
-        value: Optional[
-            Union[ImmutableVar[Union[float, int, str]], str, int, float]
-        ] = None,
-        input_ref: Optional[Union[ImmutableVar[str], str]] = None,
-        element: Optional[Union[ImmutableVar[Type[Component]], Type[Component]]] = None,
+        min_length: Optional[Union[Var[int], int]] = None,
+        debounce_timeout: Optional[Union[Var[int], int]] = None,
+        force_notify_by_enter: Optional[Union[Var[bool], bool]] = None,
+        force_notify_on_blur: Optional[Union[Var[bool], bool]] = None,
+        value: Optional[Union[Var[Union[float, int, str]], str, int, float]] = None,
+        input_ref: Optional[Union[Var[str], str]] = None,
+        element: Optional[Union[Var[Type[Component]], Type[Component]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_change: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_change: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "DebounceInput":

@@ -3,7 +3,7 @@
 from typing import Any, Literal, Optional, Union
 
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.utils import types
 
 from .base import NextComponent
@@ -17,43 +17,43 @@ class Image(NextComponent):
     is_default = True
 
     # This can be either an absolute external URL, or an internal path
-    src: ImmutableVar[Any]
+    src: Var[Any]
 
     # Represents the rendered width in pixels, so it will affect how large the image appears.
-    width: ImmutableVar[Any]
+    width: Var[Any]
 
     # Represents the rendered height in pixels, so it will affect how large the image appears.
-    height: ImmutableVar[Any]
+    height: Var[Any]
 
     # Used to describe the image for screen readers and search engines.
-    alt: ImmutableVar[str]
+    alt: Var[str]
 
     # A custom function used to resolve image URLs.
-    loader: ImmutableVar[Any]
+    loader: Var[Any]
 
     # A boolean that causes the image to fill the parent element, which is useful when the width and height are unknown. Default to True
-    fill: ImmutableVar[bool]
+    fill: Var[bool]
 
     # A string, similar to a media query, that provides information about how wide the image will be at different breakpoints.
-    sizes: ImmutableVar[str]
+    sizes: Var[str]
 
     # The quality of the optimized image, an integer between 1 and 100, where 100 is the best quality and therefore largest file size. Defaults to 75.
-    quality: ImmutableVar[int]
+    quality: Var[int]
 
     # When true, the image will be considered high priority and preload. Lazy loading is automatically disabled for images using priority.
-    priority: ImmutableVar[bool]
+    priority: Var[bool]
 
     # A placeholder to use while the image is loading. Possible values are blur, empty, or data:image/.... Defaults to empty.
-    placeholder: ImmutableVar[str]
+    placeholder: Var[str]
 
     # Allows passing CSS styles to the underlying image element.
-    # style: ImmutableVar[Any]
+    # style: Var[Any]
 
     # The loading behavior of the image. Defaults to lazy. Can hurt performance, recommended to use `priority` instead.
-    loading: ImmutableVar[Literal["lazy", "eager"]]
+    loading: Var[Literal["lazy", "eager"]]
 
     # A Data URL to be used as a placeholder image before the src image successfully loads. Only takes effect when combined with placeholder="blur".
-    blurDataURL: ImmutableVar[str]
+    blurDataURL: Var[str]
 
     # Fires when the image has loaded.
     on_load: EventHandler[lambda: []]

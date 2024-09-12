@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Union, overload
 
 from reflex.constants.colors import Color
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.style import Style
 
 from .recharts import (
@@ -20,30 +20,25 @@ class Axis(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        hide: Optional[Union[ImmutableVar[bool], bool]] = None,
-        width: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        height: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        hide: Optional[Union[Var[bool], bool]] = None,
+        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
         type_: Optional[
-            Union[
-                ImmutableVar[Literal["number", "category"]],
-                Literal["number", "category"],
-            ]
+            Union[Var[Literal["number", "category"]], Literal["number", "category"]]
         ] = None,
-        allow_decimals: Optional[Union[ImmutableVar[bool], bool]] = None,
-        allow_data_overflow: Optional[Union[ImmutableVar[bool], bool]] = None,
-        allow_duplicated_category: Optional[Union[ImmutableVar[bool], bool]] = None,
-        axis_line: Optional[Union[ImmutableVar[bool], bool]] = None,
-        mirror: Optional[Union[ImmutableVar[bool], bool]] = None,
-        reversed: Optional[Union[ImmutableVar[bool], bool]] = None,
+        allow_decimals: Optional[Union[Var[bool], bool]] = None,
+        allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
+        allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
+        axis_line: Optional[Union[Var[bool], bool]] = None,
+        mirror: Optional[Union[Var[bool], bool]] = None,
+        reversed: Optional[Union[Var[bool], bool]] = None,
         label: Optional[
-            Union[
-                ImmutableVar[Union[Dict[str, Any], int, str]], str, int, Dict[str, Any]
-            ]
+            Union[Var[Union[Dict[str, Any], int, str]], str, int, Dict[str, Any]]
         ] = None,
         scale: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Literal[
                         "auto",
                         "linear",
@@ -81,68 +76,58 @@ class Axis(Recharts):
                 ],
             ]
         ] = None,
-        unit: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        name: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        unit: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        name: Optional[Union[Var[Union[int, str]], str, int]] = None,
         ticks: Optional[
-            Union[ImmutableVar[List[Union[int, str]]], List[Union[int, str]]]
+            Union[Var[List[Union[int, str]]], List[Union[int, str]]]
         ] = None,
-        tick: Optional[Union[ImmutableVar[bool], bool]] = None,
-        tick_count: Optional[Union[ImmutableVar[int], int]] = None,
-        tick_line: Optional[Union[ImmutableVar[bool], bool]] = None,
-        tick_size: Optional[Union[ImmutableVar[int], int]] = None,
-        min_tick_gap: Optional[Union[ImmutableVar[int], int]] = None,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        text_anchor: Optional[Union[ImmutableVar[str], str]] = None,
+        tick: Optional[Union[Var[bool], bool]] = None,
+        tick_count: Optional[Union[Var[int], int]] = None,
+        tick_line: Optional[Union[Var[bool], bool]] = None,
+        tick_size: Optional[Union[Var[int], int]] = None,
+        min_tick_gap: Optional[Union[Var[int], int]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        text_anchor: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Axis":
@@ -193,35 +178,30 @@ class XAxis(Axis):
         cls,
         *children,
         orientation: Optional[
-            Union[ImmutableVar[Literal["top", "bottom"]], Literal["top", "bottom"]]
+            Union[Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
         ] = None,
-        x_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        include_hidden: Optional[Union[ImmutableVar[bool], bool]] = None,
-        domain: Optional[Union[ImmutableVar[List], List]] = None,
-        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        hide: Optional[Union[ImmutableVar[bool], bool]] = None,
-        width: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        height: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        include_hidden: Optional[Union[Var[bool], bool]] = None,
+        domain: Optional[Union[Var[List], List]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        hide: Optional[Union[Var[bool], bool]] = None,
+        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
         type_: Optional[
-            Union[
-                ImmutableVar[Literal["number", "category"]],
-                Literal["number", "category"],
-            ]
+            Union[Var[Literal["number", "category"]], Literal["number", "category"]]
         ] = None,
-        allow_decimals: Optional[Union[ImmutableVar[bool], bool]] = None,
-        allow_data_overflow: Optional[Union[ImmutableVar[bool], bool]] = None,
-        allow_duplicated_category: Optional[Union[ImmutableVar[bool], bool]] = None,
-        axis_line: Optional[Union[ImmutableVar[bool], bool]] = None,
-        mirror: Optional[Union[ImmutableVar[bool], bool]] = None,
-        reversed: Optional[Union[ImmutableVar[bool], bool]] = None,
+        allow_decimals: Optional[Union[Var[bool], bool]] = None,
+        allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
+        allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
+        axis_line: Optional[Union[Var[bool], bool]] = None,
+        mirror: Optional[Union[Var[bool], bool]] = None,
+        reversed: Optional[Union[Var[bool], bool]] = None,
         label: Optional[
-            Union[
-                ImmutableVar[Union[Dict[str, Any], int, str]], str, int, Dict[str, Any]
-            ]
+            Union[Var[Union[Dict[str, Any], int, str]], str, int, Dict[str, Any]]
         ] = None,
         scale: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Literal[
                         "auto",
                         "linear",
@@ -259,68 +239,58 @@ class XAxis(Axis):
                 ],
             ]
         ] = None,
-        unit: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        name: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        unit: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        name: Optional[Union[Var[Union[int, str]], str, int]] = None,
         ticks: Optional[
-            Union[ImmutableVar[List[Union[int, str]]], List[Union[int, str]]]
+            Union[Var[List[Union[int, str]]], List[Union[int, str]]]
         ] = None,
-        tick: Optional[Union[ImmutableVar[bool], bool]] = None,
-        tick_count: Optional[Union[ImmutableVar[int], int]] = None,
-        tick_line: Optional[Union[ImmutableVar[bool], bool]] = None,
-        tick_size: Optional[Union[ImmutableVar[int], int]] = None,
-        min_tick_gap: Optional[Union[ImmutableVar[int], int]] = None,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        text_anchor: Optional[Union[ImmutableVar[str], str]] = None,
+        tick: Optional[Union[Var[bool], bool]] = None,
+        tick_count: Optional[Union[Var[int], int]] = None,
+        tick_line: Optional[Union[Var[bool], bool]] = None,
+        tick_size: Optional[Union[Var[int], int]] = None,
+        min_tick_gap: Optional[Union[Var[int], int]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        text_anchor: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "XAxis":
@@ -375,34 +345,29 @@ class YAxis(Axis):
         cls,
         *children,
         orientation: Optional[
-            Union[ImmutableVar[Literal["left", "right"]], Literal["left", "right"]]
+            Union[Var[Literal["left", "right"]], Literal["left", "right"]]
         ] = None,
-        y_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        domain: Optional[Union[ImmutableVar[List], List]] = None,
-        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        hide: Optional[Union[ImmutableVar[bool], bool]] = None,
-        width: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        height: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        domain: Optional[Union[Var[List], List]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        hide: Optional[Union[Var[bool], bool]] = None,
+        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
         type_: Optional[
-            Union[
-                ImmutableVar[Literal["number", "category"]],
-                Literal["number", "category"],
-            ]
+            Union[Var[Literal["number", "category"]], Literal["number", "category"]]
         ] = None,
-        allow_decimals: Optional[Union[ImmutableVar[bool], bool]] = None,
-        allow_data_overflow: Optional[Union[ImmutableVar[bool], bool]] = None,
-        allow_duplicated_category: Optional[Union[ImmutableVar[bool], bool]] = None,
-        axis_line: Optional[Union[ImmutableVar[bool], bool]] = None,
-        mirror: Optional[Union[ImmutableVar[bool], bool]] = None,
-        reversed: Optional[Union[ImmutableVar[bool], bool]] = None,
+        allow_decimals: Optional[Union[Var[bool], bool]] = None,
+        allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
+        allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
+        axis_line: Optional[Union[Var[bool], bool]] = None,
+        mirror: Optional[Union[Var[bool], bool]] = None,
+        reversed: Optional[Union[Var[bool], bool]] = None,
         label: Optional[
-            Union[
-                ImmutableVar[Union[Dict[str, Any], int, str]], str, int, Dict[str, Any]
-            ]
+            Union[Var[Union[Dict[str, Any], int, str]], str, int, Dict[str, Any]]
         ] = None,
         scale: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Literal[
                         "auto",
                         "linear",
@@ -440,68 +405,58 @@ class YAxis(Axis):
                 ],
             ]
         ] = None,
-        unit: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        name: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        unit: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        name: Optional[Union[Var[Union[int, str]], str, int]] = None,
         ticks: Optional[
-            Union[ImmutableVar[List[Union[int, str]]], List[Union[int, str]]]
+            Union[Var[List[Union[int, str]]], List[Union[int, str]]]
         ] = None,
-        tick: Optional[Union[ImmutableVar[bool], bool]] = None,
-        tick_count: Optional[Union[ImmutableVar[int], int]] = None,
-        tick_line: Optional[Union[ImmutableVar[bool], bool]] = None,
-        tick_size: Optional[Union[ImmutableVar[int], int]] = None,
-        min_tick_gap: Optional[Union[ImmutableVar[int], int]] = None,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        text_anchor: Optional[Union[ImmutableVar[str], str]] = None,
+        tick: Optional[Union[Var[bool], bool]] = None,
+        tick_count: Optional[Union[Var[int], int]] = None,
+        tick_line: Optional[Union[Var[bool], bool]] = None,
+        tick_size: Optional[Union[Var[int], int]] = None,
+        min_tick_gap: Optional[Union[Var[int], int]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        text_anchor: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "YAxis":
@@ -554,13 +509,13 @@ class ZAxis(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        range: Optional[Union[ImmutableVar[List[int]], List[int]]] = None,
-        unit: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        name: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        range: Optional[Union[Var[List[int]], List[int]]] = None,
+        unit: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        name: Optional[Union[Var[Union[int, str]], str, int]] = None,
         scale: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Literal[
                         "auto",
                         "linear",
@@ -603,51 +558,41 @@ class ZAxis(Recharts):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "ZAxis":
@@ -674,33 +619,31 @@ class ZAxis(Recharts):
         ...
 
 class Brush(Recharts):
-    def get_event_triggers(self) -> dict[str, Union[ImmutableVar, Any]]: ...
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        fill: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        x: Optional[Union[ImmutableVar[int], int]] = None,
-        y: Optional[Union[ImmutableVar[int], int]] = None,
-        width: Optional[Union[ImmutableVar[int], int]] = None,
-        height: Optional[Union[ImmutableVar[int], int]] = None,
-        data: Optional[Union[ImmutableVar[List[Any]], List[Any]]] = None,
-        traveller_width: Optional[Union[ImmutableVar[int], int]] = None,
-        gap: Optional[Union[ImmutableVar[int], int]] = None,
-        start_index: Optional[Union[ImmutableVar[int], int]] = None,
-        end_index: Optional[Union[ImmutableVar[int], int]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        x: Optional[Union[Var[int], int]] = None,
+        y: Optional[Union[Var[int], int]] = None,
+        width: Optional[Union[Var[int], int]] = None,
+        height: Optional[Union[Var[int], int]] = None,
+        data: Optional[Union[Var[List[Any]], List[Any]]] = None,
+        traveller_width: Optional[Union[Var[int], int]] = None,
+        gap: Optional[Union[Var[int], int]] = None,
+        start_index: Optional[Union[Var[int], int]] = None,
+        end_index: Optional[Union[Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_change: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_change: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         **props,
     ) -> "Brush":
         """Create the component.
@@ -740,16 +683,16 @@ class Cartesian(Recharts):
         *children,
         layout: Optional[
             Union[
-                ImmutableVar[Literal["horizontal", "vertical"]],
+                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        x_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
         legend_type: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Literal[
                         "line",
                         "plainline",
@@ -784,51 +727,41 @@ class Cartesian(Recharts):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Cartesian":
@@ -860,12 +793,12 @@ class Area(Cartesian):
     def create(  # type: ignore
         cls,
         *children,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        stroke_width: Optional[Union[ImmutableVar[int], int]] = None,
-        fill: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        stroke_width: Optional[Union[Var[int], int]] = None,
+        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         type_: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Literal[
                         "basis",
                         "basisClosed",
@@ -904,27 +837,27 @@ class Area(Cartesian):
             ]
         ] = None,
         dot: Optional[
-            Union[ImmutableVar[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
         active_dot: Optional[
-            Union[ImmutableVar[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        label: Optional[Union[ImmutableVar[bool], bool]] = None,
-        stack_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        unit: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        name: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        label: Optional[Union[Var[bool], bool]] = None,
+        stack_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        unit: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        name: Optional[Union[Var[Union[int, str]], str, int]] = None,
         layout: Optional[
             Union[
-                ImmutableVar[Literal["horizontal", "vertical"]],
+                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        x_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
         legend_type: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Literal[
                         "line",
                         "plainline",
@@ -959,51 +892,41 @@ class Area(Cartesian):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Area":
@@ -1045,40 +968,38 @@ class Bar(Cartesian):
     def create(  # type: ignore
         cls,
         *children,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        stroke_width: Optional[Union[ImmutableVar[int], int]] = None,
-        fill: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        background: Optional[Union[ImmutableVar[bool], bool]] = None,
-        label: Optional[Union[ImmutableVar[bool], bool]] = None,
-        stack_id: Optional[Union[ImmutableVar[str], str]] = None,
-        unit: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        min_point_size: Optional[Union[ImmutableVar[int], int]] = None,
-        name: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        bar_size: Optional[Union[ImmutableVar[int], int]] = None,
-        max_bar_size: Optional[Union[ImmutableVar[int], int]] = None,
-        is_animation_active: Optional[Union[ImmutableVar[bool], bool]] = None,
-        animation_begin: Optional[Union[ImmutableVar[int], int]] = None,
-        animation_duration: Optional[Union[ImmutableVar[int], int]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        stroke_width: Optional[Union[Var[int], int]] = None,
+        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        background: Optional[Union[Var[bool], bool]] = None,
+        label: Optional[Union[Var[bool], bool]] = None,
+        stack_id: Optional[Union[Var[str], str]] = None,
+        unit: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        min_point_size: Optional[Union[Var[int], int]] = None,
+        name: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        bar_size: Optional[Union[Var[int], int]] = None,
+        max_bar_size: Optional[Union[Var[int], int]] = None,
+        is_animation_active: Optional[Union[Var[bool], bool]] = None,
+        animation_begin: Optional[Union[Var[int], int]] = None,
+        animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                ImmutableVar[
-                    Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
-                ],
+                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
             ]
         ] = None,
         layout: Optional[
             Union[
-                ImmutableVar[Literal["horizontal", "vertical"]],
+                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        x_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
         legend_type: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Literal[
                         "line",
                         "plainline",
@@ -1113,57 +1034,47 @@ class Bar(Cartesian):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_animation_end: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_animation_start: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Bar":
@@ -1212,7 +1123,7 @@ class Line(Cartesian):
         *children,
         type_: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Literal[
                         "basis",
                         "basisClosed",
@@ -1250,31 +1161,31 @@ class Line(Cartesian):
                 ],
             ]
         ] = None,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        stroke_width: Optional[Union[ImmutableVar[int], int]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        stroke_width: Optional[Union[Var[int], int]] = None,
         dot: Optional[
-            Union[ImmutableVar[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
         active_dot: Optional[
-            Union[ImmutableVar[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        label: Optional[Union[ImmutableVar[bool], bool]] = None,
-        hide: Optional[Union[ImmutableVar[bool], bool]] = None,
-        connect_nulls: Optional[Union[ImmutableVar[bool], bool]] = None,
-        unit: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        name: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        label: Optional[Union[Var[bool], bool]] = None,
+        hide: Optional[Union[Var[bool], bool]] = None,
+        connect_nulls: Optional[Union[Var[bool], bool]] = None,
+        unit: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        name: Optional[Union[Var[Union[int, str]], str, int]] = None,
         layout: Optional[
             Union[
-                ImmutableVar[Literal["horizontal", "vertical"]],
+                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        x_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
         legend_type: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Literal[
                         "line",
                         "plainline",
@@ -1309,51 +1220,41 @@ class Line(Cartesian):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Line":
@@ -1395,12 +1296,10 @@ class Scatter(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[
-            Union[ImmutableVar[List[Dict[str, Any]]], List[Dict[str, Any]]]
-        ] = None,
+        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
         legend_type: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Literal[
                         "line",
                         "plainline",
@@ -1430,13 +1329,13 @@ class Scatter(Recharts):
                 ],
             ]
         ] = None,
-        x_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        z_axis_id: Optional[Union[ImmutableVar[str], str]] = None,
-        line: Optional[Union[ImmutableVar[bool], bool]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        z_axis_id: Optional[Union[Var[str], str]] = None,
+        line: Optional[Union[Var[bool], bool]] = None,
         shape: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Literal[
                         "square",
                         "circle",
@@ -1453,20 +1352,16 @@ class Scatter(Recharts):
             ]
         ] = None,
         line_type: Optional[
-            Union[
-                ImmutableVar[Literal["joint", "fitting"]], Literal["joint", "fitting"]
-            ]
+            Union[Var[Literal["joint", "fitting"]], Literal["joint", "fitting"]]
         ] = None,
-        fill: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        name: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        is_animation_active: Optional[Union[ImmutableVar[bool], bool]] = None,
-        animation_begin: Optional[Union[ImmutableVar[int], int]] = None,
-        animation_duration: Optional[Union[ImmutableVar[int], int]] = None,
+        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        name: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        is_animation_active: Optional[Union[Var[bool], bool]] = None,
+        animation_begin: Optional[Union[Var[int], int]] = None,
+        animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                ImmutableVar[
-                    Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
-                ],
+                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
             ]
         ] = None,
@@ -1475,51 +1370,41 @@ class Scatter(Recharts):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Scatter":
@@ -1560,14 +1445,12 @@ class Funnel(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[
-            Union[ImmutableVar[List[Dict[str, Any]]], List[Dict[str, Any]]]
-        ] = None,
-        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        name_key: Optional[Union[ImmutableVar[str], str]] = None,
+        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        name_key: Optional[Union[Var[str], str]] = None,
         legend_type: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Literal[
                         "line",
                         "plainline",
@@ -1597,74 +1480,62 @@ class Funnel(Recharts):
                 ],
             ]
         ] = None,
-        is_animation_active: Optional[Union[ImmutableVar[bool], bool]] = None,
-        animation_begin: Optional[Union[ImmutableVar[int], int]] = None,
-        animation_duration: Optional[Union[ImmutableVar[int], int]] = None,
+        is_animation_active: Optional[Union[Var[bool], bool]] = None,
+        animation_begin: Optional[Union[Var[int], int]] = None,
+        animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                ImmutableVar[
-                    Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
-                ],
+                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
             ]
         ] = None,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_animation_end: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_animation_start: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Funnel":
@@ -1701,62 +1572,52 @@ class ErrorBar(Recharts):
         cls,
         *children,
         direction: Optional[
-            Union[ImmutableVar[Literal["x", "y", "both"]], Literal["x", "y", "both"]]
+            Union[Var[Literal["x", "y", "both"]], Literal["x", "y", "both"]]
         ] = None,
-        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        width: Optional[Union[ImmutableVar[int], int]] = None,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        stroke_width: Optional[Union[ImmutableVar[int], int]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        width: Optional[Union[Var[int], int]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        stroke_width: Optional[Union[Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "ErrorBar":
@@ -1788,66 +1649,56 @@ class Reference(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        x_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
         if_overflow: Optional[
             Union[
-                ImmutableVar[Literal["discard", "hidden", "visible", "extendDomain"]],
+                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
                 Literal["discard", "hidden", "visible", "extendDomain"],
             ]
         ] = None,
-        label: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        is_front: Optional[Union[ImmutableVar[bool], bool]] = None,
+        label: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        is_front: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Reference":
@@ -1879,71 +1730,61 @@ class ReferenceLine(Reference):
     def create(  # type: ignore
         cls,
         *children,
-        x: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        y: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        stroke_width: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        x: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        y: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        stroke_width: Optional[Union[Var[Union[int, str]], str, int]] = None,
         segment: Optional[List[Any]] = None,
-        x_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
         if_overflow: Optional[
             Union[
-                ImmutableVar[Literal["discard", "hidden", "visible", "extendDomain"]],
+                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
                 Literal["discard", "hidden", "visible", "extendDomain"],
             ]
         ] = None,
-        label: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        is_front: Optional[Union[ImmutableVar[bool], bool]] = None,
+        label: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        is_front: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "ReferenceLine":
@@ -1980,71 +1821,61 @@ class ReferenceDot(Reference):
     def create(  # type: ignore
         cls,
         *children,
-        x: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        y: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        r: Optional[Union[ImmutableVar[int], int]] = None,
-        fill: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        x_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        x: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        y: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        r: Optional[Union[Var[int], int]] = None,
+        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
         if_overflow: Optional[
             Union[
-                ImmutableVar[Literal["discard", "hidden", "visible", "extendDomain"]],
+                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
                 Literal["discard", "hidden", "visible", "extendDomain"],
             ]
         ] = None,
-        label: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        is_front: Optional[Union[ImmutableVar[bool], bool]] = None,
+        label: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        is_front: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "ReferenceDot":
@@ -2081,72 +1912,62 @@ class ReferenceArea(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        fill: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        fill_opacity: Optional[Union[ImmutableVar[float], float]] = None,
-        x_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        x1: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        x2: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        y1: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        y2: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        fill_opacity: Optional[Union[Var[float], float]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        x1: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        x2: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        y1: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        y2: Optional[Union[Var[Union[int, str]], str, int]] = None,
         if_overflow: Optional[
             Union[
-                ImmutableVar[Literal["discard", "hidden", "visible", "extendDomain"]],
+                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
                 Literal["discard", "hidden", "visible", "extendDomain"],
             ]
         ] = None,
-        is_front: Optional[Union[ImmutableVar[bool], bool]] = None,
+        is_front: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "ReferenceArea":
@@ -2184,60 +2005,50 @@ class Grid(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        x: Optional[Union[ImmutableVar[int], int]] = None,
-        y: Optional[Union[ImmutableVar[int], int]] = None,
-        width: Optional[Union[ImmutableVar[int], int]] = None,
-        height: Optional[Union[ImmutableVar[int], int]] = None,
+        x: Optional[Union[Var[int], int]] = None,
+        y: Optional[Union[Var[int], int]] = None,
+        width: Optional[Union[Var[int], int]] = None,
+        height: Optional[Union[Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Grid":
@@ -2268,72 +2079,62 @@ class CartesianGrid(Grid):
     def create(  # type: ignore
         cls,
         *children,
-        horizontal: Optional[Union[ImmutableVar[bool], bool]] = None,
-        vertical: Optional[Union[ImmutableVar[bool], bool]] = None,
+        horizontal: Optional[Union[Var[bool], bool]] = None,
+        vertical: Optional[Union[Var[bool], bool]] = None,
         vertical_points: Optional[
-            Union[ImmutableVar[List[Union[int, str]]], List[Union[int, str]]]
+            Union[Var[List[Union[int, str]]], List[Union[int, str]]]
         ] = None,
         horizontal_points: Optional[
-            Union[ImmutableVar[List[Union[int, str]]], List[Union[int, str]]]
+            Union[Var[List[Union[int, str]]], List[Union[int, str]]]
         ] = None,
-        fill: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        fill_opacity: Optional[Union[ImmutableVar[float], float]] = None,
-        stroke_dasharray: Optional[Union[ImmutableVar[str], str]] = None,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        x: Optional[Union[ImmutableVar[int], int]] = None,
-        y: Optional[Union[ImmutableVar[int], int]] = None,
-        width: Optional[Union[ImmutableVar[int], int]] = None,
-        height: Optional[Union[ImmutableVar[int], int]] = None,
+        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        fill_opacity: Optional[Union[Var[float], float]] = None,
+        stroke_dasharray: Optional[Union[Var[str], str]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        x: Optional[Union[Var[int], int]] = None,
+        y: Optional[Union[Var[int], int]] = None,
+        width: Optional[Union[Var[int], int]] = None,
+        height: Optional[Union[Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "CartesianGrid":
@@ -2374,79 +2175,67 @@ class CartesianAxis(Grid):
         *children,
         orientation: Optional[
             Union[
-                ImmutableVar[Literal["top", "bottom", "left", "right"]],
+                Var[Literal["top", "bottom", "left", "right"]],
                 Literal["top", "bottom", "left", "right"],
             ]
         ] = None,
-        axis_line: Optional[Union[ImmutableVar[bool], bool]] = None,
-        tick_line: Optional[Union[ImmutableVar[bool], bool]] = None,
-        tick_size: Optional[Union[ImmutableVar[int], int]] = None,
+        axis_line: Optional[Union[Var[bool], bool]] = None,
+        tick_line: Optional[Union[Var[bool], bool]] = None,
+        tick_size: Optional[Union[Var[int], int]] = None,
         interval: Optional[
             Union[
-                ImmutableVar[
-                    Literal["preserveStart", "preserveEnd", "preserveStartEnd"]
-                ],
+                Var[Literal["preserveStart", "preserveEnd", "preserveStartEnd"]],
                 Literal["preserveStart", "preserveEnd", "preserveStartEnd"],
             ]
         ] = None,
-        ticks: Optional[Union[ImmutableVar[bool], bool]] = None,
-        label: Optional[Union[ImmutableVar[str], str]] = None,
-        mirror: Optional[Union[ImmutableVar[bool], bool]] = None,
-        tick_margin: Optional[Union[ImmutableVar[int], int]] = None,
-        x: Optional[Union[ImmutableVar[int], int]] = None,
-        y: Optional[Union[ImmutableVar[int], int]] = None,
-        width: Optional[Union[ImmutableVar[int], int]] = None,
-        height: Optional[Union[ImmutableVar[int], int]] = None,
+        ticks: Optional[Union[Var[bool], bool]] = None,
+        label: Optional[Union[Var[str], str]] = None,
+        mirror: Optional[Union[Var[bool], bool]] = None,
+        tick_margin: Optional[Union[Var[int], int]] = None,
+        x: Optional[Union[Var[int], int]] = None,
+        y: Optional[Union[Var[int], int]] = None,
+        width: Optional[Union[Var[int], int]] = None,
+        height: Optional[Union[Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "CartesianAxis":

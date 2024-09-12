@@ -3,14 +3,14 @@
 from typing import Any, List
 
 from reflex.components.tags.tag import Tag
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 
 class MatchTag(Tag):
     """A match tag."""
 
     # The condition to determine which case to match.
-    cond: ImmutableVar[Any]
+    cond: Var[Any]
 
     # The list of match cases to be matched.
     match_cases: List[Any]

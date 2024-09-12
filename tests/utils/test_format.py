@@ -8,7 +8,7 @@ import pytest
 
 from reflex.components.tags.tag import Tag
 from reflex.event import EventChain, EventHandler, EventSpec, FrontendEvent
-from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.base import LiteralVar, Var
 from reflex.ivars.object import ObjectVar
 from reflex.style import Style
 from reflex.utils import format
@@ -274,10 +274,10 @@ def test_format_string(input: str, output: str):
     "input,output",
     [
         (LiteralVar.create(value="test"), '"test"'),
-        (ImmutableVar.create(value="test"), "test"),
+        (Var.create(value="test"), "test"),
     ],
 )
-def test_format_var(input: ImmutableVar, output: str):
+def test_format_var(input: Var, output: str):
     assert str(input) == output
 
 
@@ -333,8 +333,8 @@ def test_format_route(route: str, format_case: bool, expected: bool):
 )
 def test_format_match(
     condition: str,
-    match_cases: List[List[ImmutableVar]],
-    default: ImmutableVar,
+    match_cases: List[List[Var]],
+    default: Var,
     expected: str,
 ):
     """Test formatting a match statement.
@@ -364,7 +364,7 @@ def test_format_match(
         (
             {
                 "a": 'foo "{ "bar" }" baz',
-                "b": ImmutableVar(_var_name="val", _var_type=str).guess_type(),
+                "b": Var(_var_name="val", _var_type=str).guess_type(),
             },
             r'{({ ["a"] : "foo \"{ \"bar\" }\" baz", ["b"] : val })}',
         ),
@@ -383,7 +383,7 @@ def test_format_match(
                         args=(
                             (
                                 LiteralVar.create("arg"),
-                                ImmutableVar(
+                                Var(
                                     _var_name="_e",
                                 )
                                 .to(ObjectVar, FrontendEvent)
@@ -413,38 +413,34 @@ def test_format_match(
             '{(...args) => addEvents([Event("mock_event", {})], args, {"preventDefault": true})}',
         ),
         ({"a": "red", "b": "blue"}, '{({ ["a"] : "red", ["b"] : "blue" })}'),
-        (ImmutableVar(_var_name="var", _var_type=int).guess_type(), "var"),
+        (Var(_var_name="var", _var_type=int).guess_type(), "var"),
         (
-            ImmutableVar(
+            Var(
                 _var_name="_",
                 _var_type=Any,
             ),
             "_",
         ),
         (
-            ImmutableVar(_var_name='state.colors["a"]', _var_type=str).guess_type(),
+            Var(_var_name='state.colors["a"]', _var_type=str).guess_type(),
             'state.colors["a"]',
         ),
         (
-            {"a": ImmutableVar(_var_name="val", _var_type=str).guess_type()},
+            {"a": Var(_var_name="val", _var_type=str).guess_type()},
             '{({ ["a"] : val })}',
         ),
         (
-            {"a": ImmutableVar(_var_name='"val"', _var_type=str).guess_type()},
+            {"a": Var(_var_name='"val"', _var_type=str).guess_type()},
             '{({ ["a"] : "val" })}',
         ),
         (
-            {
-                "a": ImmutableVar(
-                    _var_name='state.colors["val"]', _var_type=str
-                ).guess_type()
-            },
+            {"a": Var(_var_name='state.colors["val"]', _var_type=str).guess_type()},
             '{({ ["a"] : state.colors["val"] })}',
         ),
         # tricky real-world case from markdown component
         (
             {
-                "h1": ImmutableVar.create_safe(
+                "h1": Var.create_safe(
                     f"(({{node, ...props}}) => <Heading {{...props}} {''.join(Tag(name='', props=Style({'as_': 'h1'})).format_props())} />)"
                 )
             },
@@ -452,7 +448,7 @@ def test_format_match(
         ),
     ],
 )
-def test_format_prop(prop: ImmutableVar, formatted: str):
+def test_format_prop(prop: Var, formatted: str):
     """Test that the formatted value of an prop is correct.
 
     Args:
@@ -466,7 +462,7 @@ def test_format_prop(prop: ImmutableVar, formatted: str):
     "single_props,key_value_props,output",
     [
         (
-            [ImmutableVar.create_safe("{...props}")],
+            [Var.create_safe("{...props}")],
             {"key": 42},
             ["key={42}", "{...props}"],
         ),

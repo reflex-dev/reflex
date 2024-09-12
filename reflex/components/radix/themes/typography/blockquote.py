@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -25,16 +25,16 @@ class Blockquote(elements.Blockquote, RadixThemesComponent):
     tag = "Blockquote"
 
     # Text size: "1" - "9"
-    size: ImmutableVar[Responsive[LiteralTextSize]]
+    size: Var[Responsive[LiteralTextSize]]
 
     # Thickness of text: "light" | "regular" | "medium" | "bold"
-    weight: ImmutableVar[Responsive[LiteralTextWeight]]
+    weight: Var[Responsive[LiteralTextWeight]]
 
     # Overrides the accent color inherited from the Theme.
-    color_scheme: ImmutableVar[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the text with higher contrast color
-    high_contrast: ImmutableVar[bool]
+    high_contrast: Var[bool]
 
 
 blockquote = Blockquote.create

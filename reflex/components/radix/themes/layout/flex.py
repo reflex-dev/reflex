@@ -6,7 +6,7 @@ from typing import Dict, Literal
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 from ..base import (
     LiteralAlign,
@@ -25,22 +25,22 @@ class Flex(elements.Div, RadixThemesComponent):
     tag = "Flex"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: ImmutableVar[bool]
+    as_child: Var[bool]
 
     # How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
-    direction: ImmutableVar[Responsive[LiteralFlexDirection]]
+    direction: Var[Responsive[LiteralFlexDirection]]
 
     # Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
-    align: ImmutableVar[Responsive[LiteralAlign]]
+    align: Var[Responsive[LiteralAlign]]
 
     # Alignment of children along the cross axis: "start" | "center" | "end" | "between"
-    justify: ImmutableVar[Responsive[LiteralJustify]]
+    justify: Var[Responsive[LiteralJustify]]
 
     # Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
-    wrap: ImmutableVar[Responsive[LiteralFlexWrap]]
+    wrap: Var[Responsive[LiteralFlexWrap]]
 
     # Gap between children: "0" - "9"
-    spacing: ImmutableVar[Responsive[LiteralSpacing]]
+    spacing: Var[Responsive[LiteralSpacing]]
 
     # Reflex maps the "spacing" prop to "gap" prop.
     _rename_props: Dict[str, str] = {"spacing": "gap"}

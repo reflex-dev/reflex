@@ -1,7 +1,7 @@
 """Skeleton theme from Radix components."""
 
 from reflex.components.core.breakpoints import Responsive
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 from ..base import RadixLoadingProp, RadixThemesComponent
 
@@ -12,22 +12,22 @@ class Skeleton(RadixLoadingProp, RadixThemesComponent):
     tag = "Skeleton"
 
     # The width of the skeleton
-    width: ImmutableVar[Responsive[str]]
+    width: Var[Responsive[str]]
 
     # The minimum width of the skeleton
-    min_width: ImmutableVar[Responsive[str]]
+    min_width: Var[Responsive[str]]
 
     # The maximum width of the skeleton
-    max_width: ImmutableVar[Responsive[str]]
+    max_width: Var[Responsive[str]]
 
     # The height of the skeleton
-    height: ImmutableVar[Responsive[str]]
+    height: Var[Responsive[str]]
 
     # The minimum height of the skeleton
-    min_height: ImmutableVar[Responsive[str]]
+    min_height: Var[Responsive[str]]
 
     # The maximum height of the skeleton
-    max_height: ImmutableVar[Responsive[str]]
+    max_height: Var[Responsive[str]]
 
 
 skeleton = Skeleton.create

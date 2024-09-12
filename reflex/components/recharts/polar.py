@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Union
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.base import LiteralVar, Var
 
 from .recharts import (
     LiteralAnimationEasing,
@@ -27,57 +27,57 @@ class Pie(Recharts):
     alias = "RechartsPie"
 
     # data
-    data: ImmutableVar[List[Dict[str, Any]]]
+    data: Var[List[Dict[str, Any]]]
 
     # The key of each sector's value.
-    data_key: ImmutableVar[Union[str, int]]
+    data_key: Var[Union[str, int]]
 
     # The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
-    cx: ImmutableVar[Union[int, str]]
+    cx: Var[Union[int, str]]
 
     # The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container height.
-    cy: ImmutableVar[Union[int, str]]
+    cy: Var[Union[int, str]]
 
     # The inner radius of pie, which can be set to a percent value.
-    inner_radius: ImmutableVar[Union[int, str]]
+    inner_radius: Var[Union[int, str]]
 
     # The outer radius of pie, which can be set to a percent value.
-    outer_radius: ImmutableVar[Union[int, str]]
+    outer_radius: Var[Union[int, str]]
 
     # The angle of first sector.
-    start_angle: ImmutableVar[int]
+    start_angle: Var[int]
 
     # The direction of sectors. 1 means clockwise and -1 means anticlockwise.
-    end_angle: ImmutableVar[int]
+    end_angle: Var[int]
 
     # The minimum angle of each unzero data.
-    min_angle: ImmutableVar[int]
+    min_angle: Var[int]
 
     # The angle between two sectors.
-    padding_angle: ImmutableVar[int]
+    padding_angle: Var[int]
 
     # The key of each sector's name.
-    name_key: ImmutableVar[str]
+    name_key: Var[str]
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered.
-    legend_type: ImmutableVar[LiteralLegendType]
+    legend_type: Var[LiteralLegendType]
 
     # If false set, labels will not be drawn.
-    label: ImmutableVar[bool] = False  # type: ignore
+    label: Var[bool] = False  # type: ignore
 
     # If false set, label lines will not be drawn.
-    label_line: ImmutableVar[bool]
+    label_line: Var[bool]
 
     # Valid children components
     _valid_children: List[str] = ["Cell", "LabelList"]
 
     # Stoke color
-    stroke: ImmutableVar[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
 
     # Fill color
-    fill: ImmutableVar[Union[str, Color]] = LiteralVar.create(Color("accent", 3))
+    fill: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 3))
 
-    def get_event_triggers(self) -> dict[str, Union[ImmutableVar, Any]]:
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -101,37 +101,37 @@ class Radar(Recharts):
     alias = "RechartsRadar"
 
     # The key of a group of data which should be unique in a radar chart.
-    data_key: ImmutableVar[Union[str, int]]
+    data_key: Var[Union[str, int]]
 
     # The coordinates of all the vertexes of the radar shape, like [{ x, y }].
-    points: ImmutableVar[List[Dict[str, Any]]]
+    points: Var[List[Dict[str, Any]]]
 
     # If false set, dots will not be drawn
-    dot: ImmutableVar[bool]
+    dot: Var[bool]
 
     # Stoke color
-    stroke: ImmutableVar[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
 
     # Fill color
-    fill: ImmutableVar[str] = LiteralVar.create(Color("accent", 3))
+    fill: Var[str] = LiteralVar.create(Color("accent", 3))
 
     # opacity
-    fill_opacity: ImmutableVar[float] = LiteralVar.create(0.6)
+    fill_opacity: Var[float] = LiteralVar.create(0.6)
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered.
-    legend_type: ImmutableVar[str]
+    legend_type: Var[str]
 
     # If false set, labels will not be drawn
-    label: ImmutableVar[bool]
+    label: Var[bool]
 
     # Specifies when the animation should begin, the unit of this option is ms.
-    animation_begin: ImmutableVar[int]
+    animation_begin: Var[int]
 
     # Specifies the duration of animation, the unit of this option is ms.
-    animation_duration: ImmutableVar[int]
+    animation_duration: Var[int]
 
     # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
-    animation_easing: ImmutableVar[LiteralAnimationEasing]
+    animation_easing: Var[LiteralAnimationEasing]
 
     # Valid children components
     _valid_children: List[str] = ["LabelList"]
@@ -145,36 +145,36 @@ class RadialBar(Recharts):
     alias = "RechartsRadialBar"
 
     # The key of a group of data which should be unique to show the meaning of angle axis.
-    data_key: ImmutableVar[Union[str, int]]
+    data_key: Var[Union[str, int]]
 
     # Min angle of each bar. A positive value between 0 and 360.
-    min_angle: ImmutableVar[int]
+    min_angle: Var[int]
 
     # Type of legend
-    legend_type: ImmutableVar[str]
+    legend_type: Var[str]
 
     # If false set, labels will not be drawn.
-    label: ImmutableVar[Union[bool, Dict[str, Any]]]
+    label: Var[Union[bool, Dict[str, Any]]]
 
     # If false set, background sector will not be drawn.
-    background: ImmutableVar[Union[bool, Dict[str, Any]]]
+    background: Var[Union[bool, Dict[str, Any]]]
 
     # If set false, animation of radial bars will be disabled. By default true in CSR, and false in SSR
-    is_animation_active: ImmutableVar[bool]
+    is_animation_active: Var[bool]
 
     # Specifies when the animation should begin, the unit of this option is ms. By default 0
-    animation_begin: ImmutableVar[int]
+    animation_begin: Var[int]
 
     # Specifies the duration of animation, the unit of this option is ms. By default 1500
-    animation_duration: ImmutableVar[int]
+    animation_duration: Var[int]
 
     # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. By default 'ease'
-    animation_easing: ImmutableVar[LiteralAnimationEasing]
+    animation_easing: Var[LiteralAnimationEasing]
 
     # Valid children components
     _valid_children: List[str] = ["Cell", "LabelList"]
 
-    def get_event_triggers(self) -> dict[str, Union[ImmutableVar, Any]]:
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -200,40 +200,40 @@ class PolarAngleAxis(Recharts):
     alias = "RechartsPolarAngleAxis"
 
     # The key of a group of data which should be unique to show the meaning of angle axis.
-    data_key: ImmutableVar[Union[str, int]]
+    data_key: Var[Union[str, int]]
 
     # The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
-    cx: ImmutableVar[Union[int, str]]
+    cx: Var[Union[int, str]]
 
     # The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container height.
-    cy: ImmutableVar[Union[int, str]]
+    cy: Var[Union[int, str]]
 
     # The outer radius of circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy.
-    radius: ImmutableVar[Union[int, str]]
+    radius: Var[Union[int, str]]
 
     # If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option.
-    axis_line: ImmutableVar[Union[bool, Dict[str, Any]]]
+    axis_line: Var[Union[bool, Dict[str, Any]]]
 
     # The type of axis line.
-    axis_line_type: ImmutableVar[str]
+    axis_line_type: Var[str]
 
     # If false set, tick lines will not be drawn. If true set, tick lines will be drawn which have the props calculated internally. If object set, tick lines will be drawn which have the props mergered by the internal calculated props and the option.
-    tick_line: ImmutableVar[Union[bool, Dict[str, Any]]] = LiteralVar.create(False)
+    tick_line: Var[Union[bool, Dict[str, Any]]] = LiteralVar.create(False)
 
     # The width or height of tick.
-    tick: ImmutableVar[Union[int, str]]
+    tick: Var[Union[int, str]]
 
     # The array of every tick's value and angle.
-    ticks: ImmutableVar[List[Dict[str, Any]]]
+    ticks: Var[List[Dict[str, Any]]]
 
     # The orientation of axis text.
-    orient: ImmutableVar[str]
+    orient: Var[str]
 
     # The stroke color of axis
-    stroke: ImmutableVar[Union[str, Color]] = LiteralVar.create(Color("gray", 10))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 10))
 
     # Allow the axis has duplicated categorys or not when the type of axis is "category".
-    allow_duplicated_category: ImmutableVar[bool]
+    allow_duplicated_category: Var[bool]
 
     # Valid children components.
     _valid_children: List[str] = ["Label"]
@@ -271,28 +271,28 @@ class PolarGrid(Recharts):
     alias = "RechartsPolarGrid"
 
     # The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
-    cx: ImmutableVar[Union[int, str]]
+    cx: Var[Union[int, str]]
 
     # The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container height.
-    cy: ImmutableVar[Union[int, str]]
+    cy: Var[Union[int, str]]
 
     # The radius of the inner polar grid.
-    inner_radius: ImmutableVar[Union[int, str]]
+    inner_radius: Var[Union[int, str]]
 
     # The radius of the outer polar grid.
-    outer_radius: ImmutableVar[Union[int, str]]
+    outer_radius: Var[Union[int, str]]
 
     # The array of every line grid's angle.
-    polar_angles: ImmutableVar[List[int]]
+    polar_angles: Var[List[int]]
 
     # The array of every line grid's radius.
-    polar_radius: ImmutableVar[List[int]]
+    polar_radius: Var[List[int]]
 
     # The type of polar grids. 'polygon' | 'circle'
-    grid_type: ImmutableVar[LiteralGridType]
+    grid_type: Var[LiteralGridType]
 
     # The stroke color of grid
-    stroke: ImmutableVar[Union[str, Color]] = LiteralVar.create(Color("gray", 10))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 10))
 
     # Valid children components
     _valid_children: List[str] = ["RadarChart", "RadiarBarChart"]
@@ -306,48 +306,48 @@ class PolarRadiusAxis(Recharts):
     alias = "RechartsPolarRadiusAxis"
 
     # The angle of radial direction line to display axis text.
-    angle: ImmutableVar[int]
+    angle: Var[int]
 
     # The type of axis line. 'number' | 'category'
-    type_: ImmutableVar[LiteralPolarRadiusType]
+    type_: Var[LiteralPolarRadiusType]
 
     # Allow the axis has duplicated categorys or not when the type of axis is "category".
-    allow_duplicated_category: ImmutableVar[bool]
+    allow_duplicated_category: Var[bool]
 
     # The x-coordinate of center.
-    cx: ImmutableVar[Union[int, str]]
+    cx: Var[Union[int, str]]
 
     # The y-coordinate of center.
-    cy: ImmutableVar[Union[int, str]]
+    cy: Var[Union[int, str]]
 
     # If set to true, the ticks of this axis are reversed.
-    reversed: ImmutableVar[bool]
+    reversed: Var[bool]
 
     # The orientation of axis text.
-    orientation: ImmutableVar[str]
+    orientation: Var[str]
 
     # If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option.
-    axis_line: ImmutableVar[Union[bool, Dict[str, Any]]]
+    axis_line: Var[Union[bool, Dict[str, Any]]]
 
     # The width or height of tick.
-    tick: ImmutableVar[Union[int, str]]
+    tick: Var[Union[int, str]]
 
     # The count of ticks.
-    tick_count: ImmutableVar[int]
+    tick_count: Var[int]
 
     # If 'auto' set, the scale funtion is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'
-    scale: ImmutableVar[LiteralScale]
+    scale: Var[LiteralScale]
 
     # Valid children components
     _valid_children: List[str] = ["Label"]
 
     # The domain of the polar radius axis, specifying the minimum and maximum values.
-    domain: ImmutableVar[List[int]] = LiteralVar.create([0, 250])
+    domain: Var[List[int]] = LiteralVar.create([0, 250])
 
     # The stroke color of axis
-    stroke: ImmutableVar[Union[str, Color]] = LiteralVar.create(Color("gray", 10))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 10))
 
-    def get_event_triggers(self) -> dict[str, Union[ImmutableVar, Any]]:
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:

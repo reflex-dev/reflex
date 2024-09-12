@@ -9,7 +9,7 @@ from reflex.components.core.colors import color
 from reflex.components.radix.primitives.accordion import DEFAULT_ANIMATION_DURATION
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 
 class ProgressComponent(RadixPrimitiveComponentWithClassName):
@@ -25,7 +25,7 @@ class ProgressRoot(ProgressComponent):
     alias = "RadixProgressRoot"
 
     # Override theme radius for progress bar: "none" | "small" | "medium" | "large" | "full"
-    radius: ImmutableVar[LiteralRadius]
+    radius: Var[LiteralRadius]
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
@@ -58,13 +58,13 @@ class ProgressIndicator(ProgressComponent):
     alias = "RadixProgressIndicator"
 
     # The current progress value.
-    value: ImmutableVar[Optional[int]]
+    value: Var[Optional[int]]
 
     # The maximum progress value.
-    max: ImmutableVar[Optional[int]]
+    max: Var[Optional[int]]
 
     # The color scheme of the progress indicator.
-    color_scheme: ImmutableVar[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
@@ -95,13 +95,13 @@ class Progress(ProgressRoot):
     """The high-level Progress component."""
 
     # Override theme color for progress bar indicator
-    color_scheme: ImmutableVar[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # The current progress value.
-    value: ImmutableVar[Optional[int]]
+    value: Var[Optional[int]]
 
     # The maximum progress value.
-    max: ImmutableVar[Optional[int]]
+    max: Var[Optional[int]]
 
     @classmethod
     def create(cls, **props) -> Component:

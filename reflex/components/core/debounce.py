@@ -8,7 +8,7 @@ from reflex.components.component import Component
 from reflex.constants import EventTriggers
 from reflex.event import EventHandler
 from reflex.ivars import VarData
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 DEFAULT_DEBOUNCE_TIMEOUT = 300
 
@@ -25,25 +25,25 @@ class DebounceInput(Component):
     tag = "DebounceInput"
 
     # Minimum input characters before triggering the on_change event
-    min_length: ImmutableVar[int]
+    min_length: Var[int]
 
     # Time to wait between end of input and triggering on_change
-    debounce_timeout: ImmutableVar[int] = DEFAULT_DEBOUNCE_TIMEOUT  # type: ignore
+    debounce_timeout: Var[int] = DEFAULT_DEBOUNCE_TIMEOUT  # type: ignore
 
     # If true, notify when Enter key is pressed
-    force_notify_by_enter: ImmutableVar[bool]
+    force_notify_by_enter: Var[bool]
 
     # If true, notify when form control loses focus
-    force_notify_on_blur: ImmutableVar[bool]
+    force_notify_on_blur: Var[bool]
 
     # If provided, create a fully-controlled input
-    value: ImmutableVar[Union[str, int, float]]
+    value: Var[Union[str, int, float]]
 
     # The ref to attach to the created input
-    input_ref: ImmutableVar[str]
+    input_ref: Var[str]
 
     # The element to wrap
-    element: ImmutableVar[Type[Component]]
+    element: Var[Type[Component]]
 
     # Fired when the input value changes
     on_change: EventHandler[lambda e0: [e0.value]]
@@ -107,13 +107,13 @@ class DebounceInput(Component):
                 props[field] = getattr(child, field)
         child_ref = child.get_ref()
         if props.get("input_ref") is None and child_ref:
-            props["input_ref"] = ImmutableVar.create_safe(child_ref)
+            props["input_ref"] = Var.create_safe(child_ref)
             props["id"] = child.id
 
         # Set the child element to wrap, including any imports/hooks from the child.
         props.setdefault(
             "element",
-            ImmutableVar(
+            Var(
                 _var_name=str(child.alias or child.tag),
                 _var_type=Type[Component],
                 _var_data=VarData(

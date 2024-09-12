@@ -37,7 +37,7 @@ from reflex.config import get_config
 from reflex.ivars.base import (
     DynamicRouteVar,
     ImmutableComputedVar,
-    ImmutableVar,
+    Var,
     immutable_computed_var,
     is_computed_var,
 )
@@ -309,16 +309,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
     # A map from the var name to the var.
-    vars: ClassVar[Dict[str, ImmutableVar]] = {}
+    vars: ClassVar[Dict[str, Var]] = {}
 
     # The base vars of the class.
-    base_vars: ClassVar[Dict[str, ImmutableVar]] = {}
+    base_vars: ClassVar[Dict[str, Var]] = {}
 
     # The computed vars of the class.
     computed_vars: ClassVar[Dict[str, ImmutableComputedVar]] = {}
 
     # Vars inherited by the parent state.
-    inherited_vars: ClassVar[Dict[str, ImmutableVar]] = {}
+    inherited_vars: ClassVar[Dict[str, Var]] = {}
 
     # Backend base vars that are never sent to the client.
     backend_vars: ClassVar[Dict[str, Any]] = {}
@@ -525,7 +525,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Set the base and computed vars.
         cls.base_vars = {
-            f.name: ImmutableVar(
+            f.name: Var(
                 _var_name=format.format_state_name(cls.get_full_name()) + "." + f.name,
                 _var_type=f.outer_type_,
                 _var_data=VarData.from_state(cls),
@@ -871,7 +871,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return getattr(substate, name)
 
     @classmethod
-    def _init_var(cls, prop: ImmutableVar):
+    def _init_var(cls, prop: Var):
         """Initialize a variable.
 
         Args:
@@ -914,7 +914,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             )
 
         # create the variable based on name and type
-        var = ImmutableVar(
+        var = Var(
             _var_name=format.format_state_name(cls.get_full_name()) + "." + name,
             _var_type=type_,
             _var_data=VarData.from_state(cls),
@@ -937,7 +937,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls._init_var_dependency_dicts()
 
     @classmethod
-    def _set_var(cls, prop: ImmutableVar):
+    def _set_var(cls, prop: Var):
         """Set the var as a class member.
 
         Args:
@@ -968,7 +968,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
 
     @classmethod
-    def _create_setter(cls, prop: ImmutableVar):
+    def _create_setter(cls, prop: Var):
         """Create a setter for the var.
 
         Args:
@@ -981,7 +981,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             setattr(cls, setter_name, event_handler)
 
     @classmethod
-    def _set_default_value(cls, prop: ImmutableVar):
+    def _set_default_value(cls, prop: Var):
         """Set the default value for the var.
 
         Args:

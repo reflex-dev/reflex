@@ -14,7 +14,7 @@ from reflex.components.radix.themes.layout.container import Container
 from reflex.components.radix.themes.layout.stack import HStack
 from reflex.event import call_script
 from reflex.experimental import hooks
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.state import ComponentState
 from reflex.style import Style
 
@@ -55,7 +55,7 @@ class Sidebar(Box, MemoizationLeaf):
         open = (
             self.State.open  # type: ignore
             if self.State
-            else ImmutableVar.create_safe("open")
+            else Var.create_safe("open")
         )
         sidebar.style["display"] = spacer.style["display"] = cond(open, "block", "none")
 
@@ -69,7 +69,7 @@ class Sidebar(Box, MemoizationLeaf):
             }
         )
 
-    def add_hooks(self) -> List[ImmutableVar]:
+    def add_hooks(self) -> List[Var]:
         """Get the hooks to render.
 
         Returns:
@@ -172,8 +172,8 @@ class SidebarTrigger(Fragment):
             open, toggle = sidebar.State.open, sidebar.State.toggle  # type: ignore
         else:
             open, toggle = (
-                ImmutableVar.create_safe("open"),
-                call_script(ImmutableVar.create_safe("setOpen(!open)")),
+                Var.create_safe("open"),
+                call_script(Var.create_safe("setOpen(!open)")),
             )
 
         trigger_props["left"] = cond(open, f"calc({sidebar_width} - 32px)", "0")

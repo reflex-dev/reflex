@@ -12,7 +12,7 @@ from reflex.ivars import (
     VarData,
     get_unique_variable_name,
 )
-from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.base import LiteralVar, Var
 from reflex.ivars.function import FunctionVar
 from reflex.utils.imports import ImportVar
 
@@ -41,7 +41,7 @@ def _client_state_ref(var_name: str) -> str:
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ClientStateVar(ImmutableVar):
+class ClientStateVar(Var):
     """A Var that exists on the client via useState."""
 
     # Track the names of the getters and setters
@@ -97,10 +97,8 @@ class ClientStateVar(ImmutableVar):
             var_name = get_unique_variable_name()
         assert isinstance(var_name, str), "var_name must be a string."
         if default is NoValue:
-            default_var = ImmutableVar.create_safe(
-                "", _var_is_local=False, _var_is_string=False
-            )
-        elif not isinstance(default, ImmutableVar):
+            default_var = Var.create_safe("", _var_is_local=False, _var_is_string=False)
+        elif not isinstance(default, Var):
             default_var = LiteralVar.create(default)
         else:
             default_var = default
@@ -131,7 +129,7 @@ class ClientStateVar(ImmutableVar):
         )
 
     @property
-    def value(self) -> ImmutableVar:
+    def value(self) -> Var:
         """Get a placeholder for the Var.
 
         This property can only be rendered on the frontend.
@@ -142,7 +140,7 @@ class ClientStateVar(ImmutableVar):
             an accessor for the client state variable.
         """
         return (
-            ImmutableVar.create_safe(
+            Var.create_safe(
                 _client_state_ref(self._getter_name)
                 if self._global_ref
                 else self._getter_name
@@ -155,7 +153,7 @@ class ClientStateVar(ImmutableVar):
             )
         )
 
-    def set_value(self, value: Any = NoValue) -> ImmutableVar:
+    def set_value(self, value: Any = NoValue) -> Var:
         """Set the value of the client state variable.
 
         This property can only be attached to a frontend event trigger.
@@ -183,13 +181,13 @@ class ClientStateVar(ImmutableVar):
             arg = re.sub(r"\[\".*\"\]", "", value_str)
 
             setter = f"({arg}) => {setter}({str(value)})"
-        return ImmutableVar(
+        return Var(
             _var_name=setter,
             _var_data=VarData(imports=_refs_import if self._global_ref else {}),
         ).to(FunctionVar, EventChain)
 
     @property
-    def set(self) -> ImmutableVar:
+    def set(self) -> Var:
         """Set the value of the client state variable.
 
         This property can only be attached to a frontend event trigger.

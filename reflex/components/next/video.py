@@ -3,7 +3,7 @@
 from typing import Optional
 
 from reflex.components.component import Component
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 from .base import NextComponent
 
@@ -15,7 +15,7 @@ class Video(NextComponent):
     library = "next-video"
     is_default = True
     # the URL
-    src: ImmutableVar[str]
+    src: Var[str]
 
     as_: Optional[Component]
 

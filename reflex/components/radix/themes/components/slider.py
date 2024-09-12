@@ -5,7 +5,7 @@ from typing import List, Literal, Optional, Union
 from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -19,46 +19,46 @@ class Slider(RadixThemesComponent):
     tag = "Slider"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: ImmutableVar[bool]
+    as_child: Var[bool]
 
     # Button size "1" - "3"
-    size: ImmutableVar[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # Variant of button
-    variant: ImmutableVar[Literal["classic", "surface", "soft"]]
+    variant: Var[Literal["classic", "surface", "soft"]]
 
     # Override theme color for button
-    color_scheme: ImmutableVar[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the button with higher contrast color against background
-    high_contrast: ImmutableVar[bool]
+    high_contrast: Var[bool]
 
     # Override theme radius for button: "none" | "small" | "full"
-    radius: ImmutableVar[Literal["none", "small", "full"]]
+    radius: Var[Literal["none", "small", "full"]]
 
     # The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
-    default_value: ImmutableVar[Union[List[Union[float, int]], float, int]]
+    default_value: Var[Union[List[Union[float, int]], float, int]]
 
     # The controlled value of the slider. Must be used in conjunction with onValueChange.
-    value: ImmutableVar[List[Union[float, int]]]
+    value: Var[List[Union[float, int]]]
 
     # The name of the slider. Submitted with its owning form as part of a name/value pair.
-    name: ImmutableVar[str]
+    name: Var[str]
 
     # The minimum value of the slider.
-    min: ImmutableVar[Union[float, int]]
+    min: Var[Union[float, int]]
 
     # The maximum value of the slider.
-    max: ImmutableVar[Union[float, int]]
+    max: Var[Union[float, int]]
 
     # The step value of the slider.
-    step: ImmutableVar[Union[float, int]]
+    step: Var[Union[float, int]]
 
     # Whether the slider is disabled
-    disabled: ImmutableVar[bool]
+    disabled: Var[bool]
 
     # The orientation of the slider.
-    orientation: ImmutableVar[Literal["horizontal", "vertical"]]
+    orientation: Var[Literal["horizontal", "vertical"]]
 
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
@@ -88,7 +88,7 @@ class Slider(RadixThemesComponent):
         """
         default_value = props.pop("default_value", [50])
 
-        if isinstance(default_value, ImmutableVar):
+        if isinstance(default_value, Var):
             if issubclass(default_value._var_type, (int, float)):
                 default_value = [default_value]
 

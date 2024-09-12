@@ -4,7 +4,7 @@ from typing import Literal
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -23,22 +23,22 @@ class Button(elements.Button, RadixLoadingProp, RadixThemesComponent):
     tag = "Button"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: ImmutableVar[bool]
+    as_child: Var[bool]
 
     # Button size "1" - "4"
-    size: ImmutableVar[Responsive[LiteralButtonSize]]
+    size: Var[Responsive[LiteralButtonSize]]
 
     # Variant of button: "solid" | "soft" | "outline" | "ghost"
-    variant: ImmutableVar[LiteralVariant]
+    variant: Var[LiteralVariant]
 
     # Override theme color for button
-    color_scheme: ImmutableVar[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the button with higher contrast color against background
-    high_contrast: ImmutableVar[bool]
+    high_contrast: Var[bool]
 
     # Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
-    radius: ImmutableVar[LiteralRadius]
+    radius: Var[LiteralRadius]
 
 
 button = Button.create

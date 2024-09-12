@@ -12,7 +12,7 @@ from reflex.components.core.foreach import (
 )
 from reflex.components.radix.themes.layout.box import box
 from reflex.components.radix.themes.typography.text import text
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.ivars.number import NumberVar
 from reflex.ivars.sequence import ArrayVar
 from reflex.state import BaseState, ComponentState
@@ -238,7 +238,7 @@ def test_foreach_render(state_var, render_fn, render_dict):
 
     # Make sure the index vars are unique.
     arg_index = rend["arg_index"]
-    assert isinstance(arg_index, ImmutableVar)
+    assert isinstance(arg_index, Var)
     assert arg_index._var_name not in seen_index_vars
     assert arg_index._var_type == int
     seen_index_vars.add(arg_index._var_name)

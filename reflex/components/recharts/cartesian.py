@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Union
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.base import LiteralVar, Var
 
 from .recharts import (
     LiteralAnimationEasing,
@@ -32,73 +32,73 @@ class Axis(Recharts):
     """A base class for axes in Recharts."""
 
     # The key of data displayed in the axis.
-    data_key: ImmutableVar[Union[str, int]]
+    data_key: Var[Union[str, int]]
 
     # If set true, the axis do not display in the chart.
-    hide: ImmutableVar[bool]
+    hide: Var[bool]
 
     # The width of axis which is usually calculated internally.
-    width: ImmutableVar[Union[str, int]]
+    width: Var[Union[str, int]]
 
     # The height of axis, which can be setted by user.
-    height: ImmutableVar[Union[str, int]]
+    height: Var[Union[str, int]]
 
     # The type of axis 'number' | 'category'
-    type_: ImmutableVar[LiteralPolarRadiusType]
+    type_: Var[LiteralPolarRadiusType]
 
     # Allow the ticks of XAxis to be decimals or not.
-    allow_decimals: ImmutableVar[bool]
+    allow_decimals: Var[bool]
 
     # When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
-    allow_data_overflow: ImmutableVar[bool]
+    allow_data_overflow: Var[bool]
 
     # Allow the axis has duplicated categorys or not when the type of axis is "category".
-    allow_duplicated_category: ImmutableVar[bool]
+    allow_duplicated_category: Var[bool]
 
     # If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
-    axis_line: ImmutableVar[bool]
+    axis_line: Var[bool]
 
     # If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
-    mirror: ImmutableVar[bool]
+    mirror: Var[bool]
 
     # Reverse the ticks or not.
-    reversed: ImmutableVar[bool]
+    reversed: Var[bool]
 
     # The label of axis, which appears next to the axis.
-    label: ImmutableVar[Union[str, int, Dict[str, Any]]]
+    label: Var[Union[str, int, Dict[str, Any]]]
 
     # If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
-    scale: ImmutableVar[LiteralScale]
+    scale: Var[LiteralScale]
 
     # The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
-    unit: ImmutableVar[Union[str, int]]
+    unit: Var[Union[str, int]]
 
     # The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
-    name: ImmutableVar[Union[str, int]]
+    name: Var[Union[str, int]]
 
     # Set the values of axis ticks manually.
-    ticks: ImmutableVar[List[Union[str, int]]]
+    ticks: Var[List[Union[str, int]]]
 
     # If set false, no ticks will be drawn.
-    tick: ImmutableVar[bool]
+    tick: Var[bool]
 
     # The count of axis ticks.
-    tick_count: ImmutableVar[int]
+    tick_count: Var[int]
 
     # If set false, no axis tick lines will be drawn.
-    tick_line: ImmutableVar[bool] = LiteralVar.create(False)
+    tick_line: Var[bool] = LiteralVar.create(False)
 
     # The length of tick line.
-    tick_size: ImmutableVar[int]
+    tick_size: Var[int]
 
     # The minimum gap between two adjacent labels
-    min_tick_gap: ImmutableVar[int]
+    min_tick_gap: Var[int]
 
     # The stroke color of axis
-    stroke: ImmutableVar[Union[str, Color]] = LiteralVar.create(Color("gray", 9))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 9))
 
     # The text anchor of axis
-    text_anchor: ImmutableVar[str]  # 'start', 'middle', 'end'
+    text_anchor: Var[str]  # 'start', 'middle', 'end'
 
     # The customized event handler of click on the ticks of this axis
     on_click: EventHandler[lambda: []]
@@ -130,19 +130,19 @@ class XAxis(Axis):
     alias = "RechartsXAxis"
 
     # The orientation of axis 'top' | 'bottom'
-    orientation: ImmutableVar[LiteralOrientationTopBottom]
+    orientation: Var[LiteralOrientationTopBottom]
 
     # The id of x-axis which is corresponding to the data.
-    x_axis_id: ImmutableVar[Union[str, int]]
+    x_axis_id: Var[Union[str, int]]
 
     # Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
-    include_hidden: ImmutableVar[bool] = LiteralVar.create(False)
+    include_hidden: Var[bool] = LiteralVar.create(False)
 
     # The range of the axis. Work best in conjuction with allow_data_overflow.
-    domain: ImmutableVar[List]
+    domain: Var[List]
 
     # The range of the axis. Work best in conjuction with allow_data_overflow.
-    domain: ImmutableVar[List]
+    domain: Var[List]
 
 
 class YAxis(Axis):
@@ -153,13 +153,13 @@ class YAxis(Axis):
     alias = "RechartsYAxis"
 
     # The orientation of axis 'left' | 'right'
-    orientation: ImmutableVar[LiteralOrientationLeftRight]
+    orientation: Var[LiteralOrientationLeftRight]
 
     # The id of y-axis which is corresponding to the data.
-    y_axis_id: ImmutableVar[Union[str, int]]
+    y_axis_id: Var[Union[str, int]]
 
     # The range of the axis. Work best in conjuction with allow_data_overflow.
-    domain: ImmutableVar[List]
+    domain: Var[List]
 
 
 class ZAxis(Recharts):
@@ -170,19 +170,19 @@ class ZAxis(Recharts):
     alias = "RechartszAxis"
 
     # The key of data displayed in the axis.
-    data_key: ImmutableVar[Union[str, int]]
+    data_key: Var[Union[str, int]]
 
     # The range of axis.
-    range: ImmutableVar[List[int]]
+    range: Var[List[int]]
 
     # The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
-    unit: ImmutableVar[Union[str, int]]
+    unit: Var[Union[str, int]]
 
     # The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
-    name: ImmutableVar[Union[str, int]]
+    name: Var[Union[str, int]]
 
     # If 'auto' set, the scale function is decided by the type of chart, and the props type.
-    scale: ImmutableVar[LiteralScale]
+    scale: Var[LiteralScale]
 
 
 class Brush(Recharts):
@@ -193,48 +193,48 @@ class Brush(Recharts):
     alias = "RechartsBrush"
 
     # Stroke color
-    stroke: ImmutableVar[Union[str, Color]] = LiteralVar.create(Color("gray", 9))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 9))
 
     # The fill color of brush.
-    fill: ImmutableVar[Union[str, Color]] = LiteralVar.create(Color("gray", 2))
+    fill: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 2))
 
     # The key of data displayed in the axis.
-    data_key: ImmutableVar[Union[str, int]]
+    data_key: Var[Union[str, int]]
 
     # The x-coordinate of brush.
-    x: ImmutableVar[int]
+    x: Var[int]
 
     # The y-coordinate of brush.
-    y: ImmutableVar[int]
+    y: Var[int]
 
     # The width of brush.
-    width: ImmutableVar[int]
+    width: Var[int]
 
     # The height of brush.
-    height: ImmutableVar[int]
+    height: Var[int]
 
     # The data domain of brush, [min, max].
-    data: ImmutableVar[List[Any]]
+    data: Var[List[Any]]
 
     # The width of each traveller.
-    traveller_width: ImmutableVar[int]
+    traveller_width: Var[int]
 
     # The data with gap of refreshing chart. If the option is not set, the chart will be refreshed every time
-    gap: ImmutableVar[int]
+    gap: Var[int]
 
     # The default start index of brush. If the option is not set, the start index will be 0.
-    start_index: ImmutableVar[int]
+    start_index: Var[int]
 
     # The default end index of brush. If the option is not set, the end index will be 1.
-    end_index: ImmutableVar[int]
+    end_index: Var[int]
 
     # The fill color of brush
-    fill: ImmutableVar[Union[str, Color]]
+    fill: Var[Union[str, Color]]
 
     # The stroke color of brush
-    stroke: ImmutableVar[Union[str, Color]]
+    stroke: Var[Union[str, Color]]
 
-    def get_event_triggers(self) -> dict[str, Union[ImmutableVar, Any]]:
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -249,19 +249,19 @@ class Cartesian(Recharts):
     """A base class for cartesian charts in Recharts."""
 
     # The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
-    layout: ImmutableVar[LiteralLayout]
+    layout: Var[LiteralLayout]
 
     # The key of a group of data which should be unique in an area chart.
-    data_key: ImmutableVar[Union[str, int]]
+    data_key: Var[Union[str, int]]
 
     # The id of x-axis which is corresponding to the data.
-    x_axis_id: ImmutableVar[Union[str, int]]
+    x_axis_id: Var[Union[str, int]]
 
     # The id of y-axis which is corresponding to the data.
-    y_axis_id: ImmutableVar[Union[str, int]]
+    y_axis_id: Var[Union[str, int]]
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional
-    legend_type: ImmutableVar[LiteralLegendType]
+    legend_type: Var[LiteralLegendType]
 
     # The customized event handler of click on the component in this group
     on_click: EventHandler[lambda: []]
@@ -296,22 +296,22 @@ class Area(Cartesian):
     alias = "RechartsArea"
 
     # The color of the line stroke.
-    stroke: ImmutableVar[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
 
     # The width of the line stroke.
-    stroke_width: ImmutableVar[int] = LiteralVar.create(1)
+    stroke_width: Var[int] = LiteralVar.create(1)
 
     # The color of the area fill.
-    fill: ImmutableVar[Union[str, Color]] = LiteralVar.create(Color("accent", 5))
+    fill: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 5))
 
     # The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
-    type_: ImmutableVar[LiteralAreaType] = LiteralVar.create("monotone")
+    type_: Var[LiteralAreaType] = LiteralVar.create("monotone")
 
     # If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally.
-    dot: ImmutableVar[Union[bool, Dict[str, Any]]]
+    dot: Var[Union[bool, Dict[str, Any]]]
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-    active_dot: ImmutableVar[Union[bool, Dict[str, Any]]] = LiteralVar.create(
+    active_dot: Var[Union[bool, Dict[str, Any]]] = LiteralVar.create(
         {
             "stroke": Color("accent", 2),
             "fill": Color("accent", 10),
@@ -319,16 +319,16 @@ class Area(Cartesian):
     )
 
     # If set false, labels will not be drawn. If set true, labels will be drawn which have the props calculated internally.
-    label: ImmutableVar[bool]
+    label: Var[bool]
 
     # The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
-    stack_id: ImmutableVar[Union[str, int]]
+    stack_id: Var[Union[str, int]]
 
     # The unit of data. This option will be used in tooltip.
-    unit: ImmutableVar[Union[str, int]]
+    unit: Var[Union[str, int]]
 
     # The name of data. This option will be used in tooltip and legend to represent a bar. If no value was set to this option, the value of dataKey will be used alternatively.
-    name: ImmutableVar[Union[str, int]]
+    name: Var[Union[str, int]]
 
     # Valid children components
     _valid_children: List[str] = ["LabelList"]
@@ -342,54 +342,54 @@ class Bar(Cartesian):
     alias = "RechartsBar"
 
     # The color of the line stroke.
-    stroke: ImmutableVar[Union[str, Color]]
+    stroke: Var[Union[str, Color]]
 
     # The width of the line stroke.
-    stroke_width: ImmutableVar[int]
+    stroke_width: Var[int]
 
     # The width of the line stroke.
-    fill: ImmutableVar[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
+    fill: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
     # If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally.
-    background: ImmutableVar[bool]
+    background: Var[bool]
 
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
-    label: ImmutableVar[bool]
+    label: Var[bool]
 
     # The stack id of bar, when two bars have the same value axis and same stack_id, then the two bars are stacked in order.
-    stack_id: ImmutableVar[str]
+    stack_id: Var[str]
 
     # The unit of data. This option will be used in tooltip.
-    unit: ImmutableVar[Union[str, int]]
+    unit: Var[Union[str, int]]
 
     # The minimal height of a bar in a horizontal BarChart, or the minimal width of a bar in a vertical BarChart. By default, 0 values are not shown. To visualize a 0 (or close to zero) point, set the minimal point size to a pixel value like 3. In stacked bar charts, minPointSize might not be respected for tightly packed values. So we strongly recommend not using this prop in stacked BarCharts.
-    min_point_size: ImmutableVar[int]
+    min_point_size: Var[int]
 
     # The name of data. This option will be used in tooltip and legend to represent a bar. If no value was set to this option, the value of dataKey will be used alternatively.
-    name: ImmutableVar[Union[str, int]]
+    name: Var[Union[str, int]]
 
     # Size of the bar (if one bar_size is set then a bar_size must be set for all bars)
-    bar_size: ImmutableVar[int]
+    bar_size: Var[int]
 
     # Max size of the bar
-    max_bar_size: ImmutableVar[int]
+    max_bar_size: Var[int]
 
     # The active bar is shown when a user enters a bar chart and this chart has tooltip. If set to false, no active bar will be drawn. If set to true, active bar will be drawn with the props calculated internally. If passed an object, active bar will be drawn, and the internally calculated props will be merged with the key value pairs of the passed object.
-    # active_bar: ImmutableVar[Union[bool, Dict[str, Any]]]
+    # active_bar: Var[Union[bool, Dict[str, Any]]]
 
     # Valid children components
     _valid_children: List[str] = ["Cell", "LabelList", "ErrorBar"]
 
     # If set false, animation of bar will be disabled.
-    is_animation_active: ImmutableVar[bool]
+    is_animation_active: Var[bool]
 
     # Specifies when the animation should begin, the unit of this option is ms, default 0.
-    animation_begin: ImmutableVar[int]
+    animation_begin: Var[int]
 
     # Specifies the duration of animation, the unit of this option is ms, default 1500.
-    animation_duration: ImmutableVar[int]
+    animation_duration: Var[int]
 
     # The type of easing function, default 'ease'
-    animation_easing: ImmutableVar[LiteralAnimationEasing]
+    animation_easing: Var[LiteralAnimationEasing]
 
     # The customized event handler of animation start
     on_animation_start: EventHandler[lambda: []]
@@ -406,16 +406,16 @@ class Line(Cartesian):
     alias = "RechartsLine"
 
     # The interpolation type of line. And customized interpolation function can be set to type. It's the same as type in Area.
-    type_: ImmutableVar[LiteralAreaType]
+    type_: Var[LiteralAreaType]
 
     # The color of the line stroke.
-    stroke: ImmutableVar[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
 
     # The width of the line stroke.
-    stroke_width: ImmutableVar[int]
+    stroke_width: Var[int]
 
     # The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-    dot: ImmutableVar[Union[bool, Dict[str, Any]]] = LiteralVar.create(
+    dot: Var[Union[bool, Dict[str, Any]]] = LiteralVar.create(
         {
             "stroke": Color("accent", 10),
             "fill": Color("accent", 4),
@@ -423,7 +423,7 @@ class Line(Cartesian):
     )
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-    active_dot: ImmutableVar[Union[bool, Dict[str, Any]]] = LiteralVar.create(
+    active_dot: Var[Union[bool, Dict[str, Any]]] = LiteralVar.create(
         {
             "stroke": Color("accent", 2),
             "fill": Color("accent", 10),
@@ -431,19 +431,19 @@ class Line(Cartesian):
     )
 
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
-    label: ImmutableVar[bool]
+    label: Var[bool]
 
     # Hides the line when true, useful when toggling visibility state via legend.
-    hide: ImmutableVar[bool]
+    hide: Var[bool]
 
     # Whether to connect a graph line across null points.
-    connect_nulls: ImmutableVar[bool]
+    connect_nulls: Var[bool]
 
     # The unit of data. This option will be used in tooltip.
-    unit: ImmutableVar[Union[str, int]]
+    unit: Var[Union[str, int]]
 
     # The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
-    name: ImmutableVar[Union[str, int]]
+    name: Var[Union[str, int]]
 
     # Valid children components
     _valid_children: List[str] = ["LabelList", "ErrorBar"]
@@ -457,49 +457,49 @@ class Scatter(Recharts):
     alias = "RechartsScatter"
 
     # The source data, in which each element is an object.
-    data: ImmutableVar[List[Dict[str, Any]]]
+    data: Var[List[Dict[str, Any]]]
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye' | 'none'
-    legend_type: ImmutableVar[LiteralLegendType]
+    legend_type: Var[LiteralLegendType]
 
     # The id of x-axis which is corresponding to the data.
-    x_axis_id: ImmutableVar[Union[str, int]]
+    x_axis_id: Var[Union[str, int]]
 
     # The id of y-axis which is corresponding to the data.
-    y_axis_id: ImmutableVar[Union[str, int]]
+    y_axis_id: Var[Union[str, int]]
 
     # The id of z-axis which is corresponding to the data.
-    z_axis_id: ImmutableVar[str]
+    z_axis_id: Var[str]
 
     # If false set, line will not be drawn. If true set, line will be drawn which have the props calculated internally.
-    line: ImmutableVar[bool]
+    line: Var[bool]
 
     # If a string set, specified symbol will be used to show scatter item. 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye'
-    shape: ImmutableVar[LiteralShape]
+    shape: Var[LiteralShape]
 
     # If 'joint' set, line will generated by just jointing all the points. If 'fitting' set, line will be generated by fitting algorithm. 'joint' | 'fitting'
-    line_type: ImmutableVar[LiteralLineType]
+    line_type: Var[LiteralLineType]
 
     # The fill
-    fill: ImmutableVar[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
+    fill: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
 
     # the name
-    name: ImmutableVar[Union[str, int]]
+    name: Var[Union[str, int]]
 
     # Valid children components.
     _valid_children: List[str] = ["LabelList", "ErrorBar"]
 
     # If set false, animation of bar will be disabled.
-    is_animation_active: ImmutableVar[bool]
+    is_animation_active: Var[bool]
 
     # Specifies when the animation should begin, the unit of this option is ms, default 0.
-    animation_begin: ImmutableVar[int]
+    animation_begin: Var[int]
 
     # Specifies the duration of animation, the unit of this option is ms, default 1500.
-    animation_duration: ImmutableVar[int]
+    animation_duration: Var[int]
 
     # The type of easing function, default 'ease'
-    animation_easing: ImmutableVar[LiteralAnimationEasing]
+    animation_easing: Var[LiteralAnimationEasing]
 
     # The customized event handler of click on the component in this group
     on_click: EventHandler[lambda: []]
@@ -534,31 +534,31 @@ class Funnel(Recharts):
     alias = "RechartsFunnel"
 
     # The source data, in which each element is an object.
-    data: ImmutableVar[List[Dict[str, Any]]]
+    data: Var[List[Dict[str, Any]]]
 
     # The key of a group of data which should be unique in an area chart.
-    data_key: ImmutableVar[Union[str, int]]
+    data_key: Var[Union[str, int]]
 
     # The key or getter of a group of data which should be unique in a LineChart.
-    name_key: ImmutableVar[str]
+    name_key: Var[str]
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered.
-    legend_type: ImmutableVar[LiteralLegendType]
+    legend_type: Var[LiteralLegendType]
 
     # If set false, animation of line will be disabled.
-    is_animation_active: ImmutableVar[bool]
+    is_animation_active: Var[bool]
 
     # Specifies when the animation should begin, the unit of this option is ms.
-    animation_begin: ImmutableVar[int]
+    animation_begin: Var[int]
 
     # Specifies the duration of animation, the unit of this option is ms.
-    animation_duration: ImmutableVar[int]
+    animation_duration: Var[int]
 
     # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
-    animation_easing: ImmutableVar[LiteralAnimationEasing]
+    animation_easing: Var[LiteralAnimationEasing]
 
     # stroke color
-    stroke: ImmutableVar[Union[str, Color]] = LiteralVar.create(Color("gray", 3))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 3))
 
     # Valid children components
     _valid_children: List[str] = ["LabelList", "Cell"]
@@ -602,38 +602,38 @@ class ErrorBar(Recharts):
     alias = "RechartsErrorBar"
 
     # The direction of error bar. 'x' | 'y' | 'both'
-    direction: ImmutableVar[LiteralDirection]
+    direction: Var[LiteralDirection]
 
     # The key of a group of data which should be unique in an area chart.
-    data_key: ImmutableVar[Union[str, int]]
+    data_key: Var[Union[str, int]]
 
     # The width of the error bar ends.
-    width: ImmutableVar[int]
+    width: Var[int]
 
     # The stroke color of error bar.
-    stroke: ImmutableVar[Union[str, Color]] = LiteralVar.create(Color("gray", 8))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 8))
 
     # The stroke width of error bar.
-    stroke_width: ImmutableVar[int]
+    stroke_width: Var[int]
 
 
 class Reference(Recharts):
     """A base class for reference components in Reference."""
 
     # The id of x-axis which is corresponding to the data.
-    x_axis_id: ImmutableVar[Union[str, int]]
+    x_axis_id: Var[Union[str, int]]
 
     # The id of y-axis which is corresponding to the data.
-    y_axis_id: ImmutableVar[Union[str, int]]
+    y_axis_id: Var[Union[str, int]]
 
     # Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
-    if_overflow: ImmutableVar[LiteralIfOverflow]
+    if_overflow: Var[LiteralIfOverflow]
 
     # If set a string or a number, default label will be drawn, and the option is content.
-    label: ImmutableVar[Union[str, int]]
+    label: Var[Union[str, int]]
 
     # If set true, the line will be rendered in front of bars in BarChart, etc.
-    is_front: ImmutableVar[bool]
+    is_front: Var[bool]
 
 
 class ReferenceLine(Reference):
@@ -644,16 +644,16 @@ class ReferenceLine(Reference):
     alias = "RechartsReferenceLine"
 
     # If set a string or a number, a vertical line perpendicular to the x-axis specified by xAxisId will be drawn. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys, otherwise no line will be drawn.
-    x: ImmutableVar[Union[str, int]]
+    x: Var[Union[str, int]]
 
     # If set a string or a number, a horizontal line perpendicular to the y-axis specified by yAxisId will be drawn. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys, otherwise no line will be drawn.
-    y: ImmutableVar[Union[str, int]]
+    y: Var[Union[str, int]]
 
     # The color of the reference line.
-    stroke: ImmutableVar[Union[str, Color]]
+    stroke: Var[Union[str, Color]]
 
     # The width of the stroke.
-    stroke_width: ImmutableVar[Union[str, int]]
+    stroke_width: Var[Union[str, int]]
 
     # Valid children components
     _valid_children: List[str] = ["Label"]
@@ -670,19 +670,19 @@ class ReferenceDot(Reference):
     alias = "RechartsReferenceDot"
 
     # If set a string or a number, a vertical line perpendicular to the x-axis specified by xAxisId will be drawn. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys, otherwise no line will be drawn.
-    x: ImmutableVar[Union[str, int]]
+    x: Var[Union[str, int]]
 
     # If set a string or a number, a horizontal line perpendicular to the y-axis specified by yAxisId will be drawn. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys, otherwise no line will be drawn.
-    y: ImmutableVar[Union[str, int]]
+    y: Var[Union[str, int]]
 
     # The radius of dot.
-    r: ImmutableVar[int]
+    r: Var[int]
 
     # The color of the area fill.
-    fill: ImmutableVar[Union[str, Color]]
+    fill: Var[Union[str, Color]]
 
     # The color of the line stroke.
-    stroke: ImmutableVar[Union[str, Color]]
+    stroke: Var[Union[str, Color]]
 
     # Valid children components
     _valid_children: List[str] = ["Label"]
@@ -720,37 +720,37 @@ class ReferenceArea(Recharts):
     alias = "RechartsReferenceArea"
 
     # Stroke color
-    stroke: ImmutableVar[Union[str, Color]]
+    stroke: Var[Union[str, Color]]
 
     # Fill color
-    fill: ImmutableVar[Union[str, Color]]
+    fill: Var[Union[str, Color]]
 
     # The opacity of area.
-    fill_opacity: ImmutableVar[float]
+    fill_opacity: Var[float]
 
     # The id of x-axis which is corresponding to the data.
-    x_axis_id: ImmutableVar[Union[str, int]]
+    x_axis_id: Var[Union[str, int]]
 
     # The id of y-axis which is corresponding to the data.
-    y_axis_id: ImmutableVar[Union[str, int]]
+    y_axis_id: Var[Union[str, int]]
 
     # A boundary value of the area. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys. If one of x1 or x2 is invalidate, the area will cover along x-axis.
-    x1: ImmutableVar[Union[str, int]]
+    x1: Var[Union[str, int]]
 
     # A boundary value of the area. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys. If one of x1 or x2 is invalidate, the area will cover along x-axis.
-    x2: ImmutableVar[Union[str, int]]
+    x2: Var[Union[str, int]]
 
     # A boundary value of the area. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys. If one of y1 or y2 is invalidate, the area will cover along y-axis.
-    y1: ImmutableVar[Union[str, int]]
+    y1: Var[Union[str, int]]
 
     # A boundary value of the area. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys. If one of y1 or y2 is invalidate, the area will cover along y-axis.
-    y2: ImmutableVar[Union[str, int]]
+    y2: Var[Union[str, int]]
 
     # Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
-    if_overflow: ImmutableVar[LiteralIfOverflow]
+    if_overflow: Var[LiteralIfOverflow]
 
     # If set true, the line will be rendered in front of bars in BarChart, etc.
-    is_front: ImmutableVar[bool]
+    is_front: Var[bool]
 
     # Valid children components
     _valid_children: List[str] = ["Label"]
@@ -760,16 +760,16 @@ class Grid(Recharts):
     """A base class for grid components in Recharts."""
 
     # The x-coordinate of grid.
-    x: ImmutableVar[int]
+    x: Var[int]
 
     # The y-coordinate of grid.
-    y: ImmutableVar[int]
+    y: Var[int]
 
     # The width of grid.
-    width: ImmutableVar[int]
+    width: Var[int]
 
     # The height of grid.
-    height: ImmutableVar[int]
+    height: Var[int]
 
 
 class CartesianGrid(Grid):
@@ -780,28 +780,28 @@ class CartesianGrid(Grid):
     alias = "RechartsCartesianGrid"
 
     # The horizontal line configuration.
-    horizontal: ImmutableVar[bool]
+    horizontal: Var[bool]
 
     # The vertical line configuration.
-    vertical: ImmutableVar[bool]
+    vertical: Var[bool]
 
     # The x-coordinates in pixel values of all vertical lines.
-    vertical_points: ImmutableVar[List[Union[str, int]]]
+    vertical_points: Var[List[Union[str, int]]]
 
     # The x-coordinates in pixel values of all vertical lines.
-    horizontal_points: ImmutableVar[List[Union[str, int]]]
+    horizontal_points: Var[List[Union[str, int]]]
 
     # The background of grid.
-    fill: ImmutableVar[Union[str, Color]]
+    fill: Var[Union[str, Color]]
 
     # The opacity of the background used to fill the space between grid lines
-    fill_opacity: ImmutableVar[float]
+    fill_opacity: Var[float]
 
     # The pattern of dashes and gaps used to paint the lines of the grid
-    stroke_dasharray: ImmutableVar[str]
+    stroke_dasharray: Var[str]
 
     # the stroke color of grid
-    stroke: ImmutableVar[Union[str, Color]] = LiteralVar.create(Color("gray", 7))
+    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 7))
 
 
 class CartesianAxis(Grid):
@@ -812,31 +812,31 @@ class CartesianAxis(Grid):
     alias = "RechartsCartesianAxis"
 
     # The orientation of axis 'top' | 'bottom' | 'left' | 'right'
-    orientation: ImmutableVar[LiteralOrientationTopBottomLeftRight]
+    orientation: Var[LiteralOrientationTopBottomLeftRight]
 
     # If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
-    axis_line: ImmutableVar[bool]
+    axis_line: Var[bool]
 
     # If set false, no axis tick lines will be drawn. If set a object, the option is the configuration of tick lines.
-    tick_line: ImmutableVar[bool]
+    tick_line: Var[bool]
 
     # The length of tick line.
-    tick_size: ImmutableVar[int]
+    tick_size: Var[int]
 
     # If set 0, all the ticks will be shown. If set preserveStart", "preserveEnd" or "preserveStartEnd", the ticks which is to be shown or hidden will be calculated automatically.
-    interval: ImmutableVar[LiteralInterval]
+    interval: Var[LiteralInterval]
 
     # If set false, no ticks will be drawn.
-    ticks: ImmutableVar[bool]
+    ticks: Var[bool]
 
     # If set a string or a number, default label will be drawn, and the option is content.
-    label: ImmutableVar[str]
+    label: Var[str]
 
     # If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
-    mirror: ImmutableVar[bool]
+    mirror: Var[bool]
 
     # The margin between tick line and tick.
-    tick_margin: ImmutableVar[int]
+    tick_margin: Var[int]
 
 
 area = Area.create

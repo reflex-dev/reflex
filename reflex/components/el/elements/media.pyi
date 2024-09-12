@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Optional, Union, overload
 from reflex import ComponentNamespace
 from reflex.constants.colors import Color
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.style import Style
 
 from .base import BaseHTML
@@ -19,137 +19,83 @@ class Area(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        alt: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        coords: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        download: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        href: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        href_lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        media: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        ping: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        alt: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        coords: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        download: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        href: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        href_lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        media: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        ping: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         referrer_policy: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        rel: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        shape: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        target: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        rel: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        shape: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        target: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Area":
@@ -203,128 +149,80 @@ class Audio(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        auto_play: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        buffered: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        controls: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        auto_play: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        buffered: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        controls: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         cross_origin: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        loop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        muted: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        preload: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        src: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        loop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        muted: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        preload: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        src: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Audio":
@@ -375,138 +273,88 @@ class Img(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        align: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        alt: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        align: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        alt: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         cross_origin: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        decoding: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        decoding: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         intrinsicsize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        ismap: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        loading: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        ismap: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        loading: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         referrer_policy: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        sizes: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        src: Optional[Union[ImmutableVar[Any], Any]] = None,
-        src_set: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        use_map: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        sizes: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        src: Optional[Union[Var[Any], Any]] = None,
+        src_set: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        use_map: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Img":
@@ -562,107 +410,71 @@ class Map(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        name: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        name: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Map":
@@ -706,119 +518,75 @@ class Track(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        default: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        kind: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        label: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        src: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        src_lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        default: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        kind: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        label: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        src: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        src_lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Track":
@@ -866,134 +634,84 @@ class Video(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        auto_play: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        buffered: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        controls: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        auto_play: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        buffered: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        controls: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         cross_origin: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        loop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        muted: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        loop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        muted: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         plays_inline: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        poster: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        preload: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        src: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        poster: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        preload: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        src: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Video":
@@ -1046,110 +764,72 @@ class Embed(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        src: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        type: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        src: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        type: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Embed":
@@ -1194,131 +874,81 @@ class Iframe(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        align: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        allow: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        csp: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        loading: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        name: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        align: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        allow: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        csp: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        loading: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        name: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         referrer_policy: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        sandbox: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        src: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        src_doc: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        sandbox: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        src: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        src_doc: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Iframe":
@@ -1370,119 +1000,75 @@ class Object(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        form: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        name: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        type: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        use_map: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        data: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        form: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        name: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        type: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        use_map: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Object":
@@ -1530,104 +1116,70 @@ class Picture(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Picture":
@@ -1670,104 +1222,70 @@ class Portal(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Portal":
@@ -1810,119 +1328,75 @@ class Source(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        media: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        sizes: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        src: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        src_set: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        type: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        media: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        sizes: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        src: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        src_set: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        type: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Source":
@@ -1970,107 +1444,73 @@ class Svg(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        width: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        height: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        xmlns: Optional[Union[ImmutableVar[str], str]] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        xmlns: Optional[Union[Var[str], str]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Svg":
@@ -2116,108 +1556,74 @@ class Circle(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        cx: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        cy: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        r: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        path_length: Optional[Union[ImmutableVar[int], int]] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        cx: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        cy: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        r: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        path_length: Optional[Union[Var[int], int]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Circle":
@@ -2264,111 +1670,77 @@ class Rect(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        x: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        y: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        width: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        height: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        rx: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        ry: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        path_length: Optional[Union[ImmutableVar[int], int]] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        x: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        y: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        rx: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        ry: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        path_length: Optional[Union[Var[int], int]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Rect":
@@ -2418,106 +1790,72 @@ class Polygon(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        points: Optional[Union[ImmutableVar[str], str]] = None,
-        path_length: Optional[Union[ImmutableVar[int], int]] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        points: Optional[Union[Var[str], str]] = None,
+        path_length: Optional[Union[Var[int], int]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Polygon":
@@ -2562,104 +1900,70 @@ class Defs(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Defs":
@@ -2702,117 +2006,77 @@ class LinearGradient(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        gradient_units: Optional[
-            Union[ImmutableVar[Union[bool, str]], str, bool]
-        ] = None,
-        gradient_transform: Optional[
-            Union[ImmutableVar[Union[bool, str]], str, bool]
-        ] = None,
-        spread_method: Optional[
-            Union[ImmutableVar[Union[bool, str]], str, bool]
-        ] = None,
-        x1: Optional[Union[ImmutableVar[Union[bool, int, str]], str, int, bool]] = None,
-        x2: Optional[Union[ImmutableVar[Union[bool, int, str]], str, int, bool]] = None,
-        y1: Optional[Union[ImmutableVar[Union[bool, int, str]], str, int, bool]] = None,
-        y2: Optional[Union[ImmutableVar[Union[bool, int, str]], str, int, bool]] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        gradient_units: Optional[Union[Var[Union[bool, str]], str, bool]] = None,
+        gradient_transform: Optional[Union[Var[Union[bool, str]], str, bool]] = None,
+        spread_method: Optional[Union[Var[Union[bool, str]], str, bool]] = None,
+        x1: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        x2: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        y1: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        y2: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "LinearGradient":
@@ -2862,113 +2126,77 @@ class Stop(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        offset: Optional[
-            Union[ImmutableVar[Union[float, int, str]], str, float, int]
-        ] = None,
+        offset: Optional[Union[Var[Union[float, int, str]], str, float, int]] = None,
         stop_color: Optional[
-            Union[ImmutableVar[Union[Color, bool, str]], str, Color, bool]
+            Union[Var[Union[Color, bool, str]], str, Color, bool]
         ] = None,
         stop_opacity: Optional[
-            Union[ImmutableVar[Union[bool, float, int, str]], str, float, int, bool]
+            Union[Var[Union[bool, float, int, str]], str, float, int, bool]
         ] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Stop":
@@ -3014,105 +2242,71 @@ class Path(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        d: Optional[Union[ImmutableVar[Union[bool, int, str]], str, int, bool]] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        d: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Path":
@@ -3162,107 +2356,73 @@ class SVG(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        width: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        height: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        xmlns: Optional[Union[ImmutableVar[str], str]] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        xmlns: Optional[Union[Var[str], str]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Svg":

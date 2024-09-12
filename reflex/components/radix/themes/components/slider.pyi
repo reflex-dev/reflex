@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Union, overload
 
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.style import Style
 
 from ..base import RadixThemesComponent
@@ -19,10 +19,10 @@ class Slider(RadixThemesComponent):
         cls,
         *children,
         width: Optional[str] = "100%",
-        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
+        as_child: Optional[Union[Var[bool], bool]] = None,
         size: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
@@ -33,13 +33,13 @@ class Slider(RadixThemesComponent):
         ] = None,
         variant: Optional[
             Union[
-                ImmutableVar[Literal["classic", "surface", "soft"]],
+                Var[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Literal[
                         "tomato",
                         "red",
@@ -99,32 +99,31 @@ class Slider(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
+        high_contrast: Optional[Union[Var[bool], bool]] = None,
         radius: Optional[
             Union[
-                ImmutableVar[Literal["none", "small", "full"]],
-                Literal["none", "small", "full"],
+                Var[Literal["none", "small", "full"]], Literal["none", "small", "full"]
             ]
         ] = None,
         default_value: Optional[
             Union[
-                ImmutableVar[Union[List[Union[float, int]], float, int]],
+                Var[Union[List[Union[float, int]], float, int]],
                 List[Union[float, int]],
                 float,
                 int,
             ]
         ] = None,
         value: Optional[
-            Union[ImmutableVar[List[Union[float, int]]], List[Union[float, int]]]
+            Union[Var[List[Union[float, int]]], List[Union[float, int]]]
         ] = None,
-        name: Optional[Union[ImmutableVar[str], str]] = None,
-        min: Optional[Union[ImmutableVar[Union[float, int]], float, int]] = None,
-        max: Optional[Union[ImmutableVar[Union[float, int]], float, int]] = None,
-        step: Optional[Union[ImmutableVar[Union[float, int]], float, int]] = None,
-        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
+        name: Optional[Union[Var[str], str]] = None,
+        min: Optional[Union[Var[Union[float, int]], float, int]] = None,
+        max: Optional[Union[Var[Union[float, int]], float, int]] = None,
+        step: Optional[Union[Var[Union[float, int]], float, int]] = None,
+        disabled: Optional[Union[Var[bool], bool]] = None,
         orientation: Optional[
             Union[
-                ImmutableVar[Literal["horizontal", "vertical"]],
+                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
@@ -133,57 +132,45 @@ class Slider(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_change: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_change: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_value_commit: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Slider":

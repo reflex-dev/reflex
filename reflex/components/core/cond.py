@@ -9,7 +9,7 @@ from reflex.components.component import BaseComponent, Component, MemoizationLea
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
 from reflex.ivars import VarData
-from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.base import LiteralVar, Var
 from reflex.ivars.number import ternary_operation
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
 from reflex.utils.imports import ImportDict, ImportVar
@@ -23,7 +23,7 @@ class Cond(MemoizationLeaf):
     """Render one of two components based on a condition."""
 
     # The cond to determine which component to render.
-    cond: ImmutableVar[Any]
+    cond: Var[Any]
 
     # The component to render if the cond is true.
     comp1: BaseComponent = None  # type: ignore
@@ -34,7 +34,7 @@ class Cond(MemoizationLeaf):
     @classmethod
     def create(
         cls,
-        cond: ImmutableVar,
+        cond: Var,
         comp1: BaseComponent,
         comp2: Optional[BaseComponent] = None,
     ) -> Component:
@@ -119,10 +119,10 @@ def cond(condition: Any, c1: Component) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Any, c2: Any) -> ImmutableVar: ...
+def cond(condition: Any, c1: Any, c2: Any) -> Var: ...
 
 
-def cond(condition: Any, c1: Any, c2: Any = None) -> Component | ImmutableVar:
+def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
     """Create a conditional component or Prop.
 
     Args:
@@ -171,7 +171,7 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | ImmutableVar:
     )
 
 
-def color_mode_cond(light: Any, dark: Any = None) -> ImmutableVar | Component:
+def color_mode_cond(light: Any, dark: Any = None) -> Var | Component:
     """Create a component or Prop based on color_mode.
 
     Args:

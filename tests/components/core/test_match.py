@@ -4,7 +4,7 @@ import pytest
 
 import reflex as rx
 from reflex.components.core.match import Match
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.state import BaseState
 from reflex.utils.exceptions import MatchTypeError
 
@@ -135,7 +135,7 @@ def test_match_vars(cases, expected):
         expected: The expected var full name.
     """
     match_comp = Match.create(MatchState.value, *cases)
-    assert isinstance(match_comp, ImmutableVar)
+    assert isinstance(match_comp, Var)
     assert str(match_comp) == expected
 
 
@@ -261,7 +261,7 @@ def test_match_case_tuple_elements(match_case):
                 rx.text("default value"),
             ),
             'Match cases should have the same return types. Case 3 with return value `<RadixThemesText as={"p"}> {"first value"} </RadixThemesText>` '
-            "of type <class 'reflex.components.radix.themes.typography.text.Text'> is not <class 'reflex.ivars.base.ImmutableVar'>",
+            "of type <class 'reflex.components.radix.themes.typography.text.Text'> is not <class 'reflex.ivars.base.Var'>",
         ),
     ],
 )

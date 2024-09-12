@@ -3,7 +3,7 @@ from typing import Dict, List
 import pytest
 
 from reflex.components.tags import CondTag, Tag, tagless
-from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.base import LiteralVar, Var
 
 
 @pytest.mark.parametrize(
@@ -16,7 +16,7 @@ from reflex.ivars.base import ImmutableVar, LiteralVar
         ({"key": True, "key2": "value2"}, ["key={true}", 'key2={"value2"}']),
     ],
 )
-def test_format_props(props: Dict[str, ImmutableVar], test_props: List):
+def test_format_props(props: Dict[str, Var], test_props: List):
     """Test that the formatted props are correct.
 
     Args:
@@ -40,7 +40,7 @@ def test_format_props(props: Dict[str, ImmutableVar], test_props: List):
         (None, False),
     ],
 )
-def test_is_valid_prop(prop: ImmutableVar, valid: bool):
+def test_is_valid_prop(prop: Var, valid: bool):
     """Test that the prop is valid.
 
     Args:
@@ -110,7 +110,7 @@ def test_format_cond_tag():
     tag = CondTag(
         true_value=dict(Tag(name="h1", contents="True content")),
         false_value=dict(Tag(name="h2", contents="False content")),
-        cond=ImmutableVar(_var_name="logged_in", _var_type=bool),
+        cond=Var(_var_name="logged_in", _var_type=bool),
     )
     tag_dict = dict(tag)
     cond, true_value, false_value = (

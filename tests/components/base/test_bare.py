@@ -1,9 +1,9 @@
 import pytest
 
 from reflex.components.base.bare import Bare
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
-STATE_VAR = ImmutableVar.create_safe("default_state.name")
+STATE_VAR = Var.create_safe("default_state.name")
 
 
 @pytest.mark.parametrize(

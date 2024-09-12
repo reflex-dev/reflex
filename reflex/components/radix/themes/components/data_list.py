@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from typing import Literal
 
 from reflex.components.core.breakpoints import Responsive
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -15,13 +15,13 @@ class DataListRoot(RadixThemesComponent):
     tag = "DataList.Root"
 
     # The orientation of the data list item: "horizontal" | "vertical"
-    orientation: ImmutableVar[Responsive[Literal["horizontal", "vertical"]]]
+    orientation: Var[Responsive[Literal["horizontal", "vertical"]]]
 
     # The size of the data list item: "1" | "2" | "3"
-    size: ImmutableVar[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # Trims the leading whitespace from the start or end of the text.
-    trim: ImmutableVar[Responsive[Literal["normal", "start", "end", "both"]]]
+    trim: Var[Responsive[Literal["normal", "start", "end", "both"]]]
 
 
 class DataListItem(RadixThemesComponent):
@@ -30,9 +30,7 @@ class DataListItem(RadixThemesComponent):
     tag = "DataList.Item"
 
     # The alignment of the data list item within its container.
-    align: ImmutableVar[
-        Responsive[Literal["start", "center", "end", "baseline", "stretch"]]
-    ]
+    align: Var[Responsive[Literal["start", "center", "end", "baseline", "stretch"]]]
 
 
 class DataListLabel(RadixThemesComponent):
@@ -41,16 +39,16 @@ class DataListLabel(RadixThemesComponent):
     tag = "DataList.Label"
 
     # The width of the component
-    width: ImmutableVar[Responsive[str]]
+    width: Var[Responsive[str]]
 
     # The minimum width of the component
-    min_width: ImmutableVar[Responsive[str]]
+    min_width: Var[Responsive[str]]
 
     # The maximum width of the component
-    max_width: ImmutableVar[Responsive[str]]
+    max_width: Var[Responsive[str]]
 
     # The color scheme for the DataList component.
-    color_scheme: ImmutableVar[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
 
 class DataListValue(RadixThemesComponent):

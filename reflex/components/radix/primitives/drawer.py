@@ -11,7 +11,7 @@ from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import Theme
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 
 class DrawerComponent(RadixPrimitiveComponent):
@@ -33,31 +33,31 @@ class DrawerRoot(DrawerComponent):
     alias = "Vaul" + tag
 
     # Whether the drawer is open or not.
-    open: ImmutableVar[bool]
+    open: Var[bool]
 
     # Enable background scaling, it requires an element with [vaul-drawer-wrapper] data attribute to scale its background.
-    should_scale_background: ImmutableVar[bool]
+    should_scale_background: Var[bool]
 
     # Number between 0 and 1 that determines when the drawer should be closed.
-    close_threshold: ImmutableVar[float]
+    close_threshold: Var[float]
 
     # Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account.
     snap_points: Optional[List[Union[str, float]]]
 
     # Index of a snapPoint from which the overlay fade should be applied. Defaults to the last snap point.
-    fade_from_index: ImmutableVar[int]
+    fade_from_index: Var[int]
 
     # Duration for which the drawer is not draggable after scrolling content inside of the drawer. Defaults to 500ms
-    scroll_lock_timeout: ImmutableVar[int]
+    scroll_lock_timeout: Var[int]
 
     # When `False`, it allows to interact with elements outside of the drawer without closing it. Defaults to `True`.
-    modal: ImmutableVar[bool]
+    modal: Var[bool]
 
     # Direction of the drawer. Defaults to `"bottom"`
-    direction: ImmutableVar[LiteralDirectionType]
+    direction: Var[LiteralDirectionType]
 
     # When `True`, it prevents scroll restoration. Defaults to `True`.
-    preventScrollRestoration: ImmutableVar[bool]
+    preventScrollRestoration: Var[bool]
 
     # Fires when the drawer is opened.
     on_open_change: EventHandler[lambda e0: [e0]]
@@ -71,7 +71,7 @@ class DrawerTrigger(DrawerComponent):
     alias = "Vaul" + tag
 
     # Defaults to true, if the first child acts as the trigger.
-    as_child: ImmutableVar[bool] = True  # type: ignore
+    as_child: Var[bool] = True  # type: ignore
 
     @classmethod
     def create(cls, *children: Any, **props: Any) -> Component:

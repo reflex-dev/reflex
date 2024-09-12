@@ -8,7 +8,7 @@ from reflex import constants
 from reflex.components.core.breakpoints import Breakpoints, breakpoints_values
 from reflex.event import EventChain, EventHandler
 from reflex.ivars import VarData
-from reflex.ivars.base import ImmutableCallableVar, ImmutableVar, LiteralVar
+from reflex.ivars.base import ImmutableCallableVar, LiteralVar, Var
 from reflex.ivars.function import FunctionVar
 from reflex.utils import format
 from reflex.utils.exceptions import ReflexError
@@ -26,7 +26,7 @@ color_mode_imports = {
 }
 
 
-def _color_mode_var(_var_name: str, _var_type: Type = str) -> ImmutableVar:
+def _color_mode_var(_var_name: str, _var_type: Type = str) -> Var:
     """Create a Var that destructs the _var_name from ColorModeContext.
 
     Args:
@@ -36,7 +36,7 @@ def _color_mode_var(_var_name: str, _var_type: Type = str) -> ImmutableVar:
     Returns:
         The Var that resolves to the color mode.
     """
-    return ImmutableVar(
+    return Var(
         _var_name=_var_name,
         _var_type=_var_type,
         _var_data=VarData(
@@ -48,8 +48,8 @@ def _color_mode_var(_var_name: str, _var_type: Type = str) -> ImmutableVar:
 
 @ImmutableCallableVar
 def set_color_mode(
-    new_color_mode: LiteralColorMode | ImmutableVar[LiteralColorMode] | None = None,
-) -> ImmutableVar[EventChain]:
+    new_color_mode: LiteralColorMode | Var[LiteralColorMode] | None = None,
+) -> Var[EventChain]:
     """Create an EventChain Var that sets the color mode to a specific value.
 
     Note: `set_color_mode` is not a real event and cannot be triggered from a
@@ -68,10 +68,10 @@ def set_color_mode(
     if new_color_mode is None:
         return base_setter
 
-    if not isinstance(new_color_mode, ImmutableVar):
+    if not isinstance(new_color_mode, Var):
         new_color_mode = LiteralVar.create(new_color_mode)
 
-    return ImmutableVar(
+    return Var(
         f"() => {str(base_setter)}({str(new_color_mode)})",
         _var_data=VarData.merge(
             base_setter._get_all_var_data(), new_color_mode._get_all_var_data()
@@ -114,8 +114,8 @@ def media_query(breakpoint_expr: str):
 
 
 def convert_item(
-    style_item: int | str | ImmutableVar,
-) -> tuple[str | ImmutableVar, VarData | None]:
+    style_item: int | str | Var,
+) -> tuple[str | Var, VarData | None]:
     """Format a single value in a style dictionary.
 
     Args:
@@ -133,7 +133,7 @@ def convert_item(
             "Please use a Var or a literal value."
         )
 
-    if isinstance(style_item, ImmutableVar):
+    if isinstance(style_item, Var):
         return style_item, style_item._get_all_var_data()
 
     # if isinstance(style_item, str) and REFLEX_VAR_OPENING_TAG not in style_item:
@@ -146,8 +146,8 @@ def convert_item(
 
 
 def convert_list(
-    responsive_list: list[str | dict | ImmutableVar],
-) -> tuple[list[str | dict[str, ImmutableVar | list | dict]], VarData | None]:
+    responsive_list: list[str | dict | Var],
+) -> tuple[list[str | dict[str, Var | list | dict]], VarData | None]:
     """Format a responsive value list.
 
     Args:
@@ -170,7 +170,7 @@ def convert_list(
 
 
 def convert(
-    style_dict: dict[str, ImmutableVar | dict | list | str],
+    style_dict: dict[str, Var | dict | list | str],
 ) -> tuple[dict[str, str | list | dict], VarData | None]:
     """Format a style dictionary.
 
@@ -189,7 +189,7 @@ def convert(
 
     for key, value in style_dict.items():
         keys = format_style_key(key)
-        if isinstance(value, ImmutableVar):
+        if isinstance(value, Var):
             return_val = value
             new_var_data = value._get_all_var_data()
             update_out_dict(return_val, keys)

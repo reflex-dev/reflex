@@ -8,7 +8,7 @@ from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.base import LiteralVar, Var
 from reflex.utils import console
 
 try:
@@ -21,7 +21,7 @@ except ImportError:
     Template = Any  # type: ignore
 
 
-def _event_data_signature(e0: ImmutableVar) -> List[Any]:
+def _event_data_signature(e0: Var) -> List[Any]:
     """For plotly events with event data and no points.
 
     Args:
@@ -30,10 +30,10 @@ def _event_data_signature(e0: ImmutableVar) -> List[Any]:
     Returns:
         The event key extracted from the event data (if defined).
     """
-    return [ImmutableVar.create_safe(f"{e0}?.event")]
+    return [Var.create_safe(f"{e0}?.event")]
 
 
-def _event_points_data_signature(e0: ImmutableVar) -> List[Any]:
+def _event_points_data_signature(e0: Var) -> List[Any]:
     """For plotly events with event data containing a point array.
 
     Args:
@@ -43,8 +43,8 @@ def _event_points_data_signature(e0: ImmutableVar) -> List[Any]:
         The event data and the extracted points.
     """
     return [
-        ImmutableVar.create_safe(f"{e0}?.event"),
-        ImmutableVar.create_safe(f"extractPoints({e0}?.points)"),
+        Var.create_safe(f"{e0}?.event"),
+        Var.create_safe(f"extractPoints({e0}?.points)"),
     ]
 
 
@@ -68,7 +68,7 @@ def _button_click_signature(e0: _ButtonClickData) -> List[Any]:
     return [e0.menu, e0.button, e0.active]
 
 
-def _passthrough_signature(e0: ImmutableVar) -> List[Any]:
+def _passthrough_signature(e0: Var) -> List[Any]:
     """For plotly events with arbitrary serializable data, passed through directly.
 
     Args:
@@ -101,19 +101,19 @@ class Plotly(NoSSRComponent):
     is_default = True
 
     # The figure to display. This can be a plotly figure or a plotly data json.
-    data: ImmutableVar[Figure]  # type: ignore
+    data: Var[Figure]  # type: ignore
 
     # The layout of the graph.
-    layout: ImmutableVar[Dict]
+    layout: Var[Dict]
 
     # The template for visual appearance of the graph.
-    template: ImmutableVar[Template]  # type: ignore
+    template: Var[Template]  # type: ignore
 
     # The config of the graph.
-    config: ImmutableVar[Dict]
+    config: Var[Dict]
 
     # If true, the graph will resize when the window is resized.
-    use_resize_handler: ImmutableVar[bool] = LiteralVar.create(True)
+    use_resize_handler: Var[bool] = LiteralVar.create(True)
 
     # Fired after the plot is redrawn.
     on_after_plot: EventHandler[_passthrough_signature]
@@ -242,7 +242,7 @@ const extractPoints = (points) => {
             light=LiteralVar.create(templates["plotly"]),
             dark=LiteralVar.create(templates["plotly_dark"]),
         )
-        if isinstance(responsive_template, ImmutableVar):
+        if isinstance(responsive_template, Var):
             # Mark the conditional Var as a Template to avoid type mismatch
             responsive_template = responsive_template.to(Template)
         props.setdefault("template", responsive_template)
@@ -268,12 +268,12 @@ const extractPoints = (points) => {
         if merge_dicts:
             tag.special_props.add(
                 # Merge all dictionaries and spread the result over props.
-                ImmutableVar.create_safe(
+                Var.create_safe(
                     f"{{...mergician({str(figure)},"
                     f"{','.join(str(md) for md in merge_dicts)})}}",
                 ),
             )
         else:
             # Spread the figure dict over props, nothing to merge.
-            tag.special_props.add(ImmutableVar.create_safe(f"{{...{str(figure)}}}"))
+            tag.special_props.add(Var.create_safe(f"{{...{str(figure)}}}"))
         return tag

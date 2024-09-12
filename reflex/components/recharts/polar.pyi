@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Union, overload
 
 from reflex.constants.colors import Color
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.style import Style
 
 from .recharts import (
@@ -15,28 +15,26 @@ from .recharts import (
 )
 
 class Pie(Recharts):
-    def get_event_triggers(self) -> dict[str, Union[ImmutableVar, Any]]: ...
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[
-            Union[ImmutableVar[List[Dict[str, Any]]], List[Dict[str, Any]]]
-        ] = None,
-        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        cx: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        cy: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        inner_radius: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        outer_radius: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        start_angle: Optional[Union[ImmutableVar[int], int]] = None,
-        end_angle: Optional[Union[ImmutableVar[int], int]] = None,
-        min_angle: Optional[Union[ImmutableVar[int], int]] = None,
-        padding_angle: Optional[Union[ImmutableVar[int], int]] = None,
-        name_key: Optional[Union[ImmutableVar[str], str]] = None,
+        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        cx: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        cy: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        inner_radius: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        outer_radius: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        start_angle: Optional[Union[Var[int], int]] = None,
+        end_angle: Optional[Union[Var[int], int]] = None,
+        min_angle: Optional[Union[Var[int], int]] = None,
+        padding_angle: Optional[Union[Var[int], int]] = None,
+        name_key: Optional[Union[Var[str], str]] = None,
         legend_type: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Literal[
                         "line",
                         "plainline",
@@ -66,33 +64,31 @@ class Pie(Recharts):
                 ],
             ]
         ] = None,
-        label: Optional[Union[ImmutableVar[bool], bool]] = None,
-        label_line: Optional[Union[ImmutableVar[bool], bool]] = None,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        fill: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
+        label: Optional[Union[Var[bool], bool]] = None,
+        label_line: Optional[Union[Var[bool], bool]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Pie":
@@ -135,23 +131,19 @@ class Radar(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        points: Optional[
-            Union[ImmutableVar[List[Dict[str, Any]]], List[Dict[str, Any]]]
-        ] = None,
-        dot: Optional[Union[ImmutableVar[bool], bool]] = None,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        fill: Optional[Union[ImmutableVar[str], str]] = None,
-        fill_opacity: Optional[Union[ImmutableVar[float], float]] = None,
-        legend_type: Optional[Union[ImmutableVar[str], str]] = None,
-        label: Optional[Union[ImmutableVar[bool], bool]] = None,
-        animation_begin: Optional[Union[ImmutableVar[int], int]] = None,
-        animation_duration: Optional[Union[ImmutableVar[int], int]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        points: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        dot: Optional[Union[Var[bool], bool]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[Var[str], str]] = None,
+        fill_opacity: Optional[Union[Var[float], float]] = None,
+        legend_type: Optional[Union[Var[str], str]] = None,
+        label: Optional[Union[Var[bool], bool]] = None,
+        animation_begin: Optional[Union[Var[int], int]] = None,
+        animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                ImmutableVar[
-                    Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
-                ],
+                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
             ]
         ] = None,
@@ -160,51 +152,41 @@ class Radar(Recharts):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Radar":
@@ -237,29 +219,27 @@ class Radar(Recharts):
         ...
 
 class RadialBar(Recharts):
-    def get_event_triggers(self) -> dict[str, Union[ImmutableVar, Any]]: ...
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        min_angle: Optional[Union[ImmutableVar[int], int]] = None,
-        legend_type: Optional[Union[ImmutableVar[str], str]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        min_angle: Optional[Union[Var[int], int]] = None,
+        legend_type: Optional[Union[Var[str], str]] = None,
         label: Optional[
-            Union[ImmutableVar[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
         background: Optional[
-            Union[ImmutableVar[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        is_animation_active: Optional[Union[ImmutableVar[bool], bool]] = None,
-        animation_begin: Optional[Union[ImmutableVar[int], int]] = None,
-        animation_duration: Optional[Union[ImmutableVar[int], int]] = None,
+        is_animation_active: Optional[Union[Var[bool], bool]] = None,
+        animation_begin: Optional[Union[Var[int], int]] = None,
+        animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                ImmutableVar[
-                    Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
-                ],
+                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
             ]
         ] = None,
@@ -268,30 +248,28 @@ class RadialBar(Recharts):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_animation_end: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_animation_start: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "RadialBar":
@@ -327,74 +305,62 @@ class PolarAngleAxis(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        cx: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        cy: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        radius: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        cx: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        cy: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        radius: Optional[Union[Var[Union[int, str]], str, int]] = None,
         axis_line: Optional[
-            Union[ImmutableVar[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        axis_line_type: Optional[Union[ImmutableVar[str], str]] = None,
+        axis_line_type: Optional[Union[Var[str], str]] = None,
         tick_line: Optional[
-            Union[ImmutableVar[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        tick: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        ticks: Optional[
-            Union[ImmutableVar[List[Dict[str, Any]]], List[Dict[str, Any]]]
-        ] = None,
-        orient: Optional[Union[ImmutableVar[str], str]] = None,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
-        allow_duplicated_category: Optional[Union[ImmutableVar[bool], bool]] = None,
+        tick: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        ticks: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        orient: Optional[Union[Var[str], str]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "PolarAngleAxis":
@@ -433,68 +399,56 @@ class PolarGrid(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        cx: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        cy: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        inner_radius: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        outer_radius: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        polar_angles: Optional[Union[ImmutableVar[List[int]], List[int]]] = None,
-        polar_radius: Optional[Union[ImmutableVar[List[int]], List[int]]] = None,
+        cx: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        cy: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        inner_radius: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        outer_radius: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        polar_angles: Optional[Union[Var[List[int]], List[int]]] = None,
+        polar_radius: Optional[Union[Var[List[int]], List[int]]] = None,
         grid_type: Optional[
-            Union[
-                ImmutableVar[Literal["polygon", "circle"]], Literal["polygon", "circle"]
-            ]
+            Union[Var[Literal["polygon", "circle"]], Literal["polygon", "circle"]]
         ] = None,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "PolarGrid":
@@ -524,32 +478,29 @@ class PolarGrid(Recharts):
         ...
 
 class PolarRadiusAxis(Recharts):
-    def get_event_triggers(self) -> dict[str, Union[ImmutableVar, Any]]: ...
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        angle: Optional[Union[ImmutableVar[int], int]] = None,
+        angle: Optional[Union[Var[int], int]] = None,
         type_: Optional[
-            Union[
-                ImmutableVar[Literal["number", "category"]],
-                Literal["number", "category"],
-            ]
+            Union[Var[Literal["number", "category"]], Literal["number", "category"]]
         ] = None,
-        allow_duplicated_category: Optional[Union[ImmutableVar[bool], bool]] = None,
-        cx: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        cy: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        reversed: Optional[Union[ImmutableVar[bool], bool]] = None,
-        orientation: Optional[Union[ImmutableVar[str], str]] = None,
+        allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
+        cx: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        cy: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        reversed: Optional[Union[Var[bool], bool]] = None,
+        orientation: Optional[Union[Var[str], str]] = None,
         axis_line: Optional[
-            Union[ImmutableVar[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        tick: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
-        tick_count: Optional[Union[ImmutableVar[int], int]] = None,
+        tick: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        tick_count: Optional[Union[Var[int], int]] = None,
         scale: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Literal[
                         "auto",
                         "linear",
@@ -587,31 +538,29 @@ class PolarRadiusAxis(Recharts):
                 ],
             ]
         ] = None,
-        domain: Optional[Union[ImmutableVar[List[int]], List[int]]] = None,
-        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
+        domain: Optional[Union[Var[List[int]], List[int]]] = None,
+        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "PolarRadiusAxis":

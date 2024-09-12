@@ -4,7 +4,7 @@ import pytest
 
 import reflex as rx
 from reflex.components.core.debounce import DEFAULT_DEBOUNCE_TIMEOUT
-from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.base import LiteralVar, Var
 from reflex.state import BaseState
 
 
@@ -57,7 +57,7 @@ def test_render_child_props():
             on_change=S.on_change,
         )
     )._render()
-    assert "css" in tag.props and isinstance(tag.props["css"], rx.ivars.ImmutableVar)
+    assert "css" in tag.props and isinstance(tag.props["css"], rx.ivars.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
     assert tag.props["value"].equals(LiteralVar.create("real"))
@@ -73,7 +73,7 @@ def test_render_with_class_name():
             class_name="foo baz",
         )
     )._render()
-    assert isinstance(tag.props["className"], rx.ivars.ImmutableVar)
+    assert isinstance(tag.props["className"], rx.ivars.Var)
     assert "foo baz" in str(tag.props["className"])
 
 
@@ -84,7 +84,7 @@ def test_render_with_ref():
             id="foo_bar",
         )
     )._render()
-    assert isinstance(tag.props["inputRef"], rx.ivars.ImmutableVar)
+    assert isinstance(tag.props["inputRef"], rx.ivars.Var)
     assert "foo_bar" in str(tag.props["inputRef"])
 
 
@@ -95,12 +95,12 @@ def test_render_with_key():
             key="foo_bar",
         )
     )._render()
-    assert isinstance(tag.props["key"], rx.ivars.ImmutableVar)
+    assert isinstance(tag.props["key"], rx.ivars.Var)
     assert "foo_bar" in str(tag.props["key"])
 
 
 def test_render_with_special_props():
-    special_prop = ImmutableVar.create_safe("{foo_bar}")
+    special_prop = Var.create_safe("{foo_bar}")
     tag = rx.debounce_input(
         rx.input(
             on_change=S.on_change,
@@ -149,7 +149,7 @@ def test_render_child_props_recursive():
         ),
         force_notify_by_enter=False,
     )._render()
-    assert "css" in tag.props and isinstance(tag.props["css"], rx.ivars.ImmutableVar)
+    assert "css" in tag.props and isinstance(tag.props["css"], rx.ivars.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
     assert tag.props["value"].equals(LiteralVar.create("outer"))

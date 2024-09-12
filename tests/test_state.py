@@ -22,7 +22,7 @@ from reflex.base import Base
 from reflex.components.sonner.toast import Toaster
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
-from reflex.ivars.base import ImmutableComputedVar, ImmutableVar
+from reflex.ivars.base import ImmutableComputedVar, Var
 from reflex.state import (
     BaseState,
     ImmutableStateError,
@@ -267,7 +267,7 @@ def test_base_class_vars(test_state):
         if field in test_state.get_skip_vars():
             continue
         prop = getattr(cls, field)
-        assert isinstance(prop, ImmutableVar)
+        assert isinstance(prop, Var)
         assert prop._var_name.split(".")[-1] == field
 
     assert cls.num1._var_type == int
@@ -517,9 +517,7 @@ def test_set_class_var():
     """Test setting the var of a class."""
     with pytest.raises(AttributeError):
         TestState.num3  # type: ignore
-    TestState._set_var(
-        ImmutableVar(_var_name="num3", _var_type=int)._var_set_state(TestState)
-    )
+    TestState._set_var(Var(_var_name="num3", _var_type=int)._var_set_state(TestState))
     var = TestState.num3  # type: ignore
     assert var._var_name == TestState.get_full_name() + ".num3"
     assert var._var_type == int

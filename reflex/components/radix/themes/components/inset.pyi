@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Literal, Optional, Union, overload
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.el import elements
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.style import Style
 
 from ..base import RadixThemesComponent
@@ -23,7 +23,7 @@ class Inset(elements.Div, RadixThemesComponent):
         *children,
         side: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Union[
                         Breakpoints[
                             str, Literal["x", "y", "top", "bottom", "right", "left"]
@@ -37,7 +37,7 @@ class Inset(elements.Div, RadixThemesComponent):
         ] = None,
         clip: Optional[
             Union[
-                ImmutableVar[
+                Var[
                     Union[
                         Breakpoints[str, Literal["border-box", "padding-box"]],
                         Literal["border-box", "padding-box"],
@@ -49,7 +49,7 @@ class Inset(elements.Div, RadixThemesComponent):
         ] = None,
         p: Optional[
             Union[
-                ImmutableVar[Union[Breakpoints[str, Union[int, str]], int, str]],
+                Var[Union[Breakpoints[str, Union[int, str]], int, str]],
                 int,
                 str,
                 Breakpoints[str, Union[int, str]],
@@ -57,7 +57,7 @@ class Inset(elements.Div, RadixThemesComponent):
         ] = None,
         px: Optional[
             Union[
-                ImmutableVar[Union[Breakpoints[str, Union[int, str]], int, str]],
+                Var[Union[Breakpoints[str, Union[int, str]], int, str]],
                 int,
                 str,
                 Breakpoints[str, Union[int, str]],
@@ -65,7 +65,7 @@ class Inset(elements.Div, RadixThemesComponent):
         ] = None,
         py: Optional[
             Union[
-                ImmutableVar[Union[Breakpoints[str, Union[int, str]], int, str]],
+                Var[Union[Breakpoints[str, Union[int, str]], int, str]],
                 int,
                 str,
                 Breakpoints[str, Union[int, str]],
@@ -73,7 +73,7 @@ class Inset(elements.Div, RadixThemesComponent):
         ] = None,
         pt: Optional[
             Union[
-                ImmutableVar[Union[Breakpoints[str, Union[int, str]], int, str]],
+                Var[Union[Breakpoints[str, Union[int, str]], int, str]],
                 int,
                 str,
                 Breakpoints[str, Union[int, str]],
@@ -81,7 +81,7 @@ class Inset(elements.Div, RadixThemesComponent):
         ] = None,
         pr: Optional[
             Union[
-                ImmutableVar[Union[Breakpoints[str, Union[int, str]], int, str]],
+                Var[Union[Breakpoints[str, Union[int, str]], int, str]],
                 int,
                 str,
                 Breakpoints[str, Union[int, str]],
@@ -89,7 +89,7 @@ class Inset(elements.Div, RadixThemesComponent):
         ] = None,
         pb: Optional[
             Union[
-                ImmutableVar[Union[Breakpoints[str, Union[int, str]], int, str]],
+                Var[Union[Breakpoints[str, Union[int, str]], int, str]],
                 int,
                 str,
                 Breakpoints[str, Union[int, str]],
@@ -97,110 +97,76 @@ class Inset(elements.Div, RadixThemesComponent):
         ] = None,
         pl: Optional[
             Union[
-                ImmutableVar[Union[Breakpoints[str, Union[int, str]], int, str]],
+                Var[Union[Breakpoints[str, Union[int, str]], int, str]],
                 int,
                 str,
                 Breakpoints[str, Union[int, str]],
             ]
         ] = None,
-        access_key: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         auto_capitalize: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        draggable: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         enter_key_hint: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        input_mode: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        item_prop: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        lang: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        role: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        slot: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        spell_check: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        tab_index: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
-        title: Optional[
-            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
-        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Inset":

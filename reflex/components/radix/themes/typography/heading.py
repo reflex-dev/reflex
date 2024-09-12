@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -27,28 +27,28 @@ class Heading(elements.H1, RadixThemesComponent):
     tag = "Heading"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: ImmutableVar[bool]
+    as_child: Var[bool]
 
     # Change the default rendered element into a semantically appropriate alternative (cannot be used with asChild)
-    as_: ImmutableVar[str]
+    as_: Var[str]
 
     # Text size: "1" - "9"
-    size: ImmutableVar[Responsive[LiteralTextSize]]
+    size: Var[Responsive[LiteralTextSize]]
 
     # Thickness of text: "light" | "regular" | "medium" | "bold"
-    weight: ImmutableVar[Responsive[LiteralTextWeight]]
+    weight: Var[Responsive[LiteralTextWeight]]
 
     # Alignment of text in element: "left" | "center" | "right"
-    align: ImmutableVar[Responsive[LiteralTextAlign]]
+    align: Var[Responsive[LiteralTextAlign]]
 
     # Removes the leading trim space: "normal" | "start" | "end" | "both"
-    trim: ImmutableVar[Responsive[LiteralTextTrim]]
+    trim: Var[Responsive[LiteralTextTrim]]
 
     # Overrides the accent color inherited from the Theme.
-    color_scheme: ImmutableVar[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the text with higher contrast color
-    high_contrast: ImmutableVar[bool]
+    high_contrast: Var[bool]
 
 
 heading = Heading.create

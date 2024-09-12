@@ -8,7 +8,7 @@ from typing import Dict, List, Literal, Optional, Union
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.utils.format import to_camel_case
 from reflex.utils.imports import ImportDict, ImportVar
 
@@ -88,7 +88,7 @@ class Editor(NoSSRComponent):
     # options: "en" | "da" | "de" | "es" | "fr" | "ja" | "ko" | "pt_br" |
     #  "ru" | "zh_cn" | "ro" | "pl" | "ckb" | "lv" | "se" | "ua" | "he" | "it"
     # default : "en"
-    lang: ImmutableVar[
+    lang: Var[
         Union[
             Literal[
                 "en",
@@ -117,34 +117,34 @@ class Editor(NoSSRComponent):
     # This is used to set the HTML form name of the editor.
     # This means on HTML form submission,
     # it will be submitted together with contents of the editor by the name provided.
-    name: ImmutableVar[str]
+    name: Var[str]
 
     # Sets the default value of the editor.
     # This is useful if you don't want the on_change method to be called on render.
     # If you want the on_change method to be called on render please use the set_contents prop
-    default_value: ImmutableVar[str]
+    default_value: Var[str]
 
     # Sets the width of the editor.
     # px and percentage values are accepted, eg width="100%" or width="500px"
     # default: 100%
-    width: ImmutableVar[str]
+    width: Var[str]
 
     # Sets the height of the editor.
     # px and percentage values are accepted, eg height="100%" or height="100px"
-    height: ImmutableVar[str]
+    height: Var[str]
 
     # Sets the placeholder of the editor.
-    placeholder: ImmutableVar[str]
+    placeholder: Var[str]
 
     # Should the editor receive focus when initialized?
-    auto_focus: ImmutableVar[bool]
+    auto_focus: Var[bool]
 
     # Pass an EditorOptions instance to modify the behaviour of Editor even more.
-    set_options: ImmutableVar[Dict]
+    set_options: Var[Dict]
 
     # Whether all SunEditor plugins should be loaded.
     # default: True
-    set_all_plugins: ImmutableVar[bool]
+    set_all_plugins: Var[bool]
 
     # Set the content of the editor.
     # Note: To set the initial contents of the editor
@@ -153,29 +153,29 @@ class Editor(NoSSRComponent):
     # set_contents is used to set the contents of the editor programmatically.
     # You must be aware that, when the set_contents's prop changes,
     # the on_change event is triggered.
-    set_contents: ImmutableVar[str]
+    set_contents: Var[str]
 
     # Append editor content
-    append_contents: ImmutableVar[str]
+    append_contents: Var[str]
 
     # Sets the default style of the editor's edit area
-    set_default_style: ImmutableVar[str]
+    set_default_style: Var[str]
 
     # Disable the editor
     # default: False
-    disable: ImmutableVar[bool]
+    disable: Var[bool]
 
     # Hide the editor
     # default: False
-    hide: ImmutableVar[bool]
+    hide: Var[bool]
 
     # Hide the editor toolbar
     # default: False
-    hide_toolbar: ImmutableVar[bool]
+    hide_toolbar: Var[bool]
 
     # Disable the editor toolbar
     # default: False
-    disable_toolbar: ImmutableVar[bool]
+    disable_toolbar: Var[bool]
 
     # Fired when the editor content changes.
     on_change: EventHandler[lambda content: [content]]
@@ -234,7 +234,7 @@ class Editor(NoSSRComponent):
             ValueError: If set_options is a state Var.
         """
         if set_options is not None:
-            if isinstance(set_options, ImmutableVar):
+            if isinstance(set_options, Var):
                 raise ValueError("EditorOptions cannot be a state Var")
             props["set_options"] = {
                 to_camel_case(k): v

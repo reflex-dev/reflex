@@ -10,7 +10,7 @@ from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
 from reflex.event import EventHandler
 from reflex.ivars import get_unique_variable_name
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.ivars.sequence import ArrayVar
 from reflex.utils import console, format, types
 from reflex.utils.imports import ImportDict, ImportVar
@@ -133,94 +133,94 @@ class DataEditor(NoSSRComponent):
     ]
 
     # Number of rows.
-    rows: ImmutableVar[int]
+    rows: Var[int]
 
     # Headers of the columns for the data grid.
-    columns: ImmutableVar[List[Dict[str, Any]]]
+    columns: Var[List[Dict[str, Any]]]
 
     # The data.
-    data: ImmutableVar[List[List[Any]]]
+    data: Var[List[List[Any]]]
 
     # The name of the callback used to find the data to display.
-    get_cell_content: ImmutableVar[str]
+    get_cell_content: Var[str]
 
     # Allow selection for copying.
-    get_cell_for_selection: ImmutableVar[bool]
+    get_cell_for_selection: Var[bool]
 
     # Allow paste.
-    on_paste: ImmutableVar[bool]
+    on_paste: Var[bool]
 
     # Controls the drawing of the focus ring.
-    draw_focus_ring: ImmutableVar[bool]
+    draw_focus_ring: Var[bool]
 
     # Enables or disables the overlay shadow when scrolling horizontally.
-    fixed_shadow_x: ImmutableVar[bool]
+    fixed_shadow_x: Var[bool]
 
     # Enables or disables the overlay shadow when scrolling vertically.
-    fixed_shadow_y: ImmutableVar[bool]
+    fixed_shadow_y: Var[bool]
 
     # The number of columns which should remain in place when scrolling horizontally. Doesn't include rowMarkers.
-    freeze_columns: ImmutableVar[int]
+    freeze_columns: Var[int]
 
     # Controls the header of the group header row.
-    group_header_height: ImmutableVar[int]
+    group_header_height: Var[int]
 
     # Controls the height of the header row.
-    header_height: ImmutableVar[int]
+    header_height: Var[int]
 
     # Additional header icons:
-    # header_icons: ImmutableVar[Any] # (TODO: must be a map of name: svg)
+    # header_icons: Var[Any] # (TODO: must be a map of name: svg)
 
     # The maximum width a column can be automatically sized to.
-    max_column_auto_width: ImmutableVar[int]
+    max_column_auto_width: Var[int]
 
     # The maximum width a column can be resized to.
-    max_column_width: ImmutableVar[int]
+    max_column_width: Var[int]
 
     # The minimum width a column can be resized to.
-    min_column_width: ImmutableVar[int]
+    min_column_width: Var[int]
 
     # Determins the height of each row.
-    row_height: ImmutableVar[int]
+    row_height: Var[int]
 
     # Kind of row markers.
-    row_markers: ImmutableVar[LiteralRowMarker]
+    row_markers: Var[LiteralRowMarker]
 
     # Changes the starting index for row markers.
-    row_marker_start_index: ImmutableVar[int]
+    row_marker_start_index: Var[int]
 
     # Sets the width of row markers in pixels, if unset row markers will automatically size.
-    row_marker_width: ImmutableVar[int]
+    row_marker_width: Var[int]
 
     # Enable horizontal smooth scrolling.
-    smooth_scroll_x: ImmutableVar[bool]
+    smooth_scroll_x: Var[bool]
 
     # Enable vertical smooth scrolling.
-    smooth_scroll_y: ImmutableVar[bool]
+    smooth_scroll_y: Var[bool]
 
     # Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders.
-    vertical_border: ImmutableVar[bool]  # TODO: support a mapping (dict[int, bool])
+    vertical_border: Var[bool]  # TODO: support a mapping (dict[int, bool])
 
     # Allow columns selections. ("none", "single", "multi")
-    column_select: ImmutableVar[Literal["none", "single", "multi"]]
+    column_select: Var[Literal["none", "single", "multi"]]
 
     # Prevent diagonal scrolling.
-    prevent_diagonal_scrolling: ImmutableVar[bool]
+    prevent_diagonal_scrolling: Var[bool]
 
     # Allow to scroll past the limit of the actual content on the horizontal axis.
-    overscroll_x: ImmutableVar[int]
+    overscroll_x: Var[int]
 
     # Allow to scroll past the limit of the actual content on the vertical axis.
-    overscroll_y: ImmutableVar[int]
+    overscroll_y: Var[int]
 
     # Initial scroll offset on the horizontal axis.
-    scroll_offset_x: ImmutableVar[int]
+    scroll_offset_x: Var[int]
 
     # Initial scroll offset on the vertical axis.
-    scroll_offset_y: ImmutableVar[int]
+    scroll_offset_y: Var[int]
 
     # global theme
-    theme: ImmutableVar[Union[DataEditorTheme, Dict]]
+    theme: Var[Union[DataEditorTheme, Dict]]
 
     # Fired when a cell is activated.
     on_cell_activated: EventHandler[lambda pos: [pos]]
@@ -295,7 +295,7 @@ class DataEditor(NoSSRComponent):
 
         # Define the name of the getData callback associated with this component and assign to get_cell_content.
         data_callback = f"getData_{editor_id}"
-        self.get_cell_content = ImmutableVar.create(data_callback)  # type: ignore
+        self.get_cell_content = Var.create(data_callback)  # type: ignore
 
         code = [f"function {data_callback}([col, row])" "{"]
 
@@ -333,18 +333,16 @@ class DataEditor(NoSSRComponent):
 
         # If rows is not provided, determine from data.
         if rows is None:
-            if isinstance(data, ImmutableVar) and not isinstance(data, ArrayVar):
+            if isinstance(data, Var) and not isinstance(data, ArrayVar):
                 raise ValueError(
                     "DataEditor data must be an ArrayVar if rows is not provided."
                 )
-            props["rows"] = (
-                data.length() if isinstance(data, ImmutableVar) else len(data)
-            )
+            props["rows"] = data.length() if isinstance(data, Var) else len(data)
 
-        if not isinstance(columns, ImmutableVar) and len(columns):
+        if not isinstance(columns, Var) and len(columns):
             if (
                 types.is_dataframe(type(data))
-                or isinstance(data, ImmutableVar)
+                or isinstance(data, Var)
                 and types.is_dataframe(data._var_type)
             ):
                 raise ValueError(

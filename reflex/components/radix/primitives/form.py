@@ -9,7 +9,7 @@ from reflex.components.core.debounce import DebounceInput
 from reflex.components.el.elements.forms import Form as HTMLForm
 from reflex.components.radix.themes.components.text_field import TextFieldRoot
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 from .base import RadixPrimitiveComponentWithClassName
 
@@ -47,10 +47,10 @@ class FormField(FormComponent):
     alias = "RadixFormField"
 
     # The name of the form field, that is passed down to the control and used to match with validation messages.
-    name: ImmutableVar[str]
+    name: Var[str]
 
     # Flag to mark the form field as invalid, for server side validation.
-    server_invalid: ImmutableVar[bool]
+    server_invalid: Var[bool]
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
@@ -133,13 +133,13 @@ class FormMessage(FormComponent):
     alias = "RadixFormMessage"
 
     # Used to target a specific field by name when rendering outside of a Field part.
-    name: ImmutableVar[str]
+    name: Var[str]
 
     # Used to indicate on which condition the message should be visible.
-    match: ImmutableVar[LiteralMatcher]
+    match: Var[LiteralMatcher]
 
     # Forces the message to be shown. This is useful when using server-side validation.
-    force_match: ImmutableVar[bool]
+    force_match: Var[bool]
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.

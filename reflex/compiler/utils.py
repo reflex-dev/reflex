@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
 
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.utils.prerequisites import get_web_dir
 
 try:
@@ -286,7 +286,7 @@ def compile_custom_component(
 def create_document_root(
     head_components: list[Component] | None = None,
     html_lang: Optional[str] = None,
-    html_custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
 ) -> Component:
     """Create the document root.
 

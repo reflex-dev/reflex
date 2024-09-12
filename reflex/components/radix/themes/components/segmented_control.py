@@ -7,7 +7,7 @@ from typing import List, Literal, Union
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -18,23 +18,23 @@ class SegmentedControlRoot(RadixThemesComponent):
     tag = "SegmentedControl.Root"
 
     # The size of the segmented control: "1" | "2" | "3"
-    size: ImmutableVar[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # Variant of button: "classic" | "surface"
-    variant: ImmutableVar[Literal["classic", "surface"]]
+    variant: Var[Literal["classic", "surface"]]
 
-    type: ImmutableVar[Literal["single", "multiple"]]
+    type: Var[Literal["single", "multiple"]]
 
     # Override theme color for button
-    color_scheme: ImmutableVar[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # The radius of the segmented control: "none" | "small" | "medium" | "large" | "full"
-    radius: ImmutableVar[Literal["none", "small", "medium", "large", "full"]]
+    radius: Var[Literal["none", "small", "medium", "large", "full"]]
 
     # The default value of the segmented control.
-    default_value: ImmutableVar[Union[str, List[str]]]
+    default_value: Var[Union[str, List[str]]]
 
-    value: ImmutableVar[Union[str, List[str]]]
+    value: Var[Union[str, List[str]]]
 
     on_change: EventHandler[lambda e0: [e0]]
 
@@ -47,7 +47,7 @@ class SegmentedControlItem(RadixThemesComponent):
     tag = "SegmentedControl.Item"
 
     # The value of the item.
-    value: ImmutableVar[str]
+    value: Var[str]
 
     _valid_parents: List[str] = ["SegmentedControlRoot"]
 

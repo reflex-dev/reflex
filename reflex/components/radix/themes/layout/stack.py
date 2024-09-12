@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from reflex.components.component import Component
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 from ..base import LiteralAlign, LiteralSpacing
 from .flex import Flex, LiteralFlexDirection
@@ -49,14 +49,14 @@ class VStack(Stack):
     """A vertical stack component."""
 
     # The direction of the stack.
-    direction: ImmutableVar[LiteralFlexDirection] = "column"  # type: ignore
+    direction: Var[LiteralFlexDirection] = "column"  # type: ignore
 
 
 class HStack(Stack):
     """A horizontal stack component."""
 
     # The direction of the stack.
-    direction: ImmutableVar[LiteralFlexDirection] = "row"  # type: ignore
+    direction: Var[LiteralFlexDirection] = "row"  # type: ignore
 
 
 stack = Stack.create

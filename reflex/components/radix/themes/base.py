@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal
 from reflex.components import Component
 from reflex.components.tags import Tag
 from reflex.config import get_config
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.utils.imports import ImportDict, ImportVar
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
@@ -53,32 +53,32 @@ class CommonMarginProps(Component):
     """Many radix-themes elements accept shorthand margin props."""
 
     # Margin: "0" - "9"
-    m: ImmutableVar[LiteralSpacing]
+    m: Var[LiteralSpacing]
 
     # Margin horizontal: "0" - "9"
-    mx: ImmutableVar[LiteralSpacing]
+    mx: Var[LiteralSpacing]
 
     # Margin vertical: "0" - "9"
-    my: ImmutableVar[LiteralSpacing]
+    my: Var[LiteralSpacing]
 
     # Margin top: "0" - "9"
-    mt: ImmutableVar[LiteralSpacing]
+    mt: Var[LiteralSpacing]
 
     # Margin right: "0" - "9"
-    mr: ImmutableVar[LiteralSpacing]
+    mr: Var[LiteralSpacing]
 
     # Margin bottom: "0" - "9"
-    mb: ImmutableVar[LiteralSpacing]
+    mb: Var[LiteralSpacing]
 
     # Margin left: "0" - "9"
-    ml: ImmutableVar[LiteralSpacing]
+    ml: Var[LiteralSpacing]
 
 
 class RadixLoadingProp(Component):
     """Base class for components that can be in a loading state."""
 
     # If set, show an rx.spinner instead of the component children.
-    loading: ImmutableVar[bool]
+    loading: Var[bool]
 
 
 class RadixThemesComponent(Component):
@@ -169,25 +169,25 @@ class Theme(RadixThemesComponent):
     tag = "Theme"
 
     # Whether to apply the themes background color to the theme node. Defaults to True.
-    has_background: ImmutableVar[bool]
+    has_background: Var[bool]
 
     # Override light or dark mode theme: "inherit" | "light" | "dark". Defaults to "inherit".
-    appearance: ImmutableVar[LiteralAppearance]
+    appearance: Var[LiteralAppearance]
 
     # The color used for default buttons, typography, backgrounds, etc
-    accent_color: ImmutableVar[LiteralAccentColor]
+    accent_color: Var[LiteralAccentColor]
 
     # The shade of gray, defaults to "auto".
-    gray_color: ImmutableVar[LiteralGrayColor]
+    gray_color: Var[LiteralGrayColor]
 
     # Whether panel backgrounds are translucent: "solid" | "translucent" (default)
-    panel_background: ImmutableVar[LiteralPanelBackground]
+    panel_background: Var[LiteralPanelBackground]
 
     # Element border radius: "none" | "small" | "medium" | "large" | "full". Defaults to "medium".
-    radius: ImmutableVar[LiteralRadius]
+    radius: Var[LiteralRadius]
 
     # Scale of all theme items: "90%" | "95%" | "100%" | "105%" | "110%". Defaults to "100%"
-    scaling: ImmutableVar[LiteralScaling]
+    scaling: Var[LiteralScaling]
 
     @classmethod
     def create(
@@ -235,7 +235,7 @@ class Theme(RadixThemesComponent):
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         tag = super()._render(props)
         tag.add_props(
-            css=ImmutableVar.create(
+            css=Var.create(
                 f"{{...theme.styles.global[':root'], ...theme.styles.global.body}}"
             ),
         )
@@ -251,7 +251,7 @@ class ThemePanel(RadixThemesComponent):
     tag = "ThemePanel"
 
     # Whether the panel is open. Defaults to False.
-    default_open: ImmutableVar[bool]
+    default_open: Var[bool]
 
     def add_imports(self) -> dict[str, str]:
         """Add imports for the ThemePanel component.

@@ -3,7 +3,7 @@
 from typing import Dict
 
 from reflex.components.el.elements.typography import Div
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 
 class Html(Div):
@@ -14,7 +14,7 @@ class Html(Div):
     """
 
     # The HTML to render.
-    dangerouslySetInnerHTML: ImmutableVar[Dict[str, str]]
+    dangerouslySetInnerHTML: Var[Dict[str, str]]
 
     @classmethod
     def create(cls, *children, **props):

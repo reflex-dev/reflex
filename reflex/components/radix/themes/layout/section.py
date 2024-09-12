@@ -6,7 +6,7 @@ from typing import Literal
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
-from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.base import LiteralVar, Var
 
 from ..base import RadixThemesComponent
 
@@ -19,7 +19,7 @@ class Section(elements.Section, RadixThemesComponent):
     tag = "Section"
 
     # The size of the section: "1" - "3" (default "2")
-    size: ImmutableVar[Responsive[LiteralSectionSize]] = LiteralVar.create("2")
+    size: Var[Responsive[LiteralSectionSize]] = LiteralVar.create("2")
 
 
 section = Section.create

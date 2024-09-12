@@ -7,7 +7,7 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.base import LiteralVar, Var
 
 from ..base import (
     LiteralAccentColor,
@@ -25,37 +25,37 @@ class Checkbox(RadixThemesComponent):
     tag = "Checkbox"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: ImmutableVar[bool]
+    as_child: Var[bool]
 
     # Checkbox size "1" - "3"
-    size: ImmutableVar[Responsive[LiteralCheckboxSize]]
+    size: Var[Responsive[LiteralCheckboxSize]]
 
     # Variant of checkbox: "classic" | "surface" | "soft"
-    variant: ImmutableVar[LiteralCheckboxVariant]
+    variant: Var[LiteralCheckboxVariant]
 
     # Override theme color for checkbox
-    color_scheme: ImmutableVar[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the checkbox with higher contrast color against background
-    high_contrast: ImmutableVar[bool]
+    high_contrast: Var[bool]
 
     # Whether the checkbox is checked by default
-    default_checked: ImmutableVar[bool]
+    default_checked: Var[bool]
 
     # Whether the checkbox is checked
-    checked: ImmutableVar[bool]
+    checked: Var[bool]
 
     # Whether the checkbox is disabled
-    disabled: ImmutableVar[bool]
+    disabled: Var[bool]
 
     # Whether the checkbox is required
-    required: ImmutableVar[bool]
+    required: Var[bool]
 
     # The name of the checkbox control when submitting the form.
-    name: ImmutableVar[str]
+    name: Var[str]
 
     # The value of the checkbox control when submitting the form.
-    value: ImmutableVar[str]
+    value: Var[str]
 
     # Props to rename
     _rename_props = {"onChange": "onCheckedChange"}
@@ -70,43 +70,43 @@ class HighLevelCheckbox(RadixThemesComponent):
     tag = "Checkbox"
 
     # The text label for the checkbox.
-    text: ImmutableVar[str]
+    text: Var[str]
 
     # The gap between the checkbox and the label.
-    spacing: ImmutableVar[LiteralSpacing]
+    spacing: Var[LiteralSpacing]
 
     # The size of the checkbox "1" - "3".
-    size: ImmutableVar[LiteralCheckboxSize]
+    size: Var[LiteralCheckboxSize]
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: ImmutableVar[bool]
+    as_child: Var[bool]
 
     # Variant of checkbox: "classic" | "surface" | "soft"
-    variant: ImmutableVar[LiteralCheckboxVariant]
+    variant: Var[LiteralCheckboxVariant]
 
     # Override theme color for checkbox
-    color_scheme: ImmutableVar[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the checkbox with higher contrast color against background
-    high_contrast: ImmutableVar[bool]
+    high_contrast: Var[bool]
 
     # Whether the checkbox is checked by default
-    default_checked: ImmutableVar[bool]
+    default_checked: Var[bool]
 
     # Whether the checkbox is checked
-    checked: ImmutableVar[bool]
+    checked: Var[bool]
 
     # Whether the checkbox is disabled
-    disabled: ImmutableVar[bool]
+    disabled: Var[bool]
 
     # Whether the checkbox is required
-    required: ImmutableVar[bool]
+    required: Var[bool]
 
     # The name of the checkbox control when submitting the form.
-    name: ImmutableVar[str]
+    name: Var[str]
 
     # The value of the checkbox control when submitting the form.
-    value: ImmutableVar[str]
+    value: Var[str]
 
     # Props to rename
     _rename_props = {"onChange": "onCheckedChange"}
@@ -115,9 +115,7 @@ class HighLevelCheckbox(RadixThemesComponent):
     on_change: EventHandler[lambda e0: [e0]]
 
     @classmethod
-    def create(
-        cls, text: ImmutableVar[str] = LiteralVar.create(""), **props
-    ) -> Component:
+    def create(cls, text: Var[str] = LiteralVar.create(""), **props) -> Component:
         """Create a checkbox with a label.
 
         Args:

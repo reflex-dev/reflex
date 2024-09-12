@@ -7,7 +7,7 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.lucide.icon import Icon
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -23,19 +23,19 @@ class CalloutRoot(elements.Div, RadixThemesComponent):
     tag = "Callout.Root"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: ImmutableVar[bool]
+    as_child: Var[bool]
 
     # Size "1" - "3"
-    size: ImmutableVar[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # Variant of button: "soft" | "surface" | "outline"
-    variant: ImmutableVar[CalloutVariant]
+    variant: Var[CalloutVariant]
 
     # Override theme color for button
-    color_scheme: ImmutableVar[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the button with higher contrast color against background
-    high_contrast: ImmutableVar[bool]
+    high_contrast: Var[bool]
 
 
 class CalloutIcon(elements.Div, RadixThemesComponent):
@@ -54,13 +54,13 @@ class Callout(CalloutRoot):
     """A short message to attract user's attention."""
 
     # The text of the callout.
-    text: ImmutableVar[str]
+    text: Var[str]
 
     # The icon of the callout.
-    icon: ImmutableVar[str]
+    icon: Var[str]
 
     @classmethod
-    def create(cls, text: Union[str, ImmutableVar[str]], **props) -> Component:
+    def create(cls, text: Union[str, Var[str]], **props) -> Component:
         """Create a callout component.
 
         Args:

@@ -1,7 +1,7 @@
 """A link component."""
 
 from reflex.components.component import Component
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 
 class NextLink(Component):
@@ -14,7 +14,7 @@ class NextLink(Component):
     is_default = True
 
     # The page to link to.
-    href: ImmutableVar[str]
+    href: Var[str]
 
     # Whether to pass the href prop to the child.
-    pass_href: ImmutableVar[bool] = True  # type: ignore
+    pass_href: Var[bool] = True  # type: ignore

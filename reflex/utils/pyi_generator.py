@@ -19,7 +19,7 @@ from types import ModuleType, SimpleNamespace
 from typing import Any, Callable, Iterable, Type, get_args
 
 from reflex.components.component import Component
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.utils import types as rx_types
 
 logger = logging.getLogger("pyi_generator")
@@ -72,7 +72,7 @@ DEFAULT_IMPORTS = {
     "reflex.components.core.breakpoints": ["Breakpoints"],
     "reflex.event": ["EventChain", "EventHandler", "EventSpec"],
     "reflex.style": ["Style"],
-    "reflex.ivars.base": ["ImmutableVar"],
+    "reflex.ivars.base": ["Var"],
 }
 
 
@@ -170,7 +170,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
 
         res = f"{value.__name__}[{', '.join(inner_container_type_args)}]"
 
-        if value.__name__ == "ImmutableVar":
+        if value.__name__ == "Var":
             args = list(
                 chain.from_iterable(
                     [get_args(arg) if rx_types.is_union(arg) else [arg] for arg in args]
@@ -204,7 +204,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
             return f"Union[{', '.join(res)}]"
         res = (
             _get_type_hint(ev, type_hint_globals, is_optional=False)
-            if ev.__name__ == "ImmutableVar"
+            if ev.__name__ == "Var"
             else value
         )
     else:
@@ -355,7 +355,7 @@ def _extract_class_props_as_ast_nodes(
                 with contextlib.suppress(AttributeError, KeyError):
                     # Try to get default from pydantic field definition.
                     default = target_class.__fields__[name].default
-                    if isinstance(default, ImmutableVar):
+                    if isinstance(default, Var):
                         default = default._decode()  # type: ignore
 
             kwargs.append(
@@ -373,7 +373,7 @@ def _extract_class_props_as_ast_nodes(
 
 
 def _get_parent_imports(func):
-    _imports = {"reflex.ivars": ["ImmutableVar"]}
+    _imports = {"reflex.ivars": ["Var"]}
     for type_hint in inspect.get_annotations(func).values():
         try:
             match = re.match(r"\w+\[([\w\d]+)\]", type_hint)
@@ -433,7 +433,7 @@ def _generate_component_create_functiondef(
             ast.arg(
                 arg=trigger,
                 annotation=ast.Name(
-                    id="Optional[Union[EventHandler, EventSpec, list, Callable, ImmutableVar]]"
+                    id="Optional[Union[EventHandler, EventSpec, list, Callable, Var]]"
                 ),
             ),
             ast.Constant(value=None),
@@ -1026,8 +1026,8 @@ class PyiGenerator:
                     # Hack due to ast not supporting comments in the tree.
                     if (
                         "def create(" in line
-                        or "ImmutableVar[Figure]" in line
-                        or "ImmutableVar[Template]" in line
+                        or "Var[Figure]" in line
+                        or "Var[Template]" in line
                     ):
                         line = line.rstrip() + "  # type: ignore\n"
                     print(line, end="")

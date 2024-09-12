@@ -7,7 +7,7 @@ from typing import Any, List, Literal
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 LiteralSliderOrientation = Literal["horizontal", "vertical"]
 LiteralSliderDir = Literal["ltr", "rtl"]
@@ -25,27 +25,27 @@ class SliderRoot(SliderComponent):
     tag = "Root"
     alias = "RadixSliderRoot"
 
-    default_value: ImmutableVar[List[int]]
+    default_value: Var[List[int]]
 
-    value: ImmutableVar[List[int]]
+    value: Var[List[int]]
 
-    name: ImmutableVar[str]
+    name: Var[str]
 
-    disabled: ImmutableVar[bool]
+    disabled: Var[bool]
 
-    orientation: ImmutableVar[LiteralSliderOrientation]
+    orientation: Var[LiteralSliderOrientation]
 
-    dir: ImmutableVar[LiteralSliderDir]
+    dir: Var[LiteralSliderDir]
 
-    inverted: ImmutableVar[bool]
+    inverted: Var[bool]
 
-    min: ImmutableVar[int]
+    min: Var[int]
 
-    max: ImmutableVar[int]
+    max: Var[int]
 
-    step: ImmutableVar[int]
+    step: Var[int]
 
-    min_steps_between_thumbs: ImmutableVar[int]
+    min_steps_between_thumbs: Var[int]
 
     # Fired when the value of a thumb changes.
     on_value_change: EventHandler[lambda e0: [e0]]

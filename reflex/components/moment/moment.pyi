@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Optional, Union, overload
 from reflex.base import Base
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
 
@@ -30,79 +30,67 @@ class Moment(NoSSRComponent):
     def create(  # type: ignore
         cls,
         *children,
-        interval: Optional[Union[ImmutableVar[int], int]] = None,
-        format: Optional[Union[ImmutableVar[str], str]] = None,
-        trim: Optional[Union[ImmutableVar[bool], bool]] = None,
-        parse: Optional[Union[ImmutableVar[str], str]] = None,
-        add: Optional[Union[ImmutableVar[MomentDelta], MomentDelta]] = None,
-        subtract: Optional[Union[ImmutableVar[MomentDelta], MomentDelta]] = None,
-        from_now: Optional[Union[ImmutableVar[bool], bool]] = None,
-        from_now_during: Optional[Union[ImmutableVar[int], int]] = None,
-        to_now: Optional[Union[ImmutableVar[bool], bool]] = None,
-        with_title: Optional[Union[ImmutableVar[bool], bool]] = None,
-        title_format: Optional[Union[ImmutableVar[str], str]] = None,
-        diff: Optional[Union[ImmutableVar[str], str]] = None,
-        decimal: Optional[Union[ImmutableVar[bool], bool]] = None,
-        unit: Optional[Union[ImmutableVar[str], str]] = None,
-        duration: Optional[Union[ImmutableVar[str], str]] = None,
-        date: Optional[Union[ImmutableVar[str], str]] = None,
-        duration_from_now: Optional[Union[ImmutableVar[bool], bool]] = None,
-        unix: Optional[Union[ImmutableVar[bool], bool]] = None,
-        local: Optional[Union[ImmutableVar[bool], bool]] = None,
-        tz: Optional[Union[ImmutableVar[str], str]] = None,
+        interval: Optional[Union[Var[int], int]] = None,
+        format: Optional[Union[Var[str], str]] = None,
+        trim: Optional[Union[Var[bool], bool]] = None,
+        parse: Optional[Union[Var[str], str]] = None,
+        add: Optional[Union[Var[MomentDelta], MomentDelta]] = None,
+        subtract: Optional[Union[Var[MomentDelta], MomentDelta]] = None,
+        from_now: Optional[Union[Var[bool], bool]] = None,
+        from_now_during: Optional[Union[Var[int], int]] = None,
+        to_now: Optional[Union[Var[bool], bool]] = None,
+        with_title: Optional[Union[Var[bool], bool]] = None,
+        title_format: Optional[Union[Var[str], str]] = None,
+        diff: Optional[Union[Var[str], str]] = None,
+        decimal: Optional[Union[Var[bool], bool]] = None,
+        unit: Optional[Union[Var[str], str]] = None,
+        duration: Optional[Union[Var[str], str]] = None,
+        date: Optional[Union[Var[str], str]] = None,
+        duration_from_now: Optional[Union[Var[bool], bool]] = None,
+        unix: Optional[Union[Var[bool], bool]] = None,
+        local: Optional[Union[Var[bool], bool]] = None,
+        tz: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_change: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_change: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Moment":

@@ -95,7 +95,7 @@ PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
 StateVar = Union[PrimitiveType, Base, None]
 StateIterVar = Union[list, set, tuple]
 
-# ArgsSpec = Callable[[ImmutableVar], list[ImmutableVar]]
+# ArgsSpec = Callable[[Var], list[Var]]
 ArgsSpec = Callable
 
 
@@ -393,9 +393,7 @@ def _breakpoints_satisfies_typing(cls_check: GenericType, instance: Any) -> bool
             _breakpoints_satisfies_typing(type_to_check, instance)
             for type_to_check in get_args(cls_check)
         )
-    elif (
-        cls_check_base == reflex.ivars.ImmutableVar and "__args__" in cls_check.__dict__
-    ):
+    elif cls_check_base == reflex.ivars.Var and "__args__" in cls_check.__dict__:
         return _breakpoints_satisfies_typing(get_args(cls_check)[0], instance)
 
     return False
@@ -562,9 +560,9 @@ def check_prop_in_allowed_types(prop: Any, allowed_types: Iterable) -> bool:
     Returns:
         If the prop type match one of the allowed_types.
     """
-    from reflex.ivars import ImmutableVar
+    from reflex.ivars import Var
 
-    type_ = prop._var_type if _isinstance(prop, ImmutableVar) else type(prop)
+    type_ = prop._var_type if _isinstance(prop, Var) else type(prop)
     return type_ in allowed_types
 
 
@@ -592,11 +590,11 @@ def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
     Raises:
         ValueError: When the value is not a valid literal.
     """
-    from reflex.ivars import ImmutableVar
+    from reflex.ivars import Var
 
     if (
         is_literal(expected_type)
-        and not isinstance(value, ImmutableVar)  # validating vars is not supported yet.
+        and not isinstance(value, Var)  # validating vars is not supported yet.
         and not is_encoded_fstring(value)  # f-strings are not supported.
         and value not in expected_type.__args__
     ):

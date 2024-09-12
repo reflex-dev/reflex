@@ -6,7 +6,7 @@
 from typing import Any, Callable, Dict, Literal, Optional, Union, overload
 
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.style import Style
 
 from ..base import RadixThemesComponent
@@ -21,110 +21,90 @@ class Tooltip(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        content: Optional[Union[ImmutableVar[str], str]] = None,
-        default_open: Optional[Union[ImmutableVar[bool], bool]] = None,
-        open: Optional[Union[ImmutableVar[bool], bool]] = None,
+        content: Optional[Union[Var[str], str]] = None,
+        default_open: Optional[Union[Var[bool], bool]] = None,
+        open: Optional[Union[Var[bool], bool]] = None,
         side: Optional[
             Union[
-                ImmutableVar[Literal["top", "right", "bottom", "left"]],
+                Var[Literal["top", "right", "bottom", "left"]],
                 Literal["top", "right", "bottom", "left"],
             ]
         ] = None,
-        side_offset: Optional[
-            Union[ImmutableVar[Union[float, int]], float, int]
-        ] = None,
+        side_offset: Optional[Union[Var[Union[float, int]], float, int]] = None,
         align: Optional[
             Union[
-                ImmutableVar[Literal["start", "center", "end"]],
+                Var[Literal["start", "center", "end"]],
                 Literal["start", "center", "end"],
             ]
         ] = None,
-        align_offset: Optional[
-            Union[ImmutableVar[Union[float, int]], float, int]
-        ] = None,
-        avoid_collisions: Optional[Union[ImmutableVar[bool], bool]] = None,
+        align_offset: Optional[Union[Var[Union[float, int]], float, int]] = None,
+        avoid_collisions: Optional[Union[Var[bool], bool]] = None,
         collision_padding: Optional[
             Union[
-                ImmutableVar[Union[Dict[str, Union[float, int]], float, int]],
+                Var[Union[Dict[str, Union[float, int]], float, int]],
                 float,
                 int,
                 Dict[str, Union[float, int]],
             ]
         ] = None,
-        arrow_padding: Optional[
-            Union[ImmutableVar[Union[float, int]], float, int]
-        ] = None,
+        arrow_padding: Optional[Union[Var[Union[float, int]], float, int]] = None,
         sticky: Optional[
-            Union[
-                ImmutableVar[Literal["partial", "always"]], Literal["partial", "always"]
-            ]
+            Union[Var[Literal["partial", "always"]], Literal["partial", "always"]]
         ] = None,
-        hide_when_detached: Optional[Union[ImmutableVar[bool], bool]] = None,
-        delay_duration: Optional[
-            Union[ImmutableVar[Union[float, int]], float, int]
-        ] = None,
-        disable_hoverable_content: Optional[Union[ImmutableVar[bool], bool]] = None,
-        force_mount: Optional[Union[ImmutableVar[bool], bool]] = None,
-        aria_label: Optional[Union[ImmutableVar[str], str]] = None,
+        hide_when_detached: Optional[Union[Var[bool], bool]] = None,
+        delay_duration: Optional[Union[Var[Union[float, int]], float, int]] = None,
+        disable_hoverable_content: Optional[Union[Var[bool], bool]] = None,
+        force_mount: Optional[Union[Var[bool], bool]] = None,
+        aria_label: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_escape_key_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_open_change: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_pointer_down_outside: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Tooltip":

@@ -10,7 +10,7 @@ from typing import Literal
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -51,34 +51,34 @@ class Text(elements.Span, RadixThemesComponent):
     tag = "Text"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: ImmutableVar[bool]
+    as_child: Var[bool]
 
     # Change the default rendered element into a semantically appropriate alternative (cannot be used with asChild)
-    as_: ImmutableVar[LiteralType] = "p"  # type: ignore
+    as_: Var[LiteralType] = "p"  # type: ignore
 
     # Text size: "1" - "9"
-    size: ImmutableVar[Responsive[LiteralTextSize]]
+    size: Var[Responsive[LiteralTextSize]]
 
     # Thickness of text: "light" | "regular" | "medium" | "bold"
-    weight: ImmutableVar[Responsive[LiteralTextWeight]]
+    weight: Var[Responsive[LiteralTextWeight]]
 
     # Alignment of text in element: "left" | "center" | "right"
-    align: ImmutableVar[Responsive[LiteralTextAlign]]
+    align: Var[Responsive[LiteralTextAlign]]
 
     # Removes the leading trim space: "normal" | "start" | "end" | "both"
-    trim: ImmutableVar[Responsive[LiteralTextTrim]]
+    trim: Var[Responsive[LiteralTextTrim]]
 
     # Overrides the accent color inherited from the Theme.
-    color_scheme: ImmutableVar[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the text with higher contrast color
-    high_contrast: ImmutableVar[bool]
+    high_contrast: Var[bool]
 
 
 class Span(Text):
     """A variant of text rendering as <span> element."""
 
-    as_: ImmutableVar[LiteralType] = "span"  # type: ignore
+    as_: Var[LiteralType] = "span"  # type: ignore
 
 
 class Em(elements.Em, RadixThemesComponent):
@@ -93,7 +93,7 @@ class Kbd(elements.Kbd, RadixThemesComponent):
     tag = "Kbd"
 
     # Text size: "1" - "9"
-    size: ImmutableVar[LiteralTextSize]
+    size: Var[LiteralTextSize]
 
 
 class Quote(elements.Q, RadixThemesComponent):

@@ -12,12 +12,12 @@ from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
 from reflex.event import EventChain, EventHandler
 from reflex.ivars import VarData
-from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.base import LiteralVar, Var
 from reflex.utils.imports import ImportDict
 
 from .base import BaseHTML
 
-FORM_DATA = ImmutableVar.create("form_data")
+FORM_DATA = Var.create("form_data")
 HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     """
     const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {
@@ -41,37 +41,37 @@ class Button(BaseHTML):
     tag = "button"
 
     # Automatically focuses the button when the page loads
-    auto_focus: ImmutableVar[Union[str, int, bool]]
+    auto_focus: Var[Union[str, int, bool]]
 
     # Disables the button
-    disabled: ImmutableVar[bool]
+    disabled: Var[bool]
 
     # Associates the button with a form (by id)
-    form: ImmutableVar[Union[str, int, bool]]
+    form: Var[Union[str, int, bool]]
 
     # URL to send the form data to (for type="submit" buttons)
-    form_action: ImmutableVar[Union[str, int, bool]]
+    form_action: Var[Union[str, int, bool]]
 
     # How the form data should be encoded when submitting to the server (for type="submit" buttons)
-    form_enc_type: ImmutableVar[Union[str, int, bool]]
+    form_enc_type: Var[Union[str, int, bool]]
 
     # HTTP method to use for sending form data (for type="submit" buttons)
-    form_method: ImmutableVar[Union[str, int, bool]]
+    form_method: Var[Union[str, int, bool]]
 
     # Bypasses form validation when submitting (for type="submit" buttons)
-    form_no_validate: ImmutableVar[Union[str, int, bool]]
+    form_no_validate: Var[Union[str, int, bool]]
 
     # Specifies where to display the response after submitting the form (for type="submit" buttons)
-    form_target: ImmutableVar[Union[str, int, bool]]
+    form_target: Var[Union[str, int, bool]]
 
     # Name of the button, used when sending form data
-    name: ImmutableVar[Union[str, int, bool]]
+    name: Var[Union[str, int, bool]]
 
     # Type of the button (submit, reset, or button)
-    type: ImmutableVar[Union[str, int, bool]]
+    type: Var[Union[str, int, bool]]
 
     # Value of the button, used when sending form data
-    value: ImmutableVar[Union[str, int, bool]]
+    value: Var[Union[str, int, bool]]
 
 
 class Datalist(BaseHTML):
@@ -87,13 +87,13 @@ class Fieldset(Element):
     tag = "fieldset"
 
     # Disables all the form control descendants of the fieldset
-    disabled: ImmutableVar[Union[str, int, bool]]
+    disabled: Var[Union[str, int, bool]]
 
     # Associates the fieldset with a form (by id)
-    form: ImmutableVar[Union[str, int, bool]]
+    form: Var[Union[str, int, bool]]
 
     # Name of the fieldset, used for scripting
-    name: ImmutableVar[Union[str, int, bool]]
+    name: Var[Union[str, int, bool]]
 
 
 class Form(BaseHTML):
@@ -102,37 +102,37 @@ class Form(BaseHTML):
     tag = "form"
 
     # MIME types the server accepts for file upload
-    accept: ImmutableVar[Union[str, int, bool]]
+    accept: Var[Union[str, int, bool]]
 
     # Character encodings to be used for form submission
-    accept_charset: ImmutableVar[Union[str, int, bool]]
+    accept_charset: Var[Union[str, int, bool]]
 
     # URL where the form's data should be submitted
-    action: ImmutableVar[Union[str, int, bool]]
+    action: Var[Union[str, int, bool]]
 
     # Whether the form should have autocomplete enabled
-    auto_complete: ImmutableVar[Union[str, int, bool]]
+    auto_complete: Var[Union[str, int, bool]]
 
     # Encoding type for the form data when submitted
-    enc_type: ImmutableVar[Union[str, int, bool]]
+    enc_type: Var[Union[str, int, bool]]
 
     # HTTP method to use for form submission
-    method: ImmutableVar[Union[str, int, bool]]
+    method: Var[Union[str, int, bool]]
 
     # Name of the form
-    name: ImmutableVar[Union[str, int, bool]]
+    name: Var[Union[str, int, bool]]
 
     # Indicates that the form should not be validated on submit
-    no_validate: ImmutableVar[Union[str, int, bool]]
+    no_validate: Var[Union[str, int, bool]]
 
     # Where to display the response after submitting the form
-    target: ImmutableVar[Union[str, int, bool]]
+    target: Var[Union[str, int, bool]]
 
     # If true, the form will be cleared after submit.
-    reset_on_submit: ImmutableVar[bool] = False  # type: ignore
+    reset_on_submit: Var[bool] = False  # type: ignore
 
     # The name used to make this form's submit handler function unique.
-    handle_submit_unique_name: ImmutableVar[str]
+    handle_submit_unique_name: Var[str]
 
     # Fired when the form is submitted
     on_submit: EventHandler[lambda e0: [FORM_DATA]]
@@ -197,7 +197,7 @@ class Form(BaseHTML):
         if EventTriggers.ON_SUBMIT in self.event_triggers:
             render_tag.add_props(
                 **{
-                    EventTriggers.ON_SUBMIT: ImmutableVar(
+                    EventTriggers.ON_SUBMIT: Var(
                         _var_name=f"handleSubmit_{self.handle_submit_unique_name}",
                         _var_type=EventChain,
                     )
@@ -212,21 +212,21 @@ class Form(BaseHTML):
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):
-                ref_var = ImmutableVar.create_safe(ref[:-3]).as_ref()
-                form_refs[ref[len("refs_") : -3]] = ImmutableVar.create_safe(
+                ref_var = Var.create_safe(ref[:-3]).as_ref()
+                form_refs[ref[len("refs_") : -3]] = Var.create_safe(
                     f"getRefValues({str(ref_var)})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
             else:
-                ref_var = ImmutableVar.create_safe(ref).as_ref()
-                form_refs[ref[4:]] = ImmutableVar.create_safe(
+                ref_var = Var.create_safe(ref).as_ref()
+                form_refs[ref[4:]] = Var.create_safe(
                     f"getRefValue({str(ref_var)})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
         # print(repr(form_refs))
         return form_refs
 
-    def _get_vars(self, include_children: bool = True) -> Iterator[ImmutableVar]:
+    def _get_vars(self, include_children: bool = True) -> Iterator[Var]:
         yield from super()._get_vars(include_children=include_children)
         yield from self._get_form_refs().values()
 
@@ -243,103 +243,103 @@ class Input(BaseHTML):
     tag = "input"
 
     # Accepted types of files when the input is file type
-    accept: ImmutableVar[Union[str, int, bool]]
+    accept: Var[Union[str, int, bool]]
 
     # Alternate text for input type="image"
-    alt: ImmutableVar[Union[str, int, bool]]
+    alt: Var[Union[str, int, bool]]
 
     # Whether the input should have autocomplete enabled
-    auto_complete: ImmutableVar[Union[str, int, bool]]
+    auto_complete: Var[Union[str, int, bool]]
 
     # Automatically focuses the input when the page loads
-    auto_focus: ImmutableVar[Union[str, int, bool]]
+    auto_focus: Var[Union[str, int, bool]]
 
     # Captures media from the user (camera or microphone)
-    capture: ImmutableVar[Union[str, int, bool]]
+    capture: Var[Union[str, int, bool]]
 
     # Indicates whether the input is checked (for checkboxes and radio buttons)
-    checked: ImmutableVar[Union[str, int, bool]]
+    checked: Var[Union[str, int, bool]]
 
     # The initial value (for checkboxes and radio buttons)
-    default_checked: ImmutableVar[bool]
+    default_checked: Var[bool]
 
     # The initial value for a text field
-    default_value: ImmutableVar[str]
+    default_value: Var[str]
 
     # Name part of the input to submit in 'dir' and 'name' pair when form is submitted
-    dirname: ImmutableVar[Union[str, int, bool]]
+    dirname: Var[Union[str, int, bool]]
 
     # Disables the input
-    disabled: ImmutableVar[Union[str, int, bool]]
+    disabled: Var[Union[str, int, bool]]
 
     # Associates the input with a form (by id)
-    form: ImmutableVar[Union[str, int, bool]]
+    form: Var[Union[str, int, bool]]
 
     # URL to send the form data to (for type="submit" buttons)
-    form_action: ImmutableVar[Union[str, int, bool]]
+    form_action: Var[Union[str, int, bool]]
 
     # How the form data should be encoded when submitting to the server (for type="submit" buttons)
-    form_enc_type: ImmutableVar[Union[str, int, bool]]
+    form_enc_type: Var[Union[str, int, bool]]
 
     # HTTP method to use for sending form data (for type="submit" buttons)
-    form_method: ImmutableVar[Union[str, int, bool]]
+    form_method: Var[Union[str, int, bool]]
 
     # Bypasses form validation when submitting (for type="submit" buttons)
-    form_no_validate: ImmutableVar[Union[str, int, bool]]
+    form_no_validate: Var[Union[str, int, bool]]
 
     # Specifies where to display the response after submitting the form (for type="submit" buttons)
-    form_target: ImmutableVar[Union[str, int, bool]]
+    form_target: Var[Union[str, int, bool]]
 
     # References a datalist for suggested options
-    list: ImmutableVar[Union[str, int, bool]]
+    list: Var[Union[str, int, bool]]
 
     # Specifies the maximum value for the input
-    max: ImmutableVar[Union[str, int, bool]]
+    max: Var[Union[str, int, bool]]
 
     # Specifies the maximum number of characters allowed in the input
-    max_length: ImmutableVar[Union[str, int, bool]]
+    max_length: Var[Union[str, int, bool]]
 
     # Specifies the minimum number of characters required in the input
-    min_length: ImmutableVar[Union[str, int, bool]]
+    min_length: Var[Union[str, int, bool]]
 
     # Specifies the minimum value for the input
-    min: ImmutableVar[Union[str, int, bool]]
+    min: Var[Union[str, int, bool]]
 
     # Indicates whether multiple values can be entered in an input of the type email or file
-    multiple: ImmutableVar[Union[str, int, bool]]
+    multiple: Var[Union[str, int, bool]]
 
     # Name of the input, used when sending form data
-    name: ImmutableVar[Union[str, int, bool]]
+    name: Var[Union[str, int, bool]]
 
     # Regex pattern the input's value must match to be valid
-    pattern: ImmutableVar[Union[str, int, bool]]
+    pattern: Var[Union[str, int, bool]]
 
     # Placeholder text in the input
-    placeholder: ImmutableVar[Union[str, int, bool]]
+    placeholder: Var[Union[str, int, bool]]
 
     # Indicates whether the input is read-only
-    read_only: ImmutableVar[Union[str, int, bool]]
+    read_only: Var[Union[str, int, bool]]
 
     # Indicates that the input is required
-    required: ImmutableVar[Union[str, int, bool]]
+    required: Var[Union[str, int, bool]]
 
     # Specifies the visible width of a text control
-    size: ImmutableVar[Union[str, int, bool]]
+    size: Var[Union[str, int, bool]]
 
     # URL for image inputs
-    src: ImmutableVar[Union[str, int, bool]]
+    src: Var[Union[str, int, bool]]
 
     # Specifies the legal number intervals for an input
-    step: ImmutableVar[Union[str, int, bool]]
+    step: Var[Union[str, int, bool]]
 
     # Specifies the type of input
-    type: ImmutableVar[Union[str, int, bool]]
+    type: Var[Union[str, int, bool]]
 
     # Name of the image map used with the input
-    use_map: ImmutableVar[Union[str, int, bool]]
+    use_map: Var[Union[str, int, bool]]
 
     # Value of the input
-    value: ImmutableVar[Union[str, int, float]]
+    value: Var[Union[str, int, float]]
 
     # Fired when the input value changes
     on_change: EventHandler[lambda e0: [e0.target.value]]
@@ -363,10 +363,10 @@ class Label(BaseHTML):
     tag = "label"
 
     # ID of a form control with which the label is associated
-    html_for: ImmutableVar[Union[str, int, bool]]
+    html_for: Var[Union[str, int, bool]]
 
     # Associates the label with a form (by id)
-    form: ImmutableVar[Union[str, int, bool]]
+    form: Var[Union[str, int, bool]]
 
 
 class Legend(BaseHTML):
@@ -382,25 +382,25 @@ class Meter(BaseHTML):
     tag = "meter"
 
     # Associates the meter with a form (by id)
-    form: ImmutableVar[Union[str, int, bool]]
+    form: Var[Union[str, int, bool]]
 
     # High limit of range (above this is considered high value)
-    high: ImmutableVar[Union[str, int, bool]]
+    high: Var[Union[str, int, bool]]
 
     # Low limit of range (below this is considered low value)
-    low: ImmutableVar[Union[str, int, bool]]
+    low: Var[Union[str, int, bool]]
 
     # Maximum value of the range
-    max: ImmutableVar[Union[str, int, bool]]
+    max: Var[Union[str, int, bool]]
 
     # Minimum value of the range
-    min: ImmutableVar[Union[str, int, bool]]
+    min: Var[Union[str, int, bool]]
 
     # Optimum value in the range
-    optimum: ImmutableVar[Union[str, int, bool]]
+    optimum: Var[Union[str, int, bool]]
 
     # Current value of the meter
-    value: ImmutableVar[Union[str, int, bool]]
+    value: Var[Union[str, int, bool]]
 
 
 class Optgroup(BaseHTML):
@@ -409,10 +409,10 @@ class Optgroup(BaseHTML):
     tag = "optgroup"
 
     # Disables the optgroup
-    disabled: ImmutableVar[Union[str, int, bool]]
+    disabled: Var[Union[str, int, bool]]
 
     # Label for the optgroup
-    label: ImmutableVar[Union[str, int, bool]]
+    label: Var[Union[str, int, bool]]
 
 
 class Option(BaseHTML):
@@ -421,16 +421,16 @@ class Option(BaseHTML):
     tag = "option"
 
     # Disables the option
-    disabled: ImmutableVar[Union[str, int, bool]]
+    disabled: Var[Union[str, int, bool]]
 
     # Label for the option, if the text is not the label
-    label: ImmutableVar[Union[str, int, bool]]
+    label: Var[Union[str, int, bool]]
 
     # Indicates that the option is initially selected
-    selected: ImmutableVar[Union[str, int, bool]]
+    selected: Var[Union[str, int, bool]]
 
     # Value to be sent as form data
-    value: ImmutableVar[Union[str, int, bool]]
+    value: Var[Union[str, int, bool]]
 
 
 class Output(BaseHTML):
@@ -439,13 +439,13 @@ class Output(BaseHTML):
     tag = "output"
 
     # Associates the output with one or more elements (by their IDs)
-    html_for: ImmutableVar[Union[str, int, bool]]
+    html_for: Var[Union[str, int, bool]]
 
     # Associates the output with a form (by id)
-    form: ImmutableVar[Union[str, int, bool]]
+    form: Var[Union[str, int, bool]]
 
     # Name of the output element for form submission
-    name: ImmutableVar[Union[str, int, bool]]
+    name: Var[Union[str, int, bool]]
 
 
 class Progress(BaseHTML):
@@ -454,13 +454,13 @@ class Progress(BaseHTML):
     tag = "progress"
 
     # Associates the progress element with a form (by id)
-    form: ImmutableVar[Union[str, int, bool]]
+    form: Var[Union[str, int, bool]]
 
     # Maximum value of the progress indicator
-    max: ImmutableVar[Union[str, int, bool]]
+    max: Var[Union[str, int, bool]]
 
     # Current value of the progress indicator
-    value: ImmutableVar[Union[str, int, bool]]
+    value: Var[Union[str, int, bool]]
 
 
 class Select(BaseHTML):
@@ -469,28 +469,28 @@ class Select(BaseHTML):
     tag = "select"
 
     # Whether the form control should have autocomplete enabled
-    auto_complete: ImmutableVar[Union[str, int, bool]]
+    auto_complete: Var[Union[str, int, bool]]
 
     # Automatically focuses the select when the page loads
-    auto_focus: ImmutableVar[Union[str, int, bool]]
+    auto_focus: Var[Union[str, int, bool]]
 
     # Disables the select control
-    disabled: ImmutableVar[Union[str, int, bool]]
+    disabled: Var[Union[str, int, bool]]
 
     # Associates the select with a form (by id)
-    form: ImmutableVar[Union[str, int, bool]]
+    form: Var[Union[str, int, bool]]
 
     # Indicates that multiple options can be selected
-    multiple: ImmutableVar[Union[str, int, bool]]
+    multiple: Var[Union[str, int, bool]]
 
     # Name of the select, used when submitting the form
-    name: ImmutableVar[Union[str, int, bool]]
+    name: Var[Union[str, int, bool]]
 
     # Indicates that the select control must have a selected option
-    required: ImmutableVar[Union[str, int, bool]]
+    required: Var[Union[str, int, bool]]
 
     # Number of visible options in a drop-down list
-    size: ImmutableVar[Union[str, int, bool]]
+    size: Var[Union[str, int, bool]]
 
     # Fired when the select value changes
     on_change: EventHandler[lambda e0: [e0.target.value]]
@@ -532,55 +532,55 @@ class Textarea(BaseHTML):
     tag = "textarea"
 
     # Whether the form control should have autocomplete enabled
-    auto_complete: ImmutableVar[Union[str, int, bool]]
+    auto_complete: Var[Union[str, int, bool]]
 
     # Automatically focuses the textarea when the page loads
-    auto_focus: ImmutableVar[Union[str, int, bool]]
+    auto_focus: Var[Union[str, int, bool]]
 
     # Automatically fit the content height to the text (use min-height with this prop)
-    auto_height: ImmutableVar[bool]
+    auto_height: Var[bool]
 
     # Visible width of the text control, in average character widths
-    cols: ImmutableVar[Union[str, int, bool]]
+    cols: Var[Union[str, int, bool]]
 
     # Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted
-    dirname: ImmutableVar[Union[str, int, bool]]
+    dirname: Var[Union[str, int, bool]]
 
     # Disables the textarea
-    disabled: ImmutableVar[Union[str, int, bool]]
+    disabled: Var[Union[str, int, bool]]
 
     # Enter key submits form (shift-enter adds new line)
-    enter_key_submit: ImmutableVar[bool]
+    enter_key_submit: Var[bool]
 
     # Associates the textarea with a form (by id)
-    form: ImmutableVar[Union[str, int, bool]]
+    form: Var[Union[str, int, bool]]
 
     # Maximum number of characters allowed in the textarea
-    max_length: ImmutableVar[Union[str, int, bool]]
+    max_length: Var[Union[str, int, bool]]
 
     # Minimum number of characters required in the textarea
-    min_length: ImmutableVar[Union[str, int, bool]]
+    min_length: Var[Union[str, int, bool]]
 
     # Name of the textarea, used when submitting the form
-    name: ImmutableVar[Union[str, int, bool]]
+    name: Var[Union[str, int, bool]]
 
     # Placeholder text in the textarea
-    placeholder: ImmutableVar[Union[str, int, bool]]
+    placeholder: Var[Union[str, int, bool]]
 
     # Indicates whether the textarea is read-only
-    read_only: ImmutableVar[Union[str, int, bool]]
+    read_only: Var[Union[str, int, bool]]
 
     # Indicates that the textarea is required
-    required: ImmutableVar[Union[str, int, bool]]
+    required: Var[Union[str, int, bool]]
 
     # Visible number of lines in the text control
-    rows: ImmutableVar[Union[str, int, bool]]
+    rows: Var[Union[str, int, bool]]
 
     # The controlled value of the textarea, read only unless used with on_change
-    value: ImmutableVar[Union[str, int, bool]]
+    value: Var[Union[str, int, bool]]
 
     # How the text in the textarea is to be wrapped when submitting the form
-    wrap: ImmutableVar[Union[str, int, bool]]
+    wrap: Var[Union[str, int, bool]]
 
     # Fired when the input value changes
     on_change: EventHandler[lambda e0: [e0.target.value]]
@@ -624,14 +624,14 @@ class Textarea(BaseHTML):
                     "Cannot combine `enter_key_submit` with `on_key_down`.",
                 )
             tag.add_props(
-                on_key_down=ImmutableVar.create_safe(
+                on_key_down=Var.create_safe(
                     f"(e) => enterKeySubmitOnKeyDown(e, {str(self.enter_key_submit)})",
                     _var_data=VarData.merge(self.enter_key_submit._get_all_var_data()),
                 )
             )
         if self.auto_height is not None:
             tag.add_props(
-                on_input=ImmutableVar.create_safe(
+                on_input=Var.create_safe(
                     f"(e) => autoHeightOnInput(e, {str(self.auto_height)})",
                     _var_data=VarData.merge(self.auto_height._get_all_var_data()),
                 )

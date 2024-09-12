@@ -5,7 +5,7 @@ from typing import List, Literal, Union
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -20,28 +20,28 @@ class SelectRoot(RadixThemesComponent):
     tag = "Select.Root"
 
     # The size of the select: "1" | "2" | "3"
-    size: ImmutableVar[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # The value of the select when initially rendered. Use when you do not need to control the state of the select.
-    default_value: ImmutableVar[str]
+    default_value: Var[str]
 
     # The controlled value of the select. Should be used in conjunction with on_change.
-    value: ImmutableVar[str]
+    value: Var[str]
 
     # The open state of the select when it is initially rendered. Use when you do not need to control its open state.
-    default_open: ImmutableVar[bool]
+    default_open: Var[bool]
 
     # The controlled open state of the select. Must be used in conjunction with on_open_change.
-    open: ImmutableVar[bool]
+    open: Var[bool]
 
     # The name of the select control when submitting the form.
-    name: ImmutableVar[str]
+    name: Var[str]
 
     # When True, prevents the user from interacting with select.
-    disabled: ImmutableVar[bool]
+    disabled: Var[bool]
 
     # When True, indicates that the user must select a value before the owning form can be submitted.
-    required: ImmutableVar[bool]
+    required: Var[bool]
 
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
@@ -59,16 +59,16 @@ class SelectTrigger(RadixThemesComponent):
     tag = "Select.Trigger"
 
     # Variant of the select trigger
-    variant: ImmutableVar[Literal["classic", "surface", "soft", "ghost"]]
+    variant: Var[Literal["classic", "surface", "soft", "ghost"]]
 
     # The color of the select trigger
-    color_scheme: ImmutableVar[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # The radius of the select trigger
-    radius: ImmutableVar[LiteralRadius]
+    radius: Var[LiteralRadius]
 
     # The placeholder of the select trigger
-    placeholder: ImmutableVar[str]
+    placeholder: Var[str]
 
     _valid_parents: List[str] = ["SelectRoot"]
 
@@ -79,28 +79,28 @@ class SelectContent(RadixThemesComponent):
     tag = "Select.Content"
 
     # The variant of the select content
-    variant: ImmutableVar[Literal["solid", "soft"]]
+    variant: Var[Literal["solid", "soft"]]
 
     # The color of the select content
-    color_scheme: ImmutableVar[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the select content with higher contrast color against background
-    high_contrast: ImmutableVar[bool]
+    high_contrast: Var[bool]
 
     # The positioning mode to use, item-aligned is the default and behaves similarly to a native MacOS menu by positioning content relative to the active item. popper positions content in the same way as our other primitives, for example Popover or DropdownMenu.
-    position: ImmutableVar[Literal["item-aligned", "popper"]]
+    position: Var[Literal["item-aligned", "popper"]]
 
     # The preferred side of the anchor to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled. Only available when position is set to popper.
-    side: ImmutableVar[Literal["top", "right", "bottom", "left"]]
+    side: Var[Literal["top", "right", "bottom", "left"]]
 
     # The distance in pixels from the anchor. Only available when position is set to popper.
-    side_offset: ImmutableVar[int]
+    side_offset: Var[int]
 
     # The preferred alignment against the anchor. May change when collisions occur. Only available when position is set to popper.
-    align: ImmutableVar[Literal["start", "center", "end"]]
+    align: Var[Literal["start", "center", "end"]]
 
     # The vertical distance in pixels from the anchor. Only available when position is set to popper.
-    align_offset: ImmutableVar[int]
+    align_offset: Var[int]
 
     # Fired when the select content is closed.
     on_close_auto_focus: rx.EventHandler[lambda e0: [e0]]
@@ -126,10 +126,10 @@ class SelectItem(RadixThemesComponent):
     tag = "Select.Item"
 
     # The value given as data when submitting a form with a name.
-    value: ImmutableVar[str]
+    value: Var[str]
 
     # Whether the select item is disabled
-    disabled: ImmutableVar[bool]
+    disabled: Var[bool]
 
     _valid_parents: List[str] = ["SelectGroup", "SelectContent"]
 
@@ -152,36 +152,34 @@ class HighLevelSelect(SelectRoot):
     """High level wrapper for the Select component."""
 
     # The items of the select.
-    items: ImmutableVar[List[str]]
+    items: Var[List[str]]
 
     # The placeholder of the select.
-    placeholder: ImmutableVar[str]
+    placeholder: Var[str]
 
     # The label of the select.
-    label: ImmutableVar[str]
+    label: Var[str]
 
     # The color of the select.
-    color_scheme: ImmutableVar[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the select with higher contrast color against background.
-    high_contrast: ImmutableVar[bool]
+    high_contrast: Var[bool]
 
     # The variant of the select.
-    variant: ImmutableVar[Literal["classic", "surface", "soft", "ghost"]]
+    variant: Var[Literal["classic", "surface", "soft", "ghost"]]
 
     # The radius of the select.
-    radius: ImmutableVar[LiteralRadius]
+    radius: Var[LiteralRadius]
 
     # The width of the select.
-    width: ImmutableVar[str]
+    width: Var[str]
 
     # The positioning mode to use. Default is "item-aligned".
-    position: ImmutableVar[Literal["item-aligned", "popper"]]
+    position: Var[Literal["item-aligned", "popper"]]
 
     @classmethod
-    def create(
-        cls, items: Union[List[str], ImmutableVar[List[str]]], **props
-    ) -> Component:
+    def create(cls, items: Union[List[str], Var[List[str]]], **props) -> Component:
         """Create a select component.
 
         Args:
@@ -218,7 +216,7 @@ class HighLevelSelect(SelectRoot):
 
         label = props.pop("label", None)
 
-        if isinstance(items, ImmutableVar):
+        if isinstance(items, Var):
             child = [
                 rx.foreach(items, lambda item: SelectItem.create(item, value=item))
             ]

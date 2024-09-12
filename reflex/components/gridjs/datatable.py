@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Union
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
-from reflex.ivars.base import ImmutableVar, LiteralVar, is_computed_var
+from reflex.ivars.base import LiteralVar, Var, is_computed_var
 from reflex.utils import types
 from reflex.utils.imports import ImportDict
 from reflex.utils.serializers import serialize
@@ -32,19 +32,19 @@ class DataTable(Gridjs):
 
     # The list of columns to display. Required if data is a list and should not be provided
     # if the data field is a dataframe
-    columns: ImmutableVar[List]
+    columns: Var[List]
 
     # Enable a search bar.
-    search: ImmutableVar[bool]
+    search: Var[bool]
 
     # Enable sorting on columns.
-    sort: ImmutableVar[bool]
+    sort: Var[bool]
 
     # Enable resizable columns.
-    resizable: ImmutableVar[bool]
+    resizable: Var[bool]
 
     # Enable pagination.
-    pagination: ImmutableVar[Union[bool, Dict]]
+    pagination: Var[Union[bool, Dict]]
 
     @classmethod
     def create(cls, *children, **props):
@@ -82,7 +82,7 @@ class DataTable(Gridjs):
         # If data is a pandas dataframe and columns are provided throw an error.
         if (
             types.is_dataframe(type(data))
-            or (isinstance(data, ImmutableVar) and types.is_dataframe(data._var_type))
+            or (isinstance(data, Var) and types.is_dataframe(data._var_type))
         ) and columns is not None:
             raise ValueError(
                 "Cannot pass in both a pandas dataframe and columns to the data_table component."
@@ -90,7 +90,7 @@ class DataTable(Gridjs):
 
         # If data is a list and columns are not provided, throw an error
         if (
-            (isinstance(data, ImmutableVar) and types._issubclass(data._var_type, List))
+            (isinstance(data, Var) and types._issubclass(data._var_type, List))
             or issubclass(type(data), List)
         ) and columns is None:
             raise ValueError(
@@ -112,9 +112,7 @@ class DataTable(Gridjs):
         return {"": "gridjs/dist/theme/mermaid.css"}
 
     def _render(self) -> Tag:
-        if isinstance(self.data, ImmutableVar) and types.is_dataframe(
-            self.data._var_type
-        ):
+        if isinstance(self.data, Var) and types.is_dataframe(self.data._var_type):
             self.columns = self.data._replace(
                 _var_name=f"{self.data._var_name}.columns",
                 _var_type=List[Any],

@@ -9,7 +9,7 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.match import Match
 from reflex.components.el import elements
 from reflex.components.lucide import Icon
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 from reflex.style import Style
 
 from ..base import (
@@ -29,22 +29,22 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
     tag = "IconButton"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: ImmutableVar[bool]
+    as_child: Var[bool]
 
     # Button size "1" - "4"
-    size: ImmutableVar[Responsive[LiteralButtonSize]]
+    size: Var[Responsive[LiteralButtonSize]]
 
     # Variant of button: "classic" | "solid" | "soft" | "surface" | "outline" | "ghost"
-    variant: ImmutableVar[LiteralVariant]
+    variant: Var[LiteralVariant]
 
     # Override theme color for button
-    color_scheme: ImmutableVar[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the button with higher contrast color against background
-    high_contrast: ImmutableVar[bool]
+    high_contrast: Var[bool]
 
     # Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
-    radius: ImmutableVar[LiteralRadius]
+    radius: Var[LiteralRadius]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -82,7 +82,7 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
                     *[(size, px) for size, px in RADIX_TO_LUCIDE_SIZE.items()],
                     12,
                 )
-                if not isinstance(size_map_var, ImmutableVar):
+                if not isinstance(size_map_var, Var):
                     raise ValueError(f"Match did not return a Var: {size_map_var}")
                 children[0].size = size_map_var
         return super().create(*children, **props)

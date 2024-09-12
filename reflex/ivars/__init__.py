@@ -1,7 +1,7 @@
 """Experimental Immutable-Based Var System."""
 
-from .base import ImmutableVar as ImmutableVar
 from .base import LiteralVar as LiteralVar
+from .base import Var as Var
 from .base import VarData as VarData
 from .base import get_unique_variable_name as get_unique_variable_name
 from .base import get_uuid_string_var as get_uuid_string_var

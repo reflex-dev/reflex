@@ -3,14 +3,14 @@
 from typing import Any, Dict, Optional
 
 from reflex.components.tags.tag import Tag
-from reflex.ivars.base import ImmutableVar
+from reflex.ivars.base import Var
 
 
 class CondTag(Tag):
     """A conditional tag."""
 
     # The condition to determine which component to render.
-    cond: ImmutableVar[Any]
+    cond: Var[Any]
 
     # The code to render if the condition is true.
     true_value: Dict
