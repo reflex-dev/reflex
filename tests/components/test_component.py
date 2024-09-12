@@ -1179,7 +1179,7 @@ TEST_VAR = LiteralVar.create("test")._replace(
 FORMATTED_TEST_VAR = LiteralVar.create(f"foo{TEST_VAR}bar")
 STYLE_VAR = TEST_VAR._replace(_var_name="style")
 EVENT_CHAIN_VAR = TEST_VAR._replace(_var_type=EventChain)
-ARG_VAR = Var.create_safe("arg")
+ARG_VAR = Var.create("arg")
 
 TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "test"}})._replace(
     merge_var_data=TEST_VAR._var_data

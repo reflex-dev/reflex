@@ -89,7 +89,7 @@ class StyleEl(Element):  # noqa: E742
 
     media: Var[Union[str, int, bool]]
 
-    special_props: Set[Var] = {Var.create_safe("suppressHydrationWarning")}
+    special_props: Set[Var] = {Var.create("suppressHydrationWarning")}
 
 
 base = Base.create

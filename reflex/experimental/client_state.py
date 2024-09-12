@@ -97,7 +97,7 @@ class ClientStateVar(Var):
             var_name = get_unique_variable_name()
         assert isinstance(var_name, str), "var_name must be a string."
         if default is NoValue:
-            default_var = Var.create_safe("", _var_is_local=False, _var_is_string=False)
+            default_var = Var.create("", _var_is_local=False, _var_is_string=False)
         elif not isinstance(default, Var):
             default_var = LiteralVar.create(default)
         else:
@@ -140,7 +140,7 @@ class ClientStateVar(Var):
             an accessor for the client state variable.
         """
         return (
-            Var.create_safe(
+            Var.create(
                 _client_state_ref(self._getter_name)
                 if self._global_ref
                 else self._getter_name

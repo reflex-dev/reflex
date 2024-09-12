@@ -878,8 +878,8 @@ def test_function_var():
     manual_addition_func = ArgsFunctionOperation.create(
         ("a", "b"),
         {
-            "args": [Var.create_safe("a"), Var.create_safe("b")],
-            "result": Var.create_safe("a + b"),
+            "args": [Var.create("a"), Var.create("b")],
+            "result": Var.create("a + b"),
         },
     )
     assert (
@@ -894,7 +894,7 @@ def test_function_var():
     )
 
     create_hello_statement = ArgsFunctionOperation.create(
-        ("name",), f"Hello, {Var.create_safe('name')}!"
+        ("name",), f"Hello, {Var.create('name')}!"
     )
     first_name = LiteralStringVar.create("Steven")
     last_name = LiteralStringVar.create("Universe")
@@ -1086,7 +1086,7 @@ def test_retrival():
     assert REFLEX_VAR_CLOSING_TAG in f_string
 
     result_var_data = LiteralVar.create(f_string)._get_all_var_data()
-    result_immutable_var_data = Var.create_safe(f_string)._var_data
+    result_immutable_var_data = Var.create(f_string)._var_data
     assert result_var_data is not None and result_immutable_var_data is not None
     assert (
         result_var_data.state
@@ -1110,7 +1110,7 @@ def test_fstring_concat():
         "imagination", _var_data=VarData(state="fear")
     )
 
-    immutable_var_with_data = Var.create_safe(
+    immutable_var_with_data = Var.create(
         "consequences",
         _var_data=VarData(
             imports={
@@ -1198,7 +1198,7 @@ def test_fstring_roundtrip(value):
     Args:
         value: The value to create a Var from.
     """
-    var = Var.create_safe(value)._var_set_state("state")
+    var = Var.create(value)._var_set_state("state")
     rt_var = LiteralVar.create(f"{var}")
     assert var._var_state == rt_var._var_state
     assert str(rt_var) == str(var)

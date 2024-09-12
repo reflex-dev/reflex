@@ -30,7 +30,7 @@ def _event_data_signature(e0: Var) -> List[Any]:
     Returns:
         The event key extracted from the event data (if defined).
     """
-    return [Var.create_safe(f"{e0}?.event")]
+    return [Var.create(f"{e0}?.event")]
 
 
 def _event_points_data_signature(e0: Var) -> List[Any]:
@@ -43,8 +43,8 @@ def _event_points_data_signature(e0: Var) -> List[Any]:
         The event data and the extracted points.
     """
     return [
-        Var.create_safe(f"{e0}?.event"),
-        Var.create_safe(f"extractPoints({e0}?.points)"),
+        Var.create(f"{e0}?.event"),
+        Var.create(f"extractPoints({e0}?.points)"),
     ]
 
 
@@ -268,12 +268,12 @@ const extractPoints = (points) => {
         if merge_dicts:
             tag.special_props.add(
                 # Merge all dictionaries and spread the result over props.
-                Var.create_safe(
+                Var.create(
                     f"{{...mergician({str(figure)},"
                     f"{','.join(str(md) for md in merge_dicts)})}}",
                 ),
             )
         else:
             # Spread the figure dict over props, nothing to merge.
-            tag.special_props.add(Var.create_safe(f"{{...{str(figure)}}}"))
+            tag.special_props.add(Var.create(f"{{...{str(figure)}}}"))
         return tag

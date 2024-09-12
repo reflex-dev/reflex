@@ -212,14 +212,14 @@ class Form(BaseHTML):
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):
-                ref_var = Var.create_safe(ref[:-3]).as_ref()
-                form_refs[ref[len("refs_") : -3]] = Var.create_safe(
+                ref_var = Var.create(ref[:-3]).as_ref()
+                form_refs[ref[len("refs_") : -3]] = Var.create(
                     f"getRefValues({str(ref_var)})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
             else:
-                ref_var = Var.create_safe(ref).as_ref()
-                form_refs[ref[4:]] = Var.create_safe(
+                ref_var = Var.create(ref).as_ref()
+                form_refs[ref[4:]] = Var.create(
                     f"getRefValue({str(ref_var)})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
@@ -624,14 +624,14 @@ class Textarea(BaseHTML):
                     "Cannot combine `enter_key_submit` with `on_key_down`.",
                 )
             tag.add_props(
-                on_key_down=Var.create_safe(
+                on_key_down=Var.create(
                     f"(e) => enterKeySubmitOnKeyDown(e, {str(self.enter_key_submit)})",
                     _var_data=VarData.merge(self.enter_key_submit._get_all_var_data()),
                 )
             )
         if self.auto_height is not None:
             tag.add_props(
-                on_input=Var.create_safe(
+                on_input=Var.create(
                     f"(e) => autoHeightOnInput(e, {str(self.auto_height)})",
                     _var_data=VarData.merge(self.auto_height._get_all_var_data()),
                 )

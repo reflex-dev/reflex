@@ -12,16 +12,16 @@ from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.vars.base import LiteralVar, Var
 
-_CHILDREN = Var.create_safe("children")
-_PROPS = Var.create_safe("...props")
-_PROPS_IN_TAG = Var.create_safe("{...props}")
-_MOCK_ARG = Var.create_safe("")
-_REMARK_MATH = Var.create_safe("remarkMath")
-_REMARK_GFM = Var.create_safe("remarkGfm")
-_REMARK_UNWRAP_IMAGES = Var.create_safe("remarkUnwrapImages")
+_CHILDREN = Var.create("children")
+_PROPS = Var.create("...props")
+_PROPS_IN_TAG = Var.create("{...props}")
+_MOCK_ARG = Var.create("")
+_REMARK_MATH = Var.create("remarkMath")
+_REMARK_GFM = Var.create("remarkGfm")
+_REMARK_UNWRAP_IMAGES = Var.create("remarkUnwrapImages")
 _REMARK_PLUGINS = LiteralVar.create([_REMARK_MATH, _REMARK_GFM, _REMARK_UNWRAP_IMAGES])
-_REHYPE_KATEX = Var.create_safe("rehypeKatex")
-_REHYPE_RAW = Var.create_safe("rehypeRaw")
+_REHYPE_KATEX = Var.create("rehypeKatex")
+_REHYPE_RAW = Var.create("rehypeRaw")
 _REHYPE_PLUGINS = LiteralVar.create([_REHYPE_KATEX, _REHYPE_RAW])
 NO_PROPS_TAGS = ("ul", "ol", "li")
 

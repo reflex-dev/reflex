@@ -440,7 +440,7 @@ def test_format_match(
         # tricky real-world case from markdown component
         (
             {
-                "h1": Var.create_safe(
+                "h1": Var.create(
                     f"(({{node, ...props}}) => <Heading {{...props}} {''.join(Tag(name='', props=Style({'as_': 'h1'})).format_props())} />)"
                 )
             },
@@ -462,7 +462,7 @@ def test_format_prop(prop: Var, formatted: str):
     "single_props,key_value_props,output",
     [
         (
-            [Var.create_safe("{...props}")],
+            [Var.create("{...props}")],
             {"key": 42},
             ["key={42}", "{...props}"],
         ),

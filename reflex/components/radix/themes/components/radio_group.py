@@ -163,7 +163,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
         ):
             default_value = LiteralVar.create(default_value)  # type: ignore
         else:
-            default_value = Var.create_safe(default_value).to_string()
+            default_value = Var.create(default_value).to_string()
 
         def radio_group_item(value: Var) -> Component:
             item_value = rx.cond(

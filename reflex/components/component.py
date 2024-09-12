@@ -1388,7 +1388,9 @@ class Component(BaseComponent, ABC):
         """
         ref = self.get_ref()
         if ref is not None:
-            return f"const {ref} = useRef(null); {str(Var.create_safe(ref).as_ref())} = {ref};"
+            return (
+                f"const {ref} = useRef(null); {str(Var.create(ref).as_ref())} = {ref};"
+            )
 
     def _get_vars_hooks(self) -> dict[str, None]:
         """Get the hooks required by vars referenced in this component.
@@ -2169,7 +2171,7 @@ class StatefulComponent(BaseComponent):
 
             # Store the memoized function name and hook code for this event trigger.
             trigger_memo[event_trigger] = (
-                Var.create_safe(memo_name)._replace(
+                Var.create(memo_name)._replace(
                     _var_type=EventChain, merge_var_data=memo_var_data
                 ),
                 f"const {memo_name} = useCallback({rendered_chain}, [{', '.join(var_deps)}])",

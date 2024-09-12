@@ -18,20 +18,20 @@ from reflex.vars.base import Var
 from reflex.vars.number import BooleanVar
 
 connect_error_var_data: VarData
-connect_errors = Var.create_safe(
+connect_errors = Var.create(
     value=CompileVars.CONNECT_ERROR, _var_data=connect_error_var_data
 )
-connection_error = Var.create_safe(
+connection_error = Var.create(
     value="((connectErrors.length > 0) ? connectErrors[connectErrors.length - 1].message : '')",
     _var_data=connect_error_var_data,
 )
-connection_errors_count = Var.create_safe(
+connection_errors_count = Var.create(
     value="connectErrors.length", _var_data=connect_error_var_data
 )
-has_connection_errors = Var.create_safe(
+has_connection_errors = Var.create(
     value="(connectErrors.length > 0)", _var_data=connect_error_var_data
 ).to(BooleanVar)
-has_too_many_connection_errors = Var.create_safe(
+has_too_many_connection_errors = Var.create(
     value="(connectErrors.length >= 2)", _var_data=connect_error_var_data
 ).to(BooleanVar)
 

@@ -480,8 +480,8 @@ class CodeBlock(Component):
         if "theme" not in props:
             # Default color scheme responds to global color mode.
             props["theme"] = color_mode_cond(
-                light=Var.create_safe("oneLight"),
-                dark=Var.create_safe("oneDark"),
+                light=Var.create("oneLight"),
+                dark=Var.create("oneDark"),
             )
 
         # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark

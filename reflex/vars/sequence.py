@@ -1260,12 +1260,10 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
         start, end, step = self._start, self._stop, self._step
 
         normalized_start = (
-            LiteralVar.create(start)
-            if start is not None
-            else Var.create_safe("undefined")
+            LiteralVar.create(start) if start is not None else Var.create("undefined")
         )
         normalized_end = (
-            LiteralVar.create(end) if end is not None else Var.create_safe("undefined")
+            LiteralVar.create(end) if end is not None else Var.create("undefined")
         )
         if step is None:
             return f"{str(self._array)}.slice({str(normalized_start)}, {str(normalized_end)})"

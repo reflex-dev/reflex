@@ -247,7 +247,31 @@ class Var(Generic[VAR_TYPE]):
             _var_data=_var_data,
         )
 
-    create_safe = classmethod(create)
+    @deprecated("Use `.create()` instead.")
+    @classmethod
+    def create_safe(
+        cls,
+        value: Any,
+        _var_is_local: bool | None = None,
+        _var_is_string: bool | None = None,
+        _var_data: VarData | None = None,
+    ) -> Var:
+        """Create a var from a value.
+
+        Args:
+            value: The value to create the var from.
+            _var_is_local: Whether the var is local. Deprecated.
+            _var_is_string: Whether the var is a string literal. Deprecated.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+
+        Raises:
+            VarTypeError: If the value is JSON-unserializable.
+            TypeError: If _var_is_local or _var_is_string is not None.
+        """
+        return cls.create(value, _var_is_local, _var_is_string, _var_data)
 
     def __format__(self, format_spec: str) -> str:
         """Format the var into a Javascript equivalent to an f-string.
@@ -837,7 +861,6 @@ class Var(Generic[VAR_TYPE]):
     ) -> ArrayVar[List[int]]: ...
 
     @classmethod
-    @classmethod
     def range(
         cls,
         first_endpoint: int | NumberVar,
@@ -988,14 +1011,12 @@ class LiteralVar(Var):
             sig = inspect.signature(value.args_spec)  # type: ignore
             if sig.parameters:
                 arg_def = tuple((f"_{p}" for p in sig.parameters))
-                arg_def_expr = LiteralVar.create(
-                    [Var.create_safe(arg) for arg in arg_def]
-                )
+                arg_def_expr = LiteralVar.create([Var.create(arg) for arg in arg_def])
             else:
                 # add a default argument for addEvents if none were specified in value.args_spec
                 # used to trigger the preventDefault() on the event.
                 arg_def = ("...args",)
-                arg_def_expr = Var.create_safe("args")
+                arg_def_expr = Var.create("args")
 
             return ArgsFunctionOperation.create(
                 arg_def,

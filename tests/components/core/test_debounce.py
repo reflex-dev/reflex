@@ -100,7 +100,7 @@ def test_render_with_key():
 
 
 def test_render_with_special_props():
-    special_prop = Var.create_safe("{foo_bar}")
+    special_prop = Var.create("{foo_bar}")
     tag = rx.debounce_input(
         rx.input(
             on_change=S.on_change,

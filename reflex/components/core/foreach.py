@@ -51,7 +51,7 @@ class Foreach(Component):
             ForeachVarError: If the iterable is of type Any.
             TypeError: If the render function is a ComponentState.
         """
-        iterable = Var.create_safe(iterable)
+        iterable = Var.create(iterable)
         if iterable._var_type == Any:
             raise ForeachVarError(
                 f"Could not foreach over var `{str(iterable)}` of type Any. "

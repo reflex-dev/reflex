@@ -26,7 +26,7 @@ class ErrorBoundary(Component):
     ).to(FunctionVar, EventChain)
 
     # Rendered instead of the children when an error is caught.
-    Fallback_component: Var[Component] = Var.create_safe("Fallback")._replace(
+    Fallback_component: Var[Component] = Var.create("Fallback")._replace(
         _var_type=Component
     )
 

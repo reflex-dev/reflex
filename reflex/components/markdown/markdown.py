@@ -22,20 +22,20 @@ from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import LiteralVar, Var
 
 # Special vars used in the component map.
-_CHILDREN = Var.create_safe("children")
-_PROPS = Var.create_safe("...props")
-_PROPS_IN_TAG = Var.create_safe("{...props}")
-_MOCK_ARG = Var.create_safe("")
+_CHILDREN = Var.create("children")
+_PROPS = Var.create("...props")
+_PROPS_IN_TAG = Var.create("{...props}")
+_MOCK_ARG = Var.create("")
 
 # Special remark plugins.
-_REMARK_MATH = Var.create_safe("remarkMath")
-_REMARK_GFM = Var.create_safe("remarkGfm")
-_REMARK_UNWRAP_IMAGES = Var.create_safe("remarkUnwrapImages")
+_REMARK_MATH = Var.create("remarkMath")
+_REMARK_GFM = Var.create("remarkGfm")
+_REMARK_UNWRAP_IMAGES = Var.create("remarkUnwrapImages")
 _REMARK_PLUGINS = LiteralVar.create([_REMARK_MATH, _REMARK_GFM, _REMARK_UNWRAP_IMAGES])
 
 # Special rehype plugins.
-_REHYPE_KATEX = Var.create_safe("rehypeKatex")
-_REHYPE_RAW = Var.create_safe("rehypeRaw")
+_REHYPE_KATEX = Var.create("rehypeKatex")
+_REHYPE_RAW = Var.create("rehypeRaw")
 _REHYPE_PLUGINS = LiteralVar.create([_REHYPE_KATEX, _REHYPE_RAW])
 
 # These tags do NOT get props passed to them
@@ -204,7 +204,7 @@ class Markdown(Component):
         # If the children are set as a prop, don't pass them as children.
         children_prop = props.pop("children", None)
         if children_prop is not None:
-            special_props.add(Var.create_safe(f"children={{{str(children_prop)}}}"))
+            special_props.add(Var.create(f"children={{{str(children_prop)}}}"))
             children = []
         # Get the component.
         component = self.component_map[tag](*children, **props).set(
@@ -231,14 +231,14 @@ class Markdown(Component):
             The formatted component map.
         """
         components = {
-            tag: Var.create_safe(
+            tag: Var.create(
                 f"(({{node, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => ({self.format_component(tag)}))"
             )
             for tag in self.component_map
         }
 
         # Separate out inline code and code blocks.
-        components["code"] = Var.create_safe(
+        components["code"] = Var.create(
             f"""(({{node, inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
     const match = (className || '').match(/language-(?<lang>.*)/);
     const language = match ? match[1] : '';
@@ -255,7 +255,7 @@ class Markdown(Component):
     return inline ? (
         {self.format_component("code")}
     ) : (
-        {self.format_component("codeblock", language=Var.create_safe("language"))}
+        {self.format_component("codeblock", language=Var.create("language"))}
     );
       }})""".replace("\n", " ")
         )
@@ -295,7 +295,7 @@ class Markdown(Component):
             .add_props(
                 remark_plugins=_REMARK_PLUGINS,
                 rehype_plugins=_REHYPE_PLUGINS,
-                components=Var.create_safe(f"{self._get_component_map_name()}()"),
+                components=Var.create(f"{self._get_component_map_name()}()"),
             )
             .remove_props("componentMap", "componentMapHash")
         )

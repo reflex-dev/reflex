@@ -22,7 +22,7 @@ LiteralPosition = Literal[
     "bottom-center",
     "bottom-right",
 ]
-toast_ref = Var.create_safe("refs['__toast']")
+toast_ref = Var.create("refs['__toast']")
 
 class ToastAction(Base):
     label: str

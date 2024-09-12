@@ -32,7 +32,7 @@ class FunctionVar(Var[Callable]):
         """
         return ArgsFunctionOperation.create(
             ("...args",),
-            VarOperationCall.create(self, *args, Var.create_safe("...args")),
+            VarOperationCall.create(self, *args, Var.create("...args")),
         )
 
     def call(self, *args: Var | Any) -> VarOperationCall:
