@@ -17,8 +17,6 @@ from . import utils
 
 def ClientSide():
     """App for testing client-side state."""
-    import reflex_chakra as rc
-
     import reflex as rx
 
     class ClientSideState(rx.State):
@@ -72,18 +70,18 @@ def ClientSide():
 
     def index():
         return rx.fragment(
-            rc.input(
+            rx.input(
                 value=ClientSideState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rc.input(
+            rx.input(
                 placeholder="state var",
                 value=ClientSideState.state_var,
                 on_change=ClientSideState.set_state_var,  # type: ignore
                 id="state_var",
             ),
-            rc.input(
+            rx.input(
                 placeholder="input value",
                 value=ClientSideState.input_value,
                 on_change=ClientSideState.set_input_value,  # type: ignore
@@ -313,7 +311,6 @@ async def test_client_side_state(
     # no cookies should be set yet!
     assert not driver.get_cookies()
     local_storage_items = local_storage.items()
-    local_storage_items.pop("chakra-ui-color-mode", None)
     local_storage_items.pop("last_compiled_time", None)
     assert not local_storage_items
 
@@ -429,7 +426,6 @@ async def test_client_side_state(
         assert f"{sub_state_name}.c3" not in cookie_info_map(driver)
 
     local_storage_items = local_storage.items()
-    local_storage_items.pop("chakra-ui-color-mode", None)
     local_storage_items.pop("last_compiled_time", None)
     assert local_storage_items.pop(f"{sub_state_name}.l1") == "l1 value"
     assert local_storage_items.pop(f"{sub_state_name}.l2") == "l2 value"

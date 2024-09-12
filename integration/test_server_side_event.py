@@ -11,8 +11,6 @@ from reflex.testing import AppHarness
 
 def ServerSideEvent():
     """App with inputs set via event handlers and set_value."""
-    import reflex_chakra as rc
-
     import reflex as rx
 
     class SSState(rx.State):
@@ -41,12 +39,12 @@ def ServerSideEvent():
     @app.add_page
     def index():
         return rx.fragment(
-            rc.input(
+            rx.input(
                 id="token", value=SSState.router.session.client_token, is_read_only=True
             ),
-            rc.input(default_value="a", id="a"),
-            rc.input(default_value="b", id="b"),
-            rc.input(default_value="c", id="c"),
+            rx.input(default_value="a", id="a"),
+            rx.input(default_value="b", id="b"),
+            rx.input(default_value="c", id="c"),
             rx.button(
                 "Clear Immediate",
                 id="clear_immediate",

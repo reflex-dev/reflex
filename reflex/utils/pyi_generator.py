@@ -903,7 +903,13 @@ class PyiGenerator:
             # construct the import statement and handle special cases for aliases
             sub_mod_attrs_imports = [
                 f"from .{path} import {mod if not isinstance(mod, tuple) else mod[0]} as {mod if not isinstance(mod, tuple) else mod[1]}"
-                + ("  # type: ignore" if mod in pyright_ignore_imports else "")
+                + (
+                    "  # type: ignore"
+                    if mod in pyright_ignore_imports
+                    else "  # noqa"  # ignore ruff formatting here for cases like rx.list.
+                    if isinstance(mod, tuple)
+                    else ""
+                )
                 for mod, path in sub_mod_attrs.items()
             ]
             sub_mod_attrs_imports.append("")

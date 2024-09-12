@@ -27,8 +27,6 @@ def TailwindApp(
     """
     from pathlib import Path
 
-    import reflex_chakra as rc
-
     import reflex as rx
 
     class UnusedState(rx.State):
@@ -36,7 +34,7 @@ def TailwindApp(
 
     def index():
         return rx.el.div(
-            rc.text(paragraph_text, class_name=paragraph_class_name),
+            rx.text(paragraph_text, class_name=paragraph_class_name),
             rx.el.p(paragraph_text, class_name=paragraph_class_name),
             rx.text(paragraph_text, as_="p", class_name=paragraph_class_name),
             rx.el.div("Test external stylesheet", class_name="external"),

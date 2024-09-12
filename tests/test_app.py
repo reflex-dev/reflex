@@ -13,7 +13,6 @@ from typing import Generator, List, Tuple, Type
 from unittest.mock import AsyncMock
 
 import pytest
-import reflex_chakra as rc
 import sqlmodel
 from fastapi import FastAPI, UploadFile
 from starlette_admin.auth import AuthProvider
@@ -1311,13 +1310,13 @@ def test_app_wrap_priority(compilable_app: tuple[App, Path]):
         tag = "Fragment1"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(99, "Box"): rc.box()}
+            return {(99, "Box"): rx.box()}
 
     class Fragment2(Component):
         tag = "Fragment2"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(50, "Text"): rc.text()}
+            return {(50, "Text"): rx.text()}
 
     class Fragment3(Component):
         tag = "Fragment3"
@@ -1337,19 +1336,17 @@ def test_app_wrap_priority(compilable_app: tuple[App, Path]):
     assert (
         "function AppWrap({children}) {"
         "return ("
-        "<Box>"
-        "<ChakraProvider theme={extendTheme(theme)}>"
-        "<ChakraColorModeProvider>"
-        "<Text>"
+        "<RadixThemesBox>"
+        '<RadixThemesText as={"p"}>'
+        "<RadixThemesColorModeProvider>"
         "<Fragment2>"
         "<Fragment>"
         "{children}"
         "</Fragment>"
         "</Fragment2>"
-        "</Text>"
-        "</ChakraColorModeProvider>"
-        "</ChakraProvider>"
-        "</Box>"
+        "</RadixThemesColorModeProvider>"
+        "</RadixThemesText>"
+        "</RadixThemesBox>"
         ")"
         "}"
     ) in "".join(app_js_lines)

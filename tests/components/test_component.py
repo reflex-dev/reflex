@@ -2,8 +2,6 @@ from contextlib import nullcontext
 from typing import Any, Dict, List, Optional, Type, Union
 
 import pytest
-import reflex_chakra as rc
-from reflex_chakra.components.layout.box import Box
 
 import reflex as rx
 from reflex.base import Base
@@ -16,6 +14,7 @@ from reflex.components.component import (
     StatefulComponent,
     custom_component,
 )
+from reflex.components.radix.themes.layout.box import Box
 from reflex.constants import EventTriggers
 from reflex.event import EventChain, EventHandler, parse_args_spec
 from reflex.ivars.base import ImmutableVar, LiteralVar
@@ -1114,8 +1113,8 @@ def test_component_with_only_valid_children(fixture, request):
     [
         (rx.text("hi"), '<RadixThemesText as={"p"}>\n  {"hi"}\n</RadixThemesText>'),
         (
-            rx.box(rc.heading("test", size="md")),
-            '<RadixThemesBox>\n  <Heading size={"md"}>\n  {"test"}\n</Heading>\n</RadixThemesBox>',
+            rx.box(rx.heading("test", size="3")),
+            '<RadixThemesBox>\n  <RadixThemesHeading size={"3"}>\n  {"test"}\n</RadixThemesHeading>\n</RadixThemesBox>',
         ),
     ],
 )
