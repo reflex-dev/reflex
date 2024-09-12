@@ -247,8 +247,8 @@ class Var(Generic[VAR_TYPE]):
             _var_data=_var_data,
         )
 
-    @deprecated("Use `.create()` instead.")
     @classmethod
+    @deprecated("Use `.create()` instead.")
     def create_safe(
         cls,
         value: Any,
