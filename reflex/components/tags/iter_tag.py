@@ -64,7 +64,7 @@ class IterTag(Tag):
             The index var.
         """
         return Var(
-            _var_name=self.index_var_name,
+            _js_expr=self.index_var_name,
             _var_type=int,
         ).guess_type()
 
@@ -77,7 +77,7 @@ class IterTag(Tag):
             The arg var.
         """
         return Var(
-            _var_name=self.arg_var_name,
+            _js_expr=self.arg_var_name,
             _var_type=self.get_iterable_var_type(),
         ).guess_type()
 
@@ -90,7 +90,7 @@ class IterTag(Tag):
             The index var.
         """
         return Var(
-            _var_name=self.index_var_name,
+            _js_expr=self.index_var_name,
             _var_type=int,
         ).guess_type()
 
@@ -103,7 +103,7 @@ class IterTag(Tag):
             The arg var.
         """
         return Var(
-            _var_name=self.arg_var_name,
+            _js_expr=self.arg_var_name,
             _var_type=self.get_iterable_var_type(),
         ).guess_type()
 

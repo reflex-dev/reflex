@@ -32,7 +32,7 @@ class FunctionVar(Var[Callable]):
         """
         return ArgsFunctionOperation.create(
             ("...args",),
-            VarOperationCall.create(self, *args, Var.create("...args")),
+            VarOperationCall.create(self, *args, Var(_js_expr="...args")),
         )
 
     def call(self, *args: Var | Any) -> VarOperationCall:
@@ -67,7 +67,7 @@ class FunctionStringVar(FunctionVar):
             The function var.
         """
         return cls(
-            _var_name=func,
+            _js_expr=func,
             _var_type=_var_type,
             _var_data=_var_data,
         )
@@ -125,7 +125,7 @@ class VarOperationCall(CachedVarOperation, Var):
             The function call var.
         """
         return cls(
-            _var_name="",
+            _js_expr="",
             _var_type=_var_type,
             _var_data=_var_data,
             _func=func,
@@ -172,7 +172,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
             The function var.
         """
         return cls(
-            _var_name="",
+            _js_expr="",
             _var_type=_var_type,
             _var_data=_var_data,
             _args_names=args_names,

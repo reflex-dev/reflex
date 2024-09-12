@@ -447,7 +447,7 @@ class Component(BaseComponent, ABC):
                     not passed_types
                     and not types._issubclass(passed_type, expected_type, value)
                 ):
-                    value_name = value._var_name if isinstance(value, Var) else value
+                    value_name = value._js_expr if isinstance(value, Var) else value
                     raise TypeError(
                         f"Invalid var passed for prop {type(self).__name__}.{key}, expected type {expected_type}, got value {value_name} of type {passed_types or passed_type}."
                     )
@@ -671,7 +671,7 @@ class Component(BaseComponent, ABC):
             # Add ref to element if `id` is not None.
             ref = self.get_ref()
             if ref is not None:
-                props["ref"] = Var.create(ref)
+                props["ref"] = Var(_js_expr=ref)
         else:
             props = props.copy()
 
@@ -1047,7 +1047,7 @@ class Component(BaseComponent, ABC):
         if isinstance(self.style, dict) and self.style or isinstance(self.style, Var):
             vars.append(
                 Var(
-                    _var_name="style",
+                    _js_expr="style",
                     _var_type=str,
                     _var_data=VarData.merge(self.style._var_data),
                 )
@@ -1388,9 +1388,7 @@ class Component(BaseComponent, ABC):
         """
         ref = self.get_ref()
         if ref is not None:
-            return (
-                f"const {ref} = useRef(null); {str(Var.create(ref).as_ref())} = {ref};"
-            )
+            return f"const {ref} = useRef(null); {str(Var(_js_expr=ref).as_ref())} = {ref};"
 
     def _get_vars_hooks(self) -> dict[str, None]:
         """Get the hooks required by vars referenced in this component.
@@ -1778,7 +1776,7 @@ class CustomComponent(Component):
         """
         return [
             Var(
-                _var_name=name,
+                _js_expr=name,
                 _var_type=(
                     prop._var_type if types._isinstance(prop, Var) else type(prop)
                 ),
@@ -2171,7 +2169,7 @@ class StatefulComponent(BaseComponent):
 
             # Store the memoized function name and hook code for this event trigger.
             trigger_memo[event_trigger] = (
-                Var.create(memo_name)._replace(
+                Var(_js_expr=memo_name)._replace(
                     _var_type=EventChain, merge_var_data=memo_var_data
                 ),
                 f"const {memo_name} = useCallback({rendered_chain}, [{', '.join(var_deps)}])",

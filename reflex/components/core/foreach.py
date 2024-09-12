@@ -10,7 +10,7 @@ from reflex.components.component import Component
 from reflex.components.tags import IterTag
 from reflex.constants import MemoizationMode
 from reflex.state import ComponentState
-from reflex.vars.base import Var
+from reflex.vars.base import LiteralVar, Var
 
 
 class ForeachVarError(TypeError):
@@ -51,7 +51,7 @@ class Foreach(Component):
             ForeachVarError: If the iterable is of type Any.
             TypeError: If the render function is a ComponentState.
         """
-        iterable = Var.create(iterable)
+        iterable = LiteralVar.create(iterable)
         if iterable._var_type == Any:
             raise ForeachVarError(
                 f"Could not foreach over var `{str(iterable)}` of type Any. "

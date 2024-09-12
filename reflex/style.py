@@ -26,22 +26,22 @@ color_mode_imports = {
 }
 
 
-def _color_mode_var(_var_name: str, _var_type: Type = str) -> Var:
-    """Create a Var that destructs the _var_name from ColorModeContext.
+def _color_mode_var(_js_expr: str, _var_type: Type = str) -> Var:
+    """Create a Var that destructs the _js_expr from ColorModeContext.
 
     Args:
-        _var_name: The name of the variable to get from ColorModeContext.
+        _js_expr: The name of the variable to get from ColorModeContext.
         _var_type: The type of the Var.
 
     Returns:
         The Var that resolves to the color mode.
     """
     return Var(
-        _var_name=_var_name,
+        _js_expr=_js_expr,
         _var_type=_var_type,
         _var_data=VarData(
             imports=color_mode_imports,
-            hooks={f"const {{ {_var_name} }} = useContext(ColorModeContext)": None},
+            hooks={f"const {{ {_js_expr} }} = useContext(ColorModeContext)": None},
         ),
     ).guess_type()
 
@@ -62,7 +62,7 @@ def set_color_mode(
         The EventChain Var that can be passed to an event trigger.
     """
     base_setter = _color_mode_var(
-        _var_name=constants.ColorMode.SET,
+        _js_expr=constants.ColorMode.SET,
         _var_type=EventChain,
     )
     if new_color_mode is None:
@@ -80,12 +80,12 @@ def set_color_mode(
 
 
 # Var resolves to the current color mode for the app ("light", "dark" or "system")
-color_mode = _color_mode_var(_var_name=constants.ColorMode.NAME)
+color_mode = _color_mode_var(_js_expr=constants.ColorMode.NAME)
 # Var resolves to the resolved color mode for the app ("light" or "dark")
-resolved_color_mode = _color_mode_var(_var_name=constants.ColorMode.RESOLVED_NAME)
+resolved_color_mode = _color_mode_var(_js_expr=constants.ColorMode.RESOLVED_NAME)
 # Var resolves to a function invocation that toggles the color mode
 toggle_color_mode = _color_mode_var(
-    _var_name=constants.ColorMode.TOGGLE,
+    _js_expr=constants.ColorMode.TOGGLE,
     _var_type=EventChain,
 )
 

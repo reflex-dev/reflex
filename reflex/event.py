@@ -191,7 +191,7 @@ class EventHandler(EventActionsMixin):
 
         # Get the function args.
         fn_args = inspect.getfullargspec(self.fn).args[1:]
-        fn_args = (Var.create(arg) for arg in fn_args)
+        fn_args = (Var(_js_expr=arg) for arg in fn_args)
 
         # Construct the payload.
         values = []
@@ -269,7 +269,7 @@ class EventSpec(EventActionsMixin):
 
         # Get the remaining unfilled function args.
         fn_args = inspect.getfullargspec(self.handler.fn).args[1 + len(self.args) :]
-        fn_args = (Var.create(arg) for arg in fn_args)
+        fn_args = (Var(_js_expr=arg) for arg in fn_args)
 
         # Construct the payload.
         values = []
@@ -393,15 +393,15 @@ class FileUpload(Base):
         upload_id = self.upload_id or DEFAULT_UPLOAD_ID
         spec_args = [
             (
-                Var.create("files"),
+                Var(_js_expr="files"),
                 Var(
-                    _var_name="filesById",
+                    _js_expr="filesById",
                     _var_type=Dict[str, Any],
                     _var_data=VarData.merge(upload_files_context_var_data),
                 ).to(ObjectVar)[LiteralVar.create(upload_id)],
             ),
             (
-                Var.create("upload_id"),
+                Var(_js_expr="upload_id"),
                 LiteralVar.create(upload_id),
             ),
         ]
@@ -430,7 +430,7 @@ class FileUpload(Base):
             formatted_chain = str(format.format_prop(on_upload_progress_chain))
             spec_args.append(
                 (
-                    Var.create("on_upload_progress"),
+                    Var(_js_expr="on_upload_progress"),
                     FunctionStringVar(
                         formatted_chain.strip("{}"),
                     ).to(FunctionVar, EventChain),
@@ -470,7 +470,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
         handler=EventHandler(fn=fn),
         args=tuple(
             (
-                Var.create(k),
+                Var(_js_expr=k),
                 LiteralVar.create(v),
             )
             for k, v in kwargs.items()
@@ -998,7 +998,7 @@ def fix_events(
             e = e()
         assert isinstance(e, EventSpec), f"Unexpected event type, {type(e)}."
         name = format.format_event_handler(e.handler)
-        payload = {k._var_name: v._decode() for k, v in e.args}  # type: ignore
+        payload = {k._js_expr: v._decode() for k, v in e.args}  # type: ignore
 
         # Filter router_data to reduce payload size
         event_router_data = {

@@ -31,7 +31,7 @@ def cancel_upload(upload_id: str) -> EventSpec: ...
 def get_upload_dir() -> Path: ...
 
 uploaded_files_url_prefix = Var(
-    _var_name="getBackendURL(env.UPLOAD)",
+    _js_expr="getBackendURL(env.UPLOAD)",
     _var_data=VarData(
         imports={
             f"/{Dirs.STATE_PATH}": "getBackendURL",

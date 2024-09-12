@@ -268,7 +268,7 @@ def test_base_class_vars(test_state):
             continue
         prop = getattr(cls, field)
         assert isinstance(prop, Var)
-        assert prop._var_name.split(".")[-1] == field
+        assert prop._js_expr.split(".")[-1] == field
 
     assert cls.num1._var_type == int
     assert cls.num2._var_type == float
@@ -282,7 +282,7 @@ def test_computed_class_var(test_state):
         test_state: A state.
     """
     cls = type(test_state)
-    vars = [(prop._var_name, prop._var_type) for prop in cls.computed_vars.values()]
+    vars = [(prop._js_expr, prop._var_type) for prop in cls.computed_vars.values()]
     assert ("sum", float) in vars
     assert ("upper", str) in vars
 
@@ -517,9 +517,9 @@ def test_set_class_var():
     """Test setting the var of a class."""
     with pytest.raises(AttributeError):
         TestState.num3  # type: ignore
-    TestState._set_var(Var(_var_name="num3", _var_type=int)._var_set_state(TestState))
+    TestState._set_var(Var(_js_expr="num3", _var_type=int)._var_set_state(TestState))
     var = TestState.num3  # type: ignore
-    assert var._var_name == TestState.get_full_name() + ".num3"
+    assert var._js_expr == TestState.get_full_name() + ".num3"
     assert var._var_type == int
     assert var._var_state == TestState.get_full_name()
 

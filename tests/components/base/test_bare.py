@@ -3,7 +3,7 @@ import pytest
 from reflex.components.base.bare import Bare
 from reflex.vars.base import Var
 
-STATE_VAR = Var.create("default_state.name")
+STATE_VAR = Var(_js_expr="default_state.name")
 
 
 @pytest.mark.parametrize(

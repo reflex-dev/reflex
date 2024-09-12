@@ -187,7 +187,7 @@ class Match(MemoizationLeaf):
             if not types._issubclass(type(case[-1]), return_type):
                 raise MatchTypeError(
                     f"Match cases should have the same return types. Case {index} with return "
-                    f"value `{case[-1]._var_name if isinstance(case[-1], Var) else textwrap.shorten(str(case[-1]), width=250)}`"
+                    f"value `{case[-1]._js_expr if isinstance(case[-1], Var) else textwrap.shorten(str(case[-1]), width=250)}`"
                     f" of type {type(case[-1])!r} is not {return_type}"
                 )
 
@@ -233,7 +233,7 @@ class Match(MemoizationLeaf):
             raise ValueError("Return types of match cases should be Vars.")
 
         return Var(
-            _var_name=format.format_match(
+            _js_expr=format.format_match(
                 cond=str(match_cond_var),
                 match_cases=match_cases,
                 default=default,  # type: ignore

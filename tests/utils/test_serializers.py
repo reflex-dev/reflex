@@ -154,16 +154,16 @@ class BaseSubclass(Base):
             '({ ["ts"] : "1 day, 0:00:01.000001" })',
         ),
         (
-            [1, LiteralVar.create("hi"), Var.create("bye")],
+            [1, LiteralVar.create("hi"), Var(_js_expr="bye")],
             '[1, "hi", bye]',
         ),
         (
-            (1, LiteralVar.create("hi"), Var.create("bye")),
+            (1, LiteralVar.create("hi"), Var(_js_expr="bye")),
             '[1, "hi", bye]',
         ),
         ({1: 2, 3: 4}, "({ [1] : 2, [3] : 4 })"),
         (
-            {1: LiteralVar.create("hi"), 3: Var.create("bye")},
+            {1: LiteralVar.create("hi"), 3: Var(_js_expr="bye")},
             '({ [1] : "hi", [3] : bye })',
         ),
         (datetime.datetime(2021, 1, 1, 1, 1, 1, 1), "2021-01-01 01:01:01.000001"),

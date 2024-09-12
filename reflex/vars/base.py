@@ -81,7 +81,7 @@ class Var(Generic[VAR_TYPE]):
     """Base class for immutable vars."""
 
     # The name of the var.
-    _var_name: str = dataclasses.field()
+    _js_expr: str = dataclasses.field()
 
     # The type of the var.
     _var_type: types.GenericType = dataclasses.field(default=Any)
@@ -95,7 +95,7 @@ class Var(Generic[VAR_TYPE]):
         Returns:
             The name of the var.
         """
-        return self._var_name
+        return self._js_expr
 
     @property
     def _var_is_local(self) -> bool:
@@ -105,6 +105,16 @@ class Var(Generic[VAR_TYPE]):
             False
         """
         return False
+
+    @property
+    @deprecated("Use `_js_expr` instead.")
+    def _var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return self._js_expr
 
     @property
     def _var_is_string(self) -> bool:
@@ -118,11 +128,11 @@ class Var(Generic[VAR_TYPE]):
     def __post_init__(self):
         """Post-initialize the var."""
         # Decode any inline Var markup and apply it to the instance
-        _var_data, _var_name = _decode_var_immutable(self._var_name)
+        _var_data, _js_expr = _decode_var_immutable(self._js_expr)
 
-        if _var_data or _var_name != self._var_name:
+        if _var_data or _js_expr != self._js_expr:
             self.__init__(
-                _var_name=_var_name,
+                _js_expr=_js_expr,
                 _var_type=self._var_type,
                 _var_data=VarData.merge(self._var_data, _var_data),
             )
@@ -133,7 +143,7 @@ class Var(Generic[VAR_TYPE]):
         Returns:
             The hash of the var.
         """
-        return hash((self._var_name, self._var_type, self._var_data))
+        return hash((self._js_expr, self._var_type, self._var_data))
 
     def _get_all_var_data(self) -> VarData | None:
         """Get all VarData associated with the Var.
@@ -153,7 +163,7 @@ class Var(Generic[VAR_TYPE]):
             Whether the vars are equal.
         """
         return (
-            self._var_name == other._var_name
+            self._js_expr == other._js_expr
             and self._var_type == other._var_type
             and self._get_all_var_data() == other._get_all_var_data()
         )
@@ -242,7 +252,7 @@ class Var(Generic[VAR_TYPE]):
         name = name if isinstance(name, str) else format.json_dumps(name)
 
         return cls(
-            _var_name=name,
+            _js_expr=name,
             _var_type=type_,
             _var_data=_var_data,
         )
@@ -283,7 +293,7 @@ class Var(Generic[VAR_TYPE]):
         _global_vars[hashed_var] = self
 
         # Encode the _var_data into the formatted output for tracking purposes.
-        return f"{constants.REFLEX_VAR_OPENING_TAG}{hashed_var}{constants.REFLEX_VAR_CLOSING_TAG}{self._var_name}"
+        return f"{constants.REFLEX_VAR_OPENING_TAG}{hashed_var}{constants.REFLEX_VAR_CLOSING_TAG}{self._js_expr}"
 
     @overload
     def to(self, output: Type[StringVar]) -> ToStringOperation: ...
@@ -537,7 +547,7 @@ class Var(Generic[VAR_TYPE]):
         Returns:
             The name of the setter function.
         """
-        var_name_parts = self._var_name.split(".")
+        var_name_parts = self._js_expr.split(".")
         setter = constants.SETTER_PREFIX + var_name_parts[-1]
         var_data = self._get_all_var_data()
         if var_data is None:
@@ -552,7 +562,7 @@ class Var(Generic[VAR_TYPE]):
         Returns:
             A function that that creates a setter for the var.
         """
-        actual_name = self._var_name.split(".")[-1]
+        actual_name = self._js_expr.split(".")[-1]
 
         def setter(state: BaseState, value: Any):
             """Get the setter for the var.
@@ -567,7 +577,7 @@ class Var(Generic[VAR_TYPE]):
                     setattr(state, actual_name, value)
                 except ValueError:
                     console.debug(
-                        f"{type(state).__name__}.{self._var_name}: Failed conversion of {value} to '{self._var_type.__name__}'. Value not set.",
+                        f"{type(state).__name__}.{self._js_expr}: Failed conversion of {value} to '{self._var_type.__name__}'. Value not set.",
                     )
             else:
                 setattr(state, actual_name, value)
@@ -705,7 +715,7 @@ class Var(Generic[VAR_TYPE]):
         from .object import ObjectVar
 
         refs = Var(
-            _var_name="refs",
+            _js_expr="refs",
             _var_data=VarData(
                 imports={
                     f"/{constants.Dirs.STATE_PATH}": [imports.ImportVar(tag="refs")]
@@ -1007,12 +1017,12 @@ class LiteralVar(Var):
             sig = inspect.signature(value.args_spec)  # type: ignore
             if sig.parameters:
                 arg_def = tuple((f"_{p}" for p in sig.parameters))
-                arg_def_expr = LiteralVar.create([Var.create(arg) for arg in arg_def])
+                arg_def_expr = LiteralVar.create([Var(_js_expr=arg) for arg in arg_def])
             else:
                 # add a default argument for addEvents if none were specified in value.args_spec
                 # used to trigger the preventDefault() on the event.
                 arg_def = ("...args",)
-                arg_def_expr = Var.create("args")
+                arg_def_expr = Var(_js_expr="args")
 
             return ArgsFunctionOperation.create(
                 arg_def,
@@ -1209,7 +1219,7 @@ class CachedVarOperation:
 
     def __post_init__(self):
         """Post-initialize the CachedVarOperation."""
-        object.__delattr__(self, "_var_name")
+        object.__delattr__(self, "_js_expr")
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -1220,7 +1230,7 @@ class CachedVarOperation:
         Returns:
             The attribute.
         """
-        if name == "_var_name":
+        if name == "_js_expr":
             return self._cached_var_name
 
         parent_classes = inspect.getmro(self.__class__)
@@ -1269,7 +1279,7 @@ class CachedVarOperation:
                 *[
                     getattr(self, field.name)
                     for field in dataclasses.fields(self)  # type: ignore
-                    if field.name not in ["_var_name", "_var_data", "_var_type"]
+                    if field.name not in ["_js_expr", "_var_data", "_var_type"]
                 ],
             )
         )
@@ -1348,10 +1358,10 @@ class ImmutableCallableVar(Var):
     """
 
     fn: Callable[..., Var] = dataclasses.field(
-        default_factory=lambda: lambda: Var(_var_name="undefined")
+        default_factory=lambda: lambda: Var(_js_expr="undefined")
     )
     original_var: Var = dataclasses.field(
-        default_factory=lambda: Var(_var_name="undefined")
+        default_factory=lambda: Var(_js_expr="undefined")
     )
 
     def __init__(self, fn: Callable[..., Var]):
@@ -1362,7 +1372,7 @@ class ImmutableCallableVar(Var):
         """
         original_var = fn()
         super(ImmutableCallableVar, self).__init__(
-            _var_name=original_var._var_name,
+            _js_expr=original_var._js_expr,
             _var_type=original_var._var_type,
             _var_data=VarData.merge(original_var._get_all_var_data()),
         )
@@ -1475,12 +1485,12 @@ class ImmutableComputedVar(Var[RETURN_TYPE]):
         hints = get_type_hints(fget)
         hint = hints.get("return", Any)
 
-        kwargs["_var_name"] = kwargs.pop("_var_name", fget.__name__)
+        kwargs["_js_expr"] = kwargs.pop("_js_expr", fget.__name__)
         kwargs["_var_type"] = kwargs.pop("_var_type", hint)
 
         Var.__init__(
             self,
-            _var_name=kwargs.pop("_var_name"),
+            _js_expr=kwargs.pop("_js_expr"),
             _var_type=kwargs.pop("_var_type"),
             _var_data=kwargs.pop("_var_data", None),
         )
@@ -1511,7 +1521,7 @@ class ImmutableComputedVar(Var[RETURN_TYPE]):
         object.__setattr__(
             self,
             "_static_deps",
-            {dep._var_name if isinstance(dep, Var) else dep for dep in deps},
+            {dep._js_expr if isinstance(dep, Var) else dep for dep in deps},
         )
         object.__setattr__(self, "_auto_deps", auto_deps)
 
@@ -1539,7 +1549,7 @@ class ImmutableComputedVar(Var[RETURN_TYPE]):
             auto_deps=kwargs.pop("auto_deps", self._auto_deps),
             interval=kwargs.pop("interval", self._update_interval),
             backend=kwargs.pop("backend", self._backend),
-            _var_name=kwargs.pop("_var_name", self._var_name),
+            _js_expr=kwargs.pop("_js_expr", self._js_expr),
             _var_type=kwargs.pop("_var_type", self._var_type),
             _var_data=kwargs.pop(
                 "_var_data", VarData.merge(self._var_data, merge_var_data)
@@ -1559,7 +1569,7 @@ class ImmutableComputedVar(Var[RETURN_TYPE]):
         Returns:
             An attribute name.
         """
-        return f"__cached_{self._var_name}"
+        return f"__cached_{self._js_expr}"
 
     @property
     def _last_updated_attr(self) -> str:
@@ -1568,7 +1578,7 @@ class ImmutableComputedVar(Var[RETURN_TYPE]):
         Returns:
             An attribute name.
         """
-        return f"__last_updated_{self._var_name}"
+        return f"__last_updated_{self._js_expr}"
 
     def needs_update(self, instance: BaseState) -> bool:
         """Check if the computed var needs to be updated.
@@ -1654,9 +1664,9 @@ class ImmutableComputedVar(Var[RETURN_TYPE]):
                 state_where_defined = state_where_defined.get_parent_state()
 
             return self._replace(
-                _var_name=format_state_name(state_where_defined.get_full_name())
+                _js_expr=format_state_name(state_where_defined.get_full_name())
                 + "."
-                + self._var_name,
+                + self._js_expr,
                 merge_var_data=VarData.from_state(state_where_defined),
             ).guess_type()
 
@@ -1941,7 +1951,7 @@ class CustomVarOperationReturn(Var[RETURN]):
             The CustomVarOperation.
         """
         return CustomVarOperationReturn(
-            _var_name=js_expression,
+            _js_expr=js_expression,
             _var_type=_var_type or Any,
             _var_data=_var_data,
         )
@@ -2020,7 +2030,7 @@ class CustomVarOperation(CachedVarOperation, Var[T]):
             The CustomVarOperation.
         """
         return CustomVarOperation(
-            _var_name="",
+            _js_expr="",
             _var_type=return_var._var_type,
             _var_data=_var_data,
             _args=args,
@@ -2057,7 +2067,7 @@ class LiteralNoneVar(LiteralVar, NoneVar):
             The var.
         """
         return LiteralNoneVar(
-            _var_name="null",
+            _js_expr="null",
             _var_type=None,
             _var_data=_var_data,
         )
@@ -2100,7 +2110,7 @@ class ToNoneOperation(CachedVarOperation, NoneVar):
             The ToNoneOperation.
         """
         return ToNoneOperation(
-            _var_name="",
+            _js_expr="",
             _var_type=None,
             _var_data=_var_data,
             _original_var=var,
@@ -2136,7 +2146,7 @@ class StateOperation(CachedVarOperation, Var):
         Returns:
             The attribute.
         """
-        if name == "_var_name":
+        if name == "_js_expr":
             return self._cached_var_name
 
         return getattr(self._field, name)
@@ -2159,7 +2169,7 @@ class StateOperation(CachedVarOperation, Var):
             The DotOperation.
         """
         return StateOperation(
-            _var_name="",
+            _js_expr="",
             _var_type=field._var_type,
             _var_data=_var_data,
             _state_name=state_name,
@@ -2183,7 +2193,7 @@ class ToOperation:
 
     def __post_init__(self):
         """Post initialization."""
-        object.__delattr__(self, "_var_name")
+        object.__delattr__(self, "_js_expr")
 
     def __hash__(self) -> int:
         """Calculate the hash value of the object.
@@ -2222,7 +2232,7 @@ class ToOperation:
             The ToOperation.
         """
         return cls(
-            _var_name="",  # type: ignore
+            _js_expr="",  # type: ignore
             _var_data=_var_data,  # type: ignore
             _var_type=_var_type or cls._default_var_type,  # type: ignore
             _original=value,  # type: ignore
@@ -2251,7 +2261,7 @@ def get_uuid_string_var() -> Var:
     )
 
     return Var(
-        _var_name=unique_uuid_var,
+        _js_expr=unique_uuid_var,
         _var_type=str,
         _var_data=unique_uuid_var_data,
     )
@@ -2498,7 +2508,7 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
 # These names were changed in reflex 0.3.0
 REPLACED_NAMES = {
     "full_name": "_var_full_name",
-    "name": "_var_name",
+    "name": "_js_expr",
     "state": "_var_data.state",
     "type_": "_var_type",
     "is_local": "_var_is_local",

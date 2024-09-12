@@ -22,8 +22,8 @@ def const(name, value) -> Var:
         The constant Var.
     """
     if isinstance(name, list):
-        return Var.create(f"const [{', '.join(name)}] = {value}")
-    return Var.create(f"const {name} = {value}")
+        return Var(_js_expr=f"const [{', '.join(name)}] = {value}")
+    return Var(_js_expr=f"const {name} = {value}")
 
 
 def useCallback(func, deps) -> Var:
@@ -36,8 +36,8 @@ def useCallback(func, deps) -> Var:
     Returns:
         The useCallback hook.
     """
-    return Var.create(
-        f"useCallback({func}, {deps})" if deps else f"useCallback({func})",
+    return Var(
+        _js_expr=f"useCallback({func}, {deps})" if deps else f"useCallback({func})",
         _var_data=VarData(imports=_compose_react_imports(["useCallback"])),
     )
 
@@ -51,8 +51,8 @@ def useContext(context) -> Var:
     Returns:
         The useContext hook.
     """
-    return Var.create(
-        f"useContext({context})",
+    return Var(
+        _js_expr=f"useContext({context})",
         _var_data=VarData(imports=_compose_react_imports(["useContext"])),
     )
 
@@ -66,8 +66,8 @@ def useRef(default) -> Var:
     Returns:
         The useRef hook.
     """
-    return Var.create(
-        f"useRef({default})",
+    return Var(
+        _js_expr=f"useRef({default})",
         _var_data=VarData(imports=_compose_react_imports(["useRef"])),
     )
 
@@ -84,8 +84,8 @@ def useState(var_name, default=None) -> Var:
     """
     return const(
         [var_name, f"set{var_name.capitalize()}"],
-        Var.create(
-            f"useState({default})",
+        Var(
+            _js_expr=f"useState({default})",
             _var_data=VarData(imports=_compose_react_imports(["useState"])),
         ),
     )

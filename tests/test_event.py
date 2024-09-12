@@ -18,7 +18,7 @@ def make_var(value) -> Var:
     Returns:
         The var.
     """
-    return Var.create(value)
+    return Var(_js_expr=value)
 
 
 def test_create_event():
@@ -54,10 +54,10 @@ def test_call_event_handler():
 
     # Test passing vars as args.
     assert event_spec.handler == handler
-    assert event_spec.args[0][0].equals(Var.create("arg1"))
-    assert event_spec.args[0][1].equals(Var.create("first"))
-    assert event_spec.args[1][0].equals(Var.create("arg2"))
-    assert event_spec.args[1][1].equals(Var.create("second"))
+    assert event_spec.args[0][0].equals(Var(_js_expr="arg1"))
+    assert event_spec.args[0][1].equals(Var(_js_expr="first"))
+    assert event_spec.args[1][0].equals(Var(_js_expr="arg2"))
+    assert event_spec.args[1][1].equals(Var(_js_expr="second"))
     assert (
         format.format_event(event_spec)
         == 'Event("test_fn_with_args", {arg1:first,arg2:second})'
@@ -79,9 +79,9 @@ def test_call_event_handler():
     )
 
     assert event_spec.handler == handler
-    assert event_spec.args[0][0].equals(Var.create("arg1"))
+    assert event_spec.args[0][0].equals(Var(_js_expr="arg1"))
     assert event_spec.args[0][1].equals(LiteralVar.create(first))
-    assert event_spec.args[1][0].equals(Var.create("arg2"))
+    assert event_spec.args[1][0].equals(Var(_js_expr="arg2"))
     assert event_spec.args[1][1].equals(LiteralVar.create(second))
 
     handler = EventHandler(fn=test_fn_with_args)
@@ -106,17 +106,17 @@ def test_call_event_handler_partial():
 
     assert event_spec.handler == handler
     assert len(event_spec.args) == 1
-    assert event_spec.args[0][0].equals(Var.create("arg1"))
-    assert event_spec.args[0][1].equals(Var.create("first"))
+    assert event_spec.args[0][0].equals(Var(_js_expr="arg1"))
+    assert event_spec.args[0][1].equals(Var(_js_expr="first"))
     assert format.format_event(event_spec) == 'Event("test_fn_with_args", {arg1:first})'
 
     assert event_spec2 is not event_spec
     assert event_spec2.handler == handler
     assert len(event_spec2.args) == 2
-    assert event_spec2.args[0][0].equals(Var.create("arg1"))
-    assert event_spec2.args[0][1].equals(Var.create("first"))
-    assert event_spec2.args[1][0].equals(Var.create("arg2"))
-    assert event_spec2.args[1][1].equals(Var.create("_a2"))
+    assert event_spec2.args[0][0].equals(Var(_js_expr="arg1"))
+    assert event_spec2.args[0][1].equals(Var(_js_expr="first"))
+    assert event_spec2.args[1][0].equals(Var(_js_expr="arg2"))
+    assert event_spec2.args[1][1].equals(Var(_js_expr="_a2"))
     assert (
         format.format_event(event_spec2)
         == 'Event("test_fn_with_args", {arg1:first,arg2:_a2})'
@@ -168,7 +168,7 @@ def test_fix_events(arg1, arg2):
             'Event("_redirect", {path:"/path",external:false,replace:false})',
         ),
         (
-            (Var.create("path"), None, None),
+            (Var(_js_expr="path"), None, None),
             'Event("_redirect", {path:path,external:false,replace:false})',
         ),
         (
@@ -199,8 +199,8 @@ def test_event_redirect(input, output):
     assert spec.handler.fn.__qualname__ == "_redirect"
 
     # this asserts need comment about what it's testing (they fail with Var as input)
-    # assert spec.args[0][0].equals(Var.create("path"))
-    # assert spec.args[0][1].equals(Var.create("/path"))
+    # assert spec.args[0][0].equals(Var(_js_expr="path"))
+    # assert spec.args[0][1].equals(Var(_js_expr="/path"))
 
     assert format.format_event(spec) == output
 
@@ -210,10 +210,10 @@ def test_event_console_log():
     spec = event.console_log("message")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_console"
-    assert spec.args[0][0].equals(Var(_var_name="message", _var_type=str))
+    assert spec.args[0][0].equals(Var(_js_expr="message", _var_type=str))
     assert spec.args[0][1].equals(LiteralVar.create("message"))
     assert format.format_event(spec) == 'Event("_console", {message:"message"})'
-    spec = event.console_log(Var.create("message"))
+    spec = event.console_log(Var(_js_expr="message"))
     assert format.format_event(spec) == 'Event("_console", {message:message})'
 
 
@@ -222,10 +222,10 @@ def test_event_window_alert():
     spec = event.window_alert("message")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_alert"
-    assert spec.args[0][0].equals(Var(_var_name="message", _var_type=str))
+    assert spec.args[0][0].equals(Var(_js_expr="message", _var_type=str))
     assert spec.args[0][1].equals(LiteralVar.create("message"))
     assert format.format_event(spec) == 'Event("_alert", {message:"message"})'
-    spec = event.window_alert(Var.create("message"))
+    spec = event.window_alert(Var(_js_expr="message"))
     assert format.format_event(spec) == 'Event("_alert", {message:message})'
 
 
@@ -234,7 +234,7 @@ def test_set_focus():
     spec = event.set_focus("input1")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_set_focus"
-    assert spec.args[0][0].equals(Var.create("ref"))
+    assert spec.args[0][0].equals(Var(_js_expr="ref"))
     assert spec.args[0][1].equals(LiteralVar.create("ref_input1"))
     assert format.format_event(spec) == 'Event("_set_focus", {ref:"ref_input1"})'
     spec = event.set_focus("input1")
@@ -246,14 +246,14 @@ def test_set_value():
     spec = event.set_value("input1", "")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_set_value"
-    assert spec.args[0][0].equals(Var.create("ref"))
+    assert spec.args[0][0].equals(Var(_js_expr="ref"))
     assert spec.args[0][1].equals(LiteralVar.create("ref_input1"))
-    assert spec.args[1][0].equals(Var.create("value"))
+    assert spec.args[1][0].equals(Var(_js_expr="value"))
     assert spec.args[1][1].equals(LiteralVar.create(""))
     assert (
         format.format_event(spec) == 'Event("_set_value", {ref:"ref_input1",value:""})'
     )
-    spec = event.set_value("input1", Var.create("message"))
+    spec = event.set_value("input1", Var(_js_expr="message"))
     assert (
         format.format_event(spec)
         == 'Event("_set_value", {ref:"ref_input1",value:message})'
@@ -265,9 +265,9 @@ def test_remove_cookie():
     spec = event.remove_cookie("testkey")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_remove_cookie"
-    assert spec.args[0][0].equals(Var.create("key"))
+    assert spec.args[0][0].equals(Var(_js_expr="key"))
     assert spec.args[0][1].equals(LiteralVar.create("testkey"))
-    assert spec.args[1][0].equals(Var.create("options"))
+    assert spec.args[1][0].equals(Var(_js_expr="options"))
     assert spec.args[1][1].equals(LiteralVar.create({"path": "/"}))
     assert (
         format.format_event(spec)
@@ -286,9 +286,9 @@ def test_remove_cookie_with_options():
     spec = event.remove_cookie("testkey", options)
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_remove_cookie"
-    assert spec.args[0][0].equals(Var.create("key"))
+    assert spec.args[0][0].equals(Var(_js_expr="key"))
     assert spec.args[0][1].equals(LiteralVar.create("testkey"))
-    assert spec.args[1][0].equals(Var.create("options"))
+    assert spec.args[1][0].equals(Var(_js_expr="options"))
     assert spec.args[1][1].equals(LiteralVar.create(options))
     assert (
         format.format_event(spec)
@@ -310,7 +310,7 @@ def test_remove_local_storage():
     spec = event.remove_local_storage("testkey")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_remove_local_storage"
-    assert spec.args[0][0].equals(Var.create("key"))
+    assert spec.args[0][0].equals(Var(_js_expr="key"))
     assert spec.args[0][1].equals(LiteralVar.create("testkey"))
     assert (
         format.format_event(spec) == 'Event("_remove_local_storage", {key:"testkey"})'

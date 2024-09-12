@@ -53,7 +53,7 @@ def test_set_src_img(pil_image: Img):
         pil_image: The image to serialize.
     """
     image = Image.create(src=pil_image)
-    assert str(image.src._var_name) == '"' + serialize_image(pil_image) + '"'  # type: ignore
+    assert str(image.src._js_expr) == '"' + serialize_image(pil_image) + '"'  # type: ignore
 
 
 def test_render(pil_image: Img):

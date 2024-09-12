@@ -582,7 +582,7 @@ class LiteralStringVar(LiteralVar, StringVar):
                     # This is a global immutable var.
                     var = _global_vars[int(serialized_data)]
                     strings_and_vals.append(var)
-                    value = value[(end + len(var._var_name)) :]
+                    value = value[(end + len(var._js_expr)) :]
 
                 offset += end - start
 
@@ -601,7 +601,7 @@ class LiteralStringVar(LiteralVar, StringVar):
             )
 
         return LiteralStringVar(
-            _var_name=json.dumps(value),
+            _js_expr=json.dumps(value),
             _var_type=str,
             _var_data=_var_data,
             _var_value=value,
@@ -696,7 +696,7 @@ class ConcatVarOperation(CachedVarOperation, StringVar):
             The var.
         """
         return cls(
-            _var_name="",
+            _js_expr="",
             _var_type=str,
             _var_data=_var_data,
             _var_value=tuple(map(LiteralVar.create, value)),
@@ -1108,7 +1108,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE]):
 
             # get first argument type
             first_arg = Var(
-                _var_name=arg_name,
+                _js_expr=arg_name,
                 _var_type=first_arg_type,
             ).guess_type()
 
@@ -1176,7 +1176,7 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self._var_name))
+        return hash((self.__class__.__name__, self._js_expr))
 
     def json(self) -> str:
         """Get the JSON representation of the var.
@@ -1209,7 +1209,7 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
             The var.
         """
         return cls(
-            _var_name="",
+            _js_expr="",
             _var_type=figure_out_type(value) if _var_type is None else _var_type,
             _var_data=_var_data,
             _var_value=value,
@@ -1260,10 +1260,10 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
         start, end, step = self._start, self._stop, self._step
 
         normalized_start = (
-            LiteralVar.create(start) if start is not None else Var.create("undefined")
+            LiteralVar.create(start) if start is not None else Var(_js_expr="undefined")
         )
         normalized_end = (
-            LiteralVar.create(end) if end is not None else Var.create("undefined")
+            LiteralVar.create(end) if end is not None else Var(_js_expr="undefined")
         )
         if step is None:
             return f"{str(self._array)}.slice({str(normalized_start)}, {str(normalized_end)})"
@@ -1299,7 +1299,7 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
             The var.
         """
         return cls(
-            _var_name="",
+            _js_expr="",
             _var_type=array._var_type,
             _var_data=_var_data,
             _array=array,

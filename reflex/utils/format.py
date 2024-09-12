@@ -485,10 +485,10 @@ def format_event(event_spec: EventSpec) -> str:
         [
             ":".join(
                 (
-                    name._var_name,
+                    name._js_expr,
                     (
                         wrap(
-                            json.dumps(val._var_name).strip('"').replace("`", "\\`"),
+                            json.dumps(val._js_expr).strip('"').replace("`", "\\`"),
                             "`",
                         )
                         if val._var_is_string
@@ -789,6 +789,6 @@ def format_data_editor_cell(cell: Any):
     from reflex.vars.base import Var
 
     return {
-        "kind": Var.create("GridCellKind.Text"),
+        "kind": Var(_js_expr="GridCellKind.Text"),
         "data": cell,
     }

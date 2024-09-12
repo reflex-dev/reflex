@@ -480,8 +480,8 @@ class CodeBlock(Component):
         if "theme" not in props:
             # Default color scheme responds to global color mode.
             props["theme"] = color_mode_cond(
-                light=Var.create("oneLight"),
-                dark=Var.create("oneDark"),
+                light=Var(_js_expr="oneLight"),
+                dark=Var(_js_expr="oneDark"),
             )
 
         # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
@@ -534,7 +534,7 @@ class CodeBlock(Component):
         out = super()._render()
 
         theme = self.theme._replace(
-            _var_name=replace_quotes_with_camel_case(str(self.theme))
+            _js_expr=replace_quotes_with_camel_case(str(self.theme))
         )
 
         out.add_props(style=theme).remove_props("theme", "code").add_props(

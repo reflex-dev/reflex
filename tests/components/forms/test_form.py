@@ -6,7 +6,7 @@ from reflex.vars.base import Var
 def test_render_on_submit():
     """Test that on_submit event chain is rendered as a separate function."""
     submit_it = Var(
-        _var_name="submit_it",
+        _js_expr="submit_it",
         _var_type=EventChain,
     )
     f = Form.create(on_submit=submit_it)

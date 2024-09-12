@@ -34,11 +34,11 @@ from reflex.vars.sequence import (
 )
 
 test_vars = [
-    Var(_var_name="prop1", _var_type=int),
-    Var(_var_name="key", _var_type=str),
-    Var(_var_name="value", _var_type=str)._var_set_state("state"),
-    Var(_var_name="local", _var_type=str)._var_set_state("state"),
-    Var(_var_name="local2", _var_type=str),
+    Var(_js_expr="prop1", _var_type=int),
+    Var(_js_expr="key", _var_type=str),
+    Var(_js_expr="value", _var_type=str)._var_set_state("state"),
+    Var(_js_expr="local", _var_type=str)._var_set_state("state"),
+    Var(_js_expr="local2", _var_type=str),
 ]
 
 
@@ -214,14 +214,14 @@ def test_str(prop, expected):
 @pytest.mark.parametrize(
     "prop,expected",
     [
-        (Var(_var_name="p", _var_type=int), 0),
-        (Var(_var_name="p", _var_type=float), 0.0),
-        (Var(_var_name="p", _var_type=str), ""),
-        (Var(_var_name="p", _var_type=bool), False),
-        (Var(_var_name="p", _var_type=list), []),
-        (Var(_var_name="p", _var_type=dict), {}),
-        (Var(_var_name="p", _var_type=tuple), ()),
-        (Var(_var_name="p", _var_type=set), set()),
+        (Var(_js_expr="p", _var_type=int), 0),
+        (Var(_js_expr="p", _var_type=float), 0.0),
+        (Var(_js_expr="p", _var_type=str), ""),
+        (Var(_js_expr="p", _var_type=bool), False),
+        (Var(_js_expr="p", _var_type=list), []),
+        (Var(_js_expr="p", _var_type=dict), {}),
+        (Var(_js_expr="p", _var_type=tuple), ()),
+        (Var(_js_expr="p", _var_type=set), set()),
     ],
 )
 def test_default_value(prop, expected):
@@ -260,14 +260,14 @@ def test_get_setter(prop, expected):
 @pytest.mark.parametrize(
     "value,expected",
     [
-        (None, Var(_var_name="null", _var_type=None)),
-        (1, Var(_var_name="1", _var_type=int)),
-        ("key", Var(_var_name='"key"', _var_type=str)),
-        (3.14, Var(_var_name="3.14", _var_type=float)),
-        ([1, 2, 3], Var(_var_name="[1, 2, 3]", _var_type=List[int])),
+        (None, Var(_js_expr="null", _var_type=None)),
+        (1, Var(_js_expr="1", _var_type=int)),
+        ("key", Var(_js_expr='"key"', _var_type=str)),
+        (3.14, Var(_js_expr="3.14", _var_type=float)),
+        ([1, 2, 3], Var(_js_expr="[1, 2, 3]", _var_type=List[int])),
         (
             {"a": 1, "b": 2},
-            Var(_var_name='({ ["a"] : 1, ["b"] : 2 })', _var_type=Dict[str, int]),
+            Var(_js_expr='({ ["a"] : 1, ["b"] : 2 })', _var_type=Dict[str, int]),
         ),
     ],
 )
@@ -325,20 +325,20 @@ def test_basic_operations(TestObj):
         == '({ ["a"] : 1, ["b"] : 2 })["a"]'
     )
     assert str(v("foo") == v("bar")) == '("foo" === "bar")'
-    assert str(Var.create("foo") == Var.create("bar")) == "(foo === bar)"
+    assert str(Var(_js_expr="foo") == Var(_js_expr="bar")) == "(foo === bar)"
     assert (
         str(LiteralVar.create("foo") == LiteralVar.create("bar")) == '("foo" === "bar")'
     )
-    print(Var(_var_name="foo").to(ObjectVar, TestObj)._var_set_state("state"))
+    print(Var(_js_expr="foo").to(ObjectVar, TestObj)._var_set_state("state"))
     assert (
         str(
-            Var(_var_name="foo").to(ObjectVar, TestObj)._var_set_state("state").bar
+            Var(_js_expr="foo").to(ObjectVar, TestObj)._var_set_state("state").bar
             == LiteralVar.create("bar")
         )
         == '(state.foo["bar"] === "bar")'
     )
     assert (
-        str(Var(_var_name="foo").to(ObjectVar, TestObj)._var_set_state("state").bar)
+        str(Var(_js_expr="foo").to(ObjectVar, TestObj)._var_set_state("state").bar)
         == 'state.foo["bar"]'
     )
     assert str(abs(LiteralNumberVar.create(1))) == "Math.abs(1)"
@@ -358,11 +358,11 @@ def test_basic_operations(TestObj):
         == '["1", "2", "3"].slice().reverse()'
     )
     assert (
-        str(Var(_var_name="foo")._var_set_state("state").to(list).reverse())
+        str(Var(_js_expr="foo")._var_set_state("state").to(list).reverse())
         == "state.foo.slice().reverse()"
     )
-    assert str(Var(_var_name="foo").to(list).reverse()) == "foo.slice().reverse()"
-    assert str(Var(_var_name="foo", _var_type=str).js_type()) == "(typeof(foo))"
+    assert str(Var(_js_expr="foo").to(list).reverse()) == "foo.slice().reverse()"
+    assert str(Var(_js_expr="foo", _var_type=str).js_type()) == "(typeof(foo))"
 
 
 @pytest.mark.parametrize(
@@ -372,17 +372,17 @@ def test_basic_operations(TestObj):
         (v(set([1, 2, 3])), "[1, 2, 3]"),
         (v(["1", "2", "3"]), '["1", "2", "3"]'),
         (
-            Var(_var_name="foo")._var_set_state("state").to(list),
+            Var(_js_expr="foo")._var_set_state("state").to(list),
             "state.foo",
         ),
-        (Var(_var_name="foo").to(list), "foo"),
+        (Var(_js_expr="foo").to(list), "foo"),
         (v((1, 2, 3)), "[1, 2, 3]"),
         (v(("1", "2", "3")), '["1", "2", "3"]'),
         (
-            Var(_var_name="foo")._var_set_state("state").to(tuple),
+            Var(_js_expr="foo")._var_set_state("state").to(tuple),
             "state.foo",
         ),
-        (Var(_var_name="foo").to(tuple), "foo"),
+        (Var(_js_expr="foo").to(tuple), "foo"),
     ],
 )
 def test_list_tuple_contains(var, expected):
@@ -390,8 +390,8 @@ def test_list_tuple_contains(var, expected):
     assert str(var.contains("1")) == f'{expected}.includes("1")'
     assert str(var.contains(v(1))) == f"{expected}.includes(1)"
     assert str(var.contains(v("1"))) == f'{expected}.includes("1")'
-    other_state_var = Var(_var_name="other", _var_type=str)._var_set_state("state")
-    other_var = Var(_var_name="other", _var_type=str)
+    other_state_var = Var(_js_expr="other", _var_type=str)._var_set_state("state")
+    other_var = Var(_js_expr="other", _var_type=str)
     assert str(var.contains(other_state_var)) == f"{expected}.includes(state.other)"
     assert str(var.contains(other_var)) == f"{expected}.includes(other)"
 
@@ -400,15 +400,15 @@ def test_list_tuple_contains(var, expected):
     "var, expected",
     [
         (v("123"), json.dumps("123")),
-        (Var(_var_name="foo")._var_set_state("state").to(str), "state.foo"),
-        (Var(_var_name="foo").to(str), "foo"),
+        (Var(_js_expr="foo")._var_set_state("state").to(str), "state.foo"),
+        (Var(_js_expr="foo").to(str), "foo"),
     ],
 )
 def test_str_contains(var, expected):
     assert str(var.contains("1")) == f'{expected}.includes("1")'
     assert str(var.contains(v("1"))) == f'{expected}.includes("1")'
-    other_state_var = Var(_var_name="other")._var_set_state("state").to(str)
-    other_var = Var(_var_name="other").to(str)
+    other_state_var = Var(_js_expr="other")._var_set_state("state").to(str)
+    other_var = Var(_js_expr="other").to(str)
     assert str(var.contains(other_state_var)) == f"{expected}.includes(state.other)"
     assert str(var.contains(other_var)) == f"{expected}.includes(other)"
     assert (
@@ -421,8 +421,8 @@ def test_str_contains(var, expected):
     "var, expected",
     [
         (v({"a": 1, "b": 2}), '({ ["a"] : 1, ["b"] : 2 })'),
-        (Var(_var_name="foo")._var_set_state("state").to(dict), "state.foo"),
-        (Var(_var_name="foo").to(dict), "foo"),
+        (Var(_js_expr="foo")._var_set_state("state").to(dict), "state.foo"),
+        (Var(_js_expr="foo").to(dict), "foo"),
     ],
 )
 def test_dict_contains(var, expected):
@@ -430,8 +430,8 @@ def test_dict_contains(var, expected):
     assert str(var.contains("1")) == f'{expected}.hasOwnProperty("1")'
     assert str(var.contains(v(1))) == f"{expected}.hasOwnProperty(1)"
     assert str(var.contains(v("1"))) == f'{expected}.hasOwnProperty("1")'
-    other_state_var = Var(_var_name="other")._var_set_state("state").to(str)
-    other_var = Var(_var_name="other").to(str)
+    other_state_var = Var(_js_expr="other")._var_set_state("state").to(str)
+    other_var = Var(_js_expr="other").to(str)
     assert (
         str(var.contains(other_state_var)) == f"{expected}.hasOwnProperty(state.other)"
     )
@@ -441,9 +441,9 @@ def test_dict_contains(var, expected):
 @pytest.mark.parametrize(
     "var",
     [
-        Var(_var_name="list", _var_type=List[int]).guess_type(),
-        Var(_var_name="tuple", _var_type=Tuple[int, int]).guess_type(),
-        Var(_var_name="str", _var_type=str).guess_type(),
+        Var(_js_expr="list", _var_type=List[int]).guess_type(),
+        Var(_js_expr="tuple", _var_type=Tuple[int, int]).guess_type(),
+        Var(_js_expr="str", _var_type=str).guess_type(),
     ],
 )
 def test_var_indexing_lists(var):
@@ -453,19 +453,19 @@ def test_var_indexing_lists(var):
         var : The str, list or tuple base var.
     """
     # Test basic indexing.
-    assert str(var[0]) == f"{var._var_name}.at(0)"
-    assert str(var[1]) == f"{var._var_name}.at(1)"
+    assert str(var[0]) == f"{var._js_expr}.at(0)"
+    assert str(var[1]) == f"{var._js_expr}.at(1)"
 
     # Test negative indexing.
-    assert str(var[-1]) == f"{var._var_name}.at(-1)"
+    assert str(var[-1]) == f"{var._js_expr}.at(-1)"
 
 
 @pytest.mark.parametrize(
     "var, type_",
     [
-        (Var(_var_name="list", _var_type=List[int]).guess_type(), [int, int]),
+        (Var(_js_expr="list", _var_type=List[int]).guess_type(), [int, int]),
         (
-            Var(_var_name="tuple", _var_type=Tuple[int, str]).guess_type(),
+            Var(_js_expr="tuple", _var_type=Tuple[int, str]).guess_type(),
             [int, str],
         ),
     ],
@@ -484,7 +484,7 @@ def test_var_indexing_types(var, type_):
 
 def test_var_indexing_str():
     """Test that we can index into str vars."""
-    str_var = Var(_var_name="str").to(str)
+    str_var = Var(_js_expr="str").to(str)
 
     # Test that indexing gives a type of Var[str].
     assert isinstance(str_var[0], Var)
@@ -501,8 +501,8 @@ def test_var_indexing_str():
 @pytest.mark.parametrize(
     "var",
     [
-        (Var(_var_name="foo", _var_type=int).guess_type()),
-        (Var(_var_name="bar", _var_type=float).guess_type()),
+        (Var(_js_expr="foo", _var_type=int).guess_type()),
+        (Var(_js_expr="bar", _var_type=float).guess_type()),
     ],
 )
 def test_var_replace_with_invalid_kwargs(var):
@@ -524,65 +524,65 @@ def test_computed_var_replace_with_invalid_kwargs():
 @pytest.mark.parametrize(
     "var, index",
     [
-        (Var(_var_name="lst", _var_type=List[int]).guess_type(), [1, 2]),
+        (Var(_js_expr="lst", _var_type=List[int]).guess_type(), [1, 2]),
         (
-            Var(_var_name="lst", _var_type=List[int]).guess_type(),
+            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
             {"name": "dict"},
         ),
-        (Var(_var_name="lst", _var_type=List[int]).guess_type(), {"set"}),
+        (Var(_js_expr="lst", _var_type=List[int]).guess_type(), {"set"}),
         (
-            Var(_var_name="lst", _var_type=List[int]).guess_type(),
+            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
             (
                 1,
                 2,
             ),
         ),
-        (Var(_var_name="lst", _var_type=List[int]).guess_type(), 1.5),
-        (Var(_var_name="lst", _var_type=List[int]).guess_type(), "str"),
+        (Var(_js_expr="lst", _var_type=List[int]).guess_type(), 1.5),
+        (Var(_js_expr="lst", _var_type=List[int]).guess_type(), "str"),
         (
-            Var(_var_name="lst", _var_type=List[int]).guess_type(),
-            Var(_var_name="string_var", _var_type=str).guess_type(),
+            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
+            Var(_js_expr="string_var", _var_type=str).guess_type(),
         ),
         (
-            Var(_var_name="lst", _var_type=List[int]).guess_type(),
-            Var(_var_name="float_var", _var_type=float).guess_type(),
+            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
+            Var(_js_expr="float_var", _var_type=float).guess_type(),
         ),
         (
-            Var(_var_name="lst", _var_type=List[int]).guess_type(),
-            Var(_var_name="list_var", _var_type=List[int]).guess_type(),
+            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
+            Var(_js_expr="list_var", _var_type=List[int]).guess_type(),
         ),
         (
-            Var(_var_name="lst", _var_type=List[int]).guess_type(),
-            Var(_var_name="set_var", _var_type=Set[str]).guess_type(),
+            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
+            Var(_js_expr="set_var", _var_type=Set[str]).guess_type(),
         ),
         (
-            Var(_var_name="lst", _var_type=List[int]).guess_type(),
-            Var(_var_name="dict_var", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
+            Var(_js_expr="dict_var", _var_type=Dict[str, str]).guess_type(),
         ),
-        (Var(_var_name="str", _var_type=str).guess_type(), [1, 2]),
-        (Var(_var_name="lst", _var_type=str).guess_type(), {"name": "dict"}),
-        (Var(_var_name="lst", _var_type=str).guess_type(), {"set"}),
+        (Var(_js_expr="str", _var_type=str).guess_type(), [1, 2]),
+        (Var(_js_expr="lst", _var_type=str).guess_type(), {"name": "dict"}),
+        (Var(_js_expr="lst", _var_type=str).guess_type(), {"set"}),
         (
-            Var(_var_name="lst", _var_type=str).guess_type(),
-            Var(_var_name="string_var", _var_type=str).guess_type(),
+            Var(_js_expr="lst", _var_type=str).guess_type(),
+            Var(_js_expr="string_var", _var_type=str).guess_type(),
         ),
         (
-            Var(_var_name="lst", _var_type=str).guess_type(),
-            Var(_var_name="float_var", _var_type=float).guess_type(),
+            Var(_js_expr="lst", _var_type=str).guess_type(),
+            Var(_js_expr="float_var", _var_type=float).guess_type(),
         ),
-        (Var(_var_name="str", _var_type=Tuple[str]).guess_type(), [1, 2]),
+        (Var(_js_expr="str", _var_type=Tuple[str]).guess_type(), [1, 2]),
         (
-            Var(_var_name="lst", _var_type=Tuple[str]).guess_type(),
+            Var(_js_expr="lst", _var_type=Tuple[str]).guess_type(),
             {"name": "dict"},
         ),
-        (Var(_var_name="lst", _var_type=Tuple[str]).guess_type(), {"set"}),
+        (Var(_js_expr="lst", _var_type=Tuple[str]).guess_type(), {"set"}),
         (
-            Var(_var_name="lst", _var_type=Tuple[str]).guess_type(),
-            Var(_var_name="string_var", _var_type=str).guess_type(),
+            Var(_js_expr="lst", _var_type=Tuple[str]).guess_type(),
+            Var(_js_expr="string_var", _var_type=str).guess_type(),
         ),
         (
-            Var(_var_name="lst", _var_type=Tuple[str]).guess_type(),
-            Var(_var_name="float_var", _var_type=float).guess_type(),
+            Var(_js_expr="lst", _var_type=Tuple[str]).guess_type(),
+            Var(_js_expr="float_var", _var_type=float).guess_type(),
         ),
     ],
 )
@@ -600,8 +600,8 @@ def test_var_unsupported_indexing_lists(var, index):
 @pytest.mark.parametrize(
     "var",
     [
-        Var(_var_name="lst", _var_type=List[int]).guess_type(),
-        Var(_var_name="tuple", _var_type=Tuple[int, int]).guess_type(),
+        Var(_js_expr="lst", _var_type=List[int]).guess_type(),
+        Var(_js_expr="tuple", _var_type=Tuple[int, int]).guess_type(),
     ],
 )
 def test_var_list_slicing(var):
@@ -610,14 +610,14 @@ def test_var_list_slicing(var):
     Args:
         var : The str, list or tuple base var.
     """
-    assert str(var[:1]) == f"{var._var_name}.slice(undefined, 1)"
-    assert str(var[1:]) == f"{var._var_name}.slice(1, undefined)"
-    assert str(var[:]) == f"{var._var_name}.slice(undefined, undefined)"
+    assert str(var[:1]) == f"{var._js_expr}.slice(undefined, 1)"
+    assert str(var[1:]) == f"{var._js_expr}.slice(1, undefined)"
+    assert str(var[:]) == f"{var._js_expr}.slice(undefined, undefined)"
 
 
 def test_str_var_slicing():
     """Test that we can slice into str vars."""
-    str_var = Var(_var_name="str").to(str)
+    str_var = Var(_js_expr="str").to(str)
 
     # Test that slicing gives a type of Var[str].
     assert isinstance(str_var[:1], Var)
@@ -638,7 +638,7 @@ def test_str_var_slicing():
 
 def test_dict_indexing():
     """Test that we can index into dict vars."""
-    dct = Var(_var_name="dct").to(ObjectVar, Dict[str, str])
+    dct = Var(_js_expr="dct").to(ObjectVar, Dict[str, str])
 
     # Check correct indexing.
     assert str(dct["a"]) == 'dct["a"]'
@@ -649,66 +649,66 @@ def test_dict_indexing():
     "var, index",
     [
         (
-            Var(_var_name="dict", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="dict", _var_type=Dict[str, str]).guess_type(),
             [1, 2],
         ),
         (
-            Var(_var_name="dict", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="dict", _var_type=Dict[str, str]).guess_type(),
             {"name": "dict"},
         ),
         (
-            Var(_var_name="dict", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="dict", _var_type=Dict[str, str]).guess_type(),
             {"set"},
         ),
         (
-            Var(_var_name="dict", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="dict", _var_type=Dict[str, str]).guess_type(),
             (
                 1,
                 2,
             ),
         ),
         (
-            Var(_var_name="lst", _var_type=Dict[str, str]).guess_type(),
-            Var(_var_name="list_var", _var_type=List[int]).guess_type(),
+            Var(_js_expr="lst", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="list_var", _var_type=List[int]).guess_type(),
         ),
         (
-            Var(_var_name="lst", _var_type=Dict[str, str]).guess_type(),
-            Var(_var_name="set_var", _var_type=Set[str]).guess_type(),
+            Var(_js_expr="lst", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="set_var", _var_type=Set[str]).guess_type(),
         ),
         (
-            Var(_var_name="lst", _var_type=Dict[str, str]).guess_type(),
-            Var(_var_name="dict_var", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="lst", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="dict_var", _var_type=Dict[str, str]).guess_type(),
         ),
         (
-            Var(_var_name="df", _var_type=DataFrame).guess_type(),
+            Var(_js_expr="df", _var_type=DataFrame).guess_type(),
             [1, 2],
         ),
         (
-            Var(_var_name="df", _var_type=DataFrame).guess_type(),
+            Var(_js_expr="df", _var_type=DataFrame).guess_type(),
             {"name": "dict"},
         ),
         (
-            Var(_var_name="df", _var_type=DataFrame).guess_type(),
+            Var(_js_expr="df", _var_type=DataFrame).guess_type(),
             {"set"},
         ),
         (
-            Var(_var_name="df", _var_type=DataFrame).guess_type(),
+            Var(_js_expr="df", _var_type=DataFrame).guess_type(),
             (
                 1,
                 2,
             ),
         ),
         (
-            Var(_var_name="df", _var_type=DataFrame).guess_type(),
-            Var(_var_name="list_var", _var_type=List[int]).guess_type(),
+            Var(_js_expr="df", _var_type=DataFrame).guess_type(),
+            Var(_js_expr="list_var", _var_type=List[int]).guess_type(),
         ),
         (
-            Var(_var_name="df", _var_type=DataFrame).guess_type(),
-            Var(_var_name="set_var", _var_type=Set[str]).guess_type(),
+            Var(_js_expr="df", _var_type=DataFrame).guess_type(),
+            Var(_js_expr="set_var", _var_type=Set[str]).guess_type(),
         ),
         (
-            Var(_var_name="df", _var_type=DataFrame).guess_type(),
-            Var(_var_name="dict_var", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="df", _var_type=DataFrame).guess_type(),
+            Var(_js_expr="dict_var", _var_type=Dict[str, str]).guess_type(),
         ),
     ],
 )
@@ -878,8 +878,8 @@ def test_function_var():
     manual_addition_func = ArgsFunctionOperation.create(
         ("a", "b"),
         {
-            "args": [Var.create("a"), Var.create("b")],
-            "result": Var.create("a + b"),
+            "args": [Var(_js_expr="a"), Var(_js_expr="b")],
+            "result": Var(_js_expr="a + b"),
         },
     )
     assert (
@@ -894,7 +894,7 @@ def test_function_var():
     )
 
     create_hello_statement = ArgsFunctionOperation.create(
-        ("name",), f"Hello, {Var.create('name')}!"
+        ("name",), f"Hello, {Var(_js_expr='name')}!"
     )
     first_name = LiteralStringVar.create("Steven")
     last_name = LiteralStringVar.create("Universe")
@@ -1069,7 +1069,7 @@ def nested_base():
 
 
 def test_retrival():
-    var_without_data = Var.create("test")
+    var_without_data = Var(_js_expr="test")
     assert var_without_data is not None
 
     original_var_data = VarData(
@@ -1086,7 +1086,7 @@ def test_retrival():
     assert REFLEX_VAR_CLOSING_TAG in f_string
 
     result_var_data = LiteralVar.create(f_string)._get_all_var_data()
-    result_immutable_var_data = Var.create(f_string)._var_data
+    result_immutable_var_data = Var(_js_expr=f_string)._var_data
     assert result_var_data is not None and result_immutable_var_data is not None
     assert (
         result_var_data.state
@@ -1110,8 +1110,8 @@ def test_fstring_concat():
         "imagination", _var_data=VarData(state="fear")
     )
 
-    immutable_var_with_data = Var.create(
-        "consequences",
+    immutable_var_with_data = Var(
+        _js_expr="consequences",
         _var_data=VarData(
             imports={
                 "react": [ImportVar(tag="useRef")],
@@ -1141,9 +1141,9 @@ def test_fstring_concat():
     )
 
 
-var = Var(_var_name="var", _var_type=str)
-myvar = Var(_var_name="myvar", _var_type=int)._var_set_state("state")
-x = Var(_var_name="x", _var_type=str)
+var = Var(_js_expr="var", _var_type=str)
+myvar = Var(_js_expr="myvar", _var_type=int)._var_set_state("state")
+x = Var(_js_expr="x", _var_type=str)
 
 
 @pytest.mark.parametrize(
@@ -1198,7 +1198,7 @@ def test_fstring_roundtrip(value):
     Args:
         value: The value to create a Var from.
     """
-    var = Var.create(value)._var_set_state("state")
+    var = Var(_js_expr=value)._var_set_state("state")
     rt_var = LiteralVar.create(f"{var}")
     assert var._var_state == rt_var._var_state
     assert str(rt_var) == str(var)
@@ -1207,12 +1207,12 @@ def test_fstring_roundtrip(value):
 @pytest.mark.parametrize(
     "var",
     [
-        Var(_var_name="var", _var_type=int).guess_type(),
-        Var(_var_name="var", _var_type=float).guess_type(),
-        Var(_var_name="var", _var_type=str).guess_type(),
-        Var(_var_name="var", _var_type=bool).guess_type(),
-        Var(_var_name="var", _var_type=dict).guess_type(),
-        Var(_var_name="var", _var_type=None).guess_type(),
+        Var(_js_expr="var", _var_type=int).guess_type(),
+        Var(_js_expr="var", _var_type=float).guess_type(),
+        Var(_js_expr="var", _var_type=str).guess_type(),
+        Var(_js_expr="var", _var_type=bool).guess_type(),
+        Var(_js_expr="var", _var_type=dict).guess_type(),
+        Var(_js_expr="var", _var_type=None).guess_type(),
     ],
 )
 def test_unsupported_types_for_reverse(var):
@@ -1229,10 +1229,10 @@ def test_unsupported_types_for_reverse(var):
 @pytest.mark.parametrize(
     "var",
     [
-        Var(_var_name="var", _var_type=int).guess_type(),
-        Var(_var_name="var", _var_type=float).guess_type(),
-        Var(_var_name="var", _var_type=bool).guess_type(),
-        Var(_var_name="var", _var_type=None).guess_type(),
+        Var(_js_expr="var", _var_type=int).guess_type(),
+        Var(_js_expr="var", _var_type=float).guess_type(),
+        Var(_js_expr="var", _var_type=bool).guess_type(),
+        Var(_js_expr="var", _var_type=None).guess_type(),
     ],
 )
 def test_unsupported_types_for_contains(var):
@@ -1252,18 +1252,18 @@ def test_unsupported_types_for_contains(var):
 @pytest.mark.parametrize(
     "other",
     [
-        Var(_var_name="other", _var_type=int).guess_type(),
-        Var(_var_name="other", _var_type=float).guess_type(),
-        Var(_var_name="other", _var_type=bool).guess_type(),
-        Var(_var_name="other", _var_type=list).guess_type(),
-        Var(_var_name="other", _var_type=dict).guess_type(),
-        Var(_var_name="other", _var_type=tuple).guess_type(),
-        Var(_var_name="other", _var_type=set).guess_type(),
+        Var(_js_expr="other", _var_type=int).guess_type(),
+        Var(_js_expr="other", _var_type=float).guess_type(),
+        Var(_js_expr="other", _var_type=bool).guess_type(),
+        Var(_js_expr="other", _var_type=list).guess_type(),
+        Var(_js_expr="other", _var_type=dict).guess_type(),
+        Var(_js_expr="other", _var_type=tuple).guess_type(),
+        Var(_js_expr="other", _var_type=set).guess_type(),
     ],
 )
 def test_unsupported_types_for_string_contains(other):
     with pytest.raises(TypeError) as err:
-        assert Var(_var_name="var").to(str).contains(other)
+        assert Var(_js_expr="var").to(str).contains(other)
     assert (
         err.value.args[0]
         == f"Unsupported Operand type(s) for contains: ToStringOperation, {type(other).__name__}"
@@ -1272,7 +1272,7 @@ def test_unsupported_types_for_string_contains(other):
 
 def test_unsupported_default_contains():
     with pytest.raises(TypeError) as err:
-        assert 1 in Var(_var_name="var", _var_type=str).guess_type()
+        assert 1 in Var(_js_expr="var", _var_type=str).guess_type()
     assert (
         err.value.args[0]
         == "'in' operator not supported for Var types, use Var.contains() instead."

@@ -30,29 +30,25 @@ connect_error_var_data: VarData = VarData(  # type: ignore
     hooks={Hooks.EVENTS: None},
 )
 
-connect_errors = Var.create(
-    value=CompileVars.CONNECT_ERROR,
+connect_errors = Var(
+    _js_expr=CompileVars.CONNECT_ERROR, _var_data=connect_error_var_data
+)
+
+connection_error = Var(
+    _js_expr="((connectErrors.length > 0) ? connectErrors[connectErrors.length - 1].message : '')",
     _var_data=connect_error_var_data,
 )
 
-connection_error = Var.create(
-    value="((connectErrors.length > 0) ? connectErrors[connectErrors.length - 1].message : '')",
-    _var_data=connect_error_var_data,
+connection_errors_count = Var(
+    _js_expr="connectErrors.length", _var_data=connect_error_var_data
 )
 
-connection_errors_count = Var.create(
-    value="connectErrors.length",
-    _var_data=connect_error_var_data,
-)
-
-has_connection_errors = Var.create(
-    value="(connectErrors.length > 0)",
-    _var_data=connect_error_var_data,
+has_connection_errors = Var(
+    _js_expr="(connectErrors.length > 0)", _var_data=connect_error_var_data
 ).to(BooleanVar)
 
-has_too_many_connection_errors = Var.create(
-    value="(connectErrors.length >= 2)",
-    _var_data=connect_error_var_data,
+has_too_many_connection_errors = Var(
+    _js_expr="(connectErrors.length >= 2)", _var_data=connect_error_var_data
 ).to(BooleanVar)
 
 
@@ -67,7 +63,7 @@ class WebsocketTargetURL(Var):
             The websocket target URL component.
         """
         return Var(
-            _var_name="getBackendURL(env.EVENT).href",
+            _js_expr="getBackendURL(env.EVENT).href",
             _var_data=VarData(
                 imports={
                     "/env.json": [ImportVar(tag="env", is_default=True)],
@@ -125,8 +121,8 @@ class ConnectionToaster(Toaster):
                 ),
             ).call(
                 # TODO: This breaks the assumption that Vars are JS expressions
-                Var.create(
-                    f"""
+                Var(
+                    _js_expr=f"""
 () => {{
     if ({str(has_too_many_connection_errors)}) {{
         if (!userDismissed) {{
@@ -238,7 +234,7 @@ class WifiOffPulse(Icon):
         Returns:
             The icon component with default props applied.
         """
-        pulse_var = Var.create("pulse")
+        pulse_var = Var(_js_expr="pulse")
         return super().create(
             "wifi_off",
             color=props.pop("color", "crimson"),

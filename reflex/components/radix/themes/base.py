@@ -235,8 +235,8 @@ class Theme(RadixThemesComponent):
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         tag = super()._render(props)
         tag.add_props(
-            css=Var.create(
-                f"{{...theme.styles.global[':root'], ...theme.styles.global.body}}"
+            css=Var(
+                _js_expr=f"{{...theme.styles.global[':root'], ...theme.styles.global.body}}"
             ),
         )
         return tag

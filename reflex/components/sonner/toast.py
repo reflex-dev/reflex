@@ -30,7 +30,7 @@ LiteralPosition = Literal[
     "bottom-right",
 ]
 
-toast_ref = Var.create("refs['__toast']")
+toast_ref = Var(_js_expr="refs['__toast']")
 
 
 class ToastAction(Base):
@@ -66,8 +66,8 @@ def _toast_callback_signature(toast: Var) -> list[Var]:
         A function call stripping non-serializable members of the toast object.
     """
     return [
-        Var.create(
-            f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {str(toast)}; return rest}})()"
+        Var(
+            _js_expr=f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {str(toast)}; return rest}})()"
         )
     ]
 
@@ -247,8 +247,8 @@ class Toaster(Component):
         Returns:
             The hooks for the toaster component.
         """
-        hook = Var.create(
-            f"{toast_ref} = toast",
+        hook = Var(
+            _js_expr=f"{toast_ref} = toast",
             _var_data=VarData(
                 imports={
                     "/utils/state": [ImportVar(tag="refs")],
@@ -286,7 +286,7 @@ class Toaster(Component):
         else:
             toast = f"{toast_command}(`{message}`)"
 
-        toast_action = Var.create(toast)
+        toast_action = Var(_js_expr=toast)
         return call_script(toast_action)
 
     @staticmethod
@@ -360,9 +360,8 @@ class Toaster(Component):
             dismiss = f"{toast_ref}.dismiss('{id}')"
         else:
             dismiss = f"{toast_ref}.dismiss()"
-        dismiss_action = Var.create(
-            dismiss,
-            _var_data=VarData.merge(dismiss_var_data),
+        dismiss_action = Var(
+            _js_expr=dismiss, _var_data=VarData.merge(dismiss_var_data)
         )
         return call_script(dismiss_action)
 

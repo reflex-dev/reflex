@@ -377,8 +377,8 @@ class StyleState(rx.State):
         (
             {"color": f"dark{StyleState.color}"},
             {
-                "css": Var.create(
-                    f'({{ ["color"] : ("dark"+{StyleState.color}) }})'
+                "css": Var(
+                    _js_expr=f'({{ ["color"] : ("dark"+{StyleState.color}) }})'
                 ).to(Dict[str, str])
             },
         ),

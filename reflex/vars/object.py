@@ -354,7 +354,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self._var_name))
+        return hash((self.__class__.__name__, self._js_expr))
 
     @cached_property_no_lock
     def _cached_get_all_var_data(self) -> VarData | None:
@@ -390,7 +390,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
             The literal object var.
         """
         return LiteralObjectVar(
-            _var_name="",
+            _js_expr="",
             _var_type=(figure_out_type(_var_value) if _var_type is None else _var_type),
             _var_data=_var_data,
             _var_value=_var_value,
@@ -509,7 +509,7 @@ class ObjectItemOperation(CachedVarOperation, Var):
             The object item operation.
         """
         return cls(
-            _var_name="",
+            _js_expr="",
             _var_type=object._value_type() if _var_type is None else _var_type,
             _var_data=_var_data,
             _object=object,
@@ -540,8 +540,8 @@ class ToObjectOperation(ToOperation, ObjectVar):
         Returns:
             The attribute of the var.
         """
-        if name == "_var_name":
-            return self._original._var_name
+        if name == "_js_expr":
+            return self._original._js_expr
         return ObjectVar.__getattr__(self, name)
 
 

@@ -107,14 +107,14 @@ class DebounceInput(Component):
                 props[field] = getattr(child, field)
         child_ref = child.get_ref()
         if props.get("input_ref") is None and child_ref:
-            props["input_ref"] = Var.create(child_ref)
+            props["input_ref"] = Var(_js_expr=child_ref)
             props["id"] = child.id
 
         # Set the child element to wrap, including any imports/hooks from the child.
         props.setdefault(
             "element",
             Var(
-                _var_name=str(child.alias or child.tag),
+                _js_expr=str(child.alias or child.tag),
                 _var_type=Type[Component],
                 _var_data=VarData(
                     imports=child._get_imports(),

@@ -274,7 +274,7 @@ def test_format_string(input: str, output: str):
     "input,output",
     [
         (LiteralVar.create(value="test"), '"test"'),
-        (Var.create(value="test"), "test"),
+        (Var(_js_expr="test"), "test"),
     ],
 )
 def test_format_var(input: Var, output: str):
@@ -364,7 +364,7 @@ def test_format_match(
         (
             {
                 "a": 'foo "{ "bar" }" baz',
-                "b": Var(_var_name="val", _var_type=str).guess_type(),
+                "b": Var(_js_expr="val", _var_type=str).guess_type(),
             },
             r'{({ ["a"] : "foo \"{ \"bar\" }\" baz", ["b"] : val })}',
         ),
@@ -384,7 +384,7 @@ def test_format_match(
                             (
                                 LiteralVar.create("arg"),
                                 Var(
-                                    _var_name="_e",
+                                    _js_expr="_e",
                                 )
                                 .to(ObjectVar, FrontendEvent)
                                 .target.value,
@@ -413,36 +413,36 @@ def test_format_match(
             '{(...args) => addEvents([Event("mock_event", {})], args, {"preventDefault": true})}',
         ),
         ({"a": "red", "b": "blue"}, '{({ ["a"] : "red", ["b"] : "blue" })}'),
-        (Var(_var_name="var", _var_type=int).guess_type(), "var"),
+        (Var(_js_expr="var", _var_type=int).guess_type(), "var"),
         (
             Var(
-                _var_name="_",
+                _js_expr="_",
                 _var_type=Any,
             ),
             "_",
         ),
         (
-            Var(_var_name='state.colors["a"]', _var_type=str).guess_type(),
+            Var(_js_expr='state.colors["a"]', _var_type=str).guess_type(),
             'state.colors["a"]',
         ),
         (
-            {"a": Var(_var_name="val", _var_type=str).guess_type()},
+            {"a": Var(_js_expr="val", _var_type=str).guess_type()},
             '{({ ["a"] : val })}',
         ),
         (
-            {"a": Var(_var_name='"val"', _var_type=str).guess_type()},
+            {"a": Var(_js_expr='"val"', _var_type=str).guess_type()},
             '{({ ["a"] : "val" })}',
         ),
         (
-            {"a": Var(_var_name='state.colors["val"]', _var_type=str).guess_type()},
+            {"a": Var(_js_expr='state.colors["val"]', _var_type=str).guess_type()},
             '{({ ["a"] : state.colors["val"] })}',
         ),
         # tricky real-world case from markdown component
         (
             {
-                "h1": Var.create(
-                    f"(({{node, ...props}}) => <Heading {{...props}} {''.join(Tag(name='', props=Style({'as_': 'h1'})).format_props())} />)"
-                )
+                "h1": Var(
+                    _js_expr=f"(({{node, ...props}}) => <Heading {{...props}} {''.join(Tag(name='', props=Style({'as_': 'h1'})).format_props())} />)"
+                ),
             },
             '{({ ["h1"] : (({node, ...props}) => <Heading {...props} as={"h1"} />) })}',
         ),
@@ -462,7 +462,7 @@ def test_format_prop(prop: Var, formatted: str):
     "single_props,key_value_props,output",
     [
         (
-            [Var.create("{...props}")],
+            [Var(_js_expr="{...props}")],
             {"key": 42},
             ["key={42}", "{...props}"],
         ),

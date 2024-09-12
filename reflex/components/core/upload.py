@@ -59,7 +59,7 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     """
 
     return Var(
-        _var_name=var_name,
+        _js_expr=var_name,
         _var_type=EventChain,
         _var_data=VarData.merge(
             upload_files_context_var_data, id_var._get_all_var_data()
@@ -79,7 +79,7 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     """
     id_var = LiteralStringVar.create(id_)
     return Var(
-        _var_name=f"(filesById[{str(id_var)}] ? filesById[{str(id_var)}].map((f) => (f.path || f.name)) : [])",
+        _js_expr=f"(filesById[{str(id_var)}] ? filesById[{str(id_var)}].map((f) => (f.path || f.name)) : [])",
         _var_type=List[str],
         _var_data=VarData.merge(
             upload_files_context_var_data, id_var._get_all_var_data()
@@ -133,7 +133,7 @@ def get_upload_dir() -> Path:
 
 
 uploaded_files_url_prefix = Var(
-    _var_name="getBackendURL(env.UPLOAD)",
+    _js_expr="getBackendURL(env.UPLOAD)",
     _var_data=VarData(
         imports={
             f"/{Dirs.STATE_PATH}": "getBackendURL",
@@ -247,7 +247,7 @@ class Upload(MemoizationLeaf):
         }
         # The file input to use.
         upload = Input.create(type="file")
-        upload.special_props = {Var(_var_name="{...getInputProps()}", _var_type=None)}
+        upload.special_props = {Var(_js_expr="{...getInputProps()}", _var_type=None)}
 
         # The dropzone to use.
         zone = Box.create(
@@ -255,7 +255,7 @@ class Upload(MemoizationLeaf):
             *children,
             **{k: v for k, v in props.items() if k not in supported_props},
         )
-        zone.special_props = {Var(_var_name="{...getRootProps()}", _var_type=None)}
+        zone.special_props = {Var(_js_expr="{...getRootProps()}", _var_type=None)}
 
         # Create the component.
         upload_props["id"] = props.get("id", DEFAULT_UPLOAD_ID)
@@ -292,7 +292,7 @@ class Upload(MemoizationLeaf):
         Returns:
             The updated arg_value tuple when arg is "files", otherwise the original arg_value.
         """
-        if arg_value[0]._var_name == "files":
+        if arg_value[0]._js_expr == "files":
             placeholder = parse_args_spec(_on_drop_spec)[0]
             return (arg_value[0], placeholder)
         return arg_value

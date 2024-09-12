@@ -114,11 +114,11 @@ class DataTable(Gridjs):
     def _render(self) -> Tag:
         if isinstance(self.data, Var) and types.is_dataframe(self.data._var_type):
             self.columns = self.data._replace(
-                _var_name=f"{self.data._var_name}.columns",
+                _js_expr=f"{self.data._js_expr}.columns",
                 _var_type=List[Any],
             )
             self.data = self.data._replace(
-                _var_name=f"{self.data._var_name}.data",
+                _js_expr=f"{self.data._js_expr}.data",
                 _var_type=List[List[Any]],
             )
         if types.is_dataframe(type(self.data)):

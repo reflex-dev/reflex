@@ -15,4 +15,4 @@ class AppWrap(Fragment):
         Returns:
             A new AppWrap component containing {children}.
         """
-        return super().create(Var.create("children"))
+        return super().create(Var(_js_expr="children"))

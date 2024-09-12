@@ -193,7 +193,7 @@ class ColorModeNamespace(Var):
 
 
 color_mode = color_mode_var_and_namespace = ColorModeNamespace(
-    _var_name=color_mode._var_name,
+    _js_expr=color_mode._js_expr,
     _var_type=color_mode._var_type,
     _var_data=color_mode.get_default_value(),
 )

@@ -1016,7 +1016,7 @@ class LiteralBooleanVar(LiteralVar, BooleanVar):
             The boolean var.
         """
         return cls(
-            _var_name="true" if value else "false",
+            _js_expr="true" if value else "false",
             _var_type=bool,
             _var_data=_var_data,
             _var_value=value,
@@ -1061,7 +1061,7 @@ class LiteralNumberVar(LiteralVar, NumberVar):
             The number var.
         """
         return cls(
-            _var_name=str(value),
+            _js_expr=str(value),
             _var_type=type(value),
             _var_data=_var_data,
             _var_value=value,

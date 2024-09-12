@@ -17,7 +17,7 @@ from reflex.vars.base import LiteralVar, Var
 
 from .base import BaseHTML
 
-FORM_DATA = Var.create("form_data")
+FORM_DATA = Var(_js_expr="form_data")
 HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     """
     const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {
@@ -198,7 +198,7 @@ class Form(BaseHTML):
             render_tag.add_props(
                 **{
                     EventTriggers.ON_SUBMIT: Var(
-                        _var_name=f"handleSubmit_{self.handle_submit_unique_name}",
+                        _js_expr=f"handleSubmit_{self.handle_submit_unique_name}",
                         _var_type=EventChain,
                     )
                 }
@@ -212,15 +212,15 @@ class Form(BaseHTML):
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):
-                ref_var = Var.create(ref[:-3]).as_ref()
-                form_refs[ref[len("refs_") : -3]] = Var.create(
-                    f"getRefValues({str(ref_var)})",
+                ref_var = Var(_js_expr=ref[:-3]).as_ref()
+                form_refs[ref[len("refs_") : -3]] = Var(
+                    _js_expr=f"getRefValues({str(ref_var)})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
             else:
-                ref_var = Var.create(ref).as_ref()
-                form_refs[ref[4:]] = Var.create(
-                    f"getRefValue({str(ref_var)})",
+                ref_var = Var(_js_expr=ref).as_ref()
+                form_refs[ref[4:]] = Var(
+                    _js_expr=f"getRefValue({str(ref_var)})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
         # print(repr(form_refs))
@@ -624,15 +624,15 @@ class Textarea(BaseHTML):
                     "Cannot combine `enter_key_submit` with `on_key_down`.",
                 )
             tag.add_props(
-                on_key_down=Var.create(
-                    f"(e) => enterKeySubmitOnKeyDown(e, {str(self.enter_key_submit)})",
+                on_key_down=Var(
+                    _js_expr=f"(e) => enterKeySubmitOnKeyDown(e, {str(self.enter_key_submit)})",
                     _var_data=VarData.merge(self.enter_key_submit._get_all_var_data()),
                 )
             )
         if self.auto_height is not None:
             tag.add_props(
-                on_input=Var.create(
-                    f"(e) => autoHeightOnInput(e, {str(self.auto_height)})",
+                on_input=Var(
+                    _js_expr=f"(e) => autoHeightOnInput(e, {str(self.auto_height)})",
                     _var_data=VarData.merge(self.auto_height._get_all_var_data()),
                 )
             )

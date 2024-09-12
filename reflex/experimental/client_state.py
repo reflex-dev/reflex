@@ -58,7 +58,7 @@ class ClientStateVar(Var):
             The hash of the var.
         """
         return hash(
-            (self._var_name, str(self._var_type), self._getter_name, self._setter_name)
+            (self._js_expr, str(self._var_type), self._getter_name, self._setter_name)
         )
 
     @classmethod
@@ -97,7 +97,7 @@ class ClientStateVar(Var):
             var_name = get_unique_variable_name()
         assert isinstance(var_name, str), "var_name must be a string."
         if default is NoValue:
-            default_var = Var.create("", _var_is_local=False, _var_is_string=False)
+            default_var = Var(_js_expr="")
         elif not isinstance(default, Var):
             default_var = LiteralVar.create(default)
         else:
@@ -114,7 +114,7 @@ class ClientStateVar(Var):
             hooks[f"{_client_state_ref(setter_name)} = {setter_name}"] = None
             imports.update(_refs_import)
         return cls(
-            _var_name="",
+            _js_expr="",
             _setter_name=setter_name,
             _getter_name=var_name,
             _global_ref=global_ref,
@@ -140,10 +140,12 @@ class ClientStateVar(Var):
             an accessor for the client state variable.
         """
         return (
-            Var.create(
-                _client_state_ref(self._getter_name)
-                if self._global_ref
-                else self._getter_name
+            Var(
+                _js_expr=(
+                    _client_state_ref(self._getter_name)
+                    if self._global_ref
+                    else self._getter_name
+                )
             )
             .to(self._var_type)
             ._replace(
@@ -182,7 +184,7 @@ class ClientStateVar(Var):
 
             setter = f"({arg}) => {setter}({str(value)})"
         return Var(
-            _var_name=setter,
+            _js_expr=setter,
             _var_data=VarData(imports=_refs_import if self._global_ref else {}),
         ).to(FunctionVar, EventChain)
 

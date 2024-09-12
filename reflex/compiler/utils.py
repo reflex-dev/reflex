@@ -268,7 +268,7 @@ def compile_custom_component(
     }
 
     # Concatenate the props.
-    props = [prop._var_name for prop in component.get_prop_vars()]
+    props = [prop._js_expr for prop in component.get_prop_vars()]
 
     # Compile the component.
     return (

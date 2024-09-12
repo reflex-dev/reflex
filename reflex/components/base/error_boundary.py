@@ -26,7 +26,7 @@ class ErrorBoundary(Component):
     ).to(FunctionVar, EventChain)
 
     # Rendered instead of the children when an error is caught.
-    Fallback_component: Var[Component] = Var.create("Fallback")._replace(
+    Fallback_component: Var[Component] = Var(_js_expr="Fallback")._replace(
         _var_type=Component
     )
 
@@ -57,7 +57,7 @@ class ErrorBoundary(Component):
         fallback_container = div(
             p("Ooops...Unknown Reflex error has occured:"),
             p(
-                Var.create("error.message"),
+                Var(_js_expr="error.message"),
                 color="red",
             ),
             p("Please contact the support."),
