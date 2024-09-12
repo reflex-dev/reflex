@@ -290,7 +290,6 @@ def _format_emotion_style_pseudo_selector(key: str) -> str:
     """
     prefix = None
     if key.startswith("_"):
-        # Handle pseudo selectors in chakra style format.
         prefix = "&:"
         key = key[1:]
     if key.startswith(":"):

@@ -132,6 +132,7 @@ from .components.radix.themes.layout.container import container as container
 from .components.radix.themes.layout.flex import flex as flex
 from .components.radix.themes.layout.grid import grid as grid
 from .components.radix.themes.layout.list import list_item as list_item
+from .components.radix.themes.layout.list import list_ns as list  # noqa
 from .components.radix.themes.layout.list import ordered_list as ordered_list
 from .components.radix.themes.layout.list import unordered_list as unordered_list
 from .components.radix.themes.layout.section import section as section
