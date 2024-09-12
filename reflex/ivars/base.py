@@ -811,7 +811,8 @@ class ImmutableVar(Generic[VAR_TYPE]):
             TypeError: If the var type is Any.
         """
         if name.startswith("_"):
-            self.__getattribute__(name)
+            return self.__getattribute__(name)
+
         if self._var_type is Any:
             raise TypeError(
                 f"You must provide an annotation for the state var `{str(self)}`. Annotation cannot be `{self._var_type}`."

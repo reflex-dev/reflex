@@ -324,7 +324,6 @@ _MAPPING: dict = {
     "style": ["Style", "toggle_color_mode"],
     "utils.imports": ["ImportVar"],
     "utils.serializers": ["serializer"],
-    "vars": ["Var"],
 }
 
 _SUBMODULES: set[str] = {
@@ -337,7 +336,6 @@ _SUBMODULES: set[str] = {
     "model",
     "testing",
     "utils",
-    "vars",
     "ivars",
     "config",
     "compiler",
