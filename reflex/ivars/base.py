@@ -55,7 +55,6 @@ from reflex.utils.imports import (
     parse_imports,
 )
 from reflex.utils.types import GenericType, Self, get_origin
-from reflex.vars import Var
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -77,9 +76,8 @@ VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ImmutableVar(Var, Generic[VAR_TYPE]):
+class ImmutableVar(Generic[VAR_TYPE]):
     """Base class for immutable vars."""
 
     # The name of the var.
@@ -813,7 +811,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             TypeError: If the var type is Any.
         """
         if name.startswith("_"):
-            return super(ImmutableVar, self).__getattribute__(name)
+            self.__getattribute__(name)
         if self._var_type is Any:
             raise TypeError(
                 f"You must provide an annotation for the state var `{str(self)}`. Annotation cannot be `{self._var_type}`."
@@ -1422,7 +1420,7 @@ DICT_VAL = TypeVar("DICT_VAL")
 LIST_INSIDE = TypeVar("LIST_INSIDE")
 
 
-class FakeComputedVarBaseClass(Var, property):
+class FakeComputedVarBaseClass(property):
     """A fake base class for ComputedVar to avoid inheriting from property."""
 
     __pydantic_run_validation__ = False
@@ -2307,7 +2305,7 @@ def get_unique_variable_name() -> str:
     frozen=True,
 )
 class VarData:
-    """Metadata associated with a Var."""
+    """Metadata associated with a x."""
 
     # The name of the enclosing state.
     state: str = dataclasses.field(default="")
