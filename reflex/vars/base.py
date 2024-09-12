@@ -266,10 +266,6 @@ class Var(Generic[VAR_TYPE]):
 
         Returns:
             The var.
-
-        Raises:
-            VarTypeError: If the value is JSON-unserializable.
-            TypeError: If _var_is_local or _var_is_string is not None.
         """
         return cls.create(value, _var_is_local, _var_is_string, _var_data)
 
