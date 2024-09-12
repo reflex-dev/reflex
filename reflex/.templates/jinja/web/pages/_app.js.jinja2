@@ -41,7 +41,7 @@ export default function MyApp({ Component, pageProps }) {
     window["__reflex"] = windowImports;
   }, []);
   return (
-    <ThemeProvider defaultTheme={ defaultColorMode } storageKey="chakra-ui-color-mode" attribute="class">
+    <ThemeProvider defaultTheme={ defaultColorMode } attribute="class">
       <AppWrap>
         <StateProvider>
           <EventLoopProvider>

@@ -1,5 +1,4 @@
-from reflex_chakra.components.forms.form import Form
-
+from reflex.components.radix.primitives.form import Form
 from reflex.event import EventChain
 from reflex.ivars.base import ImmutableVar
 
