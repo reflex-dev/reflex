@@ -9,7 +9,6 @@ from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 DEFAULT_DEBOUNCE_TIMEOUT = 300
 
@@ -19,13 +18,15 @@ class DebounceInput(Component):
     def create(  # type: ignore
         cls,
         *children,
-        min_length: Optional[Union[Var[int], int]] = None,
-        debounce_timeout: Optional[Union[Var[int], int]] = None,
-        force_notify_by_enter: Optional[Union[Var[bool], bool]] = None,
-        force_notify_on_blur: Optional[Union[Var[bool], bool]] = None,
-        value: Optional[Union[Var[Union[float, int, str]], str, int, float]] = None,
-        input_ref: Optional[Union[Var[str], str]] = None,
-        element: Optional[Union[Var[Type[Component]], Type[Component]]] = None,
+        min_length: Optional[Union[ImmutableVar[int], int]] = None,
+        debounce_timeout: Optional[Union[ImmutableVar[int], int]] = None,
+        force_notify_by_enter: Optional[Union[ImmutableVar[bool], bool]] = None,
+        force_notify_on_blur: Optional[Union[ImmutableVar[bool], bool]] = None,
+        value: Optional[
+            Union[ImmutableVar[Union[float, int, str]], str, int, float]
+        ] = None,
+        input_ref: Optional[Union[ImmutableVar[str], str]] = None,
+        element: Optional[Union[ImmutableVar[Type[Component]], Type[Component]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

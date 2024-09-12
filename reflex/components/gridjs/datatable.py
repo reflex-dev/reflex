@@ -10,7 +10,6 @@ from reflex.ivars.base import ImmutableVar, LiteralVar, is_computed_var
 from reflex.utils import types
 from reflex.utils.imports import ImportDict
 from reflex.utils.serializers import serialize
-from reflex.vars import Var
 
 
 class Gridjs(Component):
@@ -33,19 +32,19 @@ class DataTable(Gridjs):
 
     # The list of columns to display. Required if data is a list and should not be provided
     # if the data field is a dataframe
-    columns: Var[List]
+    columns: ImmutableVar[List]
 
     # Enable a search bar.
-    search: Var[bool]
+    search: ImmutableVar[bool]
 
     # Enable sorting on columns.
-    sort: Var[bool]
+    sort: ImmutableVar[bool]
 
     # Enable resizable columns.
-    resizable: Var[bool]
+    resizable: ImmutableVar[bool]
 
     # Enable pagination.
-    pagination: Var[Union[bool, Dict]]
+    pagination: ImmutableVar[Union[bool, Dict]]
 
     @classmethod
     def create(cls, *children, **props):

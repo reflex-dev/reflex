@@ -18,7 +18,7 @@ from typing import (
 )
 
 from reflex.utils.exceptions import VarTypeError
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
 
 from .base import (
     CustomVarOperationReturn,
@@ -1080,7 +1080,9 @@ boolean_types = Union[BooleanVar, bool]
 class ToNumberVarOperation(ToOperation, NumberVar):
     """Base class for immutable number vars that are the result of a number operation."""
 
-    _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
+    _original: ImmutableVar = dataclasses.field(
+        default_factory=lambda: LiteralNoneVar.create()
+    )
 
     _default_var_type: ClassVar[Type] = float
 
@@ -1093,13 +1095,15 @@ class ToNumberVarOperation(ToOperation, NumberVar):
 class ToBooleanVarOperation(ToOperation, BooleanVar):
     """Base class for immutable boolean vars that are the result of a boolean operation."""
 
-    _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
+    _original: ImmutableVar = dataclasses.field(
+        default_factory=lambda: LiteralNoneVar.create()
+    )
 
     _default_var_type: ClassVar[Type] = bool
 
 
 @var_operation
-def boolify(value: Var):
+def boolify(value: ImmutableVar):
     """Convert the value to a boolean.
 
     Args:

@@ -10,7 +10,6 @@ from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from ..base import RadixThemesComponent
 
@@ -22,7 +21,7 @@ class CheckboxGroupRoot(RadixThemesComponent):
         *children,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
@@ -33,13 +32,13 @@ class CheckboxGroupRoot(RadixThemesComponent):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
+                ImmutableVar[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -99,9 +98,9 @@ class CheckboxGroupRoot(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
-        default_value: Optional[Union[Var[List[str]], List[str]]] = None,
-        name: Optional[Union[Var[str], str]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
+        default_value: Optional[Union[ImmutableVar[List[str]], List[str]]] = None,
+        name: Optional[Union[ImmutableVar[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -187,8 +186,8 @@ class CheckboxGroupItem(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

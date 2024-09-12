@@ -13,7 +13,7 @@ from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadiu
 from reflex.event import EventHandler
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style
-from reflex.vars import Var, get_uuid_string_var
+from reflex.vars import get_uuid_string_var
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
@@ -25,7 +25,7 @@ DEFAULT_ANIMATION_EASING = "cubic-bezier(0.87, 0, 0.13, 1)"
 
 
 def _inherited_variant_selector(
-    variant: Var[LiteralAccordionVariant] | LiteralAccordionVariant,
+    variant: ImmutableVar[LiteralAccordionVariant] | LiteralAccordionVariant,
     *selectors: str,
 ) -> str:
     """Create a multi CSS selector for targeting variant against the given selectors.
@@ -55,10 +55,10 @@ class AccordionComponent(RadixPrimitiveComponent):
     library = "@radix-ui/react-accordion@^1.1.2"
 
     # The color scheme of the component.
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: ImmutableVar[LiteralAccentColor]
 
     # The variant of the component.
-    variant: Var[LiteralAccordionVariant]
+    variant: ImmutableVar[LiteralAccordionVariant]
 
     def add_style(self):
         """Add style to the component."""
@@ -79,37 +79,37 @@ class AccordionRoot(AccordionComponent):
     alias = "RadixAccordionRoot"
 
     # The type of accordion (single or multiple).
-    type: Var[LiteralAccordionType]
+    type: ImmutableVar[LiteralAccordionType]
 
     # The value of the item to expand.
-    value: Var[Union[str, List[str]]]
+    value: ImmutableVar[Union[str, List[str]]]
 
     # The default value of the item to expand.
-    default_value: Var[Union[str, List[str]]]
+    default_value: ImmutableVar[Union[str, List[str]]]
 
     # Whether or not the accordion is collapsible.
-    collapsible: Var[bool]
+    collapsible: ImmutableVar[bool]
 
     # Whether or not the accordion is disabled.
-    disabled: Var[bool]
+    disabled: ImmutableVar[bool]
 
     # The reading direction of the accordion when applicable.
-    dir: Var[LiteralAccordionDir]
+    dir: ImmutableVar[LiteralAccordionDir]
 
     # The orientation of the accordion.
-    orientation: Var[LiteralAccordionOrientation]
+    orientation: ImmutableVar[LiteralAccordionOrientation]
 
     # The radius of the accordion corners.
-    radius: Var[LiteralRadius]
+    radius: ImmutableVar[LiteralRadius]
 
     # The time in milliseconds to animate open and close
-    duration: Var[int] = LiteralVar.create(DEFAULT_ANIMATION_DURATION)
+    duration: ImmutableVar[int] = LiteralVar.create(DEFAULT_ANIMATION_DURATION)
 
     # The easing function to use for the animation.
-    easing: Var[str] = LiteralVar.create(DEFAULT_ANIMATION_EASING)
+    easing: ImmutableVar[str] = LiteralVar.create(DEFAULT_ANIMATION_EASING)
 
     # Whether to show divider lines between items.
-    show_dividers: Var[bool]
+    show_dividers: ImmutableVar[bool]
 
     _valid_children: List[str] = ["AccordionItem"]
 
@@ -176,10 +176,10 @@ class AccordionItem(AccordionComponent):
     alias = "RadixAccordionItem"
 
     # A unique identifier for the item.
-    value: Var[str]
+    value: ImmutableVar[str]
 
     # When true, prevents the user from interacting with the item.
-    disabled: Var[bool]
+    disabled: ImmutableVar[bool]
 
     _valid_children: List[str] = [
         "AccordionHeader",

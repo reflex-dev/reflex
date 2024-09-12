@@ -5,7 +5,7 @@ from typing import List, Literal
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.ivars.base import ImmutableVar
 
 from ..base import (
     LiteralAccentColor,
@@ -19,7 +19,7 @@ class ContextMenuRoot(RadixThemesComponent):
     tag = "ContextMenu.Root"
 
     # The modality of the context menu. When set to true, interaction with outside elements will be disabled and only menu content will be visible to screen readers.
-    modal: Var[bool]
+    modal: ImmutableVar[bool]
 
     _invalid_children: List[str] = ["ContextMenuItem"]
 
@@ -33,7 +33,7 @@ class ContextMenuTrigger(RadixThemesComponent):
     tag = "ContextMenu.Trigger"
 
     # Whether the trigger is disabled
-    disabled: Var[bool]
+    disabled: ImmutableVar[bool]
 
     _valid_parents: List[str] = ["ContextMenuRoot"]
 
@@ -46,22 +46,22 @@ class ContextMenuContent(RadixThemesComponent):
     tag = "ContextMenu.Content"
 
     # Button size "1" - "4"
-    size: Var[Responsive[Literal["1", "2"]]]
+    size: ImmutableVar[Responsive[Literal["1", "2"]]]
 
     # Variant of button: "solid" | "soft" | "outline" | "ghost"
-    variant: Var[Literal["solid", "soft"]]
+    variant: ImmutableVar[Literal["solid", "soft"]]
 
     # Override theme color for button
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: ImmutableVar[LiteralAccentColor]
 
     # Whether to render the button with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: ImmutableVar[bool]
 
     # The vertical distance in pixels from the anchor.
-    align_offset: Var[int]
+    align_offset: ImmutableVar[int]
 
     # When true, overrides the side and aligns preferences to prevent collisions with boundary edges.
-    avoid_collisions: Var[bool]
+    avoid_collisions: ImmutableVar[bool]
 
     # Fired when the context menu is closed.
     on_close_auto_focus: EventHandler[lambda e0: [e0]]
@@ -91,7 +91,7 @@ class ContextMenuSubTrigger(RadixThemesComponent):
     tag = "ContextMenu.SubTrigger"
 
     # Whether the trigger is disabled
-    disabled: Var[bool]
+    disabled: ImmutableVar[bool]
 
     _valid_parents: List[str] = ["ContextMenuContent", "ContextMenuSub"]
 
@@ -102,7 +102,7 @@ class ContextMenuSubContent(RadixThemesComponent):
     tag = "ContextMenu.SubContent"
 
     # When true, keyboard navigation will loop from last item to first, and vice versa.
-    loop: Var[bool]
+    loop: ImmutableVar[bool]
 
     _valid_parents: List[str] = ["ContextMenuSub"]
 
@@ -125,10 +125,10 @@ class ContextMenuItem(RadixThemesComponent):
     tag = "ContextMenu.Item"
 
     # Override theme color for button
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: ImmutableVar[LiteralAccentColor]
 
     # Shortcut to render a menu item as a link
-    shortcut: Var[str]
+    shortcut: ImmutableVar[str]
 
     _valid_parents: List[str] = ["ContextMenuContent", "ContextMenuSubContent"]
 

@@ -12,7 +12,7 @@ from reflex.ivars.function import FunctionVar
 from reflex.utils import format
 from reflex.utils.exceptions import ReflexError
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
 
 SYSTEM_COLOR_MODE: str = "system"
 LIGHT_COLOR_MODE: str = "light"
@@ -48,7 +48,7 @@ def _color_mode_var(_var_name: str, _var_type: Type = str) -> ImmutableVar:
 
 @ImmutableCallableVar
 def set_color_mode(
-    new_color_mode: LiteralColorMode | Var[LiteralColorMode] | None = None,
+    new_color_mode: LiteralColorMode | ImmutableVar[LiteralColorMode] | None = None,
 ) -> ImmutableVar[EventChain]:
     """Create an EventChain Var that sets the color mode to a specific value.
 
@@ -114,8 +114,8 @@ def media_query(breakpoint_expr: str):
 
 
 def convert_item(
-    style_item: int | str | Var,
-) -> tuple[str | Var, VarData | VarData | None]:
+    style_item: int | str | ImmutableVar,
+) -> tuple[str | ImmutableVar, VarData | None]:
     """Format a single value in a style dictionary.
 
     Args:
@@ -147,7 +147,7 @@ def convert_item(
 
 def convert_list(
     responsive_list: list[str | dict | ImmutableVar],
-) -> tuple[list[str | dict[str, Var | list | dict]], VarData | None]:
+) -> tuple[list[str | dict[str, ImmutableVar | list | dict]], VarData | None]:
     """Format a responsive value list.
 
     Args:
@@ -170,7 +170,7 @@ def convert_list(
 
 
 def convert(
-    style_dict: dict[str, Var | dict | list | str],
+    style_dict: dict[str, ImmutableVar | dict | list | str],
 ) -> tuple[dict[str, str | list | dict], VarData | None]:
     """Format a style dictionary.
 

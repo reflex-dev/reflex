@@ -32,7 +32,6 @@ from reflex.ivars.sequence import (
 from reflex.state import BaseState
 from reflex.utils.imports import ImportVar
 from reflex.vars import (
-    Var,
     VarData,
 )
 
@@ -507,7 +506,7 @@ def test_var_indexing_str():
     """Test that we can index into str vars."""
     str_var = ImmutableVar(_var_name="str").to(str)
 
-    # Test that indexing gives a type of Var[str].
+    # Test that indexing gives a type of ImmutableVar[str].
     assert isinstance(str_var[0], ImmutableVar)
     assert str_var[0]._var_type == str
 
@@ -640,7 +639,7 @@ def test_str_var_slicing():
     """Test that we can slice into str vars."""
     str_var = ImmutableVar(_var_name="str").to(str)
 
-    # Test that slicing gives a type of Var[str].
+    # Test that slicing gives a type of ImmutableVar[str].
     assert isinstance(str_var[:1], ImmutableVar)
     assert str_var[:1]._var_type == str
 
@@ -1385,7 +1384,9 @@ def test_unsupported_default_contains():
         ),
     ],
 )
-def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[str]):
+def test_valid_var_operations(
+    operand1_var: ImmutableVar, operand2_var, operators: List[str]
+):
     """Test that operations do not raise a TypeError.
 
     Args:
@@ -1679,7 +1680,9 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
         ),
     ],
 )
-def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List[str]):
+def test_invalid_var_operations(
+    operand1_var: ImmutableVar, operand2_var, operators: List[str]
+):
     for operator in operators:
         print(f"testing {operator} on {str(operand1_var)} and {str(operand2_var)}")
         with pytest.raises(TypeError):

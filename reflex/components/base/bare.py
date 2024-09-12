@@ -8,13 +8,12 @@ from reflex.components.component import Component
 from reflex.components.tags import Tag
 from reflex.components.tags.tagless import Tagless
 from reflex.ivars.base import ImmutableVar
-from reflex.vars import Var
 
 
 class Bare(Component):
     """A component with no tag."""
 
-    contents: Var[Any]
+    contents: ImmutableVar[Any]
 
     @classmethod
     def create(cls, contents: Any) -> Component:

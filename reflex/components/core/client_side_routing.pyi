@@ -9,9 +9,8 @@ from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
-route_not_found: Var
+route_not_found: ImmutableVar
 
 class ClientSideRouting(Component):
     def add_hooks(self) -> list[str]: ...
@@ -99,7 +98,7 @@ class Default404Page(Component):
     def create(  # type: ignore
         cls,
         *children,
-        status_code: Optional[Union[Var[int], int]] = None,
+        status_code: Optional[Union[ImmutableVar[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

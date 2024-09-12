@@ -9,7 +9,6 @@ from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from ..base import RadixThemesComponent
 
@@ -22,11 +21,11 @@ class Avatar(RadixThemesComponent):
         cls,
         *children,
         variant: Optional[
-            Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
+            Union[ImmutableVar[Literal["solid", "soft"]], Literal["solid", "soft"]]
         ] = None,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[
                             str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
@@ -40,7 +39,7 @@ class Avatar(RadixThemesComponent):
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -100,15 +99,15 @@ class Avatar(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                ImmutableVar[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        src: Optional[Union[Var[str], str]] = None,
-        fallback: Optional[Union[Var[str], str]] = None,
+        src: Optional[Union[ImmutableVar[str], str]] = None,
+        fallback: Optional[Union[ImmutableVar[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

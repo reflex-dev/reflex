@@ -6,7 +6,6 @@ import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.ivars.base import ImmutableVar
-from reflex.vars import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -21,28 +20,28 @@ class SelectRoot(RadixThemesComponent):
     tag = "Select.Root"
 
     # The size of the select: "1" | "2" | "3"
-    size: Var[Responsive[Literal["1", "2", "3"]]]
+    size: ImmutableVar[Responsive[Literal["1", "2", "3"]]]
 
     # The value of the select when initially rendered. Use when you do not need to control the state of the select.
-    default_value: Var[str]
+    default_value: ImmutableVar[str]
 
     # The controlled value of the select. Should be used in conjunction with on_change.
-    value: Var[str]
+    value: ImmutableVar[str]
 
     # The open state of the select when it is initially rendered. Use when you do not need to control its open state.
-    default_open: Var[bool]
+    default_open: ImmutableVar[bool]
 
     # The controlled open state of the select. Must be used in conjunction with on_open_change.
-    open: Var[bool]
+    open: ImmutableVar[bool]
 
     # The name of the select control when submitting the form.
-    name: Var[str]
+    name: ImmutableVar[str]
 
     # When True, prevents the user from interacting with select.
-    disabled: Var[bool]
+    disabled: ImmutableVar[bool]
 
     # When True, indicates that the user must select a value before the owning form can be submitted.
-    required: Var[bool]
+    required: ImmutableVar[bool]
 
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
@@ -60,16 +59,16 @@ class SelectTrigger(RadixThemesComponent):
     tag = "Select.Trigger"
 
     # Variant of the select trigger
-    variant: Var[Literal["classic", "surface", "soft", "ghost"]]
+    variant: ImmutableVar[Literal["classic", "surface", "soft", "ghost"]]
 
     # The color of the select trigger
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: ImmutableVar[LiteralAccentColor]
 
     # The radius of the select trigger
-    radius: Var[LiteralRadius]
+    radius: ImmutableVar[LiteralRadius]
 
     # The placeholder of the select trigger
-    placeholder: Var[str]
+    placeholder: ImmutableVar[str]
 
     _valid_parents: List[str] = ["SelectRoot"]
 
@@ -80,28 +79,28 @@ class SelectContent(RadixThemesComponent):
     tag = "Select.Content"
 
     # The variant of the select content
-    variant: Var[Literal["solid", "soft"]]
+    variant: ImmutableVar[Literal["solid", "soft"]]
 
     # The color of the select content
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: ImmutableVar[LiteralAccentColor]
 
     # Whether to render the select content with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: ImmutableVar[bool]
 
     # The positioning mode to use, item-aligned is the default and behaves similarly to a native MacOS menu by positioning content relative to the active item. popper positions content in the same way as our other primitives, for example Popover or DropdownMenu.
-    position: Var[Literal["item-aligned", "popper"]]
+    position: ImmutableVar[Literal["item-aligned", "popper"]]
 
     # The preferred side of the anchor to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled. Only available when position is set to popper.
-    side: Var[Literal["top", "right", "bottom", "left"]]
+    side: ImmutableVar[Literal["top", "right", "bottom", "left"]]
 
     # The distance in pixels from the anchor. Only available when position is set to popper.
-    side_offset: Var[int]
+    side_offset: ImmutableVar[int]
 
     # The preferred alignment against the anchor. May change when collisions occur. Only available when position is set to popper.
-    align: Var[Literal["start", "center", "end"]]
+    align: ImmutableVar[Literal["start", "center", "end"]]
 
     # The vertical distance in pixels from the anchor. Only available when position is set to popper.
-    align_offset: Var[int]
+    align_offset: ImmutableVar[int]
 
     # Fired when the select content is closed.
     on_close_auto_focus: rx.EventHandler[lambda e0: [e0]]
@@ -127,10 +126,10 @@ class SelectItem(RadixThemesComponent):
     tag = "Select.Item"
 
     # The value given as data when submitting a form with a name.
-    value: Var[str]
+    value: ImmutableVar[str]
 
     # Whether the select item is disabled
-    disabled: Var[bool]
+    disabled: ImmutableVar[bool]
 
     _valid_parents: List[str] = ["SelectGroup", "SelectContent"]
 
@@ -153,34 +152,36 @@ class HighLevelSelect(SelectRoot):
     """High level wrapper for the Select component."""
 
     # The items of the select.
-    items: Var[List[str]]
+    items: ImmutableVar[List[str]]
 
     # The placeholder of the select.
-    placeholder: Var[str]
+    placeholder: ImmutableVar[str]
 
     # The label of the select.
-    label: Var[str]
+    label: ImmutableVar[str]
 
     # The color of the select.
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: ImmutableVar[LiteralAccentColor]
 
     # Whether to render the select with higher contrast color against background.
-    high_contrast: Var[bool]
+    high_contrast: ImmutableVar[bool]
 
     # The variant of the select.
-    variant: Var[Literal["classic", "surface", "soft", "ghost"]]
+    variant: ImmutableVar[Literal["classic", "surface", "soft", "ghost"]]
 
     # The radius of the select.
-    radius: Var[LiteralRadius]
+    radius: ImmutableVar[LiteralRadius]
 
     # The width of the select.
-    width: Var[str]
+    width: ImmutableVar[str]
 
     # The positioning mode to use. Default is "item-aligned".
-    position: Var[Literal["item-aligned", "popper"]]
+    position: ImmutableVar[Literal["item-aligned", "popper"]]
 
     @classmethod
-    def create(cls, items: Union[List[str], Var[List[str]]], **props) -> Component:
+    def create(
+        cls, items: Union[List[str], ImmutableVar[List[str]]], **props
+    ) -> Component:
         """Create a select component.
 
         Args:

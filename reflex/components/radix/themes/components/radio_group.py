@@ -13,7 +13,6 @@ from reflex.event import EventHandler
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.ivars.sequence import StringVar
 from reflex.utils import types
-from reflex.vars import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -30,31 +29,33 @@ class RadioGroupRoot(RadixThemesComponent):
     tag = "RadioGroup.Root"
 
     # The size of the radio group: "1" | "2" | "3"
-    size: Var[Responsive[Literal["1", "2", "3"]]] = LiteralVar.create("2")
+    size: ImmutableVar[Responsive[Literal["1", "2", "3"]]] = LiteralVar.create("2")
 
     # The variant of the radio group
-    variant: Var[Literal["classic", "surface", "soft"]] = LiteralVar.create("classic")
+    variant: ImmutableVar[Literal["classic", "surface", "soft"]] = LiteralVar.create(
+        "classic"
+    )
 
     # The color of the radio group
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: ImmutableVar[LiteralAccentColor]
 
     # Whether to render the radio group with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: ImmutableVar[bool]
 
     # The controlled value of the radio item to check. Should be used in conjunction with on_change.
-    value: Var[str]
+    value: ImmutableVar[str]
 
     # The initial value of checked radio item. Should be used in conjunction with on_change.
-    default_value: Var[str]
+    default_value: ImmutableVar[str]
 
     # Whether the radio group is disabled
-    disabled: Var[bool]
+    disabled: ImmutableVar[bool]
 
     # The name of the group. Submitted with its owning form as part of a name/value pair.
-    name: Var[str]
+    name: ImmutableVar[str]
 
     # Whether the radio group is required
-    required: Var[bool]
+    required: ImmutableVar[bool]
 
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
@@ -69,53 +70,55 @@ class RadioGroupItem(RadixThemesComponent):
     tag = "RadioGroup.Item"
 
     # The value of the radio item to check. Should be used in conjunction with on_change.
-    value: Var[str]
+    value: ImmutableVar[str]
 
     # When true, prevents the user from interacting with the radio item.
-    disabled: Var[bool]
+    disabled: ImmutableVar[bool]
 
     # When true, indicates that the user must check the radio item before the owning form can be submitted.
-    required: Var[bool]
+    required: ImmutableVar[bool]
 
 
 class HighLevelRadioGroup(RadixThemesComponent):
     """High level wrapper for the RadioGroup component."""
 
     # The items of the radio group.
-    items: Var[List[str]]
+    items: ImmutableVar[List[str]]
 
     # The direction of the radio group.
-    direction: Var[LiteralFlexDirection] = LiteralVar.create("column")
+    direction: ImmutableVar[LiteralFlexDirection] = LiteralVar.create("column")
 
     # The gap between the items of the radio group.
-    spacing: Var[LiteralSpacing] = LiteralVar.create("2")
+    spacing: ImmutableVar[LiteralSpacing] = LiteralVar.create("2")
 
     # The size of the radio group.
-    size: Var[Literal["1", "2", "3"]] = LiteralVar.create("2")
+    size: ImmutableVar[Literal["1", "2", "3"]] = LiteralVar.create("2")
 
     # The variant of the radio group
-    variant: Var[Literal["classic", "surface", "soft"]] = LiteralVar.create("classic")
+    variant: ImmutableVar[Literal["classic", "surface", "soft"]] = LiteralVar.create(
+        "classic"
+    )
 
     # The color of the radio group
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: ImmutableVar[LiteralAccentColor]
 
     # Whether to render the radio group with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: ImmutableVar[bool]
 
     # The controlled value of the radio item to check. Should be used in conjunction with on_change.
-    value: Var[str]
+    value: ImmutableVar[str]
 
     # The initial value of checked radio item. Should be used in conjunction with on_change.
-    default_value: Var[str]
+    default_value: ImmutableVar[str]
 
     # Whether the radio group is disabled
-    disabled: Var[bool]
+    disabled: ImmutableVar[bool]
 
     # The name of the group. Submitted with its owning form as part of a name/value pair.
-    name: Var[str]
+    name: ImmutableVar[str]
 
     # Whether the radio group is required
-    required: Var[bool]
+    required: ImmutableVar[bool]
 
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
@@ -123,7 +126,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
     @classmethod
     def create(
         cls,
-        items: Var[List[Optional[Union[str, int, float, list, dict, bool]]]],
+        items: ImmutableVar[List[Optional[Union[str, int, float, list, dict, bool]]]],
         **props,
     ) -> Component:
         """Create a radio group component.

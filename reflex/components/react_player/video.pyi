@@ -9,7 +9,6 @@ from reflex.components.react_player.react_player import ReactPlayer
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 class Video(ReactPlayer):
     pass
@@ -19,15 +18,15 @@ class Video(ReactPlayer):
     def create(  # type: ignore
         cls,
         *children,
-        url: Optional[Union[Var[str], str]] = None,
-        playing: Optional[Union[Var[bool], bool]] = None,
-        loop: Optional[Union[Var[bool], bool]] = None,
-        controls: Optional[Union[Var[bool], bool]] = None,
-        light: Optional[Union[Var[bool], bool]] = None,
-        volume: Optional[Union[Var[float], float]] = None,
-        muted: Optional[Union[Var[bool], bool]] = None,
-        width: Optional[Union[Var[str], str]] = None,
-        height: Optional[Union[Var[str], str]] = None,
+        url: Optional[Union[ImmutableVar[str], str]] = None,
+        playing: Optional[Union[ImmutableVar[bool], bool]] = None,
+        loop: Optional[Union[ImmutableVar[bool], bool]] = None,
+        controls: Optional[Union[ImmutableVar[bool], bool]] = None,
+        light: Optional[Union[ImmutableVar[bool], bool]] = None,
+        volume: Optional[Union[ImmutableVar[float], float]] = None,
+        muted: Optional[Union[ImmutableVar[bool], bool]] = None,
+        width: Optional[Union[ImmutableVar[str], str]] = None,
+        height: Optional[Union[ImmutableVar[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

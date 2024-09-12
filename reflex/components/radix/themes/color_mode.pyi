@@ -25,7 +25,6 @@ from reflex.style import (
     Style,
     color_mode,
 )
-from reflex.vars import Var
 
 from .components.icon_button import IconButton
 
@@ -38,7 +37,7 @@ class ColorModeIcon(Cond):
     def create(  # type: ignore
         cls,
         *children,
-        cond: Optional[Union[Var[Any], Any]] = None,
+        cond: Optional[Union[ImmutableVar[Any], Any]] = None,
         comp1: Optional[BaseComponent] = None,
         comp2: Optional[BaseComponent] = None,
         style: Optional[Style] = None,
@@ -115,10 +114,10 @@ class ColorModeIconButton(IconButton):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3", "4"]],
                         Literal["1", "2", "3", "4"],
@@ -130,13 +129,15 @@ class ColorModeIconButton(IconButton):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],
+                ImmutableVar[
+                    Literal["classic", "solid", "soft", "surface", "outline", "ghost"]
+                ],
                 Literal["classic", "solid", "soft", "surface", "outline", "ghost"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -196,53 +197,93 @@ class ColorModeIconButton(IconButton):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                ImmutableVar[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        auto_focus: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        form: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        form_action: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        auto_focus: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
+        form: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        form_action: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         form_enc_type: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        form_method: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        form_method: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         form_no_validate: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        form_target: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        name: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        type: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        value: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        form_target: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        name: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        type: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        value: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        loading: Optional[Union[Var[bool], bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        loading: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -354,16 +395,16 @@ class ColorModeSwitch(Switch):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
-        default_checked: Optional[Union[Var[bool], bool]] = None,
-        checked: Optional[Union[Var[bool], bool]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
+        default_checked: Optional[Union[ImmutableVar[bool], bool]] = None,
+        checked: Optional[Union[ImmutableVar[bool], bool]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
+        required: Optional[Union[ImmutableVar[bool], bool]] = None,
+        name: Optional[Union[ImmutableVar[str], str]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
@@ -374,13 +415,13 @@ class ColorModeSwitch(Switch):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
+                ImmutableVar[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -440,10 +481,11 @@ class ColorModeSwitch(Switch):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "full"]], Literal["none", "small", "full"]
+                ImmutableVar[Literal["none", "small", "full"]],
+                Literal["none", "small", "full"],
             ]
         ] = None,
         style: Optional[Style] = None,

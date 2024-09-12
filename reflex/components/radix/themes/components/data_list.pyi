@@ -10,7 +10,6 @@ from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from ..base import RadixThemesComponent
 
@@ -22,7 +21,7 @@ class DataListRoot(RadixThemesComponent):
         *children,
         orientation: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["horizontal", "vertical"]],
                         Literal["horizontal", "vertical"],
@@ -34,7 +33,7 @@ class DataListRoot(RadixThemesComponent):
         ] = None,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
@@ -45,7 +44,7 @@ class DataListRoot(RadixThemesComponent):
         ] = None,
         trim: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["normal", "start", "end", "both"]],
                         Literal["normal", "start", "end", "both"],
@@ -139,7 +138,7 @@ class DataListItem(RadixThemesComponent):
         *children,
         align: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[
                             str,
@@ -235,17 +234,29 @@ class DataListLabel(RadixThemesComponent):
         cls,
         *children,
         width: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[
+                ImmutableVar[Union[Breakpoints[str, str], str]],
+                str,
+                Breakpoints[str, str],
+            ]
         ] = None,
         min_width: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[
+                ImmutableVar[Union[Breakpoints[str, str], str]],
+                str,
+                Breakpoints[str, str],
+            ]
         ] = None,
         max_width: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[
+                ImmutableVar[Union[Breakpoints[str, str], str]],
+                str,
+                Breakpoints[str, str],
+            ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",

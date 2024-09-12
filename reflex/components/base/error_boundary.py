@@ -12,7 +12,6 @@ from reflex.event import EventChain, EventHandler
 from reflex.ivars.base import ImmutableVar
 from reflex.ivars.function import FunctionVar
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var
 
 
 class ErrorBoundary(Component):
@@ -27,9 +26,9 @@ class ErrorBoundary(Component):
     ).to(FunctionVar, EventChain)
 
     # Rendered instead of the children when an error is caught.
-    Fallback_component: Var[Component] = ImmutableVar.create_safe("Fallback")._replace(
-        _var_type=Component
-    )
+    Fallback_component: ImmutableVar[Component] = ImmutableVar.create_safe(
+        "Fallback"
+    )._replace(_var_type=Component)
 
     def add_imports(self) -> dict[str, list[ImportVar]]:
         """Add imports for the component.

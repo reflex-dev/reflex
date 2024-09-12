@@ -13,7 +13,6 @@ from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
 from reflex.utils.serializers import serializer
-from reflex.vars import Var
 
 LiteralPosition = Literal[
     "top-left",
@@ -75,19 +74,19 @@ class Toaster(Component):
     @staticmethod
     def toast_success(message: str = "", **kwargs): ...
     @staticmethod
-    def toast_dismiss(id: Var | str | None = None): ...
+    def toast_dismiss(id: ImmutableVar | str | None = None): ...
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        theme: Optional[Union[Var[str], str]] = None,
-        rich_colors: Optional[Union[Var[bool], bool]] = None,
-        expand: Optional[Union[Var[bool], bool]] = None,
-        visible_toasts: Optional[Union[Var[int], int]] = None,
+        theme: Optional[Union[ImmutableVar[str], str]] = None,
+        rich_colors: Optional[Union[ImmutableVar[bool], bool]] = None,
+        expand: Optional[Union[ImmutableVar[bool], bool]] = None,
+        visible_toasts: Optional[Union[ImmutableVar[int], int]] = None,
         position: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "top-left",
                         "top-center",
@@ -107,15 +106,15 @@ class Toaster(Component):
                 ],
             ]
         ] = None,
-        close_button: Optional[Union[Var[bool], bool]] = None,
-        offset: Optional[Union[Var[str], str]] = None,
-        dir: Optional[Union[Var[str], str]] = None,
-        hotkey: Optional[Union[Var[str], str]] = None,
-        invert: Optional[Union[Var[bool], bool]] = None,
-        toast_options: Optional[Union[Var[ToastProps], ToastProps]] = None,
-        gap: Optional[Union[Var[int], int]] = None,
-        loading_icon: Optional[Union[Var[Icon], Icon]] = None,
-        pause_when_page_is_hidden: Optional[Union[Var[bool], bool]] = None,
+        close_button: Optional[Union[ImmutableVar[bool], bool]] = None,
+        offset: Optional[Union[ImmutableVar[str], str]] = None,
+        dir: Optional[Union[ImmutableVar[str], str]] = None,
+        hotkey: Optional[Union[ImmutableVar[str], str]] = None,
+        invert: Optional[Union[ImmutableVar[bool], bool]] = None,
+        toast_options: Optional[Union[ImmutableVar[ToastProps], ToastProps]] = None,
+        gap: Optional[Union[ImmutableVar[int], int]] = None,
+        loading_icon: Optional[Union[ImmutableVar[Icon], Icon]] = None,
+        pause_when_page_is_hidden: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

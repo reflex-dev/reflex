@@ -9,7 +9,6 @@ from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 class Script(Component):
     @overload
@@ -17,10 +16,12 @@ class Script(Component):
     def create(  # type: ignore
         cls,
         *children,
-        src: Optional[Union[Var[str], str]] = None,
+        src: Optional[Union[ImmutableVar[str], str]] = None,
         strategy: Optional[
             Union[
-                Var[Literal["afterInteractive", "beforeInteractive", "lazyOnload"]],
+                ImmutableVar[
+                    Literal["afterInteractive", "beforeInteractive", "lazyOnload"]
+                ],
                 Literal["afterInteractive", "beforeInteractive", "lazyOnload"],
             ]
         ] = None,

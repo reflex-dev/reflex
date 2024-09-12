@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Literal
 
 from reflex.components.core.breakpoints import Responsive
-from reflex.vars import Var
+from reflex.ivars.base import ImmutableVar
 
 from ..base import (
     CommonMarginProps,
@@ -23,28 +23,28 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
     """
 
     # Padding: "0" - "9"
-    p: Var[Responsive[LiteralSpacing]]
+    p: ImmutableVar[Responsive[LiteralSpacing]]
 
     # Padding horizontal: "0" - "9"
-    px: Var[Responsive[LiteralSpacing]]
+    px: ImmutableVar[Responsive[LiteralSpacing]]
 
     # Padding vertical: "0" - "9"
-    py: Var[Responsive[LiteralSpacing]]
+    py: ImmutableVar[Responsive[LiteralSpacing]]
 
     # Padding top: "0" - "9"
-    pt: Var[Responsive[LiteralSpacing]]
+    pt: ImmutableVar[Responsive[LiteralSpacing]]
 
     # Padding right: "0" - "9"
-    pr: Var[Responsive[LiteralSpacing]]
+    pr: ImmutableVar[Responsive[LiteralSpacing]]
 
     # Padding bottom: "0" - "9"
-    pb: Var[Responsive[LiteralSpacing]]
+    pb: ImmutableVar[Responsive[LiteralSpacing]]
 
     # Padding left: "0" - "9"
-    pl: Var[Responsive[LiteralSpacing]]
+    pl: ImmutableVar[Responsive[LiteralSpacing]]
 
     # Whether the element will take up the smallest possible space: "0" | "1"
-    flex_shrink: Var[Responsive[LiteralBoolNumber]]
+    flex_shrink: ImmutableVar[Responsive[LiteralBoolNumber]]
 
     # Whether the element will take up the largest possible space: "0" | "1"
-    flex_grow: Var[Responsive[LiteralBoolNumber]]
+    flex_grow: ImmutableVar[Responsive[LiteralBoolNumber]]

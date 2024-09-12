@@ -9,7 +9,6 @@ from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from ..base import RadixThemesComponent
 
@@ -21,7 +20,7 @@ class Radio(RadixThemesComponent):
         *children,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
@@ -32,13 +31,13 @@ class Radio(RadixThemesComponent):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
+                ImmutableVar[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -98,7 +97,7 @@ class Radio(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

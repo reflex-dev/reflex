@@ -10,7 +10,6 @@ from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from ..base import RadixThemesComponent
 
@@ -20,7 +19,7 @@ class ContextMenuRoot(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        modal: Optional[Union[Var[bool], bool]] = None,
+        modal: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -104,7 +103,7 @@ class ContextMenuTrigger(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        disabled: Optional[Union[Var[bool], bool]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -187,17 +186,19 @@ class ContextMenuContent(RadixThemesComponent):
         *children,
         size: Optional[
             Union[
-                Var[Union[Breakpoints[str, Literal["1", "2"]], Literal["1", "2"]]],
+                ImmutableVar[
+                    Union[Breakpoints[str, Literal["1", "2"]], Literal["1", "2"]]
+                ],
                 Literal["1", "2"],
                 Breakpoints[str, Literal["1", "2"]],
             ]
         ] = None,
         variant: Optional[
-            Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
+            Union[ImmutableVar[Literal["solid", "soft"]], Literal["solid", "soft"]]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -257,9 +258,9 @@ class ContextMenuContent(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
-        align_offset: Optional[Union[Var[int], int]] = None,
-        avoid_collisions: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
+        align_offset: Optional[Union[ImmutableVar[int], int]] = None,
+        avoid_collisions: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -439,7 +440,7 @@ class ContextMenuSubTrigger(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        disabled: Optional[Union[Var[bool], bool]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -520,7 +521,7 @@ class ContextMenuSubContent(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        loop: Optional[Union[Var[bool], bool]] = None,
+        loop: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -615,7 +616,7 @@ class ContextMenuItem(RadixThemesComponent):
         *children,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -675,7 +676,7 @@ class ContextMenuItem(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        shortcut: Optional[Union[Var[str], str]] = None,
+        shortcut: Optional[Union[ImmutableVar[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

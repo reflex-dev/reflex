@@ -9,7 +9,7 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
 from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.ivars.base import ImmutableVar
 
 from ..base import (
     LiteralAccentColor,
@@ -27,49 +27,49 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
     tag = "TextField.Root"
 
     # Text field size "1" - "3"
-    size: Var[Responsive[LiteralTextFieldSize]]
+    size: ImmutableVar[Responsive[LiteralTextFieldSize]]
 
     # Variant of text field: "classic" | "surface" | "soft"
-    variant: Var[LiteralTextFieldVariant]
+    variant: ImmutableVar[LiteralTextFieldVariant]
 
     # Override theme color for text field
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: ImmutableVar[LiteralAccentColor]
 
     # Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
+    radius: ImmutableVar[LiteralRadius]
 
     # Whether the input should have autocomplete enabled
-    auto_complete: Var[bool]
+    auto_complete: ImmutableVar[bool]
 
     # The value of the input when initially rendered.
-    default_value: Var[str]
+    default_value: ImmutableVar[str]
 
     # Disables the input
-    disabled: Var[bool]
+    disabled: ImmutableVar[bool]
 
     # Specifies the maximum number of characters allowed in the input
-    max_length: Var[int]
+    max_length: ImmutableVar[int]
 
     # Specifies the minimum number of characters required in the input
-    min_length: Var[int]
+    min_length: ImmutableVar[int]
 
     # Name of the input, used when sending form data
-    name: Var[str]
+    name: ImmutableVar[str]
 
     # Placeholder text in the input
-    placeholder: Var[str]
+    placeholder: ImmutableVar[str]
 
     # Indicates whether the input is read-only
-    read_only: Var[bool]
+    read_only: ImmutableVar[bool]
 
     # Indicates that the input is required
-    required: Var[bool]
+    required: ImmutableVar[bool]
 
     # Specifies the type of input
-    type: Var[str]
+    type: ImmutableVar[str]
 
     # Value of the input
-    value: Var[Union[str, int, float]]
+    value: ImmutableVar[Union[str, int, float]]
 
     # Fired when the value of the textarea changes.
     on_change: EventHandler[lambda e0: [e0.target.value]]
@@ -110,7 +110,7 @@ class TextFieldSlot(RadixThemesComponent):
     tag = "TextField.Slot"
 
     # Override theme color for text field slot
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: ImmutableVar[LiteralAccentColor]
 
 
 class TextField(ComponentNamespace):

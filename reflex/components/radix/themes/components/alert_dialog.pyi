@@ -11,7 +11,6 @@ from reflex.components.el import elements
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from ..base import RadixThemesComponent, RadixThemesTriggerComponent
 
@@ -23,7 +22,7 @@ class AlertDialogRoot(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        open: Optional[Union[Var[bool], bool]] = None,
+        open: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -179,7 +178,7 @@ class AlertDialogContent(elements.Div, RadixThemesComponent):
         *children,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3", "4"]],
                         Literal["1", "2", "3", "4"],
@@ -189,31 +188,55 @@ class AlertDialogContent(elements.Div, RadixThemesComponent):
                 Breakpoints[str, Literal["1", "2", "3", "4"]],
             ]
         ] = None,
-        force_mount: Optional[Union[Var[bool], bool]] = None,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        force_mount: Optional[Union[ImmutableVar[bool], bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

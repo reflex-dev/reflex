@@ -6,7 +6,7 @@ from typing import Dict, Literal
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
-from reflex.vars import Var
+from reflex.ivars.base import ImmutableVar
 
 from ..base import (
     LiteralAlign,
@@ -24,31 +24,31 @@ class Grid(elements.Div, RadixThemesComponent):
     tag = "Grid"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: ImmutableVar[bool]
 
     # Number of columns
-    columns: Var[Responsive[str]]
+    columns: ImmutableVar[Responsive[str]]
 
     # Number of rows
-    rows: Var[Responsive[str]]
+    rows: ImmutableVar[Responsive[str]]
 
     # How the grid items are layed out: "row" | "column" | "dense" | "row-dense" | "column-dense"
-    flow: Var[Responsive[LiteralGridFlow]]
+    flow: ImmutableVar[Responsive[LiteralGridFlow]]
 
     # Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
-    align: Var[Responsive[LiteralAlign]]
+    align: ImmutableVar[Responsive[LiteralAlign]]
 
     # Alignment of children along the cross axis: "start" | "center" | "end" | "between"
-    justify: Var[Responsive[LiteralJustify]]
+    justify: ImmutableVar[Responsive[LiteralJustify]]
 
     # Gap between children: "0" - "9"
-    spacing: Var[Responsive[LiteralSpacing]]
+    spacing: ImmutableVar[Responsive[LiteralSpacing]]
 
     # Gap between children horizontal: "0" - "9"
-    spacing_x: Var[Responsive[LiteralSpacing]]
+    spacing_x: ImmutableVar[Responsive[LiteralSpacing]]
 
     # Gap between children vertical: "0" - "9"
-    spacing_y: Var[Responsive[LiteralSpacing]]
+    spacing_y: ImmutableVar[Responsive[LiteralSpacing]]
 
     # Reflex maps the "spacing" prop to "gap" prop.
     _rename_props: Dict[str, str] = {

@@ -10,7 +10,6 @@ from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
-from reflex.vars import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]
@@ -58,43 +57,43 @@ class CommonMarginProps(Component):
         *children,
         m: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mx: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         my: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mt: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mr: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         mb: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         ml: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
@@ -181,7 +180,7 @@ class RadixLoadingProp(Component):
     def create(  # type: ignore
         cls,
         *children,
-        loading: Optional[Union[Var[bool], bool]] = None,
+        loading: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -410,16 +409,16 @@ class Theme(RadixThemesComponent):
         *children,
         color_mode: Optional[Literal["inherit", "light", "dark"]] = None,
         theme_panel: Optional[bool] = False,
-        has_background: Optional[Union[Var[bool], bool]] = None,
+        has_background: Optional[Union[ImmutableVar[bool], bool]] = None,
         appearance: Optional[
             Union[
-                Var[Literal["inherit", "light", "dark"]],
+                ImmutableVar[Literal["inherit", "light", "dark"]],
                 Literal["inherit", "light", "dark"],
             ]
         ] = None,
         accent_color: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -481,22 +480,27 @@ class Theme(RadixThemesComponent):
         ] = None,
         gray_color: Optional[
             Union[
-                Var[Literal["gray", "mauve", "slate", "sage", "olive", "sand", "auto"]],
+                ImmutableVar[
+                    Literal["gray", "mauve", "slate", "sage", "olive", "sand", "auto"]
+                ],
                 Literal["gray", "mauve", "slate", "sage", "olive", "sand", "auto"],
             ]
         ] = None,
         panel_background: Optional[
-            Union[Var[Literal["solid", "translucent"]], Literal["solid", "translucent"]]
+            Union[
+                ImmutableVar[Literal["solid", "translucent"]],
+                Literal["solid", "translucent"],
+            ]
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                ImmutableVar[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
         scaling: Optional[
             Union[
-                Var[Literal["90%", "95%", "100%", "105%", "110%"]],
+                ImmutableVar[Literal["90%", "95%", "100%", "105%", "110%"]],
                 Literal["90%", "95%", "100%", "105%", "110%"],
             ]
         ] = None,
@@ -589,7 +593,7 @@ class ThemePanel(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        default_open: Optional[Union[Var[bool], bool]] = None,
+        default_open: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

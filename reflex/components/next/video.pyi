@@ -9,7 +9,6 @@ from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from .base import NextComponent
 
@@ -19,7 +18,7 @@ class Video(NextComponent):
     def create(  # type: ignore
         cls,
         *children,
-        src: Optional[Union[Var[str], str]] = None,
+        src: Optional[Union[ImmutableVar[str], str]] = None,
         as_: Optional[Component] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

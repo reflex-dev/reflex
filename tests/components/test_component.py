@@ -51,13 +51,13 @@ def component1() -> Type[Component]:
 
     class TestComponent1(Component):
         # A test string prop.
-        text: Var[str]
+        text: ImmutableVar[str]
 
         # A test number prop.
-        number: Var[int]
+        number: ImmutableVar[int]
 
         # A test string/number prop.
-        text_or_number: Var[Union[int, str]]
+        text_or_number: ImmutableVar[Union[int, str]]
 
         def _get_imports(self) -> ParsedImportDict:
             return {"react": [ImportVar(tag="Component")]}
@@ -78,7 +78,7 @@ def component2() -> Type[Component]:
 
     class TestComponent2(Component):
         # A test list prop.
-        arr: Var[List[str]]
+        arr: ImmutableVar[List[str]]
 
         on_prop_event: EventHandler[lambda e0: [e0]]
 
@@ -221,7 +221,7 @@ def my_component():
         A test component function.
     """
 
-    def my_component(prop1: Var[str], prop2: Var[int]):
+    def my_component(prop1: ImmutableVar[str], prop2: ImmutableVar[int]):
         return Box.create(prop1, prop2)
 
     return my_component
@@ -865,7 +865,7 @@ def test_custom_component_wrapper():
     """Test that the wrapper of a custom component is correct."""
 
     @custom_component
-    def my_component(width: Var[int], color: Var[str]):
+    def my_component(width: ImmutableVar[int], color: ImmutableVar[str]):
         return rx.box(
             width=width,
             color=color,
@@ -1214,10 +1214,10 @@ FORMATTED_TEST_VAR_LIST_OF_DICT = LiteralVar.create([{"a": "footestbar"}])._repl
 class ComponentNestedVar(Component):
     """A component with nested Var types."""
 
-    dict_of_dict: Var[Dict[str, Dict[str, str]]]
-    list_of_list: Var[List[List[str]]]
-    list_of_list_of_list: Var[List[List[List[str]]]]
-    list_of_dict: Var[List[Dict[str, str]]]
+    dict_of_dict: ImmutableVar[Dict[str, Dict[str, str]]]
+    list_of_list: ImmutableVar[List[List[str]]]
+    list_of_list_of_list: ImmutableVar[List[List[List[str]]]]
+    list_of_dict: ImmutableVar[List[Dict[str, str]]]
 
 
 class EventState(rx.State):
@@ -1696,15 +1696,15 @@ def test_rename_props():
     class C1(Component):
         tag = "C1"
 
-        prop1: Var[str]
-        prop2: Var[str]
+        prop1: ImmutableVar[str]
+        prop2: ImmutableVar[str]
 
         _rename_props = {"prop1": "renamed_prop1", "prop2": "renamed_prop2"}
 
     class C2(C1):
         tag = "C2"
 
-        prop3: Var[str]
+        prop3: ImmutableVar[str]
 
         _rename_props = {"prop2": "subclass_prop2", "prop3": "renamed_prop3"}
 
@@ -1799,7 +1799,7 @@ def test_custom_component_declare_event_handlers_in_fields():
 
 def test_invalid_event_trigger():
     class TriggerComponent(Component):
-        on_push: Var[bool]
+        on_push: ImmutableVar[bool]
 
         def get_event_triggers(self) -> Dict[str, Any]:
             """Test controlled triggers.
@@ -2113,7 +2113,7 @@ def test_add_style_embedded_vars(test_state: BaseState):
 def test_add_style_foreach():
     class StyledComponent(Component):
         tag = "StyledComponent"
-        ix: Var[int]
+        ix: ImmutableVar[int]
 
         def add_style(self):
             return Style({"color": "red"})

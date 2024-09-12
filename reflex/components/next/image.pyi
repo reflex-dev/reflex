@@ -8,7 +8,6 @@ from typing import Any, Callable, Dict, Literal, Optional, Union, overload
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from .base import NextComponent
 
@@ -20,18 +19,18 @@ class Image(NextComponent):
         *children,
         width: Optional[Union[int, str]] = None,
         height: Optional[Union[int, str]] = None,
-        src: Optional[Union[Var[Any], Any]] = None,
-        alt: Optional[Union[Var[str], str]] = None,
-        loader: Optional[Union[Var[Any], Any]] = None,
-        fill: Optional[Union[Var[bool], bool]] = None,
-        sizes: Optional[Union[Var[str], str]] = None,
-        quality: Optional[Union[Var[int], int]] = None,
-        priority: Optional[Union[Var[bool], bool]] = None,
-        placeholder: Optional[Union[Var[str], str]] = None,
+        src: Optional[Union[ImmutableVar[Any], Any]] = None,
+        alt: Optional[Union[ImmutableVar[str], str]] = None,
+        loader: Optional[Union[ImmutableVar[Any], Any]] = None,
+        fill: Optional[Union[ImmutableVar[bool], bool]] = None,
+        sizes: Optional[Union[ImmutableVar[str], str]] = None,
+        quality: Optional[Union[ImmutableVar[int], int]] = None,
+        priority: Optional[Union[ImmutableVar[bool], bool]] = None,
+        placeholder: Optional[Union[ImmutableVar[str], str]] = None,
         loading: Optional[
-            Union[Var[Literal["lazy", "eager"]], Literal["lazy", "eager"]]
+            Union[ImmutableVar[Literal["lazy", "eager"]], Literal["lazy", "eager"]]
         ] = None,
-        blurDataURL: Optional[Union[Var[str], str]] = None,
+        blurDataURL: Optional[Union[ImmutableVar[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -105,7 +104,7 @@ class Image(NextComponent):
             quality: The quality of the optimized image, an integer between 1 and 100, where 100 is the best quality and therefore largest file size. Defaults to 75.
             priority: When true, the image will be considered high priority and preload. Lazy loading is automatically disabled for images using priority.
             placeholder: A placeholder to use while the image is loading. Possible values are blur, empty, or data:image/.... Defaults to empty.
-            loading: Allows passing CSS styles to the underlying image element.  style: Var[Any]  The loading behavior of the image. Defaults to lazy. Can hurt performance, recommended to use `priority` instead.
+            loading: Allows passing CSS styles to the underlying image element.  style: ImmutableVar[Any]  The loading behavior of the image. Defaults to lazy. Can hurt performance, recommended to use `priority` instead.
             blurDataURL: A Data URL to be used as a placeholder image before the src image successfully loads. Only takes effect when combined with placeholder="blur".
             style: The style of the component.
             key: A unique key for the component.

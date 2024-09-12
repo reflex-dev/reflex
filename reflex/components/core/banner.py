@@ -23,34 +23,34 @@ from reflex.ivars.function import FunctionStringVar
 from reflex.ivars.number import BooleanVar
 from reflex.ivars.sequence import LiteralArrayVar
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
 
 connect_error_var_data: VarData = VarData(  # type: ignore
     imports=Imports.EVENTS,
     hooks={Hooks.EVENTS: None},
 )
 
-connect_errors: Var = ImmutableVar.create_safe(
+connect_errors = ImmutableVar.create_safe(
     value=CompileVars.CONNECT_ERROR,
     _var_data=connect_error_var_data,
 )
 
-connection_error: Var = ImmutableVar.create_safe(
+connection_error = ImmutableVar.create_safe(
     value="((connectErrors.length > 0) ? connectErrors[connectErrors.length - 1].message : '')",
     _var_data=connect_error_var_data,
 )
 
-connection_errors_count: Var = ImmutableVar.create_safe(
+connection_errors_count = ImmutableVar.create_safe(
     value="connectErrors.length",
     _var_data=connect_error_var_data,
 )
 
-has_connection_errors: Var = ImmutableVar.create_safe(
+has_connection_errors = ImmutableVar.create_safe(
     value="(connectErrors.length > 0)",
     _var_data=connect_error_var_data,
 ).to(BooleanVar)
 
-has_too_many_connection_errors: Var = ImmutableVar.create_safe(
+has_too_many_connection_errors = ImmutableVar.create_safe(
     value="(connectErrors.length >= 2)",
     _var_data=connect_error_var_data,
 ).to(BooleanVar)
@@ -78,7 +78,7 @@ class WebsocketTargetURL(ImmutableVar):
         )
 
 
-def default_connection_error() -> list[str | Var | Component]:
+def default_connection_error() -> list[str | ImmutableVar | Component]:
     """Get the default connection error message.
 
     Returns:

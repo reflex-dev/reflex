@@ -15,8 +15,8 @@ class Base(BaseHTML):  # noqa: E742
     tag = "base"
 
     tag = "base"
-    href: Var[Union[str, int, bool]]
-    target: Var[Union[str, int, bool]]
+    href: ImmutableVar[Union[str, int, bool]]
+    target: ImmutableVar[Union[str, int, bool]]
 
 
 class Head(BaseHTML):  # noqa: E742
@@ -31,31 +31,31 @@ class Link(BaseHTML):  # noqa: E742
     tag = "link"
 
     # Specifies the CORS settings for the linked resource
-    cross_origin: Var[Union[str, int, bool]]
+    cross_origin: ImmutableVar[Union[str, int, bool]]
 
     # Specifies the URL of the linked document/resource
-    href: Var[Union[str, int, bool]]
+    href: ImmutableVar[Union[str, int, bool]]
 
     # Specifies the language of the text in the linked document
-    href_lang: Var[Union[str, int, bool]]
+    href_lang: ImmutableVar[Union[str, int, bool]]
 
     # Allows a browser to check the fetched link for integrity
-    integrity: Var[Union[str, int, bool]]
+    integrity: ImmutableVar[Union[str, int, bool]]
 
     # Specifies on what device the linked document will be displayed
-    media: Var[Union[str, int, bool]]
+    media: ImmutableVar[Union[str, int, bool]]
 
     # Specifies the referrer policy of the linked document
-    referrer_policy: Var[Union[str, int, bool]]
+    referrer_policy: ImmutableVar[Union[str, int, bool]]
 
     # Specifies the relationship between the current document and the linked one
-    rel: Var[Union[str, int, bool]]
+    rel: ImmutableVar[Union[str, int, bool]]
 
     # Specifies the sizes of icons for visual media
-    sizes: Var[Union[str, int, bool]]
+    sizes: ImmutableVar[Union[str, int, bool]]
 
     # Specifies the MIME type of the linked document
-    type: Var[Union[str, int, bool]]
+    type: ImmutableVar[Union[str, int, bool]]
 
 
 class Meta(BaseHTML):  # Inherits common attributes from BaseHTML
@@ -64,16 +64,16 @@ class Meta(BaseHTML):  # Inherits common attributes from BaseHTML
     tag = "meta"  # The HTML tag for this element is <meta>
 
     # Specifies the character encoding for the HTML document
-    char_set: Var[Union[str, int, bool]]
+    char_set: ImmutableVar[Union[str, int, bool]]
 
     # Defines the content of the metadata
-    content: Var[Union[str, int, bool]]
+    content: ImmutableVar[Union[str, int, bool]]
 
     # Provides an HTTP header for the information/value of the content attribute
-    http_equiv: Var[Union[str, int, bool]]
+    http_equiv: ImmutableVar[Union[str, int, bool]]
 
     # Specifies a name for the metadata
-    name: Var[Union[str, int, bool]]
+    name: ImmutableVar[Union[str, int, bool]]
 
 
 class Title(Element):  # noqa: E742
@@ -88,7 +88,7 @@ class StyleEl(Element):  # noqa: E742
 
     tag = "style"
 
-    media: Var[Union[str, int, bool]]
+    media: ImmutableVar[Union[str, int, bool]]
 
     special_props: Set[ImmutableVar] = {
         ImmutableVar.create_safe("suppressHydrationWarning")

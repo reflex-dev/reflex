@@ -10,7 +10,6 @@ from reflex.components.core.cond import color_mode_cond
 from reflex.event import EventHandler
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.utils import console
-from reflex.vars import Var
 
 try:
     from plotly.graph_objects import Figure, layout
@@ -22,7 +21,7 @@ except ImportError:
     Template = Any  # type: ignore
 
 
-def _event_data_signature(e0: Var) -> List[Any]:
+def _event_data_signature(e0: ImmutableVar) -> List[Any]:
     """For plotly events with event data and no points.
 
     Args:
@@ -34,7 +33,7 @@ def _event_data_signature(e0: Var) -> List[Any]:
     return [ImmutableVar.create_safe(f"{e0}?.event")]
 
 
-def _event_points_data_signature(e0: Var) -> List[Any]:
+def _event_points_data_signature(e0: ImmutableVar) -> List[Any]:
     """For plotly events with event data containing a point array.
 
     Args:
@@ -69,7 +68,7 @@ def _button_click_signature(e0: _ButtonClickData) -> List[Any]:
     return [e0.menu, e0.button, e0.active]
 
 
-def _passthrough_signature(e0: Var) -> List[Any]:
+def _passthrough_signature(e0: ImmutableVar) -> List[Any]:
     """For plotly events with arbitrary serializable data, passed through directly.
 
     Args:
@@ -102,19 +101,19 @@ class Plotly(NoSSRComponent):
     is_default = True
 
     # The figure to display. This can be a plotly figure or a plotly data json.
-    data: Var[Figure]
+    data: ImmutableVar[Figure]  # type: ignore
 
     # The layout of the graph.
-    layout: Var[Dict]
+    layout: ImmutableVar[Dict]
 
     # The template for visual appearance of the graph.
-    template: Var[Template]
+    template: ImmutableVar[Template]  # type: ignore
 
     # The config of the graph.
-    config: Var[Dict]
+    config: ImmutableVar[Dict]
 
     # If true, the graph will resize when the window is resized.
-    use_resize_handler: Var[bool] = LiteralVar.create(True)
+    use_resize_handler: ImmutableVar[bool] = LiteralVar.create(True)
 
     # Fired after the plot is redrawn.
     on_after_plot: EventHandler[_passthrough_signature]
@@ -255,7 +254,7 @@ const extractPoints = (points) => {
 
     def _render(self):
         tag = super()._render()
-        figure = self.data.upcast().to(dict)
+        figure = self.data.to(dict)
         merge_dicts = []  # Data will be merged and spread from these dict Vars
         if self.layout is not None:
             # Why is this not a literal dict? Great question... it didn't work

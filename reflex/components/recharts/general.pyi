@@ -10,7 +10,6 @@ from reflex.constants.colors import Color
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from .recharts import (
     Recharts,
@@ -22,12 +21,12 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
     def create(  # type: ignore
         cls,
         *children,
-        aspect: Optional[Union[Var[int], int]] = None,
-        width: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        height: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        min_width: Optional[Union[Var[int], int]] = None,
-        min_height: Optional[Union[Var[int], int]] = None,
-        debounce: Optional[Union[Var[int], int]] = None,
+        aspect: Optional[Union[ImmutableVar[int], int]] = None,
+        width: Optional[Union[ImmutableVar[Union[int, str]], int, str]] = None,
+        height: Optional[Union[ImmutableVar[Union[int, str]], int, str]] = None,
+        min_width: Optional[Union[ImmutableVar[int], int]] = None,
+        min_height: Optional[Union[ImmutableVar[int], int]] = None,
+        debounce: Optional[Union[ImmutableVar[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -110,30 +109,30 @@ class Legend(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        width: Optional[Union[Var[int], int]] = None,
-        height: Optional[Union[Var[int], int]] = None,
+        width: Optional[Union[ImmutableVar[int], int]] = None,
+        height: Optional[Union[ImmutableVar[int], int]] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
+                ImmutableVar[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
         align: Optional[
             Union[
-                Var[Literal["left", "center", "right"]],
+                ImmutableVar[Literal["left", "center", "right"]],
                 Literal["left", "center", "right"],
             ]
         ] = None,
         vertical_align: Optional[
             Union[
-                Var[Literal["top", "middle", "bottom"]],
+                ImmutableVar[Literal["top", "middle", "bottom"]],
                 Literal["top", "middle", "bottom"],
             ]
         ] = None,
-        icon_size: Optional[Union[Var[int], int]] = None,
+        icon_size: Optional[Union[ImmutableVar[int], int]] = None,
         icon_type: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "line",
                         "plainline",
@@ -161,9 +160,9 @@ class Legend(Recharts):
                 ],
             ]
         ] = None,
-        chart_width: Optional[Union[Var[int], int]] = None,
-        chart_height: Optional[Union[Var[int], int]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        chart_width: Optional[Union[ImmutableVar[int], int]] = None,
+        chart_height: Optional[Union[ImmutableVar[int], int]] = None,
+        margin: Optional[Union[ImmutableVar[Dict[str, Any]], Dict[str, Any]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -250,28 +249,40 @@ class GraphingTooltip(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        separator: Optional[Union[Var[str], str]] = None,
-        offset: Optional[Union[Var[int], int]] = None,
-        filter_null: Optional[Union[Var[bool], bool]] = None,
+        separator: Optional[Union[ImmutableVar[str], str]] = None,
+        offset: Optional[Union[ImmutableVar[int], int]] = None,
+        filter_null: Optional[Union[ImmutableVar[bool], bool]] = None,
         cursor: Optional[
-            Union[Var[Union[Dict[str, Any], bool]], Dict[str, Any], bool]
+            Union[ImmutableVar[Union[Dict[str, Any], bool]], Dict[str, Any], bool]
         ] = None,
-        view_box: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        item_style: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        wrapper_style: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        content_style: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        label_style: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        view_box: Optional[Union[ImmutableVar[Dict[str, Any]], Dict[str, Any]]] = None,
+        item_style: Optional[
+            Union[ImmutableVar[Dict[str, Any]], Dict[str, Any]]
+        ] = None,
+        wrapper_style: Optional[
+            Union[ImmutableVar[Dict[str, Any]], Dict[str, Any]]
+        ] = None,
+        content_style: Optional[
+            Union[ImmutableVar[Dict[str, Any]], Dict[str, Any]]
+        ] = None,
+        label_style: Optional[
+            Union[ImmutableVar[Dict[str, Any]], Dict[str, Any]]
+        ] = None,
         allow_escape_view_box: Optional[
-            Union[Var[Dict[str, bool]], Dict[str, bool]]
+            Union[ImmutableVar[Dict[str, bool]], Dict[str, bool]]
         ] = None,
-        active: Optional[Union[Var[bool], bool]] = None,
-        position: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        coordinate: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        is_animation_active: Optional[Union[Var[bool], bool]] = None,
-        animation_duration: Optional[Union[Var[int], int]] = None,
+        active: Optional[Union[ImmutableVar[bool], bool]] = None,
+        position: Optional[Union[ImmutableVar[Dict[str, Any]], Dict[str, Any]]] = None,
+        coordinate: Optional[
+            Union[ImmutableVar[Dict[str, Any]], Dict[str, Any]]
+        ] = None,
+        is_animation_active: Optional[Union[ImmutableVar[bool], bool]] = None,
+        animation_duration: Optional[Union[ImmutableVar[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
+                ImmutableVar[
+                    Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
+                ],
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
             ]
         ] = None,
@@ -367,12 +378,12 @@ class Label(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        view_box: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        offset: Optional[Union[Var[int], int]] = None,
+        view_box: Optional[Union[ImmutableVar[Dict[str, Any]], Dict[str, Any]]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
+        offset: Optional[Union[ImmutableVar[int], int]] = None,
         position: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "top",
                         "left",
@@ -496,10 +507,10 @@ class LabelList(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        data_key: Optional[Union[ImmutableVar[Union[int, str]], int, str]] = None,
         position: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "top",
                         "left",
@@ -543,9 +554,9 @@ class LabelList(Recharts):
                 ],
             ]
         ] = None,
-        offset: Optional[Union[Var[int], int]] = None,
-        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        offset: Optional[Union[ImmutableVar[int], int]] = None,
+        fill: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
+        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

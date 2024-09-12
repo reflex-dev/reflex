@@ -5,8 +5,8 @@ from typing import List, Optional
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.event import EventHandler
+from reflex.ivars.base import ImmutableVar
 from reflex.utils.imports import ImportDict
-from reflex.vars import Var
 
 
 class MomentDelta(Base):
@@ -32,64 +32,64 @@ class Moment(NoSSRComponent):
     lib_dependencies: List[str] = ["moment"]
 
     # How often the date update (how often time update / 0 to disable).
-    interval: Var[int]
+    interval: ImmutableVar[int]
 
     # Formats the date according to the given format string.
-    format: Var[str]
+    format: ImmutableVar[str]
 
     # When formatting duration time, the largest-magnitude tokens are automatically trimmed when they have no value.
-    trim: Var[bool]
+    trim: ImmutableVar[bool]
 
     #  Use the parse attribute to tell moment how to parse the given date when non-standard.
-    parse: Var[str]
+    parse: ImmutableVar[str]
 
     # Add a delta to the base date (keys are "years", "quarters", "months", "weeks", "days", "hours", "minutes", "seconds")
-    add: Var[MomentDelta]
+    add: ImmutableVar[MomentDelta]
 
     # Subtract a delta to the base date (keys are "years", "quarters", "months", "weeks", "days", "hours", "minutes", "seconds")
-    subtract: Var[MomentDelta]
+    subtract: ImmutableVar[MomentDelta]
 
     # Displays the date as the time from now, e.g. "5 minutes ago".
-    from_now: Var[bool]
+    from_now: ImmutableVar[bool]
 
     # Setting fromNowDuring will display the relative time as with fromNow but just during its value in milliseconds, after that format will be used instead.
-    from_now_during: Var[int]
+    from_now_during: ImmutableVar[int]
 
     # Similar to fromNow, but gives the opposite interval.
-    to_now: Var[bool]
+    to_now: ImmutableVar[bool]
 
     # Adds a title attribute to the element with the complete date.
-    with_title: Var[bool]
+    with_title: ImmutableVar[bool]
 
     # How the title date is formatted when using the withTitle attribute.
-    title_format: Var[str]
+    title_format: ImmutableVar[str]
 
     # Show the different between this date and the rendered child.
-    diff: Var[str]
+    diff: ImmutableVar[str]
 
     # Display the diff as decimal.
-    decimal: Var[bool]
+    decimal: ImmutableVar[bool]
 
     # Display the diff in given unit.
-    unit: Var[str]
+    unit: ImmutableVar[str]
 
     # Shows the duration (elapsed time) between two dates. duration property should be behind date property time-wise.
-    duration: Var[str]
+    duration: ImmutableVar[str]
 
     # The date to display (also work if passed as children).
-    date: Var[str]
+    date: ImmutableVar[str]
 
     # Shows the duration (elapsed time) between now and the provided datetime.
-    duration_from_now: Var[bool]
+    duration_from_now: ImmutableVar[bool]
 
     # Tells Moment to parse the given date value as a unix timestamp.
-    unix: Var[bool]
+    unix: ImmutableVar[bool]
 
     # Outputs the result in local time.
-    local: Var[bool]
+    local: ImmutableVar[bool]
 
     # Display the date in the given timezone.
-    tz: Var[str]
+    tz: ImmutableVar[str]
 
     # Fires when the date changes.
     on_change: EventHandler[lambda date: [date]]

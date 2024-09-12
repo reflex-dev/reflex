@@ -13,7 +13,6 @@ from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
-from reflex.vars import Var
 
 from ..base import RadixThemesComponent
 
@@ -27,10 +26,10 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[
                             str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
@@ -44,7 +43,7 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
         ] = None,
         weight: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["light", "regular", "medium", "bold"]],
                         Literal["light", "regular", "medium", "bold"],
@@ -56,7 +55,7 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
         ] = None,
         trim: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["normal", "start", "end", "both"]],
                         Literal["normal", "start", "end", "both"],
@@ -68,13 +67,13 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
         ] = None,
         underline: Optional[
             Union[
-                Var[Literal["auto", "hover", "always", "none"]],
+                ImmutableVar[Literal["auto", "hover", "always", "none"]],
                 Literal["auto", "hover", "always", "none"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -134,43 +133,83 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
-        is_external: Optional[Union[Var[bool], bool]] = None,
-        download: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        href: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        href_lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        media: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        ping: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        referrer_policy: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
+        is_external: Optional[Union[ImmutableVar[bool], bool]] = None,
+        download: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        rel: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        shape: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        target: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        href: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        href_lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        media: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        ping: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        referrer_policy: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        rel: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        shape: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        target: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
 from reflex import constants
 from reflex.utils import exceptions, types
-from reflex.vars import Var
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
@@ -263,7 +262,7 @@ def format_string(string: str) -> str:
     return _wrap_js_string(_escape_js_string(string))
 
 
-def format_var(var: Var) -> str:
+def format_var(var: ImmutableVar) -> str:
     """Format the given Var as a javascript value.
 
     Args:

@@ -9,8 +9,7 @@ from typing import Literal
 
 from reflex.components.component import Component
 from reflex.event import EventHandler
-from reflex.ivars.base import LiteralVar
-from reflex.vars import Var
+from reflex.ivars.base import ImmutableVar, LiteralVar
 
 
 class Script(Component):
@@ -28,12 +27,12 @@ class Script(Component):
     is_default = True
 
     # Required unless inline script is used
-    src: Var[str]
+    src: ImmutableVar[str]
 
     # When the script will execute: afterInteractive (defer-like behavior) | beforeInteractive | lazyOnload (async-like behavior)
-    strategy: Var[Literal["afterInteractive", "beforeInteractive", "lazyOnload"]] = (
-        LiteralVar.create("afterInteractive")
-    )
+    strategy: ImmutableVar[
+        Literal["afterInteractive", "beforeInteractive", "lazyOnload"]
+    ] = LiteralVar.create("afterInteractive")
 
     # Triggered when the script is loading
     on_load: EventHandler[lambda: []]

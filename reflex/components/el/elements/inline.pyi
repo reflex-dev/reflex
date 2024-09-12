@@ -8,7 +8,6 @@ from typing import Any, Callable, Dict, Optional, Union, overload
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from .base import BaseHTML
 
@@ -18,41 +17,81 @@ class A(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        download: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        href: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        href_lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        media: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        ping: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        referrer_policy: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+        download: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        rel: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        shape: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        target: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        href: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        href_lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        media: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        ping: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        referrer_policy: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        rel: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        shape: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        target: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -154,30 +193,54 @@ class Abbr(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -270,30 +333,54 @@ class B(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -386,30 +473,54 @@ class Bdi(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -502,30 +613,54 @@ class Bdo(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -618,30 +753,54 @@ class Br(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -734,30 +893,54 @@ class Cite(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -850,30 +1033,54 @@ class Code(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -966,31 +1173,57 @@ class Data(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        value: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1084,30 +1317,54 @@ class Dfn(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1200,30 +1457,54 @@ class Em(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1316,30 +1597,54 @@ class I(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1432,30 +1737,54 @@ class Kbd(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1548,30 +1877,54 @@ class Mark(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1664,31 +2017,57 @@ class Q(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        cite: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        cite: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1782,30 +2161,54 @@ class Rp(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1898,30 +2301,54 @@ class Rt(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2014,30 +2441,54 @@ class Ruby(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2130,30 +2581,54 @@ class S(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2246,30 +2721,54 @@ class Samp(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2362,30 +2861,54 @@ class Small(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2478,30 +3001,54 @@ class Span(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2594,30 +3141,54 @@ class Strong(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2710,30 +3281,54 @@ class Sub(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2826,30 +3421,54 @@ class Sup(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2942,31 +3561,57 @@ class Time(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        date_time: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        date_time: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -3060,30 +3705,54 @@ class U(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -3176,30 +3845,54 @@ class Wbr(BaseHTML):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

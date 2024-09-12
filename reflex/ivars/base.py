@@ -67,7 +67,7 @@ if TYPE_CHECKING:
     from .sequence import ArrayVar, StringVar, ToArrayOperation, ToStringOperation
 
 
-VAR_TYPE = TypeVar("VAR_TYPE")
+VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
 
 
 @dataclasses.dataclass(
@@ -199,7 +199,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         _var_is_local: bool | None = None,
         _var_is_string: bool | None = None,
         _var_data: VarData | None = None,
-    ) -> ImmutableVar | None:
+    ) -> ImmutableVar:
         """Create a var from a value.
 
         Args:
@@ -229,7 +229,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
 
         # Check for none values.
         if value is None:
-            return None
+            raise
 
         # If the value is already a var, do nothing.
         if isinstance(value, ImmutableVar):
@@ -432,7 +432,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             return ToNoneOperation.create(self)
 
         # If we can't determine the first argument, we just replace the _var_type.
-        if not issubclass(output, Var) or var_type is None:
+        if not issubclass(output, ImmutableVar) or var_type is None:
             return dataclasses.replace(
                 self,
                 _var_type=output,
@@ -2022,7 +2022,7 @@ class LiteralNoneVar(LiteralVar, NoneVar):
 class ToNoneOperation(CachedVarOperation, NoneVar):
     """A var operation that converts a var to None."""
 
-    _original_var: Var = dataclasses.field(
+    _original_var: ImmutableVar = dataclasses.field(
         default_factory=lambda: LiteralNoneVar.create()
     )
 
@@ -2038,7 +2038,7 @@ class ToNoneOperation(CachedVarOperation, NoneVar):
     @classmethod
     def create(
         cls,
-        var: Var,
+        var: ImmutableVar,
         _var_data: VarData | None = None,
     ) -> ToNoneOperation:
         """Create a ToNoneOperation.
@@ -2067,7 +2067,9 @@ class StateOperation(CachedVarOperation, ImmutableVar):
     """A var operation that accesses a field on an object."""
 
     _state_name: str = dataclasses.field(default="")
-    _field: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
+    _field: ImmutableVar = dataclasses.field(
+        default_factory=lambda: LiteralNoneVar.create()
+    )
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -2158,7 +2160,7 @@ class ToOperation:
     @classmethod
     def create(
         cls,
-        value: Var,
+        value: ImmutableVar,
         _var_type: GenericType | None = None,
         _var_data: VarData | None = None,
     ):

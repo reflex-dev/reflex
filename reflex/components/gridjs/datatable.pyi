@@ -10,7 +10,6 @@ from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
-from reflex.vars import Var
 
 class Gridjs(Component):
     @overload
@@ -95,11 +94,11 @@ class DataTable(Gridjs):
         cls,
         *children,
         data: Optional[Any] = None,
-        columns: Optional[Union[Var[List], List]] = None,
-        search: Optional[Union[Var[bool], bool]] = None,
-        sort: Optional[Union[Var[bool], bool]] = None,
-        resizable: Optional[Union[Var[bool], bool]] = None,
-        pagination: Optional[Union[Var[Union[Dict, bool]], bool, Dict]] = None,
+        columns: Optional[Union[ImmutableVar[List], List]] = None,
+        search: Optional[Union[ImmutableVar[bool], bool]] = None,
+        sort: Optional[Union[ImmutableVar[bool], bool]] = None,
+        resizable: Optional[Union[ImmutableVar[bool], bool]] = None,
+        pagination: Optional[Union[ImmutableVar[Union[Dict, bool]], bool, Dict]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

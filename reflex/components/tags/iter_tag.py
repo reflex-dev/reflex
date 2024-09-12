@@ -3,11 +3,19 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, List, Tuple, Type, Union, get_args
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Iterable,
+    Tuple,
+    Type,
+    Union,
+    get_args,
+)
 
 from reflex.components.tags.tag import Tag
 from reflex.ivars.base import ImmutableVar
-from reflex.vars import Var
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
@@ -17,7 +25,7 @@ class IterTag(Tag):
     """An iterator tag."""
 
     # The var to iterate over.
-    iterable: Var[List]
+    iterable: ImmutableVar[Iterable]
 
     # The component render function for each item in the iterable.
     render_fn: Callable
@@ -34,7 +42,7 @@ class IterTag(Tag):
         Returns:
             The type of the iterable var.
         """
-        iterable = self.iterable.upcast()
+        iterable = self.iterable
         try:
             if iterable._var_type.mro()[0] == dict:
                 # Arg is a tuple of (key, value).
@@ -47,7 +55,7 @@ class IterTag(Tag):
         except Exception:
             return Any
 
-    def get_index_var(self) -> Var:
+    def get_index_var(self) -> ImmutableVar:
         """Get the index var for the tag (with curly braces).
 
         This is used to reference the index var within the tag.
@@ -60,7 +68,7 @@ class IterTag(Tag):
             _var_type=int,
         ).guess_type()
 
-    def get_arg_var(self) -> Var:
+    def get_arg_var(self) -> ImmutableVar:
         """Get the arg var for the tag (with curly braces).
 
         This is used to reference the arg var within the tag.
@@ -73,7 +81,7 @@ class IterTag(Tag):
             _var_type=self.get_iterable_var_type(),
         ).guess_type()
 
-    def get_index_var_arg(self) -> Var:
+    def get_index_var_arg(self) -> ImmutableVar:
         """Get the index var for the tag (without curly braces).
 
         This is used to render the index var in the .map() function.
@@ -86,7 +94,7 @@ class IterTag(Tag):
             _var_type=int,
         ).guess_type()
 
-    def get_arg_var_arg(self) -> Var:
+    def get_arg_var_arg(self) -> ImmutableVar:
         """Get the arg var for the tag (without curly braces).
 
         This is used to render the arg var in the .map() function.

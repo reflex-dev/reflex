@@ -393,7 +393,9 @@ def _breakpoints_satisfies_typing(cls_check: GenericType, instance: Any) -> bool
             _breakpoints_satisfies_typing(type_to_check, instance)
             for type_to_check in get_args(cls_check)
         )
-    elif cls_check_base == reflex.vars.Var and "__args__" in cls_check.__dict__:
+    elif (
+        cls_check_base == reflex.ivars.ImmutableVar and "__args__" in cls_check.__dict__
+    ):
         return _breakpoints_satisfies_typing(get_args(cls_check)[0], instance)
 
     return False
@@ -560,9 +562,9 @@ def check_prop_in_allowed_types(prop: Any, allowed_types: Iterable) -> bool:
     Returns:
         If the prop type match one of the allowed_types.
     """
-    from reflex.vars import Var
+    from reflex.ivars import ImmutableVar
 
-    type_ = prop._var_type if _isinstance(prop, Var) else type(prop)
+    type_ = prop._var_type if _isinstance(prop, ImmutableVar) else type(prop)
     return type_ in allowed_types
 
 

@@ -8,7 +8,7 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.colors import color
 from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.ivars.base import ImmutableVar
 
 from ..base import (
     LiteralAccentColor,
@@ -24,19 +24,19 @@ class TabsRoot(RadixThemesComponent):
     tag = "Tabs.Root"
 
     # The value of the tab that should be active when initially rendered. Use when you do not need to control the state of the tabs.
-    default_value: Var[str]
+    default_value: ImmutableVar[str]
 
     # The controlled value of the tab that should be active. Use when you need to control the state of the tabs.
-    value: Var[str]
+    value: ImmutableVar[str]
 
     # The orientation of the tabs.
-    orientation: Var[Literal["horizontal", "vertical"]]
+    orientation: ImmutableVar[Literal["horizontal", "vertical"]]
 
     # Reading direction of the tabs.
-    dir: Var[Literal["ltr", "rtl"]]
+    dir: ImmutableVar[Literal["ltr", "rtl"]]
 
     # The mode of activation for the tabs. "automatic" will activate the tab when focused. "manual" will activate the tab when clicked.
-    activation_mode: Var[Literal["automatic", "manual"]]
+    activation_mode: ImmutableVar[Literal["automatic", "manual"]]
 
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
@@ -63,10 +63,10 @@ class TabsList(RadixThemesComponent):
     tag = "Tabs.List"
 
     # Tabs size "1" - "2"
-    size: Var[Responsive[Literal["1", "2"]]]
+    size: ImmutableVar[Responsive[Literal["1", "2"]]]
 
     # When true, the tabs will loop when reaching the end.
-    loop: Var[bool]
+    loop: ImmutableVar[bool]
 
     def add_style(self):
         """Add style for the component.
@@ -88,13 +88,13 @@ class TabsTrigger(RadixThemesComponent):
     tag = "Tabs.Trigger"
 
     # The value of the tab. Must be unique for each tab.
-    value: Var[str]
+    value: ImmutableVar[str]
 
     # Whether the tab is disabled
-    disabled: Var[bool]
+    disabled: ImmutableVar[bool]
 
     # The color of the line under the tab when active.
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: ImmutableVar[LiteralAccentColor]
 
     _valid_parents: List[str] = ["TabsList"]
 
@@ -132,10 +132,10 @@ class TabsContent(RadixThemesComponent):
     tag = "Tabs.Content"
 
     # The value of the tab. Must be unique for each tab.
-    value: Var[str]
+    value: ImmutableVar[str]
 
     # Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries.
-    force_mount: Var[bool]
+    force_mount: ImmutableVar[bool]
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style for the component.

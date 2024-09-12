@@ -10,7 +10,6 @@ from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from ..base import RadixThemesComponent
 
@@ -23,10 +22,10 @@ class Checkbox(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
@@ -37,13 +36,13 @@ class Checkbox(RadixThemesComponent):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
+                ImmutableVar[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -103,13 +102,13 @@ class Checkbox(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
-        default_checked: Optional[Union[Var[bool], bool]] = None,
-        checked: Optional[Union[Var[bool], bool]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
+        default_checked: Optional[Union[ImmutableVar[bool], bool]] = None,
+        checked: Optional[Union[ImmutableVar[bool], bool]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
+        required: Optional[Union[ImmutableVar[bool], bool]] = None,
+        name: Optional[Union[ImmutableVar[str], str]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -203,26 +202,26 @@ class HighLevelCheckbox(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        text: Optional[Union[Var[str], str]] = None,
+        text: Optional[Union[ImmutableVar[str], str]] = None,
         spacing: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[ImmutableVar[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
+                ImmutableVar[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -282,13 +281,13 @@ class HighLevelCheckbox(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
-        default_checked: Optional[Union[Var[bool], bool]] = None,
-        checked: Optional[Union[Var[bool], bool]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
+        default_checked: Optional[Union[ImmutableVar[bool], bool]] = None,
+        checked: Optional[Union[ImmutableVar[bool], bool]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
+        required: Optional[Union[ImmutableVar[bool], bool]] = None,
+        name: Optional[Union[ImmutableVar[str], str]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -379,26 +378,26 @@ class CheckboxNamespace(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        text: Optional[Union[Var[str], str]] = None,
+        text: Optional[Union[ImmutableVar[str], str]] = None,
         spacing: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[ImmutableVar[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
+                ImmutableVar[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -458,13 +457,13 @@ class CheckboxNamespace(ComponentNamespace):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
-        default_checked: Optional[Union[Var[bool], bool]] = None,
-        checked: Optional[Union[Var[bool], bool]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
+        default_checked: Optional[Union[ImmutableVar[bool], bool]] = None,
+        checked: Optional[Union[ImmutableVar[bool], bool]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
+        required: Optional[Union[ImmutableVar[bool], bool]] = None,
+        name: Optional[Union[ImmutableVar[str], str]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

@@ -2,7 +2,7 @@
 
 from typing import Union
 
-from reflex.vars import Var
+from reflex.ivars.base import ImmutableVar
 
 from ..base import RadixThemesComponent
 
@@ -13,7 +13,7 @@ class AspectRatio(RadixThemesComponent):
     tag = "AspectRatio"
 
     # The ratio of the width to the height of the element
-    ratio: Var[Union[float, int]]
+    ratio: ImmutableVar[Union[float, int]]
 
 
 aspect_ratio = AspectRatio.create

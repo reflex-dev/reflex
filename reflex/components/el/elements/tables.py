@@ -2,6 +2,7 @@
 
 from typing import Union
 
+from reflex.ivars.base import ImmutableVar
 from reflex.vars import Var as Var
 
 from .base import BaseHTML
@@ -13,7 +14,7 @@ class Caption(BaseHTML):
     tag = "caption"
 
     # Alignment of the caption
-    align: Var[Union[str, int, bool]]
+    align: ImmutableVar[Union[str, int, bool]]
 
 
 class Col(BaseHTML):
@@ -22,10 +23,10 @@ class Col(BaseHTML):
     tag = "col"
 
     # Alignment of the content within the column
-    align: Var[Union[str, int, bool]]
+    align: ImmutableVar[Union[str, int, bool]]
 
     # Number of columns the col element spans
-    span: Var[Union[str, int, bool]]
+    span: ImmutableVar[Union[str, int, bool]]
 
 
 class Colgroup(BaseHTML):
@@ -34,10 +35,10 @@ class Colgroup(BaseHTML):
     tag = "colgroup"
 
     # Alignment of the content within the column group
-    align: Var[Union[str, int, bool]]
+    align: ImmutableVar[Union[str, int, bool]]
 
     # Number of columns the colgroup element spans
-    span: Var[Union[str, int, bool]]
+    span: ImmutableVar[Union[str, int, bool]]
 
 
 class Table(BaseHTML):
@@ -46,10 +47,10 @@ class Table(BaseHTML):
     tag = "table"
 
     # Alignment of the table
-    align: Var[Union[str, int, bool]]
+    align: ImmutableVar[Union[str, int, bool]]
 
     # Provides a summary of the table's purpose and structure
-    summary: Var[Union[str, int, bool]]
+    summary: ImmutableVar[Union[str, int, bool]]
 
 
 class Tbody(BaseHTML):
@@ -58,7 +59,7 @@ class Tbody(BaseHTML):
     tag = "tbody"
 
     # Alignment of the content within the table body
-    align: Var[Union[str, int, bool]]
+    align: ImmutableVar[Union[str, int, bool]]
 
 
 class Td(BaseHTML):
@@ -67,16 +68,16 @@ class Td(BaseHTML):
     tag = "td"
 
     # Alignment of the content within the table cell
-    align: Var[Union[str, int, bool]]
+    align: ImmutableVar[Union[str, int, bool]]
 
     # Number of columns a cell should span
-    col_span: Var[Union[str, int, bool]]
+    col_span: ImmutableVar[Union[str, int, bool]]
 
     # IDs of the headers associated with this cell
-    headers: Var[Union[str, int, bool]]
+    headers: ImmutableVar[Union[str, int, bool]]
 
     # Number of rows a cell should span
-    row_span: Var[Union[str, int, bool]]
+    row_span: ImmutableVar[Union[str, int, bool]]
 
 
 class Tfoot(BaseHTML):
@@ -85,7 +86,7 @@ class Tfoot(BaseHTML):
     tag = "tfoot"
 
     # Alignment of the content within the table footer
-    align: Var[Union[str, int, bool]]
+    align: ImmutableVar[Union[str, int, bool]]
 
 
 class Th(BaseHTML):
@@ -94,19 +95,19 @@ class Th(BaseHTML):
     tag = "th"
 
     # Alignment of the content within the table header cell
-    align: Var[Union[str, int, bool]]
+    align: ImmutableVar[Union[str, int, bool]]
 
     # Number of columns a header cell should span
-    col_span: Var[Union[str, int, bool]]
+    col_span: ImmutableVar[Union[str, int, bool]]
 
     # IDs of the headers associated with this header cell
-    headers: Var[Union[str, int, bool]]
+    headers: ImmutableVar[Union[str, int, bool]]
 
     # Number of rows a header cell should span
-    row_span: Var[Union[str, int, bool]]
+    row_span: ImmutableVar[Union[str, int, bool]]
 
     # Scope of the header cell (row, col, rowgroup, colgroup)
-    scope: Var[Union[str, int, bool]]
+    scope: ImmutableVar[Union[str, int, bool]]
 
 
 class Thead(BaseHTML):
@@ -115,7 +116,7 @@ class Thead(BaseHTML):
     tag = "thead"
 
     # Alignment of the content within the table header
-    align: Var[Union[str, int, bool]]
+    align: ImmutableVar[Union[str, int, bool]]
 
 
 class Tr(BaseHTML):
@@ -124,7 +125,7 @@ class Tr(BaseHTML):
     tag = "tr"
 
     # Alignment of the content within the table row
-    align: Var[Union[str, int, bool]]
+    align: ImmutableVar[Union[str, int, bool]]
 
 
 caption = Caption.create

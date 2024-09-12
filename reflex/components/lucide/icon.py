@@ -1,8 +1,8 @@
 """Lucide Icon component."""
 
 from reflex.components.component import Component
+from reflex.ivars.base import ImmutableVar
 from reflex.utils import format
-from reflex.vars import Var
 
 
 class LucideIconComponent(Component):
@@ -17,7 +17,7 @@ class Icon(LucideIconComponent):
     tag = "None"
 
     # The size of the icon in pixels.
-    size: Var[int]
+    size: ImmutableVar[int]
 
     @classmethod
     def create(cls, *children, **props) -> Component:

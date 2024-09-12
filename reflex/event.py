@@ -25,7 +25,7 @@ from reflex.ivars.object import ObjectVar
 from reflex.utils import format
 from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
 from reflex.utils.types import ArgsSpec
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
 
 try:
     from typing import Annotated
@@ -481,7 +481,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
 
 
 def redirect(
-    path: str | Var[str],
+    path: str | ImmutableVar[str],
     external: Optional[bool] = False,
     replace: Optional[bool] = False,
 ) -> EventSpec:
@@ -504,7 +504,7 @@ def redirect(
     )
 
 
-def console_log(message: str | Var[str]) -> EventSpec:
+def console_log(message: str | ImmutableVar[str]) -> EventSpec:
     """Do a console.log on the browser.
 
     Args:
@@ -525,7 +525,7 @@ def back() -> EventSpec:
     return call_script("window.history.back()")
 
 
-def window_alert(message: str | Var[str]) -> EventSpec:
+def window_alert(message: str | ImmutableVar[str]) -> EventSpec:
     """Create a window alert on the browser.
 
     Args:
@@ -759,7 +759,7 @@ def _callback_arg_spec(eval_result):
 
 
 def call_script(
-    javascript_code: str | Var[str],
+    javascript_code: str | ImmutableVar[str],
     callback: (
         EventSpec
         | EventHandler

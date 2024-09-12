@@ -11,7 +11,6 @@ from reflex.components.el import elements
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from ..base import RadixThemesComponent
 
@@ -26,7 +25,7 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
         *children,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
@@ -37,13 +36,13 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
+                ImmutableVar[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -105,45 +104,71 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                ImmutableVar[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        auto_complete: Optional[Union[Var[bool], bool]] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        max_length: Optional[Union[Var[int], int]] = None,
-        min_length: Optional[Union[Var[int], int]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        placeholder: Optional[Union[Var[str], str]] = None,
-        read_only: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
-        type: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[Union[float, int, str]], str, int, float]] = None,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        auto_complete: Optional[Union[ImmutableVar[bool], bool]] = None,
+        default_value: Optional[Union[ImmutableVar[str], str]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
+        max_length: Optional[Union[ImmutableVar[int], int]] = None,
+        min_length: Optional[Union[ImmutableVar[int], int]] = None,
+        name: Optional[Union[ImmutableVar[str], str]] = None,
+        placeholder: Optional[Union[ImmutableVar[str], str]] = None,
+        read_only: Optional[Union[ImmutableVar[bool], bool]] = None,
+        required: Optional[Union[ImmutableVar[bool], bool]] = None,
+        type: Optional[Union[ImmutableVar[str], str]] = None,
+        value: Optional[
+            Union[ImmutableVar[Union[float, int, str]], str, int, float]
+        ] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -262,7 +287,7 @@ class TextFieldSlot(RadixThemesComponent):
         *children,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -404,7 +429,7 @@ class TextField(ComponentNamespace):
         *children,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
@@ -415,13 +440,13 @@ class TextField(ComponentNamespace):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
+                ImmutableVar[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -483,45 +508,71 @@ class TextField(ComponentNamespace):
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                ImmutableVar[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        auto_complete: Optional[Union[Var[bool], bool]] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        max_length: Optional[Union[Var[int], int]] = None,
-        min_length: Optional[Union[Var[int], int]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        placeholder: Optional[Union[Var[str], str]] = None,
-        read_only: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
-        type: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[Union[float, int, str]], str, int, float]] = None,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        auto_complete: Optional[Union[ImmutableVar[bool], bool]] = None,
+        default_value: Optional[Union[ImmutableVar[str], str]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
+        max_length: Optional[Union[ImmutableVar[int], int]] = None,
+        min_length: Optional[Union[ImmutableVar[int], int]] = None,
+        name: Optional[Union[ImmutableVar[str], str]] = None,
+        placeholder: Optional[Union[ImmutableVar[str], str]] = None,
+        read_only: Optional[Union[ImmutableVar[bool], bool]] = None,
+        required: Optional[Union[ImmutableVar[bool], bool]] = None,
+        type: Optional[Union[ImmutableVar[str], str]] = None,
+        value: Optional[
+            Union[ImmutableVar[Union[float, int, str]], str, int, float]
+        ] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

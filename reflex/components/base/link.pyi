@@ -9,7 +9,6 @@ from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 class RawLink(Component):
     @overload
@@ -17,8 +16,8 @@ class RawLink(Component):
     def create(  # type: ignore
         cls,
         *children,
-        href: Optional[Union[Var[str], str]] = None,
-        rel: Optional[Union[Var[str], str]] = None,
+        href: Optional[Union[ImmutableVar[str], str]] = None,
+        rel: Optional[Union[ImmutableVar[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -97,13 +96,13 @@ class ScriptTag(Component):
     def create(  # type: ignore
         cls,
         *children,
-        type_: Optional[Union[Var[str], str]] = None,
-        source: Optional[Union[Var[str], str]] = None,
-        integrity: Optional[Union[Var[str], str]] = None,
-        crossorigin: Optional[Union[Var[str], str]] = None,
-        referrer_policy: Optional[Union[Var[str], str]] = None,
-        is_async: Optional[Union[Var[bool], bool]] = None,
-        defer: Optional[Union[Var[bool], bool]] = None,
+        type_: Optional[Union[ImmutableVar[str], str]] = None,
+        source: Optional[Union[ImmutableVar[str], str]] = None,
+        integrity: Optional[Union[ImmutableVar[str], str]] = None,
+        crossorigin: Optional[Union[ImmutableVar[str], str]] = None,
+        referrer_policy: Optional[Union[ImmutableVar[str], str]] = None,
+        is_async: Optional[Union[ImmutableVar[bool], bool]] = None,
+        defer: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

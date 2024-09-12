@@ -7,7 +7,7 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
 from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.ivars.base import ImmutableVar
 
 from ..base import (
     LiteralAccentColor,
@@ -26,61 +26,61 @@ class TextArea(RadixThemesComponent, elements.Textarea):
     tag = "TextArea"
 
     # The size of the text area: "1" | "2" | "3"
-    size: Var[Responsive[LiteralTextAreaSize]]
+    size: ImmutableVar[Responsive[LiteralTextAreaSize]]
 
     # The variant of the text area
-    variant: Var[Literal["classic", "surface", "soft"]]
+    variant: ImmutableVar[Literal["classic", "surface", "soft"]]
 
     # The resize behavior of the text area: "none" | "vertical" | "horizontal" | "both"
-    resize: Var[Responsive[LiteralTextAreaResize]]
+    resize: ImmutableVar[Responsive[LiteralTextAreaResize]]
 
     # The color of the text area
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: ImmutableVar[LiteralAccentColor]
 
     # The radius of the text area: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
+    radius: ImmutableVar[LiteralRadius]
 
     # Whether the form control should have autocomplete enabled
-    auto_complete: Var[bool]
+    auto_complete: ImmutableVar[bool]
 
     # Automatically focuses the textarea when the page loads
-    auto_focus: Var[bool]
+    auto_focus: ImmutableVar[bool]
 
     # Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted
-    dirname: Var[str]
+    dirname: ImmutableVar[str]
 
     # Disables the textarea
-    disabled: Var[bool]
+    disabled: ImmutableVar[bool]
 
     # Associates the textarea with a form (by id)
-    form: Var[Union[str, int, bool]]
+    form: ImmutableVar[Union[str, int, bool]]
 
     # Maximum number of characters allowed in the textarea
-    max_length: Var[int]
+    max_length: ImmutableVar[int]
 
     # Minimum number of characters required in the textarea
-    min_length: Var[int]
+    min_length: ImmutableVar[int]
 
     # Name of the textarea, used when submitting the form
-    name: Var[str]
+    name: ImmutableVar[str]
 
     # Placeholder text in the textarea
-    placeholder: Var[str]
+    placeholder: ImmutableVar[str]
 
     # Indicates whether the textarea is read-only
-    read_only: Var[bool]
+    read_only: ImmutableVar[bool]
 
     # Indicates that the textarea is required
-    required: Var[bool]
+    required: ImmutableVar[bool]
 
     # Visible number of lines in the text control
-    rows: Var[str]
+    rows: ImmutableVar[str]
 
     # The controlled value of the textarea, read only unless used with on_change
-    value: Var[str]
+    value: ImmutableVar[str]
 
     # How the text in the textarea is to be wrapped when submitting the form
-    wrap: Var[str]
+    wrap: ImmutableVar[str]
 
     # Fired when the value of the textarea changes.
     on_change: EventHandler[lambda e0: [e0.target.value]]

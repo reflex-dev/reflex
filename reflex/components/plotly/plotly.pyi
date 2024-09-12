@@ -11,7 +11,6 @@ from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
 from reflex.utils import console
-from reflex.vars import Var
 
 try:
     from plotly.graph_objects import Figure, layout
@@ -35,11 +34,11 @@ class Plotly(NoSSRComponent):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[Figure], Figure]] = None,  # type: ignore
-        layout: Optional[Union[Var[Dict], Dict]] = None,
-        template: Optional[Union[Var[Template], Template]] = None,  # type: ignore
-        config: Optional[Union[Var[Dict], Dict]] = None,
-        use_resize_handler: Optional[Union[Var[bool], bool]] = None,
+        data: Optional[Union[ImmutableVar[Figure], Figure]] = None,  # type: ignore
+        layout: Optional[Union[ImmutableVar[Dict], Dict]] = None,
+        template: Optional[Union[ImmutableVar[Template], Template]] = None,  # type: ignore
+        config: Optional[Union[ImmutableVar[Dict], Dict]] = None,
+        use_resize_handler: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

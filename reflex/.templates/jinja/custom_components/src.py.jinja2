@@ -34,8 +34,8 @@ class {{ component_class_name }}(rx.Component):
     # Note: when Reflex compiles the component to Javascript,
     # `snake_case` property names are automatically formatted as `camelCase`.
     # The prop names may be defined in `camelCase` as well.
-    # some_prop: rx.Var[str] = "some default value"
-    # some_other_prop: rx.Var[int] = 1
+    # some_prop: rx.ImmutableVar[str] = "some default value"
+    # some_other_prop: rx.ImmutableVar[int] = 1
 
     # By default Reflex will install the library you have specified in the library property.
     # However, sometimes you may need to install other libraries to use a component.

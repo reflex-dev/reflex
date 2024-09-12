@@ -10,7 +10,6 @@ from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from ..base import RadixThemesComponent
 
@@ -20,10 +19,10 @@ class RadioCardsRoot(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
@@ -33,11 +32,14 @@ class RadioCardsRoot(RadixThemesComponent):
             ]
         ] = None,
         variant: Optional[
-            Union[Var[Literal["classic", "surface"]], Literal["classic", "surface"]]
+            Union[
+                ImmutableVar[Literal["classic", "surface"]],
+                Literal["classic", "surface"],
+            ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -97,10 +99,10 @@ class RadioCardsRoot(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
         columns: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[
                             str,
@@ -123,7 +125,7 @@ class RadioCardsRoot(RadixThemesComponent):
         ] = None,
         gap: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[
                             str,
@@ -144,19 +146,21 @@ class RadioCardsRoot(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
+        default_value: Optional[Union[ImmutableVar[str], str]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
+        name: Optional[Union[ImmutableVar[str], str]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
+        required: Optional[Union[ImmutableVar[bool], bool]] = None,
         orientation: Optional[
             Union[
-                Var[Literal["horizontal", "vertical", "undefined"]],
+                ImmutableVar[Literal["horizontal", "vertical", "undefined"]],
                 Literal["horizontal", "vertical", "undefined"],
             ]
         ] = None,
-        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
-        loop: Optional[Union[Var[bool], bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
+        ] = None,
+        loop: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -253,10 +257,10 @@ class RadioCardsItem(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
+        required: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

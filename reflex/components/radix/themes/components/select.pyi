@@ -10,7 +10,6 @@ from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from ..base import RadixThemesComponent
 
@@ -22,7 +21,7 @@ class SelectRoot(RadixThemesComponent):
         *children,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
@@ -31,13 +30,13 @@ class SelectRoot(RadixThemesComponent):
                 Breakpoints[str, Literal["1", "2", "3"]],
             ]
         ] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        default_open: Optional[Union[Var[bool], bool]] = None,
-        open: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
+        default_value: Optional[Union[ImmutableVar[str], str]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
+        default_open: Optional[Union[ImmutableVar[bool], bool]] = None,
+        open: Optional[Union[ImmutableVar[bool], bool]] = None,
+        name: Optional[Union[ImmutableVar[str], str]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
+        required: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -133,13 +132,13 @@ class SelectTrigger(RadixThemesComponent):
         *children,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft", "ghost"]],
+                ImmutableVar[Literal["classic", "surface", "soft", "ghost"]],
                 Literal["classic", "surface", "soft", "ghost"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -201,11 +200,11 @@ class SelectTrigger(RadixThemesComponent):
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                ImmutableVar[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        placeholder: Optional[Union[Var[str], str]] = None,
+        placeholder: Optional[Union[ImmutableVar[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -290,11 +289,11 @@ class SelectContent(RadixThemesComponent):
         cls,
         *children,
         variant: Optional[
-            Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
+            Union[ImmutableVar[Literal["solid", "soft"]], Literal["solid", "soft"]]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -354,27 +353,27 @@ class SelectContent(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
         position: Optional[
             Union[
-                Var[Literal["item-aligned", "popper"]],
+                ImmutableVar[Literal["item-aligned", "popper"]],
                 Literal["item-aligned", "popper"],
             ]
         ] = None,
         side: Optional[
             Union[
-                Var[Literal["top", "right", "bottom", "left"]],
+                ImmutableVar[Literal["top", "right", "bottom", "left"]],
                 Literal["top", "right", "bottom", "left"],
             ]
         ] = None,
-        side_offset: Optional[Union[Var[int], int]] = None,
+        side_offset: Optional[Union[ImmutableVar[int], int]] = None,
         align: Optional[
             Union[
-                Var[Literal["start", "center", "end"]],
+                ImmutableVar[Literal["start", "center", "end"]],
                 Literal["start", "center", "end"],
             ]
         ] = None,
-        align_offset: Optional[Union[Var[int], int]] = None,
+        align_offset: Optional[Union[ImmutableVar[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -550,8 +549,8 @@ class SelectItem(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -791,12 +790,12 @@ class HighLevelSelect(SelectRoot):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Union[Var[List[str]], List[str]]] = None,
-        placeholder: Optional[Union[Var[str], str]] = None,
-        label: Optional[Union[Var[str], str]] = None,
+        items: Optional[Union[ImmutableVar[List[str]], List[str]]] = None,
+        placeholder: Optional[Union[ImmutableVar[str], str]] = None,
+        label: Optional[Union[ImmutableVar[str], str]] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -856,29 +855,29 @@ class HighLevelSelect(SelectRoot):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft", "ghost"]],
+                ImmutableVar[Literal["classic", "surface", "soft", "ghost"]],
                 Literal["classic", "surface", "soft", "ghost"],
             ]
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                ImmutableVar[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        width: Optional[Union[Var[str], str]] = None,
+        width: Optional[Union[ImmutableVar[str], str]] = None,
         position: Optional[
             Union[
-                Var[Literal["item-aligned", "popper"]],
+                ImmutableVar[Literal["item-aligned", "popper"]],
                 Literal["item-aligned", "popper"],
             ]
         ] = None,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
@@ -887,13 +886,13 @@ class HighLevelSelect(SelectRoot):
                 Breakpoints[str, Literal["1", "2", "3"]],
             ]
         ] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        default_open: Optional[Union[Var[bool], bool]] = None,
-        open: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
+        default_value: Optional[Union[ImmutableVar[str], str]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
+        default_open: Optional[Union[ImmutableVar[bool], bool]] = None,
+        open: Optional[Union[ImmutableVar[bool], bool]] = None,
+        name: Optional[Union[ImmutableVar[str], str]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
+        required: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -999,12 +998,12 @@ class Select(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        items: Optional[Union[Var[List[str]], List[str]]] = None,
-        placeholder: Optional[Union[Var[str], str]] = None,
-        label: Optional[Union[Var[str], str]] = None,
+        items: Optional[Union[ImmutableVar[List[str]], List[str]]] = None,
+        placeholder: Optional[Union[ImmutableVar[str], str]] = None,
+        label: Optional[Union[ImmutableVar[str], str]] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -1064,29 +1063,29 @@ class Select(ComponentNamespace):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft", "ghost"]],
+                ImmutableVar[Literal["classic", "surface", "soft", "ghost"]],
                 Literal["classic", "surface", "soft", "ghost"],
             ]
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                ImmutableVar[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        width: Optional[Union[Var[str], str]] = None,
+        width: Optional[Union[ImmutableVar[str], str]] = None,
         position: Optional[
             Union[
-                Var[Literal["item-aligned", "popper"]],
+                ImmutableVar[Literal["item-aligned", "popper"]],
                 Literal["item-aligned", "popper"],
             ]
         ] = None,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
@@ -1095,13 +1094,13 @@ class Select(ComponentNamespace):
                 Breakpoints[str, Literal["1", "2", "3"]],
             ]
         ] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        default_open: Optional[Union[Var[bool], bool]] = None,
-        open: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
+        default_value: Optional[Union[ImmutableVar[str], str]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
+        default_open: Optional[Union[ImmutableVar[bool], bool]] = None,
+        open: Optional[Union[ImmutableVar[bool], bool]] = None,
+        name: Optional[Union[ImmutableVar[str], str]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
+        required: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

@@ -3,7 +3,7 @@
 from typing import Literal
 
 from reflex.components.core.breakpoints import Responsive
-from reflex.vars import Var
+from reflex.ivars.base import ImmutableVar
 
 from ..base import (
     LiteralAccentColor,
@@ -20,25 +20,25 @@ class Avatar(RadixThemesComponent):
     tag = "Avatar"
 
     # The variant of the avatar
-    variant: Var[Literal["solid", "soft"]]
+    variant: ImmutableVar[Literal["solid", "soft"]]
 
     # The size of the avatar: "1" - "9"
-    size: Var[Responsive[LiteralSize]]
+    size: ImmutableVar[Responsive[LiteralSize]]
 
     # Color theme of the avatar
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: ImmutableVar[LiteralAccentColor]
 
     # Whether to render the avatar with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: ImmutableVar[bool]
 
     # Override theme radius for avatar: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
+    radius: ImmutableVar[LiteralRadius]
 
     # The src of the avatar image
-    src: Var[str]
+    src: ImmutableVar[str]
 
     # The rendered fallback text
-    fallback: Var[str]
+    fallback: ImmutableVar[str]
 
 
 avatar = Avatar.create

@@ -9,7 +9,6 @@ from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from ..base import RadixThemesComponent
 
@@ -20,10 +19,10 @@ class Slider(RadixThemesComponent):
         cls,
         *children,
         width: Optional[str] = "100%",
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
@@ -34,13 +33,13 @@ class Slider(RadixThemesComponent):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
+                ImmutableVar[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -100,32 +99,33 @@ class Slider(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "full"]], Literal["none", "small", "full"]
+                ImmutableVar[Literal["none", "small", "full"]],
+                Literal["none", "small", "full"],
             ]
         ] = None,
         default_value: Optional[
             Union[
-                Var[Union[List[Union[float, int]], float, int]],
+                ImmutableVar[Union[List[Union[float, int]], float, int]],
                 List[Union[float, int]],
                 float,
                 int,
             ]
         ] = None,
         value: Optional[
-            Union[Var[List[Union[float, int]]], List[Union[float, int]]]
+            Union[ImmutableVar[List[Union[float, int]]], List[Union[float, int]]]
         ] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        min: Optional[Union[Var[Union[float, int]], float, int]] = None,
-        max: Optional[Union[Var[Union[float, int]], float, int]] = None,
-        step: Optional[Union[Var[Union[float, int]], float, int]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
+        name: Optional[Union[ImmutableVar[str], str]] = None,
+        min: Optional[Union[ImmutableVar[Union[float, int]], float, int]] = None,
+        max: Optional[Union[ImmutableVar[Union[float, int]], float, int]] = None,
+        step: Optional[Union[ImmutableVar[Union[float, int]], float, int]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
         orientation: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
-                Literal["horizontal", "vertical"],
+                ImmutableVar[Literal["vertical", "horizontal"]],
+                Literal["vertical", "horizontal"],
             ]
         ] = None,
         style: Optional[Style] = None,

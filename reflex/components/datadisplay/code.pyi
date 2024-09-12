@@ -11,7 +11,6 @@ from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
-from reflex.vars import Var
 
 LiteralCodeBlockTheme = Literal[
     "a11y-dark",
@@ -355,7 +354,7 @@ class CodeBlock(Component):
         copy_button: Optional[Union[Component, bool]] = None,
         theme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "a11y-dark",
                         "atom-dark",
@@ -455,7 +454,7 @@ class CodeBlock(Component):
         ] = None,
         language: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "abap",
                         "abnf",
@@ -1021,12 +1020,14 @@ class CodeBlock(Component):
                 ],
             ]
         ] = None,
-        code: Optional[Union[Var[str], str]] = None,
-        show_line_numbers: Optional[Union[Var[bool], bool]] = None,
-        starting_line_number: Optional[Union[Var[int], int]] = None,
-        wrap_long_lines: Optional[Union[Var[bool], bool]] = None,
-        custom_style: Optional[Dict[str, Union[str, Var, Color]]] = None,
-        code_tag_props: Optional[Union[Var[Dict[str, str]], Dict[str, str]]] = None,
+        code: Optional[Union[ImmutableVar[str], str]] = None,
+        show_line_numbers: Optional[Union[ImmutableVar[bool], bool]] = None,
+        starting_line_number: Optional[Union[ImmutableVar[int], int]] = None,
+        wrap_long_lines: Optional[Union[ImmutableVar[bool], bool]] = None,
+        custom_style: Optional[Dict[str, Union[str, ImmutableVar, Color]]] = None,
+        code_tag_props: Optional[
+            Union[ImmutableVar[Dict[str, str]], Dict[str, str]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

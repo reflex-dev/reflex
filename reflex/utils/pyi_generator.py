@@ -171,7 +171,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
 
         res = f"{value.__name__}[{', '.join(inner_container_type_args)}]"
 
-        if value.__name__ == "Var":
+        if value.__name__ == "ImmutableVar":
             args = list(
                 chain.from_iterable(
                     [get_args(arg) if rx_types.is_union(arg) else [arg] for arg in args]
@@ -205,7 +205,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
             return f"Union[{', '.join(res)}]"
         res = (
             _get_type_hint(ev, type_hint_globals, is_optional=False)
-            if ev.__name__ == "Var"
+            if ev.__name__ == "ImmutableVar"
             else value
         )
     else:
@@ -374,7 +374,7 @@ def _extract_class_props_as_ast_nodes(
 
 
 def _get_parent_imports(func):
-    _imports = {"reflex.vars": ["Var"]}
+    _imports = {"reflex.vars": ["Var"], "reflex.ivars": ["ImmutableVar"]}
     for type_hint in inspect.get_annotations(func).values():
         try:
             match = re.match(r"\w+\[([\w\d]+)\]", type_hint)
@@ -1021,8 +1021,8 @@ class PyiGenerator:
                     # Hack due to ast not supporting comments in the tree.
                     if (
                         "def create(" in line
-                        or "Var[Figure]" in line
-                        or "Var[Template]" in line
+                        or "ImmutableVar[Figure]" in line
+                        or "ImmutableVar[Template]" in line
                     ):
                         line = line.rstrip() + "  # type: ignore\n"
                     print(line, end="")

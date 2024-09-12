@@ -14,9 +14,8 @@ from reflex import constants
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
 from reflex.ivars.base import ImmutableVar
-from reflex.vars import Var
 
-route_not_found: Var = ImmutableVar.create_safe(constants.ROUTE_NOT_FOUND)
+route_not_found: ImmutableVar = ImmutableVar.create_safe(constants.ROUTE_NOT_FOUND)
 
 
 class ClientSideRouting(Component):
@@ -67,4 +66,4 @@ class Default404Page(Component):
     tag = "Error"
     is_default = True
 
-    status_code: Var[int] = 404  # type: ignore
+    status_code: ImmutableVar[int] = 404  # type: ignore

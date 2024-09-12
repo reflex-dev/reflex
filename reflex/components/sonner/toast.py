@@ -19,7 +19,7 @@ from reflex.style import Style, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serialize, serializer
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
 
 LiteralPosition = Literal[
     "top-left",
@@ -56,7 +56,7 @@ def serialize_action(action: ToastAction) -> dict:
     }
 
 
-def _toast_callback_signature(toast: Var) -> list[ImmutableVar]:
+def _toast_callback_signature(toast: ImmutableVar) -> list[ImmutableVar]:
     """The signature for the toast callback, stripping out unserializable keys.
 
     Args:
@@ -197,46 +197,46 @@ class Toaster(Component):
     tag = "Toaster"
 
     # the theme of the toast
-    theme: Var[str] = resolved_color_mode
+    theme: ImmutableVar[str] = resolved_color_mode
 
     # whether to show rich colors
-    rich_colors: Var[bool] = LiteralVar.create(True)
+    rich_colors: ImmutableVar[bool] = LiteralVar.create(True)
 
     # whether to expand the toast
-    expand: Var[bool] = LiteralVar.create(True)
+    expand: ImmutableVar[bool] = LiteralVar.create(True)
 
     # the number of toasts that are currently visible
-    visible_toasts: Var[int]
+    visible_toasts: ImmutableVar[int]
 
     # the position of the toast
-    position: Var[LiteralPosition] = LiteralVar.create("bottom-right")
+    position: ImmutableVar[LiteralPosition] = LiteralVar.create("bottom-right")
 
     # whether to show the close button
-    close_button: Var[bool] = LiteralVar.create(False)
+    close_button: ImmutableVar[bool] = LiteralVar.create(False)
 
     # offset of the toast
-    offset: Var[str]
+    offset: ImmutableVar[str]
 
     # directionality of the toast (default: ltr)
-    dir: Var[str]
+    dir: ImmutableVar[str]
 
     # Keyboard shortcut that will move focus to the toaster area.
-    hotkey: Var[str]
+    hotkey: ImmutableVar[str]
 
     # Dark toasts in light mode and vice versa.
-    invert: Var[bool]
+    invert: ImmutableVar[bool]
 
     # These will act as default options for all toasts. See toast() for all available options.
-    toast_options: Var[ToastProps]
+    toast_options: ImmutableVar[ToastProps]
 
     # Gap between toasts when expanded
-    gap: Var[int]
+    gap: ImmutableVar[int]
 
     # Changes the default loading icon
-    loading_icon: Var[Icon]
+    loading_icon: ImmutableVar[Icon]
 
     # Pauses toast timers when the page is hidden, e.g., when the tab is backgrounded, the browser is minimized, or the OS is locked.
-    pause_when_page_is_hidden: Var[bool]
+    pause_when_page_is_hidden: ImmutableVar[bool]
 
     # Marked True when any Toast component is created.
     is_used: ClassVar[bool] = False
@@ -342,7 +342,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="success", **kwargs)
 
     @staticmethod
-    def toast_dismiss(id: Var | str | None = None):
+    def toast_dismiss(id: ImmutableVar | str | None = None):
         """Dismiss a toast.
 
         Args:

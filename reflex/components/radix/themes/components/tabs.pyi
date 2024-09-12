@@ -10,7 +10,6 @@ from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from ..base import RadixThemesComponent
 
@@ -23,17 +22,22 @@ class TabsRoot(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        default_value: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
+        default_value: Optional[Union[ImmutableVar[str], str]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
         orientation: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
+                ImmutableVar[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
+        ] = None,
         activation_mode: Optional[
-            Union[Var[Literal["automatic", "manual"]], Literal["automatic", "manual"]]
+            Union[
+                ImmutableVar[Literal["automatic", "manual"]],
+                Literal["automatic", "manual"],
+            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -125,12 +129,14 @@ class TabsList(RadixThemesComponent):
         *children,
         size: Optional[
             Union[
-                Var[Union[Breakpoints[str, Literal["1", "2"]], Literal["1", "2"]]],
+                ImmutableVar[
+                    Union[Breakpoints[str, Literal["1", "2"]], Literal["1", "2"]]
+                ],
                 Literal["1", "2"],
                 Breakpoints[str, Literal["1", "2"]],
             ]
         ] = None,
-        loop: Optional[Union[Var[bool], bool]] = None,
+        loop: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -212,11 +218,11 @@ class TabsTrigger(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -358,8 +364,8 @@ class TabsContent(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[str], str]] = None,
-        force_mount: Optional[Union[Var[bool], bool]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
+        force_mount: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -444,17 +450,22 @@ class Tabs(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        default_value: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[str], str]] = None,
+        default_value: Optional[Union[ImmutableVar[str], str]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
         orientation: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
+                ImmutableVar[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
+        ] = None,
         activation_mode: Optional[
-            Union[Var[Literal["automatic", "manual"]], Literal["automatic", "manual"]]
+            Union[
+                ImmutableVar[Literal["automatic", "manual"]],
+                Literal["automatic", "manual"],
+            ]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

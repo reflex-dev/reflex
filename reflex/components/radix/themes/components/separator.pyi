@@ -9,7 +9,6 @@ from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from ..base import RadixThemesComponent
 
@@ -23,7 +22,7 @@ class Separator(RadixThemesComponent):
         *children,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3", "4"]],
                         Literal["1", "2", "3", "4"],
@@ -35,7 +34,7 @@ class Separator(RadixThemesComponent):
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -97,7 +96,7 @@ class Separator(RadixThemesComponent):
         ] = None,
         orientation: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["horizontal", "vertical"]],
                         Literal["horizontal", "vertical"],
@@ -107,7 +106,7 @@ class Separator(RadixThemesComponent):
                 Breakpoints[str, Literal["horizontal", "vertical"]],
             ]
         ] = None,
-        decorative: Optional[Union[Var[bool], bool]] = None,
+        decorative: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

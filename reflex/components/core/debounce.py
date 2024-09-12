@@ -8,7 +8,7 @@ from reflex.components.component import Component
 from reflex.constants import EventTriggers
 from reflex.event import EventHandler
 from reflex.ivars.base import ImmutableVar
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
 
 DEFAULT_DEBOUNCE_TIMEOUT = 300
 
@@ -25,25 +25,25 @@ class DebounceInput(Component):
     tag = "DebounceInput"
 
     # Minimum input characters before triggering the on_change event
-    min_length: Var[int]
+    min_length: ImmutableVar[int]
 
     # Time to wait between end of input and triggering on_change
-    debounce_timeout: Var[int] = DEFAULT_DEBOUNCE_TIMEOUT  # type: ignore
+    debounce_timeout: ImmutableVar[int] = DEFAULT_DEBOUNCE_TIMEOUT  # type: ignore
 
     # If true, notify when Enter key is pressed
-    force_notify_by_enter: Var[bool]
+    force_notify_by_enter: ImmutableVar[bool]
 
     # If true, notify when form control loses focus
-    force_notify_on_blur: Var[bool]
+    force_notify_on_blur: ImmutableVar[bool]
 
     # If provided, create a fully-controlled input
-    value: Var[Union[str, int, float]]
+    value: ImmutableVar[Union[str, int, float]]
 
     # The ref to attach to the created input
-    input_ref: Var[str]
+    input_ref: ImmutableVar[str]
 
     # The element to wrap
-    element: Var[Type[Component]]
+    element: ImmutableVar[Type[Component]]
 
     # Fired when the input value changes
     on_change: EventHandler[lambda e0: [e0.value]]

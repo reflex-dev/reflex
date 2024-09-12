@@ -14,7 +14,7 @@ from reflex.ivars.sequence import ArrayVar
 from reflex.utils import console, format, types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
-from reflex.vars import Var, get_unique_variable_name
+from reflex.vars import get_unique_variable_name
 
 
 # TODO: Fix the serialization issue for custom types.
@@ -133,94 +133,94 @@ class DataEditor(NoSSRComponent):
     ]
 
     # Number of rows.
-    rows: Var[int]
+    rows: ImmutableVar[int]
 
     # Headers of the columns for the data grid.
-    columns: Var[List[Dict[str, Any]]]
+    columns: ImmutableVar[List[Dict[str, Any]]]
 
     # The data.
-    data: Var[List[List[Any]]]
+    data: ImmutableVar[List[List[Any]]]
 
     # The name of the callback used to find the data to display.
-    get_cell_content: Var[str]
+    get_cell_content: ImmutableVar[str]
 
     # Allow selection for copying.
-    get_cell_for_selection: Var[bool]
+    get_cell_for_selection: ImmutableVar[bool]
 
     # Allow paste.
-    on_paste: Var[bool]
+    on_paste: ImmutableVar[bool]
 
     # Controls the drawing of the focus ring.
-    draw_focus_ring: Var[bool]
+    draw_focus_ring: ImmutableVar[bool]
 
     # Enables or disables the overlay shadow when scrolling horizontally.
-    fixed_shadow_x: Var[bool]
+    fixed_shadow_x: ImmutableVar[bool]
 
     # Enables or disables the overlay shadow when scrolling vertically.
-    fixed_shadow_y: Var[bool]
+    fixed_shadow_y: ImmutableVar[bool]
 
     # The number of columns which should remain in place when scrolling horizontally. Doesn't include rowMarkers.
-    freeze_columns: Var[int]
+    freeze_columns: ImmutableVar[int]
 
     # Controls the header of the group header row.
-    group_header_height: Var[int]
+    group_header_height: ImmutableVar[int]
 
     # Controls the height of the header row.
-    header_height: Var[int]
+    header_height: ImmutableVar[int]
 
     # Additional header icons:
-    # header_icons: Var[Any] # (TODO: must be a map of name: svg)
+    # header_icons: ImmutableVar[Any] # (TODO: must be a map of name: svg)
 
     # The maximum width a column can be automatically sized to.
-    max_column_auto_width: Var[int]
+    max_column_auto_width: ImmutableVar[int]
 
     # The maximum width a column can be resized to.
-    max_column_width: Var[int]
+    max_column_width: ImmutableVar[int]
 
     # The minimum width a column can be resized to.
-    min_column_width: Var[int]
+    min_column_width: ImmutableVar[int]
 
     # Determins the height of each row.
-    row_height: Var[int]
+    row_height: ImmutableVar[int]
 
     # Kind of row markers.
-    row_markers: Var[LiteralRowMarker]
+    row_markers: ImmutableVar[LiteralRowMarker]
 
     # Changes the starting index for row markers.
-    row_marker_start_index: Var[int]
+    row_marker_start_index: ImmutableVar[int]
 
     # Sets the width of row markers in pixels, if unset row markers will automatically size.
-    row_marker_width: Var[int]
+    row_marker_width: ImmutableVar[int]
 
     # Enable horizontal smooth scrolling.
-    smooth_scroll_x: Var[bool]
+    smooth_scroll_x: ImmutableVar[bool]
 
     # Enable vertical smooth scrolling.
-    smooth_scroll_y: Var[bool]
+    smooth_scroll_y: ImmutableVar[bool]
 
     # Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders.
-    vertical_border: Var[bool]  # TODO: support a mapping (dict[int, bool])
+    vertical_border: ImmutableVar[bool]  # TODO: support a mapping (dict[int, bool])
 
     # Allow columns selections. ("none", "single", "multi")
-    column_select: Var[Literal["none", "single", "multi"]]
+    column_select: ImmutableVar[Literal["none", "single", "multi"]]
 
     # Prevent diagonal scrolling.
-    prevent_diagonal_scrolling: Var[bool]
+    prevent_diagonal_scrolling: ImmutableVar[bool]
 
     # Allow to scroll past the limit of the actual content on the horizontal axis.
-    overscroll_x: Var[int]
+    overscroll_x: ImmutableVar[int]
 
     # Allow to scroll past the limit of the actual content on the vertical axis.
-    overscroll_y: Var[int]
+    overscroll_y: ImmutableVar[int]
 
     # Initial scroll offset on the horizontal axis.
-    scroll_offset_x: Var[int]
+    scroll_offset_x: ImmutableVar[int]
 
     # Initial scroll offset on the vertical axis.
-    scroll_offset_y: Var[int]
+    scroll_offset_y: ImmutableVar[int]
 
     # global theme
-    theme: Var[Union[DataEditorTheme, Dict]]
+    theme: ImmutableVar[Union[DataEditorTheme, Dict]]
 
     # Fired when a cell is activated.
     on_cell_activated: EventHandler[lambda pos: [pos]]

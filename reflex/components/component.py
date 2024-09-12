@@ -54,7 +54,7 @@ from reflex.utils.imports import (
     parse_imports,
 )
 from reflex.utils.serializers import serializer
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
 
 
 class BaseComponent(Base, ABC):
@@ -167,7 +167,7 @@ def evaluate_style_namespaces(style: ComponentStyle) -> dict:
 ComponentStyle = Dict[
     Union[str, Type[BaseComponent], Callable, ComponentNamespace], Any
 ]
-ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
+ComponentChild = Union[types.PrimitiveType, ImmutableVar, BaseComponent]
 
 
 class Component(BaseComponent, ABC):
@@ -325,7 +325,7 @@ class Component(BaseComponent, ABC):
                 continue
 
             # Set default values for any props.
-            if types._issubclass(field.type_, Var):
+            if types._issubclass(field.type_, ImmutableVar):
                 field.required = False
                 if field.default is not None:
                     field.default = LiteralVar.create(field.default)
@@ -399,7 +399,7 @@ class Component(BaseComponent, ABC):
                 continue
 
             # Check whether the key is a component prop.
-            if types._issubclass(field_type, Var):
+            if types._issubclass(field_type, ImmutableVar):
                 # Used to store the passed types if var type is a union.
                 passed_types = None
                 try:
@@ -499,7 +499,11 @@ class Component(BaseComponent, ABC):
         self,
         args_spec: Any,
         value: Union[
-            Var, EventHandler, EventSpec, List[Union[EventHandler, EventSpec]], Callable
+            ImmutableVar,
+            EventHandler,
+            EventSpec,
+            List[Union[EventHandler, EventSpec]],
+            Callable,
         ],
     ) -> Union[EventChain, ImmutableVar]:
         """Create an event chain from a variety of input types.
@@ -1780,7 +1784,9 @@ class CustomComponent(Component):
             ImmutableVar(
                 _var_name=name,
                 _var_type=(
-                    prop._var_type if types._isinstance(prop, Var) else type(prop)
+                    prop._var_type
+                    if types._isinstance(prop, ImmutableVar)
+                    else type(prop)
                 ),
             ).guess_type()
             for name, prop in self.props.items()
@@ -2002,7 +2008,7 @@ class StatefulComponent(BaseComponent):
         return None
 
     @staticmethod
-    def _child_var(child: Component) -> Var | Component:
+    def _child_var(child: Component) -> ImmutableVar | Component:
         """Get the Var from a child component.
 
         This method is used for special cases when the StatefulComponent should actually

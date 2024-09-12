@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
-from reflex.vars import Var
+from reflex.ivars.base import ImmutableVar
 
 from ..base import (
     LiteralAccentColor,
@@ -26,19 +26,19 @@ class Code(elements.Code, RadixThemesComponent):
     tag = "Code"
 
     # The visual variant to apply: "solid" | "soft" | "outline" | "ghost"
-    variant: Var[LiteralVariant]
+    variant: ImmutableVar[LiteralVariant]
 
     # Text size: "1" - "9"
-    size: Var[Responsive[LiteralTextSize]]
+    size: ImmutableVar[Responsive[LiteralTextSize]]
 
     # Thickness of text: "light" | "regular" | "medium" | "bold"
-    weight: Var[Responsive[LiteralTextWeight]]
+    weight: ImmutableVar[Responsive[LiteralTextWeight]]
 
     # Overrides the accent color inherited from the Theme.
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: ImmutableVar[LiteralAccentColor]
 
     # Whether to render the text with higher contrast color
-    high_contrast: Var[bool]
+    high_contrast: ImmutableVar[bool]
 
 
 code = Code.create

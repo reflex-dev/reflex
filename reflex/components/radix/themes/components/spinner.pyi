@@ -9,7 +9,6 @@ from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from ..base import RadixLoadingProp, RadixThemesComponent
 
@@ -23,7 +22,7 @@ class Spinner(RadixLoadingProp, RadixThemesComponent):
         *children,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
@@ -32,7 +31,7 @@ class Spinner(RadixLoadingProp, RadixThemesComponent):
                 Breakpoints[str, Literal["1", "2", "3"]],
             ]
         ] = None,
-        loading: Optional[Union[Var[bool], bool]] = None,
+        loading: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

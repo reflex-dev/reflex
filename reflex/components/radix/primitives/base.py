@@ -4,15 +4,15 @@ from typing import List
 
 from reflex.components.component import Component
 from reflex.components.tags.tag import Tag
+from reflex.ivars.base import ImmutableVar
 from reflex.utils import format
-from reflex.vars import Var
 
 
 class RadixPrimitiveComponent(Component):
     """Basic component for radix Primitives."""
 
     # Change the default rendered element for the one passed as a child.
-    as_child: Var[bool]
+    as_child: ImmutableVar[bool]
 
     lib_dependencies: List[str] = ["@emotion/react@^11.11.1"]
 

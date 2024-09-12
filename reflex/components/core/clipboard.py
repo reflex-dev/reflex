@@ -7,22 +7,23 @@ from typing import Dict, List, Union
 from reflex.components.base.fragment import Fragment
 from reflex.components.tags.tag import Tag
 from reflex.event import EventChain, EventHandler
+from reflex.ivars.base import ImmutableVar
 from reflex.utils.format import format_prop, wrap
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, get_unique_variable_name
+from reflex.vars import get_unique_variable_name
 
 
 class Clipboard(Fragment):
     """Clipboard component."""
 
     # The element ids to attach the event listener to. Defaults to all child components or the document.
-    targets: Var[List[str]]
+    targets: ImmutableVar[List[str]]
 
     # Called when the user pastes data into the document. Data is a list of tuples of (mime_type, data). Binary types will be base64 encoded as a data uri.
     on_paste: EventHandler[lambda data: [data]]
 
     # Save the original event actions for the on_paste event.
-    on_paste_event_actions: Var[Dict[str, Union[bool, int]]]
+    on_paste_event_actions: ImmutableVar[Dict[str, Union[bool, int]]]
 
     @classmethod
     def create(cls, *children, **props):

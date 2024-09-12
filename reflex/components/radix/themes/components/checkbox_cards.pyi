@@ -10,7 +10,6 @@ from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from ..base import RadixThemesComponent
 
@@ -22,7 +21,7 @@ class CheckboxCardsRoot(RadixThemesComponent):
         *children,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
@@ -32,11 +31,14 @@ class CheckboxCardsRoot(RadixThemesComponent):
             ]
         ] = None,
         variant: Optional[
-            Union[Var[Literal["classic", "surface"]], Literal["classic", "surface"]]
+            Union[
+                ImmutableVar[Literal["classic", "surface"]],
+                Literal["classic", "surface"],
+            ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -96,10 +98,10 @@ class CheckboxCardsRoot(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
         columns: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[
                             str,
@@ -122,7 +124,7 @@ class CheckboxCardsRoot(RadixThemesComponent):
         ] = None,
         gap: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[
                             str,

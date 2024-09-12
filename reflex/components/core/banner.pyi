@@ -9,24 +9,37 @@ from reflex.components.component import Component
 from reflex.components.el.elements.typography import Div
 from reflex.components.lucide.icon import Icon
 from reflex.components.sonner.toast import Toaster, ToastProps
+from reflex.constants.compiler import CompileVars
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
+from reflex.ivars.number import BooleanVar
 from reflex.style import Style
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
 
 connect_error_var_data: VarData
-connect_errors: Var
-connection_error: Var
-connection_errors_count: Var
-has_connection_errors: Var
-has_too_many_connection_errors: Var
+connect_errors = ImmutableVar.create_safe(
+    value=CompileVars.CONNECT_ERROR, _var_data=connect_error_var_data
+)
+connection_error = ImmutableVar.create_safe(
+    value="((connectErrors.length > 0) ? connectErrors[connectErrors.length - 1].message : '')",
+    _var_data=connect_error_var_data,
+)
+connection_errors_count = ImmutableVar.create_safe(
+    value="connectErrors.length", _var_data=connect_error_var_data
+)
+has_connection_errors = ImmutableVar.create_safe(
+    value="(connectErrors.length > 0)", _var_data=connect_error_var_data
+).to(BooleanVar)
+has_too_many_connection_errors = ImmutableVar.create_safe(
+    value="(connectErrors.length >= 2)", _var_data=connect_error_var_data
+).to(BooleanVar)
 
 class WebsocketTargetURL(ImmutableVar):
     @classmethod
     def create(cls) -> ImmutableVar: ...  # type: ignore
 
-def default_connection_error() -> list[str | Var | Component]: ...
+def default_connection_error() -> list[str | ImmutableVar | Component]: ...
 
 class ConnectionToaster(Toaster):
     def add_hooks(self) -> list[str | ImmutableVar]: ...
@@ -35,13 +48,13 @@ class ConnectionToaster(Toaster):
     def create(  # type: ignore
         cls,
         *children,
-        theme: Optional[Union[Var[str], str]] = None,
-        rich_colors: Optional[Union[Var[bool], bool]] = None,
-        expand: Optional[Union[Var[bool], bool]] = None,
-        visible_toasts: Optional[Union[Var[int], int]] = None,
+        theme: Optional[Union[ImmutableVar[str], str]] = None,
+        rich_colors: Optional[Union[ImmutableVar[bool], bool]] = None,
+        expand: Optional[Union[ImmutableVar[bool], bool]] = None,
+        visible_toasts: Optional[Union[ImmutableVar[int], int]] = None,
         position: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "top-left",
                         "top-center",
@@ -61,15 +74,15 @@ class ConnectionToaster(Toaster):
                 ],
             ]
         ] = None,
-        close_button: Optional[Union[Var[bool], bool]] = None,
-        offset: Optional[Union[Var[str], str]] = None,
-        dir: Optional[Union[Var[str], str]] = None,
-        hotkey: Optional[Union[Var[str], str]] = None,
-        invert: Optional[Union[Var[bool], bool]] = None,
-        toast_options: Optional[Union[Var[ToastProps], ToastProps]] = None,
-        gap: Optional[Union[Var[int], int]] = None,
-        loading_icon: Optional[Union[Var[Icon], Icon]] = None,
-        pause_when_page_is_hidden: Optional[Union[Var[bool], bool]] = None,
+        close_button: Optional[Union[ImmutableVar[bool], bool]] = None,
+        offset: Optional[Union[ImmutableVar[str], str]] = None,
+        dir: Optional[Union[ImmutableVar[str], str]] = None,
+        hotkey: Optional[Union[ImmutableVar[str], str]] = None,
+        invert: Optional[Union[ImmutableVar[bool], bool]] = None,
+        toast_options: Optional[Union[ImmutableVar[ToastProps], ToastProps]] = None,
+        gap: Optional[Union[ImmutableVar[int], int]] = None,
+        loading_icon: Optional[Union[ImmutableVar[Icon], Icon]] = None,
+        pause_when_page_is_hidden: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -298,7 +311,7 @@ class WifiOffPulse(Icon):
     def create(  # type: ignore
         cls,
         *children,
-        size: Optional[Union[Var[int], int]] = None,
+        size: Optional[Union[ImmutableVar[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -378,30 +391,54 @@ class ConnectionPulser(Div):
     def create(  # type: ignore
         cls,
         *children,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        access_key: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        draggable: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        input_mode: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        item_prop: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        lang: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        role: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        slot: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        spell_check: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        tab_index: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
+        title: Optional[
+            Union[ImmutableVar[Union[bool, int, str]], str, int, bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

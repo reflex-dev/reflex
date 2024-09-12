@@ -11,14 +11,14 @@ from reflex.style import Style
 from reflex.utils import format, types
 from reflex.utils.exceptions import MatchTypeError
 from reflex.utils.imports import ImportDict
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
 
 
 class Match(MemoizationLeaf):
     """Match cases based on a condition."""
 
     # The condition to determine which case to match.
-    cond: Var[Any]
+    cond: ImmutableVar[Any]
 
     # The list of match cases to be matched.
     match_cases: List[Any] = []
@@ -46,7 +46,9 @@ class Match(MemoizationLeaf):
 
         cls._validate_return_types(match_cases)
 
-        if default is None and types._issubclass(type(match_cases[0][-1]), Var):
+        if default is None and types._issubclass(
+            type(match_cases[0][-1]), ImmutableVar
+        ):
             raise ValueError(
                 "For cases with return types as Vars, a default case must be provided"
             )
@@ -228,8 +230,10 @@ class Match(MemoizationLeaf):
 
         # Validate the match cases (as well as the default case) to have Var return types.
         if any(
-            case for case in match_cases if not types._isinstance(case[-1], Var)
-        ) or not types._isinstance(default, Var):
+            case
+            for case in match_cases
+            if not types._isinstance(case[-1], ImmutableVar)
+        ) or not types._isinstance(default, ImmutableVar):
             raise ValueError("Return types of match cases should be Vars.")
 
         return ImmutableVar(

@@ -9,7 +9,6 @@ from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 class NextLink(Component):
     @overload
@@ -17,8 +16,8 @@ class NextLink(Component):
     def create(  # type: ignore
         cls,
         *children,
-        href: Optional[Union[Var[str], str]] = None,
-        pass_href: Optional[Union[Var[bool], bool]] = None,
+        href: Optional[Union[ImmutableVar[str], str]] = None,
+        pass_href: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

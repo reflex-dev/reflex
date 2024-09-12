@@ -4,7 +4,7 @@ from typing import Literal, Union
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
-from reflex.vars import Var
+from reflex.ivars.base import ImmutableVar
 
 from ..base import (
     RadixThemesComponent,
@@ -19,31 +19,31 @@ class Inset(elements.Div, RadixThemesComponent):
     tag = "Inset"
 
     # The side
-    side: Var[Responsive[Literal["x", "y", "top", "bottom", "right", "left"]]]
+    side: ImmutableVar[Responsive[Literal["x", "y", "top", "bottom", "right", "left"]]]
 
     # How to clip the element's content: "border-box" | "padding-box"
-    clip: Var[Responsive[Literal["border-box", "padding-box"]]]
+    clip: ImmutableVar[Responsive[Literal["border-box", "padding-box"]]]
 
     # Padding
-    p: Var[Responsive[Union[int, str]]]
+    p: ImmutableVar[Responsive[Union[int, str]]]
 
     # Padding on the x axis
-    px: Var[Responsive[Union[int, str]]]
+    px: ImmutableVar[Responsive[Union[int, str]]]
 
     # Padding on the y axis
-    py: Var[Responsive[Union[int, str]]]
+    py: ImmutableVar[Responsive[Union[int, str]]]
 
     # Padding on the top
-    pt: Var[Responsive[Union[int, str]]]
+    pt: ImmutableVar[Responsive[Union[int, str]]]
 
     # Padding on the right
-    pr: Var[Responsive[Union[int, str]]]
+    pr: ImmutableVar[Responsive[Union[int, str]]]
 
     # Padding on the bottom
-    pb: Var[Responsive[Union[int, str]]]
+    pb: ImmutableVar[Responsive[Union[int, str]]]
 
     # Padding on the left
-    pl: Var[Responsive[Union[int, str]]]
+    pl: ImmutableVar[Responsive[Union[int, str]]]
 
 
 inset = Inset.create

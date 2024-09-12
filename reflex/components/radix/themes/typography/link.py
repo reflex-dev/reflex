@@ -13,8 +13,8 @@ from reflex.components.core.colors import color
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
 from reflex.components.next.link import NextLink
+from reflex.ivars.base import ImmutableVar
 from reflex.utils.imports import ImportDict
-from reflex.vars import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -37,28 +37,28 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
     tag = "Link"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: ImmutableVar[bool]
 
     # Text size: "1" - "9"
-    size: Var[Responsive[LiteralTextSize]]
+    size: ImmutableVar[Responsive[LiteralTextSize]]
 
     # Thickness of text: "light" | "regular" | "medium" | "bold"
-    weight: Var[Responsive[LiteralTextWeight]]
+    weight: ImmutableVar[Responsive[LiteralTextWeight]]
 
     # Removes the leading trim space: "normal" | "start" | "end" | "both"
-    trim: Var[Responsive[LiteralTextTrim]]
+    trim: ImmutableVar[Responsive[LiteralTextTrim]]
 
     # Sets the visibility of the underline affordance: "auto" | "hover" | "always" | "none"
-    underline: Var[LiteralLinkUnderline]
+    underline: ImmutableVar[LiteralLinkUnderline]
 
     # Overrides the accent color inherited from the Theme.
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: ImmutableVar[LiteralAccentColor]
 
     # Whether to render the text with higher contrast color
-    high_contrast: Var[bool]
+    high_contrast: ImmutableVar[bool]
 
     # If True, the link will open in a new tab
-    is_external: Var[bool]
+    is_external: ImmutableVar[bool]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the Link component.

@@ -10,7 +10,6 @@ from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
 from reflex.event import EventHandler
 from reflex.ivars.base import ImmutableVar, LiteralVar
-from reflex.vars import Var
 
 from .recharts import (
     LiteralAnimationEasing,
@@ -26,10 +25,10 @@ class ChartBase(RechartsCharts):
     """A component that wraps a Recharts charts."""
 
     # The width of chart container. String or Integer
-    width: Var[Union[str, int]] = "100%"  # type: ignore
+    width: ImmutableVar[Union[str, int]] = "100%"  # type: ignore
 
     # The height of chart container.
-    height: Var[Union[str, int]] = "100%"  # type: ignore
+    height: ImmutableVar[Union[str, int]] = "100%"  # type: ignore
 
     # The customized event handler of click on the component in this chart
     on_click: EventHandler[lambda: []]
@@ -105,22 +104,22 @@ class CategoricalChartBase(ChartBase):
     """A component that wraps a Categorical Recharts charts."""
 
     # The source data, in which each element is an object.
-    data: Var[List[Dict[str, Any]]]
+    data: ImmutableVar[List[Dict[str, Any]]]
 
     # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
-    margin: Var[Dict[str, Any]]
+    margin: ImmutableVar[Dict[str, Any]]
 
     # If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
-    sync_id: Var[str]
+    sync_id: ImmutableVar[str]
 
     # When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
-    sync_method: Var[LiteralSyncMethod]
+    sync_method: ImmutableVar[LiteralSyncMethod]
 
     # The layout of area in the chart. 'horizontal' | 'vertical'
-    layout: Var[LiteralLayout]
+    layout: ImmutableVar[LiteralLayout]
 
     # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
-    stack_offset: Var[LiteralStackOffset]
+    stack_offset: ImmutableVar[LiteralStackOffset]
 
 
 class AreaChart(CategoricalChartBase):
@@ -131,7 +130,7 @@ class AreaChart(CategoricalChartBase):
     alias = "RechartsAreaChart"
 
     # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
-    base_value: Var[Union[int, LiteralComposedChartBaseValue]]
+    base_value: ImmutableVar[Union[int, LiteralComposedChartBaseValue]]
 
     # Valid children components
     _valid_children: List[str] = [
@@ -157,22 +156,22 @@ class BarChart(CategoricalChartBase):
     alias = "RechartsBarChart"
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
-    bar_category_gap: Var[Union[str, int]] = LiteralVar.create("10%")
+    bar_category_gap: ImmutableVar[Union[str, int]] = LiteralVar.create("10%")
 
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
-    bar_gap: Var[Union[str, int]] = LiteralVar.create(4)  # type: ignore
+    bar_gap: ImmutableVar[Union[str, int]] = LiteralVar.create(4)  # type: ignore
 
     # The width of all the bars in the chart. Number
-    bar_size: Var[int]
+    bar_size: ImmutableVar[int]
 
     # The maximum width of all the bars in a horizontal BarChart, or maximum height in a vertical BarChart.
-    max_bar_size: Var[int]
+    max_bar_size: ImmutableVar[int]
 
     # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape.
-    stack_offset: Var[LiteralStackOffset]
+    stack_offset: ImmutableVar[LiteralStackOffset]
 
     # If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
-    reverse_stack_order: Var[bool]
+    reverse_stack_order: ImmutableVar[bool]
 
     # Valid children components
     _valid_children: List[str] = [
@@ -219,19 +218,19 @@ class ComposedChart(CategoricalChartBase):
     alias = "RechartsComposedChart"
 
     # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
-    base_value: Var[Union[int, LiteralComposedChartBaseValue]]
+    base_value: ImmutableVar[Union[int, LiteralComposedChartBaseValue]]
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
-    bar_category_gap: Var[Union[str, int]]  # type: ignore
+    bar_category_gap: ImmutableVar[Union[str, int]]  # type: ignore
 
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
-    bar_gap: Var[Union[str, int]]  # type: ignore
+    bar_gap: ImmutableVar[Union[str, int]]  # type: ignore
 
     # The width of all the bars in the chart. Number
-    bar_size: Var[int]
+    bar_size: ImmutableVar[int]
 
     # If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
-    reverse_stack_order: Var[bool]
+    reverse_stack_order: ImmutableVar[bool]
 
     # Valid children components
     _valid_children: List[str] = [
@@ -258,7 +257,7 @@ class PieChart(ChartBase):
     alias = "RechartsPieChart"
 
     # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
-    margin: Var[Dict[str, Any]]
+    margin: ImmutableVar[Dict[str, Any]]
 
     # Valid children components
     _valid_children: List[str] = [
@@ -291,28 +290,28 @@ class RadarChart(ChartBase):
     alias = "RechartsRadarChart"
 
     # The source data, in which each element is an object.
-    data: Var[List[Dict[str, Any]]]
+    data: ImmutableVar[List[Dict[str, Any]]]
 
     # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
-    margin: Var[Dict[str, Any]]
+    margin: ImmutableVar[Dict[str, Any]]
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
-    cx: Var[Union[int, str]]
+    cx: ImmutableVar[Union[int, str]]
 
     # The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage
-    cy: Var[Union[int, str]]
+    cy: ImmutableVar[Union[int, str]]
 
     # The angle of first radial direction line.
-    start_angle: Var[int]
+    start_angle: ImmutableVar[int]
 
     # The angle of last point in the circle which should be startAngle - 360 or startAngle + 360. We'll calculate the direction of chart by 'startAngle' and 'endAngle'.
-    end_angle: Var[int]
+    end_angle: ImmutableVar[int]
 
     # The inner radius of first circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage
-    inner_radius: Var[Union[int, str]]
+    inner_radius: ImmutableVar[Union[int, str]]
 
     # The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage
-    outer_radius: Var[Union[int, str]]
+    outer_radius: ImmutableVar[Union[int, str]]
 
     # Valid children components
     _valid_children: List[str] = [
@@ -345,37 +344,37 @@ class RadialBarChart(ChartBase):
     alias = "RechartsRadialBarChart"
 
     # The source data which each element is an object.
-    data: Var[List[Dict[str, Any]]]
+    data: ImmutableVar[List[Dict[str, Any]]]
 
     # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
-    margin: Var[Dict[str, Any]]
+    margin: ImmutableVar[Dict[str, Any]]
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
-    cx: Var[Union[int, str]]
+    cx: ImmutableVar[Union[int, str]]
 
     # The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage
-    cy: Var[Union[int, str]]
+    cy: ImmutableVar[Union[int, str]]
 
     # The angle of first radial direction line.
-    start_angle: Var[int]
+    start_angle: ImmutableVar[int]
 
     # The angle of last point in the circle which should be startAngle - 360 or startAngle + 360. We'll calculate the direction of chart by 'startAngle' and 'endAngle'.
-    end_angle: Var[int]
+    end_angle: ImmutableVar[int]
 
     # The inner radius of first circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage
-    inner_radius: Var[Union[int, str]]
+    inner_radius: ImmutableVar[Union[int, str]]
 
     # The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage
-    outer_radius: Var[Union[int, str]]
+    outer_radius: ImmutableVar[Union[int, str]]
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
-    bar_category_gap: Var[Union[int, str]]
+    bar_category_gap: ImmutableVar[Union[int, str]]
 
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
-    bar_gap: Var[str]
+    bar_gap: ImmutableVar[str]
 
     # The size of each bar. If the barSize is not specified, the size of bar will be calculated by the barCategoryGap, barGap and the quantity of bar groups.
-    bar_size: Var[int]
+    bar_size: ImmutableVar[int]
 
     # Valid children components
     _valid_children: List[str] = [
@@ -396,7 +395,7 @@ class ScatterChart(ChartBase):
     alias = "RechartsScatterChart"
 
     # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
-    margin: Var[Dict[str, Any]]
+    margin: ImmutableVar[Dict[str, Any]]
 
     # Valid children components
     _valid_children: List[str] = [
@@ -439,13 +438,13 @@ class FunnelChart(ChartBase):
     alias = "RechartsFunnelChart"
 
     # The layout of bars in the chart. centeric
-    layout: Var[str]
+    layout: ImmutableVar[str]
 
     # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
-    margin: Var[Dict[str, Any]]
+    margin: ImmutableVar[Dict[str, Any]]
 
     # The stroke color of each bar. String | Object
-    stroke: Var[Union[str, Color]]
+    stroke: ImmutableVar[Union[str, Color]]
 
     # Valid children components
     _valid_children: List[str] = ["Legend", "GraphingTooltip", "Funnel"]
@@ -459,31 +458,31 @@ class Treemap(RechartsCharts):
     alias = "RechartsTreemap"
 
     # The width of chart container. String or Integer
-    width: Var[Union[str, int]] = "100%"  # type: ignore
+    width: ImmutableVar[Union[str, int]] = "100%"  # type: ignore
 
     # The height of chart container.
-    height: Var[Union[str, int]] = "100%"  # type: ignore
+    height: ImmutableVar[Union[str, int]] = "100%"  # type: ignore
 
     # data of treemap. Array
-    data: Var[List[Dict[str, Any]]]
+    data: ImmutableVar[List[Dict[str, Any]]]
 
     # The key of a group of data which should be unique in a treemap. String | Number | Function
-    data_key: Var[Union[str, int]]
+    data_key: ImmutableVar[Union[str, int]]
 
     # The treemap will try to keep every single rectangle's aspect ratio near the aspectRatio given. Number
-    aspect_ratio: Var[int]
+    aspect_ratio: ImmutableVar[int]
 
     # If set false, animation of area will be disabled.
-    is_animation_active: Var[bool]
+    is_animation_active: ImmutableVar[bool]
 
     # Specifies when the animation should begin, the unit of this option is ms.
-    animation_begin: Var[int]
+    animation_begin: ImmutableVar[int]
 
     # Specifies the duration of animation, the unit of this option is ms.
-    animation_duration: Var[int]
+    animation_duration: ImmutableVar[int]
 
     # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
-    animation_easing: Var[LiteralAnimationEasing]
+    animation_easing: ImmutableVar[LiteralAnimationEasing]
 
     # The customized event handler of animation start
     on_animation_start: EventHandler[lambda: []]

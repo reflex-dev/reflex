@@ -22,7 +22,7 @@ from reflex.event import (
 from reflex.ivars.base import ImmutableCallableVar, ImmutableVar, LiteralVar
 from reflex.ivars.sequence import LiteralStringVar
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
 
 DEFAULT_UPLOAD_ID: str = "default"
 
@@ -143,7 +143,7 @@ uploaded_files_url_prefix = ImmutableVar(
 ).to(str)
 
 
-def get_upload_url(file_path: str) -> Var[str]:
+def get_upload_url(file_path: str) -> ImmutableVar[str]:
     """Get the URL of an uploaded file.
 
     Args:
@@ -157,7 +157,7 @@ def get_upload_url(file_path: str) -> Var[str]:
     return uploaded_files_url_prefix + "/" + file_path
 
 
-def _on_drop_spec(files: Var):
+def _on_drop_spec(files: ImmutableVar):
     """Args spec for the on_drop event trigger.
 
     Args:
@@ -188,31 +188,31 @@ class Upload(MemoizationLeaf):
     # The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as
     # values.
     # supported MIME types: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
-    accept: Var[Optional[Dict[str, List]]]
+    accept: ImmutableVar[Optional[Dict[str, List]]]
 
     # Whether the dropzone is disabled.
-    disabled: Var[bool]
+    disabled: ImmutableVar[bool]
 
     # The maximum number of files that can be uploaded.
-    max_files: Var[int]
+    max_files: ImmutableVar[int]
 
     # The maximum file size (bytes) that can be uploaded.
-    max_size: Var[int]
+    max_size: ImmutableVar[int]
 
     # The minimum file size (bytes) that can be uploaded.
-    min_size: Var[int]
+    min_size: ImmutableVar[int]
 
     # Whether to allow multiple files to be uploaded.
-    multiple: Var[bool] = True  # type: ignore
+    multiple: ImmutableVar[bool] = True  # type: ignore
 
     # Whether to disable click to upload.
-    no_click: Var[bool]
+    no_click: ImmutableVar[bool]
 
     # Whether to disable drag and drop.
-    no_drag: Var[bool]
+    no_drag: ImmutableVar[bool]
 
     # Whether to disable using the space/enter keys to upload.
-    no_keyboard: Var[bool]
+    no_keyboard: ImmutableVar[bool]
 
     # Marked True when any Upload component is created.
     is_used: ClassVar[bool] = False

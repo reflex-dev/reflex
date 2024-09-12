@@ -12,7 +12,7 @@ from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.ivars.number import ternary_operation
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
 
 _IS_TRUE_IMPORT: ImportDict = {
     f"/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
@@ -23,7 +23,7 @@ class Cond(MemoizationLeaf):
     """Render one of two components based on a condition."""
 
     # The cond to determine which component to render.
-    cond: Var[Any]
+    cond: ImmutableVar[Any]
 
     # The component to render if the cond is true.
     comp1: BaseComponent = None  # type: ignore
@@ -34,7 +34,7 @@ class Cond(MemoizationLeaf):
     @classmethod
     def create(
         cls,
-        cond: Var,
+        cond: ImmutableVar,
         comp1: BaseComponent,
         comp2: Optional[BaseComponent] = None,
     ) -> Component:
@@ -171,7 +171,7 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | ImmutableVar:
     )
 
 
-def color_mode_cond(light: Any, dark: Any = None) -> Var | Component:
+def color_mode_cond(light: Any, dark: Any = None) -> ImmutableVar | Component:
     """Create a component or Prop based on color_mode.
 
     Args:

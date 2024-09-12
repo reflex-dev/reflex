@@ -11,6 +11,7 @@ from packaging import version
 from reflex import constants
 from reflex.base import Base
 from reflex.event import EventHandler
+from reflex.ivars.base import ImmutableVar
 from reflex.state import BaseState
 from reflex.utils import (
     build,
@@ -19,7 +20,6 @@ from reflex.utils import (
 )
 from reflex.utils import exec as utils_exec
 from reflex.utils.exceptions import ReflexError
-from reflex.vars import Var
 
 
 def mock_event(arg):
@@ -203,7 +203,7 @@ def test_is_backend_base_variable(
         (List[int], List[int], True),
         (List[int], List[float], True),
         (Union[int, float], Union[int, float], False),
-        (Union[int, Var[int]], Var[int], False),
+        (Union[int, ImmutableVar[int]], ImmutableVar[int], False),
         (int, Any, True),
         (Any, Any, True),
         (Union[int, float], Any, True),

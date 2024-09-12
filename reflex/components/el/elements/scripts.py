@@ -2,6 +2,7 @@
 
 from typing import Union
 
+from reflex.ivars.base import ImmutableVar
 from reflex.vars import Var as Var
 
 from .base import BaseHTML
@@ -26,31 +27,31 @@ class Script(BaseHTML):
     tag = "script"
 
     # Indicates that the script should be executed asynchronously
-    async_: Var[Union[str, int, bool]]
+    async_: ImmutableVar[Union[str, int, bool]]
 
     # Character encoding of the external script
-    char_set: Var[Union[str, int, bool]]
+    char_set: ImmutableVar[Union[str, int, bool]]
 
     # Configures the CORS requests for the script
-    cross_origin: Var[Union[str, int, bool]]
+    cross_origin: ImmutableVar[Union[str, int, bool]]
 
     # Indicates that the script should be executed after the page has finished parsing
-    defer: Var[Union[str, int, bool]]
+    defer: ImmutableVar[Union[str, int, bool]]
 
     # Security feature allowing browsers to verify what they fetch
-    integrity: Var[Union[str, int, bool]]
+    integrity: ImmutableVar[Union[str, int, bool]]
 
     # Specifies the scripting language used in the type attribute
-    language: Var[Union[str, int, bool]]
+    language: ImmutableVar[Union[str, int, bool]]
 
     # Specifies which referrer information to send when fetching the script
-    referrer_policy: Var[Union[str, int, bool]]
+    referrer_policy: ImmutableVar[Union[str, int, bool]]
 
     # URL of an external script
-    src: Var[Union[str, int, bool]]
+    src: ImmutableVar[Union[str, int, bool]]
 
     # Specifies the MIME type of the script
-    type: Var[Union[str, int, bool]]
+    type: ImmutableVar[Union[str, int, bool]]
 
 
 canvas = Canvas.create

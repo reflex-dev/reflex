@@ -6,7 +6,7 @@ from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.ivars.base import ImmutableVar
 
 from ..base import (
     RadixThemesComponent,
@@ -20,7 +20,7 @@ class DialogRoot(RadixThemesComponent):
     tag = "Dialog.Root"
 
     # The controlled open state of the dialog.
-    open: Var[bool]
+    open: ImmutableVar[bool]
 
     # Fired when the open state changes.
     on_open_change: EventHandler[lambda e0: [e0]]
@@ -44,7 +44,7 @@ class DialogContent(elements.Div, RadixThemesComponent):
     tag = "Dialog.Content"
 
     # DialogContent size "1" - "4"
-    size: Var[Responsive[Literal["1", "2", "3", "4"]]]
+    size: ImmutableVar[Responsive[Literal["1", "2", "3", "4"]]]
 
     # Fired when the dialog is opened.
     on_open_auto_focus: EventHandler[lambda e0: [e0]]

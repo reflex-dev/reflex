@@ -17,7 +17,6 @@ from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import Var
 
 LiteralCodeBlockTheme = Literal[
     "a11y-dark",
@@ -375,28 +374,28 @@ class CodeBlock(Component):
     alias = "SyntaxHighlighter"
 
     # The theme to use ("light" or "dark").
-    theme: Var[LiteralCodeBlockTheme] = "one-light"  # type: ignore
+    theme: ImmutableVar[LiteralCodeBlockTheme] = "one-light"  # type: ignore
 
     # The language to use.
-    language: Var[LiteralCodeLanguage] = "python"  # type: ignore
+    language: ImmutableVar[LiteralCodeLanguage] = "python"  # type: ignore
 
     # The code to display.
-    code: Var[str]
+    code: ImmutableVar[str]
 
     # If this is enabled line numbers will be shown next to the code block.
-    show_line_numbers: Var[bool]
+    show_line_numbers: ImmutableVar[bool]
 
     # The starting line number to use.
-    starting_line_number: Var[int]
+    starting_line_number: ImmutableVar[int]
 
     # Whether to wrap long lines.
-    wrap_long_lines: Var[bool]
+    wrap_long_lines: ImmutableVar[bool]
 
     # A custom style for the code block.
-    custom_style: Dict[str, Union[str, Var, Color]] = {}
+    custom_style: Dict[str, Union[str, ImmutableVar, Color]] = {}
 
     # Props passed down to the code tag.
-    code_tag_props: Var[Dict[str, str]]
+    code_tag_props: ImmutableVar[Dict[str, str]]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the CodeBlock component.
@@ -534,7 +533,7 @@ class CodeBlock(Component):
     def _render(self):
         out = super()._render()
 
-        theme = self.theme.upcast()._replace(
+        theme = self.theme._replace(
             _var_name=replace_quotes_with_camel_case(str(self.theme))
         )
 

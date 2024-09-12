@@ -10,7 +10,6 @@ from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from ..base import RadixThemesComponent
 
@@ -24,7 +23,7 @@ class RadioGroupRoot(RadixThemesComponent):
         *children,
         size: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
@@ -35,13 +34,13 @@ class RadioGroupRoot(RadixThemesComponent):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
+                ImmutableVar[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -101,12 +100,12 @@ class RadioGroupRoot(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
+        default_value: Optional[Union[ImmutableVar[str], str]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
+        name: Optional[Union[ImmutableVar[str], str]] = None,
+        required: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -198,9 +197,9 @@ class RadioGroupItem(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
+        required: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -283,31 +282,31 @@ class HighLevelRadioGroup(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Union[Var[List[str]], List[str]]] = None,
+        items: Optional[Union[ImmutableVar[List[str]], List[str]]] = None,
         direction: Optional[
             Union[
-                Var[Literal["row", "column", "row-reverse", "column-reverse"]],
+                ImmutableVar[Literal["row", "column", "row-reverse", "column-reverse"]],
                 Literal["row", "column", "row-reverse", "column-reverse"],
             ]
         ] = None,
         spacing: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[ImmutableVar[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
+                ImmutableVar[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -367,12 +366,12 @@ class HighLevelRadioGroup(RadixThemesComponent):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
+        default_value: Optional[Union[ImmutableVar[str], str]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
+        name: Optional[Union[ImmutableVar[str], str]] = None,
+        required: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -465,31 +464,31 @@ class RadioGroup(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        items: Optional[Union[Var[List[str]], List[str]]] = None,
+        items: Optional[Union[ImmutableVar[List[str]], List[str]]] = None,
         direction: Optional[
             Union[
-                Var[Literal["row", "column", "row-reverse", "column-reverse"]],
+                ImmutableVar[Literal["row", "column", "row-reverse", "column-reverse"]],
                 Literal["row", "column", "row-reverse", "column-reverse"],
             ]
         ] = None,
         spacing: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                ImmutableVar[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+            Union[ImmutableVar[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
+                ImmutableVar[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -549,12 +548,12 @@ class RadioGroup(ComponentNamespace):
                 ],
             ]
         ] = None,
-        high_contrast: Optional[Union[Var[bool], bool]] = None,
-        value: Optional[Union[Var[str], str]] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        required: Optional[Union[Var[bool], bool]] = None,
+        high_contrast: Optional[Union[ImmutableVar[bool], bool]] = None,
+        value: Optional[Union[ImmutableVar[str], str]] = None,
+        default_value: Optional[Union[ImmutableVar[str], str]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
+        name: Optional[Union[ImmutableVar[str], str]] = None,
+        required: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

@@ -29,7 +29,6 @@ from reflex.constants.base import REFLEX_VAR_OPENING_TAG
 from reflex.utils.exceptions import VarTypeError
 from reflex.utils.types import GenericType, get_origin
 from reflex.vars import (
-    Var,
     VarData,
     _global_vars,
     get_unique_variable_name,
@@ -688,7 +687,7 @@ class ConcatVarOperation(CachedVarOperation, StringVar):
     @classmethod
     def create(
         cls,
-        *value: Var | str,
+        *value: ImmutableVar | str,
         _var_data: VarData | None = None,
     ) -> ConcatVarOperation:
         """Create a var from a string value.
@@ -1479,7 +1478,7 @@ def array_range_operation(
 
 @var_operation
 def array_contains_field_operation(
-    haystack: ArrayVar, needle: Any | Var, field: StringVar | str
+    haystack: ArrayVar, needle: Any | ImmutableVar, field: StringVar | str
 ):
     """Check if an array contains an element.
 
@@ -1498,7 +1497,7 @@ def array_contains_field_operation(
 
 
 @var_operation
-def array_contains_operation(haystack: ArrayVar, needle: Any | Var):
+def array_contains_operation(haystack: ArrayVar, needle: Any | ImmutableVar):
     """Check if an array contains an element.
 
     Args:
@@ -1522,7 +1521,9 @@ def array_contains_operation(haystack: ArrayVar, needle: Any | Var):
 class ToStringOperation(ToOperation, StringVar):
     """Base class for immutable string vars that are the result of a to string operation."""
 
-    _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
+    _original: ImmutableVar = dataclasses.field(
+        default_factory=lambda: LiteralNoneVar.create()
+    )
 
     _default_var_type: ClassVar[Type] = str
 
@@ -1535,7 +1536,9 @@ class ToStringOperation(ToOperation, StringVar):
 class ToArrayOperation(ToOperation, ArrayVar):
     """Base class for immutable array vars that are the result of a to array operation."""
 
-    _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
+    _original: ImmutableVar = dataclasses.field(
+        default_factory=lambda: LiteralNoneVar.create()
+    )
 
     _default_var_type: ClassVar[Type] = List[Any]
 

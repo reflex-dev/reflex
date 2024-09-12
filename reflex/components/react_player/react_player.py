@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.ivars.base import ImmutableVar
 
 
 class ReactPlayer(NoSSRComponent):
@@ -19,31 +19,31 @@ class ReactPlayer(NoSSRComponent):
     is_default = True
 
     # The url of a video or song to play
-    url: Var[str]
+    url: ImmutableVar[str]
 
     # Set to true or false to pause or play the media
-    playing: Var[bool]
+    playing: ImmutableVar[bool]
 
     # Set to true or false to loop the media
-    loop: Var[bool]
+    loop: ImmutableVar[bool]
 
     # Set to true or false to display native player controls.
-    controls: Var[bool] = True  # type: ignore
+    controls: ImmutableVar[bool] = True  # type: ignore
 
     # Set to true to show just the video thumbnail, which loads the full player on click
-    light: Var[bool]
+    light: ImmutableVar[bool]
 
     # Set the volume of the player, between 0 and 1
-    volume: Var[float]
+    volume: ImmutableVar[float]
 
     # Mutes the player
-    muted: Var[bool]
+    muted: ImmutableVar[bool]
 
     # Set the width of the player: ex:640px
-    width: Var[str]
+    width: ImmutableVar[str]
 
     # Set the height of the player: ex:640px
-    height: Var[str]
+    height: ImmutableVar[str]
 
     # Called when media is loaded and ready to play. If playing is set to true, media will play immediately.
     on_ready: EventHandler[lambda: []]

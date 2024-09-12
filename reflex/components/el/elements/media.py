@@ -4,6 +4,7 @@ from typing import Any, Union
 
 from reflex import Component, ComponentNamespace
 from reflex.constants.colors import Color
+from reflex.ivars.base import ImmutableVar
 from reflex.vars import Var as Var
 
 from .base import BaseHTML
@@ -15,37 +16,37 @@ class Area(BaseHTML):
     tag = "area"
 
     # Alternate text for the area, used for accessibility
-    alt: Var[Union[str, int, bool]]
+    alt: ImmutableVar[Union[str, int, bool]]
 
     # Coordinates to define the shape of the area
-    coords: Var[Union[str, int, bool]]
+    coords: ImmutableVar[Union[str, int, bool]]
 
     # Specifies that the target will be downloaded when clicked
-    download: Var[Union[str, int, bool]]
+    download: ImmutableVar[Union[str, int, bool]]
 
     # Hyperlink reference for the area
-    href: Var[Union[str, int, bool]]
+    href: ImmutableVar[Union[str, int, bool]]
 
     # Language of the linked resource
-    href_lang: Var[Union[str, int, bool]]
+    href_lang: ImmutableVar[Union[str, int, bool]]
 
     # Specifies what media/device the linked resource is optimized for
-    media: Var[Union[str, int, bool]]
+    media: ImmutableVar[Union[str, int, bool]]
 
     # A list of URLs to be notified if the user follows the hyperlink
-    ping: Var[Union[str, int, bool]]
+    ping: ImmutableVar[Union[str, int, bool]]
 
     # Specifies which referrer information to send with the link
-    referrer_policy: Var[Union[str, int, bool]]
+    referrer_policy: ImmutableVar[Union[str, int, bool]]
 
     # Specifies the relationship of the target object to the link object
-    rel: Var[Union[str, int, bool]]
+    rel: ImmutableVar[Union[str, int, bool]]
 
     # Defines the shape of the area (rectangle, circle, polygon)
-    shape: Var[Union[str, int, bool]]
+    shape: ImmutableVar[Union[str, int, bool]]
 
     # Specifies where to open the linked document
-    target: Var[Union[str, int, bool]]
+    target: ImmutableVar[Union[str, int, bool]]
 
 
 class Audio(BaseHTML):
@@ -54,28 +55,28 @@ class Audio(BaseHTML):
     tag = "audio"
 
     # Specifies that the audio will start playing as soon as it is ready
-    auto_play: Var[Union[str, int, bool]]
+    auto_play: ImmutableVar[Union[str, int, bool]]
 
     # Represents the time range of the buffered media
-    buffered: Var[Union[str, int, bool]]
+    buffered: ImmutableVar[Union[str, int, bool]]
 
     # Displays the standard audio controls
-    controls: Var[Union[str, int, bool]]
+    controls: ImmutableVar[Union[str, int, bool]]
 
     # Configures the CORS requests for the element
-    cross_origin: Var[Union[str, int, bool]]
+    cross_origin: ImmutableVar[Union[str, int, bool]]
 
     # Specifies that the audio will loop
-    loop: Var[Union[str, int, bool]]
+    loop: ImmutableVar[Union[str, int, bool]]
 
     # Indicates whether the audio is muted by default
-    muted: Var[Union[str, int, bool]]
+    muted: ImmutableVar[Union[str, int, bool]]
 
     # Specifies how the audio file should be preloaded
-    preload: Var[Union[str, int, bool]]
+    preload: ImmutableVar[Union[str, int, bool]]
 
     # URL of the audio to play
-    src: Var[Union[str, int, bool]]
+    src: ImmutableVar[Union[str, int, bool]]
 
 
 class Img(BaseHTML):
@@ -84,40 +85,40 @@ class Img(BaseHTML):
     tag = "img"
 
     # Image alignment with respect to its surrounding elements
-    align: Var[Union[str, int, bool]]
+    align: ImmutableVar[Union[str, int, bool]]
 
     # Alternative text for the image
-    alt: Var[Union[str, int, bool]]
+    alt: ImmutableVar[Union[str, int, bool]]
 
     # Configures the CORS requests for the image
-    cross_origin: Var[Union[str, int, bool]]
+    cross_origin: ImmutableVar[Union[str, int, bool]]
 
     # How the image should be decoded
-    decoding: Var[Union[str, int, bool]]
+    decoding: ImmutableVar[Union[str, int, bool]]
 
     # Specifies an intrinsic size for the image
-    intrinsicsize: Var[Union[str, int, bool]]
+    intrinsicsize: ImmutableVar[Union[str, int, bool]]
 
     # Whether the image is a server-side image map
-    ismap: Var[Union[str, int, bool]]
+    ismap: ImmutableVar[Union[str, int, bool]]
 
     # Specifies the loading behavior of the image
-    loading: Var[Union[str, int, bool]]
+    loading: ImmutableVar[Union[str, int, bool]]
 
     # Referrer policy for the image
-    referrer_policy: Var[Union[str, int, bool]]
+    referrer_policy: ImmutableVar[Union[str, int, bool]]
 
     # Sizes of the image for different layouts
-    sizes: Var[Union[str, int, bool]]
+    sizes: ImmutableVar[Union[str, int, bool]]
 
     # URL of the image to display
-    src: Var[Any]
+    src: ImmutableVar[Any]
 
     # A set of source sizes and URLs for responsive images
-    src_set: Var[Union[str, int, bool]]
+    src_set: ImmutableVar[Union[str, int, bool]]
 
     # The name of the map to use with the image
-    use_map: Var[Union[str, int, bool]]
+    use_map: ImmutableVar[Union[str, int, bool]]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -144,7 +145,7 @@ class Map(BaseHTML):
     tag = "map"
 
     # Name of the map, referenced by the 'usemap' attribute in 'img' and 'object' elements
-    name: Var[Union[str, int, bool]]
+    name: ImmutableVar[Union[str, int, bool]]
 
 
 class Track(BaseHTML):
@@ -153,19 +154,19 @@ class Track(BaseHTML):
     tag = "track"
 
     # Indicates that the track should be enabled unless the user's preferences indicate otherwise
-    default: Var[Union[str, int, bool]]
+    default: ImmutableVar[Union[str, int, bool]]
 
     # Specifies the kind of text track
-    kind: Var[Union[str, int, bool]]
+    kind: ImmutableVar[Union[str, int, bool]]
 
     # Title of the text track, used by the browser when listing available text tracks
-    label: Var[Union[str, int, bool]]
+    label: ImmutableVar[Union[str, int, bool]]
 
     # URL of the track file
-    src: Var[Union[str, int, bool]]
+    src: ImmutableVar[Union[str, int, bool]]
 
     # Language of the track text data
-    src_lang: Var[Union[str, int, bool]]
+    src_lang: ImmutableVar[Union[str, int, bool]]
 
 
 class Video(BaseHTML):
@@ -174,34 +175,34 @@ class Video(BaseHTML):
     tag = "video"
 
     # Specifies that the video will start playing as soon as it is ready
-    auto_play: Var[Union[str, int, bool]]
+    auto_play: ImmutableVar[Union[str, int, bool]]
 
     # Represents the time range of the buffered media
-    buffered: Var[Union[str, int, bool]]
+    buffered: ImmutableVar[Union[str, int, bool]]
 
     # Displays the standard video controls
-    controls: Var[Union[str, int, bool]]
+    controls: ImmutableVar[Union[str, int, bool]]
 
     # Configures the CORS requests for the video
-    cross_origin: Var[Union[str, int, bool]]
+    cross_origin: ImmutableVar[Union[str, int, bool]]
 
     # Specifies that the video will loop
-    loop: Var[Union[str, int, bool]]
+    loop: ImmutableVar[Union[str, int, bool]]
 
     # Indicates whether the video is muted by default
-    muted: Var[Union[str, int, bool]]
+    muted: ImmutableVar[Union[str, int, bool]]
 
     # Indicates that the video should play 'inline', inside its element's playback area
-    plays_inline: Var[Union[str, int, bool]]
+    plays_inline: ImmutableVar[Union[str, int, bool]]
 
     # URL of an image to show while the video is downloading, or until the user hits the play button
-    poster: Var[Union[str, int, bool]]
+    poster: ImmutableVar[Union[str, int, bool]]
 
     # Specifies how the video file should be preloaded
-    preload: Var[Union[str, int, bool]]
+    preload: ImmutableVar[Union[str, int, bool]]
 
     # URL of the video to play
-    src: Var[Union[str, int, bool]]
+    src: ImmutableVar[Union[str, int, bool]]
 
 
 class Embed(BaseHTML):
@@ -210,10 +211,10 @@ class Embed(BaseHTML):
     tag = "embed"
 
     # URL of the embedded content
-    src: Var[Union[str, int, bool]]
+    src: ImmutableVar[Union[str, int, bool]]
 
     # Media type of the embedded content
-    type: Var[Union[str, int, bool]]
+    type: ImmutableVar[Union[str, int, bool]]
 
 
 class Iframe(BaseHTML):
@@ -222,31 +223,31 @@ class Iframe(BaseHTML):
     tag = "iframe"
 
     # Alignment of the iframe within the page or surrounding elements
-    align: Var[Union[str, int, bool]]
+    align: ImmutableVar[Union[str, int, bool]]
 
     # Permissions policy for the iframe
-    allow: Var[Union[str, int, bool]]
+    allow: ImmutableVar[Union[str, int, bool]]
 
     # Content Security Policy to apply to the iframe's content
-    csp: Var[Union[str, int, bool]]
+    csp: ImmutableVar[Union[str, int, bool]]
 
     # Specifies the loading behavior of the iframe
-    loading: Var[Union[str, int, bool]]
+    loading: ImmutableVar[Union[str, int, bool]]
 
     # Name of the iframe, used as a target for hyperlinks and forms
-    name: Var[Union[str, int, bool]]
+    name: ImmutableVar[Union[str, int, bool]]
 
     # Referrer policy for the iframe
-    referrer_policy: Var[Union[str, int, bool]]
+    referrer_policy: ImmutableVar[Union[str, int, bool]]
 
     # Security restrictions for the content in the iframe
-    sandbox: Var[Union[str, int, bool]]
+    sandbox: ImmutableVar[Union[str, int, bool]]
 
     # URL of the document to display in the iframe
-    src: Var[Union[str, int, bool]]
+    src: ImmutableVar[Union[str, int, bool]]
 
     # HTML content to embed directly within the iframe
-    src_doc: Var[Union[str, int, bool]]
+    src_doc: ImmutableVar[Union[str, int, bool]]
 
 
 class Object(BaseHTML):
@@ -255,19 +256,19 @@ class Object(BaseHTML):
     tag = "object"
 
     # URL of the data to be used by the object
-    data: Var[Union[str, int, bool]]
+    data: ImmutableVar[Union[str, int, bool]]
 
     # Associates the object with a form element
-    form: Var[Union[str, int, bool]]
+    form: ImmutableVar[Union[str, int, bool]]
 
     # Name of the object, used for scripting or as a target for forms and links
-    name: Var[Union[str, int, bool]]
+    name: ImmutableVar[Union[str, int, bool]]
 
     # Media type of the data specified in the data attribute
-    type: Var[Union[str, int, bool]]
+    type: ImmutableVar[Union[str, int, bool]]
 
     # Name of an image map to use with the object
-    use_map: Var[Union[str, int, bool]]
+    use_map: ImmutableVar[Union[str, int, bool]]
 
 
 class Picture(BaseHTML):
@@ -290,19 +291,19 @@ class Source(BaseHTML):
     tag = "source"
 
     # Media query indicating what device the linked resource is optimized for
-    media: Var[Union[str, int, bool]]
+    media: ImmutableVar[Union[str, int, bool]]
 
     # Sizes of the source for different layouts
-    sizes: Var[Union[str, int, bool]]
+    sizes: ImmutableVar[Union[str, int, bool]]
 
     # URL of the media file or an image for the element to use
-    src: Var[Union[str, int, bool]]
+    src: ImmutableVar[Union[str, int, bool]]
 
     # A set of source sizes and URLs for responsive images
-    src_set: Var[Union[str, int, bool]]
+    src_set: ImmutableVar[Union[str, int, bool]]
 
     # Media type of the source
-    type: Var[Union[str, int, bool]]
+    type: ImmutableVar[Union[str, int, bool]]
 
 
 class Svg(BaseHTML):
@@ -310,11 +311,11 @@ class Svg(BaseHTML):
 
     tag = "svg"
     # The width of the svg.
-    width: Var[Union[str, int]]
+    width: ImmutableVar[Union[str, int]]
     # The height of the svg.
-    height: Var[Union[str, int]]
+    height: ImmutableVar[Union[str, int]]
     # The XML namespace declaration.
-    xmlns: Var[str]
+    xmlns: ImmutableVar[str]
 
 
 class Circle(BaseHTML):
@@ -322,13 +323,13 @@ class Circle(BaseHTML):
 
     tag = "circle"
     # The x-axis coordinate of the center of the circle.
-    cx: Var[Union[str, int]]
+    cx: ImmutableVar[Union[str, int]]
     # The y-axis coordinate of the center of the circle.
-    cy: Var[Union[str, int]]
+    cy: ImmutableVar[Union[str, int]]
     # The radius of the circle.
-    r: Var[Union[str, int]]
+    r: ImmutableVar[Union[str, int]]
     # The total length for the circle's circumference, in user units.
-    path_length: Var[int]
+    path_length: ImmutableVar[int]
 
 
 class Rect(BaseHTML):
@@ -336,19 +337,19 @@ class Rect(BaseHTML):
 
     tag = "rect"
     # The x coordinate of the rect.
-    x: Var[Union[str, int]]
+    x: ImmutableVar[Union[str, int]]
     # The y coordinate of the rect.
-    y: Var[Union[str, int]]
+    y: ImmutableVar[Union[str, int]]
     # The width of the rect
-    width: Var[Union[str, int]]
+    width: ImmutableVar[Union[str, int]]
     # The height of the rect.
-    height: Var[Union[str, int]]
+    height: ImmutableVar[Union[str, int]]
     # The horizontal corner radius of the rect. Defaults to ry if it is specified.
-    rx: Var[Union[str, int]]
+    rx: ImmutableVar[Union[str, int]]
     # The vertical corner radius of the rect. Defaults to rx if it is specified.
-    ry: Var[Union[str, int]]
+    ry: ImmutableVar[Union[str, int]]
     # The total length of the rectangle's perimeter, in user units.
-    path_length: Var[int]
+    path_length: ImmutableVar[int]
 
 
 class Polygon(BaseHTML):
@@ -356,9 +357,9 @@ class Polygon(BaseHTML):
 
     tag = "polygon"
     # defines the list of points (pairs of x,y absolute coordinates) required to draw the polygon.
-    points: Var[str]
+    points: ImmutableVar[str]
     # This prop lets specify the total length for the path, in user units.
-    path_length: Var[int]
+    path_length: ImmutableVar[int]
 
 
 class Defs(BaseHTML):
@@ -373,25 +374,25 @@ class LinearGradient(BaseHTML):
     tag = "linearGradient"
 
     # Units for the gradient.
-    gradient_units: Var[Union[str, bool]]
+    gradient_units: ImmutableVar[Union[str, bool]]
 
     # Transform applied to the gradient.
-    gradient_transform: Var[Union[str, bool]]
+    gradient_transform: ImmutableVar[Union[str, bool]]
 
     # Method used to spread the gradient.
-    spread_method: Var[Union[str, bool]]
+    spread_method: ImmutableVar[Union[str, bool]]
 
     # X coordinate of the starting point of the gradient.
-    x1: Var[Union[str, int, bool]]
+    x1: ImmutableVar[Union[str, int, bool]]
 
     # X coordinate of the ending point of the gradient.
-    x2: Var[Union[str, int, bool]]
+    x2: ImmutableVar[Union[str, int, bool]]
 
     # Y coordinate of the starting point of the gradient.
-    y1: Var[Union[str, int, bool]]
+    y1: ImmutableVar[Union[str, int, bool]]
 
     # Y coordinate of the ending point of the gradient.
-    y2: Var[Union[str, int, bool]]
+    y2: ImmutableVar[Union[str, int, bool]]
 
 
 class Stop(BaseHTML):
@@ -400,13 +401,13 @@ class Stop(BaseHTML):
     tag = "stop"
 
     # Offset of the gradient stop.
-    offset: Var[Union[str, float, int]]
+    offset: ImmutableVar[Union[str, float, int]]
 
     # Color of the gradient stop.
-    stop_color: Var[Union[str, Color, bool]]
+    stop_color: ImmutableVar[Union[str, Color, bool]]
 
     # Opacity of the gradient stop.
-    stop_opacity: Var[Union[str, float, int, bool]]
+    stop_opacity: ImmutableVar[Union[str, float, int, bool]]
 
 
 class Path(BaseHTML):
@@ -415,7 +416,7 @@ class Path(BaseHTML):
     tag = "path"
 
     # Defines the shape of the path.
-    d: Var[Union[str, int, bool]]
+    d: ImmutableVar[Union[str, int, bool]]
 
 
 class SVG(ComponentNamespace):

@@ -10,7 +10,6 @@ from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithC
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 LiteralSliderOrientation = Literal["horizontal", "vertical"]
 LiteralSliderDir = Literal["ltr", "rtl"]
@@ -21,7 +20,7 @@ class SliderComponent(RadixPrimitiveComponentWithClassName):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -100,23 +99,25 @@ class SliderRoot(SliderComponent):
     def create(  # type: ignore
         cls,
         *children,
-        default_value: Optional[Union[Var[List[int]], List[int]]] = None,
-        value: Optional[Union[Var[List[int]], List[int]]] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        disabled: Optional[Union[Var[bool], bool]] = None,
+        default_value: Optional[Union[ImmutableVar[List[int]], List[int]]] = None,
+        value: Optional[Union[ImmutableVar[List[int]], List[int]]] = None,
+        name: Optional[Union[ImmutableVar[str], str]] = None,
+        disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
         orientation: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
+                ImmutableVar[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
-        inverted: Optional[Union[Var[bool], bool]] = None,
-        min: Optional[Union[Var[int], int]] = None,
-        max: Optional[Union[Var[int], int]] = None,
-        step: Optional[Union[Var[int], int]] = None,
-        min_steps_between_thumbs: Optional[Union[Var[int], int]] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        dir: Optional[
+            Union[ImmutableVar[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]
+        ] = None,
+        inverted: Optional[Union[ImmutableVar[bool], bool]] = None,
+        min: Optional[Union[ImmutableVar[int], int]] = None,
+        max: Optional[Union[ImmutableVar[int], int]] = None,
+        step: Optional[Union[ImmutableVar[int], int]] = None,
+        min_steps_between_thumbs: Optional[Union[ImmutableVar[int], int]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -201,7 +202,7 @@ class SliderTrack(SliderComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -280,7 +281,7 @@ class SliderRange(SliderComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -359,7 +360,7 @@ class SliderThumb(SliderComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

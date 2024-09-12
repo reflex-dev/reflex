@@ -13,7 +13,6 @@ from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.utils.serializers import serializer
-from reflex.vars import Var
 
 class GridColumnIcons(Enum):
     Array = "array"
@@ -87,48 +86,50 @@ class DataEditor(NoSSRComponent):
     def create(  # type: ignore
         cls,
         *children,
-        rows: Optional[Union[Var[int], int]] = None,
+        rows: Optional[Union[ImmutableVar[int], int]] = None,
         columns: Optional[
-            Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
+            Union[ImmutableVar[List[Dict[str, Any]]], List[Dict[str, Any]]]
         ] = None,
-        data: Optional[Union[Var[List[List[Any]]], List[List[Any]]]] = None,
-        get_cell_content: Optional[Union[Var[str], str]] = None,
-        get_cell_for_selection: Optional[Union[Var[bool], bool]] = None,
-        on_paste: Optional[Union[Var[bool], bool]] = None,
-        draw_focus_ring: Optional[Union[Var[bool], bool]] = None,
-        fixed_shadow_x: Optional[Union[Var[bool], bool]] = None,
-        fixed_shadow_y: Optional[Union[Var[bool], bool]] = None,
-        freeze_columns: Optional[Union[Var[int], int]] = None,
-        group_header_height: Optional[Union[Var[int], int]] = None,
-        header_height: Optional[Union[Var[int], int]] = None,
-        max_column_auto_width: Optional[Union[Var[int], int]] = None,
-        max_column_width: Optional[Union[Var[int], int]] = None,
-        min_column_width: Optional[Union[Var[int], int]] = None,
-        row_height: Optional[Union[Var[int], int]] = None,
+        data: Optional[Union[ImmutableVar[List[List[Any]]], List[List[Any]]]] = None,
+        get_cell_content: Optional[Union[ImmutableVar[str], str]] = None,
+        get_cell_for_selection: Optional[Union[ImmutableVar[bool], bool]] = None,
+        on_paste: Optional[Union[ImmutableVar[bool], bool]] = None,
+        draw_focus_ring: Optional[Union[ImmutableVar[bool], bool]] = None,
+        fixed_shadow_x: Optional[Union[ImmutableVar[bool], bool]] = None,
+        fixed_shadow_y: Optional[Union[ImmutableVar[bool], bool]] = None,
+        freeze_columns: Optional[Union[ImmutableVar[int], int]] = None,
+        group_header_height: Optional[Union[ImmutableVar[int], int]] = None,
+        header_height: Optional[Union[ImmutableVar[int], int]] = None,
+        max_column_auto_width: Optional[Union[ImmutableVar[int], int]] = None,
+        max_column_width: Optional[Union[ImmutableVar[int], int]] = None,
+        min_column_width: Optional[Union[ImmutableVar[int], int]] = None,
+        row_height: Optional[Union[ImmutableVar[int], int]] = None,
         row_markers: Optional[
             Union[
-                Var[Literal["none", "number", "checkbox", "both", "clickable-number"]],
+                ImmutableVar[
+                    Literal["none", "number", "checkbox", "both", "clickable-number"]
+                ],
                 Literal["none", "number", "checkbox", "both", "clickable-number"],
             ]
         ] = None,
-        row_marker_start_index: Optional[Union[Var[int], int]] = None,
-        row_marker_width: Optional[Union[Var[int], int]] = None,
-        smooth_scroll_x: Optional[Union[Var[bool], bool]] = None,
-        smooth_scroll_y: Optional[Union[Var[bool], bool]] = None,
-        vertical_border: Optional[Union[Var[bool], bool]] = None,
+        row_marker_start_index: Optional[Union[ImmutableVar[int], int]] = None,
+        row_marker_width: Optional[Union[ImmutableVar[int], int]] = None,
+        smooth_scroll_x: Optional[Union[ImmutableVar[bool], bool]] = None,
+        smooth_scroll_y: Optional[Union[ImmutableVar[bool], bool]] = None,
+        vertical_border: Optional[Union[ImmutableVar[bool], bool]] = None,
         column_select: Optional[
             Union[
-                Var[Literal["none", "single", "multi"]],
+                ImmutableVar[Literal["none", "single", "multi"]],
                 Literal["none", "single", "multi"],
             ]
         ] = None,
-        prevent_diagonal_scrolling: Optional[Union[Var[bool], bool]] = None,
-        overscroll_x: Optional[Union[Var[int], int]] = None,
-        overscroll_y: Optional[Union[Var[int], int]] = None,
-        scroll_offset_x: Optional[Union[Var[int], int]] = None,
-        scroll_offset_y: Optional[Union[Var[int], int]] = None,
+        prevent_diagonal_scrolling: Optional[Union[ImmutableVar[bool], bool]] = None,
+        overscroll_x: Optional[Union[ImmutableVar[int], int]] = None,
+        overscroll_y: Optional[Union[ImmutableVar[int], int]] = None,
+        scroll_offset_x: Optional[Union[ImmutableVar[int], int]] = None,
+        scroll_offset_y: Optional[Union[ImmutableVar[int], int]] = None,
         theme: Optional[
-            Union[Var[Union[DataEditorTheme, Dict]], DataEditorTheme, Dict]
+            Union[ImmutableVar[Union[DataEditorTheme, Dict]], DataEditorTheme, Dict]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -247,7 +248,7 @@ class DataEditor(NoSSRComponent):
             freeze_columns: The number of columns which should remain in place when scrolling horizontally. Doesn't include rowMarkers.
             group_header_height: Controls the header of the group header row.
             header_height: Controls the height of the header row.
-            max_column_auto_width: Additional header icons:  header_icons: Var[Any] # (TODO: must be a map of name: svg)  The maximum width a column can be automatically sized to.
+            max_column_auto_width: Additional header icons:  header_icons: ImmutableVar[Any] # (TODO: must be a map of name: svg)  The maximum width a column can be automatically sized to.
             max_column_width: The maximum width a column can be resized to.
             min_column_width: The minimum width a column can be resized to.
             row_height: Determins the height of each row.

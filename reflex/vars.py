@@ -15,7 +15,7 @@ from typing import (
     Optional,
     Tuple,
     Type,
-    _GenericAlias,  # type: ignore
+    overload,  # type: ignore
 )
 
 from reflex import constants
@@ -292,21 +292,43 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
 class Var:
     """An abstract var."""
 
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: str,
+        *,
+        _var_is_string: bool = True,
+        _var_data: Optional[VarData] = None,
+        _var_is_local: bool | None = None,
+    ) -> ImmutableVar: ...
+
+    @overload
     @classmethod
     def create(
         cls,
         value: Any,
-        _var_is_local: bool = True,
+        *,
+        _var_data: Optional[VarData] = None,
+        _var_is_local: bool | None = None,
+    ) -> ImmutableVar: ...
+
+    @classmethod
+    def create(
+        cls,
+        value: Any,
+        *,
         _var_is_string: bool | None = None,
         _var_data: Optional[VarData] = None,
-    ) -> ImmutableVar | None:
+        _var_is_local: bool | None = None,
+    ) -> ImmutableVar:
         """Create a var from a value.
 
         Args:
             value: The value to create the var from.
-            _var_is_local: Whether the var is local.
             _var_is_string: Whether the var is a string literal.
             _var_data: Additional hooks and imports associated with the Var.
+            _var_is_local: Whether the var is local. Deprecated.
 
         Returns:
             The var.
@@ -315,7 +337,7 @@ class Var:
 
         # Check for none values.
         if value is None:
-            return None
+            raise
 
         # If the value is already a var, do nothing.
         if isinstance(value, ImmutableVar):
@@ -340,57 +362,20 @@ class Var:
                 _var_data=_var_data,
             )
 
+        # TODO: Deprecate _var_is_local
+
         # Otherwise, rely on _var_is_local
         if _var_is_local is True:
             return LiteralVar.create(
                 value,
                 _var_data=_var_data,
             )
-
         return ImmutableVar.create(
             value,
             _var_data=_var_data,
         )
 
-    @classmethod
-    def create_safe(
-        cls,
-        value: Any,
-        _var_is_local: bool = True,
-        _var_is_string: bool | None = None,
-        _var_data: Optional[VarData] = None,
-    ) -> ImmutableVar:
-        """Create a var from a value, asserting that it is not None.
-
-        Args:
-            value: The value to create the var from.
-            _var_is_local: Whether the var is local.
-            _var_is_string: Whether the var is a string literal.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        var = cls.create(
-            value,
-            _var_is_local=_var_is_local,
-            _var_is_string=_var_is_string,
-            _var_data=_var_data,
-        )
-        assert var is not None
-        return var
-
-    @classmethod
-    def __class_getitem__(cls, type_: str) -> _GenericAlias:
-        """Get a typed var.
-
-        Args:
-            type_: The type of the var.
-
-        Returns:
-            The var class item.
-        """
-        return _GenericAlias(cls, type_)
+    create_safe = classmethod(create)
 
     def __bool__(self) -> bool:
         """Raise exception if using Var in a boolean context.
@@ -423,18 +408,6 @@ class Var:
             "'in' operator not supported for Var types, use Var.contains() instead."
         )
 
-    def __get__(self, instance: Any, owner: Any) -> ImmutableVar:
-        """Return the value of the Var.
-
-        Args:
-            instance: The instance of the Var.
-            owner: The owner of the Var.
-
-        Returns:
-            The value of the Var.
-        """
-        return self  # type: ignore
-
     @classmethod
     def range(
         cls,
@@ -455,14 +428,6 @@ class Var:
         from reflex.ivars import ArrayVar
 
         return ArrayVar.range(v1, v2, step)  # type: ignore
-
-    def upcast(self) -> ImmutableVar:
-        """Upcast a Var to an ImmutableVar.
-
-        Returns:
-            The upcasted Var.
-        """
-        return self  # type: ignore
 
     def json(self) -> str:
         """Serialize the var to a JSON string.

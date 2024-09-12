@@ -10,7 +10,6 @@ from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithC
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 class ProgressComponent(RadixPrimitiveComponentWithClassName):
     @overload
@@ -18,7 +17,7 @@ class ProgressComponent(RadixPrimitiveComponentWithClassName):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -99,11 +98,11 @@ class ProgressRoot(ProgressComponent):
         *children,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                ImmutableVar[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -183,11 +182,11 @@ class ProgressIndicator(ProgressComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[Optional[int]], int]] = None,
-        max: Optional[Union[Var[Optional[int]], int]] = None,
+        value: Optional[Union[ImmutableVar[Optional[int]], int]] = None,
+        max: Optional[Union[ImmutableVar[Optional[int]], int]] = None,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -247,7 +246,7 @@ class ProgressIndicator(ProgressComponent):
                 ],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -330,7 +329,7 @@ class Progress(ProgressRoot):
         *children,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -390,15 +389,15 @@ class Progress(ProgressRoot):
                 ],
             ]
         ] = None,
-        value: Optional[Union[Var[Optional[int]], int]] = None,
-        max: Optional[Union[Var[Optional[int]], int]] = None,
+        value: Optional[Union[ImmutableVar[Optional[int]], int]] = None,
+        max: Optional[Union[ImmutableVar[Optional[int]], int]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                ImmutableVar[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -482,7 +481,7 @@ class ProgressNamespace(ComponentNamespace):
         *children,
         color_scheme: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "tomato",
                         "red",
@@ -542,15 +541,15 @@ class ProgressNamespace(ComponentNamespace):
                 ],
             ]
         ] = None,
-        value: Optional[Union[Var[Optional[int]], int]] = None,
-        max: Optional[Union[Var[Optional[int]], int]] = None,
+        value: Optional[Union[ImmutableVar[Optional[int]], int]] = None,
+        max: Optional[Union[ImmutableVar[Optional[int]], int]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
+                ImmutableVar[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

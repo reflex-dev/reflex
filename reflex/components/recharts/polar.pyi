@@ -9,7 +9,6 @@ from reflex.constants.colors import Color
 from reflex.event import EventHandler, EventSpec
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from .recharts import (
     Recharts,
@@ -22,20 +21,22 @@ class Pie(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        cx: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        cy: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        inner_radius: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        outer_radius: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        start_angle: Optional[Union[Var[int], int]] = None,
-        end_angle: Optional[Union[Var[int], int]] = None,
-        min_angle: Optional[Union[Var[int], int]] = None,
-        padding_angle: Optional[Union[Var[int], int]] = None,
-        name_key: Optional[Union[Var[str], str]] = None,
+        data: Optional[
+            Union[ImmutableVar[List[Dict[str, Any]]], List[Dict[str, Any]]]
+        ] = None,
+        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        cx: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        cy: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        inner_radius: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        outer_radius: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        start_angle: Optional[Union[ImmutableVar[int], int]] = None,
+        end_angle: Optional[Union[ImmutableVar[int], int]] = None,
+        min_angle: Optional[Union[ImmutableVar[int], int]] = None,
+        padding_angle: Optional[Union[ImmutableVar[int], int]] = None,
+        name_key: Optional[Union[ImmutableVar[str], str]] = None,
         legend_type: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "line",
                         "plainline",
@@ -65,10 +66,10 @@ class Pie(Recharts):
                 ],
             ]
         ] = None,
-        label: Optional[Union[Var[bool], bool]] = None,
-        label_line: Optional[Union[Var[bool], bool]] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        label: Optional[Union[ImmutableVar[bool], bool]] = None,
+        label_line: Optional[Union[ImmutableVar[bool], bool]] = None,
+        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -134,19 +135,23 @@ class Radar(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        points: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        dot: Optional[Union[Var[bool], bool]] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        fill: Optional[Union[Var[str], str]] = None,
-        fill_opacity: Optional[Union[Var[float], float]] = None,
-        legend_type: Optional[Union[Var[str], str]] = None,
-        label: Optional[Union[Var[bool], bool]] = None,
-        animation_begin: Optional[Union[Var[int], int]] = None,
-        animation_duration: Optional[Union[Var[int], int]] = None,
+        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        points: Optional[
+            Union[ImmutableVar[List[Dict[str, Any]]], List[Dict[str, Any]]]
+        ] = None,
+        dot: Optional[Union[ImmutableVar[bool], bool]] = None,
+        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[ImmutableVar[str], str]] = None,
+        fill_opacity: Optional[Union[ImmutableVar[float], float]] = None,
+        legend_type: Optional[Union[ImmutableVar[str], str]] = None,
+        label: Optional[Union[ImmutableVar[bool], bool]] = None,
+        animation_begin: Optional[Union[ImmutableVar[int], int]] = None,
+        animation_duration: Optional[Union[ImmutableVar[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
+                ImmutableVar[
+                    Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
+                ],
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
             ]
         ] = None,
@@ -238,21 +243,23 @@ class RadialBar(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        min_angle: Optional[Union[Var[int], int]] = None,
-        legend_type: Optional[Union[Var[str], str]] = None,
+        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        min_angle: Optional[Union[ImmutableVar[int], int]] = None,
+        legend_type: Optional[Union[ImmutableVar[str], str]] = None,
         label: Optional[
-            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[ImmutableVar[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
         background: Optional[
-            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[ImmutableVar[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        is_animation_active: Optional[Union[Var[bool], bool]] = None,
-        animation_begin: Optional[Union[Var[int], int]] = None,
-        animation_duration: Optional[Union[Var[int], int]] = None,
+        is_animation_active: Optional[Union[ImmutableVar[bool], bool]] = None,
+        animation_begin: Optional[Union[ImmutableVar[int], int]] = None,
+        animation_duration: Optional[Union[ImmutableVar[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
+                ImmutableVar[
+                    Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
+                ],
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
             ]
         ] = None,
@@ -320,22 +327,24 @@ class PolarAngleAxis(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        cx: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        cy: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        radius: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        data_key: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        cx: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        cy: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        radius: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
         axis_line: Optional[
-            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[ImmutableVar[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        axis_line_type: Optional[Union[Var[str], str]] = None,
+        axis_line_type: Optional[Union[ImmutableVar[str], str]] = None,
         tick_line: Optional[
-            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[ImmutableVar[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        tick: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        ticks: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        orient: Optional[Union[Var[str], str]] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
+        tick: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        ticks: Optional[
+            Union[ImmutableVar[List[Dict[str, Any]]], List[Dict[str, Any]]]
+        ] = None,
+        orient: Optional[Union[ImmutableVar[str], str]] = None,
+        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
+        allow_duplicated_category: Optional[Union[ImmutableVar[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -424,16 +433,18 @@ class PolarGrid(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        cx: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        cy: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        inner_radius: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        outer_radius: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        polar_angles: Optional[Union[Var[List[int]], List[int]]] = None,
-        polar_radius: Optional[Union[Var[List[int]], List[int]]] = None,
+        cx: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        cy: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        inner_radius: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        outer_radius: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        polar_angles: Optional[Union[ImmutableVar[List[int]], List[int]]] = None,
+        polar_radius: Optional[Union[ImmutableVar[List[int]], List[int]]] = None,
         grid_type: Optional[
-            Union[Var[Literal["polygon", "circle"]], Literal["polygon", "circle"]]
+            Union[
+                ImmutableVar[Literal["polygon", "circle"]], Literal["polygon", "circle"]
+            ]
         ] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -519,23 +530,26 @@ class PolarRadiusAxis(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        angle: Optional[Union[Var[int], int]] = None,
+        angle: Optional[Union[ImmutableVar[int], int]] = None,
         type_: Optional[
-            Union[Var[Literal["number", "category"]], Literal["number", "category"]]
+            Union[
+                ImmutableVar[Literal["number", "category"]],
+                Literal["number", "category"],
+            ]
         ] = None,
-        allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
-        cx: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        cy: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        reversed: Optional[Union[Var[bool], bool]] = None,
-        orientation: Optional[Union[Var[str], str]] = None,
+        allow_duplicated_category: Optional[Union[ImmutableVar[bool], bool]] = None,
+        cx: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        cy: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        reversed: Optional[Union[ImmutableVar[bool], bool]] = None,
+        orientation: Optional[Union[ImmutableVar[str], str]] = None,
         axis_line: Optional[
-            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[ImmutableVar[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
         ] = None,
-        tick: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        tick_count: Optional[Union[Var[int], int]] = None,
+        tick: Optional[Union[ImmutableVar[Union[int, str]], str, int]] = None,
+        tick_count: Optional[Union[ImmutableVar[int], int]] = None,
         scale: Optional[
             Union[
-                Var[
+                ImmutableVar[
                     Literal[
                         "auto",
                         "linear",
@@ -573,8 +587,8 @@ class PolarRadiusAxis(Recharts):
                 ],
             ]
         ] = None,
-        domain: Optional[Union[Var[List[int]], List[int]]] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        domain: Optional[Union[ImmutableVar[List[int]], List[int]]] = None,
+        stroke: Optional[Union[ImmutableVar[Union[Color, str]], str, Color]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

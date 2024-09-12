@@ -11,7 +11,6 @@ from reflex.components.el import elements
 from reflex.components.lucide import Icon
 from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -30,22 +29,22 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
     tag = "IconButton"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: ImmutableVar[bool]
 
     # Button size "1" - "4"
-    size: Var[Responsive[LiteralButtonSize]]
+    size: ImmutableVar[Responsive[LiteralButtonSize]]
 
     # Variant of button: "classic" | "solid" | "soft" | "surface" | "outline" | "ghost"
-    variant: Var[LiteralVariant]
+    variant: ImmutableVar[LiteralVariant]
 
     # Override theme color for button
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: ImmutableVar[LiteralAccentColor]
 
     # Whether to render the button with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: ImmutableVar[bool]
 
     # Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
+    radius: ImmutableVar[LiteralRadius]
 
     @classmethod
     def create(cls, *children, **props) -> Component:

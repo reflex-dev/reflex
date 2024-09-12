@@ -11,7 +11,6 @@ from reflex.components.tags import IterTag
 from reflex.constants import MemoizationMode
 from reflex.ivars.base import ImmutableVar
 from reflex.state import ComponentState
-from reflex.vars import Var
 
 
 class ForeachVarError(TypeError):
@@ -28,7 +27,7 @@ class Foreach(Component):
     _memoization_mode = MemoizationMode(recursive=False)
 
     # The iterable to create components from.
-    iterable: Var[Iterable]
+    iterable: ImmutableVar[Iterable]
 
     # A function from the render args to the component.
     render_fn: Callable = Fragment.create
@@ -36,7 +35,7 @@ class Foreach(Component):
     @classmethod
     def create(
         cls,
-        iterable: Var[Iterable] | Iterable,
+        iterable: ImmutableVar[Iterable] | Iterable,
         render_fn: Callable,
     ) -> Foreach:
         """Create a foreach component.
@@ -130,7 +129,7 @@ class Foreach(Component):
             iterable_state=str(tag.iterable),
             arg_name=tag.arg_var_name,
             arg_index=tag.get_index_var_arg(),
-            iterable_type=tag.iterable.upcast()._var_type.mro()[0].__name__,
+            iterable_type=tag.iterable._var_type.mro()[0].__name__,
         )
 
 

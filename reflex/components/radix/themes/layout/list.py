@@ -10,7 +10,6 @@ from reflex.components.el.elements.typography import Li, Ol, Ul
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.typography.text import Text
 from reflex.ivars.base import ImmutableVar
-from reflex.vars import Var
 
 LiteralListStyleTypeUnordered = Literal[
     "none",
@@ -43,7 +42,7 @@ class BaseList(Component):
     tag = "ul"
 
     # The style of the list. Default to "none".
-    list_style_type: Var[
+    list_style_type: ImmutableVar[
         Union[LiteralListStyleTypeUnordered, LiteralListStyleTypeOrdered]
     ]
 
