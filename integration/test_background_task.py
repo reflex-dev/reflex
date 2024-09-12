@@ -13,7 +13,6 @@ def BackgroundTask():
     import asyncio
 
     import pytest
-    import reflex_chakra as rc
 
     import reflex as rx
     from reflex.state import ImmutableStateError
@@ -116,11 +115,11 @@ def BackgroundTask():
 
     def index() -> rx.Component:
         return rx.vstack(
-            rc.input(
+            rx.input(
                 id="token", value=State.router.session.client_token, is_read_only=True
             ),
             rx.heading(State.counter, id="counter"),
-            rc.input(
+            rx.input(
                 id="iterations",
                 placeholder="Iterations",
                 value=State.iterations.to_string(),  # type: ignore
