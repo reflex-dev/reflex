@@ -430,11 +430,6 @@ export const connect = async (
   socket.current.on("event", async (message) => {
     const update = JSON5.parse(message);
     for (const substate in update.delta) {
-      for (const var_name in update.delta[substate]) {
-        if (var_name.slice(0, 5) === "comp_") {
-          update.delta[substate][var_name] = await evalReactComponent(update.delta[substate][var_name])
-        }
-      }
       dispatch[substate](update.delta[substate]);
     }
     applyClientStorageDelta(client_storage, update.delta);

@@ -51,6 +51,7 @@ from reflex.vars import (
     _decode_var_immutable,
     _extract_var_data,
     _global_vars,
+    get_unique_variable_name,
 )
 
 if TYPE_CHECKING:
@@ -112,6 +113,17 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             False
         """
         return False
+
+    @property
+    def _var_field_name(self) -> str:
+        """The name of the field.
+
+        Returns:
+            The name of the field.
+        """
+        var_data = self._get_all_var_data()
+        field_name = var_data.field_name if var_data else None
+        return field_name or self._var_name
 
     def __post_init__(self):
         """Post-initialize the var."""
@@ -553,8 +565,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             The name of the setter function.
         """
-        var_name_parts = self._var_name.split(".")
-        setter = constants.SETTER_PREFIX + var_name_parts[-1]
+        setter = constants.SETTER_PREFIX + self._var_field_name
         var_data = self._get_all_var_data()
         if var_data is None:
             return setter
@@ -568,7 +579,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A function that that creates a setter for the var.
         """
-        actual_name = self._var_name.split(".")[-1]
+        actual_name = self._var_field_name
 
         def setter(state: BaseState, value: Any):
             """Get the setter for the var.
@@ -610,7 +621,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         return StateOperation.create(
             formatted_state_name,
             self,
-            _var_data=VarData.merge(VarData.from_state(state), self._var_data),
+            _var_data=VarData.merge(
+                VarData.from_state(state, self._var_name), self._var_data
+            ),
         ).guess_type()
 
     def __eq__(self, other: ImmutableVar | Any) -> BooleanVar:
@@ -1598,15 +1611,36 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
             The value of the var for the given instance.
         """
         if instance is None:
+            from reflex.components import Component
+
             state_where_defined = owner
             while self.fget.__name__ in state_where_defined.inherited_vars:
                 state_where_defined = state_where_defined.get_parent_state()
 
-            return self._replace(
-                _var_name=format_state_name(state_where_defined.get_full_name())
+            field_name = (
+                format_state_name(state_where_defined.get_full_name())
                 + "."
-                + self._var_name,
-                merge_var_data=VarData.from_state(state_where_defined),
+                + self._var_name
+            )
+
+            if inspect.isclass(self._var_type) and issubclass(
+                self._var_type, Component
+            ):
+                unique_var_name, var_data = eval_component(field_name)
+                return self._replace(
+                    _var_name=unique_var_name,
+                    merge_var_data=VarData.merge(
+                        VarData.from_state(state_where_defined, self._var_name),
+                        var_data,
+                    ),
+                ).guess_type()
+
+            return self._replace(
+                _var_name=field_name,
+                merge_var_data=VarData.from_state(
+                    state_where_defined,
+                    self._var_name,
+                ),
             ).guess_type()
 
         if not self._cache:
@@ -2180,14 +2214,36 @@ class ToOperation:
         )
 
 
-@var_operation
-def jsx_tag_operation(tag: ImmutableVar):
-    """Create a JSX tag operation.
+def eval_component(var_name: str) -> Tuple[str, VarData]:
+    """Evaluate a component.
 
     Args:
-        tag: The tag name.
+        var_name: The name of the component.
 
     Returns:
-        The JSX tag operation.
+        The component and the associated VarData.
     """
-    return var_operation_return(js_expression=f"< {tag} />")
+    unique_var_name = get_unique_variable_name()
+    return unique_var_name, VarData(
+        imports={
+            f"/{constants.Dirs.STATE_PATH}": [
+                imports.ImportVar(tag="evalReactComponent"),
+            ]
+        },
+        hooks={
+            f"const [{unique_var_name}, set_{unique_var_name}] = useState(null);": None,
+            "useEffect(() => {"
+            "let isMounted = true;"
+            f"evalReactComponent({var_name})"
+            ".then((component) => {"
+            "if (isMounted) {"
+            f"set_{unique_var_name}(component);"
+            "}"
+            "});"
+            "return () => {"
+            "isMounted = false;"
+            "};"
+            "}"
+            f", [{var_name}]);": None,
+        },
+    )

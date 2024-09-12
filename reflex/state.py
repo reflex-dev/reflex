@@ -33,15 +33,14 @@ from typing import (
 import dill
 from sqlalchemy.orm import DeclarativeBase
 
-from reflex.components.core import cond
 from reflex.config import get_config
 from reflex.ivars.base import (
     DynamicRouteVar,
     ImmutableComputedVar,
     ImmutableVar,
+    eval_component,
     immutable_computed_var,
     is_computed_var,
-    jsx_tag_operation,
 )
 
 try:
@@ -307,6 +306,10 @@ class EventHandlerSetVar(EventHandler):
         return super().__call__(*args)
 
 
+if TYPE_CHECKING:
+    from pydantic.v1.fields import ModelField
+
+
 class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
@@ -525,13 +528,35 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             **new_backend_vars,
         }
 
+        def get_var_for_field(f: ModelField):
+            base_classes_name = (
+                [base_class.__name__ for base_class in inspect.getmro(f.outer_type_)]
+                if inspect.isclass(f.outer_type_)
+                else []
+            )
+
+            field_name = format.format_state_name(cls.get_full_name()) + "." + f.name
+
+            if any(
+                base_class_name == "BaseComponent"
+                for base_class_name in base_classes_name
+            ):
+                unique_var_name, var_data = eval_component(field_name)
+                return ImmutableVar(
+                    _var_name=unique_var_name,
+                    _var_type=f.outer_type_,
+                    _var_data=VarData.merge(VarData.from_state(cls, f.name), var_data),
+                )
+
+            return ImmutableVar(
+                _var_name=field_name,
+                _var_type=f.outer_type_,
+                _var_data=VarData.from_state(cls, f.name),
+            ).guess_type()
+
         # Set the base and computed vars.
         cls.base_vars = {
-            f.name: ImmutableVar(
-                _var_name=format.format_state_name(cls.get_full_name()) + "." + f.name,
-                _var_type=f.outer_type_,
-                _var_data=VarData.from_state(cls),
-            ).guess_type()
+            f.name: get_var_for_field(f)
             for f in cls.get_fields().values()
             if f.name not in cls.get_skip_vars()
         }
@@ -539,14 +564,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             v._var_name: v._replace(merge_var_data=VarData.from_state(cls))
             for v in computed_vars
         }
-        for var_name, computed_var in cls.computed_vars.items():
-            if var_name.startswith("comp_"):
-                cls.computed_vars[var_name] = cond(  # type: ignore
-                    computed_var.js_type() == "function",
-                    jsx_tag_operation(computed_var),
-                    "",
-                )
-                setattr(cls, var_name, cls.computed_vars[var_name])
         cls.vars = {
             **cls.inherited_vars,
             **cls.base_vars,
@@ -927,7 +944,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         var = ImmutableVar(
             _var_name=format.format_state_name(cls.get_full_name()) + "." + name,
             _var_type=type_,
-            _var_data=VarData.from_state(cls),
+            _var_data=VarData.from_state(cls, name),
         ).guess_type()
 
         # add the pydantic field dynamically (must be done before _init_var)
@@ -953,12 +970,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             prop: The var instance to set.
         """
-        acutal_var_name = (
-            prop._var_name
-            if "." not in prop._var_name
-            else prop._var_name.split(".")[-1]
-        )
-        setattr(cls, acutal_var_name, prop)
+        setattr(cls, prop._var_field_name, prop)
 
     @classmethod
     def _create_event_handler(cls, fn):
@@ -998,10 +1010,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             prop: The var to set the default value for.
         """
         # Get the pydantic field for the var.
-        if "." in prop._var_name:
-            field = cls.get_fields()[prop._var_name.split(".")[-1]]
-        else:
-            field = cls.get_fields()[prop._var_name]
+        field = cls.get_fields()[prop._var_field_name]
         if field.required:
             default_value = prop.get_default_value()
             if default_value is not None:
@@ -1718,11 +1727,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             .union(self._always_dirty_computed_vars)
         )
 
-        subdelta = {
-            prop: getattr(self, prop)
+        subdelta: Dict[str, Any] = {
+            prop: self.get_value(getattr(self, prop))
             for prop in delta_vars
             if not types.is_backend_base_variable(prop, type(self))
         }
+
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
 
@@ -1813,8 +1823,73 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The value of the field.
         """
+        from reflex.components.component import Component
+
+        def make_component(component: Component) -> str:
+            from reflex.compiler import templates, utils
+
+            rendered_components = {}
+            # Include dynamic imports in the shared component.
+            if dynamic_imports := component._get_all_dynamic_imports():
+                rendered_components.update(
+                    {dynamic_import: None for dynamic_import in dynamic_imports}
+                )
+
+            # Include custom code in the shared component.
+            rendered_components.update(
+                {code: None for code in component._get_all_custom_code()},
+            )
+
+            rendered_components[
+                templates.STATEFUL_COMPONENT.render(
+                    tag_name="MySSRComponent",
+                    memo_trigger_hooks=[],
+                    component=component,
+                )
+            ] = None
+
+            imports = {}
+            for lib, names in component._get_all_imports().items():
+                if (
+                    not lib.startswith((".", "/"))
+                    and not lib.startswith("http")
+                    and lib != "react"
+                ):
+                    imports[f"https://cdn.jsdelivr.net/npm/{lib}" + "/+esm"] = names
+                else:
+                    imports[lib] = names
+
+            module_code_lines = templates.STATEFUL_COMPONENTS.render(
+                imports=utils.compile_imports(imports),
+                memoized_code="\n".join(rendered_components),
+            ).splitlines()[1:]
+
+            # Rewrite imports from `/` to destructure from window
+            for ix, line in enumerate(module_code_lines[:]):
+                if line.startswith("import "):
+                    if 'from "/' in line:
+                        module_code_lines[ix] = (
+                            line.replace("import ", "const ", 1).replace(
+                                " from ", " = window['__reflex'][", 1
+                            )
+                            + "]"
+                        )
+                    elif 'from "react"' in line:
+                        module_code_lines[ix] = line.replace(
+                            "import ", "const ", 1
+                        ).replace(' from "react"', " = window.__reflex.react", 1)
+                if line.startswith("export function"):
+                    module_code_lines[ix] = line.replace(
+                        "export function", "export default function", 1
+                    )
+            return "//__reflex_evaluate\n" + "\n".join(module_code_lines)
+
         if isinstance(key, MutableProxy):
+            if isinstance(key.__wrapped__, Component):
+                return make_component(key.__wrapped__)
             return super().get_value(key.__wrapped__)
+        if isinstance(key, Component):
+            return make_component(key)
         return super().get_value(key)
 
     def dict(
@@ -1837,7 +1912,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self._mark_dirty()
 
         base_vars = {
-            prop_name: self.get_value(getattr(self, prop_name))
+            prop_name: self.get_value(key=getattr(self, prop_name))
             for prop_name in self.base_vars
         }
         if initial and include_computed:

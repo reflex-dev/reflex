@@ -47,6 +47,9 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
 # shadowed state vars when reloading app via utils.prerequisites.get_app(reload=True)
 pydantic_main.validate_field_name = validate_field_name  # type: ignore
 
+if TYPE_CHECKING:
+    from reflex.ivars import ImmutableVar
+
 
 class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
     """The base class subclassed by all Reflex classes.
@@ -92,7 +95,7 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
         return self
 
     @classmethod
-    def get_fields(cls) -> dict[str, Any]:
+    def get_fields(cls) -> dict[str, ModelField]:
         """Get the fields of the object.
 
         Returns:
@@ -101,7 +104,7 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
         return cls.__fields__
 
     @classmethod
-    def add_field(cls, var: Any, default_value: Any):
+    def add_field(cls, var: ImmutableVar, default_value: Any):
         """Add a pydantic field after class definition.
 
         Used by State.add_var() to correctly handle the new variable.
@@ -110,7 +113,7 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
             var: The variable to add a pydantic field for.
             default_value: The default value of the field
         """
-        var_name = var._var_name.split(".")[-1]
+        var_name = var._var_field_name
         new_field = ModelField.infer(
             name=var_name,
             value=default_value,
