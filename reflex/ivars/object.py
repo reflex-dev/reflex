@@ -23,13 +23,13 @@ from typing import (
 from reflex.utils import types
 from reflex.utils.exceptions import VarAttributeError
 from reflex.utils.types import GenericType, get_attribute_access_type, get_origin
-from reflex.vars import VarData
 
 from .base import (
     CachedVarOperation,
     ImmutableVar,
     LiteralVar,
     ToOperation,
+    VarData,
     cached_property_no_lock,
     figure_out_type,
     var_operation,

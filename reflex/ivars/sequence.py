@@ -28,11 +28,6 @@ from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
 from reflex.utils.exceptions import VarTypeError
 from reflex.utils.types import GenericType, get_origin
-from reflex.vars import (
-    VarData,
-    _global_vars,
-    get_unique_variable_name,
-)
 
 from .base import (
     CachedVarOperation,
@@ -41,8 +36,11 @@ from .base import (
     LiteralNoneVar,
     LiteralVar,
     ToOperation,
+    VarData,
+    _global_vars,
     cached_property_no_lock,
     figure_out_type,
+    get_unique_variable_name,
     unionize,
     var_operation,
     var_operation_return,
@@ -894,6 +892,15 @@ class ArrayVar(ImmutableVar[ARRAY_VAR_TYPE]):
         end: int | NumberVar,
         step: int | NumberVar = 1,
         /,
+    ) -> ArrayVar[List[int]]: ...
+
+    @overload
+    @classmethod
+    def range(
+        cls,
+        first_endpoint: int | NumberVar,
+        second_endpoint: int | NumberVar | None = None,
+        step: int | NumberVar | None = None,
     ) -> ArrayVar[List[int]]: ...
 
     @classmethod

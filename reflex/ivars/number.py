@@ -18,7 +18,6 @@ from typing import (
 )
 
 from reflex.utils.exceptions import VarTypeError
-from reflex.vars import VarData
 
 from .base import (
     CustomVarOperationReturn,
@@ -26,6 +25,7 @@ from .base import (
     LiteralNoneVar,
     LiteralVar,
     ToOperation,
+    VarData,
     unionize,
     var_operation,
     var_operation_return,

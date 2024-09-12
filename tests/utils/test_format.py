@@ -13,7 +13,6 @@ from reflex.ivars.object import ObjectVar
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.serializers import serialize_figure
-from reflex.vars import Var
 from tests.test_state import (
     ChildState,
     ChildState2,
@@ -274,15 +273,11 @@ def test_format_string(input: str, output: str):
 @pytest.mark.parametrize(
     "input,output",
     [
-        (Var.create(value="test"), '"test"'),
-        (Var.create(value="test", _var_is_local=True), '"test"'),
-        (Var.create(value="test", _var_is_local=False), "test"),
-        (Var.create(value="test", _var_is_string=True), '"test"'),
-        (Var.create(value='"test"', _var_is_string=False), '"test"'),
-        (Var.create(value="test", _var_is_local=False, _var_is_string=False), "test"),
+        (LiteralVar.create(value="test"), '"test"'),
+        (ImmutableVar.create(value="test"), "test"),
     ],
 )
-def test_format_var(input: Var, output: str):
+def test_format_var(input: ImmutableVar, output: str):
     assert str(input) == output
 
 

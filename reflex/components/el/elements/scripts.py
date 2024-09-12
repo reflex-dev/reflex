@@ -3,7 +3,6 @@
 from typing import Union
 
 from reflex.ivars.base import ImmutableVar
-from reflex.vars import Var as Var
 
 from .base import BaseHTML
 

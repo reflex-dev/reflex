@@ -69,7 +69,6 @@ DEFAULT_TYPING_IMPORTS = {
 # TODO: fix import ordering and unused imports with ruff later
 DEFAULT_IMPORTS = {
     "typing": sorted(DEFAULT_TYPING_IMPORTS),
-    "reflex.vars": ["Var"],
     "reflex.components.core.breakpoints": ["Breakpoints"],
     "reflex.event": ["EventChain", "EventHandler", "EventSpec"],
     "reflex.style": ["Style"],
@@ -374,7 +373,7 @@ def _extract_class_props_as_ast_nodes(
 
 
 def _get_parent_imports(func):
-    _imports = {"reflex.vars": ["Var"], "reflex.ivars": ["ImmutableVar"]}
+    _imports = {"reflex.ivars": ["ImmutableVar"]}
     for type_hint in inspect.get_annotations(func).values():
         try:
             match = re.match(r"\w+\[([\w\d]+)\]", type_hint)

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from reflex.ivars import VarData
 from reflex.ivars.base import ImmutableVar
 from reflex.utils.imports import ImportVar
-from reflex.vars import VarData
 
 
 def _compose_react_imports(tags: list[str]) -> dict[str, list[ImportVar]]:

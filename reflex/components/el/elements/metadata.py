@@ -4,7 +4,6 @@ from typing import Set, Union
 
 from reflex.components.el.element import Element
 from reflex.ivars.base import ImmutableVar
-from reflex.vars import Var as Var
 
 from .base import BaseHTML
 

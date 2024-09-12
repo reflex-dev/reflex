@@ -2,6 +2,9 @@
 
 from .base import ImmutableVar as ImmutableVar
 from .base import LiteralVar as LiteralVar
+from .base import VarData as VarData
+from .base import get_unique_variable_name as get_unique_variable_name
+from .base import get_uuid_string_var as get_uuid_string_var
 from .base import var_operation as var_operation
 from .function import FunctionStringVar as FunctionStringVar
 from .function import FunctionVar as FunctionVar

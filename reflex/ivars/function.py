@@ -7,13 +7,13 @@ import sys
 from typing import Any, Callable, ClassVar, Optional, Tuple, Type, Union
 
 from reflex.utils.types import GenericType
-from reflex.vars import VarData
 
 from .base import (
     CachedVarOperation,
     ImmutableVar,
     LiteralVar,
     ToOperation,
+    VarData,
     cached_property_no_lock,
 )
 

@@ -18,12 +18,12 @@ from reflex.components.radix.themes.typography.text import Text
 from reflex.components.sonner.toast import Toaster, ToastProps
 from reflex.constants import Dirs, Hooks, Imports
 from reflex.constants.compiler import CompileVars
+from reflex.ivars import VarData
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.ivars.function import FunctionStringVar
 from reflex.ivars.number import BooleanVar
 from reflex.ivars.sequence import LiteralArrayVar
 from reflex.utils.imports import ImportVar
-from reflex.vars import VarData
 
 connect_error_var_data: VarData = VarData(  # type: ignore
     imports=Imports.EVENTS,

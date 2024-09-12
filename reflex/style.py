@@ -7,12 +7,12 @@ from typing import Any, Literal, Tuple, Type
 from reflex import constants
 from reflex.components.core.breakpoints import Breakpoints, breakpoints_values
 from reflex.event import EventChain, EventHandler
+from reflex.ivars import VarData
 from reflex.ivars.base import ImmutableCallableVar, ImmutableVar, LiteralVar
 from reflex.ivars.function import FunctionVar
 from reflex.utils import format
 from reflex.utils.exceptions import ReflexError
 from reflex.utils.imports import ImportVar
-from reflex.vars import VarData
 
 SYSTEM_COLOR_MODE: str = "system"
 LIGHT_COLOR_MODE: str = "light"

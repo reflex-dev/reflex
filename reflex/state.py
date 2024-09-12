@@ -60,6 +60,7 @@ from reflex.event import (
     EventSpec,
     fix_events,
 )
+from reflex.ivars import VarData
 from reflex.utils import console, format, path_ops, prerequisites, types
 from reflex.utils.exceptions import (
     DynamicRouteArgShadowsStateVar,
@@ -69,7 +70,6 @@ from reflex.utils.exceptions import (
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
 from reflex.utils.types import override
-from reflex.vars import VarData
 
 if TYPE_CHECKING:
     from reflex.components.component import Component

@@ -19,10 +19,10 @@ from reflex.event import (
     call_script,
     parse_args_spec,
 )
+from reflex.ivars import VarData
 from reflex.ivars.base import ImmutableCallableVar, ImmutableVar, LiteralVar
 from reflex.ivars.sequence import LiteralStringVar
 from reflex.utils.imports import ImportVar
-from reflex.vars import VarData
 
 DEFAULT_UPLOAD_ID: str = "default"
 

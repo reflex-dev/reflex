@@ -8,13 +8,13 @@ from typing import Any, Callable, Union
 
 from reflex import constants
 from reflex.event import EventChain, EventHandler, EventSpec, call_script
-from reflex.ivars.base import ImmutableVar, LiteralVar
-from reflex.ivars.function import FunctionVar
-from reflex.utils.imports import ImportVar
-from reflex.vars import (
+from reflex.ivars import (
     VarData,
     get_unique_variable_name,
 )
+from reflex.ivars.base import ImmutableVar, LiteralVar
+from reflex.ivars.function import FunctionVar
+from reflex.utils.imports import ImportVar
 
 NoValue = object()
 

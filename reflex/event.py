@@ -19,13 +19,13 @@ from typing import (
 
 from reflex import constants
 from reflex.base import Base
+from reflex.ivars import VarData
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.ivars.function import FunctionStringVar, FunctionVar
 from reflex.ivars.object import ObjectVar
 from reflex.utils import format
 from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
 from reflex.utils.types import ArgsSpec
-from reflex.vars import VarData
 
 try:
     from typing import Annotated

@@ -7,10 +7,10 @@ from typing import Dict, List, Union
 from reflex.components.base.fragment import Fragment
 from reflex.components.tags.tag import Tag
 from reflex.event import EventChain, EventHandler
+from reflex.ivars import get_unique_variable_name
 from reflex.ivars.base import ImmutableVar
 from reflex.utils.format import format_prop, wrap
 from reflex.utils.imports import ImportVar
-from reflex.vars import get_unique_variable_name
 
 
 class Clipboard(Fragment):

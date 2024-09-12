@@ -8,6 +8,7 @@ from pandas import DataFrame
 
 from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
+from reflex.ivars import VarData
 from reflex.ivars.base import (
     ImmutableComputedVar,
     ImmutableVar,
@@ -31,9 +32,6 @@ from reflex.ivars.sequence import (
 )
 from reflex.state import BaseState
 from reflex.utils.imports import ImportVar
-from reflex.vars import (
-    VarData,
-)
 
 test_vars = [
     ImmutableVar(_var_name="prop1", _var_type=int),

@@ -11,11 +11,11 @@ from reflex.components.lucide.icon import Icon
 from reflex.components.sonner.toast import Toaster, ToastProps
 from reflex.constants.compiler import CompileVars
 from reflex.event import EventHandler, EventSpec
+from reflex.ivars import VarData
 from reflex.ivars.base import ImmutableVar
 from reflex.ivars.number import BooleanVar
 from reflex.style import Style
 from reflex.utils.imports import ImportVar
-from reflex.vars import VarData
 
 connect_error_var_data: VarData
 connect_errors = ImmutableVar.create_safe(

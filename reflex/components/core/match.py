@@ -6,12 +6,12 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.tags import MatchTag, Tag
+from reflex.ivars import VarData
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style
 from reflex.utils import format, types
 from reflex.utils.exceptions import MatchTypeError
 from reflex.utils.imports import ImportDict
-from reflex.vars import VarData
 
 
 class Match(MemoizationLeaf):

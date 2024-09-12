@@ -17,13 +17,13 @@ from reflex.components.component import (
 from reflex.components.radix.themes.layout.box import Box
 from reflex.constants import EventTriggers
 from reflex.event import EventChain, EventHandler, parse_args_spec
+from reflex.ivars import VarData
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
 from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
-from reflex.vars import Var, VarData
 
 
 @pytest.fixture
@@ -2117,7 +2117,9 @@ def test_add_style_foreach():
         def add_style(self):
             return Style({"color": "red"})
 
-    page = rx.vstack(rx.foreach(Var.range(3), lambda i: StyledComponent.create(i)))
+    page = rx.vstack(
+        rx.foreach(ImmutableVar.range(3), lambda i: StyledComponent.create(i))
+    )
     page._add_style_recursive(Style())
 
     # Expect only a single child of the foreach on the python side

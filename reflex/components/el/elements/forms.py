@@ -11,9 +11,9 @@ from reflex.components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
 from reflex.event import EventChain, EventHandler
+from reflex.ivars import VarData
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.utils.imports import ImportDict
-from reflex.vars import VarData
 
 from .base import BaseHTML
 

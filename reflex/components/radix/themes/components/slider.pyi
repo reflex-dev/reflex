@@ -124,8 +124,8 @@ class Slider(RadixThemesComponent):
         disabled: Optional[Union[ImmutableVar[bool], bool]] = None,
         orientation: Optional[
             Union[
-                ImmutableVar[Literal["vertical", "horizontal"]],
-                Literal["vertical", "horizontal"],
+                ImmutableVar[Literal["horizontal", "vertical"]],
+                Literal["horizontal", "vertical"],
             ]
         ] = None,
         style: Optional[Style] = None,

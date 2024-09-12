@@ -8,11 +8,11 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
+from reflex.ivars import VarData
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.ivars.number import ternary_operation
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import VarData
 
 _IS_TRUE_IMPORT: ImportDict = {
     f"/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
