@@ -2221,8 +2221,8 @@ def get_uuid_string_var() -> Var:
     Returns:
         A Var that generates a UUID at runtime.
     """
-    from reflex.vars import Var
     from reflex.utils.imports import ImportVar
+    from reflex.vars import Var
 
     unique_uuid_var = get_unique_variable_name()
     unique_uuid_var_data = VarData(
@@ -2452,8 +2452,8 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
     Returns:
         The extracted VarDatas.
     """
-    from reflex.vars import Var
     from reflex.style import Style
+    from reflex.vars import Var
 
     var_datas = []
     with contextlib.suppress(TypeError):
