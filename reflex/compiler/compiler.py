@@ -17,12 +17,12 @@ from reflex.components.component import (
     StatefulComponent,
 )
 from reflex.config import get_config
-from reflex.ivars.base import LiteralVar, Var
 from reflex.state import BaseState
 from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.imports import ImportVar
 from reflex.utils.prerequisites import get_web_dir
+from reflex.vars.base import LiteralVar, Var
 
 
 def _compile_document_root(root: Component) -> str:

@@ -3,8 +3,8 @@
 from typing import Any, Literal, Optional, Union
 
 from reflex.event import EventHandler
-from reflex.ivars.base import Var
 from reflex.utils import types
+from reflex.vars.base import Var
 
 from .base import NextComponent
 

@@ -4,8 +4,8 @@ from typing import List
 
 from reflex.components.component import Component
 from reflex.components.tags.tag import Tag
-from reflex.ivars.base import Var
 from reflex.utils import format
+from reflex.vars.base import Var
 
 
 class RadixPrimitiveComponent(Component):

@@ -11,7 +11,6 @@ from packaging import version
 from reflex import constants
 from reflex.base import Base
 from reflex.event import EventHandler
-from reflex.ivars.base import Var
 from reflex.state import BaseState
 from reflex.utils import (
     build,
@@ -20,6 +19,7 @@ from reflex.utils import (
 )
 from reflex.utils import exec as utils_exec
 from reflex.utils.exceptions import ReflexError
+from reflex.vars.base import Var
 
 
 def mock_event(arg):

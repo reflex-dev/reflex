@@ -13,8 +13,8 @@ from reflex.components.core.colors import color
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
 from reflex.components.next.link import NextLink
-from reflex.ivars.base import Var
 from reflex.utils.imports import ImportDict
+from reflex.vars.base import Var
 
 from ..base import (
     LiteralAccentColor,

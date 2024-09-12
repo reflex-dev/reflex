@@ -249,7 +249,7 @@ def serialize_base(value: Base) -> str:
     Returns:
         The serialized Base.
     """
-    from reflex.ivars import LiteralObjectVar
+    from reflex.vars import LiteralObjectVar
 
     return str(
         LiteralObjectVar.create(
@@ -269,7 +269,7 @@ def serialize_list(value: Union[List, Tuple, Set]) -> str:
     Returns:
         The serialized list.
     """
-    from reflex.ivars import LiteralArrayVar
+    from reflex.vars import LiteralArrayVar
 
     return str(LiteralArrayVar.create(value))
 
@@ -284,7 +284,7 @@ def serialize_dict(prop: Dict[str, Any]) -> str:
     Returns:
         The serialized dictionary.
     """
-    from reflex.ivars import LiteralObjectVar
+    from reflex.vars import LiteralObjectVar
 
     return str(LiteralObjectVar.create(prop))
 

@@ -3,7 +3,7 @@
 from typing import Any, Dict, Optional
 
 from reflex.components.tags.tag import Tag
-from reflex.ivars.base import Var
+from reflex.vars.base import Var
 
 
 class CondTag(Tag):

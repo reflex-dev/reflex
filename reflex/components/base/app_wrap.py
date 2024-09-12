@@ -2,7 +2,7 @@
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
-from reflex.ivars.base import Var
+from reflex.vars.base import Var
 
 
 class AppWrap(Fragment):

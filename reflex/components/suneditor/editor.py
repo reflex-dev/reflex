@@ -8,9 +8,9 @@ from typing import Dict, List, Literal, Optional, Union
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.event import EventHandler
-from reflex.ivars.base import Var
 from reflex.utils.format import to_camel_case
 from reflex.utils.imports import ImportDict, ImportVar
+from reflex.vars.base import Var
 
 
 class EditorButtonList(list, enum.Enum):

@@ -34,7 +34,6 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import Event
-from reflex.ivars.base import immutable_computed_var
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
 from reflex.state import (
@@ -50,6 +49,7 @@ from reflex.state import (
 )
 from reflex.style import Style
 from reflex.utils import exceptions, format
+from reflex.vars.base import immutable_computed_var
 
 from .conftest import chdir
 from .states import (

@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Union
 from reflex.components.component import MemoizationLeaf
 from reflex.constants.colors import Color
 from reflex.event import EventHandler
-from reflex.ivars.base import LiteralVar, Var
+from reflex.vars.base import LiteralVar, Var
 
 from .recharts import (
     LiteralAnimationEasing,

@@ -43,8 +43,6 @@ from reflex.event import (
     call_event_handler,
     get_handler_args,
 )
-from reflex.ivars import VarData
-from reflex.ivars.base import LiteralVar, Var
 from reflex.style import Style, format_as_emotion
 from reflex.utils import format, imports, types
 from reflex.utils.imports import (
@@ -55,6 +53,8 @@ from reflex.utils.imports import (
     parse_imports,
 )
 from reflex.utils.serializers import serializer
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
 
 
 class BaseComponent(Base, ABC):

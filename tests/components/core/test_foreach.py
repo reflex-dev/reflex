@@ -12,10 +12,10 @@ from reflex.components.core.foreach import (
 )
 from reflex.components.radix.themes.layout.box import box
 from reflex.components.radix.themes.typography.text import text
-from reflex.ivars.base import Var
-from reflex.ivars.number import NumberVar
-from reflex.ivars.sequence import ArrayVar
 from reflex.state import BaseState, ComponentState
+from reflex.vars.base import Var
+from reflex.vars.number import NumberVar
+from reflex.vars.sequence import ArrayVar
 
 
 class ForEachState(BaseState):

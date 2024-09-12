@@ -17,9 +17,9 @@ from reflex.components.radix.themes.typography.heading import Heading
 from reflex.components.radix.themes.typography.link import Link
 from reflex.components.radix.themes.typography.text import Text
 from reflex.components.tags.tag import Tag
-from reflex.ivars.base import LiteralVar, Var
 from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
+from reflex.vars.base import LiteralVar, Var
 
 # Special vars used in the component map.
 _CHILDREN = Var.create_safe("children")

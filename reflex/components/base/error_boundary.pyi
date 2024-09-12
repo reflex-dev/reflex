@@ -7,9 +7,9 @@ from typing import Any, Callable, Dict, List, Optional, Union, overload
 
 from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import Var
 from reflex.style import Style
 from reflex.utils.imports import ImportVar
+from reflex.vars.base import Var
 
 class ErrorBoundary(Component):
     def add_imports(self) -> dict[str, list[ImportVar]]: ...

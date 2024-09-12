@@ -9,7 +9,7 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
 from reflex.event import EventHandler
-from reflex.ivars.base import Var
+from reflex.vars.base import Var
 
 from ..base import (
     LiteralAccentColor,

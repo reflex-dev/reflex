@@ -347,8 +347,8 @@ def format_prop(
     """
     # import here to avoid circular import.
     from reflex.event import EventChain
-    from reflex.ivars import Var
     from reflex.utils import serializers
+    from reflex.vars import Var
 
     try:
         # Handle var props.
@@ -405,7 +405,7 @@ def format_props(*single_props, **key_value_props) -> list[str]:
         The formatted props list.
     """
     # Format all the props.
-    from reflex.ivars.base import LiteralVar, Var
+    from reflex.vars.base import LiteralVar, Var
 
     return [
         (
@@ -510,7 +510,7 @@ def format_event(event_spec: EventSpec) -> str:
 
 
 if TYPE_CHECKING:
-    from reflex.ivars import Var
+    from reflex.vars import Var
 
 
 def format_queue_events(
@@ -548,7 +548,7 @@ def format_queue_events(
         call_event_fn,
         call_event_handler,
     )
-    from reflex.ivars import FunctionVar, Var
+    from reflex.vars import FunctionVar, Var
 
     if not events:
         return Var("(() => null)").to(FunctionVar, EventChain)  # type: ignore
@@ -755,7 +755,7 @@ def format_data_editor_column(col: str | dict):
     Returns:
         The formatted column.
     """
-    from reflex.ivars import Var
+    from reflex.vars import Var
 
     if isinstance(col, str):
         return {"title": col, "id": col.lower(), "type": "str"}
@@ -786,7 +786,7 @@ def format_data_editor_cell(cell: Any):
     Returns:
         The formatted cell.
     """
-    from reflex.ivars.base import Var
+    from reflex.vars.base import Var
 
     return {
         "kind": Var.create("GridCellKind.Text"),

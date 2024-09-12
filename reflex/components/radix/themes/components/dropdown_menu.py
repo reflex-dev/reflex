@@ -5,7 +5,7 @@ from typing import Dict, List, Literal, Union
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
-from reflex.ivars.base import Var
+from reflex.vars.base import Var
 
 from ..base import (
     LiteralAccentColor,

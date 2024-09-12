@@ -7,8 +7,8 @@ from typing import Any, Dict, Literal
 from reflex.components import Component
 from reflex.components.tags import Tag
 from reflex.config import get_config
-from reflex.ivars.base import Var
 from reflex.utils.imports import ImportDict, ImportVar
+from reflex.vars.base import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]

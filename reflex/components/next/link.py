@@ -1,7 +1,7 @@
 """A link component."""
 
 from reflex.components.component import Component
-from reflex.ivars.base import Var
+from reflex.vars.base import Var
 
 
 class NextLink(Component):

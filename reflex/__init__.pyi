@@ -12,11 +12,11 @@ from . import compiler as compiler
 from . import components as components
 from . import config as config
 from . import event as event
-from . import ivars as ivars
 from . import model as model
 from . import style as style
 from . import testing as testing
 from . import utils as utils
+from . import vars as vars
 from .admin import AdminDash as AdminDash
 from .app import App as App
 from .app import UploadFile as UploadFile
@@ -189,6 +189,7 @@ from .style import Style as Style
 from .style import toggle_color_mode as toggle_color_mode
 from .utils.imports import ImportVar as ImportVar
 from .utils.serializers import serializer as serializer
+from .vars import Var as Var
 
 del compat
 RADIX_THEMES_MAPPING: dict

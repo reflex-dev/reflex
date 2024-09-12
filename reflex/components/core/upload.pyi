@@ -13,10 +13,10 @@ from reflex.event import (
     EventHandler,
     EventSpec,
 )
-from reflex.ivars import VarData
-from reflex.ivars.base import ImmutableCallableVar, Var
 from reflex.style import Style
 from reflex.utils.imports import ImportVar
+from reflex.vars import VarData
+from reflex.vars.base import ImmutableCallableVar, Var
 
 DEFAULT_UPLOAD_ID: str
 upload_files_context_var_data: VarData

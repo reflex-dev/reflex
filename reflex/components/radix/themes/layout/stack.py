@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from reflex.components.component import Component
-from reflex.ivars.base import Var
+from reflex.vars.base import Var
 
 from ..base import LiteralAlign, LiteralSpacing
 from .flex import Flex, LiteralFlexDirection

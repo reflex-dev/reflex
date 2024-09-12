@@ -7,8 +7,8 @@ from typing import Any, Callable, Dict, Optional, Union, overload
 
 from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import Var
 from reflex.style import Style
+from reflex.vars.base import Var
 
 class NextDocumentLib(Component):
     @overload

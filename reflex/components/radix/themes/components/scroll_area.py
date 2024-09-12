@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from reflex.ivars.base import Var
+from reflex.vars.base import Var
 
 from ..base import (
     RadixThemesComponent,

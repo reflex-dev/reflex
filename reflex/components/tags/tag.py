@@ -6,8 +6,8 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from reflex.base import Base
 from reflex.event import EventChain
-from reflex.ivars.base import LiteralVar, Var
 from reflex.utils import format, types
+from reflex.vars.base import LiteralVar, Var
 
 
 class Tag(Base):

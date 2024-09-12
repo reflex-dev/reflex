@@ -8,11 +8,11 @@ import pytest
 
 from reflex.components.tags.tag import Tag
 from reflex.event import EventChain, EventHandler, EventSpec, FrontendEvent
-from reflex.ivars.base import LiteralVar, Var
-from reflex.ivars.object import ObjectVar
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.serializers import serialize_figure
+from reflex.vars.base import LiteralVar, Var
+from reflex.vars.object import ObjectVar
 from tests.test_state import (
     ChildState,
     ChildState2,

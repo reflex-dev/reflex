@@ -8,9 +8,9 @@ from typing import Any, Callable, Dict, Literal, Optional, Union, overload
 from reflex.components.component import Component
 from reflex.constants.colors import Color
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import Var
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
+from reflex.vars.base import Var
 
 LiteralCodeBlockTheme = Literal[
     "a11y-dark",

@@ -4,9 +4,9 @@ import pytest
 
 import reflex as rx
 from reflex.components.core.match import Match
-from reflex.ivars.base import Var
 from reflex.state import BaseState
 from reflex.utils.exceptions import MatchTypeError
+from reflex.vars.base import Var
 
 
 class MatchState(BaseState):
@@ -248,7 +248,7 @@ def test_match_case_tuple_elements(match_case):
                 rx.text("default value"),
             ),
             'Match cases should have the same return types. Case 3 with return value `"red"` of type '
-            "<class 'reflex.ivars.sequence.LiteralStringVar'> is not <class 'reflex.components.component.BaseComponent'>",
+            "<class 'reflex.vars.sequence.LiteralStringVar'> is not <class 'reflex.components.component.BaseComponent'>",
         ),
         (
             (
@@ -261,7 +261,7 @@ def test_match_case_tuple_elements(match_case):
                 rx.text("default value"),
             ),
             'Match cases should have the same return types. Case 3 with return value `<RadixThemesText as={"p"}> {"first value"} </RadixThemesText>` '
-            "of type <class 'reflex.components.radix.themes.typography.text.Text'> is not <class 'reflex.ivars.base.Var'>",
+            "of type <class 'reflex.components.radix.themes.typography.text.Text'> is not <class 'reflex.vars.base.Var'>",
         ),
     ],
 )

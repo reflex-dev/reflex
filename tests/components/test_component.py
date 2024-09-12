@@ -17,13 +17,13 @@ from reflex.components.component import (
 from reflex.components.radix.themes.layout.box import Box
 from reflex.constants import EventTriggers
 from reflex.event import EventChain, EventHandler, parse_args_spec
-from reflex.ivars import VarData
-from reflex.ivars.base import LiteralVar, Var
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
 from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
 
 
 @pytest.fixture

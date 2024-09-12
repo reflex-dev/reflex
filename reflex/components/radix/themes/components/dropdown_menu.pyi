@@ -8,8 +8,8 @@ from typing import Any, Callable, Dict, Literal, Optional, Union, overload
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import Var
 from reflex.style import Style
+from reflex.vars.base import Var
 
 from ..base import RadixThemesComponent, RadixThemesTriggerComponent
 

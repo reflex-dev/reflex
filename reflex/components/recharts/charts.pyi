@@ -7,8 +7,8 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Union, overload
 
 from reflex.constants.colors import Color
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import Var
 from reflex.style import Style
+from reflex.vars.base import Var
 
 from .recharts import (
     RechartsCharts,

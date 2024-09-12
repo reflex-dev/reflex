@@ -6,8 +6,8 @@ from PIL.Image import Image as Img
 
 import reflex as rx
 from reflex.components.next.image import Image  # type: ignore
-from reflex.ivars.sequence import StringVar
 from reflex.utils.serializers import serialize, serialize_image
+from reflex.vars.sequence import StringVar
 
 
 @pytest.fixture

@@ -8,9 +8,9 @@ from typing import Any, Callable, Dict, Optional, Union, overload
 from reflex.base import Base
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import Var
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
+from reflex.vars.base import Var
 
 class MomentDelta(Base):
     years: Optional[int]

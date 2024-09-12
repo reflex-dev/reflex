@@ -9,9 +9,9 @@ from reflex.components.component import Component
 from reflex.components.el import div, p
 from reflex.constants import Hooks, Imports
 from reflex.event import EventChain, EventHandler
-from reflex.ivars.base import Var
-from reflex.ivars.function import FunctionVar
 from reflex.utils.imports import ImportVar
+from reflex.vars.base import Var
+from reflex.vars.function import FunctionVar
 
 
 class ErrorBoundary(Component):

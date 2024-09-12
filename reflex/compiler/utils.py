@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
 
-from reflex.ivars.base import Var
 from reflex.utils.prerequisites import get_web_dir
+from reflex.vars.base import Var
 
 try:
     from pydantic.v1.fields import ModelField

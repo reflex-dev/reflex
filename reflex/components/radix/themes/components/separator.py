@@ -3,7 +3,7 @@
 from typing import Literal
 
 from reflex.components.core.breakpoints import Responsive
-from reflex.ivars.base import LiteralVar, Var
+from reflex.vars.base import LiteralVar, Var
 
 from ..base import (
     LiteralAccentColor,

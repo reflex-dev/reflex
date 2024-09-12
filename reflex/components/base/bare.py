@@ -7,7 +7,7 @@ from typing import Any, Iterator
 from reflex.components.component import Component
 from reflex.components.tags import Tag
 from reflex.components.tags.tagless import Tagless
-from reflex.ivars.base import Var
+from reflex.vars.base import Var
 
 
 class Bare(Component):

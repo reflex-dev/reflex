@@ -7,8 +7,8 @@ from typing import Any, Type, Union
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
 from reflex.event import EventHandler
-from reflex.ivars import VarData
-from reflex.ivars.base import Var
+from reflex.vars import VarData
+from reflex.vars.base import Var
 
 DEFAULT_DEBOUNCE_TIMEOUT = 300
 

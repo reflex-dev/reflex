@@ -8,8 +8,8 @@ from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond
 from reflex.event import EventHandler
-from reflex.ivars.base import LiteralVar, Var
 from reflex.utils import console
+from reflex.vars.base import LiteralVar, Var
 
 try:
     from plotly.graph_objects import Figure, layout

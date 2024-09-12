@@ -11,9 +11,9 @@ from reflex.components.component import Component, ComponentNamespace, Memoizati
 from reflex.components.radix.primitives.drawer import DrawerRoot
 from reflex.components.radix.themes.layout.box import Box
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import Var
 from reflex.state import ComponentState
 from reflex.style import Style
+from reflex.vars.base import Var
 
 class Sidebar(Box, MemoizationLeaf):
     @overload

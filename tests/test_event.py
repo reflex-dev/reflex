@@ -4,9 +4,9 @@ import pytest
 
 from reflex import event
 from reflex.event import Event, EventHandler, EventSpec, call_event_handler, fix_events
-from reflex.ivars.base import LiteralVar, Var
 from reflex.state import BaseState
 from reflex.utils import format
+from reflex.vars.base import LiteralVar, Var
 
 
 def make_var(value) -> Var:

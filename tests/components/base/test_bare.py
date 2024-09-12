@@ -1,7 +1,7 @@
 import pytest
 
 from reflex.components.base.bare import Bare
-from reflex.ivars.base import Var
+from reflex.vars.base import Var
 
 STATE_VAR = Var.create_safe("default_state.name")
 

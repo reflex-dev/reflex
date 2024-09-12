@@ -8,8 +8,8 @@ from typing import Any, Callable, Dict, Literal, Optional, Union, overload
 from reflex.components.component import MemoizationLeaf
 from reflex.constants.colors import Color
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import Var
 from reflex.style import Style
+from reflex.vars.base import Var
 
 from .recharts import (
     Recharts,

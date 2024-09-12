@@ -22,7 +22,6 @@ from reflex.base import Base
 from reflex.components.sonner.toast import Toaster
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
-from reflex.ivars.base import ImmutableComputedVar, Var
 from reflex.state import (
     BaseState,
     ImmutableStateError,
@@ -42,6 +41,7 @@ from reflex.state import (
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
+from reflex.vars.base import ImmutableComputedVar, Var
 from tests.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState

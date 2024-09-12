@@ -10,9 +10,9 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
 from reflex.components.props import PropsBase
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import Var
 from reflex.style import Style
 from reflex.utils.serializers import serializer
+from reflex.vars.base import Var
 
 LiteralPosition = Literal[
     "top-left",

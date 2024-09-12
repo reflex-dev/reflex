@@ -9,9 +9,9 @@ from jinja2 import Environment
 
 from reflex.components.el.element import Element
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import Var
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
+from reflex.vars.base import Var
 
 from .base import BaseHTML
 

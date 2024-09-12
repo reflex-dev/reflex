@@ -3,7 +3,7 @@ from typing import Dict, List
 import pytest
 
 from reflex.components.tags import CondTag, Tag, tagless
-from reflex.ivars.base import LiteralVar, Var
+from reflex.vars.base import LiteralVar, Var
 
 
 @pytest.mark.parametrize(

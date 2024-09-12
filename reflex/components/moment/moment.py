@@ -5,8 +5,8 @@ from typing import List, Optional
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.event import EventHandler
-from reflex.ivars.base import Var
 from reflex.utils.imports import ImportDict
+from reflex.vars.base import Var
 
 
 class MomentDelta(Base):

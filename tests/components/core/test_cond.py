@@ -6,9 +6,9 @@ import pytest
 from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond, cond
 from reflex.components.radix.themes.typography.text import Text
-from reflex.ivars.base import LiteralVar, Var, immutable_computed_var
 from reflex.state import BaseState, State
 from reflex.utils.format import format_state_name
+from reflex.vars.base import LiteralVar, Var, immutable_computed_var
 
 
 @pytest.fixture

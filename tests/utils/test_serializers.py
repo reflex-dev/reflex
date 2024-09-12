@@ -7,8 +7,8 @@ import pytest
 
 from reflex.base import Base
 from reflex.components.core.colors import Color
-from reflex.ivars.base import LiteralVar, Var
 from reflex.utils import serializers
+from reflex.vars.base import LiteralVar, Var
 
 
 @pytest.mark.parametrize(

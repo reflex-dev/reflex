@@ -7,9 +7,9 @@ from typing import Any, Callable, Dict, Literal, Optional, Union, overload
 
 from reflex.components import Component
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import Var
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
+from reflex.vars.base import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]

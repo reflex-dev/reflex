@@ -393,7 +393,7 @@ def _breakpoints_satisfies_typing(cls_check: GenericType, instance: Any) -> bool
             _breakpoints_satisfies_typing(type_to_check, instance)
             for type_to_check in get_args(cls_check)
         )
-    elif cls_check_base == reflex.ivars.Var and "__args__" in cls_check.__dict__:
+    elif cls_check_base == reflex.vars.Var and "__args__" in cls_check.__dict__:
         return _breakpoints_satisfies_typing(get_args(cls_check)[0], instance)
 
     return False
@@ -514,7 +514,7 @@ def is_backend_base_variable(name: str, cls: Type) -> bool:
     if name in cls.inherited_backend_vars:
         return False
 
-    from reflex.ivars.base import is_computed_var
+    from reflex.vars.base import is_computed_var
 
     if name in cls.__dict__:
         value = cls.__dict__[name]
@@ -560,7 +560,7 @@ def check_prop_in_allowed_types(prop: Any, allowed_types: Iterable) -> bool:
     Returns:
         If the prop type match one of the allowed_types.
     """
-    from reflex.ivars import Var
+    from reflex.vars import Var
 
     type_ = prop._var_type if _isinstance(prop, Var) else type(prop)
     return type_ in allowed_types
@@ -590,7 +590,7 @@ def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
     Raises:
         ValueError: When the value is not a valid literal.
     """
-    from reflex.ivars import Var
+    from reflex.vars import Var
 
     if (
         is_literal(expected_type)

@@ -7,9 +7,9 @@ import pytest
 import reflex as rx
 from reflex import style
 from reflex.components.component import evaluate_style_namespaces
-from reflex.ivars import VarData
-from reflex.ivars.base import LiteralVar, Var
 from reflex.style import Style
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
 
 test_style = [
     ({"a": 1}, {"a": 1}),

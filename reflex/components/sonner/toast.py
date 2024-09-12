@@ -14,12 +14,12 @@ from reflex.event import (
     EventSpec,
     call_script,
 )
-from reflex.ivars import VarData
-from reflex.ivars.base import LiteralVar, Var
 from reflex.style import Style, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serialize, serializer
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
 
 LiteralPosition = Literal[
     "top-left",

@@ -8,8 +8,10 @@ from pandas import DataFrame
 
 from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
-from reflex.ivars import VarData
-from reflex.ivars.base import (
+from reflex.state import BaseState
+from reflex.utils.imports import ImportVar
+from reflex.vars import VarData
+from reflex.vars.base import (
     ImmutableComputedVar,
     LiteralVar,
     Var,
@@ -17,21 +19,19 @@ from reflex.ivars.base import (
     var_operation,
     var_operation_return,
 )
-from reflex.ivars.function import ArgsFunctionOperation, FunctionStringVar
-from reflex.ivars.number import (
+from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar
+from reflex.vars.number import (
     LiteralBooleanVar,
     LiteralNumberVar,
     NumberVar,
 )
-from reflex.ivars.object import LiteralObjectVar, ObjectVar
-from reflex.ivars.sequence import (
+from reflex.vars.object import LiteralObjectVar, ObjectVar
+from reflex.vars.sequence import (
     ArrayVar,
     ConcatVarOperation,
     LiteralArrayVar,
     LiteralStringVar,
 )
-from reflex.state import BaseState
-from reflex.utils.imports import ImportVar
 
 test_vars = [
     Var(_var_name="prop1", _var_type=int),

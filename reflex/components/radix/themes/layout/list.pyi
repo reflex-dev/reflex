@@ -8,8 +8,8 @@ from typing import Any, Callable, Dict, Iterable, Literal, Optional, Union, over
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.el.elements.typography import Li, Ol, Ul
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import Var
 from reflex.style import Style
+from reflex.vars.base import Var
 
 LiteralListStyleTypeUnordered = Literal["none", "disc", "circle", "square"]
 LiteralListStyleTypeOrdered = Literal[

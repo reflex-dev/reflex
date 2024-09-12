@@ -4,8 +4,8 @@ from typing import Dict, Literal, Union
 
 from reflex.components.component import Component
 from reflex.event import EventHandler
-from reflex.ivars.base import Var
 from reflex.utils import format
+from reflex.vars.base import Var
 
 from ..base import (
     RadixThemesComponent,

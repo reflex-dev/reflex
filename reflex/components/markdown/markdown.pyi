@@ -8,9 +8,9 @@ from typing import Any, Callable, Dict, Optional, Union, overload
 
 from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import LiteralVar, Var
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
+from reflex.vars.base import LiteralVar, Var
 
 _CHILDREN = Var.create_safe("children")
 _PROPS = Var.create_safe("...props")

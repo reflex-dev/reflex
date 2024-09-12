@@ -19,8 +19,8 @@ from types import ModuleType, SimpleNamespace
 from typing import Any, Callable, Iterable, Type, get_args
 
 from reflex.components.component import Component
-from reflex.ivars.base import Var
 from reflex.utils import types as rx_types
+from reflex.vars.base import Var
 
 logger = logging.getLogger("pyi_generator")
 
@@ -72,7 +72,7 @@ DEFAULT_IMPORTS = {
     "reflex.components.core.breakpoints": ["Breakpoints"],
     "reflex.event": ["EventChain", "EventHandler", "EventSpec"],
     "reflex.style": ["Style"],
-    "reflex.ivars.base": ["Var"],
+    "reflex.vars.base": ["Var"],
 }
 
 
@@ -373,7 +373,7 @@ def _extract_class_props_as_ast_nodes(
 
 
 def _get_parent_imports(func):
-    _imports = {"reflex.ivars": ["Var"]}
+    _imports = {"reflex.vars": ["Var"]}
     for type_hint in inspect.get_annotations(func).values():
         try:
             match = re.match(r"\w+\[([\w\d]+)\]", type_hint)

@@ -13,7 +13,7 @@ from __future__ import annotations
 from reflex import constants
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
-from reflex.ivars.base import Var
+from reflex.vars.base import Var
 
 route_not_found: Var = Var.create_safe(constants.ROUTE_NOT_FOUND)
 

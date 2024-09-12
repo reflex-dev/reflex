@@ -5,7 +5,7 @@ from typing import Literal, Union
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
-from reflex.ivars.base import Var
+from reflex.vars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
 

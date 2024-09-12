@@ -13,10 +13,10 @@ from reflex.components.radix.themes.components.button import Button
 from reflex.components.radix.themes.layout.box import Box
 from reflex.constants.colors import Color
 from reflex.event import set_clipboard
-from reflex.ivars.base import LiteralVar, Var
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.imports import ImportDict, ImportVar
+from reflex.vars.base import LiteralVar, Var
 
 LiteralCodeBlockTheme = Literal[
     "a11y-dark",

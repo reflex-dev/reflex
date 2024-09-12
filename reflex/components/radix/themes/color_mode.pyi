@@ -20,11 +20,11 @@ from reflex.components.core.cond import Cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.switch import Switch
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import Var
 from reflex.style import (
     Style,
     color_mode,
 )
+from reflex.vars.base import Var
 
 from .components.icon_button import IconButton
 

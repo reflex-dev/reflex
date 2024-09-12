@@ -15,7 +15,7 @@ from typing import (
 )
 
 from reflex.components.tags.tag import Tag
-from reflex.ivars.base import Var
+from reflex.vars.base import Var
 
 if TYPE_CHECKING:
     from reflex.components.component import Component

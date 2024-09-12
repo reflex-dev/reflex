@@ -9,8 +9,8 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.tags import IterTag
 from reflex.constants import MemoizationMode
-from reflex.ivars.base import Var
 from reflex.state import ComponentState
+from reflex.vars.base import Var
 
 
 class ForeachVarError(TypeError):

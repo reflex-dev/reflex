@@ -6,10 +6,10 @@ from typing import Any, Dict, List, Union
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
-from reflex.ivars.base import LiteralVar, Var, is_computed_var
 from reflex.utils import types
 from reflex.utils.imports import ImportDict
 from reflex.utils.serializers import serialize
+from reflex.vars.base import LiteralVar, Var, is_computed_var
 
 
 class Gridjs(Component):

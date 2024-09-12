@@ -11,9 +11,9 @@ from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
 from reflex.event import EventHandler
-from reflex.ivars import get_uuid_string_var
-from reflex.ivars.base import LiteralVar, Var
 from reflex.style import Style
+from reflex.vars import get_uuid_string_var
+from reflex.vars.base import LiteralVar, Var
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]

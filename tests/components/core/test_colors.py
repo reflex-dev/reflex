@@ -3,7 +3,7 @@ import pytest
 import reflex as rx
 from reflex.components.datadisplay.code import CodeBlock
 from reflex.constants.colors import Color
-from reflex.ivars.base import LiteralVar
+from reflex.vars.base import LiteralVar
 
 
 class ColorState(rx.State):
