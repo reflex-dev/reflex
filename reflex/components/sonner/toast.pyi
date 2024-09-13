@@ -87,21 +87,21 @@ class Toaster(Component):
         position: Optional[
             Union[
                 Literal[
-                    "top-left",
-                    "top-center",
-                    "top-right",
-                    "bottom-left",
                     "bottom-center",
+                    "bottom-left",
                     "bottom-right",
+                    "top-center",
+                    "top-left",
+                    "top-right",
                 ],
                 Var[
                     Literal[
-                        "top-left",
-                        "top-center",
-                        "top-right",
-                        "bottom-left",
                         "bottom-center",
+                        "bottom-left",
                         "bottom-right",
+                        "top-center",
+                        "top-left",
+                        "top-right",
                     ]
                 ],
             ]

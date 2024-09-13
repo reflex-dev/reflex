@@ -25,28 +25,28 @@ class Stack(Flex):
         direction: Optional[
             Union[
                 Breakpoints[
-                    str, Literal["row", "column", "row-reverse", "column-reverse"]
+                    str, Literal["column", "column-reverse", "row", "row-reverse"]
                 ],
-                Literal["row", "column", "row-reverse", "column-reverse"],
+                Literal["column", "column-reverse", "row", "row-reverse"],
                 Var[
                     Union[
                         Breakpoints[
                             str,
-                            Literal["row", "column", "row-reverse", "column-reverse"],
+                            Literal["column", "column-reverse", "row", "row-reverse"],
                         ],
-                        Literal["row", "column", "row-reverse", "column-reverse"],
+                        Literal["column", "column-reverse", "row", "row-reverse"],
                     ]
                 ],
             ]
         ] = None,
         justify: Optional[
             Union[
-                Breakpoints[str, Literal["start", "center", "end", "between"]],
-                Literal["start", "center", "end", "between"],
+                Breakpoints[str, Literal["between", "center", "end", "start"]],
+                Literal["between", "center", "end", "start"],
                 Var[
                     Union[
-                        Breakpoints[str, Literal["start", "center", "end", "between"]],
-                        Literal["start", "center", "end", "between"],
+                        Breakpoints[str, Literal["between", "center", "end", "start"]],
+                        Literal["between", "center", "end", "start"],
                     ]
                 ],
             ]
@@ -179,19 +179,19 @@ class VStack(Stack):
         align: Optional[LiteralAlign] = "start",
         direction: Optional[
             Union[
-                Literal["row", "column", "row-reverse", "column-reverse"],
-                Var[Literal["row", "column", "row-reverse", "column-reverse"]],
+                Literal["column", "column-reverse", "row", "row-reverse"],
+                Var[Literal["column", "column-reverse", "row", "row-reverse"]],
             ]
         ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         justify: Optional[
             Union[
-                Breakpoints[str, Literal["start", "center", "end", "between"]],
-                Literal["start", "center", "end", "between"],
+                Breakpoints[str, Literal["between", "center", "end", "start"]],
+                Literal["between", "center", "end", "start"],
                 Var[
                     Union[
-                        Breakpoints[str, Literal["start", "center", "end", "between"]],
-                        Literal["start", "center", "end", "between"],
+                        Breakpoints[str, Literal["between", "center", "end", "start"]],
+                        Literal["between", "center", "end", "start"],
                     ]
                 ],
             ]
@@ -324,19 +324,19 @@ class HStack(Stack):
         align: Optional[LiteralAlign] = "start",
         direction: Optional[
             Union[
-                Literal["row", "column", "row-reverse", "column-reverse"],
-                Var[Literal["row", "column", "row-reverse", "column-reverse"]],
+                Literal["column", "column-reverse", "row", "row-reverse"],
+                Var[Literal["column", "column-reverse", "row", "row-reverse"]],
             ]
         ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         justify: Optional[
             Union[
-                Breakpoints[str, Literal["start", "center", "end", "between"]],
-                Literal["start", "center", "end", "between"],
+                Breakpoints[str, Literal["between", "center", "end", "start"]],
+                Literal["between", "center", "end", "start"],
                 Var[
                     Union[
-                        Breakpoints[str, Literal["start", "center", "end", "between"]],
-                        Literal["start", "center", "end", "between"],
+                        Breakpoints[str, Literal["between", "center", "end", "start"]],
+                        Literal["between", "center", "end", "start"],
                     ]
                 ],
             ]

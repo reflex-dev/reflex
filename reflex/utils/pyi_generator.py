@@ -150,7 +150,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
 
     if args:
         inner_container_type_args = (
-            [repr(arg) for arg in args]
+            sorted((repr(arg) for arg in args))
             if rx_types.is_literal(value)
             else [
                 _get_type_hint(arg, type_hint_globals, is_optional=False)

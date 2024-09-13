@@ -106,8 +106,8 @@ class DataEditor(NoSSRComponent):
         row_height: Optional[Union[Var[int], int]] = None,
         row_markers: Optional[
             Union[
-                Literal["none", "number", "checkbox", "both", "clickable-number"],
-                Var[Literal["none", "number", "checkbox", "both", "clickable-number"]],
+                Literal["both", "checkbox", "clickable-number", "none", "number"],
+                Var[Literal["both", "checkbox", "clickable-number", "none", "number"]],
             ]
         ] = None,
         row_marker_start_index: Optional[Union[Var[int], int]] = None,
@@ -117,8 +117,8 @@ class DataEditor(NoSSRComponent):
         vertical_border: Optional[Union[Var[bool], bool]] = None,
         column_select: Optional[
             Union[
-                Literal["none", "single", "multi"],
-                Var[Literal["none", "single", "multi"]],
+                Literal["multi", "none", "single"],
+                Var[Literal["multi", "none", "single"]],
             ]
         ] = None,
         prevent_diagonal_scrolling: Optional[Union[Var[bool], bool]] = None,

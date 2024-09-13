@@ -162,12 +162,12 @@ class HoverCardContent(elements.Div, RadixThemesComponent):
         *children,
         side: Optional[
             Union[
-                Breakpoints[str, Literal["top", "right", "bottom", "left"]],
-                Literal["top", "right", "bottom", "left"],
+                Breakpoints[str, Literal["bottom", "left", "right", "top"]],
+                Literal["bottom", "left", "right", "top"],
                 Var[
                     Union[
-                        Breakpoints[str, Literal["top", "right", "bottom", "left"]],
-                        Literal["top", "right", "bottom", "left"],
+                        Breakpoints[str, Literal["bottom", "left", "right", "top"]],
+                        Literal["bottom", "left", "right", "top"],
                     ]
                 ],
             ]
@@ -175,8 +175,8 @@ class HoverCardContent(elements.Div, RadixThemesComponent):
         side_offset: Optional[Union[Var[int], int]] = None,
         align: Optional[
             Union[
-                Literal["start", "center", "end"],
-                Var[Literal["start", "center", "end"]],
+                Literal["center", "end", "start"],
+                Var[Literal["center", "end", "start"]],
             ]
         ] = None,
         avoid_collisions: Optional[Union[Var[bool], bool]] = None,

@@ -170,15 +170,15 @@ class PopoverContent(elements.Div, RadixThemesComponent):
         ] = None,
         side: Optional[
             Union[
-                Literal["top", "right", "bottom", "left"],
-                Var[Literal["top", "right", "bottom", "left"]],
+                Literal["bottom", "left", "right", "top"],
+                Var[Literal["bottom", "left", "right", "top"]],
             ]
         ] = None,
         side_offset: Optional[Union[Var[int], int]] = None,
         align: Optional[
             Union[
-                Literal["start", "center", "end"],
-                Var[Literal["start", "center", "end"]],
+                Literal["center", "end", "start"],
+                Var[Literal["center", "end", "start"]],
             ]
         ] = None,
         align_offset: Optional[Union[Var[int], int]] = None,

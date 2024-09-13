@@ -25,7 +25,7 @@ class Axis(Recharts):
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
         height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         type_: Optional[
-            Union[Literal["number", "category"], Var[Literal["number", "category"]]]
+            Union[Literal["category", "number"], Var[Literal["category", "number"]]]
         ] = None,
         allow_decimals: Optional[Union[Var[bool], bool]] = None,
         allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
@@ -40,38 +40,38 @@ class Axis(Recharts):
             Union[
                 Literal[
                     "auto",
-                    "linear",
-                    "pow",
-                    "sqrt",
-                    "log",
-                    "identity",
-                    "time",
                     "band",
-                    "point",
+                    "identity",
+                    "linear",
+                    "log",
                     "ordinal",
+                    "point",
+                    "pow",
                     "quantile",
                     "quantize",
-                    "utc",
                     "sequential",
+                    "sqrt",
                     "threshold",
+                    "time",
+                    "utc",
                 ],
                 Var[
                     Literal[
                         "auto",
-                        "linear",
-                        "pow",
-                        "sqrt",
-                        "log",
-                        "identity",
-                        "time",
                         "band",
-                        "point",
+                        "identity",
+                        "linear",
+                        "log",
                         "ordinal",
+                        "point",
+                        "pow",
                         "quantile",
                         "quantize",
-                        "utc",
                         "sequential",
+                        "sqrt",
                         "threshold",
+                        "time",
+                        "utc",
                     ]
                 ],
             ]
@@ -178,7 +178,7 @@ class XAxis(Axis):
         cls,
         *children,
         orientation: Optional[
-            Union[Literal["top", "bottom"], Var[Literal["top", "bottom"]]]
+            Union[Literal["bottom", "top"], Var[Literal["bottom", "top"]]]
         ] = None,
         x_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         include_hidden: Optional[Union[Var[bool], bool]] = None,
@@ -188,7 +188,7 @@ class XAxis(Axis):
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
         height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         type_: Optional[
-            Union[Literal["number", "category"], Var[Literal["number", "category"]]]
+            Union[Literal["category", "number"], Var[Literal["category", "number"]]]
         ] = None,
         allow_decimals: Optional[Union[Var[bool], bool]] = None,
         allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
@@ -203,38 +203,38 @@ class XAxis(Axis):
             Union[
                 Literal[
                     "auto",
-                    "linear",
-                    "pow",
-                    "sqrt",
-                    "log",
-                    "identity",
-                    "time",
                     "band",
-                    "point",
+                    "identity",
+                    "linear",
+                    "log",
                     "ordinal",
+                    "point",
+                    "pow",
                     "quantile",
                     "quantize",
-                    "utc",
                     "sequential",
+                    "sqrt",
                     "threshold",
+                    "time",
+                    "utc",
                 ],
                 Var[
                     Literal[
                         "auto",
-                        "linear",
-                        "pow",
-                        "sqrt",
-                        "log",
-                        "identity",
-                        "time",
                         "band",
-                        "point",
+                        "identity",
+                        "linear",
+                        "log",
                         "ordinal",
+                        "point",
+                        "pow",
                         "quantile",
                         "quantize",
-                        "utc",
                         "sequential",
+                        "sqrt",
                         "threshold",
+                        "time",
+                        "utc",
                     ]
                 ],
             ]
@@ -354,7 +354,7 @@ class YAxis(Axis):
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
         height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         type_: Optional[
-            Union[Literal["number", "category"], Var[Literal["number", "category"]]]
+            Union[Literal["category", "number"], Var[Literal["category", "number"]]]
         ] = None,
         allow_decimals: Optional[Union[Var[bool], bool]] = None,
         allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
@@ -369,38 +369,38 @@ class YAxis(Axis):
             Union[
                 Literal[
                     "auto",
-                    "linear",
-                    "pow",
-                    "sqrt",
-                    "log",
-                    "identity",
-                    "time",
                     "band",
-                    "point",
+                    "identity",
+                    "linear",
+                    "log",
                     "ordinal",
+                    "point",
+                    "pow",
                     "quantile",
                     "quantize",
-                    "utc",
                     "sequential",
+                    "sqrt",
                     "threshold",
+                    "time",
+                    "utc",
                 ],
                 Var[
                     Literal[
                         "auto",
-                        "linear",
-                        "pow",
-                        "sqrt",
-                        "log",
-                        "identity",
-                        "time",
                         "band",
-                        "point",
+                        "identity",
+                        "linear",
+                        "log",
                         "ordinal",
+                        "point",
+                        "pow",
                         "quantile",
                         "quantize",
-                        "utc",
                         "sequential",
+                        "sqrt",
                         "threshold",
+                        "time",
+                        "utc",
                     ]
                 ],
             ]
@@ -517,38 +517,38 @@ class ZAxis(Recharts):
             Union[
                 Literal[
                     "auto",
-                    "linear",
-                    "pow",
-                    "sqrt",
-                    "log",
-                    "identity",
-                    "time",
                     "band",
-                    "point",
+                    "identity",
+                    "linear",
+                    "log",
                     "ordinal",
+                    "point",
+                    "pow",
                     "quantile",
                     "quantize",
-                    "utc",
                     "sequential",
+                    "sqrt",
                     "threshold",
+                    "time",
+                    "utc",
                 ],
                 Var[
                     Literal[
                         "auto",
-                        "linear",
-                        "pow",
-                        "sqrt",
-                        "log",
-                        "identity",
-                        "time",
                         "band",
-                        "point",
+                        "identity",
+                        "linear",
+                        "log",
                         "ordinal",
+                        "point",
+                        "pow",
                         "quantile",
                         "quantize",
-                        "utc",
                         "sequential",
+                        "sqrt",
                         "threshold",
+                        "time",
+                        "utc",
                     ]
                 ],
             ]
@@ -693,31 +693,31 @@ class Cartesian(Recharts):
         legend_type: Optional[
             Union[
                 Literal[
-                    "line",
-                    "plainline",
-                    "square",
-                    "rect",
                     "circle",
                     "cross",
                     "diamond",
+                    "line",
+                    "none",
+                    "plainline",
+                    "rect",
+                    "square",
                     "star",
                     "triangle",
                     "wye",
-                    "none",
                 ],
                 Var[
                     Literal[
-                        "line",
-                        "plainline",
-                        "square",
-                        "rect",
                         "circle",
                         "cross",
                         "diamond",
+                        "line",
+                        "none",
+                        "plainline",
+                        "rect",
+                        "square",
                         "star",
                         "triangle",
                         "wye",
-                        "none",
                     ]
                 ],
             ]
@@ -802,36 +802,36 @@ class Area(Cartesian):
                     "basis",
                     "basisClosed",
                     "basisOpen",
+                    "bump",
                     "bumpX",
                     "bumpY",
-                    "bump",
                     "linear",
                     "linearClosed",
-                    "natural",
+                    "monotone",
                     "monotoneX",
                     "monotoneY",
-                    "monotone",
+                    "natural",
                     "step",
-                    "stepBefore",
                     "stepAfter",
+                    "stepBefore",
                 ],
                 Var[
                     Literal[
                         "basis",
                         "basisClosed",
                         "basisOpen",
+                        "bump",
                         "bumpX",
                         "bumpY",
-                        "bump",
                         "linear",
                         "linearClosed",
-                        "natural",
+                        "monotone",
                         "monotoneX",
                         "monotoneY",
-                        "monotone",
+                        "natural",
                         "step",
-                        "stepBefore",
                         "stepAfter",
+                        "stepBefore",
                     ]
                 ],
             ]
@@ -858,31 +858,31 @@ class Area(Cartesian):
         legend_type: Optional[
             Union[
                 Literal[
-                    "line",
-                    "plainline",
-                    "square",
-                    "rect",
                     "circle",
                     "cross",
                     "diamond",
+                    "line",
+                    "none",
+                    "plainline",
+                    "rect",
+                    "square",
                     "star",
                     "triangle",
                     "wye",
-                    "none",
                 ],
                 Var[
                     Literal[
-                        "line",
-                        "plainline",
-                        "square",
-                        "rect",
                         "circle",
                         "cross",
                         "diamond",
+                        "line",
+                        "none",
+                        "plainline",
+                        "rect",
+                        "square",
                         "star",
                         "triangle",
                         "wye",
-                        "none",
                     ]
                 ],
             ]
@@ -984,8 +984,8 @@ class Bar(Cartesian):
         animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
+                Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"]],
             ]
         ] = None,
         layout: Optional[
@@ -1000,31 +1000,31 @@ class Bar(Cartesian):
         legend_type: Optional[
             Union[
                 Literal[
-                    "line",
-                    "plainline",
-                    "square",
-                    "rect",
                     "circle",
                     "cross",
                     "diamond",
+                    "line",
+                    "none",
+                    "plainline",
+                    "rect",
+                    "square",
                     "star",
                     "triangle",
                     "wye",
-                    "none",
                 ],
                 Var[
                     Literal[
-                        "line",
-                        "plainline",
-                        "square",
-                        "rect",
                         "circle",
                         "cross",
                         "diamond",
+                        "line",
+                        "none",
+                        "plainline",
+                        "rect",
+                        "square",
                         "star",
                         "triangle",
                         "wye",
-                        "none",
                     ]
                 ],
             ]
@@ -1127,36 +1127,36 @@ class Line(Cartesian):
                     "basis",
                     "basisClosed",
                     "basisOpen",
+                    "bump",
                     "bumpX",
                     "bumpY",
-                    "bump",
                     "linear",
                     "linearClosed",
-                    "natural",
+                    "monotone",
                     "monotoneX",
                     "monotoneY",
-                    "monotone",
+                    "natural",
                     "step",
-                    "stepBefore",
                     "stepAfter",
+                    "stepBefore",
                 ],
                 Var[
                     Literal[
                         "basis",
                         "basisClosed",
                         "basisOpen",
+                        "bump",
                         "bumpX",
                         "bumpY",
-                        "bump",
                         "linear",
                         "linearClosed",
-                        "natural",
+                        "monotone",
                         "monotoneX",
                         "monotoneY",
-                        "monotone",
+                        "natural",
                         "step",
-                        "stepBefore",
                         "stepAfter",
+                        "stepBefore",
                     ]
                 ],
             ]
@@ -1186,31 +1186,31 @@ class Line(Cartesian):
         legend_type: Optional[
             Union[
                 Literal[
-                    "line",
-                    "plainline",
-                    "square",
-                    "rect",
                     "circle",
                     "cross",
                     "diamond",
+                    "line",
+                    "none",
+                    "plainline",
+                    "rect",
+                    "square",
                     "star",
                     "triangle",
                     "wye",
-                    "none",
                 ],
                 Var[
                     Literal[
-                        "line",
-                        "plainline",
-                        "square",
-                        "rect",
                         "circle",
                         "cross",
                         "diamond",
+                        "line",
+                        "none",
+                        "plainline",
+                        "rect",
+                        "square",
                         "star",
                         "triangle",
                         "wye",
-                        "none",
                     ]
                 ],
             ]
@@ -1300,31 +1300,31 @@ class Scatter(Recharts):
         legend_type: Optional[
             Union[
                 Literal[
-                    "line",
-                    "plainline",
-                    "square",
-                    "rect",
                     "circle",
                     "cross",
                     "diamond",
+                    "line",
+                    "none",
+                    "plainline",
+                    "rect",
+                    "square",
                     "star",
                     "triangle",
                     "wye",
-                    "none",
                 ],
                 Var[
                     Literal[
-                        "line",
-                        "plainline",
-                        "square",
-                        "rect",
                         "circle",
                         "cross",
                         "diamond",
+                        "line",
+                        "none",
+                        "plainline",
+                        "rect",
+                        "square",
                         "star",
                         "triangle",
                         "wye",
-                        "none",
                     ]
                 ],
             ]
@@ -1336,14 +1336,14 @@ class Scatter(Recharts):
         shape: Optional[
             Union[
                 Literal[
-                    "square", "circle", "cross", "diamond", "star", "triangle", "wye"
+                    "circle", "cross", "diamond", "square", "star", "triangle", "wye"
                 ],
                 Var[
                     Literal[
-                        "square",
                         "circle",
                         "cross",
                         "diamond",
+                        "square",
                         "star",
                         "triangle",
                         "wye",
@@ -1352,7 +1352,7 @@ class Scatter(Recharts):
             ]
         ] = None,
         line_type: Optional[
-            Union[Literal["joint", "fitting"], Var[Literal["joint", "fitting"]]]
+            Union[Literal["fitting", "joint"], Var[Literal["fitting", "joint"]]]
         ] = None,
         fill: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         name: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -1361,8 +1361,8 @@ class Scatter(Recharts):
         animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
+                Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"]],
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -1451,31 +1451,31 @@ class Funnel(Recharts):
         legend_type: Optional[
             Union[
                 Literal[
-                    "line",
-                    "plainline",
-                    "square",
-                    "rect",
                     "circle",
                     "cross",
                     "diamond",
+                    "line",
+                    "none",
+                    "plainline",
+                    "rect",
+                    "square",
                     "star",
                     "triangle",
                     "wye",
-                    "none",
                 ],
                 Var[
                     Literal[
-                        "line",
-                        "plainline",
-                        "square",
-                        "rect",
                         "circle",
                         "cross",
                         "diamond",
+                        "line",
+                        "none",
+                        "plainline",
+                        "rect",
+                        "square",
                         "star",
                         "triangle",
                         "wye",
-                        "none",
                     ]
                 ],
             ]
@@ -1485,8 +1485,8 @@ class Funnel(Recharts):
         animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
+                Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"]],
             ]
         ] = None,
         stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
@@ -1572,7 +1572,7 @@ class ErrorBar(Recharts):
         cls,
         *children,
         direction: Optional[
-            Union[Literal["x", "y", "both"], Var[Literal["x", "y", "both"]]]
+            Union[Literal["both", "x", "y"], Var[Literal["both", "x", "y"]]]
         ] = None,
         data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         width: Optional[Union[Var[int], int]] = None,
@@ -1653,8 +1653,8 @@ class Reference(Recharts):
         y_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         if_overflow: Optional[
             Union[
-                Literal["discard", "hidden", "visible", "extendDomain"],
-                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
+                Literal["discard", "extendDomain", "hidden", "visible"],
+                Var[Literal["discard", "extendDomain", "hidden", "visible"]],
             ]
         ] = None,
         label: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -1739,8 +1739,8 @@ class ReferenceLine(Reference):
         y_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         if_overflow: Optional[
             Union[
-                Literal["discard", "hidden", "visible", "extendDomain"],
-                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
+                Literal["discard", "extendDomain", "hidden", "visible"],
+                Var[Literal["discard", "extendDomain", "hidden", "visible"]],
             ]
         ] = None,
         label: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -1830,8 +1830,8 @@ class ReferenceDot(Reference):
         y_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         if_overflow: Optional[
             Union[
-                Literal["discard", "hidden", "visible", "extendDomain"],
-                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
+                Literal["discard", "extendDomain", "hidden", "visible"],
+                Var[Literal["discard", "extendDomain", "hidden", "visible"]],
             ]
         ] = None,
         label: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -1923,8 +1923,8 @@ class ReferenceArea(Recharts):
         y2: Optional[Union[Var[Union[int, str]], int, str]] = None,
         if_overflow: Optional[
             Union[
-                Literal["discard", "hidden", "visible", "extendDomain"],
-                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
+                Literal["discard", "extendDomain", "hidden", "visible"],
+                Var[Literal["discard", "extendDomain", "hidden", "visible"]],
             ]
         ] = None,
         is_front: Optional[Union[Var[bool], bool]] = None,
@@ -2175,8 +2175,8 @@ class CartesianAxis(Grid):
         *children,
         orientation: Optional[
             Union[
-                Literal["top", "bottom", "left", "right"],
-                Var[Literal["top", "bottom", "left", "right"]],
+                Literal["bottom", "left", "right", "top"],
+                Var[Literal["bottom", "left", "right", "top"]],
             ]
         ] = None,
         axis_line: Optional[Union[Var[bool], bool]] = None,
@@ -2184,8 +2184,8 @@ class CartesianAxis(Grid):
         tick_size: Optional[Union[Var[int], int]] = None,
         interval: Optional[
             Union[
-                Literal["preserveStart", "preserveEnd", "preserveStartEnd"],
-                Var[Literal["preserveStart", "preserveEnd", "preserveStartEnd"]],
+                Literal["preserveEnd", "preserveStart", "preserveStartEnd"],
+                Var[Literal["preserveEnd", "preserveStart", "preserveStartEnd"]],
             ]
         ] = None,
         ticks: Optional[Union[Var[bool], bool]] = None,

@@ -32,7 +32,7 @@ class TableRoot(elements.Table, RadixThemesComponent):
             ]
         ] = None,
         variant: Optional[
-            Union[Literal["surface", "ghost"], Var[Literal["surface", "ghost"]]]
+            Union[Literal["ghost", "surface"], Var[Literal["ghost", "surface"]]]
         ] = None,
         align: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         summary: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
@@ -262,8 +262,8 @@ class TableRow(elements.Tr, RadixThemesComponent):
         *children,
         align: Optional[
             Union[
-                Literal["start", "center", "end", "baseline"],
-                Var[Literal["start", "center", "end", "baseline"]],
+                Literal["baseline", "center", "end", "start"],
+                Var[Literal["baseline", "center", "end", "start"]],
             ]
         ] = None,
         access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
@@ -378,8 +378,8 @@ class TableColumnHeaderCell(elements.Th, RadixThemesComponent):
         *children,
         justify: Optional[
             Union[
-                Literal["start", "center", "end"],
-                Var[Literal["start", "center", "end"]],
+                Literal["center", "end", "start"],
+                Var[Literal["center", "end", "start"]],
             ]
         ] = None,
         align: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
@@ -615,8 +615,8 @@ class TableCell(elements.Td, RadixThemesComponent):
         *children,
         justify: Optional[
             Union[
-                Literal["start", "center", "end"],
-                Var[Literal["start", "center", "end"]],
+                Literal["center", "end", "start"],
+                Var[Literal["center", "end", "start"]],
             ]
         ] = None,
         align: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
@@ -739,8 +739,8 @@ class TableRowHeaderCell(elements.Th, RadixThemesComponent):
         *children,
         justify: Optional[
             Union[
-                Literal["start", "center", "end"],
-                Var[Literal["start", "center", "end"]],
+                Literal["center", "end", "start"],
+                Var[Literal["center", "end", "start"]],
             ]
         ] = None,
         align: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,

@@ -31,18 +31,18 @@ class Grid(elements.Div, RadixThemesComponent):
         flow: Optional[
             Union[
                 Breakpoints[
-                    str, Literal["row", "column", "dense", "row-dense", "column-dense"]
+                    str, Literal["column", "column-dense", "dense", "row", "row-dense"]
                 ],
-                Literal["row", "column", "dense", "row-dense", "column-dense"],
+                Literal["column", "column-dense", "dense", "row", "row-dense"],
                 Var[
                     Union[
                         Breakpoints[
                             str,
                             Literal[
-                                "row", "column", "dense", "row-dense", "column-dense"
+                                "column", "column-dense", "dense", "row", "row-dense"
                             ],
                         ],
-                        Literal["row", "column", "dense", "row-dense", "column-dense"],
+                        Literal["column", "column-dense", "dense", "row", "row-dense"],
                     ]
                 ],
             ]
@@ -50,28 +50,28 @@ class Grid(elements.Div, RadixThemesComponent):
         align: Optional[
             Union[
                 Breakpoints[
-                    str, Literal["start", "center", "end", "baseline", "stretch"]
+                    str, Literal["baseline", "center", "end", "start", "stretch"]
                 ],
-                Literal["start", "center", "end", "baseline", "stretch"],
+                Literal["baseline", "center", "end", "start", "stretch"],
                 Var[
                     Union[
                         Breakpoints[
                             str,
-                            Literal["start", "center", "end", "baseline", "stretch"],
+                            Literal["baseline", "center", "end", "start", "stretch"],
                         ],
-                        Literal["start", "center", "end", "baseline", "stretch"],
+                        Literal["baseline", "center", "end", "start", "stretch"],
                     ]
                 ],
             ]
         ] = None,
         justify: Optional[
             Union[
-                Breakpoints[str, Literal["start", "center", "end", "between"]],
-                Literal["start", "center", "end", "between"],
+                Breakpoints[str, Literal["between", "center", "end", "start"]],
+                Literal["between", "center", "end", "start"],
                 Var[
                     Union[
-                        Breakpoints[str, Literal["start", "center", "end", "between"]],
-                        Literal["start", "center", "end", "between"],
+                        Breakpoints[str, Literal["between", "center", "end", "start"]],
+                        Literal["between", "center", "end", "start"],
                     ]
                 ],
             ]

@@ -96,8 +96,8 @@ class DrawerRoot(DrawerComponent):
         modal: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
             Union[
-                Literal["top", "bottom", "left", "right"],
-                Var[Literal["top", "bottom", "left", "right"]],
+                Literal["bottom", "left", "right", "top"],
+                Var[Literal["bottom", "left", "right", "top"]],
             ]
         ] = None,
         preventScrollRestoration: Optional[Union[Var[bool], bool]] = None,
@@ -678,8 +678,8 @@ class Drawer(ComponentNamespace):
         modal: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
             Union[
-                Literal["top", "bottom", "left", "right"],
-                Var[Literal["top", "bottom", "left", "right"]],
+                Literal["bottom", "left", "right", "top"],
+                Var[Literal["bottom", "left", "right", "top"]],
             ]
         ] = None,
         preventScrollRestoration: Optional[Union[Var[bool], bool]] = None,

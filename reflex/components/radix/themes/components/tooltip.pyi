@@ -26,15 +26,15 @@ class Tooltip(RadixThemesComponent):
         open: Optional[Union[Var[bool], bool]] = None,
         side: Optional[
             Union[
-                Literal["top", "right", "bottom", "left"],
-                Var[Literal["top", "right", "bottom", "left"]],
+                Literal["bottom", "left", "right", "top"],
+                Var[Literal["bottom", "left", "right", "top"]],
             ]
         ] = None,
         side_offset: Optional[Union[Var[Union[float, int]], float, int]] = None,
         align: Optional[
             Union[
-                Literal["start", "center", "end"],
-                Var[Literal["start", "center", "end"]],
+                Literal["center", "end", "start"],
+                Var[Literal["center", "end", "start"]],
             ]
         ] = None,
         align_offset: Optional[Union[Var[Union[float, int]], float, int]] = None,
@@ -49,7 +49,7 @@ class Tooltip(RadixThemesComponent):
         ] = None,
         arrow_padding: Optional[Union[Var[Union[float, int]], float, int]] = None,
         sticky: Optional[
-            Union[Literal["partial", "always"], Var[Literal["partial", "always"]]]
+            Union[Literal["always", "partial"], Var[Literal["always", "partial"]]]
         ] = None,
         hide_when_detached: Optional[Union[Var[bool], bool]] = None,
         delay_duration: Optional[Union[Var[Union[float, int]], float, int]] = None,

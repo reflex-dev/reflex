@@ -23,14 +23,14 @@ class Inset(elements.Div, RadixThemesComponent):
         *children,
         side: Optional[
             Union[
-                Breakpoints[str, Literal["x", "y", "top", "bottom", "right", "left"]],
-                Literal["x", "y", "top", "bottom", "right", "left"],
+                Breakpoints[str, Literal["bottom", "left", "right", "top", "x", "y"]],
+                Literal["bottom", "left", "right", "top", "x", "y"],
                 Var[
                     Union[
                         Breakpoints[
-                            str, Literal["x", "y", "top", "bottom", "right", "left"]
+                            str, Literal["bottom", "left", "right", "top", "x", "y"]
                         ],
-                        Literal["x", "y", "top", "bottom", "right", "left"],
+                        Literal["bottom", "left", "right", "top", "x", "y"],
                     ]
                 ],
             ]

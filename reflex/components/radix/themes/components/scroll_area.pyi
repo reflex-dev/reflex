@@ -19,14 +19,14 @@ class ScrollArea(RadixThemesComponent):
         *children,
         scrollbars: Optional[
             Union[
-                Literal["vertical", "horizontal", "both"],
-                Var[Literal["vertical", "horizontal", "both"]],
+                Literal["both", "horizontal", "vertical"],
+                Var[Literal["both", "horizontal", "vertical"]],
             ]
         ] = None,
         type: Optional[
             Union[
-                Literal["auto", "always", "scroll", "hover"],
-                Var[Literal["auto", "always", "scroll", "hover"]],
+                Literal["always", "auto", "hover", "scroll"],
+                Var[Literal["always", "auto", "hover", "scroll"]],
             ]
         ] = None,
         scroll_hide_delay: Optional[Union[Var[int], int]] = None,

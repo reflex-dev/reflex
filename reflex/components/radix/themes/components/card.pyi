@@ -34,8 +34,8 @@ class Card(elements.Div, RadixThemesComponent):
         ] = None,
         variant: Optional[
             Union[
-                Literal["surface", "classic", "ghost"],
-                Var[Literal["surface", "classic", "ghost"]],
+                Literal["classic", "ghost", "surface"],
+                Var[Literal["classic", "ghost", "surface"]],
             ]
         ] = None,
         access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,

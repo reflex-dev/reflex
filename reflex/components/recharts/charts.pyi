@@ -104,8 +104,8 @@ class CategoricalChartBase(ChartBase):
         ] = None,
         stack_offset: Optional[
             Union[
-                Literal["expand", "none", "wiggle", "silhouette"],
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
+                Literal["expand", "none", "silhouette", "wiggle"],
+                Var[Literal["expand", "none", "silhouette", "wiggle"]],
             ]
         ] = None,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -186,8 +186,8 @@ class AreaChart(CategoricalChartBase):
         *children,
         base_value: Optional[
             Union[
-                Literal["dataMin", "dataMax", "auto"],
-                Var[Union[Literal["dataMin", "dataMax", "auto"], int]],
+                Literal["auto", "dataMax", "dataMin"],
+                Var[Union[Literal["auto", "dataMax", "dataMin"], int]],
                 int,
             ]
         ] = None,
@@ -205,8 +205,8 @@ class AreaChart(CategoricalChartBase):
         ] = None,
         stack_offset: Optional[
             Union[
-                Literal["expand", "none", "wiggle", "silhouette"],
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
+                Literal["expand", "none", "silhouette", "wiggle"],
+                Var[Literal["expand", "none", "silhouette", "wiggle"]],
             ]
         ] = None,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -292,8 +292,8 @@ class BarChart(CategoricalChartBase):
         max_bar_size: Optional[Union[Var[int], int]] = None,
         stack_offset: Optional[
             Union[
-                Literal["expand", "none", "wiggle", "silhouette"],
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
+                Literal["expand", "none", "silhouette", "wiggle"],
+                Var[Literal["expand", "none", "silhouette", "wiggle"]],
             ]
         ] = None,
         reverse_stack_order: Optional[Union[Var[bool], bool]] = None,
@@ -404,8 +404,8 @@ class LineChart(CategoricalChartBase):
         ] = None,
         stack_offset: Optional[
             Union[
-                Literal["expand", "none", "wiggle", "silhouette"],
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
+                Literal["expand", "none", "silhouette", "wiggle"],
+                Var[Literal["expand", "none", "silhouette", "wiggle"]],
             ]
         ] = None,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -486,8 +486,8 @@ class ComposedChart(CategoricalChartBase):
         *children,
         base_value: Optional[
             Union[
-                Literal["dataMin", "dataMax", "auto"],
-                Var[Union[Literal["dataMin", "dataMax", "auto"], int]],
+                Literal["auto", "dataMax", "dataMin"],
+                Var[Union[Literal["auto", "dataMax", "dataMin"], int]],
                 int,
             ]
         ] = None,
@@ -509,8 +509,8 @@ class ComposedChart(CategoricalChartBase):
         ] = None,
         stack_offset: Optional[
             Union[
-                Literal["expand", "none", "wiggle", "silhouette"],
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
+                Literal["expand", "none", "silhouette", "wiggle"],
+                Var[Literal["expand", "none", "silhouette", "wiggle"]],
             ]
         ] = None,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -963,8 +963,8 @@ class Treemap(RechartsCharts):
         animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
+                Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"]],
             ]
         ] = None,
         style: Optional[Style] = None,

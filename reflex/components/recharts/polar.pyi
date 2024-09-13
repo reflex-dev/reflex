@@ -35,31 +35,31 @@ class Pie(Recharts):
         legend_type: Optional[
             Union[
                 Literal[
-                    "line",
-                    "plainline",
-                    "square",
-                    "rect",
                     "circle",
                     "cross",
                     "diamond",
+                    "line",
+                    "none",
+                    "plainline",
+                    "rect",
+                    "square",
                     "star",
                     "triangle",
                     "wye",
-                    "none",
                 ],
                 Var[
                     Literal[
-                        "line",
-                        "plainline",
-                        "square",
-                        "rect",
                         "circle",
                         "cross",
                         "diamond",
+                        "line",
+                        "none",
+                        "plainline",
+                        "rect",
+                        "square",
                         "star",
                         "triangle",
                         "wye",
-                        "none",
                     ]
                 ],
             ]
@@ -143,8 +143,8 @@ class Radar(Recharts):
         animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
+                Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"]],
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -239,8 +239,8 @@ class RadialBar(Recharts):
         animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
+                Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"]],
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -406,7 +406,7 @@ class PolarGrid(Recharts):
         polar_angles: Optional[Union[List[int], Var[List[int]]]] = None,
         polar_radius: Optional[Union[List[int], Var[List[int]]]] = None,
         grid_type: Optional[
-            Union[Literal["polygon", "circle"], Var[Literal["polygon", "circle"]]]
+            Union[Literal["circle", "polygon"], Var[Literal["circle", "polygon"]]]
         ] = None,
         stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         style: Optional[Style] = None,
@@ -486,7 +486,7 @@ class PolarRadiusAxis(Recharts):
         *children,
         angle: Optional[Union[Var[int], int]] = None,
         type_: Optional[
-            Union[Literal["number", "category"], Var[Literal["number", "category"]]]
+            Union[Literal["category", "number"], Var[Literal["category", "number"]]]
         ] = None,
         allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
         cx: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -502,38 +502,38 @@ class PolarRadiusAxis(Recharts):
             Union[
                 Literal[
                     "auto",
-                    "linear",
-                    "pow",
-                    "sqrt",
-                    "log",
-                    "identity",
-                    "time",
                     "band",
-                    "point",
+                    "identity",
+                    "linear",
+                    "log",
                     "ordinal",
+                    "point",
+                    "pow",
                     "quantile",
                     "quantize",
-                    "utc",
                     "sequential",
+                    "sqrt",
                     "threshold",
+                    "time",
+                    "utc",
                 ],
                 Var[
                     Literal[
                         "auto",
-                        "linear",
-                        "pow",
-                        "sqrt",
-                        "log",
-                        "identity",
-                        "time",
                         "band",
-                        "point",
+                        "identity",
+                        "linear",
+                        "log",
                         "ordinal",
+                        "point",
+                        "pow",
                         "quantile",
                         "quantize",
-                        "utc",
                         "sequential",
+                        "sqrt",
                         "threshold",
+                        "time",
+                        "utc",
                     ]
                 ],
             ]

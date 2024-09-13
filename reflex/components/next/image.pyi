@@ -28,7 +28,7 @@ class Image(NextComponent):
         priority: Optional[Union[Var[bool], bool]] = None,
         placeholder: Optional[Union[Var[str], str]] = None,
         loading: Optional[
-            Union[Literal["lazy", "eager"], Var[Literal["lazy", "eager"]]]
+            Union[Literal["eager", "lazy"], Var[Literal["eager", "lazy"]]]
         ] = None,
         blurDataURL: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
