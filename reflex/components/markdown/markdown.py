@@ -195,17 +195,17 @@ class Markdown(Component):
         if tag not in self.component_map:
             raise ValueError(f"No markdown component found for tag: {tag}.")
 
-        special_props = {_PROPS_IN_TAG}
+        special_props = [_PROPS_IN_TAG]
         children = [_CHILDREN]
 
         # For certain tags, the props from the markdown renderer are not actually valid for the component.
         if tag in NO_PROPS_TAGS:
-            special_props = set()
+            special_props = []
 
         # If the children are set as a prop, don't pass them as children.
         children_prop = props.pop("children", None)
         if children_prop is not None:
-            special_props.add(
+            special_props.append(
                 ImmutableVar.create_safe(f"children={{{str(children_prop)}}}")
             )
             children = []

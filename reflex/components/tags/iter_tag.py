@@ -2,31 +2,36 @@
 
 from __future__ import annotations
 
+import dataclasses
 import inspect
 from typing import TYPE_CHECKING, Any, Callable, List, Tuple, Type, Union, get_args
 
 from reflex.components.tags.tag import Tag
 from reflex.ivars.base import ImmutableVar
-from reflex.vars import Var
+from reflex.ivars.sequence import LiteralArrayVar
+from reflex.vars import Var, get_unique_variable_name
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
 
 
+@dataclasses.dataclass()
 class IterTag(Tag):
     """An iterator tag."""
 
     # The var to iterate over.
-    iterable: Var[List]
+    iterable: Var[List] = dataclasses.field(
+        default_factory=lambda: LiteralArrayVar.create([])
+    )
 
     # The component render function for each item in the iterable.
-    render_fn: Callable
+    render_fn: Callable = dataclasses.field(default_factory=lambda: lambda x: x)
 
     # The name of the arg var.
-    arg_var_name: str
+    arg_var_name: str = dataclasses.field(default_factory=get_unique_variable_name)
 
     # The name of the index var.
-    index_var_name: str
+    index_var_name: str = dataclasses.field(default_factory=get_unique_variable_name)
 
     def get_iterable_var_type(self) -> Type:
         """Get the type of the iterable var.

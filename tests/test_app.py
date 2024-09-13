@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import functools
 import io
 import json
@@ -1052,7 +1053,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     f"comp_{arg_name}": exp_val,
                     constants.CompileVars.IS_HYDRATED: False,
                     # "side_effect_counter": exp_index,
-                    "router": exp_router,
+                    "router": dataclasses.asdict(exp_router),
                 }
             },
             events=[
