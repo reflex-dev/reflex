@@ -116,7 +116,7 @@ def test_call_event_handler_partial():
     assert event_spec2.args[0][0].equals(Var(_js_expr="arg1"))
     assert event_spec2.args[0][1].equals(Var(_js_expr="first"))
     assert event_spec2.args[1][0].equals(Var(_js_expr="arg2"))
-    assert event_spec2.args[1][1].equals(Var(_js_expr="_a2"))
+    assert event_spec2.args[1][1].equals(Var(_js_expr="_a2", _var_type=str))
     assert (
         format.format_event(event_spec2)
         == 'Event("test_fn_with_args", {arg1:first,arg2:_a2})'
@@ -210,7 +210,7 @@ def test_event_console_log():
     spec = event.console_log("message")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_console"
-    assert spec.args[0][0].equals(Var(_js_expr="message", _var_type=str))
+    assert spec.args[0][0].equals(Var(_js_expr="message"))
     assert spec.args[0][1].equals(LiteralVar.create("message"))
     assert format.format_event(spec) == 'Event("_console", {message:"message"})'
     spec = event.console_log(Var(_js_expr="message"))
@@ -222,7 +222,7 @@ def test_event_window_alert():
     spec = event.window_alert("message")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_alert"
-    assert spec.args[0][0].equals(Var(_js_expr="message", _var_type=str))
+    assert spec.args[0][0].equals(Var(_js_expr="message"))
     assert spec.args[0][1].equals(LiteralVar.create("message"))
     assert format.format_event(spec) == 'Event("_alert", {message:"message"})'
     spec = event.window_alert(Var(_js_expr="message"))

@@ -871,7 +871,7 @@ def parse_args_spec(arg_spec: ArgsSpec):
     annotations = get_type_hints(arg_spec)
     return arg_spec(
         *[
-            Var(f"_{l_arg}").to(ObjectVar, annotations.get(l_arg, FrontendEvent))
+            Var(f"_{l_arg}").to(annotations.get(l_arg, FrontendEvent))
             for l_arg in spec.args
         ]
     )

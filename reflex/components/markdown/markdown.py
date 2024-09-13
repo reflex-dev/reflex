@@ -25,7 +25,7 @@ from reflex.vars.base import LiteralVar, Var
 _CHILDREN = Var(_js_expr="children")
 _PROPS = Var(_js_expr="...props")
 _PROPS_IN_TAG = Var(_js_expr="{...props}")
-_MOCK_ARG = Var(_js_expr="")
+_MOCK_ARG = Var(_js_expr="", _var_type=str)
 
 # Special remark plugins.
 _REMARK_MATH = Var(_js_expr="remarkMath")

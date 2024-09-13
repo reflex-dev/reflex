@@ -372,6 +372,8 @@ class Var(Generic[VAR_TYPE]):
             return self.to(BooleanVar, output)
         if fixed_output_type is None:
             return ToNoneOperation.create(self)
+        if issubclass(fixed_output_type, Base):
+            return self.to(ObjectVar, output)
 
         if issubclass(output, BooleanVar):
             return ToBooleanVarOperation.create(self)
@@ -712,7 +714,7 @@ class Var(Generic[VAR_TYPE]):
                     f"/{constants.Dirs.STATE_PATH}": [imports.ImportVar(tag="refs")]
                 }
             ),
-        ).to(ObjectVar)
+        ).to(ObjectVar, Dict[str, str])
         return refs[LiteralVar.create(str(self))]
 
     @deprecated("Use `.js_type()` instead.")

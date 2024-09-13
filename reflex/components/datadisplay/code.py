@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Literal, Optional, Union
+from typing import Any, Dict, Literal, Optional, Union
 
 from typing_extensions import get_args
 
@@ -374,7 +374,7 @@ class CodeBlock(Component):
     alias = "SyntaxHighlighter"
 
     # The theme to use ("light" or "dark").
-    theme: Var[LiteralCodeBlockTheme] = "one-light"  # type: ignore
+    theme: Var[Any] = "one-light"  # type: ignore
 
     # The language to use.
     language: Var[LiteralCodeLanguage] = "python"  # type: ignore
