@@ -2,8 +2,6 @@ from contextlib import nullcontext
 from typing import Any, Dict, List, Optional, Type, Union
 
 import pytest
-import reflex_chakra as rc
-from reflex_chakra.components.layout.box import Box
 
 import reflex as rx
 from reflex.base import Base
@@ -16,6 +14,7 @@ from reflex.components.component import (
     StatefulComponent,
     custom_component,
 )
+from reflex.components.radix.themes.layout.box import Box
 from reflex.constants import EventTriggers
 from reflex.event import EventChain, EventHandler, parse_args_spec
 from reflex.ivars.base import ImmutableVar, LiteralVar
@@ -638,21 +637,21 @@ def test_component_create_unallowed_types(children, test_component):
                 "props": [],
                 "contents": "",
                 "args": None,
-                "special_props": set(),
+                "special_props": [],
                 "children": [
                     {
                         "name": "RadixThemesText",
                         "props": ['as={"p"}'],
                         "contents": "",
                         "args": None,
-                        "special_props": set(),
+                        "special_props": [],
                         "children": [
                             {
                                 "name": "",
                                 "props": [],
                                 "contents": '{"first_text"}',
                                 "args": None,
-                                "special_props": set(),
+                                "special_props": [],
                                 "children": [],
                                 "autofocus": False,
                             }
@@ -680,13 +679,13 @@ def test_component_create_unallowed_types(children, test_component):
                                 "contents": '{"first_text"}',
                                 "name": "",
                                 "props": [],
-                                "special_props": set(),
+                                "special_props": [],
                             }
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as={"p"}'],
-                        "special_props": set(),
+                        "special_props": [],
                     },
                     {
                         "args": None,
@@ -699,19 +698,19 @@ def test_component_create_unallowed_types(children, test_component):
                                 "contents": '{"second_text"}',
                                 "name": "",
                                 "props": [],
-                                "special_props": set(),
+                                "special_props": [],
                             }
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as={"p"}'],
-                        "special_props": set(),
+                        "special_props": [],
                     },
                 ],
                 "contents": "",
                 "name": "Fragment",
                 "props": [],
-                "special_props": set(),
+                "special_props": [],
             },
         ),
         (
@@ -731,13 +730,13 @@ def test_component_create_unallowed_types(children, test_component):
                                 "contents": '{"first_text"}',
                                 "name": "",
                                 "props": [],
-                                "special_props": set(),
+                                "special_props": [],
                             }
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as={"p"}'],
-                        "special_props": set(),
+                        "special_props": [],
                     },
                     {
                         "args": None,
@@ -758,31 +757,31 @@ def test_component_create_unallowed_types(children, test_component):
                                                 "contents": '{"second_text"}',
                                                 "name": "",
                                                 "props": [],
-                                                "special_props": set(),
+                                                "special_props": [],
                                             }
                                         ],
                                         "contents": "",
                                         "name": "RadixThemesText",
                                         "props": ['as={"p"}'],
-                                        "special_props": set(),
+                                        "special_props": [],
                                     }
                                 ],
                                 "contents": "",
                                 "name": "Fragment",
                                 "props": [],
-                                "special_props": set(),
+                                "special_props": [],
                             }
                         ],
                         "contents": "",
                         "name": "RadixThemesBox",
                         "props": [],
-                        "special_props": set(),
+                        "special_props": [],
                     },
                 ],
                 "contents": "",
                 "name": "Fragment",
                 "props": [],
-                "special_props": set(),
+                "special_props": [],
             },
         ),
     ],
@@ -1114,8 +1113,8 @@ def test_component_with_only_valid_children(fixture, request):
     [
         (rx.text("hi"), '<RadixThemesText as={"p"}>\n  {"hi"}\n</RadixThemesText>'),
         (
-            rx.box(rc.heading("test", size="md")),
-            '<RadixThemesBox>\n  <Heading size={"md"}>\n  {"test"}\n</Heading>\n</RadixThemesBox>',
+            rx.box(rx.heading("test", size="3")),
+            '<RadixThemesBox>\n  <RadixThemesHeading size={"3"}>\n  {"test"}\n</RadixThemesHeading>\n</RadixThemesBox>',
         ),
     ],
 )
@@ -1290,12 +1289,12 @@ class EventState(rx.State):
             id="fstring-class_name",
         ),
         pytest.param(
-            rx.fragment(special_props={TEST_VAR}),
+            rx.fragment(special_props=[TEST_VAR]),
             [TEST_VAR],
             id="direct-special_props",
         ),
         pytest.param(
-            rx.fragment(special_props={LiteralVar.create(f"foo{TEST_VAR}bar")}),
+            rx.fragment(special_props=[LiteralVar.create(f"foo{TEST_VAR}bar")]),
             [FORMATTED_TEST_VAR],
             id="fstring-special_props",
         ),

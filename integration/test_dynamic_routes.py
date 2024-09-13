@@ -17,8 +17,6 @@ def DynamicRoute():
     """App for testing dynamic routes."""
     from typing import List
 
-    import reflex_chakra as rc
-
     import reflex as rx
 
     class DynamicState(rx.State):
@@ -41,13 +39,13 @@ def DynamicRoute():
 
     def index():
         return rx.fragment(
-            rc.input(
+            rx.input(
                 value=DynamicState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rc.input(value=rx.State.page_id, is_read_only=True, id="page_id"),  # type: ignore
-            rc.input(
+            rx.input(value=rx.State.page_id, is_read_only=True, id="page_id"),  # type: ignore
+            rx.input(
                 value=DynamicState.router.page.raw_path,
                 is_read_only=True,
                 id="raw_path",
@@ -60,10 +58,10 @@ def DynamicRoute():
                 id="link_page_next",  # type: ignore
             ),
             rx.link("missing", href="/missing", id="link_missing"),
-            rc.list(
+            rx.list(  # type: ignore
                 rx.foreach(
                     DynamicState.order,  # type: ignore
-                    lambda i: rc.list_item(rx.text(i)),
+                    lambda i: rx.list_item(rx.text(i)),
                 ),
             ),
         )

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 from typing import TYPE_CHECKING, Optional
 
 from reflex import constants
@@ -14,6 +15,7 @@ if TYPE_CHECKING:
     from reflex.app import App
 
 
+@dataclasses.dataclass(init=True)
 class HydrateMiddleware(Middleware):
     """Middleware to handle initial app hydration."""
 

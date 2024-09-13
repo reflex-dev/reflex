@@ -1,6 +1,6 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
 
-from typing import Set, Union
+from typing import List, Union
 
 from reflex.components.el.element import Element
 from reflex.ivars.base import ImmutableVar
@@ -90,9 +90,9 @@ class StyleEl(Element):  # noqa: E742
 
     media: Var[Union[str, int, bool]]
 
-    special_props: Set[ImmutableVar] = {
+    special_props: List[ImmutableVar] = [
         ImmutableVar.create_safe("suppressHydrationWarning")
-    }
+    ]
 
 
 base = Base.create
