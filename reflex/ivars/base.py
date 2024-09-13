@@ -421,6 +421,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         if issubclass(output, (ObjectVar, Base)):
             return ToObjectOperation.create(self, var_type or dict)
 
+        if dataclasses.is_dataclass(output):
+            return ToObjectOperation.create(self, var_type or dict)
+
         if issubclass(output, FunctionVar):
             # if fixed_type is not None and not issubclass(fixed_type, Callable):
             #     raise TypeError(
@@ -479,7 +482,11 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             ):
                 return self.to(NumberVar, self._var_type)
 
-            if all(inspect.isclass(t) and issubclass(t, Base) for t in inner_types):
+            if all(
+                inspect.isclass(t)
+                and (issubclass(t, Base) or dataclasses.is_dataclass(t))
+                for t in inner_types
+            ):
                 return self.to(ObjectVar, self._var_type)
 
             return self
@@ -498,6 +505,8 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         if issubclass(fixed_type, str):
             return self.to(StringVar, self._var_type)
         if issubclass(fixed_type, Base):
+            return self.to(ObjectVar, self._var_type)
+        if dataclasses.is_dataclass(fixed_type):
             return self.to(ObjectVar, self._var_type)
         return self
 
@@ -984,6 +993,16 @@ class LiteralVar(ImmutableVar):
                     _var_data=_var_data,
                 )
             return LiteralVar.create(serialized_value, _var_data=_var_data)
+
+        if dataclasses.is_dataclass(value) and not isinstance(value, type):
+            return LiteralObjectVar.create(
+                {
+                    k: (None if callable(v) else v)
+                    for k, v in dataclasses.asdict(value).items()
+                },
+                _var_type=type(value),
+                _var_data=_var_data,
+            )
 
         raise TypeError(
             f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
