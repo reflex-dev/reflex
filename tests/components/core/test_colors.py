@@ -1,3 +1,5 @@
+from typing import Type
+
 import pytest
 
 import reflex as rx
@@ -22,44 +24,45 @@ def create_color_var(color):
 
 
 @pytest.mark.parametrize(
-    "color, expected",
+    "color, expected, expected_type",
     [
-        (create_color_var(rx.color("mint")), '"var(--mint-7)"'),
-        (create_color_var(rx.color("mint", 3)), '"var(--mint-3)"'),
-        (create_color_var(rx.color("mint", 3, True)), '"var(--mint-a3)"'),
+        (create_color_var(rx.color("mint")), '"var(--mint-7)"', Color),
+        (create_color_var(rx.color("mint", 3)), '"var(--mint-3)"', Color),
+        (create_color_var(rx.color("mint", 3, True)), '"var(--mint-a3)"', Color),
         (
             create_color_var(rx.color(ColorState.color, ColorState.shade)),  # type: ignore
             f'("var(--"+{str(color_state_name)}.color+"-"+{str(color_state_name)}.shade+")")',
+            Color,
         ),
         (
             create_color_var(rx.color(f"{ColorState.color}", f"{ColorState.shade}")),  # type: ignore
             f'("var(--"+{str(color_state_name)}.color+"-"+{str(color_state_name)}.shade+")")',
+            Color,
         ),
         (
             create_color_var(
                 rx.color(f"{ColorState.color_part}ato", f"{ColorState.shade}")  # type: ignore
             ),
             f'("var(--"+{str(color_state_name)}.color_part+"ato-"+{str(color_state_name)}.shade+")")',
+            Color,
         ),
         (
             create_color_var(f'{rx.color(ColorState.color, f"{ColorState.shade}")}'),  # type: ignore
             f'("var(--"+{str(color_state_name)}.color+"-"+{str(color_state_name)}.shade+")")',
+            str,
         ),
         (
             create_color_var(
                 f'{rx.color(f"{ColorState.color}", f"{ColorState.shade}")}'  # type: ignore
             ),
             f'("var(--"+{str(color_state_name)}.color+"-"+{str(color_state_name)}.shade+")")',
+            str,
         ),
     ],
 )
-def test_color(color, expected):
-    assert color._var_type is str
+def test_color(color, expected, expected_type: Type[str] | Type[Color]):
+    assert color._var_type is expected_type
     assert str(color) == expected
-    if color._var_type == Color:
-        assert str(color) == f"{{`{expected}`}}"
-    else:
-        assert str(color) == expected
 
 
 @pytest.mark.parametrize(
