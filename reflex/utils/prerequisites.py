@@ -15,6 +15,7 @@ import shutil
 import stat
 import sys
 import tempfile
+import time
 import zipfile
 from datetime import datetime
 from fileinput import FileInput
@@ -1444,7 +1445,12 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
     url = constants.Templates.REFLEX_BUILD_CODE_URL.format(
         generation_hash=generation_hash
     )
-    resp = net.get(url).raise_for_status()
+    resp = net.get(url)
+    while resp.status_code == httpx.codes.SERVICE_UNAVAILABLE:
+        console.debug("Waiting for the code to be generated...")
+        time.sleep(1)
+        resp = net.get(url)
+    resp.raise_for_status()
 
     # Determine the name of the last function, which renders the generated code.
     defined_funcs = re.findall(r"def ([a-zA-Z_]+)\(", resp.text)
