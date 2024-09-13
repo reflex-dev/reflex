@@ -15,7 +15,6 @@ import shutil
 import stat
 import sys
 import tempfile
-import textwrap
 import zipfile
 from datetime import datetime
 from fileinput import FileInput
@@ -36,6 +35,7 @@ from reflex.base import Base
 from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, net, path_ops, processes
+from reflex.utils.exceptions import GeneratedCodeHasNoFunctionDefs
 from reflex.utils.format import format_library_name
 from reflex.utils.registry import _get_best_registry
 
@@ -1437,17 +1437,26 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
         generation_hash: The generation hash from reflex.build.
     """
     # Download the reflex code for the generation.
-    resp = net.get(
-        constants.Templates.REFLEX_BUILD_CODE_URL.format(
-            generation_hash=generation_hash
+    url = constants.Templates.REFLEX_BUILD_CODE_URL.format(
+        generation_hash=generation_hash
+    )
+    resp = net.get(url).raise_for_status()
+
+    # Determine the name of the last function, which renders the generated code.
+    defined_funcs = re.findall(r"def ([a-zA-Z_]+)\(", resp.text)
+    if not defined_funcs:
+        raise GeneratedCodeHasNoFunctionDefs(
+            f"No function definitions found in generated code from {url!r}."
         )
-    ).raise_for_status()
+    render_func_name = defined_funcs[-1]
 
     def replace_content(_match):
         return "\n".join(
             [
-                "def index() -> rx.Component:",
-                textwrap.indent("return " + resp.text, "    "),
+                resp.text,
+                "",
+                "" "def index() -> rx.Component:",
+                f"    return {render_func_name}()",
                 "",
                 "",
             ],
