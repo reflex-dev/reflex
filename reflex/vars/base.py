@@ -244,13 +244,13 @@ class Var(Generic[VAR_TYPE]):
         if not isinstance(value, str):
             return LiteralVar.create(value)
 
-        if _var_is_string is True or _var_is_local is False:
-            return LiteralVar.create(value, _var_data=_var_data)
+        if _var_is_string is False or _var_is_local is True:
+            return cls(
+                _js_expr=value,
+                _var_data=_var_data,
+            )
 
-        return cls(
-            _js_expr=value,
-            _var_data=_var_data,
-        )
+        return LiteralVar.create(value, _var_data=_var_data)
 
     @classmethod
     @deprecated("Use `.create()` instead.")
@@ -1042,6 +1042,7 @@ class LiteralVar(Var):
                     for field, value in one_level_dict.items()
                     if not callable(value)
                 },
+                _var_type=type(value),
                 _var_data=_var_data,
             )
 

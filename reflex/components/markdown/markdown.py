@@ -22,7 +22,7 @@ from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import LiteralVar, Var
 
 # Special vars used in the component map.
-_CHILDREN = Var(_js_expr="children")
+_CHILDREN = Var(_js_expr="children", _var_type=str)
 _PROPS = Var(_js_expr="...props")
 _PROPS_IN_TAG = Var(_js_expr="{...props}")
 _MOCK_ARG = Var(_js_expr="", _var_type=str)
@@ -255,7 +255,7 @@ class Markdown(Component):
     return inline ? (
         {self.format_component("code")}
     ) : (
-        {self.format_component("codeblock", language=Var(_js_expr="language"))}
+        {self.format_component("codeblock", language=Var(_js_expr="language", _var_type=str))}
     );
       }})""".replace("\n", " ")
         )
