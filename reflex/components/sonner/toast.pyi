@@ -10,10 +10,9 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
 from reflex.components.props import PropsBase
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
 from reflex.utils.serializers import serializer
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 LiteralPosition = Literal[
     "top-left",
@@ -23,7 +22,7 @@ LiteralPosition = Literal[
     "bottom-center",
     "bottom-right",
 ]
-toast_ref = ImmutableVar.create_safe("refs['__toast']")
+toast_ref = Var(_js_expr="refs['__toast']")
 
 class ToastAction(Base):
     label: str
@@ -33,8 +32,8 @@ class ToastAction(Base):
 def serialize_action(action: ToastAction) -> dict: ...
 
 class ToastProps(PropsBase):
-    title: Optional[Union[str, ImmutableVar]]
-    description: Optional[Union[str, ImmutableVar]]
+    title: Optional[Union[str, Var]]
+    description: Optional[Union[str, Var]]
     close_button: Optional[bool]
     invert: Optional[bool]
     important: Optional[bool]
@@ -43,7 +42,7 @@ class ToastProps(PropsBase):
     dismissible: Optional[bool]
     action: Optional[ToastAction]
     cancel: Optional[ToastAction]
-    id: Optional[Union[str, ImmutableVar]]
+    id: Optional[Union[str, Var]]
     unstyled: Optional[bool]
     style: Optional[Style]
     action_button_styles: Optional[Style]
@@ -61,7 +60,7 @@ class ToastProps(PropsBase):
 class Toaster(Component):
     is_used: ClassVar[bool] = False
 
-    def add_hooks(self) -> list[ImmutableVar | str]: ...
+    def add_hooks(self) -> list[Var | str]: ...
     @staticmethod
     def send_toast(
         message: str = "", level: str | None = None, **props
@@ -87,23 +86,23 @@ class Toaster(Component):
         visible_toasts: Optional[Union[Var[int], int]] = None,
         position: Optional[
             Union[
+                Literal[
+                    "bottom-center",
+                    "bottom-left",
+                    "bottom-right",
+                    "top-center",
+                    "top-left",
+                    "top-right",
+                ],
                 Var[
                     Literal[
-                        "top-left",
-                        "top-center",
-                        "top-right",
-                        "bottom-left",
                         "bottom-center",
+                        "bottom-left",
                         "bottom-right",
+                        "top-center",
+                        "top-left",
+                        "top-right",
                     ]
-                ],
-                Literal[
-                    "top-left",
-                    "top-center",
-                    "top-right",
-                    "bottom-left",
-                    "bottom-center",
-                    "bottom-right",
                 ],
             ]
         ] = None,
@@ -112,60 +111,50 @@ class Toaster(Component):
         dir: Optional[Union[Var[str], str]] = None,
         hotkey: Optional[Union[Var[str], str]] = None,
         invert: Optional[Union[Var[bool], bool]] = None,
-        toast_options: Optional[Union[Var[ToastProps], ToastProps]] = None,
+        toast_options: Optional[Union[ToastProps, Var[ToastProps]]] = None,
         gap: Optional[Union[Var[int], int]] = None,
-        loading_icon: Optional[Union[Var[Icon], Icon]] = None,
+        loading_icon: Optional[Union[Icon, Var[Icon]]] = None,
         pause_when_page_is_hidden: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Toaster":

@@ -36,11 +36,11 @@ import dill
 from sqlalchemy.orm import DeclarativeBase
 
 from reflex.config import get_config
-from reflex.ivars.base import (
+from reflex.vars.base import (
+    ComputedVar,
     DynamicRouteVar,
-    ImmutableComputedVar,
-    ImmutableVar,
-    immutable_computed_var,
+    Var,
+    computed_var,
     is_computed_var,
 )
 
@@ -78,7 +78,7 @@ if TYPE_CHECKING:
 
 
 Delta = Dict[str, Any]
-var = immutable_computed_var
+var = computed_var
 
 
 # If the state is this large, it's considered a performance issue.
@@ -359,16 +359,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
     # A map from the var name to the var.
-    vars: ClassVar[Dict[str, ImmutableVar]] = {}
+    vars: ClassVar[Dict[str, Var]] = {}
 
     # The base vars of the class.
-    base_vars: ClassVar[Dict[str, ImmutableVar]] = {}
+    base_vars: ClassVar[Dict[str, Var]] = {}
 
     # The computed vars of the class.
-    computed_vars: ClassVar[Dict[str, ImmutableComputedVar]] = {}
+    computed_vars: ClassVar[Dict[str, ComputedVar]] = {}
 
     # Vars inherited by the parent state.
-    inherited_vars: ClassVar[Dict[str, ImmutableVar]] = {}
+    inherited_vars: ClassVar[Dict[str, Var]] = {}
 
     # Backend base vars that are never sent to the client.
     backend_vars: ClassVar[Dict[str, Any]] = {}
@@ -478,7 +478,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return f"{self.__class__.__name__}({self.dict()})"
 
     @classmethod
-    def _get_computed_vars(cls) -> list[ImmutableComputedVar]:
+    def _get_computed_vars(cls) -> list[ComputedVar]:
         """Helper function to get all computed vars of a instance.
 
         Returns:
@@ -575,8 +575,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Set the base and computed vars.
         cls.base_vars = {
-            f.name: ImmutableVar(
-                _var_name=format.format_state_name(cls.get_full_name()) + "." + f.name,
+            f.name: Var(
+                _js_expr=format.format_state_name(cls.get_full_name()) + "." + f.name,
                 _var_type=f.outer_type_,
                 _var_data=VarData.from_state(cls),
             ).guess_type()
@@ -584,7 +584,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if f.name not in cls.get_skip_vars()
         }
         cls.computed_vars = {
-            v._var_name: v._replace(merge_var_data=VarData.from_state(cls))
+            v._js_expr: v._replace(merge_var_data=VarData.from_state(cls))
             for v in computed_vars
         }
         cls.vars = {
@@ -614,8 +614,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     newcv = value._replace(fget=fget, _var_data=VarData.from_state(cls))
                     # cleanup refs to mixin cls in var_data
                     setattr(cls, name, newcv)
-                    cls.computed_vars[newcv._var_name] = newcv
-                    cls.vars[newcv._var_name] = newcv
+                    cls.computed_vars[newcv._js_expr] = newcv
+                    cls.vars[newcv._js_expr] = newcv
                     continue
                 if types.is_backend_base_variable(name, mixin):
                     cls.backend_vars[name] = copy.deepcopy(value)
@@ -781,9 +781,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             NameError: When a computed var shadows a base var.
         """
         for computed_var_ in cls._get_computed_vars():
-            if computed_var_._var_name in cls.__annotations__:
+            if computed_var_._js_expr in cls.__annotations__:
                 raise NameError(
-                    f"The computed var name `{computed_var_._var_name}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
+                    f"The computed var name `{computed_var_._js_expr}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 )
 
     @classmethod
@@ -796,10 +796,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for name, cv in cls.__dict__.items():
             if not is_computed_var(cv):
                 continue
-            name = cv._var_name
+            name = cv._js_expr
             if name in cls.inherited_vars or name in cls.inherited_backend_vars:
                 raise NameError(
-                    f"The computed var name `{cv._var_name}` shadows a var in {cls.__module__}.{cls.__name__}; use a different name instead"
+                    f"The computed var name `{cv._js_expr}` shadows a var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 )
 
     @classmethod
@@ -921,7 +921,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return getattr(substate, name)
 
     @classmethod
-    def _init_var(cls, prop: ImmutableVar):
+    def _init_var(cls, prop: Var):
         """Initialize a variable.
 
         Args:
@@ -937,7 +937,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 "State vars must be primitive Python types, "
                 "Plotly figures, Pandas dataframes, "
                 "or subclasses of rx.Base. "
-                f'Found var "{prop._var_name}" with type {prop._var_type}.'
+                f'Found var "{prop._js_expr}" with type {prop._var_type}.'
             )
         cls._set_var(prop)
         cls._create_setter(prop)
@@ -964,8 +964,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             )
 
         # create the variable based on name and type
-        var = ImmutableVar(
-            _var_name=format.format_state_name(cls.get_full_name()) + "." + name,
+        var = Var(
+            _js_expr=format.format_state_name(cls.get_full_name()) + "." + name,
             _var_type=type_,
             _var_data=VarData.from_state(cls),
         ).guess_type()
@@ -987,16 +987,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls._init_var_dependency_dicts()
 
     @classmethod
-    def _set_var(cls, prop: ImmutableVar):
+    def _set_var(cls, prop: Var):
         """Set the var as a class member.
 
         Args:
             prop: The var instance to set.
         """
         acutal_var_name = (
-            prop._var_name
-            if "." not in prop._var_name
-            else prop._var_name.split(".")[-1]
+            prop._js_expr if "." not in prop._js_expr else prop._js_expr.split(".")[-1]
         )
         setattr(cls, acutal_var_name, prop)
 
@@ -1018,7 +1016,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
 
     @classmethod
-    def _create_setter(cls, prop: ImmutableVar):
+    def _create_setter(cls, prop: Var):
         """Create a setter for the var.
 
         Args:
@@ -1031,17 +1029,17 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             setattr(cls, setter_name, event_handler)
 
     @classmethod
-    def _set_default_value(cls, prop: ImmutableVar):
+    def _set_default_value(cls, prop: Var):
         """Set the default value for the var.
 
         Args:
             prop: The var to set the default value for.
         """
         # Get the pydantic field for the var.
-        if "." in prop._var_name:
-            field = cls.get_fields()[prop._var_name.split(".")[-1]]
+        if "." in prop._js_expr:
+            field = cls.get_fields()[prop._js_expr.split(".")[-1]]
         else:
-            field = cls.get_fields()[prop._var_name]
+            field = cls.get_fields()[prop._js_expr]
         if field.required:
             default_value = prop.get_default_value()
             if default_value is not None:
@@ -1100,7 +1098,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             else:
                 continue
             # to allow passing as a prop, evade python frozen rules (bad practice)
-            object.__setattr__(func, "_var_name", param)
+            object.__setattr__(func, "_js_expr", param)
             # cls.vars[param] = cls.computed_vars[param] = func._var_set_state(cls)  # type: ignore
             cls.vars[param] = cls.computed_vars[param] = func._replace(
                 _var_data=VarData.from_state(cls)

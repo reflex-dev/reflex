@@ -6,8 +6,8 @@ import dataclasses
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from reflex.event import EventChain
-from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.utils import format, types
+from reflex.vars.base import LiteralVar, Var
 
 
 @dataclasses.dataclass()
@@ -27,7 +27,7 @@ class Tag:
     args: Optional[Tuple[str, ...]] = None
 
     # Special props that aren't key value pairs.
-    special_props: List[ImmutableVar] = dataclasses.field(default_factory=list)
+    special_props: List[Var] = dataclasses.field(default_factory=list)
 
     # The children components.
     children: List[Any] = dataclasses.field(default_factory=list)
@@ -109,7 +109,7 @@ class Tag:
         return self
 
     @staticmethod
-    def is_valid_prop(prop: Optional[ImmutableVar]) -> bool:
+    def is_valid_prop(prop: Optional[Var]) -> bool:
         """Check if the prop is valid.
 
         Args:

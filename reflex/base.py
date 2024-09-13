@@ -110,7 +110,7 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
             var: The variable to add a pydantic field for.
             default_value: The default value of the field
         """
-        var_name = var._var_name.split(".")[-1]
+        var_name = var._js_expr.split(".")[-1]
         new_field = ModelField.infer(
             name=var_name,
             value=default_value,

@@ -1,7 +1,5 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
 
-from reflex.vars import Var as Var
-
 from .base import BaseHTML
 
 

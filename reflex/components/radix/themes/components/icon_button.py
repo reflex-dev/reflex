@@ -9,9 +9,8 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.match import Match
 from reflex.components.el import elements
 from reflex.components.lucide import Icon
-from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -83,7 +82,7 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
                     *[(size, px) for size, px in RADIX_TO_LUCIDE_SIZE.items()],
                     12,
                 )
-                if not isinstance(size_map_var, ImmutableVar):
+                if not isinstance(size_map_var, Var):
                     raise ValueError(f"Match did not return a Var: {size_map_var}")
                 children[0].size = size_map_var
         return super().create(*children, **props)
