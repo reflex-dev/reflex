@@ -184,9 +184,6 @@ def run_backend(
         port: The app port
         loglevel: The log level.
     """
-    import uvicorn
-
-    config = get_config()
     app_module = f"reflex.app_module_for_backend:{constants.CompileVars.APP}"
 
     web_dir = get_web_dir()
@@ -195,14 +192,38 @@ def run_backend(
         (web_dir / constants.NOCOMPILE_FILE).touch()
 
     # Run the backend in development mode.
-    uvicorn.run(
-        app=f"{app_module}.{constants.CompileVars.API}",
-        host=host,
-        port=port,
-        log_level=loglevel.value,
-        reload=True,
-        reload_dirs=[config.app_name],
-    )
+    if os.getenv("REFLEX_USE_GRANIAN", "0") == "1":
+        console.debug("Using Granian for backend")
+        try:
+            from granian import Granian  # type: ignore
+            from granian.constants import Interfaces  # type: ignore
+            from granian.log import LogLevels  # type: ignore
+
+            Granian(
+                target=f"{app_module}.{constants.CompileVars.API}",
+                address=host,
+                port=port,
+                interface=Interfaces.ASGI,
+                log_level=LogLevels(loglevel.value),
+                reload=True,
+                reload_ignore_dirs=[".web"],
+            ).serve()
+        except ImportError:
+            console.error(
+                'InstallError: REFLEX_USE_GRANIAN is set but `granian` is not installed. (run `pip install "granian>=1.6.0"`)'
+            )
+            os._exit(1)
+    else:
+        import uvicorn
+
+        uvicorn.run(
+            app=f"{app_module}.{constants.CompileVars.API}",
+            host=host,
+            port=port,
+            log_level=loglevel.value,
+            reload=True,
+            reload_dirs=[get_config().app_name],
+        )
 
 
 def run_backend_prod(
