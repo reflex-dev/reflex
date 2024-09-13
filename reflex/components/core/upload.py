@@ -247,7 +247,7 @@ class Upload(MemoizationLeaf):
         }
         # The file input to use.
         upload = Input.create(type="file")
-        upload.special_props = {Var(_js_expr="{...getInputProps()}", _var_type=None)}
+        upload.special_props = [Var(_js_expr="{...getInputProps()}", _var_type=None)]
 
         # The dropzone to use.
         zone = Box.create(
@@ -255,7 +255,7 @@ class Upload(MemoizationLeaf):
             *children,
             **{k: v for k, v in props.items() if k not in supported_props},
         )
-        zone.special_props = {Var(_js_expr="{...getRootProps()}", _var_type=None)}
+        zone.special_props = [Var(_js_expr="{...getRootProps()}", _var_type=None)]
 
         # Create the component.
         upload_props["id"] = props.get("id", DEFAULT_UPLOAD_ID)

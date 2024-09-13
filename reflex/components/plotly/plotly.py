@@ -266,7 +266,7 @@ const extractPoints = (points) => {
             template_dict = LiteralVar.create({"layout": {"template": self.template}})
             merge_dicts.append(template_dict.without_data())
         if merge_dicts:
-            tag.special_props.add(
+            tag.special_props.append(
                 # Merge all dictionaries and spread the result over props.
                 Var(
                     _js_expr=f"{{...mergician({str(figure)},"
@@ -275,5 +275,5 @@ const extractPoints = (points) => {
             )
         else:
             # Spread the figure dict over props, nothing to merge.
-            tag.special_props.add(Var(_js_expr=f"{{...{str(figure)}}}"))
+            tag.special_props.append(Var(_js_expr=f"{{...{str(figure)}}}"))
         return tag

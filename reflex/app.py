@@ -9,6 +9,7 @@ import copy
 import functools
 import inspect
 import io
+import json
 import multiprocessing
 import os
 import platform
@@ -1531,8 +1532,9 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
             data: The event data.
         """
+        fields = json.loads(data)
         # Get the event.
-        event = Event.parse_raw(data)
+        event = Event(**{k: v for k, v in fields.items() if k != "handler"})
 
         self.token_to_sid[event.token] = sid
         self.sid_to_token[sid] = event.token

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import inspect
 from typing import (
     TYPE_CHECKING,
@@ -15,26 +16,29 @@ from typing import (
 )
 
 from reflex.components.tags.tag import Tag
-from reflex.vars.base import Var
+from reflex.vars import Var, LiteralArrayVar, get_unique_variable_name
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
 
 
+@dataclasses.dataclass()
 class IterTag(Tag):
     """An iterator tag."""
 
     # The var to iterate over.
-    iterable: Var[Iterable]
+    iterable: Var[Iterable] = dataclasses.field(
+        default_factory=lambda: LiteralArrayVar.create([])
+    )
 
     # The component render function for each item in the iterable.
-    render_fn: Callable
+    render_fn: Callable = dataclasses.field(default_factory=lambda: lambda x: x)
 
     # The name of the arg var.
-    arg_var_name: str
+    arg_var_name: str = dataclasses.field(default_factory=get_unique_variable_name)
 
     # The name of the index var.
-    index_var_name: str
+    index_var_name: str = dataclasses.field(default_factory=get_unique_variable_name)
 
     def get_iterable_var_type(self) -> Type:
         """Get the type of the iterable var.
