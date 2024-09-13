@@ -7,7 +7,7 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.lucide.icon import Icon
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import (
     LiteralAccentColor,

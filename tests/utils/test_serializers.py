@@ -7,8 +7,8 @@ import pytest
 
 from reflex.base import Base
 from reflex.components.core.colors import Color
-from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.utils import serializers
+from reflex.vars.base import LiteralVar, Var
 
 
 @pytest.mark.parametrize(
@@ -154,16 +154,16 @@ class BaseSubclass(Base):
             '({ ["ts"] : "1 day, 0:00:01.000001" })',
         ),
         (
-            [1, LiteralVar.create("hi"), ImmutableVar.create("bye")],
+            [1, LiteralVar.create("hi"), Var(_js_expr="bye")],
             '[1, "hi", bye]',
         ),
         (
-            (1, LiteralVar.create("hi"), ImmutableVar.create("bye")),
+            (1, LiteralVar.create("hi"), Var(_js_expr="bye")),
             '[1, "hi", bye]',
         ),
         ({1: 2, 3: 4}, "({ [1] : 2, [3] : 4 })"),
         (
-            {1: LiteralVar.create("hi"), 3: ImmutableVar.create("bye")},
+            {1: LiteralVar.create("hi"), 3: Var(_js_expr="bye")},
             '({ [1] : "hi", [3] : bye })',
         ),
         (datetime.datetime(2021, 1, 1, 1, 1, 1, 1), "2021-01-01 01:01:01.000001"),

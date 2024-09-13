@@ -6,7 +6,7 @@ from typing import List, Optional
 from reflex.components.component import Component, NoSSRComponent
 from reflex.event import EventHandler
 from reflex.utils.imports import ImportDict
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 
 @dataclasses.dataclass(frozen=True)

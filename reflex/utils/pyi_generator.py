@@ -19,8 +19,8 @@ from types import ModuleType, SimpleNamespace
 from typing import Any, Callable, Iterable, Type, get_args
 
 from reflex.components.component import Component
-from reflex.ivars.base import ImmutableVar
 from reflex.utils import types as rx_types
+from reflex.vars.base import Var
 
 logger = logging.getLogger("pyi_generator")
 
@@ -69,11 +69,10 @@ DEFAULT_TYPING_IMPORTS = {
 # TODO: fix import ordering and unused imports with ruff later
 DEFAULT_IMPORTS = {
     "typing": sorted(DEFAULT_TYPING_IMPORTS),
-    "reflex.vars": ["Var"],
     "reflex.components.core.breakpoints": ["Breakpoints"],
     "reflex.event": ["EventChain", "EventHandler", "EventSpec"],
     "reflex.style": ["Style"],
-    "reflex.ivars.base": ["ImmutableVar"],
+    "reflex.vars.base": ["Var"],
 }
 
 
@@ -151,7 +150,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
 
     if args:
         inner_container_type_args = (
-            [repr(arg) for arg in args]
+            sorted((repr(arg) for arg in args))
             if rx_types.is_literal(value)
             else [
                 _get_type_hint(arg, type_hint_globals, is_optional=False)
@@ -185,7 +184,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 if arg is not type(None)
             ]
             if len(types) > 1:
-                res = ", ".join(types)
+                res = ", ".join(sorted(types))
                 res = f"Union[{res}]"
     elif isinstance(value, str):
         ev = eval(value, type_hint_globals)
@@ -356,7 +355,7 @@ def _extract_class_props_as_ast_nodes(
                 with contextlib.suppress(AttributeError, KeyError):
                     # Try to get default from pydantic field definition.
                     default = target_class.__fields__[name].default
-                    if isinstance(default, ImmutableVar):
+                    if isinstance(default, Var):
                         default = default._decode()  # type: ignore
 
             kwargs.append(
@@ -434,7 +433,7 @@ def _generate_component_create_functiondef(
             ast.arg(
                 arg=trigger,
                 annotation=ast.Name(
-                    id="Optional[Union[EventHandler, EventSpec, list, Callable, ImmutableVar]]"
+                    id="Optional[Union[EventHandler, EventSpec, list, Callable, Var]]"
                 ),
             ),
             ast.Constant(value=None),

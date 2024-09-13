@@ -5,8 +5,7 @@ from typing import List, Literal, Union
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
-from reflex.ivars.base import ImmutableVar
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -217,7 +216,7 @@ class HighLevelSelect(SelectRoot):
 
         label = props.pop("label", None)
 
-        if isinstance(items, ImmutableVar):
+        if isinstance(items, Var):
             child = [
                 rx.foreach(items, lambda item: SelectItem.create(item, value=item))
             ]

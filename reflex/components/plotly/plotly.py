@@ -8,9 +8,8 @@ from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.utils import console
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
 
 try:
     from plotly.graph_objects import Figure, layout
@@ -31,7 +30,7 @@ def _event_data_signature(e0: Var) -> List[Any]:
     Returns:
         The event key extracted from the event data (if defined).
     """
-    return [ImmutableVar.create_safe(f"{e0}?.event")]
+    return [Var(_js_expr=f"{e0}?.event")]
 
 
 def _event_points_data_signature(e0: Var) -> List[Any]:
@@ -44,8 +43,8 @@ def _event_points_data_signature(e0: Var) -> List[Any]:
         The event data and the extracted points.
     """
     return [
-        ImmutableVar.create_safe(f"{e0}?.event"),
-        ImmutableVar.create_safe(f"extractPoints({e0}?.points)"),
+        Var(_js_expr=f"{e0}?.event"),
+        Var(_js_expr=f"extractPoints({e0}?.points)"),
     ]
 
 
@@ -102,13 +101,13 @@ class Plotly(NoSSRComponent):
     is_default = True
 
     # The figure to display. This can be a plotly figure or a plotly data json.
-    data: Var[Figure]
+    data: Var[Figure]  # type: ignore
 
     # The layout of the graph.
     layout: Var[Dict]
 
     # The template for visual appearance of the graph.
-    template: Var[Template]
+    template: Var[Template]  # type: ignore
 
     # The config of the graph.
     config: Var[Dict]
@@ -243,7 +242,7 @@ const extractPoints = (points) => {
             light=LiteralVar.create(templates["plotly"]),
             dark=LiteralVar.create(templates["plotly_dark"]),
         )
-        if isinstance(responsive_template, ImmutableVar):
+        if isinstance(responsive_template, Var):
             # Mark the conditional Var as a Template to avoid type mismatch
             responsive_template = responsive_template.to(Template)
         props.setdefault("template", responsive_template)
@@ -255,7 +254,7 @@ const extractPoints = (points) => {
 
     def _render(self):
         tag = super()._render()
-        figure = self.data.upcast().to(dict)
+        figure = self.data.to(dict)
         merge_dicts = []  # Data will be merged and spread from these dict Vars
         if self.layout is not None:
             # Why is this not a literal dict? Great question... it didn't work
@@ -269,12 +268,12 @@ const extractPoints = (points) => {
         if merge_dicts:
             tag.special_props.append(
                 # Merge all dictionaries and spread the result over props.
-                ImmutableVar.create_safe(
-                    f"{{...mergician({str(figure)},"
+                Var(
+                    _js_expr=f"{{...mergician({str(figure)},"
                     f"{','.join(str(md) for md in merge_dicts)})}}",
                 ),
             )
         else:
             # Spread the figure dict over props, nothing to merge.
-            tag.special_props.append(ImmutableVar.create_safe(f"{{...{str(figure)}}}"))
+            tag.special_props.append(Var(_js_expr=f"{{...{str(figure)}}}"))
         return tag

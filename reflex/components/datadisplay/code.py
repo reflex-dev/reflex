@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Literal, Optional, Union
+from typing import Any, Dict, Literal, Optional, Union
 
 from typing_extensions import get_args
 
@@ -13,11 +13,10 @@ from reflex.components.radix.themes.components.button import Button
 from reflex.components.radix.themes.layout.box import Box
 from reflex.constants.colors import Color
 from reflex.event import set_clipboard
-from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
 
 LiteralCodeBlockTheme = Literal[
     "a11y-dark",
@@ -375,7 +374,7 @@ class CodeBlock(Component):
     alias = "SyntaxHighlighter"
 
     # The theme to use ("light" or "dark").
-    theme: Var[LiteralCodeBlockTheme] = "one-light"  # type: ignore
+    theme: Var[Any] = "one-light"  # type: ignore
 
     # The language to use.
     language: Var[LiteralCodeLanguage] = "python"  # type: ignore
@@ -481,13 +480,13 @@ class CodeBlock(Component):
         if "theme" not in props:
             # Default color scheme responds to global color mode.
             props["theme"] = color_mode_cond(
-                light=ImmutableVar.create_safe("oneLight"),
-                dark=ImmutableVar.create_safe("oneDark"),
+                light=Var(_js_expr="oneLight"),
+                dark=Var(_js_expr="oneDark"),
             )
 
         # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
         # themes respectively to ensure code compatibility.
-        if "theme" in props and not isinstance(props["theme"], ImmutableVar):
+        if "theme" in props and not isinstance(props["theme"], Var):
             props["theme"] = cls.convert_theme_name(props["theme"])
 
         if can_copy:
@@ -513,7 +512,7 @@ class CodeBlock(Component):
         # Carry the children (code) via props
         if children:
             props["code"] = children[0]
-            if not isinstance(props["code"], ImmutableVar):
+            if not isinstance(props["code"], Var):
                 props["code"] = LiteralVar.create(props["code"])
 
         # Create the component.
@@ -534,8 +533,8 @@ class CodeBlock(Component):
     def _render(self):
         out = super()._render()
 
-        theme = self.theme.upcast()._replace(
-            _var_name=replace_quotes_with_camel_case(str(self.theme))
+        theme = self.theme._replace(
+            _js_expr=replace_quotes_with_camel_case(str(self.theme))
         )
 
         out.add_props(style=theme).remove_props("theme", "code").add_props(
