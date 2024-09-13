@@ -218,18 +218,23 @@ class Var(Generic[VAR_TYPE]):
 
         Returns:
             The var.
-
-        Raises:
-            VarTypeError: If the value is JSON-unserializable.
-            TypeError: If _var_is_local or _var_is_string is not None.
         """
         if _var_is_local is not None:
-            raise TypeError("The _var_is_local argument is not supported for Var.")
-
+            console.deprecate(
+                feature_name="_var_is_local",
+                reason="The _var_is_local argument is not supported for Var."
+                "If you want to create a Var from a raw Javascript expression, use the constructor directly",
+                deprecation_version="0.6.0",
+                removal_version="0.7.0",
+            )
         if _var_is_string is not None:
-            raise TypeError("The _var_is_string argument is not supported for Var.")
-
-        from reflex.utils import format
+            console.deprecate(
+                feature_name="_var_is_string",
+                reason="The _var_is_string argument is not supported for Var."
+                "If you want to create a Var from a raw Javascript expression, use the constructor directly",
+                deprecation_version="0.6.0",
+                removal_version="0.7.0",
+            )
 
         # If the value is already a var, do nothing.
         if isinstance(value, Var):
@@ -237,23 +242,13 @@ class Var(Generic[VAR_TYPE]):
 
         # Try to pull the imports and hooks from contained values.
         if not isinstance(value, str):
-            _var_data = VarData.merge(*_extract_var_data(value), _var_data)
+            return LiteralVar.create(value)
 
-        # Try to serialize the value.
-        type_ = type(value)
-        if type_ in types.JSONType:
-            name = value
-        else:
-            name, _serialized_type = serializers.serialize(value, get_type=True)
-        if name is None:
-            raise VarTypeError(
-                f"No JSON serializer found for var {value} of type {type_}."
-            )
-        name = name if isinstance(name, str) else format.json_dumps(name)
+        if _var_is_string is True or _var_is_local is False:
+            return LiteralVar.create(value, _var_data=_var_data)
 
         return cls(
-            _js_expr=name,
-            _var_type=type_,
+            _js_expr=value,
             _var_data=_var_data,
         )
 
@@ -261,23 +256,19 @@ class Var(Generic[VAR_TYPE]):
     @deprecated("Use `.create()` instead.")
     def create_safe(
         cls,
-        value: Any,
-        _var_is_local: bool | None = None,
-        _var_is_string: bool | None = None,
-        _var_data: VarData | None = None,
+        *args: Any,
+        **kwargs: Any,
     ) -> Var:
         """Create a var from a value.
 
         Args:
-            value: The value to create the var from.
-            _var_is_local: Whether the var is local. Deprecated.
-            _var_is_string: Whether the var is a string literal. Deprecated.
-            _var_data: Additional hooks and imports associated with the Var.
+            *args: The arguments to create the var from.
+            **kwargs: The keyword arguments to create the var from.
 
         Returns:
             The var.
         """
-        return cls.create(value, _var_is_local, _var_is_string, _var_data)
+        return cls.create(*args, **kwargs)
 
     def __format__(self, format_spec: str) -> str:
         """Format the var into a Javascript equivalent to an f-string.
