@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import inspect
 import types
 import urllib.parse
@@ -18,7 +19,6 @@ from typing import (
 )
 
 from reflex import constants
-from reflex.base import Base
 from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.ivars.function import FunctionStringVar, FunctionVar
 from reflex.ivars.object import ObjectVar
@@ -33,7 +33,11 @@ except ImportError:
     from typing_extensions import Annotated
 
 
-class Event(Base):
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
+class Event:
     """An event that describes any state change in the app."""
 
     # The token to specify the client that the event is for.
@@ -43,10 +47,10 @@ class Event(Base):
     name: str
 
     # The routing data where event occurred
-    router_data: Dict[str, Any] = {}
+    router_data: Dict[str, Any] = dataclasses.field(default_factory=dict)
 
     # The event payload.
-    payload: Dict[str, Any] = {}
+    payload: Dict[str, Any] = dataclasses.field(default_factory=dict)
 
     @property
     def substate_token(self) -> str:
@@ -81,11 +85,15 @@ def background(fn):
     return fn
 
 
-class EventActionsMixin(Base):
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
+class EventActionsMixin:
     """Mixin for DOM event actions."""
 
     # Whether to `preventDefault` or `stopPropagation` on the event.
-    event_actions: Dict[str, Union[bool, int]] = {}
+    event_actions: Dict[str, Union[bool, int]] = dataclasses.field(default_factory=dict)
 
     @property
     def stop_propagation(self):
@@ -94,8 +102,9 @@ class EventActionsMixin(Base):
         Returns:
             New EventHandler-like with stopPropagation set to True.
         """
-        return self.copy(
-            update={"event_actions": {"stopPropagation": True, **self.event_actions}},
+        return dataclasses.replace(
+            self,
+            event_actions={"stopPropagation": True, **self.event_actions},
         )
 
     @property
@@ -105,8 +114,9 @@ class EventActionsMixin(Base):
         Returns:
             New EventHandler-like with preventDefault set to True.
         """
-        return self.copy(
-            update={"event_actions": {"preventDefault": True, **self.event_actions}},
+        return dataclasses.replace(
+            self,
+            event_actions={"preventDefault": True, **self.event_actions},
         )
 
     def throttle(self, limit_ms: int):
@@ -118,8 +128,9 @@ class EventActionsMixin(Base):
         Returns:
             New EventHandler-like with throttle set to limit_ms.
         """
-        return self.copy(
-            update={"event_actions": {"throttle": limit_ms, **self.event_actions}},
+        return dataclasses.replace(
+            self,
+            event_actions={"throttle": limit_ms, **self.event_actions},
         )
 
     def debounce(self, delay_ms: int):
@@ -131,26 +142,25 @@ class EventActionsMixin(Base):
         Returns:
             New EventHandler-like with debounce set to delay_ms.
         """
-        return self.copy(
-            update={"event_actions": {"debounce": delay_ms, **self.event_actions}},
+        return dataclasses.replace(
+            self,
+            event_actions={"debounce": delay_ms, **self.event_actions},
         )
 
 
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
 class EventHandler(EventActionsMixin):
     """An event handler responds to an event to update the state."""
 
     # The function to call in response to the event.
-    fn: Any
+    fn: Any = dataclasses.field(default=None)
 
     # The full name of the state class this event handler is attached to.
     # Empty string means this event handler is a server side event.
-    state_full_name: str = ""
-
-    class Config:
-        """The Pydantic config."""
-
-        # Needed to allow serialization of Callable.
-        frozen = True
+    state_full_name: str = dataclasses.field(default="")
 
     @classmethod
     def __class_getitem__(cls, args_spec: str) -> Annotated:
@@ -215,6 +225,10 @@ class EventHandler(EventActionsMixin):
         )
 
 
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
 class EventSpec(EventActionsMixin):
     """An event specification.
 
@@ -223,19 +237,37 @@ class EventSpec(EventActionsMixin):
     """
 
     # The event handler.
-    handler: EventHandler
+    handler: EventHandler = dataclasses.field(default=None)  # type: ignore
 
     # The handler on the client to process event.
-    client_handler_name: str = ""
+    client_handler_name: str = dataclasses.field(default="")
 
     # The arguments to pass to the function.
-    args: Tuple[Tuple[ImmutableVar, ImmutableVar], ...] = ()
+    args: Tuple[Tuple[ImmutableVar, ImmutableVar], ...] = dataclasses.field(
+        default_factory=tuple
+    )
 
-    class Config:
-        """The Pydantic config."""
+    def __init__(
+        self,
+        handler: EventHandler,
+        event_actions: Dict[str, Union[bool, int]] | None = None,
+        client_handler_name: str = "",
+        args: Tuple[Tuple[ImmutableVar, ImmutableVar], ...] = tuple(),
+    ):
+        """Initialize an EventSpec.
 
-        # Required to allow tuple fields.
-        frozen = True
+        Args:
+            event_actions: The event actions.
+            handler: The event handler.
+            client_handler_name: The client handler name.
+            args: The arguments to pass to the function.
+        """
+        if event_actions is None:
+            event_actions = {}
+        object.__setattr__(self, "event_actions", event_actions)
+        object.__setattr__(self, "handler", handler)
+        object.__setattr__(self, "client_handler_name", client_handler_name)
+        object.__setattr__(self, "args", args or tuple())
 
     def with_args(
         self, args: Tuple[Tuple[ImmutableVar, ImmutableVar], ...]
@@ -286,6 +318,9 @@ class EventSpec(EventActionsMixin):
         return self.with_args(self.args + new_payload)
 
 
+@dataclasses.dataclass(
+    frozen=True,
+)
 class CallableEventSpec(EventSpec):
     """Decorate an EventSpec-returning function to act as both a EventSpec and a function.
 
@@ -305,10 +340,13 @@ class CallableEventSpec(EventSpec):
         if fn is not None:
             default_event_spec = fn()
             super().__init__(
-                fn=fn,  # type: ignore
-                **default_event_spec.dict(),
+                event_actions=default_event_spec.event_actions,
+                client_handler_name=default_event_spec.client_handler_name,
+                args=default_event_spec.args,
+                handler=default_event_spec.handler,
                 **kwargs,
             )
+            object.__setattr__(self, "fn", fn)
         else:
             super().__init__(**kwargs)
 
@@ -332,12 +370,16 @@ class CallableEventSpec(EventSpec):
         return self.fn(*args, **kwargs)
 
 
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
 class EventChain(EventActionsMixin):
     """Container for a chain of events that will be executed in order."""
 
-    events: List[EventSpec]
+    events: List[EventSpec] = dataclasses.field(default_factory=list)
 
-    args_spec: Optional[Callable]
+    args_spec: Optional[Callable] = dataclasses.field(default=None)
 
 
 # These chains can be used for their side effects when no other events are desired.
@@ -345,14 +387,22 @@ stop_propagation = EventChain(events=[], args_spec=lambda: []).stop_propagation
 prevent_default = EventChain(events=[], args_spec=lambda: []).prevent_default
 
 
-class Target(Base):
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
+class Target:
     """A Javascript event target."""
 
     checked: bool = False
     value: Any = None
 
 
-class FrontendEvent(Base):
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
+class FrontendEvent:
     """A Javascript event."""
 
     target: Target = Target()
@@ -360,7 +410,11 @@ class FrontendEvent(Base):
     value: Any = None
 
 
-class FileUpload(Base):
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
+class FileUpload:
     """Class to represent a file upload."""
 
     upload_id: Optional[str] = None
