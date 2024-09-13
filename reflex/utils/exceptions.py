@@ -91,3 +91,7 @@ class EventFnArgMismatch(ReflexError, TypeError):
 
 class DynamicRouteArgShadowsStateVar(ReflexError, NameError):
     """Raised when a dynamic route arg shadows a state var."""
+
+
+class GeneratedCodeHasNoFunctionDefs(ReflexError):
+    """Raised when refactored code generated with flexgen has no functions defined."""
