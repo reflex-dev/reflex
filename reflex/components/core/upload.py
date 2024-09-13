@@ -21,7 +21,7 @@ from reflex.event import (
 )
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
-from reflex.vars.base import ImmutableCallableVar, LiteralVar, Var
+from reflex.vars.base import CallableVar, LiteralVar, Var
 from reflex.vars.sequence import LiteralStringVar
 
 DEFAULT_UPLOAD_ID: str = "default"
@@ -37,7 +37,7 @@ upload_files_context_var_data: VarData = VarData(
 )
 
 
-@ImmutableCallableVar
+@CallableVar
 def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     """Get the file upload drop trigger.
 
@@ -67,7 +67,7 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     )
 
 
-@ImmutableCallableVar
+@CallableVar
 def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     """Get the list of selected files.
 

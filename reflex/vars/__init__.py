@@ -1,4 +1,4 @@
-"""Experimental Immutable-Based Var System."""
+"""Immutable-Based Var System."""
 
 from .base import LiteralVar as LiteralVar
 from .base import Var as Var

@@ -16,14 +16,14 @@ from reflex.event import (
 from reflex.style import Style
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
-from reflex.vars.base import ImmutableCallableVar, Var
+from reflex.vars.base import CallableVar, Var
 
 DEFAULT_UPLOAD_ID: str
 upload_files_context_var_data: VarData
 
-@ImmutableCallableVar
+@CallableVar
 def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var: ...
-@ImmutableCallableVar
+@CallableVar
 def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> Var: ...
 @CallableEventSpec
 def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec: ...

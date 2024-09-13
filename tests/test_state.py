@@ -41,7 +41,7 @@ from reflex.state import (
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
-from reflex.vars.base import ImmutableComputedVar, Var
+from reflex.vars.base import ComputedVar, Var
 from tests.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState
@@ -102,7 +102,7 @@ class TestState(BaseState):
     fig: Figure = Figure()
     dt: datetime.datetime = datetime.datetime.fromisoformat("1989-11-09T18:53:00+01:00")
 
-    @ImmutableComputedVar
+    @ComputedVar
     def sum(self) -> float:
         """Dynamically sum the numbers.
 
@@ -111,7 +111,7 @@ class TestState(BaseState):
         """
         return self.num1 + self.num2
 
-    @ImmutableComputedVar
+    @ComputedVar
     def upper(self) -> str:
         """Uppercase the key.
 
@@ -1100,7 +1100,7 @@ def test_child_state():
         v: int = 2
 
     class ChildState(MainState):
-        @ImmutableComputedVar
+        @ComputedVar
         def rendered_var(self):
             return self.v
 
@@ -1119,7 +1119,7 @@ def test_conditional_computed_vars():
         t1: str = "a"
         t2: str = "b"
 
-        @ImmutableComputedVar
+        @ComputedVar
         def rendered_var(self) -> str:
             if self.flag:
                 return self.t1
@@ -3066,12 +3066,12 @@ def test_potentially_dirty_substates():
     """
 
     class State(RxState):
-        @ImmutableComputedVar
+        @ComputedVar
         def foo(self) -> str:
             return ""
 
     class C1(State):
-        @ImmutableComputedVar
+        @ComputedVar
         def bar(self) -> str:
             return ""
 

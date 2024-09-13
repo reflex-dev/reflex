@@ -11,7 +11,7 @@ from reflex.utils import format
 from reflex.utils.exceptions import ReflexError
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
-from reflex.vars.base import ImmutableCallableVar, LiteralVar, Var
+from reflex.vars.base import CallableVar, LiteralVar, Var
 from reflex.vars.function import FunctionVar
 
 SYSTEM_COLOR_MODE: str = "system"
@@ -46,7 +46,7 @@ def _color_mode_var(_js_expr: str, _var_type: Type = str) -> Var:
     ).guess_type()
 
 
-@ImmutableCallableVar
+@CallableVar
 def set_color_mode(
     new_color_mode: LiteralColorMode | Var[LiteralColorMode] | None = None,
 ) -> Var[EventChain]:

@@ -8,7 +8,7 @@ from reflex.components.core.cond import Cond, cond
 from reflex.components.radix.themes.typography.text import Text
 from reflex.state import BaseState, State
 from reflex.utils.format import format_state_name
-from reflex.vars.base import LiteralVar, Var, immutable_computed_var
+from reflex.vars.base import LiteralVar, Var, computed_var
 
 
 @pytest.fixture
@@ -125,11 +125,11 @@ def test_cond_computed_var():
     """Test if cond works with computed vars."""
 
     class CondStateComputed(State):
-        @immutable_computed_var
+        @computed_var
         def computed_int(self) -> int:
             return 0
 
-        @immutable_computed_var
+        @computed_var
         def computed_str(self) -> str:
             return "a string"
 

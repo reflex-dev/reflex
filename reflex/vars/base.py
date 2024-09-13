@@ -1354,7 +1354,7 @@ def _or_operation(a: Var, b: Var):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ImmutableCallableVar(Var):
+class CallableVar(Var):
     """Decorate a Var-returning function to act as both a Var and a function.
 
     This is used as a compatibility shim for replacing Var objects in the
@@ -1375,7 +1375,7 @@ class ImmutableCallableVar(Var):
             fn: The function to decorate (must return Var)
         """
         original_var = fn()
-        super(ImmutableCallableVar, self).__init__(
+        super(CallableVar, self).__init__(
             _js_expr=original_var._js_expr,
             _var_type=original_var._var_type,
             _var_data=VarData.merge(original_var._get_all_var_data()),
@@ -1418,7 +1418,7 @@ class FakeComputedVarBaseClass(property):
     __pydantic_run_validation__ = False
 
 
-def is_computed_var(obj: Any) -> TypeGuard[ImmutableComputedVar]:
+def is_computed_var(obj: Any) -> TypeGuard[ComputedVar]:
     """Check if the object is a ComputedVar.
 
     Args:
@@ -1435,7 +1435,7 @@ def is_computed_var(obj: Any) -> TypeGuard[ImmutableComputedVar]:
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ImmutableComputedVar(Var[RETURN_TYPE]):
+class ComputedVar(Var[RETURN_TYPE]):
     """A field with computed getters."""
 
     # Whether to track dependencies and cache computed values
@@ -1602,50 +1602,48 @@ class ImmutableComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: ImmutableComputedVar[int] | ImmutableComputedVar[float],
+        self: ComputedVar[int] | ComputedVar[float],
         instance: None,
         owner: Type,
     ) -> NumberVar: ...
 
     @overload
     def __get__(
-        self: ImmutableComputedVar[str],
+        self: ComputedVar[str],
         instance: None,
         owner: Type,
     ) -> StringVar: ...
 
     @overload
     def __get__(
-        self: ImmutableComputedVar[dict[DICT_KEY, DICT_VAL]],
+        self: ComputedVar[dict[DICT_KEY, DICT_VAL]],
         instance: None,
         owner: Type,
     ) -> ObjectVar[dict[DICT_KEY, DICT_VAL]]: ...
 
     @overload
     def __get__(
-        self: ImmutableComputedVar[list[LIST_INSIDE]],
+        self: ComputedVar[list[LIST_INSIDE]],
         instance: None,
         owner: Type,
     ) -> ArrayVar[list[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
-        self: ImmutableComputedVar[set[LIST_INSIDE]],
+        self: ComputedVar[set[LIST_INSIDE]],
         instance: None,
         owner: Type,
     ) -> ArrayVar[set[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
-        self: ImmutableComputedVar[tuple[LIST_INSIDE, ...]],
+        self: ComputedVar[tuple[LIST_INSIDE, ...]],
         instance: None,
         owner: Type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
 
     @overload
-    def __get__(
-        self, instance: None, owner: Type
-    ) -> ImmutableComputedVar[RETURN_TYPE]: ...
+    def __get__(self, instance: None, owner: Type) -> ComputedVar[RETURN_TYPE]: ...
 
     @overload
     def __get__(self, instance: BaseState, owner: Type) -> RETURN_TYPE: ...
@@ -1770,7 +1768,7 @@ class ImmutableComputedVar(Var[RETURN_TYPE]):
                     )
                 # recurse into property fget functions
                 elif isinstance(ref_obj, property) and not isinstance(
-                    ref_obj, ImmutableComputedVar
+                    ref_obj, ComputedVar
                 ):
                     d.update(
                         self._deps(
@@ -1838,7 +1836,7 @@ class ImmutableComputedVar(Var[RETURN_TYPE]):
         return self._fget
 
 
-class DynamicRouteVar(ImmutableComputedVar[Union[str, List[str]]]):
+class DynamicRouteVar(ComputedVar[Union[str, List[str]]]):
     """A ComputedVar that represents a dynamic route."""
 
     pass
@@ -1849,7 +1847,7 @@ if TYPE_CHECKING:
 
 
 @overload
-def immutable_computed_var(
+def computed_var(
     fget: None = None,
     initial_value: Any | types.Unset = types.Unset(),
     cache: bool = False,
@@ -1858,13 +1856,11 @@ def immutable_computed_var(
     interval: Optional[Union[datetime.timedelta, int]] = None,
     backend: bool | None = None,
     **kwargs,
-) -> Callable[
-    [Callable[[BASE_STATE], RETURN_TYPE]], ImmutableComputedVar[RETURN_TYPE]
-]: ...
+) -> Callable[[Callable[[BASE_STATE], RETURN_TYPE]], ComputedVar[RETURN_TYPE]]: ...
 
 
 @overload
-def immutable_computed_var(
+def computed_var(
     fget: Callable[[BASE_STATE], RETURN_TYPE],
     initial_value: RETURN_TYPE | types.Unset = types.Unset(),
     cache: bool = False,
@@ -1873,10 +1869,10 @@ def immutable_computed_var(
     interval: Optional[Union[datetime.timedelta, int]] = None,
     backend: bool | None = None,
     **kwargs,
-) -> ImmutableComputedVar[RETURN_TYPE]: ...
+) -> ComputedVar[RETURN_TYPE]: ...
 
 
-def immutable_computed_var(
+def computed_var(
     fget: Callable[[BASE_STATE], Any] | None = None,
     initial_value: Any | types.Unset = types.Unset(),
     cache: bool = False,
@@ -1885,9 +1881,7 @@ def immutable_computed_var(
     interval: Optional[Union[datetime.timedelta, int]] = None,
     backend: bool | None = None,
     **kwargs,
-) -> (
-    ImmutableComputedVar | Callable[[Callable[[BASE_STATE], Any]], ImmutableComputedVar]
-):
+) -> ComputedVar | Callable[[Callable[[BASE_STATE], Any]], ComputedVar]:
     """A ComputedVar decorator with or without kwargs.
 
     Args:
@@ -1914,10 +1908,10 @@ def immutable_computed_var(
         raise VarDependencyError("Cannot track dependencies without caching.")
 
     if fget is not None:
-        return ImmutableComputedVar(fget, cache=cache)
+        return ComputedVar(fget, cache=cache)
 
-    def wrapper(fget: Callable[[BASE_STATE], Any]) -> ImmutableComputedVar:
-        return ImmutableComputedVar(
+    def wrapper(fget: Callable[[BASE_STATE], Any]) -> ComputedVar:
+        return ComputedVar(
             fget,
             initial_value=initial_value,
             cache=cache,

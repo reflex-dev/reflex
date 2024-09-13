@@ -35,10 +35,10 @@ from sqlalchemy.orm import DeclarativeBase
 
 from reflex.config import get_config
 from reflex.vars.base import (
+    ComputedVar,
     DynamicRouteVar,
-    ImmutableComputedVar,
     Var,
-    immutable_computed_var,
+    computed_var,
     is_computed_var,
 )
 
@@ -76,7 +76,7 @@ if TYPE_CHECKING:
 
 
 Delta = Dict[str, Any]
-var = immutable_computed_var
+var = computed_var
 
 
 # If the state is this large, it's considered a performance issue.
@@ -315,7 +315,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     base_vars: ClassVar[Dict[str, Var]] = {}
 
     # The computed vars of the class.
-    computed_vars: ClassVar[Dict[str, ImmutableComputedVar]] = {}
+    computed_vars: ClassVar[Dict[str, ComputedVar]] = {}
 
     # Vars inherited by the parent state.
     inherited_vars: ClassVar[Dict[str, Var]] = {}
@@ -428,7 +428,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return f"{self.__class__.__name__}({self.dict()})"
 
     @classmethod
-    def _get_computed_vars(cls) -> list[ImmutableComputedVar]:
+    def _get_computed_vars(cls) -> list[ComputedVar]:
         """Helper function to get all computed vars of a instance.
 
         Returns:

@@ -12,10 +12,10 @@ from reflex.state import BaseState
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import (
-    ImmutableComputedVar,
+    ComputedVar,
     LiteralVar,
     Var,
-    immutable_computed_var,
+    computed_var,
     var_operation,
     var_operation_return,
 )
@@ -64,7 +64,7 @@ def ParentState(TestObj):
         foo: int
         bar: int
 
-        @immutable_computed_var
+        @computed_var
         def var_without_annotation(self):
             return TestObj
 
@@ -74,7 +74,7 @@ def ParentState(TestObj):
 @pytest.fixture
 def ChildState(ParentState, TestObj):
     class ChildState(ParentState):
-        @immutable_computed_var
+        @computed_var
         def var_without_annotation(self):
             """This shadows ParentState.var_without_annotation.
 
@@ -89,7 +89,7 @@ def ChildState(ParentState, TestObj):
 @pytest.fixture
 def GrandChildState(ChildState, TestObj):
     class GrandChildState(ChildState):
-        @immutable_computed_var
+        @computed_var
         def var_without_annotation(self):
             """This shadows ChildState.var_without_annotation.
 
@@ -104,7 +104,7 @@ def GrandChildState(ChildState, TestObj):
 @pytest.fixture
 def StateWithAnyVar(TestObj):
     class StateWithAnyVar(BaseState):
-        @immutable_computed_var
+        @computed_var
         def var_without_annotation(self) -> typing.Any:
             return TestObj
 
@@ -114,7 +114,7 @@ def StateWithAnyVar(TestObj):
 @pytest.fixture
 def StateWithCorrectVarAnnotation():
     class StateWithCorrectVarAnnotation(BaseState):
-        @immutable_computed_var
+        @computed_var
         def var_with_annotation(self) -> str:
             return "Correct annotation"
 
@@ -124,7 +124,7 @@ def StateWithCorrectVarAnnotation():
 @pytest.fixture
 def StateWithWrongVarAnnotation(TestObj):
     class StateWithWrongVarAnnotation(BaseState):
-        @immutable_computed_var
+        @computed_var
         def var_with_annotation(self) -> str:
             return TestObj
 
@@ -134,7 +134,7 @@ def StateWithWrongVarAnnotation(TestObj):
 @pytest.fixture
 def StateWithInitialComputedVar():
     class StateWithInitialComputedVar(BaseState):
-        @immutable_computed_var(initial_value="Initial value")
+        @computed_var(initial_value="Initial value")
         def var_with_initial_value(self) -> str:
             return "Runtime value"
 
@@ -144,7 +144,7 @@ def StateWithInitialComputedVar():
 @pytest.fixture
 def ChildWithInitialComputedVar(StateWithInitialComputedVar):
     class ChildWithInitialComputedVar(StateWithInitialComputedVar):
-        @immutable_computed_var(initial_value="Initial value")
+        @computed_var(initial_value="Initial value")
         def var_with_initial_value_child(self) -> str:
             return "Runtime value"
 
@@ -154,7 +154,7 @@ def ChildWithInitialComputedVar(StateWithInitialComputedVar):
 @pytest.fixture
 def StateWithRuntimeOnlyVar():
     class StateWithRuntimeOnlyVar(BaseState):
-        @immutable_computed_var(initial_value=None)
+        @computed_var(initial_value=None)
         def var_raises_at_runtime(self) -> str:
             raise ValueError("So nicht, mein Freund")
 
@@ -164,7 +164,7 @@ def StateWithRuntimeOnlyVar():
 @pytest.fixture
 def ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
     class ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
-        @immutable_computed_var(initial_value="Initial value")
+        @computed_var(initial_value="Initial value")
         def var_raises_at_runtime_child(self) -> str:
             raise ValueError("So nicht, mein Freund")
 
@@ -512,7 +512,7 @@ def test_var_replace_with_invalid_kwargs(var):
 
 
 def test_computed_var_replace_with_invalid_kwargs():
-    @immutable_computed_var(initial_value=1)
+    @computed_var(initial_value=1)
     def test_var(state) -> int:
         return 1
 
@@ -1704,11 +1704,11 @@ def cv_fget(state: BaseState) -> int:
     [
         (["a"], {"a"}),
         (["b"], {"b"}),
-        ([ImmutableComputedVar(fget=cv_fget)], {"cv_fget"}),
+        ([ComputedVar(fget=cv_fget)], {"cv_fget"}),
     ],
 )
 def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
-    @immutable_computed_var(
+    @computed_var(
         deps=deps,
         cache=True,
     )
@@ -1729,7 +1729,7 @@ def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
 def test_invalid_computed_var_deps(deps: List):
     with pytest.raises(TypeError):
 
-        @immutable_computed_var(
+        @computed_var(
             deps=deps,
             cache=True,
         )
