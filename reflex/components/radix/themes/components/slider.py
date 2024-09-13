@@ -5,8 +5,7 @@ from typing import List, Literal, Optional, Union
 from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -89,7 +88,7 @@ class Slider(RadixThemesComponent):
         """
         default_value = props.pop("default_value", [50])
 
-        if isinstance(default_value, ImmutableVar):
+        if isinstance(default_value, Var):
             if issubclass(default_value._var_type, (int, float)):
                 default_value = [default_value]
 

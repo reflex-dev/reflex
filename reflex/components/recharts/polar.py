@@ -7,8 +7,7 @@ from typing import Any, Dict, List, Union
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar, LiteralVar
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
 
 from .recharts import (
     LiteralAnimationEasing,
@@ -78,7 +77,7 @@ class Pie(Recharts):
     # Fill color
     fill: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 3))
 
-    def get_event_triggers(self) -> dict[str, Union[ImmutableVar, Any]]:
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -175,7 +174,7 @@ class RadialBar(Recharts):
     # Valid children components
     _valid_children: List[str] = ["Cell", "LabelList"]
 
-    def get_event_triggers(self) -> dict[str, Union[ImmutableVar, Any]]:
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -348,7 +347,7 @@ class PolarRadiusAxis(Recharts):
     # The stroke color of axis
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 10))
 
-    def get_event_triggers(self) -> dict[str, Union[ImmutableVar, Any]]:
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:

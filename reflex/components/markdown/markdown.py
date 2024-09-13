@@ -17,25 +17,25 @@ from reflex.components.radix.themes.typography.heading import Heading
 from reflex.components.radix.themes.typography.link import Link
 from reflex.components.radix.themes.typography.text import Text
 from reflex.components.tags.tag import Tag
-from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
+from reflex.vars.base import LiteralVar, Var
 
 # Special vars used in the component map.
-_CHILDREN = ImmutableVar.create_safe("children")
-_PROPS = ImmutableVar.create_safe("...props")
-_PROPS_IN_TAG = ImmutableVar.create_safe("{...props}")
-_MOCK_ARG = ImmutableVar.create_safe("")
+_CHILDREN = Var(_js_expr="children", _var_type=str)
+_PROPS = Var(_js_expr="...props")
+_PROPS_IN_TAG = Var(_js_expr="{...props}")
+_MOCK_ARG = Var(_js_expr="", _var_type=str)
 
 # Special remark plugins.
-_REMARK_MATH = ImmutableVar.create_safe("remarkMath")
-_REMARK_GFM = ImmutableVar.create_safe("remarkGfm")
-_REMARK_UNWRAP_IMAGES = ImmutableVar.create_safe("remarkUnwrapImages")
+_REMARK_MATH = Var(_js_expr="remarkMath")
+_REMARK_GFM = Var(_js_expr="remarkGfm")
+_REMARK_UNWRAP_IMAGES = Var(_js_expr="remarkUnwrapImages")
 _REMARK_PLUGINS = LiteralVar.create([_REMARK_MATH, _REMARK_GFM, _REMARK_UNWRAP_IMAGES])
 
 # Special rehype plugins.
-_REHYPE_KATEX = ImmutableVar.create_safe("rehypeKatex")
-_REHYPE_RAW = ImmutableVar.create_safe("rehypeRaw")
+_REHYPE_KATEX = Var(_js_expr="rehypeKatex")
+_REHYPE_RAW = Var(_js_expr="rehypeRaw")
 _REHYPE_PLUGINS = LiteralVar.create([_REHYPE_KATEX, _REHYPE_RAW])
 
 # These tags do NOT get props passed to them
@@ -99,8 +99,7 @@ class Markdown(Component):
             The markdown component.
         """
         assert (
-            len(children) == 1
-            and types._isinstance(children[0], Union[str, ImmutableVar])
+            len(children) == 1 and types._isinstance(children[0], Union[str, Var])
         ), "Markdown component must have exactly one child containing the markdown source."
 
         # Update the base component map with the custom component map.
@@ -155,19 +154,19 @@ class Markdown(Component):
             {
                 "": "katex/dist/katex.min.css",
                 "remark-math@5.1.1": ImportVar(
-                    tag=_REMARK_MATH._var_name, is_default=True
+                    tag=_REMARK_MATH._js_expr, is_default=True
                 ),
                 "remark-gfm@3.0.1": ImportVar(
-                    tag=_REMARK_GFM._var_name, is_default=True
+                    tag=_REMARK_GFM._js_expr, is_default=True
                 ),
                 "remark-unwrap-images@4.0.0": ImportVar(
-                    tag=_REMARK_UNWRAP_IMAGES._var_name, is_default=True
+                    tag=_REMARK_UNWRAP_IMAGES._js_expr, is_default=True
                 ),
                 "rehype-katex@6.0.3": ImportVar(
-                    tag=_REHYPE_KATEX._var_name, is_default=True
+                    tag=_REHYPE_KATEX._js_expr, is_default=True
                 ),
                 "rehype-raw@6.1.1": ImportVar(
-                    tag=_REHYPE_RAW._var_name, is_default=True
+                    tag=_REHYPE_RAW._js_expr, is_default=True
                 ),
             },
             *[
@@ -205,9 +204,7 @@ class Markdown(Component):
         # If the children are set as a prop, don't pass them as children.
         children_prop = props.pop("children", None)
         if children_prop is not None:
-            special_props.append(
-                ImmutableVar.create_safe(f"children={{{str(children_prop)}}}")
-            )
+            special_props.append(Var(_js_expr=f"children={{{str(children_prop)}}}"))
             children = []
         # Get the component.
         component = self.component_map[tag](*children, **props).set(
@@ -227,22 +224,22 @@ class Markdown(Component):
         """
         return str(self.get_component(tag, **props)).replace("\n", "")
 
-    def format_component_map(self) -> dict[str, ImmutableVar]:
+    def format_component_map(self) -> dict[str, Var]:
         """Format the component map for rendering.
 
         Returns:
             The formatted component map.
         """
         components = {
-            tag: ImmutableVar.create_safe(
-                f"(({{node, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => ({self.format_component(tag)}))"
+            tag: Var(
+                _js_expr=f"(({{node, {_CHILDREN._js_expr}, {_PROPS._js_expr}}}) => ({self.format_component(tag)}))"
             )
             for tag in self.component_map
         }
 
         # Separate out inline code and code blocks.
-        components["code"] = ImmutableVar.create_safe(
-            f"""(({{node, inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
+        components["code"] = Var(
+            _js_expr=f"""(({{node, inline, className, {_CHILDREN._js_expr}, {_PROPS._js_expr}}}) => {{
     const match = (className || '').match(/language-(?<lang>.*)/);
     const language = match ? match[1] : '';
     if (language) {{
@@ -258,7 +255,7 @@ class Markdown(Component):
     return inline ? (
         {self.format_component("code")}
     ) : (
-        {self.format_component("codeblock", language=ImmutableVar.create_safe("language"))}
+        {self.format_component("codeblock", language=Var(_js_expr="language", _var_type=str))}
     );
       }})""".replace("\n", " ")
         )
@@ -298,9 +295,7 @@ class Markdown(Component):
             .add_props(
                 remark_plugins=_REMARK_PLUGINS,
                 rehype_plugins=_REHYPE_PLUGINS,
-                components=ImmutableVar.create_safe(
-                    f"{self._get_component_map_name()}()"
-                ),
+                components=Var(_js_expr=f"{self._get_component_map_name()}()"),
             )
             .remove_props("componentMap", "componentMapHash")
         )

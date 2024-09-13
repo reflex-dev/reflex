@@ -12,7 +12,6 @@ from . import compiler as compiler
 from . import components as components
 from . import config as config
 from . import event as event
-from . import ivars as ivars
 from . import model as model
 from . import style as style
 from . import testing as testing

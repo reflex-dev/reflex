@@ -7,8 +7,7 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import EventHandler
-from reflex.ivars.base import LiteralVar
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
 
 from ..base import (
     LiteralAccentColor,

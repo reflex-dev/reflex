@@ -18,56 +18,52 @@ from reflex.components.radix.themes.typography.text import Text
 from reflex.components.sonner.toast import Toaster, ToastProps
 from reflex.constants import Dirs, Hooks, Imports
 from reflex.constants.compiler import CompileVars
-from reflex.ivars.base import ImmutableVar, LiteralVar
-from reflex.ivars.function import FunctionStringVar
-from reflex.ivars.number import BooleanVar
-from reflex.ivars.sequence import LiteralArrayVar
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
+from reflex.vars.function import FunctionStringVar
+from reflex.vars.number import BooleanVar
+from reflex.vars.sequence import LiteralArrayVar
 
 connect_error_var_data: VarData = VarData(  # type: ignore
     imports=Imports.EVENTS,
     hooks={Hooks.EVENTS: None},
 )
 
-connect_errors: Var = ImmutableVar.create_safe(
-    value=CompileVars.CONNECT_ERROR,
+connect_errors = Var(
+    _js_expr=CompileVars.CONNECT_ERROR, _var_data=connect_error_var_data
+)
+
+connection_error = Var(
+    _js_expr="((connectErrors.length > 0) ? connectErrors[connectErrors.length - 1].message : '')",
     _var_data=connect_error_var_data,
 )
 
-connection_error: Var = ImmutableVar.create_safe(
-    value="((connectErrors.length > 0) ? connectErrors[connectErrors.length - 1].message : '')",
-    _var_data=connect_error_var_data,
+connection_errors_count = Var(
+    _js_expr="connectErrors.length", _var_data=connect_error_var_data
 )
 
-connection_errors_count: Var = ImmutableVar.create_safe(
-    value="connectErrors.length",
-    _var_data=connect_error_var_data,
-)
-
-has_connection_errors: Var = ImmutableVar.create_safe(
-    value="(connectErrors.length > 0)",
-    _var_data=connect_error_var_data,
+has_connection_errors = Var(
+    _js_expr="(connectErrors.length > 0)", _var_data=connect_error_var_data
 ).to(BooleanVar)
 
-has_too_many_connection_errors: Var = ImmutableVar.create_safe(
-    value="(connectErrors.length >= 2)",
-    _var_data=connect_error_var_data,
+has_too_many_connection_errors = Var(
+    _js_expr="(connectErrors.length >= 2)", _var_data=connect_error_var_data
 ).to(BooleanVar)
 
 
-class WebsocketTargetURL(ImmutableVar):
+class WebsocketTargetURL(Var):
     """A component that renders the websocket target URL."""
 
     @classmethod
-    def create(cls) -> ImmutableVar:
+    def create(cls) -> Var:
         """Create a websocket target URL component.
 
         Returns:
             The websocket target URL component.
         """
-        return ImmutableVar(
-            _var_name="getBackendURL(env.EVENT).href",
+        return Var(
+            _js_expr="getBackendURL(env.EVENT).href",
             _var_data=VarData(
                 imports={
                     "/env.json": [ImportVar(tag="env", is_default=True)],
@@ -95,7 +91,7 @@ def default_connection_error() -> list[str | Var | Component]:
 class ConnectionToaster(Toaster):
     """A connection toaster component."""
 
-    def add_hooks(self) -> list[str | ImmutableVar]:
+    def add_hooks(self) -> list[str | Var]:
         """Add the hooks for the connection toaster.
 
         Returns:
@@ -125,8 +121,8 @@ class ConnectionToaster(Toaster):
                 ),
             ).call(
                 # TODO: This breaks the assumption that Vars are JS expressions
-                ImmutableVar.create_safe(
-                    f"""
+                Var(
+                    _js_expr=f"""
 () => {{
     if ({str(has_too_many_connection_errors)}) {{
         if (!userDismissed) {{
@@ -238,7 +234,7 @@ class WifiOffPulse(Icon):
         Returns:
             The icon component with default props applied.
         """
-        pulse_var = ImmutableVar.create("pulse")
+        pulse_var = Var(_js_expr="pulse")
         return super().create(
             "wifi_off",
             color=props.pop("color", "crimson"),

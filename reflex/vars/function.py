@@ -7,21 +7,21 @@ import sys
 from typing import Any, Callable, ClassVar, Optional, Tuple, Type, Union
 
 from reflex.utils.types import GenericType
-from reflex.vars import VarData
 
 from .base import (
     CachedVarOperation,
-    ImmutableVar,
     LiteralVar,
     ToOperation,
+    Var,
+    VarData,
     cached_property_no_lock,
 )
 
 
-class FunctionVar(ImmutableVar[Callable]):
+class FunctionVar(Var[Callable]):
     """Base class for immutable function vars."""
 
-    def __call__(self, *args: ImmutableVar | Any) -> ArgsFunctionOperation:
+    def __call__(self, *args: Var | Any) -> ArgsFunctionOperation:
         """Call the function with the given arguments.
 
         Args:
@@ -32,10 +32,10 @@ class FunctionVar(ImmutableVar[Callable]):
         """
         return ArgsFunctionOperation.create(
             ("...args",),
-            VarOperationCall.create(self, *args, ImmutableVar.create_safe("...args")),
+            VarOperationCall.create(self, *args, Var(_js_expr="...args")),
         )
 
-    def call(self, *args: ImmutableVar | Any) -> VarOperationCall:
+    def call(self, *args: Var | Any) -> VarOperationCall:
         """Call the function with the given arguments.
 
         Args:
@@ -67,7 +67,7 @@ class FunctionStringVar(FunctionVar):
             The function var.
         """
         return cls(
-            _var_name=func,
+            _js_expr=func,
             _var_type=_var_type,
             _var_data=_var_data,
         )
@@ -78,13 +78,11 @@ class FunctionStringVar(FunctionVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class VarOperationCall(CachedVarOperation, ImmutableVar):
+class VarOperationCall(CachedVarOperation, Var):
     """Base class for immutable vars that are the result of a function call."""
 
     _func: Optional[FunctionVar] = dataclasses.field(default=None)
-    _args: Tuple[Union[ImmutableVar, Any], ...] = dataclasses.field(
-        default_factory=tuple
-    )
+    _args: Tuple[Union[Var, Any], ...] = dataclasses.field(default_factory=tuple)
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -112,7 +110,7 @@ class VarOperationCall(CachedVarOperation, ImmutableVar):
     def create(
         cls,
         func: FunctionVar,
-        *args: ImmutableVar | Any,
+        *args: Var | Any,
         _var_type: GenericType = Any,
         _var_data: VarData | None = None,
     ) -> VarOperationCall:
@@ -127,7 +125,7 @@ class VarOperationCall(CachedVarOperation, ImmutableVar):
             The function call var.
         """
         return cls(
-            _var_name="",
+            _js_expr="",
             _var_type=_var_type,
             _var_data=_var_data,
             _func=func,
@@ -144,7 +142,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
     """Base class for immutable function defined via arguments and return expression."""
 
     _args_names: Tuple[str, ...] = dataclasses.field(default_factory=tuple)
-    _return_expr: Union[ImmutableVar, Any] = dataclasses.field(default=None)
+    _return_expr: Union[Var, Any] = dataclasses.field(default=None)
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -159,7 +157,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
     def create(
         cls,
         args_names: Tuple[str, ...],
-        return_expr: ImmutableVar | Any,
+        return_expr: Var | Any,
         _var_type: GenericType = Callable,
         _var_data: VarData | None = None,
     ) -> ArgsFunctionOperation:
@@ -174,7 +172,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
             The function var.
         """
         return cls(
-            _var_name="",
+            _js_expr="",
             _var_type=_var_type,
             _var_data=_var_data,
             _args_names=args_names,
@@ -190,9 +188,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
 class ToFunctionOperation(ToOperation, FunctionVar):
     """Base class of converting a var to a function."""
 
-    _original: ImmutableVar = dataclasses.field(
-        default_factory=lambda: LiteralVar.create(None)
-    )
+    _original: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
 
     _default_var_type: ClassVar[GenericType] = Callable
 

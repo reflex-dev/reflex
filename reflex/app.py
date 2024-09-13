@@ -824,7 +824,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             for dep in deps:
                 if dep not in state.vars and dep not in state.backend_vars:
                     raise exceptions.VarDependencyError(
-                        f"ComputedVar {var._var_name} on state {state.__name__} has an invalid dependency {dep}"
+                        f"ComputedVar {var._js_expr} on state {state.__name__} has an invalid dependency {dep}"
                     )
 
         for substate in state.class_subclasses:
@@ -1097,7 +1097,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             if delta:
                 # When the state is modified reset dirty status and emit the delta to the frontend.
                 state._clean()
-                print(dir(state.router))
                 await self.event_namespace.emit_update(
                     update=StateUpdate(delta=delta),
                     sid=state.router.session.session_id,

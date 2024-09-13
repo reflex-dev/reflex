@@ -17,13 +17,13 @@ from reflex.components.component import (
 from reflex.components.radix.themes.layout.box import Box
 from reflex.constants import EventTriggers
 from reflex.event import EventChain, EventHandler, parse_args_spec
-from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
 from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
 
 
 @pytest.fixture
@@ -275,19 +275,19 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text",
-            ImmutableVar(_var_name="hello", _var_type=Optional[str]),
+            Var(_js_expr="hello", _var_type=Optional[str]),
             None,
             id="text-optional",
         ),
         pytest.param(
             "text",
-            ImmutableVar(_var_name="hello", _var_type=Union[str, None]),
+            Var(_js_expr="hello", _var_type=Union[str, None]),
             None,
             id="text-union-str-none",
         ),
         pytest.param(
             "text",
-            ImmutableVar(_var_name="hello", _var_type=Union[None, str]),
+            Var(_js_expr="hello", _var_type=Union[None, str]),
             None,
             id="text-union-none-str",
         ),
@@ -305,19 +305,19 @@ def test_create_component(component1):
         ),
         pytest.param(
             "number",
-            ImmutableVar(_var_name="1", _var_type=Optional[int]),
+            Var(_js_expr="1", _var_type=Optional[int]),
             None,
             id="number-optional",
         ),
         pytest.param(
             "number",
-            ImmutableVar(_var_name="1", _var_type=Union[int, None]),
+            Var(_js_expr="1", _var_type=Union[int, None]),
             None,
             id="number-union-int-none",
         ),
         pytest.param(
             "number",
-            ImmutableVar(_var_name="1", _var_type=Union[None, int]),
+            Var(_js_expr="1", _var_type=Union[None, int]),
             None,
             id="number-union-none-int",
         ),
@@ -341,37 +341,37 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text_or_number",
-            ImmutableVar(_var_name="hello", _var_type=Optional[str]),
+            Var(_js_expr="hello", _var_type=Optional[str]),
             None,
             id="text_or_number-optional-str",
         ),
         pytest.param(
             "text_or_number",
-            ImmutableVar(_var_name="hello", _var_type=Union[str, None]),
+            Var(_js_expr="hello", _var_type=Union[str, None]),
             None,
             id="text_or_number-union-str-none",
         ),
         pytest.param(
             "text_or_number",
-            ImmutableVar(_var_name="hello", _var_type=Union[None, str]),
+            Var(_js_expr="hello", _var_type=Union[None, str]),
             None,
             id="text_or_number-union-none-str",
         ),
         pytest.param(
             "text_or_number",
-            ImmutableVar(_var_name="1", _var_type=Optional[int]),
+            Var(_js_expr="1", _var_type=Optional[int]),
             None,
             id="text_or_number-optional-int",
         ),
         pytest.param(
             "text_or_number",
-            ImmutableVar(_var_name="1", _var_type=Union[int, None]),
+            Var(_js_expr="1", _var_type=Union[int, None]),
             None,
             id="text_or_number-union-int-none",
         ),
         pytest.param(
             "text_or_number",
-            ImmutableVar(_var_name="1", _var_type=Union[None, int]),
+            Var(_js_expr="1", _var_type=Union[None, int]),
             None,
             id="text_or_number-union-none-int",
         ),
@@ -383,7 +383,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text_or_number",
-            ImmutableVar(_var_name="hello", _var_type=Optional[Union[str, int]]),
+            Var(_js_expr="hello", _var_type=Optional[Union[str, int]]),
             None,
             id="text_or_number-optional-union-str-int",
         ),
@@ -392,7 +392,7 @@ def test_create_component(component1):
 def test_create_component_prop_validation(
     component1: Type[Component],
     prop_name: str,
-    var: Union[ImmutableVar, str, int],
+    var: Union[Var, str, int],
     expected: Type[Exception],
 ):
     """Test that component props are validated correctly.
@@ -1177,9 +1177,9 @@ TEST_VAR = LiteralVar.create("test")._replace(
     )
 )
 FORMATTED_TEST_VAR = LiteralVar.create(f"foo{TEST_VAR}bar")
-STYLE_VAR = TEST_VAR._replace(_var_name="style")
+STYLE_VAR = TEST_VAR._replace(_js_expr="style")
 EVENT_CHAIN_VAR = TEST_VAR._replace(_var_type=EventChain)
-ARG_VAR = ImmutableVar.create_safe("arg")
+ARG_VAR = Var(_js_expr="arg")
 
 TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "test"}})._replace(
     merge_var_data=TEST_VAR._var_data
@@ -1397,12 +1397,12 @@ class EventState(rx.State):
     ),
 )
 def test_get_vars(component, exp_vars):
-    comp_vars = sorted(component._get_vars(), key=lambda v: v._var_name)
+    comp_vars = sorted(component._get_vars(), key=lambda v: v._js_expr)
     assert len(comp_vars) == len(exp_vars)
     print(comp_vars, exp_vars)
     for comp_var, exp_var in zip(
         comp_vars,
-        sorted(exp_vars, key=lambda v: v._var_name),
+        sorted(exp_vars, key=lambda v: v._js_expr),
     ):
         # print(str(comp_var), str(exp_var))
         # print(comp_var._get_all_var_data(), exp_var._get_all_var_data())
@@ -2028,8 +2028,8 @@ def test_component_add_hooks_var():
             return [
                 "const hook3 = useRef(null)",
                 "const hook1 = 42",
-                ImmutableVar.create(
-                    "useEffect(() => () => {}, [])",
+                Var(
+                    _js_expr="useEffect(() => () => {}, [])",
                     _var_data=VarData(
                         hooks={
                             "const hook2 = 43": None,
@@ -2038,11 +2038,9 @@ def test_component_add_hooks_var():
                         imports={"react": [ImportVar(tag="useEffect")]},
                     ),
                 ),
-                ImmutableVar.create(
-                    "const hook3 = useRef(null)",
-                    _var_data=VarData(
-                        imports={"react": [ImportVar(tag="useRef")]},
-                    ),
+                Var(
+                    _js_expr="const hook3 = useRef(null)",
+                    _var_data=VarData(imports={"react": [ImportVar(tag="useRef")]}),
                 ),
             ]
 
@@ -2151,9 +2149,7 @@ class TriggerState(rx.State):
                 rx.text("random text", on_click=TriggerState.do_something),
                 rx.text(
                     "random text",
-                    on_click=ImmutableVar(
-                        _var_name="toggleColorMode", _var_type=EventChain
-                    ),
+                    on_click=Var(_js_expr="toggleColorMode", _var_type=EventChain),
                 ),
             ),
             True,
@@ -2163,9 +2159,7 @@ class TriggerState(rx.State):
                 rx.text("random text", on_click=rx.console_log("log")),
                 rx.text(
                     "random text",
-                    on_click=ImmutableVar(
-                        _var_name="toggleColorMode", _var_type=EventChain
-                    ),
+                    on_click=Var(_js_expr="toggleColorMode", _var_type=EventChain),
                 ),
             ),
             False,

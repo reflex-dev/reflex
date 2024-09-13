@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
 from reflex import constants
 from reflex.utils import exceptions, types
-from reflex.vars import Var
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
@@ -299,9 +298,9 @@ def format_route(route: str, format_case=True) -> str:
 
 
 def format_match(
-    cond: str | ImmutableVar,
-    match_cases: List[List[ImmutableVar]],
-    default: ImmutableVar,
+    cond: str | Var,
+    match_cases: List[List[Var]],
+    default: Var,
 ) -> str:
     """Format a match expression whose return type is a Var.
 
@@ -333,7 +332,7 @@ def format_match(
 
 
 def format_prop(
-    prop: Union[ImmutableVar, EventChain, ComponentStyle, str],
+    prop: Union[Var, EventChain, ComponentStyle, str],
 ) -> Union[int, float, str]:
     """Format a prop.
 
@@ -349,12 +348,12 @@ def format_prop(
     """
     # import here to avoid circular import.
     from reflex.event import EventChain
-    from reflex.ivars import ImmutableVar
     from reflex.utils import serializers
+    from reflex.vars import Var
 
     try:
         # Handle var props.
-        if isinstance(prop, ImmutableVar):
+        if isinstance(prop, Var):
             return str(prop)
 
         # Handle event props.
@@ -407,14 +406,14 @@ def format_props(*single_props, **key_value_props) -> list[str]:
         The formatted props list.
     """
     # Format all the props.
-    from reflex.ivars.base import ImmutableVar, LiteralVar
+    from reflex.vars.base import LiteralVar, Var
 
     return [
         (
             f"{name}={format_prop(prop)}"
-            if isinstance(prop, ImmutableVar) and not isinstance(prop, ImmutableVar)
+            if isinstance(prop, Var) and not isinstance(prop, Var)
             else (
-                f"{name}={{{format_prop(prop if isinstance(prop, ImmutableVar) else LiteralVar.create(prop))}}}"
+                f"{name}={{{format_prop(prop if isinstance(prop, Var) else LiteralVar.create(prop))}}}"
             )
         )
         for name, prop in sorted(key_value_props.items())
@@ -422,7 +421,7 @@ def format_props(*single_props, **key_value_props) -> list[str]:
     ] + [
         (
             str(prop)
-            if isinstance(prop, ImmutableVar) and not isinstance(prop, ImmutableVar)
+            if isinstance(prop, Var) and not isinstance(prop, Var)
             else f"{str(LiteralVar.create(prop))}"
         )
         for prop in single_props
@@ -487,10 +486,10 @@ def format_event(event_spec: EventSpec) -> str:
         [
             ":".join(
                 (
-                    name._var_name,
+                    name._js_expr,
                     (
                         wrap(
-                            json.dumps(val._var_name).strip('"').replace("`", "\\`"),
+                            json.dumps(val._js_expr).strip('"').replace("`", "\\`"),
                             "`",
                         )
                         if val._var_is_string
@@ -512,7 +511,7 @@ def format_event(event_spec: EventSpec) -> str:
 
 
 if TYPE_CHECKING:
-    from reflex.ivars import ImmutableVar
+    from reflex.vars import Var
 
 
 def format_queue_events(
@@ -524,7 +523,7 @@ def format_queue_events(
         | None
     ) = None,
     args_spec: Optional[ArgsSpec] = None,
-) -> ImmutableVar[EventChain]:
+) -> Var[EventChain]:
     """Format a list of event handler / event spec as a javascript callback.
 
     The resulting code can be passed to interfaces that expect a callback
@@ -550,10 +549,10 @@ def format_queue_events(
         call_event_fn,
         call_event_handler,
     )
-    from reflex.ivars import FunctionVar, ImmutableVar
+    from reflex.vars import FunctionVar, Var
 
     if not events:
-        return ImmutableVar("(() => null)").to(FunctionVar, EventChain)  # type: ignore
+        return Var("(() => null)").to(FunctionVar, EventChain)  # type: ignore
 
     # If no spec is provided, the function will take no arguments.
     def _default_args_spec():
@@ -578,7 +577,7 @@ def format_queue_events(
             specs = [call_event_handler(spec, args_spec or _default_args_spec)]
         elif isinstance(spec, type(lambda: None)):
             specs = call_event_fn(spec, args_spec or _default_args_spec)  # type: ignore
-            if isinstance(specs, ImmutableVar):
+            if isinstance(specs, Var):
                 raise ValueError(
                     f"Invalid event spec: {specs}. Expected a list of EventSpecs."
                 )
@@ -586,7 +585,7 @@ def format_queue_events(
 
     # Return the final code snippet, expecting queueEvents, processEvent, and socket to be in scope.
     # Typically this snippet will _only_ run from within an rx.call_script eval context.
-    return ImmutableVar(
+    return Var(
         f"{arg_def} => {{queueEvents([{','.join(payloads)}], {constants.CompileVars.SOCKET}); "
         f"processEvent({constants.CompileVars.SOCKET})}}",
     ).to(FunctionVar, EventChain)  # type: ignore
@@ -736,7 +735,7 @@ def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
     return collapsed
 
 
-def format_array_ref(refs: str, idx: ImmutableVar | None) -> str:
+def format_array_ref(refs: str, idx: Var | None) -> str:
     """Format a ref accessed by array.
 
     Args:
@@ -765,7 +764,7 @@ def format_data_editor_column(col: str | dict):
     Returns:
         The formatted column.
     """
-    from reflex.ivars import ImmutableVar
+    from reflex.vars import Var
 
     if isinstance(col, str):
         return {"title": col, "id": col.lower(), "type": "str"}
@@ -779,7 +778,7 @@ def format_data_editor_column(col: str | dict):
             col["overlayIcon"] = None
         return col
 
-    if isinstance(col, ImmutableVar):
+    if isinstance(col, Var):
         return col
 
     raise ValueError(
@@ -796,9 +795,9 @@ def format_data_editor_cell(cell: Any):
     Returns:
         The formatted cell.
     """
-    from reflex.ivars.base import ImmutableVar
+    from reflex.vars.base import Var
 
     return {
-        "kind": ImmutableVar.create("GridCellKind.Text"),
+        "kind": Var(_js_expr="GridCellKind.Text"),
         "data": cell,
     }
