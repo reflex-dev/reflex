@@ -12,7 +12,7 @@ from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.vars.base import LiteralVar, Var
 
-_CHILDREN = Var(_js_expr="children")
+_CHILDREN = Var(_js_expr="children", _var_type=str)
 _PROPS = Var(_js_expr="...props")
 _PROPS_IN_TAG = Var(_js_expr="{...props}")
 _MOCK_ARG = Var(_js_expr="", _var_type=str)
