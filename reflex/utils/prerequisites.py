@@ -1435,6 +1435,10 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
     Args:
         app_name: The name of the app.
         generation_hash: The generation hash from reflex.build.
+
+    Raises:
+        GeneratedCodeHasNoFunctionDefs: If the fetched code has no function definitions
+            (the refactored reflex code is expected to have at least one root function defined).
     """
     # Download the reflex code for the generation.
     url = constants.Templates.REFLEX_BUILD_CODE_URL.format(
