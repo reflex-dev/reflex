@@ -16,7 +16,7 @@ from typing import (
 )
 
 from reflex.components.tags.tag import Tag
-from reflex.vars import Var, LiteralArrayVar, get_unique_variable_name
+from reflex.vars import LiteralArrayVar, Var, get_unique_variable_name
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
