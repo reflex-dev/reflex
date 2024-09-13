@@ -29,23 +29,51 @@ class Switch(RadixThemesComponent):
         value: Optional[Union[Var[str], str]] = None,
         size: Optional[
             Union[
+                Breakpoints[str, Literal["1", "2", "3"]],
+                Literal["1", "2", "3"],
                 Var[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
                 ],
-                Literal["1", "2", "3"],
-                Breakpoints[str, Literal["1", "2", "3"]],
             ]
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
                 Literal["classic", "surface", "soft"],
+                Var[Literal["classic", "surface", "soft"]],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
                 Var[
                     Literal[
                         "tomato",
@@ -76,40 +104,12 @@ class Switch(RadixThemesComponent):
                         "gray",
                     ]
                 ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "full"]], Literal["none", "small", "full"]
+                Literal["none", "small", "full"], Var[Literal["none", "small", "full"]]
             ]
         ] = None,
         style: Optional[Style] = None,

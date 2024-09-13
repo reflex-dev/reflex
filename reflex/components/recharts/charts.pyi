@@ -90,22 +90,22 @@ class CategoricalChartBase(ChartBase):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         sync_id: Optional[Union[Var[str], str]] = None,
         sync_method: Optional[
-            Union[Var[Literal["index", "value"]], Literal["index", "value"]]
+            Union[Literal["index", "value"], Var[Literal["index", "value"]]]
         ] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
         stack_offset: Optional[
             Union[
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
                 Literal["expand", "none", "wiggle", "silhouette"],
+                Var[Literal["expand", "none", "wiggle", "silhouette"]],
             ]
         ] = None,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -186,27 +186,27 @@ class AreaChart(CategoricalChartBase):
         *children,
         base_value: Optional[
             Union[
+                Literal["dataMin", "dataMax", "auto"],
                 Var[Union[Literal["dataMin", "dataMax", "auto"], int]],
                 int,
-                Literal["dataMin", "dataMax", "auto"],
             ]
         ] = None,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         sync_id: Optional[Union[Var[str], str]] = None,
         sync_method: Optional[
-            Union[Var[Literal["index", "value"]], Literal["index", "value"]]
+            Union[Literal["index", "value"], Var[Literal["index", "value"]]]
         ] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
         stack_offset: Optional[
             Union[
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
                 Literal["expand", "none", "wiggle", "silhouette"],
+                Var[Literal["expand", "none", "wiggle", "silhouette"]],
             ]
         ] = None,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -292,21 +292,21 @@ class BarChart(CategoricalChartBase):
         max_bar_size: Optional[Union[Var[int], int]] = None,
         stack_offset: Optional[
             Union[
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
                 Literal["expand", "none", "wiggle", "silhouette"],
+                Var[Literal["expand", "none", "wiggle", "silhouette"]],
             ]
         ] = None,
         reverse_stack_order: Optional[Union[Var[bool], bool]] = None,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         sync_id: Optional[Union[Var[str], str]] = None,
         sync_method: Optional[
-            Union[Var[Literal["index", "value"]], Literal["index", "value"]]
+            Union[Literal["index", "value"], Var[Literal["index", "value"]]]
         ] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -390,22 +390,22 @@ class LineChart(CategoricalChartBase):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         sync_id: Optional[Union[Var[str], str]] = None,
         sync_method: Optional[
-            Union[Var[Literal["index", "value"]], Literal["index", "value"]]
+            Union[Literal["index", "value"], Var[Literal["index", "value"]]]
         ] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
         stack_offset: Optional[
             Union[
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
                 Literal["expand", "none", "wiggle", "silhouette"],
+                Var[Literal["expand", "none", "wiggle", "silhouette"]],
             ]
         ] = None,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -486,31 +486,31 @@ class ComposedChart(CategoricalChartBase):
         *children,
         base_value: Optional[
             Union[
+                Literal["dataMin", "dataMax", "auto"],
                 Var[Union[Literal["dataMin", "dataMax", "auto"], int]],
                 int,
-                Literal["dataMin", "dataMax", "auto"],
             ]
         ] = None,
         bar_category_gap: Optional[Union[Var[Union[int, str]], int, str]] = None,
         bar_gap: Optional[Union[Var[Union[int, str]], int, str]] = None,
         bar_size: Optional[Union[Var[int], int]] = None,
         reverse_stack_order: Optional[Union[Var[bool], bool]] = None,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         sync_id: Optional[Union[Var[str], str]] = None,
         sync_method: Optional[
-            Union[Var[Literal["index", "value"]], Literal["index", "value"]]
+            Union[Literal["index", "value"], Var[Literal["index", "value"]]]
         ] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
         stack_offset: Optional[
             Union[
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
                 Literal["expand", "none", "wiggle", "silhouette"],
+                Var[Literal["expand", "none", "wiggle", "silhouette"]],
             ]
         ] = None,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -594,7 +594,7 @@ class PieChart(ChartBase):
     def create(  # type: ignore
         cls,
         *children,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
         height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         style: Optional[Style] = None,
@@ -667,8 +667,8 @@ class RadarChart(ChartBase):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         cx: Optional[Union[Var[Union[int, str]], int, str]] = None,
         cy: Optional[Union[Var[Union[int, str]], int, str]] = None,
         start_angle: Optional[Union[Var[int], int]] = None,
@@ -725,8 +725,8 @@ class RadialBarChart(ChartBase):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         cx: Optional[Union[Var[Union[int, str]], int, str]] = None,
         cy: Optional[Union[Var[Union[int, str]], int, str]] = None,
         start_angle: Optional[Union[Var[int], int]] = None,
@@ -818,7 +818,7 @@ class ScatterChart(ChartBase):
     def create(  # type: ignore
         cls,
         *children,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
         height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         style: Optional[Style] = None,
@@ -878,8 +878,8 @@ class FunnelChart(ChartBase):
         cls,
         *children,
         layout: Optional[Union[Var[str], str]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
         height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         style: Optional[Style] = None,
@@ -955,7 +955,7 @@ class Treemap(RechartsCharts):
         *children,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
         height: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
         data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         aspect_ratio: Optional[Union[Var[int], int]] = None,
         is_animation_active: Optional[Union[Var[bool], bool]] = None,
@@ -963,8 +963,8 @@ class Treemap(RechartsCharts):
         animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
             ]
         ] = None,
         style: Optional[Style] = None,

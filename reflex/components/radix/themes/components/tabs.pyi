@@ -26,13 +26,13 @@ class TabsRoot(RadixThemesComponent):
         value: Optional[Union[Var[str], str]] = None,
         orientation: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
-        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
+        dir: Optional[Union[Literal["ltr", "rtl"], Var[Literal["ltr", "rtl"]]]] = None,
         activation_mode: Optional[
-            Union[Var[Literal["automatic", "manual"]], Literal["automatic", "manual"]]
+            Union[Literal["automatic", "manual"], Var[Literal["automatic", "manual"]]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -112,9 +112,9 @@ class TabsList(RadixThemesComponent):
         *children,
         size: Optional[
             Union[
-                Var[Union[Breakpoints[str, Literal["1", "2"]], Literal["1", "2"]]],
-                Literal["1", "2"],
                 Breakpoints[str, Literal["1", "2"]],
+                Literal["1", "2"],
+                Var[Union[Breakpoints[str, Literal["1", "2"]], Literal["1", "2"]]],
             ]
         ] = None,
         loop: Optional[Union[Var[bool], bool]] = None,
@@ -193,6 +193,34 @@ class TabsTrigger(RadixThemesComponent):
         disabled: Optional[Union[Var[bool], bool]] = None,
         color_scheme: Optional[
             Union[
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
                 Var[
                     Literal[
                         "tomato",
@@ -222,34 +250,6 @@ class TabsTrigger(RadixThemesComponent):
                         "bronze",
                         "gray",
                     ]
-                ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
                 ],
             ]
         ] = None,
@@ -405,13 +405,13 @@ class Tabs(ComponentNamespace):
         value: Optional[Union[Var[str], str]] = None,
         orientation: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
-        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
+        dir: Optional[Union[Literal["ltr", "rtl"], Var[Literal["ltr", "rtl"]]]] = None,
         activation_mode: Optional[
-            Union[Var[Literal["automatic", "manual"]], Literal["automatic", "manual"]]
+            Union[Literal["automatic", "manual"], Var[Literal["automatic", "manual"]]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

@@ -19,8 +19,8 @@ class Script(Component):
         src: Optional[Union[Var[str], str]] = None,
         strategy: Optional[
             Union[
-                Var[Literal["afterInteractive", "beforeInteractive", "lazyOnload"]],
                 Literal["afterInteractive", "beforeInteractive", "lazyOnload"],
+                Var[Literal["afterInteractive", "beforeInteractive", "lazyOnload"]],
             ]
         ] = None,
         style: Optional[Style] = None,

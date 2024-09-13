@@ -86,6 +86,14 @@ class Toaster(Component):
         visible_toasts: Optional[Union[Var[int], int]] = None,
         position: Optional[
             Union[
+                Literal[
+                    "top-left",
+                    "top-center",
+                    "top-right",
+                    "bottom-left",
+                    "bottom-center",
+                    "bottom-right",
+                ],
                 Var[
                     Literal[
                         "top-left",
@@ -96,14 +104,6 @@ class Toaster(Component):
                         "bottom-right",
                     ]
                 ],
-                Literal[
-                    "top-left",
-                    "top-center",
-                    "top-right",
-                    "bottom-left",
-                    "bottom-center",
-                    "bottom-right",
-                ],
             ]
         ] = None,
         close_button: Optional[Union[Var[bool], bool]] = None,
@@ -111,9 +111,9 @@ class Toaster(Component):
         dir: Optional[Union[Var[str], str]] = None,
         hotkey: Optional[Union[Var[str], str]] = None,
         invert: Optional[Union[Var[bool], bool]] = None,
-        toast_options: Optional[Union[Var[ToastProps], ToastProps]] = None,
+        toast_options: Optional[Union[ToastProps, Var[ToastProps]]] = None,
         gap: Optional[Union[Var[int], int]] = None,
-        loading_icon: Optional[Union[Var[Icon], Icon]] = None,
+        loading_icon: Optional[Union[Icon, Var[Icon]]] = None,
         pause_when_page_is_hidden: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

@@ -184,7 +184,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 if arg is not type(None)
             ]
             if len(types) > 1:
-                res = ", ".join(types)
+                res = ", ".join(sorted(types))
                 res = f"Union[{res}]"
     elif isinstance(value, str):
         ev = eval(value, type_hint_globals)

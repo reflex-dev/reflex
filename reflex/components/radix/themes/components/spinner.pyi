@@ -22,13 +22,13 @@ class Spinner(RadixLoadingProp, RadixThemesComponent):
         *children,
         size: Optional[
             Union[
+                Breakpoints[str, Literal["1", "2", "3"]],
+                Literal["1", "2", "3"],
                 Var[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
                 ],
-                Literal["1", "2", "3"],
-                Breakpoints[str, Literal["1", "2", "3"]],
             ]
         ] = None,
         loading: Optional[Union[Var[bool], bool]] = None,

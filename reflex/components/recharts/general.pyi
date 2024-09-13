@@ -103,25 +103,37 @@ class Legend(Recharts):
         height: Optional[Union[Var[int], int]] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
         align: Optional[
             Union[
-                Var[Literal["left", "center", "right"]],
                 Literal["left", "center", "right"],
+                Var[Literal["left", "center", "right"]],
             ]
         ] = None,
         vertical_align: Optional[
             Union[
-                Var[Literal["top", "middle", "bottom"]],
                 Literal["top", "middle", "bottom"],
+                Var[Literal["top", "middle", "bottom"]],
             ]
         ] = None,
         icon_size: Optional[Union[Var[int], int]] = None,
         icon_type: Optional[
             Union[
+                Literal[
+                    "line",
+                    "plainline",
+                    "square",
+                    "rect",
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "star",
+                    "triangle",
+                    "wye",
+                ],
                 Var[
                     Literal[
                         "line",
@@ -136,23 +148,11 @@ class Legend(Recharts):
                         "wye",
                     ]
                 ],
-                Literal[
-                    "line",
-                    "plainline",
-                    "square",
-                    "rect",
-                    "circle",
-                    "cross",
-                    "diamond",
-                    "star",
-                    "triangle",
-                    "wye",
-                ],
             ]
         ] = None,
         chart_width: Optional[Union[Var[int], int]] = None,
         chart_height: Optional[Union[Var[int], int]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -233,25 +233,25 @@ class GraphingTooltip(Recharts):
         offset: Optional[Union[Var[int], int]] = None,
         filter_null: Optional[Union[Var[bool], bool]] = None,
         cursor: Optional[
-            Union[Var[Union[Dict[str, Any], bool]], Dict[str, Any], bool]
+            Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
         ] = None,
-        view_box: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        item_style: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        wrapper_style: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        content_style: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        label_style: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        view_box: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
+        item_style: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
+        wrapper_style: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
+        content_style: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
+        label_style: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         allow_escape_view_box: Optional[
-            Union[Var[Dict[str, bool]], Dict[str, bool]]
+            Union[Dict[str, bool], Var[Dict[str, bool]]]
         ] = None,
         active: Optional[Union[Var[bool], bool]] = None,
-        position: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        coordinate: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        position: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
+        coordinate: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         is_animation_active: Optional[Union[Var[bool], bool]] = None,
         animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -336,11 +336,31 @@ class Label(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        view_box: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        view_box: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         value: Optional[Union[Var[str], str]] = None,
         offset: Optional[Union[Var[int], int]] = None,
         position: Optional[
             Union[
+                Literal[
+                    "top",
+                    "left",
+                    "right",
+                    "bottom",
+                    "inside",
+                    "outside",
+                    "insideLeft",
+                    "insideRight",
+                    "insideTop",
+                    "insideBottom",
+                    "insideTopLeft",
+                    "insideBottomLeft",
+                    "insideTopRight",
+                    "insideBottomRight",
+                    "insideStart",
+                    "insideEnd",
+                    "end",
+                    "center",
+                ],
                 Var[
                     Literal[
                         "top",
@@ -362,26 +382,6 @@ class Label(Recharts):
                         "end",
                         "center",
                     ]
-                ],
-                Literal[
-                    "top",
-                    "left",
-                    "right",
-                    "bottom",
-                    "inside",
-                    "outside",
-                    "insideLeft",
-                    "insideRight",
-                    "insideTop",
-                    "insideBottom",
-                    "insideTopLeft",
-                    "insideBottomLeft",
-                    "insideTopRight",
-                    "insideBottomRight",
-                    "insideStart",
-                    "insideEnd",
-                    "end",
-                    "center",
                 ],
             ]
         ] = None,
@@ -458,6 +458,26 @@ class LabelList(Recharts):
         data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         position: Optional[
             Union[
+                Literal[
+                    "top",
+                    "left",
+                    "right",
+                    "bottom",
+                    "inside",
+                    "outside",
+                    "insideLeft",
+                    "insideRight",
+                    "insideTop",
+                    "insideBottom",
+                    "insideTopLeft",
+                    "insideBottomLeft",
+                    "insideTopRight",
+                    "insideBottomRight",
+                    "insideStart",
+                    "insideEnd",
+                    "end",
+                    "center",
+                ],
                 Var[
                     Literal[
                         "top",
@@ -480,31 +500,11 @@ class LabelList(Recharts):
                         "center",
                     ]
                 ],
-                Literal[
-                    "top",
-                    "left",
-                    "right",
-                    "bottom",
-                    "inside",
-                    "outside",
-                    "insideLeft",
-                    "insideRight",
-                    "insideTop",
-                    "insideBottom",
-                    "insideTopLeft",
-                    "insideBottomLeft",
-                    "insideTopRight",
-                    "insideBottomRight",
-                    "insideStart",
-                    "insideEnd",
-                    "end",
-                    "center",
-                ],
             ]
         ] = None,
         offset: Optional[Union[Var[int], int]] = None,
-        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

@@ -21,37 +21,37 @@ class DataListRoot(RadixThemesComponent):
         *children,
         orientation: Optional[
             Union[
+                Breakpoints[str, Literal["horizontal", "vertical"]],
+                Literal["horizontal", "vertical"],
                 Var[
                     Union[
                         Breakpoints[str, Literal["horizontal", "vertical"]],
                         Literal["horizontal", "vertical"],
                     ]
                 ],
-                Literal["horizontal", "vertical"],
-                Breakpoints[str, Literal["horizontal", "vertical"]],
             ]
         ] = None,
         size: Optional[
             Union[
+                Breakpoints[str, Literal["1", "2", "3"]],
+                Literal["1", "2", "3"],
                 Var[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
                 ],
-                Literal["1", "2", "3"],
-                Breakpoints[str, Literal["1", "2", "3"]],
             ]
         ] = None,
         trim: Optional[
             Union[
+                Breakpoints[str, Literal["normal", "start", "end", "both"]],
+                Literal["normal", "start", "end", "both"],
                 Var[
                     Union[
                         Breakpoints[str, Literal["normal", "start", "end", "both"]],
                         Literal["normal", "start", "end", "both"],
                     ]
                 ],
-                Literal["normal", "start", "end", "both"],
-                Breakpoints[str, Literal["normal", "start", "end", "both"]],
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -128,6 +128,10 @@ class DataListItem(RadixThemesComponent):
         *children,
         align: Optional[
             Union[
+                Breakpoints[
+                    str, Literal["start", "center", "end", "baseline", "stretch"]
+                ],
+                Literal["start", "center", "end", "baseline", "stretch"],
                 Var[
                     Union[
                         Breakpoints[
@@ -136,10 +140,6 @@ class DataListItem(RadixThemesComponent):
                         ],
                         Literal["start", "center", "end", "baseline", "stretch"],
                     ]
-                ],
-                Literal["start", "center", "end", "baseline", "stretch"],
-                Breakpoints[
-                    str, Literal["start", "center", "end", "baseline", "stretch"]
                 ],
             ]
         ] = None,
@@ -214,16 +214,44 @@ class DataListLabel(RadixThemesComponent):
         cls,
         *children,
         width: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         min_width: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         max_width: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         color_scheme: Optional[
             Union[
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
                 Var[
                     Literal[
                         "tomato",
@@ -253,34 +281,6 @@ class DataListLabel(RadixThemesComponent):
                         "bronze",
                         "gray",
                     ]
-                ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
                 ],
             ]
         ] = None,

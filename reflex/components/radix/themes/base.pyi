@@ -57,44 +57,44 @@ class CommonMarginProps(Component):
         *children,
         m: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
             ]
         ] = None,
         mx: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
             ]
         ] = None,
         my: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
             ]
         ] = None,
         mt: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
             ]
         ] = None,
         mr: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
             ]
         ] = None,
         mb: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
             ]
         ] = None,
         ml: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -372,12 +372,40 @@ class Theme(RadixThemesComponent):
         has_background: Optional[Union[Var[bool], bool]] = None,
         appearance: Optional[
             Union[
-                Var[Literal["inherit", "light", "dark"]],
                 Literal["inherit", "light", "dark"],
+                Var[Literal["inherit", "light", "dark"]],
             ]
         ] = None,
         accent_color: Optional[
             Union[
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
                 Var[
                     Literal[
                         "tomato",
@@ -408,55 +436,27 @@ class Theme(RadixThemesComponent):
                         "gray",
                     ]
                 ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
             ]
         ] = None,
         gray_color: Optional[
             Union[
-                Var[Literal["gray", "mauve", "slate", "sage", "olive", "sand", "auto"]],
                 Literal["gray", "mauve", "slate", "sage", "olive", "sand", "auto"],
+                Var[Literal["gray", "mauve", "slate", "sage", "olive", "sand", "auto"]],
             ]
         ] = None,
         panel_background: Optional[
-            Union[Var[Literal["solid", "translucent"]], Literal["solid", "translucent"]]
+            Union[Literal["solid", "translucent"], Var[Literal["solid", "translucent"]]]
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
+                Var[Literal["none", "small", "medium", "large", "full"]],
             ]
         ] = None,
         scaling: Optional[
             Union[
-                Var[Literal["90%", "95%", "100%", "105%", "110%"]],
                 Literal["90%", "95%", "100%", "105%", "110%"],
+                Var[Literal["90%", "95%", "100%", "105%", "110%"]],
             ]
         ] = None,
         style: Optional[Style] = None,

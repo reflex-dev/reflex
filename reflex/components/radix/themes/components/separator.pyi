@@ -22,18 +22,46 @@ class Separator(RadixThemesComponent):
         *children,
         size: Optional[
             Union[
+                Breakpoints[str, Literal["1", "2", "3", "4"]],
+                Literal["1", "2", "3", "4"],
                 Var[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3", "4"]],
                         Literal["1", "2", "3", "4"],
                     ]
                 ],
-                Literal["1", "2", "3", "4"],
-                Breakpoints[str, Literal["1", "2", "3", "4"]],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
                 Var[
                     Literal[
                         "tomato",
@@ -64,46 +92,18 @@ class Separator(RadixThemesComponent):
                         "gray",
                     ]
                 ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
             ]
         ] = None,
         orientation: Optional[
             Union[
+                Breakpoints[str, Literal["horizontal", "vertical"]],
+                Literal["horizontal", "vertical"],
                 Var[
                     Union[
                         Breakpoints[str, Literal["horizontal", "vertical"]],
                         Literal["horizontal", "vertical"],
                     ]
                 ],
-                Literal["horizontal", "vertical"],
-                Breakpoints[str, Literal["horizontal", "vertical"]],
             ]
         ] = None,
         decorative: Optional[Union[Var[bool], bool]] = None,

@@ -22,6 +22,10 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
         *children,
         p: Optional[
             Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
                 Var[
                     Union[
                         Breakpoints[
@@ -30,15 +34,15 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                         ],
                         Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
                     ]
-                ],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Breakpoints[
-                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
                 ],
             ]
         ] = None,
         px: Optional[
             Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
                 Var[
                     Union[
                         Breakpoints[
@@ -47,15 +51,15 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                         ],
                         Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
                     ]
-                ],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Breakpoints[
-                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
                 ],
             ]
         ] = None,
         py: Optional[
             Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
                 Var[
                     Union[
                         Breakpoints[
@@ -64,15 +68,15 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                         ],
                         Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
                     ]
-                ],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Breakpoints[
-                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
                 ],
             ]
         ] = None,
         pt: Optional[
             Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
                 Var[
                     Union[
                         Breakpoints[
@@ -81,15 +85,15 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                         ],
                         Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
                     ]
-                ],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Breakpoints[
-                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
                 ],
             ]
         ] = None,
         pr: Optional[
             Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
                 Var[
                     Union[
                         Breakpoints[
@@ -98,15 +102,15 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                         ],
                         Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
                     ]
-                ],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Breakpoints[
-                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
                 ],
             ]
         ] = None,
         pb: Optional[
             Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
                 Var[
                     Union[
                         Breakpoints[
@@ -115,15 +119,15 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                         ],
                         Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
                     ]
-                ],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Breakpoints[
-                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
                 ],
             ]
         ] = None,
         pl: Optional[
             Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
                 Var[
                     Union[
                         Breakpoints[
@@ -133,66 +137,62 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                         Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
                     ]
                 ],
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Breakpoints[
-                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-                ],
             ]
         ] = None,
         flex_shrink: Optional[
             Union[
-                Var[Union[Breakpoints[str, Literal["0", "1"]], Literal["0", "1"]]],
-                Literal["0", "1"],
                 Breakpoints[str, Literal["0", "1"]],
+                Literal["0", "1"],
+                Var[Union[Breakpoints[str, Literal["0", "1"]], Literal["0", "1"]]],
             ]
         ] = None,
         flex_grow: Optional[
             Union[
-                Var[Union[Breakpoints[str, Literal["0", "1"]], Literal["0", "1"]]],
-                Literal["0", "1"],
                 Breakpoints[str, Literal["0", "1"]],
+                Literal["0", "1"],
+                Var[Union[Breakpoints[str, Literal["0", "1"]], Literal["0", "1"]]],
             ]
         ] = None,
         m: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
             ]
         ] = None,
         mx: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
             ]
         ] = None,
         my: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
             ]
         ] = None,
         mt: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
             ]
         ] = None,
         mr: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
             ]
         ] = None,
         mb: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
             ]
         ] = None,
         ml: Optional[
             Union[
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
                 Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
             ]
         ] = None,
         style: Optional[Style] = None,

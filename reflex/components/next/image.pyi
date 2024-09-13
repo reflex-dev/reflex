@@ -19,16 +19,16 @@ class Image(NextComponent):
         *children,
         width: Optional[Union[int, str]] = None,
         height: Optional[Union[int, str]] = None,
-        src: Optional[Union[Var[Any], Any]] = None,
+        src: Optional[Union[Any, Var[Any]]] = None,
         alt: Optional[Union[Var[str], str]] = None,
-        loader: Optional[Union[Var[Any], Any]] = None,
+        loader: Optional[Union[Any, Var[Any]]] = None,
         fill: Optional[Union[Var[bool], bool]] = None,
         sizes: Optional[Union[Var[str], str]] = None,
         quality: Optional[Union[Var[int], int]] = None,
         priority: Optional[Union[Var[bool], bool]] = None,
         placeholder: Optional[Union[Var[str], str]] = None,
         loading: Optional[
-            Union[Var[Literal["lazy", "eager"]], Literal["lazy", "eager"]]
+            Union[Literal["lazy", "eager"], Var[Literal["lazy", "eager"]]]
         ] = None,
         blurDataURL: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,

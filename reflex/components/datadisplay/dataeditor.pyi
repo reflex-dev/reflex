@@ -88,9 +88,9 @@ class DataEditor(NoSSRComponent):
         *children,
         rows: Optional[Union[Var[int], int]] = None,
         columns: Optional[
-            Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
+            Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]
         ] = None,
-        data: Optional[Union[Var[List[List[Any]]], List[List[Any]]]] = None,
+        data: Optional[Union[List[List[Any]], Var[List[List[Any]]]]] = None,
         get_cell_content: Optional[Union[Var[str], str]] = None,
         get_cell_for_selection: Optional[Union[Var[bool], bool]] = None,
         on_paste: Optional[Union[Var[bool], bool]] = None,
@@ -106,8 +106,8 @@ class DataEditor(NoSSRComponent):
         row_height: Optional[Union[Var[int], int]] = None,
         row_markers: Optional[
             Union[
-                Var[Literal["none", "number", "checkbox", "both", "clickable-number"]],
                 Literal["none", "number", "checkbox", "both", "clickable-number"],
+                Var[Literal["none", "number", "checkbox", "both", "clickable-number"]],
             ]
         ] = None,
         row_marker_start_index: Optional[Union[Var[int], int]] = None,
@@ -117,8 +117,8 @@ class DataEditor(NoSSRComponent):
         vertical_border: Optional[Union[Var[bool], bool]] = None,
         column_select: Optional[
             Union[
-                Var[Literal["none", "single", "multi"]],
                 Literal["none", "single", "multi"],
+                Var[Literal["none", "single", "multi"]],
             ]
         ] = None,
         prevent_diagonal_scrolling: Optional[Union[Var[bool], bool]] = None,
@@ -127,7 +127,7 @@ class DataEditor(NoSSRComponent):
         scroll_offset_x: Optional[Union[Var[int], int]] = None,
         scroll_offset_y: Optional[Union[Var[int], int]] = None,
         theme: Optional[
-            Union[Var[Union[DataEditorTheme, Dict]], DataEditorTheme, Dict]
+            Union[DataEditorTheme, Dict, Var[Union[DataEditorTheme, Dict]]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

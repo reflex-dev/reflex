@@ -53,6 +53,26 @@ class Editor(NoSSRComponent):
         *children,
         lang: Optional[
             Union[
+                Literal[
+                    "en",
+                    "da",
+                    "de",
+                    "es",
+                    "fr",
+                    "ja",
+                    "ko",
+                    "pt_br",
+                    "ru",
+                    "zh_cn",
+                    "ro",
+                    "pl",
+                    "ckb",
+                    "lv",
+                    "se",
+                    "ua",
+                    "he",
+                    "it",
+                ],
                 Var[
                     Union[
                         Literal[
@@ -78,26 +98,6 @@ class Editor(NoSSRComponent):
                         dict,
                     ]
                 ],
-                Literal[
-                    "en",
-                    "da",
-                    "de",
-                    "es",
-                    "fr",
-                    "ja",
-                    "ko",
-                    "pt_br",
-                    "ru",
-                    "zh_cn",
-                    "ro",
-                    "pl",
-                    "ckb",
-                    "lv",
-                    "se",
-                    "ua",
-                    "he",
-                    "it",
-                ],
                 dict,
             ]
         ] = None,
@@ -107,7 +107,7 @@ class Editor(NoSSRComponent):
         height: Optional[Union[Var[str], str]] = None,
         placeholder: Optional[Union[Var[str], str]] = None,
         auto_focus: Optional[Union[Var[bool], bool]] = None,
-        set_options: Optional[Union[Var[Dict], Dict]] = None,
+        set_options: Optional[Union[Dict, Var[Dict]]] = None,
         set_all_plugins: Optional[Union[Var[bool], bool]] = None,
         set_contents: Optional[Union[Var[str], str]] = None,
         append_contents: Optional[Union[Var[str], str]] = None,

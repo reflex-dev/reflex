@@ -116,7 +116,7 @@ class Upload(MemoizationLeaf):
     def create(  # type: ignore
         cls,
         *children,
-        accept: Optional[Union[Var[Optional[Dict[str, List]]], Dict[str, List]]] = None,
+        accept: Optional[Union[Dict[str, List], Var[Optional[Dict[str, List]]]]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         max_files: Optional[Union[Var[int], int]] = None,
         max_size: Optional[Union[Var[int], int]] = None,
@@ -201,7 +201,7 @@ class StyledUpload(Upload):
     def create(  # type: ignore
         cls,
         *children,
-        accept: Optional[Union[Var[Optional[Dict[str, List]]], Dict[str, List]]] = None,
+        accept: Optional[Union[Dict[str, List], Var[Optional[Dict[str, List]]]]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         max_files: Optional[Union[Var[int], int]] = None,
         max_size: Optional[Union[Var[int], int]] = None,
@@ -286,7 +286,7 @@ class UploadNamespace(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        accept: Optional[Union[Var[Optional[Dict[str, List]]], Dict[str, List]]] = None,
+        accept: Optional[Union[Dict[str, List], Var[Optional[Dict[str, List]]]]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         max_files: Optional[Union[Var[int], int]] = None,
         max_size: Optional[Union[Var[int], int]] = None,

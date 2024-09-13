@@ -21,10 +21,12 @@ class Avatar(RadixThemesComponent):
         cls,
         *children,
         variant: Optional[
-            Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
+            Union[Literal["solid", "soft"], Var[Literal["solid", "soft"]]]
         ] = None,
         size: Optional[
             Union[
+                Breakpoints[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
                 Var[
                     Union[
                         Breakpoints[
@@ -33,12 +35,38 @@ class Avatar(RadixThemesComponent):
                         Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
                     ]
                 ],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Breakpoints[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
                 Var[
                     Literal[
                         "tomato",
@@ -69,41 +97,13 @@ class Avatar(RadixThemesComponent):
                         "gray",
                     ]
                 ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
+                Var[Literal["none", "small", "medium", "large", "full"]],
             ]
         ] = None,
         src: Optional[Union[Var[str], str]] = None,

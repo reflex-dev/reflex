@@ -34,10 +34,10 @@ class Plotly(NoSSRComponent):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[Figure], Figure]] = None,  # type: ignore
-        layout: Optional[Union[Var[Dict], Dict]] = None,
-        template: Optional[Union[Var[Template], Template]] = None,  # type: ignore
-        config: Optional[Union[Var[Dict], Dict]] = None,
+        data: Optional[Union[Figure, Var[Figure]]] = None,  # type: ignore
+        layout: Optional[Union[Dict, Var[Dict]]] = None,
+        template: Optional[Union[Template, Var[Template]]] = None,  # type: ignore
+        config: Optional[Union[Dict, Var[Dict]]] = None,
         use_resize_handler: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

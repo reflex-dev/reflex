@@ -20,7 +20,7 @@ class ErrorBoundary(Component):
     def create(  # type: ignore
         cls,
         *children,
-        Fallback_component: Optional[Union[Var[Component], Component]] = None,
+        Fallback_component: Optional[Union[Component, Var[Component]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

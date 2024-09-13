@@ -21,13 +21,13 @@ class SelectRoot(RadixThemesComponent):
         *children,
         size: Optional[
             Union[
+                Breakpoints[str, Literal["1", "2", "3"]],
+                Literal["1", "2", "3"],
                 Var[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
                 ],
-                Literal["1", "2", "3"],
-                Breakpoints[str, Literal["1", "2", "3"]],
             ]
         ] = None,
         default_value: Optional[Union[Var[str], str]] = None,
@@ -120,12 +120,40 @@ class SelectTrigger(RadixThemesComponent):
         *children,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft", "ghost"]],
                 Literal["classic", "surface", "soft", "ghost"],
+                Var[Literal["classic", "surface", "soft", "ghost"]],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
                 Var[
                     Literal[
                         "tomato",
@@ -156,40 +184,12 @@ class SelectTrigger(RadixThemesComponent):
                         "gray",
                     ]
                 ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
             ]
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
+                Var[Literal["none", "small", "medium", "large", "full"]],
             ]
         ] = None,
         placeholder: Optional[Union[Var[str], str]] = None,
@@ -267,10 +267,38 @@ class SelectContent(RadixThemesComponent):
         cls,
         *children,
         variant: Optional[
-            Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
+            Union[Literal["solid", "soft"], Var[Literal["solid", "soft"]]]
         ] = None,
         color_scheme: Optional[
             Union[
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
                 Var[
                     Literal[
                         "tomato",
@@ -301,54 +329,26 @@ class SelectContent(RadixThemesComponent):
                         "gray",
                     ]
                 ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         position: Optional[
             Union[
-                Var[Literal["item-aligned", "popper"]],
                 Literal["item-aligned", "popper"],
+                Var[Literal["item-aligned", "popper"]],
             ]
         ] = None,
         side: Optional[
             Union[
-                Var[Literal["top", "right", "bottom", "left"]],
                 Literal["top", "right", "bottom", "left"],
+                Var[Literal["top", "right", "bottom", "left"]],
             ]
         ] = None,
         side_offset: Optional[Union[Var[int], int]] = None,
         align: Optional[
             Union[
-                Var[Literal["start", "center", "end"]],
                 Literal["start", "center", "end"],
+                Var[Literal["start", "center", "end"]],
             ]
         ] = None,
         align_offset: Optional[Union[Var[int], int]] = None,
@@ -718,11 +718,39 @@ class HighLevelSelect(SelectRoot):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Union[Var[List[str]], List[str]]] = None,
+        items: Optional[Union[List[str], Var[List[str]]]] = None,
         placeholder: Optional[Union[Var[str], str]] = None,
         label: Optional[Union[Var[str], str]] = None,
         color_scheme: Optional[
             Union[
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
                 Var[
                     Literal[
                         "tomato",
@@ -753,65 +781,37 @@ class HighLevelSelect(SelectRoot):
                         "gray",
                     ]
                 ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft", "ghost"]],
                 Literal["classic", "surface", "soft", "ghost"],
+                Var[Literal["classic", "surface", "soft", "ghost"]],
             ]
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
+                Var[Literal["none", "small", "medium", "large", "full"]],
             ]
         ] = None,
         width: Optional[Union[Var[str], str]] = None,
         position: Optional[
             Union[
-                Var[Literal["item-aligned", "popper"]],
                 Literal["item-aligned", "popper"],
+                Var[Literal["item-aligned", "popper"]],
             ]
         ] = None,
         size: Optional[
             Union[
+                Breakpoints[str, Literal["1", "2", "3"]],
+                Literal["1", "2", "3"],
                 Var[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
                 ],
-                Literal["1", "2", "3"],
-                Breakpoints[str, Literal["1", "2", "3"]],
             ]
         ] = None,
         default_value: Optional[Union[Var[str], str]] = None,
@@ -914,11 +914,39 @@ class Select(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        items: Optional[Union[Var[List[str]], List[str]]] = None,
+        items: Optional[Union[List[str], Var[List[str]]]] = None,
         placeholder: Optional[Union[Var[str], str]] = None,
         label: Optional[Union[Var[str], str]] = None,
         color_scheme: Optional[
             Union[
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
                 Var[
                     Literal[
                         "tomato",
@@ -949,65 +977,37 @@ class Select(ComponentNamespace):
                         "gray",
                     ]
                 ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft", "ghost"]],
                 Literal["classic", "surface", "soft", "ghost"],
+                Var[Literal["classic", "surface", "soft", "ghost"]],
             ]
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
                 Literal["none", "small", "medium", "large", "full"],
+                Var[Literal["none", "small", "medium", "large", "full"]],
             ]
         ] = None,
         width: Optional[Union[Var[str], str]] = None,
         position: Optional[
             Union[
-                Var[Literal["item-aligned", "popper"]],
                 Literal["item-aligned", "popper"],
+                Var[Literal["item-aligned", "popper"]],
             ]
         ] = None,
         size: Optional[
             Union[
+                Breakpoints[str, Literal["1", "2", "3"]],
+                Literal["1", "2", "3"],
                 Var[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
                 ],
-                Literal["1", "2", "3"],
-                Breakpoints[str, Literal["1", "2", "3"]],
             ]
         ] = None,
         default_value: Optional[Union[Var[str], str]] = None,

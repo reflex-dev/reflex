@@ -21,20 +21,48 @@ class CheckboxCardsRoot(RadixThemesComponent):
         *children,
         size: Optional[
             Union[
+                Breakpoints[str, Literal["1", "2", "3"]],
+                Literal["1", "2", "3"],
                 Var[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
                 ],
-                Literal["1", "2", "3"],
-                Breakpoints[str, Literal["1", "2", "3"]],
             ]
         ] = None,
         variant: Optional[
-            Union[Var[Literal["classic", "surface"]], Literal["classic", "surface"]]
+            Union[Literal["classic", "surface"], Var[Literal["classic", "surface"]]]
         ] = None,
         color_scheme: Optional[
             Union[
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
                 Var[
                     Literal[
                         "tomato",
@@ -65,39 +93,16 @@ class CheckboxCardsRoot(RadixThemesComponent):
                         "gray",
                     ]
                 ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         columns: Optional[
             Union[
+                Breakpoints[
+                    str,
+                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
+                ],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
                 Var[
                     Union[
                         Breakpoints[
@@ -112,15 +117,15 @@ class CheckboxCardsRoot(RadixThemesComponent):
                     ]
                 ],
                 str,
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Breakpoints[
-                    str,
-                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
-                ],
             ]
         ] = None,
         gap: Optional[
             Union[
+                Breakpoints[
+                    str,
+                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
+                ],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
                 Var[
                     Union[
                         Breakpoints[
@@ -135,11 +140,6 @@ class CheckboxCardsRoot(RadixThemesComponent):
                     ]
                 ],
                 str,
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Breakpoints[
-                    str,
-                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
-                ],
             ]
         ] = None,
         style: Optional[Style] = None,

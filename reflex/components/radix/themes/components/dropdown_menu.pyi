@@ -29,7 +29,7 @@ class DropdownMenuRoot(RadixThemesComponent):
         default_open: Optional[Union[Var[bool], bool]] = None,
         open: Optional[Union[Var[bool], bool]] = None,
         modal: Optional[Union[Var[bool], bool]] = None,
-        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
+        dir: Optional[Union[Literal["ltr", "rtl"], Var[Literal["ltr", "rtl"]]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -169,16 +169,44 @@ class DropdownMenuContent(RadixThemesComponent):
         *children,
         size: Optional[
             Union[
-                Var[Union[Breakpoints[str, Literal["1", "2"]], Literal["1", "2"]]],
-                Literal["1", "2"],
                 Breakpoints[str, Literal["1", "2"]],
+                Literal["1", "2"],
+                Var[Union[Breakpoints[str, Literal["1", "2"]], Literal["1", "2"]]],
             ]
         ] = None,
         variant: Optional[
-            Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
+            Union[Literal["solid", "soft"], Var[Literal["solid", "soft"]]]
         ] = None,
         color_scheme: Optional[
             Union[
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
                 Var[
                     Literal[
                         "tomato",
@@ -209,34 +237,6 @@ class DropdownMenuContent(RadixThemesComponent):
                         "gray",
                     ]
                 ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
@@ -245,30 +245,30 @@ class DropdownMenuContent(RadixThemesComponent):
         force_mount: Optional[Union[Var[bool], bool]] = None,
         side: Optional[
             Union[
-                Var[Literal["top", "right", "bottom", "left"]],
                 Literal["top", "right", "bottom", "left"],
+                Var[Literal["top", "right", "bottom", "left"]],
             ]
         ] = None,
         side_offset: Optional[Union[Var[Union[float, int]], float, int]] = None,
         align: Optional[
             Union[
-                Var[Literal["start", "center", "end"]],
                 Literal["start", "center", "end"],
+                Var[Literal["start", "center", "end"]],
             ]
         ] = None,
         align_offset: Optional[Union[Var[Union[float, int]], float, int]] = None,
         avoid_collisions: Optional[Union[Var[bool], bool]] = None,
         collision_padding: Optional[
             Union[
+                Dict[str, Union[float, int]],
                 Var[Union[Dict[str, Union[float, int]], float, int]],
                 float,
                 int,
-                Dict[str, Union[float, int]],
             ]
         ] = None,
         arrow_padding: Optional[Union[Var[Union[float, int]], float, int]] = None,
         sticky: Optional[
-            Union[Var[Literal["partial", "always"]], Literal["partial", "always"]]
+            Union[Literal["partial", "always"], Var[Literal["partial", "always"]]]
         ] = None,
         hide_when_detached: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
@@ -518,15 +518,15 @@ class DropdownMenuSubContent(RadixThemesComponent):
         avoid_collisions: Optional[Union[Var[bool], bool]] = None,
         collision_padding: Optional[
             Union[
+                Dict[str, Union[float, int]],
                 Var[Union[Dict[str, Union[float, int]], float, int]],
                 float,
                 int,
-                Dict[str, Union[float, int]],
             ]
         ] = None,
         arrow_padding: Optional[Union[Var[Union[float, int]], float, int]] = None,
         sticky: Optional[
-            Union[Var[Literal["partial", "always"]], Literal["partial", "always"]]
+            Union[Literal["partial", "always"], Var[Literal["partial", "always"]]]
         ] = None,
         hide_when_detached: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
@@ -622,6 +622,34 @@ class DropdownMenuItem(RadixThemesComponent):
         *children,
         color_scheme: Optional[
             Union[
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
                 Var[
                     Literal[
                         "tomato",
@@ -651,34 +679,6 @@ class DropdownMenuItem(RadixThemesComponent):
                         "bronze",
                         "gray",
                     ]
-                ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
                 ],
             ]
         ] = None,

@@ -22,20 +22,48 @@ class RadioCardsRoot(RadixThemesComponent):
         as_child: Optional[Union[Var[bool], bool]] = None,
         size: Optional[
             Union[
+                Breakpoints[str, Literal["1", "2", "3"]],
+                Literal["1", "2", "3"],
                 Var[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
                 ],
-                Literal["1", "2", "3"],
-                Breakpoints[str, Literal["1", "2", "3"]],
             ]
         ] = None,
         variant: Optional[
-            Union[Var[Literal["classic", "surface"]], Literal["classic", "surface"]]
+            Union[Literal["classic", "surface"], Var[Literal["classic", "surface"]]]
         ] = None,
         color_scheme: Optional[
             Union[
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
                 Var[
                     Literal[
                         "tomato",
@@ -66,39 +94,16 @@ class RadioCardsRoot(RadixThemesComponent):
                         "gray",
                     ]
                 ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         columns: Optional[
             Union[
+                Breakpoints[
+                    str,
+                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
+                ],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
                 Var[
                     Union[
                         Breakpoints[
@@ -113,15 +118,15 @@ class RadioCardsRoot(RadixThemesComponent):
                     ]
                 ],
                 str,
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Breakpoints[
-                    str,
-                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
-                ],
             ]
         ] = None,
         gap: Optional[
             Union[
+                Breakpoints[
+                    str,
+                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
+                ],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
                 Var[
                     Union[
                         Breakpoints[
@@ -136,11 +141,6 @@ class RadioCardsRoot(RadixThemesComponent):
                     ]
                 ],
                 str,
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Breakpoints[
-                    str,
-                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
-                ],
             ]
         ] = None,
         default_value: Optional[Union[Var[str], str]] = None,
@@ -150,11 +150,11 @@ class RadioCardsRoot(RadixThemesComponent):
         required: Optional[Union[Var[bool], bool]] = None,
         orientation: Optional[
             Union[
-                Var[Literal["horizontal", "vertical", "undefined"]],
                 Literal["horizontal", "vertical", "undefined"],
+                Var[Literal["horizontal", "vertical", "undefined"]],
             ]
         ] = None,
-        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
+        dir: Optional[Union[Literal["ltr", "rtl"], Var[Literal["ltr", "rtl"]]]] = None,
         loop: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

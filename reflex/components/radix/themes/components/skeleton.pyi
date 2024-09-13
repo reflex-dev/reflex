@@ -19,22 +19,22 @@ class Skeleton(RadixLoadingProp, RadixThemesComponent):
         cls,
         *children,
         width: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         min_width: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         max_width: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         height: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         min_height: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         max_height: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         loading: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,

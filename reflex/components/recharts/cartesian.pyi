@@ -20,12 +20,12 @@ class Axis(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
-        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        width: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         type_: Optional[
-            Union[Var[Literal["number", "category"]], Literal["number", "category"]]
+            Union[Literal["number", "category"], Var[Literal["number", "category"]]]
         ] = None,
         allow_decimals: Optional[Union[Var[bool], bool]] = None,
         allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
@@ -34,10 +34,27 @@ class Axis(Recharts):
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
         label: Optional[
-            Union[Var[Union[Dict[str, Any], int, str]], str, int, Dict[str, Any]]
+            Union[Dict[str, Any], Var[Union[Dict[str, Any], int, str]], int, str]
         ] = None,
         scale: Optional[
             Union[
+                Literal[
+                    "auto",
+                    "linear",
+                    "pow",
+                    "sqrt",
+                    "log",
+                    "identity",
+                    "time",
+                    "band",
+                    "point",
+                    "ordinal",
+                    "quantile",
+                    "quantize",
+                    "utc",
+                    "sequential",
+                    "threshold",
+                ],
                 Var[
                     Literal[
                         "auto",
@@ -57,36 +74,19 @@ class Axis(Recharts):
                         "threshold",
                     ]
                 ],
-                Literal[
-                    "auto",
-                    "linear",
-                    "pow",
-                    "sqrt",
-                    "log",
-                    "identity",
-                    "time",
-                    "band",
-                    "point",
-                    "ordinal",
-                    "quantile",
-                    "quantize",
-                    "utc",
-                    "sequential",
-                    "threshold",
-                ],
             ]
         ] = None,
-        unit: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        name: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        unit: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        name: Optional[Union[Var[Union[int, str]], int, str]] = None,
         ticks: Optional[
-            Union[Var[List[Union[int, str]]], List[Union[int, str]]]
+            Union[List[Union[int, str]], Var[List[Union[int, str]]]]
         ] = None,
         tick: Optional[Union[Var[bool], bool]] = None,
         tick_count: Optional[Union[Var[int], int]] = None,
         tick_line: Optional[Union[Var[bool], bool]] = None,
         tick_size: Optional[Union[Var[int], int]] = None,
         min_tick_gap: Optional[Union[Var[int], int]] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         text_anchor: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -178,17 +178,17 @@ class XAxis(Axis):
         cls,
         *children,
         orientation: Optional[
-            Union[Var[Literal["top", "bottom"]], Literal["top", "bottom"]]
+            Union[Literal["top", "bottom"], Var[Literal["top", "bottom"]]]
         ] = None,
-        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         include_hidden: Optional[Union[Var[bool], bool]] = None,
-        domain: Optional[Union[Var[List], List]] = None,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        domain: Optional[Union[List, Var[List]]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
-        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        width: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         type_: Optional[
-            Union[Var[Literal["number", "category"]], Literal["number", "category"]]
+            Union[Literal["number", "category"], Var[Literal["number", "category"]]]
         ] = None,
         allow_decimals: Optional[Union[Var[bool], bool]] = None,
         allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
@@ -197,10 +197,27 @@ class XAxis(Axis):
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
         label: Optional[
-            Union[Var[Union[Dict[str, Any], int, str]], str, int, Dict[str, Any]]
+            Union[Dict[str, Any], Var[Union[Dict[str, Any], int, str]], int, str]
         ] = None,
         scale: Optional[
             Union[
+                Literal[
+                    "auto",
+                    "linear",
+                    "pow",
+                    "sqrt",
+                    "log",
+                    "identity",
+                    "time",
+                    "band",
+                    "point",
+                    "ordinal",
+                    "quantile",
+                    "quantize",
+                    "utc",
+                    "sequential",
+                    "threshold",
+                ],
                 Var[
                     Literal[
                         "auto",
@@ -220,36 +237,19 @@ class XAxis(Axis):
                         "threshold",
                     ]
                 ],
-                Literal[
-                    "auto",
-                    "linear",
-                    "pow",
-                    "sqrt",
-                    "log",
-                    "identity",
-                    "time",
-                    "band",
-                    "point",
-                    "ordinal",
-                    "quantile",
-                    "quantize",
-                    "utc",
-                    "sequential",
-                    "threshold",
-                ],
             ]
         ] = None,
-        unit: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        name: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        unit: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        name: Optional[Union[Var[Union[int, str]], int, str]] = None,
         ticks: Optional[
-            Union[Var[List[Union[int, str]]], List[Union[int, str]]]
+            Union[List[Union[int, str]], Var[List[Union[int, str]]]]
         ] = None,
         tick: Optional[Union[Var[bool], bool]] = None,
         tick_count: Optional[Union[Var[int], int]] = None,
         tick_line: Optional[Union[Var[bool], bool]] = None,
         tick_size: Optional[Union[Var[int], int]] = None,
         min_tick_gap: Optional[Union[Var[int], int]] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         text_anchor: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -345,16 +345,16 @@ class YAxis(Axis):
         cls,
         *children,
         orientation: Optional[
-            Union[Var[Literal["left", "right"]], Literal["left", "right"]]
+            Union[Literal["left", "right"], Var[Literal["left", "right"]]]
         ] = None,
-        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        domain: Optional[Union[Var[List], List]] = None,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        domain: Optional[Union[List, Var[List]]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
-        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        width: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         type_: Optional[
-            Union[Var[Literal["number", "category"]], Literal["number", "category"]]
+            Union[Literal["number", "category"], Var[Literal["number", "category"]]]
         ] = None,
         allow_decimals: Optional[Union[Var[bool], bool]] = None,
         allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
@@ -363,10 +363,27 @@ class YAxis(Axis):
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
         label: Optional[
-            Union[Var[Union[Dict[str, Any], int, str]], str, int, Dict[str, Any]]
+            Union[Dict[str, Any], Var[Union[Dict[str, Any], int, str]], int, str]
         ] = None,
         scale: Optional[
             Union[
+                Literal[
+                    "auto",
+                    "linear",
+                    "pow",
+                    "sqrt",
+                    "log",
+                    "identity",
+                    "time",
+                    "band",
+                    "point",
+                    "ordinal",
+                    "quantile",
+                    "quantize",
+                    "utc",
+                    "sequential",
+                    "threshold",
+                ],
                 Var[
                     Literal[
                         "auto",
@@ -386,36 +403,19 @@ class YAxis(Axis):
                         "threshold",
                     ]
                 ],
-                Literal[
-                    "auto",
-                    "linear",
-                    "pow",
-                    "sqrt",
-                    "log",
-                    "identity",
-                    "time",
-                    "band",
-                    "point",
-                    "ordinal",
-                    "quantile",
-                    "quantize",
-                    "utc",
-                    "sequential",
-                    "threshold",
-                ],
             ]
         ] = None,
-        unit: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        name: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        unit: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        name: Optional[Union[Var[Union[int, str]], int, str]] = None,
         ticks: Optional[
-            Union[Var[List[Union[int, str]]], List[Union[int, str]]]
+            Union[List[Union[int, str]], Var[List[Union[int, str]]]]
         ] = None,
         tick: Optional[Union[Var[bool], bool]] = None,
         tick_count: Optional[Union[Var[int], int]] = None,
         tick_line: Optional[Union[Var[bool], bool]] = None,
         tick_size: Optional[Union[Var[int], int]] = None,
         min_tick_gap: Optional[Union[Var[int], int]] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         text_anchor: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -509,12 +509,29 @@ class ZAxis(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        range: Optional[Union[Var[List[int]], List[int]]] = None,
-        unit: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        name: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        range: Optional[Union[List[int], Var[List[int]]]] = None,
+        unit: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        name: Optional[Union[Var[Union[int, str]], int, str]] = None,
         scale: Optional[
             Union[
+                Literal[
+                    "auto",
+                    "linear",
+                    "pow",
+                    "sqrt",
+                    "log",
+                    "identity",
+                    "time",
+                    "band",
+                    "point",
+                    "ordinal",
+                    "quantile",
+                    "quantize",
+                    "utc",
+                    "sequential",
+                    "threshold",
+                ],
                 Var[
                     Literal[
                         "auto",
@@ -533,23 +550,6 @@ class ZAxis(Recharts):
                         "sequential",
                         "threshold",
                     ]
-                ],
-                Literal[
-                    "auto",
-                    "linear",
-                    "pow",
-                    "sqrt",
-                    "log",
-                    "identity",
-                    "time",
-                    "band",
-                    "point",
-                    "ordinal",
-                    "quantile",
-                    "quantize",
-                    "utc",
-                    "sequential",
-                    "threshold",
                 ],
             ]
         ] = None,
@@ -625,14 +625,14 @@ class Brush(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
+        fill: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         x: Optional[Union[Var[int], int]] = None,
         y: Optional[Union[Var[int], int]] = None,
         width: Optional[Union[Var[int], int]] = None,
         height: Optional[Union[Var[int], int]] = None,
-        data: Optional[Union[Var[List[Any]], List[Any]]] = None,
+        data: Optional[Union[List[Any], Var[List[Any]]]] = None,
         traveller_width: Optional[Union[Var[int], int]] = None,
         gap: Optional[Union[Var[int], int]] = None,
         start_index: Optional[Union[Var[int], int]] = None,
@@ -683,15 +683,28 @@ class Cartesian(Recharts):
         *children,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         legend_type: Optional[
             Union[
+                Literal[
+                    "line",
+                    "plainline",
+                    "square",
+                    "rect",
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "star",
+                    "triangle",
+                    "wye",
+                    "none",
+                ],
                 Var[
                     Literal[
                         "line",
@@ -706,19 +719,6 @@ class Cartesian(Recharts):
                         "wye",
                         "none",
                     ]
-                ],
-                Literal[
-                    "line",
-                    "plainline",
-                    "square",
-                    "rect",
-                    "circle",
-                    "cross",
-                    "diamond",
-                    "star",
-                    "triangle",
-                    "wye",
-                    "none",
                 ],
             ]
         ] = None,
@@ -793,11 +793,28 @@ class Area(Cartesian):
     def create(  # type: ignore
         cls,
         *children,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         stroke_width: Optional[Union[Var[int], int]] = None,
-        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         type_: Optional[
             Union[
+                Literal[
+                    "basis",
+                    "basisClosed",
+                    "basisOpen",
+                    "bumpX",
+                    "bumpY",
+                    "bump",
+                    "linear",
+                    "linearClosed",
+                    "natural",
+                    "monotoneX",
+                    "monotoneY",
+                    "monotone",
+                    "step",
+                    "stepBefore",
+                    "stepAfter",
+                ],
                 Var[
                     Literal[
                         "basis",
@@ -817,46 +834,42 @@ class Area(Cartesian):
                         "stepAfter",
                     ]
                 ],
-                Literal[
-                    "basis",
-                    "basisClosed",
-                    "basisOpen",
-                    "bumpX",
-                    "bumpY",
-                    "bump",
-                    "linear",
-                    "linearClosed",
-                    "natural",
-                    "monotoneX",
-                    "monotoneY",
-                    "monotone",
-                    "step",
-                    "stepBefore",
-                    "stepAfter",
-                ],
             ]
         ] = None,
         dot: Optional[
-            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
         ] = None,
         active_dot: Optional[
-            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
         ] = None,
         label: Optional[Union[Var[bool], bool]] = None,
-        stack_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        unit: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        name: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        stack_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        unit: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        name: Optional[Union[Var[Union[int, str]], int, str]] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         legend_type: Optional[
             Union[
+                Literal[
+                    "line",
+                    "plainline",
+                    "square",
+                    "rect",
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "star",
+                    "triangle",
+                    "wye",
+                    "none",
+                ],
                 Var[
                     Literal[
                         "line",
@@ -871,19 +884,6 @@ class Area(Cartesian):
                         "wye",
                         "none",
                     ]
-                ],
-                Literal[
-                    "line",
-                    "plainline",
-                    "square",
-                    "rect",
-                    "circle",
-                    "cross",
-                    "diamond",
-                    "star",
-                    "triangle",
-                    "wye",
-                    "none",
                 ],
             ]
         ] = None,
@@ -968,15 +968,15 @@ class Bar(Cartesian):
     def create(  # type: ignore
         cls,
         *children,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         stroke_width: Optional[Union[Var[int], int]] = None,
-        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         background: Optional[Union[Var[bool], bool]] = None,
         label: Optional[Union[Var[bool], bool]] = None,
         stack_id: Optional[Union[Var[str], str]] = None,
-        unit: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        unit: Optional[Union[Var[Union[int, str]], int, str]] = None,
         min_point_size: Optional[Union[Var[int], int]] = None,
-        name: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        name: Optional[Union[Var[Union[int, str]], int, str]] = None,
         bar_size: Optional[Union[Var[int], int]] = None,
         max_bar_size: Optional[Union[Var[int], int]] = None,
         is_animation_active: Optional[Union[Var[bool], bool]] = None,
@@ -984,21 +984,34 @@ class Bar(Cartesian):
         animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
             ]
         ] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         legend_type: Optional[
             Union[
+                Literal[
+                    "line",
+                    "plainline",
+                    "square",
+                    "rect",
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "star",
+                    "triangle",
+                    "wye",
+                    "none",
+                ],
                 Var[
                     Literal[
                         "line",
@@ -1013,19 +1026,6 @@ class Bar(Cartesian):
                         "wye",
                         "none",
                     ]
-                ],
-                Literal[
-                    "line",
-                    "plainline",
-                    "square",
-                    "rect",
-                    "circle",
-                    "cross",
-                    "diamond",
-                    "star",
-                    "triangle",
-                    "wye",
-                    "none",
                 ],
             ]
         ] = None,
@@ -1123,6 +1123,23 @@ class Line(Cartesian):
         *children,
         type_: Optional[
             Union[
+                Literal[
+                    "basis",
+                    "basisClosed",
+                    "basisOpen",
+                    "bumpX",
+                    "bumpY",
+                    "bump",
+                    "linear",
+                    "linearClosed",
+                    "natural",
+                    "monotoneX",
+                    "monotoneY",
+                    "monotone",
+                    "step",
+                    "stepBefore",
+                    "stepAfter",
+                ],
                 Var[
                     Literal[
                         "basis",
@@ -1142,49 +1159,45 @@ class Line(Cartesian):
                         "stepAfter",
                     ]
                 ],
-                Literal[
-                    "basis",
-                    "basisClosed",
-                    "basisOpen",
-                    "bumpX",
-                    "bumpY",
-                    "bump",
-                    "linear",
-                    "linearClosed",
-                    "natural",
-                    "monotoneX",
-                    "monotoneY",
-                    "monotone",
-                    "step",
-                    "stepBefore",
-                    "stepAfter",
-                ],
             ]
         ] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         stroke_width: Optional[Union[Var[int], int]] = None,
         dot: Optional[
-            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
         ] = None,
         active_dot: Optional[
-            Union[Var[Union[Dict[str, Any], bool]], bool, Dict[str, Any]]
+            Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
         ] = None,
         label: Optional[Union[Var[bool], bool]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         connect_nulls: Optional[Union[Var[bool], bool]] = None,
-        unit: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        name: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        unit: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        name: Optional[Union[Var[Union[int, str]], int, str]] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         legend_type: Optional[
             Union[
+                Literal[
+                    "line",
+                    "plainline",
+                    "square",
+                    "rect",
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "star",
+                    "triangle",
+                    "wye",
+                    "none",
+                ],
                 Var[
                     Literal[
                         "line",
@@ -1199,19 +1212,6 @@ class Line(Cartesian):
                         "wye",
                         "none",
                     ]
-                ],
-                Literal[
-                    "line",
-                    "plainline",
-                    "square",
-                    "rect",
-                    "circle",
-                    "cross",
-                    "diamond",
-                    "star",
-                    "triangle",
-                    "wye",
-                    "none",
                 ],
             ]
         ] = None,
@@ -1296,9 +1296,22 @@ class Scatter(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
         legend_type: Optional[
             Union[
+                Literal[
+                    "line",
+                    "plainline",
+                    "square",
+                    "rect",
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "star",
+                    "triangle",
+                    "wye",
+                    "none",
+                ],
                 Var[
                     Literal[
                         "line",
@@ -1314,27 +1327,17 @@ class Scatter(Recharts):
                         "none",
                     ]
                 ],
-                Literal[
-                    "line",
-                    "plainline",
-                    "square",
-                    "rect",
-                    "circle",
-                    "cross",
-                    "diamond",
-                    "star",
-                    "triangle",
-                    "wye",
-                    "none",
-                ],
             ]
         ] = None,
-        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         z_axis_id: Optional[Union[Var[str], str]] = None,
         line: Optional[Union[Var[bool], bool]] = None,
         shape: Optional[
             Union[
+                Literal[
+                    "square", "circle", "cross", "diamond", "star", "triangle", "wye"
+                ],
                 Var[
                     Literal[
                         "square",
@@ -1346,23 +1349,20 @@ class Scatter(Recharts):
                         "wye",
                     ]
                 ],
-                Literal[
-                    "square", "circle", "cross", "diamond", "star", "triangle", "wye"
-                ],
             ]
         ] = None,
         line_type: Optional[
-            Union[Var[Literal["joint", "fitting"]], Literal["joint", "fitting"]]
+            Union[Literal["joint", "fitting"], Var[Literal["joint", "fitting"]]]
         ] = None,
-        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        name: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        fill: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
+        name: Optional[Union[Var[Union[int, str]], int, str]] = None,
         is_animation_active: Optional[Union[Var[bool], bool]] = None,
         animation_begin: Optional[Union[Var[int], int]] = None,
         animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -1445,11 +1445,24 @@ class Funnel(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         name_key: Optional[Union[Var[str], str]] = None,
         legend_type: Optional[
             Union[
+                Literal[
+                    "line",
+                    "plainline",
+                    "square",
+                    "rect",
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "star",
+                    "triangle",
+                    "wye",
+                    "none",
+                ],
                 Var[
                     Literal[
                         "line",
@@ -1465,19 +1478,6 @@ class Funnel(Recharts):
                         "none",
                     ]
                 ],
-                Literal[
-                    "line",
-                    "plainline",
-                    "square",
-                    "rect",
-                    "circle",
-                    "cross",
-                    "diamond",
-                    "star",
-                    "triangle",
-                    "wye",
-                    "none",
-                ],
             ]
         ] = None,
         is_animation_active: Optional[Union[Var[bool], bool]] = None,
@@ -1485,11 +1485,11 @@ class Funnel(Recharts):
         animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
                 Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
             ]
         ] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1572,11 +1572,11 @@ class ErrorBar(Recharts):
         cls,
         *children,
         direction: Optional[
-            Union[Var[Literal["x", "y", "both"]], Literal["x", "y", "both"]]
+            Union[Literal["x", "y", "both"], Var[Literal["x", "y", "both"]]]
         ] = None,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         width: Optional[Union[Var[int], int]] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         stroke_width: Optional[Union[Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1649,15 +1649,15 @@ class Reference(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         if_overflow: Optional[
             Union[
-                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
                 Literal["discard", "hidden", "visible", "extendDomain"],
+                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
             ]
         ] = None,
-        label: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        label: Optional[Union[Var[Union[int, str]], int, str]] = None,
         is_front: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1730,20 +1730,20 @@ class ReferenceLine(Reference):
     def create(  # type: ignore
         cls,
         *children,
-        x: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        y: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        stroke_width: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        x: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        y: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
+        stroke_width: Optional[Union[Var[Union[int, str]], int, str]] = None,
         segment: Optional[List[Any]] = None,
-        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         if_overflow: Optional[
             Union[
-                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
                 Literal["discard", "hidden", "visible", "extendDomain"],
+                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
             ]
         ] = None,
-        label: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        label: Optional[Union[Var[Union[int, str]], int, str]] = None,
         is_front: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1821,20 +1821,20 @@ class ReferenceDot(Reference):
     def create(  # type: ignore
         cls,
         *children,
-        x: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        y: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        x: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        y: Optional[Union[Var[Union[int, str]], int, str]] = None,
         r: Optional[Union[Var[int], int]] = None,
-        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        fill: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         if_overflow: Optional[
             Union[
-                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
                 Literal["discard", "hidden", "visible", "extendDomain"],
+                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
             ]
         ] = None,
-        label: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        label: Optional[Union[Var[Union[int, str]], int, str]] = None,
         is_front: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1912,19 +1912,19 @@ class ReferenceArea(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
+        fill: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         fill_opacity: Optional[Union[Var[float], float]] = None,
-        x_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        y_axis_id: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        x1: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        x2: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        y1: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        y2: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        x_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        y_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        x1: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        x2: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        y1: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        y2: Optional[Union[Var[Union[int, str]], int, str]] = None,
         if_overflow: Optional[
             Union[
-                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
                 Literal["discard", "hidden", "visible", "extendDomain"],
+                Var[Literal["discard", "hidden", "visible", "extendDomain"]],
             ]
         ] = None,
         is_front: Optional[Union[Var[bool], bool]] = None,
@@ -2082,15 +2082,15 @@ class CartesianGrid(Grid):
         horizontal: Optional[Union[Var[bool], bool]] = None,
         vertical: Optional[Union[Var[bool], bool]] = None,
         vertical_points: Optional[
-            Union[Var[List[Union[int, str]]], List[Union[int, str]]]
+            Union[List[Union[int, str]], Var[List[Union[int, str]]]]
         ] = None,
         horizontal_points: Optional[
-            Union[Var[List[Union[int, str]]], List[Union[int, str]]]
+            Union[List[Union[int, str]], Var[List[Union[int, str]]]]
         ] = None,
-        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         fill_opacity: Optional[Union[Var[float], float]] = None,
         stroke_dasharray: Optional[Union[Var[str], str]] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         x: Optional[Union[Var[int], int]] = None,
         y: Optional[Union[Var[int], int]] = None,
         width: Optional[Union[Var[int], int]] = None,
@@ -2175,8 +2175,8 @@ class CartesianAxis(Grid):
         *children,
         orientation: Optional[
             Union[
-                Var[Literal["top", "bottom", "left", "right"]],
                 Literal["top", "bottom", "left", "right"],
+                Var[Literal["top", "bottom", "left", "right"]],
             ]
         ] = None,
         axis_line: Optional[Union[Var[bool], bool]] = None,
@@ -2184,8 +2184,8 @@ class CartesianAxis(Grid):
         tick_size: Optional[Union[Var[int], int]] = None,
         interval: Optional[
             Union[
-                Var[Literal["preserveStart", "preserveEnd", "preserveStartEnd"]],
                 Literal["preserveStart", "preserveEnd", "preserveStartEnd"],
+                Var[Literal["preserveStart", "preserveEnd", "preserveStartEnd"]],
             ]
         ] = None,
         ticks: Optional[Union[Var[bool], bool]] = None,
