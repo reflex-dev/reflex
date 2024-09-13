@@ -986,7 +986,7 @@ class LiteralVar(Var):
         if value is None:
             return LiteralNoneVar.create(_var_data=_var_data)
 
-        from reflex.event import EventChain, EventSpec
+        from reflex.event import EventChain, EventHandler, EventSpec
         from reflex.utils.format import get_event_handler_parts
 
         from .function import ArgsFunctionOperation, FunctionStringVar
@@ -1028,10 +1028,20 @@ class LiteralVar(Var):
                 ),
             )
 
+        if isinstance(value, EventHandler):
+            return Var(_js_expr=".".join(filter(None, get_event_handler_parts(value))))
+
         if isinstance(value, Base):
+            # get the fields of the pydantic class
+            fields = value.__fields__.keys()
+            one_level_dict = {field: getattr(value, field) for field in fields}
+
             return LiteralObjectVar.create(
-                {k: (None if callable(v) else v) for k, v in value.dict().items()},
-                _var_type=type(value),
+                {
+                    field: value
+                    for field, value in one_level_dict.items()
+                    if not callable(value)
+                },
                 _var_data=_var_data,
             )
 

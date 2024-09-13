@@ -249,14 +249,9 @@ def serialize_base(value: Base) -> str:
     Returns:
         The serialized Base.
     """
-    from reflex.vars import LiteralObjectVar
+    from reflex.vars import LiteralVar
 
-    return str(
-        LiteralObjectVar.create(
-            {k: (None if callable(v) else v) for k, v in value.dict().items()},
-            _var_type=type(value),
-        )
-    )
+    return str(LiteralVar.create(value))
 
 
 @serializer
