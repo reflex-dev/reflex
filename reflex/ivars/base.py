@@ -482,13 +482,6 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             ):
                 return self.to(NumberVar, self._var_type)
 
-            if all(
-                inspect.isclass(t)
-                and (issubclass(t, Base) or dataclasses.is_dataclass(t))
-                for t in inner_types
-            ):
-                return self.to(ObjectVar, self._var_type)
-
             return self.to(ObjectVar, self._var_type)
 
         if not inspect.isclass(fixed_type):
