@@ -36,6 +36,7 @@ import dill
 from sqlalchemy.orm import DeclarativeBase
 
 from reflex.config import get_config
+from reflex.utils.imports import ImportVar
 from reflex.vars.base import (
     ComputedVar,
     DynamicRouteVar,
@@ -1908,6 +1909,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     imports[f"https://cdn.jsdelivr.net/npm/{lib}" + "/+esm"] = names
                 else:
                     imports[lib] = names
+            if "react" not in imports:
+                imports["react"] = []
+            imports["react"].append(ImportVar("*", is_default=True, alias="React"))
 
             module_code_lines = templates.STATEFUL_COMPONENTS.render(
                 imports=utils.compile_imports(imports),

@@ -1708,9 +1708,9 @@ class ComputedVar(Var[RETURN_TYPE]):
                 + self._js_expr
             )
 
-            if inspect.isclass(self._var_type) and issubclass(
-                self._var_type, Component
-            ):
+            var_type = get_origin(self._var_type) or self._var_type
+
+            if inspect.isclass(var_type) and issubclass(var_type, Component):
                 unique_var_name, var_data = eval_component(field_name)
                 return self._replace(
                     _js_expr=unique_var_name,
