@@ -48,7 +48,7 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
 pydantic_main.validate_field_name = validate_field_name  # type: ignore
 
 if TYPE_CHECKING:
-    from reflex.ivars import ImmutableVar
+    from reflex.vars import Var
 
 
 class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
@@ -104,7 +104,7 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
         return cls.__fields__
 
     @classmethod
-    def add_field(cls, var: ImmutableVar, default_value: Any):
+    def add_field(cls, var: Var, default_value: Any):
         """Add a pydantic field after class definition.
 
         Used by State.add_var() to correctly handle the new variable.
