@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Type, Union
 
 import pytest
 
@@ -60,7 +60,7 @@ def create_color_var(color):
         ),
     ],
 )
-def test_color(color, expected, expected_type: Type[str] | Type[Color]):
+def test_color(color, expected, expected_type: Union[Type[str], Type[Color]]):
     assert color._var_type is expected_type
     assert str(color) == expected
 
