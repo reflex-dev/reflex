@@ -3,8 +3,7 @@
 from typing import List, Union
 
 from reflex.components.el.element import Element
-from reflex.ivars.base import ImmutableVar
-from reflex.vars import Var as Var
+from reflex.vars.base import Var
 
 from .base import BaseHTML
 
@@ -90,9 +89,7 @@ class StyleEl(Element):  # noqa: E742
 
     media: Var[Union[str, int, bool]]
 
-    special_props: List[ImmutableVar] = [
-        ImmutableVar.create_safe("suppressHydrationWarning")
-    ]
+    special_props: List[Var] = [Var(_js_expr="suppressHydrationWarning")]
 
 
 base = Base.create

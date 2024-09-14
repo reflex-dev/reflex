@@ -7,8 +7,8 @@ from reflex.components.core.upload import (
     get_upload_url,
 )
 from reflex.event import EventSpec
-from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.state import State
+from reflex.vars.base import LiteralVar, Var
 
 
 class TestUploadState(State):
@@ -38,7 +38,7 @@ def test_cancel_upload():
 
 def test_get_upload_url():
     url = get_upload_url("foo_file")
-    assert isinstance(url, ImmutableVar)
+    assert isinstance(url, Var)
 
 
 def test__on_drop_spec():

@@ -15,8 +15,8 @@ def VarOperations():
     from typing import Dict, List
 
     import reflex as rx
-    from reflex.ivars.base import LiteralVar
-    from reflex.ivars.sequence import ArrayVar
+    from reflex.vars.base import LiteralVar
+    from reflex.vars.sequence import ArrayVar
 
     class Object(rx.Base):
         str: str = "hello"

@@ -9,7 +9,8 @@ from reflex.components.tags.tag import Tag
 from reflex.event import EventChain, EventHandler
 from reflex.utils.format import format_prop, wrap
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, get_unique_variable_name
+from reflex.vars import get_unique_variable_name
+from reflex.vars.base import Var
 
 
 class Clipboard(Fragment):

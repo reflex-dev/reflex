@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
 
-from reflex.ivars.base import ImmutableVar
 from reflex.utils.prerequisites import get_web_dir
+from reflex.vars.base import Var
 
 try:
     from pydantic.v1.fields import ModelField
@@ -268,7 +268,7 @@ def compile_custom_component(
     }
 
     # Concatenate the props.
-    props = [prop._var_name for prop in component.get_prop_vars()]
+    props = [prop._js_expr for prop in component.get_prop_vars()]
 
     # Compile the component.
     return (
@@ -286,7 +286,7 @@ def compile_custom_component(
 def create_document_root(
     head_components: list[Component] | None = None,
     html_lang: Optional[str] = None,
-    html_custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
+    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
 ) -> Component:
     """Create the document root.
 

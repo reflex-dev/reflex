@@ -249,14 +249,9 @@ def serialize_base(value: Base) -> str:
     Returns:
         The serialized Base.
     """
-    from reflex.ivars import LiteralObjectVar
+    from reflex.vars import LiteralVar
 
-    return str(
-        LiteralObjectVar.create(
-            {k: (None if callable(v) else v) for k, v in value.dict().items()},
-            _var_type=type(value),
-        )
-    )
+    return str(LiteralVar.create(value))
 
 
 @serializer
@@ -269,7 +264,7 @@ def serialize_list(value: Union[List, Tuple, Set]) -> str:
     Returns:
         The serialized list.
     """
-    from reflex.ivars import LiteralArrayVar
+    from reflex.vars import LiteralArrayVar
 
     return str(LiteralArrayVar.create(value))
 
@@ -284,7 +279,7 @@ def serialize_dict(prop: Dict[str, Any]) -> str:
     Returns:
         The serialized dictionary.
     """
-    from reflex.ivars import LiteralObjectVar
+    from reflex.vars import LiteralObjectVar
 
     return str(LiteralObjectVar.create(prop))
 

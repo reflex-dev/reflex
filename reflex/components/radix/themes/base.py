@@ -7,9 +7,8 @@ from typing import Any, Dict, Literal
 from reflex.components import Component
 from reflex.components.tags import Tag
 from reflex.config import get_config
-from reflex.ivars.base import ImmutableVar
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]
@@ -236,8 +235,8 @@ class Theme(RadixThemesComponent):
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         tag = super()._render(props)
         tag.add_props(
-            css=ImmutableVar.create(
-                f"{{...theme.styles.global[':root'], ...theme.styles.global.body}}"
+            css=Var(
+                _js_expr=f"{{...theme.styles.global[':root'], ...theme.styles.global.body}}"
             ),
         )
         return tag

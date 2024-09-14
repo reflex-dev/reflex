@@ -338,7 +338,6 @@ _SUBMODULES: set[str] = {
     "testing",
     "utils",
     "vars",
-    "ivars",
     "config",
     "compiler",
 }

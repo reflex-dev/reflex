@@ -4,12 +4,19 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, List, Tuple, Type, Union, get_args
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Iterable,
+    Tuple,
+    Type,
+    Union,
+    get_args,
+)
 
 from reflex.components.tags.tag import Tag
-from reflex.ivars.base import ImmutableVar
-from reflex.ivars.sequence import LiteralArrayVar
-from reflex.vars import Var, get_unique_variable_name
+from reflex.vars import LiteralArrayVar, Var, get_unique_variable_name
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
@@ -20,7 +27,7 @@ class IterTag(Tag):
     """An iterator tag."""
 
     # The var to iterate over.
-    iterable: Var[List] = dataclasses.field(
+    iterable: Var[Iterable] = dataclasses.field(
         default_factory=lambda: LiteralArrayVar.create([])
     )
 
@@ -39,7 +46,7 @@ class IterTag(Tag):
         Returns:
             The type of the iterable var.
         """
-        iterable = self.iterable.upcast()
+        iterable = self.iterable
         try:
             if iterable._var_type.mro()[0] == dict:
                 # Arg is a tuple of (key, value).
@@ -60,8 +67,8 @@ class IterTag(Tag):
         Returns:
             The index var.
         """
-        return ImmutableVar(
-            _var_name=self.index_var_name,
+        return Var(
+            _js_expr=self.index_var_name,
             _var_type=int,
         ).guess_type()
 
@@ -73,8 +80,8 @@ class IterTag(Tag):
         Returns:
             The arg var.
         """
-        return ImmutableVar(
-            _var_name=self.arg_var_name,
+        return Var(
+            _js_expr=self.arg_var_name,
             _var_type=self.get_iterable_var_type(),
         ).guess_type()
 
@@ -86,8 +93,8 @@ class IterTag(Tag):
         Returns:
             The index var.
         """
-        return ImmutableVar(
-            _var_name=self.index_var_name,
+        return Var(
+            _js_expr=self.index_var_name,
             _var_type=int,
         ).guess_type()
 
@@ -99,8 +106,8 @@ class IterTag(Tag):
         Returns:
             The arg var.
         """
-        return ImmutableVar(
-            _var_name=self.arg_var_name,
+        return Var(
+            _js_expr=self.arg_var_name,
             _var_type=self.get_iterable_var_type(),
         ).guess_type()
 
