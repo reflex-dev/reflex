@@ -117,6 +117,17 @@ class Var(Generic[VAR_TYPE]):
         return self._js_expr
 
     @property
+    def _var_field_name(self) -> str:
+        """The name of the field.
+
+        Returns:
+            The name of the field.
+        """
+        var_data = self._get_all_var_data()
+        field_name = var_data.field_name if var_data else None
+        return field_name or self._js_expr
+
+    @property
     def _var_is_string(self) -> bool:
         """Whether the var is a string literal.
 
@@ -553,8 +564,7 @@ class Var(Generic[VAR_TYPE]):
         Returns:
             The name of the setter function.
         """
-        var_name_parts = self._js_expr.split(".")
-        setter = constants.SETTER_PREFIX + var_name_parts[-1]
+        setter = constants.SETTER_PREFIX + self._var_field_name
         var_data = self._get_all_var_data()
         if var_data is None:
             return setter
@@ -568,7 +578,7 @@ class Var(Generic[VAR_TYPE]):
         Returns:
             A function that that creates a setter for the var.
         """
-        actual_name = self._js_expr.split(".")[-1]
+        actual_name = self._var_field_name
 
         def setter(state: BaseState, value: Any):
             """Get the setter for the var.
@@ -610,7 +620,9 @@ class Var(Generic[VAR_TYPE]):
         return StateOperation.create(
             formatted_state_name,
             self,
-            _var_data=VarData.merge(VarData.from_state(state), self._var_data),
+            _var_data=VarData.merge(
+                VarData.from_state(state, self._js_expr), self._var_data
+            ),
         ).guess_type()
 
     def __eq__(self, other: Var | Any) -> BooleanVar:
@@ -1684,15 +1696,36 @@ class ComputedVar(Var[RETURN_TYPE]):
             The value of the var for the given instance.
         """
         if instance is None:
+            from reflex.components import Component
+
             state_where_defined = owner
             while self.fget.__name__ in state_where_defined.inherited_vars:
                 state_where_defined = state_where_defined.get_parent_state()
 
-            return self._replace(
-                _js_expr=format_state_name(state_where_defined.get_full_name())
+            field_name = (
+                format_state_name(state_where_defined.get_full_name())
                 + "."
-                + self._js_expr,
-                merge_var_data=VarData.from_state(state_where_defined),
+                + self._js_expr
+            )
+
+            if inspect.isclass(self._var_type) and issubclass(
+                self._var_type, Component
+            ):
+                unique_var_name, var_data = eval_component(field_name)
+                return self._replace(
+                    _js_expr=unique_var_name,
+                    merge_var_data=VarData.merge(
+                        VarData.from_state(state_where_defined, self._js_expr),
+                        var_data,
+                    ),
+                ).guess_type()
+
+            return self._replace(
+                _js_expr=field_name,
+                merge_var_data=VarData.from_state(
+                    state_where_defined,
+                    self._js_expr,
+                ),
             ).guess_type()
 
         if not self._cache:
@@ -2537,3 +2570,38 @@ REPLACED_NAMES = {
     "set_state": "_var_set_state",
     "deps": "_deps",
 }
+
+
+def eval_component(var_name: str) -> Tuple[str, VarData]:
+    """Evaluate a component.
+
+    Args:
+        var_name: The name of the component.
+
+    Returns:
+        The component and the associated VarData.
+    """
+    unique_var_name = get_unique_variable_name()
+    return unique_var_name, VarData(
+        imports={
+            f"/{constants.Dirs.STATE_PATH}": [
+                imports.ImportVar(tag="evalReactComponent"),
+            ]
+        },
+        hooks={
+            f"const [{unique_var_name}, set_{unique_var_name}] = useState(null);": None,
+            "useEffect(() => {"
+            "let isMounted = true;"
+            f"evalReactComponent({var_name})"
+            ".then((component) => {"
+            "if (isMounted) {"
+            f"set_{unique_var_name}(component);"
+            "}"
+            "});"
+            "return () => {"
+            "isMounted = false;"
+            "};"
+            "}"
+            f", [{var_name}]);": None,
+        },
+    )

@@ -40,8 +40,8 @@ from reflex.vars.base import (
     ComputedVar,
     DynamicRouteVar,
     Var,
-    eval_component,
     computed_var,
+    eval_component,
     is_computed_var,
 )
 
