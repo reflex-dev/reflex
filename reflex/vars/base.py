@@ -2348,6 +2348,9 @@ class VarData:
     # The name of the enclosing state.
     state: str = dataclasses.field(default="")
 
+    # The name of the field in the state.
+    field_name: str = dataclasses.field(default="")
+
     # Imports needed to render this var
     imports: ImmutableParsedImportDict = dataclasses.field(default_factory=tuple)
 
@@ -2357,6 +2360,7 @@ class VarData:
     def __init__(
         self,
         state: str = "",
+        field_name: str = "",
         imports: ImportDict | ParsedImportDict | None = None,
         hooks: dict[str, None] | None = None,
     ):
@@ -2364,6 +2368,7 @@ class VarData:
 
         Args:
             state: The name of the enclosing state.
+            field_name: The name of the field in the state.
             imports: Imports needed to render this var.
             hooks: Hooks that need to be present in the component to render this var.
         """
@@ -2373,6 +2378,7 @@ class VarData:
             )
         )
         object.__setattr__(self, "state", state)
+        object.__setattr__(self, "field_name", field_name)
         object.__setattr__(self, "imports", immutable_imports)
         object.__setattr__(self, "hooks", tuple(hooks or {}))
 
@@ -2395,12 +2401,14 @@ class VarData:
             The merged var data object.
         """
         state = ""
+        field_name = ""
         _imports = {}
         hooks = {}
         for var_data in others:
             if var_data is None:
                 continue
             state = state or var_data.state
+            field_name = field_name or var_data.field_name
             _imports = imports.merge_imports(_imports, var_data.imports)
             hooks.update(
                 var_data.hooks
@@ -2408,9 +2416,10 @@ class VarData:
                 else {k: None for k in var_data.hooks}
             )
 
-        if state or _imports or hooks:
+        if state or _imports or hooks or field_name:
             return VarData(
                 state=state,
+                field_name=field_name,
                 imports=_imports,
                 hooks=hooks,
             )
@@ -2422,38 +2431,15 @@ class VarData:
         Returns:
             True if any field is set to a non-default value.
         """
-        return bool(self.state or self.imports or self.hooks)
-
-    def __eq__(self, other: Any) -> bool:
-        """Check if two var data objects are equal.
-
-        Args:
-            other: The other var data object to compare.
-
-        Returns:
-            True if all fields are equal and collapsed imports are equal.
-        """
-        if not isinstance(other, VarData):
-            return False
-
-        # Don't compare interpolations - that's added in by the decoder, and
-        # not part of the vardata itself.
-        return (
-            self.state == other.state
-            and self.hooks
-            == (
-                other.hooks if isinstance(other, VarData) else tuple(other.hooks.keys())
-            )
-            and imports.collapse_imports(self.imports)
-            == imports.collapse_imports(other.imports)
-        )
+        return bool(self.state or self.imports or self.hooks or self.field_name)
 
     @classmethod
-    def from_state(cls, state: Type[BaseState] | str) -> VarData:
+    def from_state(cls, state: Type[BaseState] | str, field_name: str = "") -> VarData:
         """Set the state of the var.
 
         Args:
             state: The state to set or the full name of the state.
+            field_name: The name of the field in the state. Optional.
 
         Returns:
             The var with the set state.
@@ -2461,8 +2447,9 @@ class VarData:
         from reflex.utils import format
 
         state_name = state if isinstance(state, str) else state.get_full_name()
-        new_var_data = VarData(
+        return VarData(
             state=state_name,
+            field_name=field_name,
             hooks={
                 "const {0} = useContext(StateContexts.{0})".format(
                     format.format_state_name(state_name)
@@ -2473,7 +2460,6 @@ class VarData:
                 "react": [ImportVar(tag="useContext")],
             },
         )
-        return new_var_data
 
 
 def _decode_var_immutable(value: str) -> tuple[VarData | None, str]:

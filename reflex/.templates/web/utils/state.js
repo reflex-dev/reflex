@@ -118,8 +118,8 @@ export const isStateful = () => {
   if (event_queue.length === 0) {
     return false;
   }
-  return event_queue.some(event => event.name.startsWith("reflex___state"));
-}
+  return event_queue.some((event) => event.name.startsWith("reflex___state"));
+};
 
 /**
  * Apply a delta to the state.
@@ -131,14 +131,16 @@ export const applyDelta = (state, delta) => {
 };
 
 export const evalReactComponent = async (component) => {
-  console.log("Detected dynamic component in delta: ", component)
-  const output = Babel.transform(component, { presets: ["react"] }).code
+  console.log("Detected dynamic component in delta: ", component);
+  if (!window.React && window.__reflex) {
+    window.React = window.__reflex.react;
+  }
+  const output = Babel.transform(component, { presets: ["react"] }).code;
   const encodedJs = encodeURIComponent(output);
-  const dataUri = 'data:text/javascript;charset=utf-8,'
-    + encodedJs;
-  const module = await eval(`import(dataUri)`)
+  const dataUri = "data:text/javascript;charset=utf-8," + encodedJs;
+  const module = await eval(`import(dataUri)`);
   return module.default;
-}
+};
 
 /**
  * Only Queue and process events when websocket connection exists.
@@ -152,7 +154,7 @@ export const queueEventIfSocketExists = async (events, socket) => {
     return;
   }
   await queueEvents(events, socket);
-}
+};
 
 /**
  * Handle frontend event or send the event to the backend via Websocket.
@@ -219,7 +221,10 @@ export const applyEvent = async (event, socket) => {
     const a = document.createElement("a");
     a.hidden = true;
     // Special case when linking to uploaded files
-    a.href = event.payload.url.replace("${getBackendURL(env.UPLOAD)}", getBackendURL(env.UPLOAD))
+    a.href = event.payload.url.replace(
+      "${getBackendURL(env.UPLOAD)}",
+      getBackendURL(env.UPLOAD)
+    );
     a.download = event.payload.filename;
     a.click();
     a.remove();
@@ -260,7 +265,7 @@ export const applyEvent = async (event, socket) => {
     } catch (e) {
       console.log("_call_script", e);
       if (window && window?.onerror) {
-        window.onerror(e.message, null, null, null, e)
+        window.onerror(e.message, null, null, null, e);
       }
     }
     return false;
@@ -301,10 +306,9 @@ export const applyEvent = async (event, socket) => {
 export const applyRestEvent = async (event, socket) => {
   let eventSent = false;
   if (event.handler === "uploadFiles") {
-
     if (event.payload.files === undefined || event.payload.files.length === 0) {
       // Submit the event over the websocket to trigger the event handler.
-      return await applyEvent(Event(event.name), socket)
+      return await applyEvent(Event(event.name), socket);
     }
 
     // Start upload, but do not wait for it, which would block other events.
@@ -408,7 +412,7 @@ export const connect = async (
       console.log("Disconnect backend before bfcache on navigation");
       socket.current.disconnect();
     }
-  }
+  };
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
@@ -585,7 +589,11 @@ export const hydrateClientStorage = (client_storage) => {
       }
     }
   }
-  if (client_storage.cookies || client_storage.local_storage || client_storage.session_storage) {
+  if (
+    client_storage.cookies ||
+    client_storage.local_storage ||
+    client_storage.session_storage
+  ) {
     return client_storage_values;
   }
   return {};
@@ -625,15 +633,17 @@ const applyClientStorageDelta = (client_storage, delta) => {
       ) {
         const options = client_storage.local_storage[state_key];
         localStorage.setItem(options.name || state_key, delta[substate][key]);
-      } else if(
+      } else if (
         client_storage.session_storage &&
         state_key in client_storage.session_storage &&
         typeof window !== "undefined"
       ) {
         const session_options = client_storage.session_storage[state_key];
-        sessionStorage.setItem(session_options.name || state_key, delta[substate][key]);
+        sessionStorage.setItem(
+          session_options.name || state_key,
+          delta[substate][key]
+        );
       }
-
     }
   }
 };
@@ -662,7 +672,7 @@ export const useEventLoop = (
     if (!(args instanceof Array)) {
       args = [args];
     }
-    const _e = args.filter((o) => o?.preventDefault !== undefined)[0]
+    const _e = args.filter((o) => o?.preventDefault !== undefined)[0];
 
     if (event_actions?.preventDefault && _e?.preventDefault) {
       _e.preventDefault();
@@ -682,7 +692,7 @@ export const useEventLoop = (
       debounce(
         combined_name,
         () => queueEvents(events, socket),
-        event_actions.debounce,
+        event_actions.debounce
       );
     } else {
       queueEvents(events, socket);
@@ -707,30 +717,32 @@ export const useEventLoop = (
     }
   }, [router.isReady]);
 
-    // Handle frontend errors and send them to the backend via websocket.
-    useEffect(() => {
-      
-      if (typeof window === 'undefined') {
-        return;
-      }
-  
-      window.onerror = function (msg, url, lineNo, columnNo, error) {
-        addEvents([Event(`${exception_state_name}.handle_frontend_exception`, {
-          stack: error.stack,
-        })])
-        return false;
-      }
+  // Handle frontend errors and send them to the backend via websocket.
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
 
-      //NOTE: Only works in Chrome v49+
-      //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
-      window.onunhandledrejection = function (event) {
-          addEvents([Event(`${exception_state_name}.handle_frontend_exception`, {
-            stack: event.reason.stack,
-          })])
-          return false;
-      }
-  
-    },[])
+    window.onerror = function (msg, url, lineNo, columnNo, error) {
+      addEvents([
+        Event(`${exception_state_name}.handle_frontend_exception`, {
+          stack: error.stack,
+        }),
+      ]);
+      return false;
+    };
+
+    //NOTE: Only works in Chrome v49+
+    //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
+    window.onunhandledrejection = function (event) {
+      addEvents([
+        Event(`${exception_state_name}.handle_frontend_exception`, {
+          stack: event.reason.stack,
+        }),
+      ]);
+      return false;
+    };
+  }, []);
 
   // Main event loop.
   useEffect(() => {
@@ -793,11 +805,11 @@ export const useEventLoop = (
   // Route after the initial page hydration.
   useEffect(() => {
     const change_start = () => {
-      const main_state_dispatch = dispatch["reflex___state____state"]
+      const main_state_dispatch = dispatch["reflex___state____state"];
       if (main_state_dispatch !== undefined) {
-        main_state_dispatch({ is_hydrated: false })
+        main_state_dispatch({ is_hydrated: false });
       }
-    }
+    };
     const change_complete = () => addEvents(onLoadInternalEvent());
     router.events.on("routeChangeStart", change_start);
     router.events.on("routeChangeComplete", change_complete);
