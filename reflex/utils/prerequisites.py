@@ -1285,8 +1285,10 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
     for tp in templates_data:
         if tp["hidden"] or tp["code_url"] is None:
             continue
-        tp.pop("hidden")
-        filtered_templates[tp["name"]] = Template(**tp)
+        known_fields = set(f.name for f in dataclasses.fields(Template))
+        filtered_templates[tp["name"]] = Template(
+            **{k: v for k, v in tp.items() if k in known_fields}
+        )
     return filtered_templates
 
 
