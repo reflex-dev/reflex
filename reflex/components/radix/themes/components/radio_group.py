@@ -10,10 +10,9 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar, LiteralVar
-from reflex.ivars.sequence import StringVar
 from reflex.utils import types
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
+from reflex.vars.sequence import StringVar
 
 from ..base import (
     LiteralAccentColor,
@@ -164,11 +163,11 @@ class HighLevelRadioGroup(RadixThemesComponent):
         ):
             default_value = LiteralVar.create(default_value)  # type: ignore
         else:
-            default_value = ImmutableVar.create_safe(default_value).to_string()
+            default_value = LiteralVar.create(default_value).to_string()
 
         def radio_group_item(value: Var) -> Component:
             item_value = rx.cond(
-                value._type() == "string",
+                value.js_type() == "string",
                 value,
                 value.to_string(),
             ).to(StringVar)

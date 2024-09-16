@@ -9,8 +9,7 @@ from reflex.components.recharts.general import ResponsiveContainer
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
 from reflex.event import EventHandler
-from reflex.ivars.base import LiteralVar
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
 
 from .recharts import (
     LiteralAnimationEasing,

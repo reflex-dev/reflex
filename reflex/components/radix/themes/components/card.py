@@ -4,7 +4,7 @@ from typing import Literal
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import (
     RadixThemesComponent,

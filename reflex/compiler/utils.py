@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
 
 from reflex.utils.prerequisites import get_web_dir
+from reflex.vars.base import Var
 
 try:
     from pydantic.v1.fields import ModelField
@@ -32,7 +33,6 @@ from reflex.state import BaseState, Cookie, LocalStorage, SessionStorage
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
 from reflex.utils.imports import ImportVar, ParsedImportDict
-from reflex.vars import Var
 
 # To re-export this function.
 merge_imports = imports.merge_imports
@@ -268,7 +268,7 @@ def compile_custom_component(
     }
 
     # Concatenate the props.
-    props = [prop._var_name for prop in component.get_prop_vars()]
+    props = [prop._js_expr for prop in component.get_prop_vars()]
 
     # Compile the component.
     return (

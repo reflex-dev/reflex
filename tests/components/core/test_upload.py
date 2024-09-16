@@ -8,7 +8,7 @@ from reflex.components.core.upload import (
 )
 from reflex.event import EventSpec
 from reflex.state import State
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
 
 
 class TestUploadState(State):
@@ -42,7 +42,7 @@ def test_get_upload_url():
 
 
 def test__on_drop_spec():
-    assert isinstance(_on_drop_spec(Var.create([])), list)
+    assert isinstance(_on_drop_spec(LiteralVar.create([])), list)
 
 
 def test_upload_create():

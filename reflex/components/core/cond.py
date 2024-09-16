@@ -8,11 +8,11 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
-from reflex.ivars.base import ImmutableVar, LiteralVar
-from reflex.ivars.number import ternary_operation
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
+from reflex.vars.number import ternary_operation
 
 _IS_TRUE_IMPORT: ImportDict = {
     f"/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
@@ -94,7 +94,7 @@ class Cond(MemoizationLeaf):
             ).set(
                 props=tag.format_props(),
             ),
-            cond_state=f"isTrue({self.cond._var_full_name})",
+            cond_state=f"isTrue({str(self.cond)})",
         )
 
     def add_imports(self) -> ImportDict:
@@ -103,10 +103,11 @@ class Cond(MemoizationLeaf):
         Returns:
             The import dict for the component.
         """
-        cond_imports: dict[str, str | ImportVar | list[str | ImportVar]] = getattr(
-            VarData.merge(self.cond._get_all_var_data()), "imports", {}
-        )
-        return {**cond_imports, **_IS_TRUE_IMPORT}
+        var_data = VarData.merge(self.cond._get_all_var_data())
+
+        imports = var_data.old_school_imports() if var_data else {}
+
+        return {**imports, **_IS_TRUE_IMPORT}
 
 
 @overload
@@ -118,10 +119,10 @@ def cond(condition: Any, c1: Component) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Any, c2: Any) -> ImmutableVar: ...
+def cond(condition: Any, c1: Any, c2: Any) -> Var: ...
 
 
-def cond(condition: Any, c1: Any, c2: Any = None) -> Component | ImmutableVar:
+def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
     """Create a conditional component or Prop.
 
     Args:
@@ -135,8 +136,6 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | ImmutableVar:
     Raises:
         ValueError: If the arguments are invalid.
     """
-    if isinstance(condition, Var) and not isinstance(condition, ImmutableVar):
-        condition._var_is_local = True
     # Convert the condition to a Var.
     cond_var = LiteralVar.create(condition)
     assert cond_var is not None, "The condition must be set."

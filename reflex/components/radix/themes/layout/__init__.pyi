@@ -9,6 +9,7 @@ from .container import container as container
 from .flex import flex as flex
 from .grid import grid as grid
 from .list import list_item as list_item
+from .list import list_ns as list  # noqa
 from .list import ordered_list as ordered_list
 from .list import unordered_list as unordered_list
 from .section import section as section

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import functools
 import io
 import json
@@ -13,7 +14,6 @@ from typing import Generator, List, Tuple, Type
 from unittest.mock import AsyncMock
 
 import pytest
-import reflex_chakra as rc
 import sqlmodel
 from fastapi import FastAPI, UploadFile
 from starlette_admin.auth import AuthProvider
@@ -50,7 +50,7 @@ from reflex.state import (
 )
 from reflex.style import Style
 from reflex.utils import exceptions, format
-from reflex.vars import computed_var
+from reflex.vars.base import computed_var
 
 from .conftest import chdir
 from .states import (
@@ -69,7 +69,7 @@ class EmptyState(BaseState):
 
 
 @pytest.fixture
-def index_page():
+def index_page() -> ComponentCallable:
     """An index page.
 
     Returns:
@@ -83,7 +83,7 @@ def index_page():
 
 
 @pytest.fixture
-def about_page():
+def about_page() -> ComponentCallable:
     """An about page.
 
     Returns:
@@ -268,8 +268,6 @@ def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
     app = App(state=EmptyState)
     assert app.state is not None
     route = "/test/[dynamic]"
-    if windows_platform:
-        route.lstrip("/").replace("/", "\\")
     assert app.pages == {}
     app.add_page(index_page, route=route)
     assert app.pages.keys() == {"test/[dynamic]"}
@@ -919,9 +917,57 @@ class DynamicState(BaseState):
     on_load_internal = OnLoadInternalState.on_load_internal.fn
 
 
+def test_dynamic_arg_shadow(
+    index_page: ComponentCallable,
+    windows_platform: bool,
+    token: str,
+    app_module_mock: unittest.mock.Mock,
+    mocker,
+):
+    """Create app with dynamic route var and try to add a page with a dynamic arg that shadows a state var.
+
+    Args:
+        index_page: The index page.
+        windows_platform: Whether the system is windows.
+        token: a Token.
+        app_module_mock: Mocked app module.
+        mocker: pytest mocker object.
+    """
+    arg_name = "counter"
+    route = f"/test/[{arg_name}]"
+    app = app_module_mock.app = App(state=DynamicState)
+    assert app.state is not None
+    with pytest.raises(NameError):
+        app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
+
+
+def test_multiple_dynamic_args(
+    index_page: ComponentCallable,
+    windows_platform: bool,
+    token: str,
+    app_module_mock: unittest.mock.Mock,
+    mocker,
+):
+    """Create app with multiple dynamic route vars with the same name.
+
+    Args:
+        index_page: The index page.
+        windows_platform: Whether the system is windows.
+        token: a Token.
+        app_module_mock: Mocked app module.
+        mocker: pytest mocker object.
+    """
+    arg_name = "my_arg"
+    route = f"/test/[{arg_name}]"
+    route2 = f"/test2/[{arg_name}]"
+    app = app_module_mock.app = App(state=EmptyState)
+    app.add_page(index_page, route=route)
+    app.add_page(index_page, route=route2)
+
+
 @pytest.mark.asyncio
 async def test_dynamic_route_var_route_change_completed_on_load(
-    index_page,
+    index_page: ComponentCallable,
     windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
@@ -941,8 +987,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     """
     arg_name = "dynamic"
     route = f"/test/[{arg_name}]"
-    if windows_platform:
-        route.lstrip("/").replace("/", "\\")
     app = app_module_mock.app = App(state=DynamicState)
     assert app.state is not None
     assert arg_name not in app.state.vars
@@ -1009,7 +1053,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     f"comp_{arg_name}": exp_val,
                     constants.CompileVars.IS_HYDRATED: False,
                     # "side_effect_counter": exp_index,
-                    "router": exp_router,
+                    "router": dataclasses.asdict(exp_router),
                 }
             },
             events=[
@@ -1267,13 +1311,13 @@ def test_app_wrap_priority(compilable_app: tuple[App, Path]):
         tag = "Fragment1"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(99, "Box"): rc.box()}
+            return {(99, "Box"): rx.box()}
 
     class Fragment2(Component):
         tag = "Fragment2"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(50, "Text"): rc.text()}
+            return {(50, "Text"): rx.text()}
 
     class Fragment3(Component):
         tag = "Fragment3"
@@ -1293,19 +1337,17 @@ def test_app_wrap_priority(compilable_app: tuple[App, Path]):
     assert (
         "function AppWrap({children}) {"
         "return ("
-        "<Box>"
-        "<ChakraProvider theme={extendTheme(theme)}>"
-        "<ChakraColorModeProvider>"
-        "<Text>"
+        "<RadixThemesBox>"
+        '<RadixThemesText as={"p"}>'
+        "<RadixThemesColorModeProvider>"
         "<Fragment2>"
         "<Fragment>"
         "{children}"
         "</Fragment>"
         "</Fragment2>"
-        "</Text>"
-        "</ChakraColorModeProvider>"
-        "</ChakraProvider>"
-        "</Box>"
+        "</RadixThemesColorModeProvider>"
+        "</RadixThemesText>"
+        "</RadixThemesBox>"
         ")"
         "}"
     ) in "".join(app_js_lines)

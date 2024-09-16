@@ -10,7 +10,7 @@ from reflex.components.component import Component, NoSSRComponent
 from reflex.event import EventHandler
 from reflex.utils.format import to_camel_case
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 
 class EditorButtonList(list, enum.Enum):

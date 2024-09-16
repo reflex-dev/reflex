@@ -12,7 +12,6 @@ from . import compiler as compiler
 from . import components as components
 from . import config as config
 from . import event as event
-from . import ivars as ivars
 from . import model as model
 from . import style as style
 from . import testing as testing
@@ -132,6 +131,7 @@ from .components.radix.themes.layout.container import container as container
 from .components.radix.themes.layout.flex import flex as flex
 from .components.radix.themes.layout.grid import grid as grid
 from .components.radix.themes.layout.list import list_item as list_item
+from .components.radix.themes.layout.list import list_ns as list  # noqa
 from .components.radix.themes.layout.list import ordered_list as ordered_list
 from .components.radix.themes.layout.list import unordered_list as unordered_list
 from .components.radix.themes.layout.section import section as section

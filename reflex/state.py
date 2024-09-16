@@ -5,8 +5,10 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import copy
+import dataclasses
 import functools
 import inspect
+import json
 import os
 import uuid
 from abc import ABC, abstractmethod
@@ -34,7 +36,13 @@ import dill
 from sqlalchemy.orm import DeclarativeBase
 
 from reflex.config import get_config
-from reflex.ivars.base import ImmutableComputedVar, ImmutableVar, immutable_computed_var
+from reflex.vars.base import (
+    ComputedVar,
+    DynamicRouteVar,
+    Var,
+    computed_var,
+    is_computed_var,
+)
 
 try:
     import pydantic.v1 as pydantic
@@ -55,35 +63,37 @@ from reflex.event import (
     fix_events,
 )
 from reflex.utils import console, format, path_ops, prerequisites, types
-from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
+from reflex.utils.exceptions import (
+    DynamicRouteArgShadowsStateVar,
+    ImmutableStateError,
+    LockExpiredError,
+)
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import SerializedType, serialize, serializer
 from reflex.utils.types import override
-from reflex.vars import (
-    ComputedVar,
-    ImmutableVarData,
-    Var,
-)
+from reflex.vars import VarData
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
 
 
 Delta = Dict[str, Any]
-var = immutable_computed_var
+var = computed_var
 
 
 # If the state is this large, it's considered a performance issue.
 TOO_LARGE_SERIALIZED_STATE = 100 * 1024  # 100kb
 
 
-class HeaderData(Base):
+@dataclasses.dataclass(frozen=True)
+class HeaderData:
     """An object containing headers data."""
 
     host: str = ""
     origin: str = ""
     upgrade: str = ""
     connection: str = ""
+    cookie: str = ""
     pragma: str = ""
     cache_control: str = ""
     user_agent: str = ""
@@ -99,13 +109,16 @@ class HeaderData(Base):
         Args:
             router_data: the router_data dict.
         """
-        super().__init__()
         if router_data:
             for k, v in router_data.get(constants.RouteVar.HEADERS, {}).items():
-                setattr(self, format.to_snake_case(k), v)
+                object.__setattr__(self, format.to_snake_case(k), v)
+        else:
+            for k in dataclasses.fields(self):
+                object.__setattr__(self, k.name, "")
 
 
-class PageData(Base):
+@dataclasses.dataclass(frozen=True)
+class PageData:
     """An object containing page data."""
 
     host: str = ""  # repeated with self.headers.origin (remove or keep the duplicate?)
@@ -113,7 +126,7 @@ class PageData(Base):
     raw_path: str = ""
     full_path: str = ""
     full_raw_path: str = ""
-    params: dict = {}
+    params: dict = dataclasses.field(default_factory=dict)
 
     def __init__(self, router_data: Optional[dict] = None):
         """Initalize the PageData object based on router_data.
@@ -121,17 +134,34 @@ class PageData(Base):
         Args:
             router_data: the router_data dict.
         """
-        super().__init__()
         if router_data:
-            self.host = router_data.get(constants.RouteVar.HEADERS, {}).get("origin")
-            self.path = router_data.get(constants.RouteVar.PATH, "")
-            self.raw_path = router_data.get(constants.RouteVar.ORIGIN, "")
-            self.full_path = f"{self.host}{self.path}"
-            self.full_raw_path = f"{self.host}{self.raw_path}"
-            self.params = router_data.get(constants.RouteVar.QUERY, {})
+            object.__setattr__(
+                self,
+                "host",
+                router_data.get(constants.RouteVar.HEADERS, {}).get("origin", ""),
+            )
+            object.__setattr__(
+                self, "path", router_data.get(constants.RouteVar.PATH, "")
+            )
+            object.__setattr__(
+                self, "raw_path", router_data.get(constants.RouteVar.ORIGIN, "")
+            )
+            object.__setattr__(self, "full_path", f"{self.host}{self.path}")
+            object.__setattr__(self, "full_raw_path", f"{self.host}{self.raw_path}")
+            object.__setattr__(
+                self, "params", router_data.get(constants.RouteVar.QUERY, {})
+            )
+        else:
+            object.__setattr__(self, "host", "")
+            object.__setattr__(self, "path", "")
+            object.__setattr__(self, "raw_path", "")
+            object.__setattr__(self, "full_path", "")
+            object.__setattr__(self, "full_raw_path", "")
+            object.__setattr__(self, "params", {})
 
 
-class SessionData(Base):
+@dataclasses.dataclass(frozen=True, init=False)
+class SessionData:
     """An object containing session data."""
 
     client_token: str = ""
@@ -144,19 +174,24 @@ class SessionData(Base):
         Args:
             router_data: the router_data dict.
         """
-        super().__init__()
         if router_data:
-            self.client_token = router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
-            self.client_ip = router_data.get(constants.RouteVar.CLIENT_IP, "")
-            self.session_id = router_data.get(constants.RouteVar.SESSION_ID, "")
+            client_token = router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
+            client_ip = router_data.get(constants.RouteVar.CLIENT_IP, "")
+            session_id = router_data.get(constants.RouteVar.SESSION_ID, "")
+        else:
+            client_token = client_ip = session_id = ""
+        object.__setattr__(self, "client_token", client_token)
+        object.__setattr__(self, "client_ip", client_ip)
+        object.__setattr__(self, "session_id", session_id)
 
 
-class RouterData(Base):
+@dataclasses.dataclass(frozen=True, init=False)
+class RouterData:
     """An object containing RouterData."""
 
-    session: SessionData = SessionData()
-    headers: HeaderData = HeaderData()
-    page: PageData = PageData()
+    session: SessionData = dataclasses.field(default_factory=SessionData)
+    headers: HeaderData = dataclasses.field(default_factory=HeaderData)
+    page: PageData = dataclasses.field(default_factory=PageData)
 
     def __init__(self, router_data: Optional[dict] = None):
         """Initialize the RouterData object.
@@ -164,10 +199,30 @@ class RouterData(Base):
         Args:
             router_data: the router_data dict.
         """
-        super().__init__()
-        self.session = SessionData(router_data)
-        self.headers = HeaderData(router_data)
-        self.page = PageData(router_data)
+        object.__setattr__(self, "session", SessionData(router_data))
+        object.__setattr__(self, "headers", HeaderData(router_data))
+        object.__setattr__(self, "page", PageData(router_data))
+
+    def toJson(self) -> str:
+        """Convert the object to a JSON string.
+
+        Returns:
+            The JSON string.
+        """
+        return json.dumps(dataclasses.asdict(self))
+
+
+@serializer
+def serialize_routerdata(value: RouterData) -> str:
+    """Serialize a RouterData instance.
+
+    Args:
+        value: The RouterData to serialize.
+
+    Returns:
+        The serialized RouterData.
+    """
+    return value.toJson()
 
 
 def _no_chain_background_task(
@@ -243,10 +298,11 @@ def _split_substate_key(substate_key: str) -> tuple[str, str]:
     return token, state_name
 
 
+@dataclasses.dataclass(frozen=True, init=False)
 class EventHandlerSetVar(EventHandler):
     """A special event handler to wrap setvar functionality."""
 
-    state_cls: Type[BaseState]
+    state_cls: Type[BaseState] = dataclasses.field(init=False)
 
     def __init__(self, state_cls: Type[BaseState]):
         """Initialize the EventHandlerSetVar.
@@ -257,8 +313,8 @@ class EventHandlerSetVar(EventHandler):
         super().__init__(
             fn=type(self).setvar,
             state_full_name=state_cls.get_full_name(),
-            state_cls=state_cls,  # type: ignore
         )
+        object.__setattr__(self, "state_cls", state_cls)
 
     def setvar(self, var_name: str, value: Any):
         """Set the state variable to the value of the event.
@@ -306,10 +362,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     vars: ClassVar[Dict[str, Var]] = {}
 
     # The base vars of the class.
-    base_vars: ClassVar[Dict[str, ImmutableVar]] = {}
+    base_vars: ClassVar[Dict[str, Var]] = {}
 
     # The computed vars of the class.
-    computed_vars: ClassVar[Dict[str, Union[ComputedVar, ImmutableComputedVar]]] = {}
+    computed_vars: ClassVar[Dict[str, ComputedVar]] = {}
 
     # Vars inherited by the parent state.
     inherited_vars: ClassVar[Dict[str, Var]] = {}
@@ -422,7 +478,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return f"{self.__class__.__name__}({self.dict()})"
 
     @classmethod
-    def _get_computed_vars(cls) -> list[Union[ComputedVar, ImmutableComputedVar]]:
+    def _get_computed_vars(cls) -> list[ComputedVar]:
         """Helper function to get all computed vars of a instance.
 
         Returns:
@@ -432,8 +488,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             v
             for mixin in cls._mixins() + [cls]
             for name, v in mixin.__dict__.items()
-            if isinstance(v, (ComputedVar, ImmutableComputedVar))
-            and name not in cls.inherited_vars
+            if is_computed_var(v) and name not in cls.inherited_vars
         ]
 
     @classmethod
@@ -477,7 +532,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls._check_overridden_methods()
 
         # Computed vars should not shadow builtin state props.
-        cls._check_overriden_basevars()
+        cls._check_overridden_basevars()
 
         # Reset subclass tracking for this class.
         cls.class_subclasses = set()
@@ -505,6 +560,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Get computed vars.
         computed_vars = cls._get_computed_vars()
+        cls._check_overridden_computed_vars()
 
         new_backend_vars = {
             name: value
@@ -519,16 +575,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Set the base and computed vars.
         cls.base_vars = {
-            f.name: ImmutableVar(
-                _var_name=format.format_state_name(cls.get_full_name()) + "." + f.name,
+            f.name: Var(
+                _js_expr=format.format_state_name(cls.get_full_name()) + "." + f.name,
                 _var_type=f.outer_type_,
-                _var_data=ImmutableVarData.from_state(cls),
+                _var_data=VarData.from_state(cls),
             ).guess_type()
             for f in cls.get_fields().values()
             if f.name not in cls.get_skip_vars()
         }
         cls.computed_vars = {
-            v._var_name: v._replace(merge_var_data=ImmutableVarData.from_state(cls))
+            v._js_expr: v._replace(merge_var_data=VarData.from_state(cls))
             for v in computed_vars
         }
         cls.vars = {
@@ -553,15 +609,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for name, value in mixin.__dict__.items():
                 if name in cls.inherited_vars:
                     continue
-                if isinstance(value, (ComputedVar, ImmutableComputedVar)):
+                if is_computed_var(value):
                     fget = cls._copy_fn(value.fget)
-                    newcv = value._replace(
-                        fget=fget, _var_data=ImmutableVarData.from_state(cls)
-                    )
+                    newcv = value._replace(fget=fget, _var_data=VarData.from_state(cls))
                     # cleanup refs to mixin cls in var_data
                     setattr(cls, name, newcv)
-                    cls.computed_vars[newcv._var_name] = newcv
-                    cls.vars[newcv._var_name] = newcv
+                    cls.computed_vars[newcv._js_expr] = newcv
+                    cls.vars[newcv._js_expr] = newcv
                     continue
                 if types.is_backend_base_variable(name, mixin):
                     cls.backend_vars[name] = copy.deepcopy(value)
@@ -720,16 +774,32 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             )
 
     @classmethod
-    def _check_overriden_basevars(cls):
+    def _check_overridden_basevars(cls):
         """Check for shadow base vars and raise error if any.
 
         Raises:
             NameError: When a computed var shadows a base var.
         """
         for computed_var_ in cls._get_computed_vars():
-            if computed_var_._var_name in cls.__annotations__:
+            if computed_var_._js_expr in cls.__annotations__:
                 raise NameError(
-                    f"The computed var name `{computed_var_._var_name}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
+                    f"The computed var name `{computed_var_._js_expr}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
+                )
+
+    @classmethod
+    def _check_overridden_computed_vars(cls) -> None:
+        """Check for shadow computed vars and raise error if any.
+
+        Raises:
+            NameError: When a computed var shadows another.
+        """
+        for name, cv in cls.__dict__.items():
+            if not is_computed_var(cv):
+                continue
+            name = cv._js_expr
+            if name in cls.inherited_vars or name in cls.inherited_backend_vars:
+                raise NameError(
+                    f"The computed var name `{cv._js_expr}` shadows a var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 )
 
     @classmethod
@@ -851,7 +921,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return getattr(substate, name)
 
     @classmethod
-    def _init_var(cls, prop: ImmutableVar):
+    def _init_var(cls, prop: Var):
         """Initialize a variable.
 
         Args:
@@ -867,7 +937,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 "State vars must be primitive Python types, "
                 "Plotly figures, Pandas dataframes, "
                 "or subclasses of rx.Base. "
-                f'Found var "{prop._var_name}" with type {prop._var_type}.'
+                f'Found var "{prop._js_expr}" with type {prop._var_type}.'
             )
         cls._set_var(prop)
         cls._create_setter(prop)
@@ -894,10 +964,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             )
 
         # create the variable based on name and type
-        var = ImmutableVar(
-            _var_name=format.format_state_name(cls.get_full_name()) + "." + name,
+        var = Var(
+            _js_expr=format.format_state_name(cls.get_full_name()) + "." + name,
             _var_type=type_,
-            _var_data=ImmutableVarData.from_state(cls),
+            _var_data=VarData.from_state(cls),
         ).guess_type()
 
         # add the pydantic field dynamically (must be done before _init_var)
@@ -917,16 +987,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls._init_var_dependency_dicts()
 
     @classmethod
-    def _set_var(cls, prop: ImmutableVar):
+    def _set_var(cls, prop: Var):
         """Set the var as a class member.
 
         Args:
             prop: The var instance to set.
         """
         acutal_var_name = (
-            prop._var_name
-            if "." not in prop._var_name
-            else prop._var_name.split(".")[-1]
+            prop._js_expr if "." not in prop._js_expr else prop._js_expr.split(".")[-1]
         )
         setattr(cls, acutal_var_name, prop)
 
@@ -948,7 +1016,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
 
     @classmethod
-    def _create_setter(cls, prop: ImmutableVar):
+    def _create_setter(cls, prop: Var):
         """Create a setter for the var.
 
         Args:
@@ -961,17 +1029,17 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             setattr(cls, setter_name, event_handler)
 
     @classmethod
-    def _set_default_value(cls, prop: ImmutableVar):
+    def _set_default_value(cls, prop: Var):
         """Set the default value for the var.
 
         Args:
             prop: The var to set the default value for.
         """
         # Get the pydantic field for the var.
-        if "." in prop._var_name:
-            field = cls.get_fields()[prop._var_name.split(".")[-1]]
+        if "." in prop._js_expr:
+            field = cls.get_fields()[prop._js_expr.split(".")[-1]]
         else:
-            field = cls.get_fields()[prop._var_name]
+            field = cls.get_fields()[prop._js_expr]
         if field.required:
             default_value = prop.get_default_value()
             if default_value is not None:
@@ -1008,17 +1076,19 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if not args:
             return
 
+        cls._check_overwritten_dynamic_args(list(args.keys()))
+
         def argsingle_factory(param):
             def inner_func(self) -> str:
                 return self.router.page.params.get(param, "")
 
-            return ComputedVar(fget=inner_func, cache=True)
+            return DynamicRouteVar(fget=inner_func, cache=True)
 
         def arglist_factory(param):
-            def inner_func(self) -> List:
+            def inner_func(self) -> List[str]:
                 return self.router.page.params.get(param, [])
 
-            return ComputedVar(fget=inner_func, cache=True)
+            return DynamicRouteVar(fget=inner_func, cache=True)
 
         for param, value in args.items():
             if value == constants.RouteArgType.SINGLE:
@@ -1027,13 +1097,37 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 func = arglist_factory(param)
             else:
                 continue
-            # to allow passing as a prop
-            func._var_name = param
-            cls.vars[param] = cls.computed_vars[param] = func._var_set_state(cls)  # type: ignore
+            # to allow passing as a prop, evade python frozen rules (bad practice)
+            object.__setattr__(func, "_js_expr", param)
+            # cls.vars[param] = cls.computed_vars[param] = func._var_set_state(cls)  # type: ignore
+            cls.vars[param] = cls.computed_vars[param] = func._replace(
+                _var_data=VarData.from_state(cls)
+            )
             setattr(cls, param, func)
 
         # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
+
+    @classmethod
+    def _check_overwritten_dynamic_args(cls, args: list[str]):
+        """Check if dynamic args are shadowing existing vars. Recursively checks all child states.
+
+        Args:
+            args: a dict of args
+
+        Raises:
+            DynamicRouteArgShadowsStateVar: If a dynamic arg is shadowing an existing var.
+        """
+        for arg in args:
+            if (
+                arg in cls.computed_vars
+                and not isinstance(cls.computed_vars[arg], DynamicRouteVar)
+            ) or arg in cls.base_vars:
+                raise DynamicRouteArgShadowsStateVar(
+                    f"Dynamic route arg '{arg}' is shadowing an existing var in {cls.__module__}.{cls.__name__}"
+                )
+        for substate in cls.get_substates():
+            substate._check_overwritten_dynamic_args(args)
 
     def __getattribute__(self, name: str) -> Any:
         """Get the state var.
@@ -1780,8 +1874,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self.dirty_vars.update(self._always_dirty_computed_vars)
             self._mark_dirty()
 
+        def dictify(value: Any):
+            if dataclasses.is_dataclass(value) and not isinstance(value, type):
+                return dataclasses.asdict(value)
+            return value
+
         base_vars = {
-            prop_name: self.get_value(getattr(self, prop_name))
+            prop_name: dictify(self.get_value(getattr(self, prop_name)))
             for prop_name in self.base_vars
         }
         if initial and include_computed:
@@ -1789,7 +1888,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 # Include initial computed vars.
                 prop_name: (
                     cv._initial_value
-                    if isinstance(cv, (ComputedVar, ImmutableComputedVar))
+                    if is_computed_var(cv)
                     and not isinstance(cv._initial_value, types.Unset)
                     else self.get_value(getattr(self, prop_name))
                 )
@@ -1859,9 +1958,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         state["__dict__"]["substates"] = {}
         state["__dict__"].pop("_was_touched", None)
         return state
-
-
-EventHandlerSetVar.update_forward_refs()
 
 
 class State(BaseState):
@@ -2295,17 +2391,28 @@ class StateProxy(wrapt.ObjectProxy):
             self._self_mutable = original_mutable
 
 
-class StateUpdate(Base):
+@dataclasses.dataclass(
+    frozen=True,
+)
+class StateUpdate:
     """A state update sent to the frontend."""
 
     # The state delta.
-    delta: Delta = {}
+    delta: Delta = dataclasses.field(default_factory=dict)
 
     # Events to be added to the event queue.
-    events: List[Event] = []
+    events: List[Event] = dataclasses.field(default_factory=list)
 
     # Whether this is the final state update for the event.
     final: bool = True
+
+    def json(self) -> str:
+        """Convert the state update to a JSON string.
+
+        Returns:
+            The state update as a JSON string.
+        """
+        return json.dumps(dataclasses.asdict(self))
 
 
 class StateManager(Base, ABC):

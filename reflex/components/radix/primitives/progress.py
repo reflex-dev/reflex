@@ -9,7 +9,7 @@ from reflex.components.core.colors import color
 from reflex.components.radix.primitives.accordion import DEFAULT_ANIMATION_DURATION
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 
 class ProgressComponent(RadixPrimitiveComponentWithClassName):

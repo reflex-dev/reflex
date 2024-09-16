@@ -3,7 +3,7 @@ import pytest
 import reflex as rx
 from reflex.components.datadisplay.code import CodeBlock
 from reflex.constants.colors import Color
-from reflex.ivars.base import LiteralVar
+from reflex.vars.base import LiteralVar
 
 
 class ColorState(rx.State):
@@ -54,8 +54,8 @@ def create_color_var(color):
     ],
 )
 def test_color(color, expected):
-    assert color._var_is_string or color._var_type is str
-    assert color._var_full_name == expected
+    assert color._var_type is str
+    assert str(color) == expected
     if color._var_type == Color:
         assert str(color) == f"{{`{expected}`}}"
     else:

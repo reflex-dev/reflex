@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import functools
 import json
-import types as builtin_types
 import warnings
 from datetime import date, datetime, time, timedelta
 from enum import Enum
@@ -26,7 +25,7 @@ from typing import (
 
 from reflex.base import Base
 from reflex.constants.colors import Color, format_color
-from reflex.utils import exceptions, types
+from reflex.utils import types
 
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON object.
@@ -250,7 +249,9 @@ def serialize_base(value: Base) -> str:
     Returns:
         The serialized Base.
     """
-    return value.json()
+    from reflex.vars import LiteralVar
+
+    return str(LiteralVar.create(value))
 
 
 @serializer
@@ -263,13 +264,9 @@ def serialize_list(value: Union[List, Tuple, Set]) -> str:
     Returns:
         The serialized list.
     """
-    from reflex.utils import format
+    from reflex.vars import LiteralArrayVar
 
-    # Dump the list to a string.
-    fprop = format.json_dumps(list(value))
-
-    # Unwrap var values.
-    return format.unwrap_vars(fprop)
+    return str(LiteralArrayVar.create(value))
 
 
 @serializer
@@ -281,30 +278,10 @@ def serialize_dict(prop: Dict[str, Any]) -> str:
 
     Returns:
         The serialized dictionary.
-
-    Raises:
-        InvalidStylePropError: If the style prop is invalid.
     """
-    # Import here to avoid circular imports.
-    from reflex.event import EventHandler
-    from reflex.utils import format
+    from reflex.vars import LiteralObjectVar
 
-    prop_dict = {}
-
-    for key, value in prop.items():
-        if types._issubclass(type(value), Callable):
-            raise exceptions.InvalidStylePropError(
-                f"The style prop `{format.to_snake_case(key)}` cannot have "  # type: ignore
-                f"`{value.fn.__qualname__ if isinstance(value, EventHandler) else value.__qualname__ if isinstance(value, builtin_types.FunctionType) else value}`, "
-                f"an event handler or callable as its value"
-            )
-        prop_dict[key] = value
-
-    # Dump the dict to a string.
-    fprop = format.json_dumps(prop_dict)
-
-    # Unwrap var values.
-    return format.unwrap_vars(fprop)
+    return str(LiteralObjectVar.create(prop))
 
 
 @serializer(to=str)

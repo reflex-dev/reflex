@@ -6,11 +6,10 @@ from typing import Any, Dict, List, Union
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
-from reflex.ivars.base import ImmutableComputedVar
 from reflex.utils import types
 from reflex.utils.imports import ImportDict
 from reflex.utils.serializers import serialize
-from reflex.vars import ComputedVar, Var
+from reflex.vars.base import LiteralVar, Var, is_computed_var
 
 
 class Gridjs(Component):
@@ -66,17 +65,14 @@ class DataTable(Gridjs):
 
         # The annotation should be provided if data is a computed var. We need this to know how to
         # render pandas dataframes.
-        if (
-            isinstance(data, (ComputedVar, ImmutableComputedVar))
-            and data._var_type == Any
-        ):
+        if is_computed_var(data) and data._var_type == Any:
             raise ValueError(
                 "Annotation of the computed var assigned to the data field should be provided."
             )
 
         if (
             columns is not None
-            and isinstance(columns, (ComputedVar, ImmutableComputedVar))
+            and is_computed_var(columns)
             and columns._var_type == Any
         ):
             raise ValueError(
@@ -101,8 +97,6 @@ class DataTable(Gridjs):
                 "column field should be specified when the data field is a list type"
             )
 
-        print("props", props)
-
         # Create the component.
         return super().create(
             *children,
@@ -120,19 +114,19 @@ class DataTable(Gridjs):
     def _render(self) -> Tag:
         if isinstance(self.data, Var) and types.is_dataframe(self.data._var_type):
             self.columns = self.data._replace(
-                _var_name=f"{self.data._var_name}.columns",
+                _js_expr=f"{self.data._js_expr}.columns",
                 _var_type=List[Any],
             )
             self.data = self.data._replace(
-                _var_name=f"{self.data._var_name}.data",
+                _js_expr=f"{self.data._js_expr}.data",
                 _var_type=List[List[Any]],
             )
         if types.is_dataframe(type(self.data)):
             # If given a pandas df break up the data and columns
             data = serialize(self.data)
             assert isinstance(data, dict), "Serialized dataframe should be a dict."
-            self.columns = Var.create_safe(data["columns"])
-            self.data = Var.create_safe(data["data"])
+            self.columns = LiteralVar.create(data["columns"])
+            self.data = LiteralVar.create(data["data"])
 
         # Render the table.
         return super()._render()

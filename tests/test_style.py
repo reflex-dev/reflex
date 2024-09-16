@@ -7,9 +7,9 @@ import pytest
 import reflex as rx
 from reflex import style
 from reflex.components.component import evaluate_style_namespaces
-from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style
-from reflex.vars import ImmutableVarData, Var, VarData
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
 
 test_style = [
     ({"a": 1}, {"a": 1}),
@@ -377,8 +377,8 @@ class StyleState(rx.State):
         (
             {"color": f"dark{StyleState.color}"},
             {
-                "css": ImmutableVar.create_safe(
-                    f'({{ ["color"] : ("dark"+{StyleState.color}) }})'
+                "css": Var(
+                    _js_expr=f'({{ ["color"] : ("dark"+{StyleState.color}) }})'
                 ).to(Dict[str, str])
             },
         ),
@@ -504,7 +504,7 @@ def test_style_via_component_with_state(
     comp = rx.el.div(**kwargs)
 
     assert (
-        ImmutableVarData.merge(comp.style._var_data)
+        VarData.merge(comp.style._var_data)
         == expected_get_style["css"]._get_all_var_data()
     )
     # Assert that style values are equal.

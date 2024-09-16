@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Literal, Optional, Union, overload
 
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import RadixThemesComponent
 
@@ -19,14 +19,14 @@ class ScrollArea(RadixThemesComponent):
         *children,
         scrollbars: Optional[
             Union[
-                Var[Literal["vertical", "horizontal", "both"]],
-                Literal["vertical", "horizontal", "both"],
+                Literal["both", "horizontal", "vertical"],
+                Var[Literal["both", "horizontal", "vertical"]],
             ]
         ] = None,
         type: Optional[
             Union[
-                Var[Literal["auto", "always", "scroll", "hover"]],
-                Literal["auto", "always", "scroll", "hover"],
+                Literal["always", "auto", "hover", "scroll"],
+                Var[Literal["always", "auto", "hover", "scroll"]],
             ]
         ] = None,
         scroll_hide_delay: Optional[Union[Var[int], int]] = None,
