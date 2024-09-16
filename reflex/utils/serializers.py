@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 import json
 import warnings
@@ -29,7 +30,7 @@ from reflex.utils import types
 
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON object.
-SerializedType = Union[str, bool, int, float, list, dict]
+SerializedType = Union[str, bool, int, float, list, dict, None]
 
 
 Serializer = Callable[[Type], SerializedType]
@@ -124,6 +125,8 @@ def serialize(
 
     # If there is no serializer, return None.
     if serializer is None:
+        if dataclasses.is_dataclass(value) and not isinstance(value, type):
+            return serialize(dataclasses.asdict(value))
         if get_type:
             return None, None
         return None
@@ -225,7 +228,7 @@ def serialize_str(value: str) -> str:
 
 
 @serializer
-def serialize_primitive(value: Union[bool, int, float, None]) -> str:
+def serialize_primitive(value: Union[bool, int, float, None]):
     """Serialize a primitive type.
 
     Args:
@@ -234,13 +237,11 @@ def serialize_primitive(value: Union[bool, int, float, None]) -> str:
     Returns:
         The serialized number/bool/None.
     """
-    from reflex.utils import format
-
-    return format.json_dumps(value)
+    return value
 
 
 @serializer
-def serialize_base(value: Base) -> str:
+def serialize_base(value: Base) -> dict:
     """Serialize a Base instance.
 
     Args:
@@ -249,13 +250,11 @@ def serialize_base(value: Base) -> str:
     Returns:
         The serialized Base.
     """
-    from reflex.vars import LiteralVar
-
-    return str(LiteralVar.create(value))
+    return {k: serialize(v) for k, v in value.dict().items() if not callable(v)}
 
 
 @serializer
-def serialize_list(value: Union[List, Tuple, Set]) -> str:
+def serialize_list(value: Union[List, Tuple, Set]) -> list:
     """Serialize a list to a JSON string.
 
     Args:
@@ -264,13 +263,11 @@ def serialize_list(value: Union[List, Tuple, Set]) -> str:
     Returns:
         The serialized list.
     """
-    from reflex.vars import LiteralArrayVar
-
-    return str(LiteralArrayVar.create(value))
+    return [serialize(item) for item in value]
 
 
 @serializer
-def serialize_dict(prop: Dict[str, Any]) -> str:
+def serialize_dict(prop: Dict[str, Any]) -> dict:
     """Serialize a dictionary to a JSON string.
 
     Args:
@@ -279,9 +276,7 @@ def serialize_dict(prop: Dict[str, Any]) -> str:
     Returns:
         The serialized dictionary.
     """
-    from reflex.vars import LiteralObjectVar
-
-    return str(LiteralObjectVar.create(prop))
+    return {k: serialize(v) for k, v in prop.items()}
 
 
 @serializer(to=str)
