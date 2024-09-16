@@ -1067,6 +1067,10 @@ class LiteralVar(Var):
                     _var_type=type(value),
                     _var_data=_var_data,
                 )
+            if isinstance(serialized_value, str):
+                return LiteralStringVar.create(
+                    serialized_value, _var_type=type(value), _var_data=_var_data
+                )
             return LiteralVar.create(serialized_value, _var_data=_var_data)
 
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
