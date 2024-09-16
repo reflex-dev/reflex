@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import dataclasses
 import inspect
 import sys
 import types
@@ -95,7 +96,7 @@ PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
 StateVar = Union[PrimitiveType, Base, None]
 StateIterVar = Union[list, set, tuple]
 
-# ArgsSpec = Callable[[ImmutableVar], list[ImmutableVar]]
+# ArgsSpec = Callable[[Var], list[Var]]
 ArgsSpec = Callable
 
 
@@ -480,7 +481,11 @@ def is_valid_var_type(type_: Type) -> bool:
 
     if is_union(type_):
         return all((is_valid_var_type(arg) for arg in get_args(type_)))
-    return _issubclass(type_, StateVar) or serializers.has_serializer(type_)
+    return (
+        _issubclass(type_, StateVar)
+        or serializers.has_serializer(type_)
+        or dataclasses.is_dataclass(type_)
+    )
 
 
 def is_backend_base_variable(name: str, cls: Type) -> bool:
@@ -514,7 +519,7 @@ def is_backend_base_variable(name: str, cls: Type) -> bool:
     if name in cls.inherited_backend_vars:
         return False
 
-    from reflex.ivars.base import is_computed_var
+    from reflex.vars.base import is_computed_var
 
     if name in cls.__dict__:
         value = cls.__dict__[name]
@@ -590,11 +595,11 @@ def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
     Raises:
         ValueError: When the value is not a valid literal.
     """
-    from reflex.ivars import ImmutableVar
+    from reflex.vars import Var
 
     if (
         is_literal(expected_type)
-        and not isinstance(value, ImmutableVar)  # validating vars is not supported yet.
+        and not isinstance(value, Var)  # validating vars is not supported yet.
         and not is_encoded_fstring(value)  # f-strings are not supported.
         and value not in expected_type.__args__
     ):

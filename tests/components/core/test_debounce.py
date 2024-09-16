@@ -4,8 +4,8 @@ import pytest
 
 import reflex as rx
 from reflex.components.core.debounce import DEFAULT_DEBOUNCE_TIMEOUT
-from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.state import BaseState
+from reflex.vars.base import LiteralVar, Var
 
 
 def test_create_no_child():
@@ -57,7 +57,7 @@ def test_render_child_props():
             on_change=S.on_change,
         )
     )._render()
-    assert "css" in tag.props and isinstance(tag.props["css"], rx.Var)
+    assert "css" in tag.props and isinstance(tag.props["css"], rx.vars.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
     assert tag.props["value"].equals(LiteralVar.create("real"))
@@ -73,7 +73,7 @@ def test_render_with_class_name():
             class_name="foo baz",
         )
     )._render()
-    assert isinstance(tag.props["className"], rx.Var)
+    assert isinstance(tag.props["className"], rx.vars.Var)
     assert "foo baz" in str(tag.props["className"])
 
 
@@ -84,7 +84,7 @@ def test_render_with_ref():
             id="foo_bar",
         )
     )._render()
-    assert isinstance(tag.props["inputRef"], rx.Var)
+    assert isinstance(tag.props["inputRef"], rx.vars.Var)
     assert "foo_bar" in str(tag.props["inputRef"])
 
 
@@ -95,12 +95,12 @@ def test_render_with_key():
             key="foo_bar",
         )
     )._render()
-    assert isinstance(tag.props["key"], rx.Var)
+    assert isinstance(tag.props["key"], rx.vars.Var)
     assert "foo_bar" in str(tag.props["key"])
 
 
 def test_render_with_special_props():
-    special_prop = ImmutableVar.create_safe("{foo_bar}")
+    special_prop = Var(_js_expr="{foo_bar}")
     tag = rx.debounce_input(
         rx.input(
             on_change=S.on_change,
@@ -149,13 +149,13 @@ def test_render_child_props_recursive():
         ),
         force_notify_by_enter=False,
     )._render()
-    assert "css" in tag.props and isinstance(tag.props["css"], rx.Var)
+    assert "css" in tag.props and isinstance(tag.props["css"], rx.vars.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
     assert tag.props["value"].equals(LiteralVar.create("outer"))
-    assert tag.props["forceNotifyOnBlur"]._var_name == "false"
-    assert tag.props["forceNotifyByEnter"]._var_name == "false"
-    assert tag.props["debounceTimeout"]._var_name == "42"
+    assert tag.props["forceNotifyOnBlur"]._js_expr == "false"
+    assert tag.props["forceNotifyByEnter"]._js_expr == "false"
+    assert tag.props["debounceTimeout"]._js_expr == "42"
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
     assert tag.contents == ""
@@ -167,7 +167,7 @@ def test_full_control_implicit_debounce():
         value=S.value,
         on_change=S.on_change,
     )._render()
-    assert tag.props["debounceTimeout"]._var_name == str(DEFAULT_DEBOUNCE_TIMEOUT)
+    assert tag.props["debounceTimeout"]._js_expr == str(DEFAULT_DEBOUNCE_TIMEOUT)
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
     assert tag.contents == ""
@@ -179,7 +179,7 @@ def test_full_control_implicit_debounce_text_area():
         value=S.value,
         on_change=S.on_change,
     )._render()
-    assert tag.props["debounceTimeout"]._var_name == str(DEFAULT_DEBOUNCE_TIMEOUT)
+    assert tag.props["debounceTimeout"]._js_expr == str(DEFAULT_DEBOUNCE_TIMEOUT)
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
     assert tag.contents == ""

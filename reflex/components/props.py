@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from reflex.base import Base
-from reflex.ivars.object import LiteralObjectVar
 from reflex.utils import format
+from reflex.vars.object import LiteralObjectVar
 
 
 class PropsBase(Base):

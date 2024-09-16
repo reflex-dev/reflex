@@ -1,7 +1,7 @@
 """Skeleton theme from Radix components."""
 
 from reflex.components.core.breakpoints import Responsive
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import RadixLoadingProp, RadixThemesComponent
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 import glob
 import importlib
@@ -15,6 +16,7 @@ import shutil
 import stat
 import sys
 import tempfile
+import time
 import zipfile
 from datetime import datetime
 from fileinput import FileInput
@@ -31,7 +33,6 @@ from redis import exceptions
 from redis.asyncio import Redis
 
 from reflex import constants, model
-from reflex.base import Base
 from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, net, path_ops, processes
@@ -42,7 +43,8 @@ from reflex.utils.registry import _get_best_registry
 CURRENTLY_INSTALLING_NODE = False
 
 
-class Template(Base):
+@dataclasses.dataclass(frozen=True)
+class Template:
     """A template for a Reflex app."""
 
     name: str
@@ -51,7 +53,8 @@ class Template(Base):
     demo_url: str
 
 
-class CpuInfo(Base):
+@dataclasses.dataclass(frozen=True)
+class CpuInfo:
     """Model to save cpu info."""
 
     manufacturer_id: Optional[str]
@@ -1277,11 +1280,16 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
             ),
             None,
         )
-    return {
-        tp["name"]: Template.parse_obj(tp)
-        for tp in templates_data
-        if not tp["hidden"] and tp["code_url"] is not None
-    }
+
+    filtered_templates = {}
+    for tp in templates_data:
+        if tp["hidden"] or tp["code_url"] is None:
+            continue
+        known_fields = set(f.name for f in dataclasses.fields(Template))
+        filtered_templates[tp["name"]] = Template(
+            **{k: v for k, v in tp.items() if k in known_fields}
+        )
+    return filtered_templates
 
 
 def create_config_init_app_from_remote_template(app_name: str, template_url: str):
@@ -1435,12 +1443,21 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
     Args:
         app_name: The name of the app.
         generation_hash: The generation hash from reflex.build.
+
+    Raises:
+        GeneratedCodeHasNoFunctionDefs: If the fetched code has no function definitions
+            (the refactored reflex code is expected to have at least one root function defined).
     """
     # Download the reflex code for the generation.
     url = constants.Templates.REFLEX_BUILD_CODE_URL.format(
         generation_hash=generation_hash
     )
-    resp = net.get(url).raise_for_status()
+    resp = net.get(url)
+    while resp.status_code == httpx.codes.SERVICE_UNAVAILABLE:
+        console.debug("Waiting for the code to be generated...")
+        time.sleep(1)
+        resp = net.get(url)
+    resp.raise_for_status()
 
     # Determine the name of the last function, which renders the generated code.
     defined_funcs = re.findall(r"def ([a-zA-Z_]+)\(", resp.text)

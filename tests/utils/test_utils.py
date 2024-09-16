@@ -19,7 +19,7 @@ from reflex.utils import (
 )
 from reflex.utils import exec as utils_exec
 from reflex.utils.exceptions import ReflexError
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 
 def mock_event(arg):

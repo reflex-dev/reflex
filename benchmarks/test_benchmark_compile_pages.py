@@ -130,7 +130,6 @@ def render_multiple_pages(app, num: int):
 
 def AppWithOnePage():
     """A reflex app with one page."""
-    import reflex_chakra as rc
     from rxconfig import config  # type: ignore
 
     import reflex as rx
@@ -145,7 +144,7 @@ def AppWithOnePage():
 
     def index() -> rx.Component:
         return rx.center(
-            rc.input(
+            rx.input(
                 id="token", value=State.router.session.client_token, is_read_only=True
             ),
             rx.vstack(

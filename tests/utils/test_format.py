@@ -8,12 +8,11 @@ import pytest
 
 from reflex.components.tags.tag import Tag
 from reflex.event import EventChain, EventHandler, EventSpec, FrontendEvent
-from reflex.ivars.base import ImmutableVar, LiteralVar
-from reflex.ivars.object import ObjectVar
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.serializers import serialize_figure
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
+from reflex.vars.object import ObjectVar
 from tests.test_state import (
     ChildState,
     ChildState2,
@@ -274,12 +273,8 @@ def test_format_string(input: str, output: str):
 @pytest.mark.parametrize(
     "input,output",
     [
-        (Var.create(value="test"), '"test"'),
-        (Var.create(value="test", _var_is_local=True), '"test"'),
-        (Var.create(value="test", _var_is_local=False), "test"),
-        (Var.create(value="test", _var_is_string=True), '"test"'),
-        (Var.create(value='"test"', _var_is_string=False), '"test"'),
-        (Var.create(value="test", _var_is_local=False, _var_is_string=False), "test"),
+        (LiteralVar.create(value="test"), '"test"'),
+        (Var(_js_expr="test"), "test"),
     ],
 )
 def test_format_var(input: Var, output: str):
@@ -338,8 +333,8 @@ def test_format_route(route: str, format_case: bool, expected: bool):
 )
 def test_format_match(
     condition: str,
-    match_cases: List[List[ImmutableVar]],
-    default: ImmutableVar,
+    match_cases: List[List[Var]],
+    default: Var,
     expected: str,
 ):
     """Test formatting a match statement.
@@ -357,28 +352,28 @@ def test_format_match(
     "prop,formatted",
     [
         ("string", '"string"'),
-        ("{wrapped_string}", "{wrapped_string}"),
-        (True, "{true}"),
-        (False, "{false}"),
-        (123, "{123}"),
-        (3.14, "{3.14}"),
-        ([1, 2, 3], "{[1, 2, 3]}"),
-        (["a", "b", "c"], '{["a", "b", "c"]}'),
-        ({"a": 1, "b": 2, "c": 3}, '{({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })}'),
-        ({"a": 'foo "bar" baz'}, r'{({ ["a"] : "foo \"bar\" baz" })}'),
+        ("{wrapped_string}", '"{wrapped_string}"'),
+        (True, "true"),
+        (False, "false"),
+        (123, "123"),
+        (3.14, "3.14"),
+        ([1, 2, 3], "[1, 2, 3]"),
+        (["a", "b", "c"], '["a", "b", "c"]'),
+        ({"a": 1, "b": 2, "c": 3}, '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })'),
+        ({"a": 'foo "bar" baz'}, r'({ ["a"] : "foo \"bar\" baz" })'),
         (
             {
                 "a": 'foo "{ "bar" }" baz',
-                "b": ImmutableVar(_var_name="val", _var_type=str).guess_type(),
+                "b": Var(_js_expr="val", _var_type=str).guess_type(),
             },
-            r'{({ ["a"] : "foo \"{ \"bar\" }\" baz", ["b"] : val })}',
+            r'({ ["a"] : "foo \"{ \"bar\" }\" baz", ["b"] : val })',
         ),
         (
             EventChain(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))],
                 args_spec=lambda: [],
             ),
-            '{(...args) => addEvents([Event("mock_event", {})], args, {})}',
+            '((...args) => ((addEvents([(Event("mock_event", ({  })))], args, ({  })))))',
         ),
         (
             EventChain(
@@ -387,9 +382,9 @@ def test_format_match(
                         handler=EventHandler(fn=mock_event),
                         args=(
                             (
-                                LiteralVar.create("arg"),
-                                ImmutableVar(
-                                    _var_name="_e",
+                                Var(_js_expr="arg"),
+                                Var(
+                                    _js_expr="_e",
                                 )
                                 .to(ObjectVar, FrontendEvent)
                                 .target.value,
@@ -399,7 +394,7 @@ def test_format_match(
                 ],
                 args_spec=lambda e: [e.target.value],
             ),
-            '{(_e) => addEvents([Event("mock_event", {"arg":_e["target"]["value"]})], [_e], {})}',
+            '((_e) => ((addEvents([(Event("mock_event", ({ ["arg"] : _e["target"]["value"] })))], [_e], ({  })))))',
         ),
         (
             EventChain(
@@ -407,7 +402,7 @@ def test_format_match(
                 args_spec=lambda: [],
                 event_actions={"stopPropagation": True},
             ),
-            '{(...args) => addEvents([Event("mock_event", {})], args, {"stopPropagation": true})}',
+            '((...args) => ((addEvents([(Event("mock_event", ({  })))], args, ({ ["stopPropagation"] : true })))))',
         ),
         (
             EventChain(
@@ -415,63 +410,59 @@ def test_format_match(
                 args_spec=lambda: [],
                 event_actions={"preventDefault": True},
             ),
-            '{(...args) => addEvents([Event("mock_event", {})], args, {"preventDefault": true})}',
+            '((...args) => ((addEvents([(Event("mock_event", ({  })))], args, ({ ["preventDefault"] : true })))))',
         ),
-        ({"a": "red", "b": "blue"}, '{({ ["a"] : "red", ["b"] : "blue" })}'),
-        (ImmutableVar(_var_name="var", _var_type=int).guess_type(), "var"),
+        ({"a": "red", "b": "blue"}, '({ ["a"] : "red", ["b"] : "blue" })'),
+        (Var(_js_expr="var", _var_type=int).guess_type(), "var"),
         (
-            ImmutableVar(
-                _var_name="_",
+            Var(
+                _js_expr="_",
                 _var_type=Any,
             ),
             "_",
         ),
         (
-            ImmutableVar(_var_name='state.colors["a"]', _var_type=str).guess_type(),
+            Var(_js_expr='state.colors["a"]', _var_type=str).guess_type(),
             'state.colors["a"]',
         ),
         (
-            {"a": ImmutableVar(_var_name="val", _var_type=str).guess_type()},
-            '{({ ["a"] : val })}',
+            {"a": Var(_js_expr="val", _var_type=str).guess_type()},
+            '({ ["a"] : val })',
         ),
         (
-            {"a": ImmutableVar(_var_name='"val"', _var_type=str).guess_type()},
-            '{({ ["a"] : "val" })}',
+            {"a": Var(_js_expr='"val"', _var_type=str).guess_type()},
+            '({ ["a"] : "val" })',
         ),
         (
-            {
-                "a": ImmutableVar(
-                    _var_name='state.colors["val"]', _var_type=str
-                ).guess_type()
-            },
-            '{({ ["a"] : state.colors["val"] })}',
+            {"a": Var(_js_expr='state.colors["val"]', _var_type=str).guess_type()},
+            '({ ["a"] : state.colors["val"] })',
         ),
         # tricky real-world case from markdown component
         (
             {
-                "h1": ImmutableVar.create_safe(
-                    f"(({{node, ...props}}) => <Heading {{...props}} {''.join(Tag(name='', props=Style({'as_': 'h1'})).format_props())} />)"
-                )
+                "h1": Var(
+                    _js_expr=f"(({{node, ...props}}) => <Heading {{...props}} {''.join(Tag(name='', props=Style({'as_': 'h1'})).format_props())} />)"
+                ),
             },
-            '{({ ["h1"] : (({node, ...props}) => <Heading {...props} as={"h1"} />) })}',
+            '({ ["h1"] : (({node, ...props}) => <Heading {...props} as={"h1"} />) })',
         ),
     ],
 )
-def test_format_prop(prop: ImmutableVar, formatted: str):
+def test_format_prop(prop: Var, formatted: str):
     """Test that the formatted value of an prop is correct.
 
     Args:
         prop: The prop to test.
         formatted: The expected formatted value.
     """
-    assert format.format_prop(prop) == formatted
+    assert format.format_prop(LiteralVar.create(prop)) == formatted
 
 
 @pytest.mark.parametrize(
     "single_props,key_value_props,output",
     [
         (
-            [ImmutableVar.create_safe("{...props}")],
+            [Var(_js_expr="{...props}")],
             {"key": 42},
             ["key={42}", "{...props}"],
         ),
@@ -553,6 +544,7 @@ formatted_router = {
         "origin": "",
         "upgrade": "",
         "connection": "",
+        "cookie": "",
         "pragma": "",
         "cache_control": "",
         "user_agent": "",

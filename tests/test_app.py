@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import functools
 import io
 import json
@@ -13,7 +14,6 @@ from typing import Generator, List, Tuple, Type
 from unittest.mock import AsyncMock
 
 import pytest
-import reflex_chakra as rc
 import sqlmodel
 from fastapi import FastAPI, UploadFile
 from starlette_admin.auth import AuthProvider
@@ -35,7 +35,6 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import Event
-from reflex.ivars.base import immutable_computed_var
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
 from reflex.state import (
@@ -51,6 +50,7 @@ from reflex.state import (
 )
 from reflex.style import Style
 from reflex.utils import exceptions, format
+from reflex.vars.base import computed_var
 
 from .conftest import chdir
 from .states import (
@@ -904,7 +904,7 @@ class DynamicState(BaseState):
         """Increment the counter var."""
         self.counter = self.counter + 1
 
-    @immutable_computed_var(cache=True)
+    @computed_var(cache=True)
     def comp_dynamic(self) -> str:
         """A computed var that depends on the dynamic var.
 
@@ -1053,7 +1053,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     f"comp_{arg_name}": exp_val,
                     constants.CompileVars.IS_HYDRATED: False,
                     # "side_effect_counter": exp_index,
-                    "router": exp_router,
+                    "router": dataclasses.asdict(exp_router),
                 }
             },
             events=[
@@ -1311,13 +1311,13 @@ def test_app_wrap_priority(compilable_app: tuple[App, Path]):
         tag = "Fragment1"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(99, "Box"): rc.box()}
+            return {(99, "Box"): rx.box()}
 
     class Fragment2(Component):
         tag = "Fragment2"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(50, "Text"): rc.text()}
+            return {(50, "Text"): rx.text()}
 
     class Fragment3(Component):
         tag = "Fragment3"
@@ -1337,19 +1337,17 @@ def test_app_wrap_priority(compilable_app: tuple[App, Path]):
     assert (
         "function AppWrap({children}) {"
         "return ("
-        "<Box>"
-        "<ChakraProvider theme={extendTheme(theme)}>"
-        "<ChakraColorModeProvider>"
-        "<Text>"
+        "<RadixThemesBox>"
+        '<RadixThemesText as={"p"}>'
+        "<RadixThemesColorModeProvider>"
         "<Fragment2>"
         "<Fragment>"
         "{children}"
         "</Fragment>"
         "</Fragment2>"
-        "</Text>"
-        "</ChakraColorModeProvider>"
-        "</ChakraProvider>"
-        "</Box>"
+        "</RadixThemesColorModeProvider>"
+        "</RadixThemesText>"
+        "</RadixThemesBox>"
         ")"
         "}"
     ) in "".join(app_js_lines)
@@ -1543,11 +1541,11 @@ def test_app_with_valid_var_dependencies(compilable_app: tuple[App, Path]):
         base: int = 0
         _backend: int = 0
 
-        @immutable_computed_var(cache=True)
+        @computed_var(cache=True)
         def foo(self) -> str:
             return "foo"
 
-        @immutable_computed_var(deps=["_backend", "base", foo], cache=True)
+        @computed_var(deps=["_backend", "base", foo], cache=True)
         def bar(self) -> str:
             return "bar"
 
@@ -1559,7 +1557,7 @@ def test_app_with_invalid_var_dependencies(compilable_app: tuple[App, Path]):
     app, _ = compilable_app
 
     class InvalidDepState(BaseState):
-        @immutable_computed_var(deps=["foolksjdf"], cache=True)
+        @computed_var(deps=["foolksjdf"], cache=True)
         def bar(self) -> str:
             return "bar"
 

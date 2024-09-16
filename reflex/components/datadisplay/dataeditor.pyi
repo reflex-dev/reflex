@@ -9,11 +9,10 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Union, overload
 from reflex.base import Base
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventHandler, EventSpec
-from reflex.ivars.base import ImmutableVar
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.utils.serializers import serializer
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 class GridColumnIcons(Enum):
     Array = "array"
@@ -89,9 +88,9 @@ class DataEditor(NoSSRComponent):
         *children,
         rows: Optional[Union[Var[int], int]] = None,
         columns: Optional[
-            Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]
+            Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]
         ] = None,
-        data: Optional[Union[Var[List[List[Any]]], List[List[Any]]]] = None,
+        data: Optional[Union[List[List[Any]], Var[List[List[Any]]]]] = None,
         get_cell_content: Optional[Union[Var[str], str]] = None,
         get_cell_for_selection: Optional[Union[Var[bool], bool]] = None,
         on_paste: Optional[Union[Var[bool], bool]] = None,
@@ -107,8 +106,8 @@ class DataEditor(NoSSRComponent):
         row_height: Optional[Union[Var[int], int]] = None,
         row_markers: Optional[
             Union[
-                Var[Literal["none", "number", "checkbox", "both", "clickable-number"]],
-                Literal["none", "number", "checkbox", "both", "clickable-number"],
+                Literal["both", "checkbox", "clickable-number", "none", "number"],
+                Var[Literal["both", "checkbox", "clickable-number", "none", "number"]],
             ]
         ] = None,
         row_marker_start_index: Optional[Union[Var[int], int]] = None,
@@ -118,8 +117,8 @@ class DataEditor(NoSSRComponent):
         vertical_border: Optional[Union[Var[bool], bool]] = None,
         column_select: Optional[
             Union[
-                Var[Literal["none", "single", "multi"]],
-                Literal["none", "single", "multi"],
+                Literal["multi", "none", "single"],
+                Var[Literal["multi", "none", "single"]],
             ]
         ] = None,
         prevent_diagonal_scrolling: Optional[Union[Var[bool], bool]] = None,
@@ -128,106 +127,94 @@ class DataEditor(NoSSRComponent):
         scroll_offset_x: Optional[Union[Var[int], int]] = None,
         scroll_offset_y: Optional[Union[Var[int], int]] = None,
         theme: Optional[
-            Union[Var[Union[DataEditorTheme, Dict]], DataEditorTheme, Dict]
+            Union[DataEditorTheme, Dict, Var[Union[DataEditorTheme, Dict]]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[ImmutableVar, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_cell_activated: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_cell_clicked: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_cell_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_cell_edited: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_column_resize: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_delete: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_delete: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_finished_editing: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_group_header_clicked: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_group_header_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_group_header_renamed: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_header_clicked: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_header_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_header_menu_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_item_hovered: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_row_appended: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_selection_cleared: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, ImmutableVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "DataEditor":

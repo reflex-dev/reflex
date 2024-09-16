@@ -93,5 +93,17 @@ class DynamicRouteArgShadowsStateVar(ReflexError, NameError):
     """Raised when a dynamic route arg shadows a state var."""
 
 
+class ComputedVarShadowsStateVar(ReflexError, NameError):
+    """Raised when a computed var shadows a state var."""
+
+
+class ComputedVarShadowsBaseVars(ReflexError, NameError):
+    """Raised when a computed var shadows a base var."""
+
+
+class EventHandlerShadowsBuiltInStateMethod(ReflexError, NameError):
+    """Raised when an event handler shadows a built-in state method."""
+
+
 class GeneratedCodeHasNoFunctionDefs(ReflexError):
     """Raised when refactored code generated with flexgen has no functions defined."""
