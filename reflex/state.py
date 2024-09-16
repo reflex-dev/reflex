@@ -203,27 +203,6 @@ class RouterData:
         object.__setattr__(self, "headers", HeaderData(router_data))
         object.__setattr__(self, "page", PageData(router_data))
 
-    def toJson(self) -> str:
-        """Convert the object to a JSON string.
-
-        Returns:
-            The JSON string.
-        """
-        return json.dumps(dataclasses.asdict(self))
-
-
-@serializer
-def serialize_routerdata(value: RouterData) -> str:
-    """Serialize a RouterData instance.
-
-    Args:
-        value: The RouterData to serialize.
-
-    Returns:
-        The serialized RouterData.
-    """
-    return value.toJson()
-
 
 def _no_chain_background_task(
     state_cls: Type["BaseState"], name: str, fn: Callable
@@ -2412,7 +2391,7 @@ class StateUpdate:
         Returns:
             The state update as a JSON string.
         """
-        return json.dumps(dataclasses.asdict(self))
+        return format.json_dumps(dataclasses.asdict(self))
 
 
 class StateManager(Base, ABC):
