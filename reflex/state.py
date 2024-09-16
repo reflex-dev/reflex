@@ -64,7 +64,10 @@ from reflex.event import (
 )
 from reflex.utils import console, format, path_ops, prerequisites, types
 from reflex.utils.exceptions import (
+    ComputedVarShadowsBaseVars,
+    ComputedVarShadowsStateVar,
     DynamicRouteArgShadowsStateVar,
+    EventHandlerShadowsBuiltInStateMethod,
     ImmutableStateError,
     LockExpiredError,
 )
@@ -755,7 +758,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """Check for shadow methods and raise error if any.
 
         Raises:
-            NameError: When an event handler shadows an inbuilt state method.
+            EventHandlerShadowsBuiltInStateMethod: When an event handler shadows an inbuilt state method.
         """
         overridden_methods = set()
         state_base_functions = cls._get_base_functions()
@@ -769,7 +772,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 overridden_methods.add(method.__name__)
 
         for method_name in overridden_methods:
-            raise NameError(
+            raise EventHandlerShadowsBuiltInStateMethod(
                 f"The event handler name `{method_name}` shadows a builtin State method; use a different name instead"
             )
 
@@ -778,11 +781,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """Check for shadow base vars and raise error if any.
 
         Raises:
-            NameError: When a computed var shadows a base var.
+            ComputedVarShadowsBaseVars: When a computed var shadows a base var.
         """
         for computed_var_ in cls._get_computed_vars():
             if computed_var_._js_expr in cls.__annotations__:
-                raise NameError(
+                raise ComputedVarShadowsBaseVars(
                     f"The computed var name `{computed_var_._js_expr}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 )
 
@@ -791,14 +794,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """Check for shadow computed vars and raise error if any.
 
         Raises:
-            NameError: When a computed var shadows another.
+            ComputedVarShadowsStateVar: When a computed var shadows another.
         """
         for name, cv in cls.__dict__.items():
             if not is_computed_var(cv):
                 continue
             name = cv._js_expr
             if name in cls.inherited_vars or name in cls.inherited_backend_vars:
-                raise NameError(
+                raise ComputedVarShadowsStateVar(
                     f"The computed var name `{cv._js_expr}` shadows a var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 )
 
