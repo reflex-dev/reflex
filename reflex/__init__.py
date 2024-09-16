@@ -206,6 +206,13 @@ RADIX_PRIMITIVES_MAPPING: dict = {
     "components.radix.primitives.form": [
         "form",
     ],
+    "components.radix.primitives.progress": [
+        "progress",
+    ],
+}
+
+RADIX_PRIMITIVES_SHORTCUT_MAPPING: dict = {
+    k: v for k, v in RADIX_PRIMITIVES_MAPPING.items() if "progress" not in k
 }
 
 COMPONENTS_CORE_MAPPING: dict = {
@@ -248,7 +255,7 @@ RADIX_MAPPING: dict = {
     **RADIX_THEMES_COMPONENTS_MAPPING,
     **RADIX_THEMES_TYPOGRAPHY_MAPPING,
     **RADIX_THEMES_LAYOUT_MAPPING,
-    **RADIX_PRIMITIVES_MAPPING,
+    **RADIX_PRIMITIVES_SHORTCUT_MAPPING,
 }
 
 _MAPPING: dict = {
