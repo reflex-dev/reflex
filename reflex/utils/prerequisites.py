@@ -1279,11 +1279,16 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
             ),
             None,
         )
-    return {
-        tp["name"]: Template(**tp)
-        for tp in templates_data
-        if not tp["hidden"] and tp["code_url"] is not None
-    }
+
+    filtered_templates = {}
+    for tp in templates_data:
+        if tp["hidden"] or tp["code_url"] is None:
+            continue
+        known_fields = set(f.name for f in dataclasses.fields(Template))
+        filtered_templates[tp["name"]] = Template(
+            **{k: v for k, v in tp.items() if k in known_fields}
+        )
+    return filtered_templates
 
 
 def create_config_init_app_from_remote_template(app_name: str, template_url: str):
