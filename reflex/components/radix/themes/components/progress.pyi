@@ -107,6 +107,7 @@ class Progress(RadixThemesComponent):
             ]
         ] = None,
         duration: Optional[Union[Var[str], str]] = None,
+        fill_color: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -162,6 +163,7 @@ class Progress(RadixThemesComponent):
             high_contrast: Whether to render the progress bar with higher contrast color against background
             radius: Override theme radius for progress bar: "none" | "small" | "medium" | "large" | "full"
             duration: The duration of the progress bar animation. Once the duration times out, the progress bar will start an indeterminate animation.
+            fill_color: The color of the progress bar fill animation.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
