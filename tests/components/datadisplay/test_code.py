@@ -9,7 +9,7 @@ from reflex.components.datadisplay.code import CodeBlock
 def test_code_light_dark_theme(theme, expected):
     code_block = CodeBlock.create(theme=theme)
 
-    assert code_block.theme._var_name == expected  # type: ignore
+    assert code_block.theme._js_expr == expected  # type: ignore
 
 
 def generate_custom_code(language, expected_case):

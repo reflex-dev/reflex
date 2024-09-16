@@ -18,14 +18,14 @@ from typing import (
 )
 
 from reflex.utils.exceptions import VarTypeError
-from reflex.vars import Var, VarData
 
 from .base import (
     CustomVarOperationReturn,
-    ImmutableVar,
     LiteralNoneVar,
     LiteralVar,
     ToOperation,
+    Var,
+    VarData,
     unionize,
     var_operation,
     var_operation_return,
@@ -54,7 +54,7 @@ def raise_unsupported_operand_types(
     )
 
 
-class NumberVar(ImmutableVar[NUMBER_T]):
+class NumberVar(Var[NUMBER_T]):
     """Base class for immutable number vars."""
 
     @overload
@@ -848,8 +848,8 @@ def boolean_to_number_operation(value: BooleanVar):
 
 
 def comparison_operator(
-    func: Callable[[ImmutableVar, ImmutableVar], str],
-) -> Callable[[ImmutableVar | Any, ImmutableVar | Any], BooleanVar]:
+    func: Callable[[Var, Var], str],
+) -> Callable[[Var | Any, Var | Any], BooleanVar]:
     """Decorator to create a comparison operation.
 
     Args:
@@ -860,13 +860,13 @@ def comparison_operator(
     """
 
     @var_operation
-    def operation(lhs: ImmutableVar, rhs: ImmutableVar):
+    def operation(lhs: Var, rhs: Var):
         return var_operation_return(
             js_expression=func(lhs, rhs),
             var_type=bool,
         )
 
-    def wrapper(lhs: ImmutableVar | Any, rhs: ImmutableVar | Any) -> BooleanVar:
+    def wrapper(lhs: Var | Any, rhs: Var | Any) -> BooleanVar:
         """Create the comparison operation.
 
         Args:
@@ -882,7 +882,7 @@ def comparison_operator(
 
 
 @comparison_operator
-def greater_than_operation(lhs: ImmutableVar, rhs: ImmutableVar):
+def greater_than_operation(lhs: Var, rhs: Var):
     """Greater than comparison.
 
     Args:
@@ -896,7 +896,7 @@ def greater_than_operation(lhs: ImmutableVar, rhs: ImmutableVar):
 
 
 @comparison_operator
-def greater_than_or_equal_operation(lhs: ImmutableVar, rhs: ImmutableVar):
+def greater_than_or_equal_operation(lhs: Var, rhs: Var):
     """Greater than or equal comparison.
 
     Args:
@@ -910,7 +910,7 @@ def greater_than_or_equal_operation(lhs: ImmutableVar, rhs: ImmutableVar):
 
 
 @comparison_operator
-def less_than_operation(lhs: ImmutableVar, rhs: ImmutableVar):
+def less_than_operation(lhs: Var, rhs: Var):
     """Less than comparison.
 
     Args:
@@ -924,7 +924,7 @@ def less_than_operation(lhs: ImmutableVar, rhs: ImmutableVar):
 
 
 @comparison_operator
-def less_than_or_equal_operation(lhs: ImmutableVar, rhs: ImmutableVar):
+def less_than_or_equal_operation(lhs: Var, rhs: Var):
     """Less than or equal comparison.
 
     Args:
@@ -938,7 +938,7 @@ def less_than_or_equal_operation(lhs: ImmutableVar, rhs: ImmutableVar):
 
 
 @comparison_operator
-def equal_operation(lhs: ImmutableVar, rhs: ImmutableVar):
+def equal_operation(lhs: Var, rhs: Var):
     """Equal comparison.
 
     Args:
@@ -952,7 +952,7 @@ def equal_operation(lhs: ImmutableVar, rhs: ImmutableVar):
 
 
 @comparison_operator
-def not_equal_operation(lhs: ImmutableVar, rhs: ImmutableVar):
+def not_equal_operation(lhs: Var, rhs: Var):
     """Not equal comparison.
 
     Args:
@@ -1016,7 +1016,7 @@ class LiteralBooleanVar(LiteralVar, BooleanVar):
             The boolean var.
         """
         return cls(
-            _var_name="true" if value else "false",
+            _js_expr="true" if value else "false",
             _var_type=bool,
             _var_data=_var_data,
             _var_value=value,
@@ -1061,7 +1061,7 @@ class LiteralNumberVar(LiteralVar, NumberVar):
             The number var.
         """
         return cls(
-            _var_name=str(value),
+            _js_expr=str(value),
             _var_type=type(value),
             _var_data=_var_data,
             _var_value=value,
@@ -1115,9 +1115,7 @@ def boolify(value: Var):
 
 
 @var_operation
-def ternary_operation(
-    condition: BooleanVar, if_true: ImmutableVar, if_false: ImmutableVar
-):
+def ternary_operation(condition: BooleanVar, if_true: Var, if_false: Var):
     """Create a ternary operation.
 
     Args:

@@ -117,7 +117,9 @@ class Templates(SimpleNamespace):
     REFLEX_BUILD_POLL_URL = REFLEX_BUILD_BACKEND + "/api/init/{reflex_init_token}"
 
     # The URL to fetch the generation's reflex code
-    REFLEX_BUILD_CODE_URL = REFLEX_BUILD_BACKEND + "/api/gen/{generation_hash}"
+    REFLEX_BUILD_CODE_URL = (
+        REFLEX_BUILD_BACKEND + "/api/gen/{generation_hash}/refactored"
+    )
 
     class Dirs(SimpleNamespace):
         """Folders used by the template system of Reflex."""

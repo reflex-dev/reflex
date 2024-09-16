@@ -24,8 +24,6 @@ from reflex.components.core.cond import Cond, color_mode_cond, cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.dropdown_menu import dropdown_menu
 from reflex.components.radix.themes.components.switch import Switch
-from reflex.ivars.base import ImmutableVar
-from reflex.ivars.sequence import LiteralArrayVar
 from reflex.style import (
     LIGHT_COLOR_MODE,
     color_mode,
@@ -33,6 +31,8 @@ from reflex.style import (
     set_color_mode,
     toggle_color_mode,
 )
+from reflex.vars.base import Var
+from reflex.vars.sequence import LiteralArrayVar
 
 from .components.icon_button import IconButton
 
@@ -114,7 +114,7 @@ class ColorModeIconButton(IconButton):
             The button component.
         """
         # position is used to set nice defaults for positioning the icon button
-        if isinstance(position, ImmutableVar):
+        if isinstance(position, Var):
             _set_var_default(props, position, "position", "fixed", position)
             _set_var_default(props, position, "bottom", "2rem")
             _set_var_default(props, position, "top", "2rem")
@@ -184,7 +184,7 @@ class ColorModeSwitch(Switch):
         )
 
 
-class ColorModeNamespace(ImmutableVar):
+class ColorModeNamespace(Var):
     """Namespace for color mode components."""
 
     icon = staticmethod(ColorModeIcon.create)
@@ -193,7 +193,7 @@ class ColorModeNamespace(ImmutableVar):
 
 
 color_mode = color_mode_var_and_namespace = ColorModeNamespace(
-    _var_name=color_mode._var_name,
+    _js_expr=color_mode._js_expr,
     _var_type=color_mode._var_type,
     _var_data=color_mode.get_default_value(),
 )

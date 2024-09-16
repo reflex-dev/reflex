@@ -7,9 +7,9 @@ import pytest
 import reflex as rx
 from reflex import style
 from reflex.components.component import evaluate_style_namespaces
-from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style
 from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
 
 test_style = [
     ({"a": 1}, {"a": 1}),
@@ -81,7 +81,7 @@ def compare_dict_of_var(d1: dict[str, Any], d2: dict[str, Any]):
         assert key in d2
         if isinstance(value, dict):
             compare_dict_of_var(value, d2[key])
-        elif isinstance(value, ImmutableVar):
+        elif isinstance(value, Var):
             assert value.equals(d2[key])
         else:
             assert value == d2[key]
@@ -377,8 +377,8 @@ class StyleState(rx.State):
         (
             {"color": f"dark{StyleState.color}"},
             {
-                "css": ImmutableVar.create_safe(
-                    f'({{ ["color"] : ("dark"+{StyleState.color}) }})'
+                "css": Var(
+                    _js_expr=f'({{ ["color"] : ("dark"+{StyleState.color}) }})'
                 ).to(Dict[str, str])
             },
         ),

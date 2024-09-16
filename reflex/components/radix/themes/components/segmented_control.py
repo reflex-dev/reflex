@@ -7,7 +7,7 @@ from typing import List, Literal, Union
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -34,8 +34,10 @@ class SegmentedControlRoot(RadixThemesComponent):
     # The default value of the segmented control.
     default_value: Var[Union[str, List[str]]]
 
+    # The current value of the segmented control.
     value: Var[Union[str, List[str]]]
 
+    # Handles the `onChange` event for the SegmentedControl component.
     on_change: EventHandler[lambda e0: [e0]]
 
     _rename_props = {"onChange": "onValueChange"}

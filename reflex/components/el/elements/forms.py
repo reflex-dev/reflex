@@ -11,13 +11,13 @@ from reflex.components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
 from reflex.event import EventChain, EventHandler
-from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.utils.imports import ImportDict
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
 
 from .base import BaseHTML
 
-FORM_DATA = ImmutableVar.create("form_data")
+FORM_DATA = Var(_js_expr="form_data")
 HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     """
     const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {
@@ -197,8 +197,8 @@ class Form(BaseHTML):
         if EventTriggers.ON_SUBMIT in self.event_triggers:
             render_tag.add_props(
                 **{
-                    EventTriggers.ON_SUBMIT: ImmutableVar(
-                        _var_name=f"handleSubmit_{self.handle_submit_unique_name}",
+                    EventTriggers.ON_SUBMIT: Var(
+                        _js_expr=f"handleSubmit_{self.handle_submit_unique_name}",
                         _var_type=EventChain,
                     )
                 }
@@ -212,21 +212,21 @@ class Form(BaseHTML):
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):
-                ref_var = ImmutableVar.create_safe(ref[:-3]).as_ref()
-                form_refs[ref[len("refs_") : -3]] = ImmutableVar.create_safe(
-                    f"getRefValues({str(ref_var)})",
+                ref_var = Var(_js_expr=ref[:-3]).as_ref()
+                form_refs[ref[len("refs_") : -3]] = Var(
+                    _js_expr=f"getRefValues({str(ref_var)})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
             else:
-                ref_var = ImmutableVar.create_safe(ref).as_ref()
-                form_refs[ref[4:]] = ImmutableVar.create_safe(
-                    f"getRefValue({str(ref_var)})",
+                ref_var = Var(_js_expr=ref).as_ref()
+                form_refs[ref[4:]] = Var(
+                    _js_expr=f"getRefValue({str(ref_var)})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
         # print(repr(form_refs))
         return form_refs
 
-    def _get_vars(self, include_children: bool = True) -> Iterator[ImmutableVar]:
+    def _get_vars(self, include_children: bool = True) -> Iterator[Var]:
         yield from super()._get_vars(include_children=include_children)
         yield from self._get_form_refs().values()
 
@@ -624,15 +624,15 @@ class Textarea(BaseHTML):
                     "Cannot combine `enter_key_submit` with `on_key_down`.",
                 )
             tag.add_props(
-                on_key_down=ImmutableVar.create_safe(
-                    f"(e) => enterKeySubmitOnKeyDown(e, {str(self.enter_key_submit)})",
+                on_key_down=Var(
+                    _js_expr=f"(e) => enterKeySubmitOnKeyDown(e, {str(self.enter_key_submit)})",
                     _var_data=VarData.merge(self.enter_key_submit._get_all_var_data()),
                 )
             )
         if self.auto_height is not None:
             tag.add_props(
-                on_input=ImmutableVar.create_safe(
-                    f"(e) => autoHeightOnInput(e, {str(self.auto_height)})",
+                on_input=Var(
+                    _js_expr=f"(e) => autoHeightOnInput(e, {str(self.auto_height)})",
                     _var_data=VarData.merge(self.auto_height._get_all_var_data()),
                 )
             )
