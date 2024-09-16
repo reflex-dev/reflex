@@ -2,9 +2,12 @@
 
 from reflex.components.component import Component
 from reflex.utils.imports import ImportVar
+from reflex.utils.serializers import serializer
 
 
+@serializer
 def make_component(component: Component) -> str:
+    """Generate the code for a dynamic component."""
     from reflex.compiler import templates, utils
 
     rendered_components = {}

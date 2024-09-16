@@ -1873,15 +1873,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The value of the field.
         """
-        from reflex.components.component import Component
-        from reflex.components.dynamic import make_component
-
         if isinstance(key, MutableProxy):
-            if isinstance(key.__wrapped__, Component):
-                return make_component(key.__wrapped__)
             return super().get_value(key.__wrapped__)
-        if isinstance(key, Component):
-            return make_component(key)
         return super().get_value(key)
 
     def dict(

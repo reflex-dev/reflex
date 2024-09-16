@@ -136,6 +136,7 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
             # Seems like this function signature was wrong all along?
             # If the user wants a field that we know of, get it and pass it off to _get_value
             key = getattr(self, key)
+        return key
         return self._get_value(
             key,
             to_dict=True,

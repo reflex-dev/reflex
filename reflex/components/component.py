@@ -1886,19 +1886,6 @@ class NoSSRComponent(Component):
         return "".join((library_import, mod_import, opts_fragment))
 
 
-@serializer
-def serialize_component(comp: Component):
-    """Serialize a component.
-
-    Args:
-        comp: The component to serialize.
-
-    Returns:
-        The serialized component.
-    """
-    return str(comp)
-
-
 class StatefulComponent(BaseComponent):
     """A component that depends on state and is rendered outside of the page component.
 
@@ -2311,3 +2298,6 @@ class MemoizationLeaf(Component):
                 update={"disposition": MemoizationDisposition.ALWAYS}
             )
         return comp
+
+
+import reflex.components.dynamic
