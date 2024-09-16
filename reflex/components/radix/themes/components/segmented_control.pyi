@@ -164,6 +164,7 @@ class SegmentedControlRoot(RadixThemesComponent):
             color_scheme: Override theme color for button
             radius: The radius of the segmented control: "none" | "small" | "medium" | "large" | "full"
             default_value: The default value of the segmented control.
+            value: The current value of the segmented control.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

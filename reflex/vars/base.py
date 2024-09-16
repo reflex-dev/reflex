@@ -948,21 +948,6 @@ class Var(Generic[VAR_TYPE]):
 OUTPUT = TypeVar("OUTPUT", bound=Var)
 
 
-def _encode_var(value: Var) -> str:
-    """Encode the state name into a formatted var.
-
-    Args:
-        value: The value to encode the state name into.
-
-    Returns:
-        The encoded var.
-    """
-    return f"{value}"
-
-
-serializers.serializer(_encode_var)
-
-
 class LiteralVar(Var):
     """Base class for immutable literal vars."""
 
@@ -1079,6 +1064,10 @@ class LiteralVar(Var):
                     _var_type=type(value),
                     _var_data=_var_data,
                 )
+            if isinstance(serialized_value, str):
+                return LiteralStringVar.create(
+                    serialized_value, _var_type=type(value), _var_data=_var_data
+                )
             return LiteralVar.create(serialized_value, _var_data=_var_data)
 
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
@@ -1107,6 +1096,19 @@ class LiteralVar(Var):
         raise NotImplementedError(
             "LiteralVar subclasses must implement the json method."
         )
+
+
+@serializers.serializer
+def serialize_literal(value: LiteralVar):
+    """Serialize a Literal type.
+
+    Args:
+        value: The Literal to serialize.
+
+    Returns:
+        The serialized Literal.
+    """
+    return serializers.serialize(value._var_value)
 
 
 P = ParamSpec("P")

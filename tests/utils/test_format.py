@@ -352,28 +352,28 @@ def test_format_match(
     "prop,formatted",
     [
         ("string", '"string"'),
-        ("{wrapped_string}", "{wrapped_string}"),
-        (True, "{true}"),
-        (False, "{false}"),
-        (123, "{123}"),
-        (3.14, "{3.14}"),
-        ([1, 2, 3], "{[1, 2, 3]}"),
-        (["a", "b", "c"], '{["a", "b", "c"]}'),
-        ({"a": 1, "b": 2, "c": 3}, '{({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })}'),
-        ({"a": 'foo "bar" baz'}, r'{({ ["a"] : "foo \"bar\" baz" })}'),
+        ("{wrapped_string}", '"{wrapped_string}"'),
+        (True, "true"),
+        (False, "false"),
+        (123, "123"),
+        (3.14, "3.14"),
+        ([1, 2, 3], "[1, 2, 3]"),
+        (["a", "b", "c"], '["a", "b", "c"]'),
+        ({"a": 1, "b": 2, "c": 3}, '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })'),
+        ({"a": 'foo "bar" baz'}, r'({ ["a"] : "foo \"bar\" baz" })'),
         (
             {
                 "a": 'foo "{ "bar" }" baz',
                 "b": Var(_js_expr="val", _var_type=str).guess_type(),
             },
-            r'{({ ["a"] : "foo \"{ \"bar\" }\" baz", ["b"] : val })}',
+            r'({ ["a"] : "foo \"{ \"bar\" }\" baz", ["b"] : val })',
         ),
         (
             EventChain(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))],
                 args_spec=lambda: [],
             ),
-            '{(...args) => addEvents([Event("mock_event", {})], args, {})}',
+            '((...args) => ((addEvents([(Event("mock_event", ({  })))], args, ({  })))))',
         ),
         (
             EventChain(
@@ -382,7 +382,7 @@ def test_format_match(
                         handler=EventHandler(fn=mock_event),
                         args=(
                             (
-                                LiteralVar.create("arg"),
+                                Var(_js_expr="arg"),
                                 Var(
                                     _js_expr="_e",
                                 )
@@ -394,7 +394,7 @@ def test_format_match(
                 ],
                 args_spec=lambda e: [e.target.value],
             ),
-            '{(_e) => addEvents([Event("mock_event", {"arg":_e["target"]["value"]})], [_e], {})}',
+            '((_e) => ((addEvents([(Event("mock_event", ({ ["arg"] : _e["target"]["value"] })))], [_e], ({  })))))',
         ),
         (
             EventChain(
@@ -402,7 +402,7 @@ def test_format_match(
                 args_spec=lambda: [],
                 event_actions={"stopPropagation": True},
             ),
-            '{(...args) => addEvents([Event("mock_event", {})], args, {"stopPropagation": true})}',
+            '((...args) => ((addEvents([(Event("mock_event", ({  })))], args, ({ ["stopPropagation"] : true })))))',
         ),
         (
             EventChain(
@@ -410,9 +410,9 @@ def test_format_match(
                 args_spec=lambda: [],
                 event_actions={"preventDefault": True},
             ),
-            '{(...args) => addEvents([Event("mock_event", {})], args, {"preventDefault": true})}',
+            '((...args) => ((addEvents([(Event("mock_event", ({  })))], args, ({ ["preventDefault"] : true })))))',
         ),
-        ({"a": "red", "b": "blue"}, '{({ ["a"] : "red", ["b"] : "blue" })}'),
+        ({"a": "red", "b": "blue"}, '({ ["a"] : "red", ["b"] : "blue" })'),
         (Var(_js_expr="var", _var_type=int).guess_type(), "var"),
         (
             Var(
@@ -427,15 +427,15 @@ def test_format_match(
         ),
         (
             {"a": Var(_js_expr="val", _var_type=str).guess_type()},
-            '{({ ["a"] : val })}',
+            '({ ["a"] : val })',
         ),
         (
             {"a": Var(_js_expr='"val"', _var_type=str).guess_type()},
-            '{({ ["a"] : "val" })}',
+            '({ ["a"] : "val" })',
         ),
         (
             {"a": Var(_js_expr='state.colors["val"]', _var_type=str).guess_type()},
-            '{({ ["a"] : state.colors["val"] })}',
+            '({ ["a"] : state.colors["val"] })',
         ),
         # tricky real-world case from markdown component
         (
@@ -444,7 +444,7 @@ def test_format_match(
                     _js_expr=f"(({{node, ...props}}) => <Heading {{...props}} {''.join(Tag(name='', props=Style({'as_': 'h1'})).format_props())} />)"
                 ),
             },
-            '{({ ["h1"] : (({node, ...props}) => <Heading {...props} as={"h1"} />) })}',
+            '({ ["h1"] : (({node, ...props}) => <Heading {...props} as={"h1"} />) })',
         ),
     ],
 )
@@ -455,7 +455,7 @@ def test_format_prop(prop: Var, formatted: str):
         prop: The prop to test.
         formatted: The expected formatted value.
     """
-    assert format.format_prop(prop) == formatted
+    assert format.format_prop(LiteralVar.create(prop)) == formatted
 
 
 @pytest.mark.parametrize(

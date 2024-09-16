@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import dataclasses
 import inspect
 import json
 import os
@@ -410,22 +409,11 @@ def format_props(*single_props, **key_value_props) -> list[str]:
 
     return [
         (
-            f"{name}={format_prop(prop)}"
-            if isinstance(prop, Var) and not isinstance(prop, Var)
-            else (
-                f"{name}={{{format_prop(prop if isinstance(prop, Var) else LiteralVar.create(prop))}}}"
-            )
+            f"{name}={{{format_prop(prop if isinstance(prop, Var) else LiteralVar.create(prop))}}}"
         )
         for name, prop in sorted(key_value_props.items())
         if prop is not None
-    ] + [
-        (
-            str(prop)
-            if isinstance(prop, Var) and not isinstance(prop, Var)
-            else f"{str(LiteralVar.create(prop))}"
-        )
-        for prop in single_props
-    ]
+    ] + [(f"{str(LiteralVar.create(prop))}") for prop in single_props]
 
 
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
@@ -622,14 +610,6 @@ def format_state(value: Any, key: Optional[str] = None) -> Any:
     # Handle dicts.
     if isinstance(value, dict):
         return {k: format_state(v, k) for k, v in value.items()}
-
-    # Hand dataclasses.
-    if dataclasses.is_dataclass(value):
-        if isinstance(value, type):
-            raise TypeError(
-                f"Cannot format state of type {type(value)}. Please provide an instance of the dataclass."
-            )
-        return {k: format_state(v, k) for k, v in dataclasses.asdict(value).items()}
 
     # Handle lists, sets, typles.
     if isinstance(value, types.StateIterBases):

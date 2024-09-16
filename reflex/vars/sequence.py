@@ -553,12 +553,14 @@ class LiteralStringVar(LiteralVar, StringVar):
     def create(
         cls,
         value: str,
+        _var_type: GenericType | None = str,
         _var_data: VarData | None = None,
     ) -> StringVar:
         """Create a var from a string value.
 
         Args:
             value: The value to create the var from.
+            _var_type: The type of the var.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -591,18 +593,27 @@ class LiteralStringVar(LiteralVar, StringVar):
             filtered_strings_and_vals = [
                 s for s in strings_and_vals if isinstance(s, Var) or s
             ]
-
             if len(filtered_strings_and_vals) == 1:
-                return LiteralVar.create(filtered_strings_and_vals[0]).to(StringVar)
+                only_string = filtered_strings_and_vals[0]
+                if isinstance(only_string, str):
+                    return LiteralVar.create(only_string).to(StringVar, _var_type)
+                else:
+                    return only_string.to(StringVar, only_string._var_type)
 
-            return ConcatVarOperation.create(
+            concat_result = ConcatVarOperation.create(
                 *filtered_strings_and_vals,
                 _var_data=_var_data,
             )
 
+            return (
+                concat_result
+                if _var_type is str
+                else concat_result.to(StringVar, _var_type)
+            )
+
         return LiteralStringVar(
             _js_expr=json.dumps(value),
-            _var_type=str,
+            _var_type=_var_type,
             _var_data=_var_data,
             _var_value=value,
         )
