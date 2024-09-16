@@ -161,6 +161,7 @@ class SegmentedControlRoot(RadixThemesComponent):
             *children: Child components.
             size: The size of the segmented control: "1" | "2" | "3"
             variant: Variant of button: "classic" | "surface"
+            type: The type of the segmented control, either "single" for selecting one option or "multiple" for selecting multiple options.
             color_scheme: Override theme color for button
             radius: The radius of the segmented control: "none" | "small" | "medium" | "large" | "full"
             default_value: The default value of the segmented control.
