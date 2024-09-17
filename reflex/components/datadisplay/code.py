@@ -549,9 +549,9 @@ def construct_theme_var(theme: str) -> Var:
         theme,
         _var_data=VarData(
             imports={
-                f"react-syntax-highlighter/dist/cjs/styles/prism/{
-                    format.to_kebab_case(theme)
-                }": [ImportVar(tag=theme, is_default=True, install=False)]
+                f"react-syntax-highlighter/dist/cjs/styles/prism/{format.to_kebab_case(theme)}": [
+                    ImportVar(tag=theme, is_default=True, install=False)
+                ]
             }
         ),
     )
