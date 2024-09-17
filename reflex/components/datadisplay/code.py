@@ -16,7 +16,7 @@ from reflex.event import set_clipboard
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars.base import LiteralVar, Var
+from reflex.vars.base import LiteralVar, Var, VarData
 
 LiteralCodeBlockTheme = Literal[
     "a11y-dark",
@@ -405,31 +405,6 @@ class CodeBlock(Component):
         """
         imports_: ImportDict = {}
 
-        themeString = str(self.theme)
-
-        selected_themes = []
-
-        for possibleTheme in get_args(LiteralCodeBlockTheme):
-            if format.to_camel_case(possibleTheme) in themeString:
-                selected_themes.append(possibleTheme)
-            if possibleTheme in themeString:
-                selected_themes.append(possibleTheme)
-
-        selected_themes = sorted(set(map(self.convert_theme_name, selected_themes)))
-
-        imports_.update(
-            {
-                f"react-syntax-highlighter/dist/cjs/styles/prism/{theme}": [
-                    ImportVar(
-                        tag=format.to_camel_case(theme),
-                        is_default=True,
-                        install=False,
-                    )
-                ]
-                for theme in selected_themes
-            }
-        )
-
         if (
             self.language is not None
             and (language_without_quotes := str(self.language).replace('"', ""))
@@ -473,6 +448,9 @@ class CodeBlock(Component):
 
         Returns:
             The text component.
+
+        Raises:
+            ValueError: If the theme prop is not a Var instance.
         """
         # This component handles style in a special prop.
         custom_style = props.pop("custom_style", {})
@@ -480,14 +458,16 @@ class CodeBlock(Component):
         if "theme" not in props:
             # Default color scheme responds to global color mode.
             props["theme"] = color_mode_cond(
-                light=Var(_js_expr="oneLight"),
-                dark=Var(_js_expr="oneDark"),
+                light=Themes.one_light,
+                dark=Themes.one_dark,
             )
 
         # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
         # themes respectively to ensure code compatibility.
         if "theme" in props and not isinstance(props["theme"], Var):
-            props["theme"] = cls.convert_theme_name(props["theme"])
+            raise ValueError(
+                "The theme prop must be a Var instance. Use Themes to select a theme."
+            )
 
         if can_copy:
             code = children[0]
@@ -533,9 +513,7 @@ class CodeBlock(Component):
     def _render(self):
         out = super()._render()
 
-        theme = self.theme._replace(
-            _js_expr=replace_quotes_with_camel_case(str(self.theme))
-        )
+        theme = self.theme
 
         out.add_props(style=theme).remove_props("theme", "code").add_props(
             children=self.code
@@ -558,4 +536,83 @@ class CodeBlock(Component):
         return theme
 
 
-code_block = CodeBlock.create
+def construct_theme_var(theme: str) -> Var:
+    """Construct a theme var.
+
+    Args:
+        theme: The theme to construct.
+
+    Returns:
+        The constructed theme var.
+    """
+    return Var(
+        theme,
+        _var_data=VarData(
+            imports={
+                f"react-syntax-highlighter/dist/cjs/styles/prism/{
+                    format.to_kebab_case(theme)
+                }": [ImportVar(tag=theme, is_default=True, install=False)]
+            }
+        ),
+    )
+
+
+class Themes:
+    """Themes for the CodeBlock component."""
+
+    a11y_dark = construct_theme_var("a11yDark")
+    atom_dark = construct_theme_var("atomDark")
+    cb = construct_theme_var("cb")
+    coldark_cold = construct_theme_var("coldarkCold")
+    coldark_dark = construct_theme_var("coldarkDark")
+    coy = construct_theme_var("coy")
+    coy_without_shadows = construct_theme_var("coyWithoutShadows")
+    darcula = construct_theme_var("darcula")
+    dark = construct_theme_var("dark")
+    dracula = construct_theme_var("dracula")
+    duotone_dark = construct_theme_var("duotoneDark")
+    duotone_earth = construct_theme_var("duotoneEarth")
+    duotone_forest = construct_theme_var("duotoneForest")
+    duotone_light = construct_theme_var("duotoneLight")
+    duotone_sea = construct_theme_var("duotoneSea")
+    duotone_space = construct_theme_var("duotoneSpace")
+    funky = construct_theme_var("funky")
+    ghcolors = construct_theme_var("ghcolors")
+    gruvbox_dark = construct_theme_var("gruvboxDark")
+    gruvbox_light = construct_theme_var("gruvboxLight")
+    holi_theme = construct_theme_var("holiTheme")
+    hopscotch = construct_theme_var("hopscotch")
+    light = construct_theme_var("light")
+    lucario = construct_theme_var("lucario")
+    material_dark = construct_theme_var("materialDark")
+    material_light = construct_theme_var("materialLight")
+    material_oceanic = construct_theme_var("materialOceanic")
+    night_owl = construct_theme_var("nightOwl")
+    nord = construct_theme_var("nord")
+    okaidia = construct_theme_var("okaidia")
+    one_dark = construct_theme_var("oneDark")
+    one_light = construct_theme_var("oneLight")
+    pojoaque = construct_theme_var("pojoaque")
+    prism = construct_theme_var("prism")
+    shades_of_purple = construct_theme_var("shadesOfPurple")
+    solarized_dark_atom = construct_theme_var("solarizedDarkAtom")
+    solarizedlight = construct_theme_var("solarizedlight")
+    synthwave84 = construct_theme_var("synthwave84")
+    tomorrow = construct_theme_var("tomorrow")
+    twilight = construct_theme_var("twilight")
+    vs = construct_theme_var("vs")
+    vs_dark = construct_theme_var("vsDark")
+    vsc_dark_plus = construct_theme_var("vscDarkPlus")
+    xonokai = construct_theme_var("xonokai")
+    z_touch = construct_theme_var("zTouch")
+
+
+class CodeblockNamespace:
+    """Namespace for the CodeBlock component."""
+
+    themes = Themes
+
+    __call__ = CodeBlock.create
+
+
+code_block = CodeblockNamespace()

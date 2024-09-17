@@ -1001,4 +1001,62 @@ class CodeBlock(Component):
     @staticmethod
     def convert_theme_name(theme) -> str: ...
 
-code_block = CodeBlock.create
+def construct_theme_var(theme: str) -> Var: ...
+
+class Themes:
+    """Themes for the CodeBlock component."""
+
+    a11y_dark = construct_theme_var("a11yDark")
+    atom_dark = construct_theme_var("atomDark")
+    cb = construct_theme_var("cb")
+    coldark_cold = construct_theme_var("coldarkCold")
+    coldark_dark = construct_theme_var("coldarkDark")
+    coy = construct_theme_var("coy")
+    coy_without_shadows = construct_theme_var("coyWithoutShadows")
+    darcula = construct_theme_var("darcula")
+    dark = construct_theme_var("dark")
+    dracula = construct_theme_var("dracula")
+    duotone_dark = construct_theme_var("duotoneDark")
+    duotone_earth = construct_theme_var("duotoneEarth")
+    duotone_forest = construct_theme_var("duotoneForest")
+    duotone_light = construct_theme_var("duotoneLight")
+    duotone_sea = construct_theme_var("duotoneSea")
+    duotone_space = construct_theme_var("duotoneSpace")
+    funky = construct_theme_var("funky")
+    ghcolors = construct_theme_var("ghcolors")
+    gruvbox_dark = construct_theme_var("gruvboxDark")
+    gruvbox_light = construct_theme_var("gruvboxLight")
+    holi_theme = construct_theme_var("holiTheme")
+    hopscotch = construct_theme_var("hopscotch")
+    light = construct_theme_var("light")
+    lucario = construct_theme_var("lucario")
+    material_dark = construct_theme_var("materialDark")
+    material_light = construct_theme_var("materialLight")
+    material_oceanic = construct_theme_var("materialOceanic")
+    night_owl = construct_theme_var("nightOwl")
+    nord = construct_theme_var("nord")
+    okaidia = construct_theme_var("okaidia")
+    one_dark = construct_theme_var("oneDark")
+    one_light = construct_theme_var("oneLight")
+    pojoaque = construct_theme_var("pojoaque")
+    prism = construct_theme_var("prism")
+    shades_of_purple = construct_theme_var("shadesOfPurple")
+    solarized_dark_atom = construct_theme_var("solarizedDarkAtom")
+    solarizedlight = construct_theme_var("solarizedlight")
+    synthwave84 = construct_theme_var("synthwave84")
+    tomorrow = construct_theme_var("tomorrow")
+    twilight = construct_theme_var("twilight")
+    vs = construct_theme_var("vs")
+    vs_dark = construct_theme_var("vsDark")
+    vsc_dark_plus = construct_theme_var("vscDarkPlus")
+    xonokai = construct_theme_var("xonokai")
+    z_touch = construct_theme_var("zTouch")
+
+class CodeblockNamespace:
+    """Namespace for the CodeBlock component."""
+
+    themes = Themes
+
+    __call__ = CodeBlock.create
+
+code_block = CodeblockNamespace()
