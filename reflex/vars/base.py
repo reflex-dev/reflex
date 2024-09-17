@@ -19,6 +19,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    FrozenSet,
     Generic,
     Iterable,
     List,
@@ -1698,8 +1699,6 @@ class ComputedVar(Var[RETURN_TYPE]):
             The value of the var for the given instance.
         """
         if instance is None:
-            from reflex.components import Component
-
             state_where_defined = owner
             while self.fget.__name__ in state_where_defined.inherited_vars:
                 state_where_defined = state_where_defined.get_parent_state()
@@ -1712,23 +1711,11 @@ class ComputedVar(Var[RETURN_TYPE]):
 
             var_type = get_origin(self._var_type) or self._var_type
 
-            if inspect.isclass(var_type) and issubclass(var_type, Component):
-                unique_var_name, var_data = eval_component(field_name)
-                return self._replace(
-                    _js_expr=unique_var_name,
-                    merge_var_data=VarData.merge(
-                        VarData.from_state(state_where_defined, self._js_expr),
-                        var_data,
-                    ),
-                ).guess_type()
-
-            return self._replace(
-                _js_expr=field_name,
-                merge_var_data=VarData.from_state(
-                    state_where_defined,
-                    self._js_expr,
-                ),
-            ).guess_type()
+            return dispatch(
+                field_name,
+                var_data=VarData.from_state(state_where_defined, self._js_expr),
+                result_var_type=var_type,
+            )
 
         if not self._cache:
             return self.fget(instance)
@@ -2560,36 +2547,203 @@ REPLACED_NAMES = {
 }
 
 
-def eval_component(var_name: str) -> Tuple[str, VarData]:
-    """Evaluate a component.
+dispatchers: Dict[GenericType, Callable[[Var], Var]] = {}
+
+
+def transform(fn: Callable[[Var], Var]) -> Callable[[Var], Var]:
+    """Register a function to transform a Var.
 
     Args:
-        var_name: The name of the component.
+        fn: The function to register.
 
     Returns:
-        The component and the associated VarData.
+        The decorator.
+
+    Raises:
+        TypeError: If the return type of the function is not a Var.
+        TypeError: If the Var return type does not have a generic type.
+        ValueError: If a function for the generic type is already registered.
     """
-    unique_var_name = get_unique_variable_name()
-    return unique_var_name, VarData(
-        imports={
-            f"/{constants.Dirs.STATE_PATH}": [
-                imports.ImportVar(tag="evalReactComponent"),
-            ]
-        },
-        hooks={
-            f"const [{unique_var_name}, set_{unique_var_name}] = useState(null);": None,
-            "useEffect(() => {"
-            "let isMounted = true;"
-            f"evalReactComponent({var_name})"
-            ".then((component) => {"
-            "if (isMounted) {"
-            f"set_{unique_var_name}(component);"
-            "}"
-            "});"
-            "return () => {"
-            "isMounted = false;"
-            "};"
-            "}"
-            f", [{var_name}]);": None,
-        },
+    return_type = fn.__annotations__["return"]
+
+    origin = get_origin(return_type)
+
+    if origin is not Var:
+        raise TypeError(
+            f"Expected return type of {fn.__name__} to be a Var, got {origin}."
+        )
+
+    generic_args = get_args(return_type)
+
+    if not generic_args:
+        raise TypeError(
+            f"Expected Var return type of {fn.__name__} to have a generic type."
+        )
+
+    generic_type = get_origin(generic_args[0]) or generic_args[0]
+
+    if generic_type in dispatchers:
+        raise ValueError(f"Function for {generic_type} already registered.")
+
+    dispatchers[generic_type] = fn
+
+    return fn
+
+
+def generic_type_to_actual_type_map(
+    generic_type: GenericType, actual_type: GenericType
+) -> Dict[TypeVar, GenericType]:
+    """Map the generic type to the actual type.
+
+    Args:
+        generic_type: The generic type.
+        actual_type: The actual type.
+
+    Returns:
+        The mapping of type variables to actual types.
+    """
+    generic_origin = get_origin(generic_type) or generic_type
+    actual_origin = get_origin(actual_type) or actual_type
+
+    if generic_origin is not actual_origin:
+        if isinstance(generic_origin, TypeVar):
+            return {generic_origin: actual_origin}
+        raise TypeError(
+            f"Type mismatch: expected {generic_origin}, got {actual_origin}."
+        )
+
+    generic_args = get_args(generic_type)
+    actual_args = get_args(actual_type)
+
+    if len(generic_args) != len(actual_args):
+        raise TypeError(
+            f"Number of generic arguments mismatch: expected {len(generic_args)}, got {len(actual_args)}."
+        )
+
+    # call recursively for nested generic types and merge the results
+    return {
+        k: v
+        for generic_arg, actual_arg in zip(generic_args, actual_args)
+        for k, v in generic_type_to_actual_type_map(generic_arg, actual_arg).items()
+    }
+
+
+def resolve_generic_type_with_mapping(
+    generic_type: GenericType, type_mapping: Dict[TypeVar, GenericType]
+):
+    """Resolve a generic type with a type mapping.
+
+    Args:
+        generic_type: The generic type.
+        type_mapping: The type mapping.
+
+    Returns:
+        The resolved generic type.
+    """
+    if isinstance(generic_type, TypeVar):
+        return type_mapping.get(generic_type, generic_type)
+
+    generic_origin = get_origin(generic_type) or generic_type
+
+    generic_args = get_args(generic_type)
+
+    if not generic_args:
+        return generic_type
+
+    mapping_for_older_python = {
+        list: List,
+        set: Set,
+        dict: Dict,
+        tuple: Tuple,
+        frozenset: FrozenSet,
+    }
+
+    return mapping_for_older_python.get(generic_origin, generic_origin)[
+        tuple(
+            resolve_generic_type_with_mapping(arg, type_mapping) for arg in generic_args
+        )
+    ]
+
+
+def resolve_arg_type_from_return_type(
+    arg_type: GenericType, return_type: GenericType, actual_return_type: GenericType
+) -> GenericType:
+    """Resolve the argument type from the return type.
+
+    Args:
+        arg_type: The argument type.
+        return_type: The return type.
+        actual_return_type: The requested return type.
+
+    Returns:
+        The argument type without the generics that are resolved.
+    """
+    return resolve_generic_type_with_mapping(
+        arg_type, generic_type_to_actual_type_map(return_type, actual_return_type)
     )
+
+
+def dispatch(field_name: str, var_data: VarData, result_var_type: GenericType) -> Var:
+    """Dispatch a Var to the appropriate transformation function.
+
+    Args:
+        field_name: The name of the field.
+        var_data: The VarData associated with the Var.
+        result_var_type: The type of the Var.
+
+    Returns:
+        The transformed Var.
+    """
+    result_origin_var_type = get_origin(result_var_type) or result_var_type
+
+    if result_origin_var_type in dispatchers:
+        fn = dispatchers[result_origin_var_type]
+        fn_first_arg_type = list(inspect.signature(fn).parameters.values())[
+            0
+        ].annotation
+
+        fn_return = inspect.signature(fn).return_annotation
+
+        fn_return_origin = get_origin(fn_return) or fn_return
+
+        if fn_return_origin is not Var:
+            raise TypeError(
+                f"Expected return type of {fn.__name__} to be a Var, got {fn_return}."
+            )
+
+        fn_return_generic_args = get_args(fn_return)
+
+        if not fn_return_generic_args:
+            raise TypeError(f"Expected generic type of {fn_return} to be a type.")
+
+        arg_origin = get_origin(fn_first_arg_type) or fn_first_arg_type
+
+        if arg_origin is not Var:
+            raise TypeError(
+                f"Expected first argument of {fn.__name__} to be a Var, got {fn_first_arg_type}."
+            )
+
+        arg_generic_args = get_args(fn_first_arg_type)
+
+        if not arg_generic_args:
+            raise TypeError(
+                f"Expected generic type of {fn_first_arg_type} to be a type."
+            )
+
+        arg_type = arg_generic_args[0]
+        fn_return_type = fn_return_generic_args[0]
+
+        var = Var(
+            field_name,
+            _var_data=var_data,
+            _var_type=resolve_arg_type_from_return_type(
+                arg_type, fn_return_type, result_var_type
+            ),
+        ).guess_type()
+
+        return fn(var)
+    return Var(
+        field_name,
+        _var_data=var_data,
+        _var_type=result_var_type,
+    ).guess_type()

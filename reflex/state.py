@@ -40,7 +40,6 @@ from reflex.vars.base import (
     DynamicRouteVar,
     Var,
     computed_var,
-    eval_component,
     is_computed_var,
 )
 
@@ -560,30 +559,15 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         }
 
         def get_var_for_field(f: ModelField):
-            base_classes_name = (
-                [base_class.__name__ for base_class in inspect.getmro(f.outer_type_)]
-                if inspect.isclass(f.outer_type_)
-                else []
-            )
+            from reflex.vars.base import dispatch
 
             field_name = format.format_state_name(cls.get_full_name()) + "." + f.name
 
-            if any(
-                base_class_name == "BaseComponent"
-                for base_class_name in base_classes_name
-            ):
-                unique_var_name, var_data = eval_component(field_name)
-                return Var(
-                    _js_expr=unique_var_name,
-                    _var_type=f.outer_type_,
-                    _var_data=VarData.merge(VarData.from_state(cls, f.name), var_data),
-                )
-
-            return Var(
-                _js_expr=field_name,
-                _var_type=f.outer_type_,
-                _var_data=VarData.from_state(cls, f.name),
-            ).guess_type()
+            return dispatch(
+                field_name=field_name,
+                var_data=VarData.from_state(cls, f.name),
+                result_var_type=f.outer_type_,
+            )
 
         # Set the base and computed vars.
         cls.base_vars = {

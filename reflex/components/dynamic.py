@@ -1,10 +1,16 @@
 """Components that are dynamically generated on the backend."""
 
+from reflex.vars.base import VarData
+
 
 def load_dynamic_serializer():
     """Load the serializer for dynamic components."""
+    from reflex import constants
     from reflex.components.component import Component
+    from reflex.utils import imports
     from reflex.utils.serializers import serializer
+    from reflex.vars import Var, get_unique_variable_name
+    from reflex.vars.base import transform
 
     @serializer
     def make_component(component: Component) -> str:
@@ -76,3 +82,46 @@ def load_dynamic_serializer():
         module_code_lines.insert(0, "const React = window.__reflex.react;")
 
         return "//__reflex_evaluate\n" + "\n".join(module_code_lines)
+
+    @transform
+    def evaluate_component(js_string: Var[str]) -> Var[Component]:
+        """Evaluate a component.
+
+        Args:
+            js_string: The JavaScript string to evaluate.
+
+        Returns:
+            The evaluated JavaScript string.
+        """
+        unique_var_name = get_unique_variable_name()
+
+        return Var(
+            unique_var_name,
+            _var_type=Component,
+            _var_data=VarData.merge(
+                js_string._get_all_var_data(),
+                VarData(
+                    imports={
+                        f"/{constants.Dirs.STATE_PATH}": [
+                            imports.ImportVar(tag="evalReactComponent"),
+                        ]
+                    },
+                    hooks={
+                        f"const [{unique_var_name}, set_{unique_var_name}] = useState(null);": None,
+                        "useEffect(() => {"
+                        "let isMounted = true;"
+                        f"evalReactComponent({str(js_string)})"
+                        ".then((component) => {"
+                        "if (isMounted) {"
+                        f"set_{unique_var_name}(component);"
+                        "}"
+                        "});"
+                        "return () => {"
+                        "isMounted = false;"
+                        "};"
+                        "}"
+                        f", [{str(js_string)}]);": None,
+                    },
+                ),
+            ),
+        )
