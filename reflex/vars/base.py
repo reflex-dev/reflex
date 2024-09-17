@@ -2601,6 +2601,10 @@ def generic_type_to_actual_type_map(
 
     Returns:
         The mapping of type variables to actual types.
+
+    Raises:
+        TypeError: If the generic type and actual type do not match.
+        TypeError: If the number of generic arguments and actual arguments do not match.
     """
     generic_origin = get_origin(generic_type) or generic_type
     actual_origin = get_origin(actual_type) or actual_type
@@ -2693,6 +2697,12 @@ def dispatch(field_name: str, var_data: VarData, result_var_type: GenericType) -
 
     Returns:
         The transformed Var.
+
+    Raises:
+        TypeError: If the return type of the function is not a Var.
+        TypeError: If the Var return type does not have a generic type.
+        TypeError: If the first argument of the function is not a Var.
+        TypeError: If the first argument of the function does not have a generic type
     """
     result_origin_var_type = get_origin(result_var_type) or result_var_type
 
