@@ -172,6 +172,15 @@ def run_frontend_prod(root: Path, port: str, backend_present=True):
     )
 
 
+def should_use_granian():
+    """Whether to use Granian for backend.
+
+    Returns:
+        True if Granian should be used.
+    """
+    return os.getenv("REFLEX_USE_GRANIAN", "0") == "1"
+
+
 def run_backend(
     host: str,
     port: int,
@@ -192,7 +201,7 @@ def run_backend(
         (web_dir / constants.NOCOMPILE_FILE).touch()
 
     # Run the backend in development mode.
-    if os.getenv("REFLEX_USE_GRANIAN", "0") == "1":
+    if should_use_granian():
         console.debug("Using Granian for backend")
         try:
             from granian import Granian  # type: ignore
@@ -246,41 +255,77 @@ def run_backend_prod(
         if not config.gunicorn_workers
         else config.gunicorn_workers
     )
-    RUN_BACKEND_PROD = f"gunicorn --worker-class {config.gunicorn_worker_class} --preload --timeout {config.timeout} --log-level critical".split()
-    RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {config.timeout}".split()
     app_module = f"reflex.app_module_for_backend:{constants.CompileVars.APP}"
-    command = (
-        [
-            *RUN_BACKEND_PROD_WINDOWS,
-            "--host",
-            host,
-            "--port",
-            str(port),
-            app_module,
-        ]
-        if constants.IS_WINDOWS
-        else [
-            *RUN_BACKEND_PROD,
-            "--bind",
-            f"{host}:{port}",
-            "--threads",
-            str(num_workers),
-            f"{app_module}()",
-        ]
-    )
 
-    command += [
-        "--log-level",
-        loglevel.value,
-        "--workers",
-        str(num_workers),
-    ]
-    processes.new_process(
-        command,
-        run=True,
-        show_logs=True,
-        env={constants.SKIP_COMPILE_ENV_VAR: "yes"},  # skip compile for prod backend
-    )
+    if should_use_granian():
+        try:
+            from granian.constants import Interfaces  # type: ignore
+
+            command = [
+                "granian",
+                "--workers",
+                str(num_workers),
+                "--log-level",
+                "critical",
+                "--host",
+                host,
+                "--port",
+                str(port),
+                "--interface",
+                str(Interfaces.ASGI),
+                app_module,
+            ]
+            processes.new_process(
+                command,
+                run=True,
+                show_logs=True,
+                env={
+                    constants.SKIP_COMPILE_ENV_VAR: "yes"
+                },  # skip compile for prod backend
+            )
+        except ImportError:
+            console.error(
+                'InstallError: REFLEX_USE_GRANIAN is set but `granian` is not installed. (run `pip install "granian>=1.6.0"`)'
+            )
+    else:
+        RUN_BACKEND_PROD = f"gunicorn --worker-class {config.gunicorn_worker_class} --preload --timeout {config.timeout} --log-level critical".split()
+        RUN_BACKEND_PROD_WINDOWS = (
+            f"uvicorn --timeout-keep-alive {config.timeout}".split()
+        )
+        command = (
+            [
+                *RUN_BACKEND_PROD_WINDOWS,
+                "--host",
+                host,
+                "--port",
+                str(port),
+                app_module,
+            ]
+            if constants.IS_WINDOWS
+            else [
+                *RUN_BACKEND_PROD,
+                "--bind",
+                f"{host}:{port}",
+                "--threads",
+                str(num_workers),
+                f"{app_module}()",
+            ]
+        )
+
+        command += [
+            "--log-level",
+            loglevel.value,
+            "--workers",
+            str(num_workers),
+        ]
+        processes.new_process(
+            command,
+            run=True,
+            show_logs=True,
+            env={
+                constants.SKIP_COMPILE_ENV_VAR: "yes"
+            },  # skip compile for prod backend
+        )
 
 
 def output_system_info():
