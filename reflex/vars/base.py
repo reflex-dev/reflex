@@ -72,6 +72,7 @@ if TYPE_CHECKING:
 
 
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
+OTHER_VAR_TYPE = TypeVar("OTHER_VAR_TYPE")
 
 
 @dataclasses.dataclass(
@@ -180,7 +181,19 @@ class Var(Generic[VAR_TYPE]):
             and self._get_all_var_data() == other._get_all_var_data()
         )
 
-    def _replace(self, merge_var_data=None, **kwargs: Any):
+    @overload
+    def _replace(
+        self, _var_type: Type[OTHER_VAR_TYPE], merge_var_data=None, **kwargs: Any
+    ) -> Var[OTHER_VAR_TYPE]: ...
+
+    @overload
+    def _replace(
+        self, _var_type: GenericType | None = None, merge_var_data=None, **kwargs: Any
+    ): ...
+
+    def _replace(
+        self, _var_type: GenericType | None = None, merge_var_data=None, **kwargs: Any
+    ) -> Self | Var:
         """Make a copy of this Var with updated fields.
 
         Args:
@@ -204,13 +217,18 @@ class Var(Generic[VAR_TYPE]):
                 "The _var_full_name_needs_state_prefix argument is not supported for Var."
             )
 
-        return dataclasses.replace(
+        value_with_replaced = dataclasses.replace(
             self,
             _var_data=VarData.merge(
                 kwargs.get("_var_data", self._var_data), merge_var_data
             ),
             **kwargs,
         )
+
+        if (js_expr := kwargs.get("_js_expr", None)) is not None:
+            object.__setattr__(value_with_replaced, "_js_expr", js_expr)
+
+        return value_with_replaced
 
     @classmethod
     def create(
@@ -1713,6 +1731,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                 field_name,
                 var_data=VarData.from_state(state_where_defined, self._js_expr),
                 result_var_type=self._var_type,
+                existing_var=self,
             )
 
         if not self._cache:
@@ -2685,13 +2704,19 @@ def resolve_arg_type_from_return_type(
     )
 
 
-def dispatch(field_name: str, var_data: VarData, result_var_type: GenericType) -> Var:
+def dispatch(
+    field_name: str,
+    var_data: VarData,
+    result_var_type: GenericType,
+    existing_var: Var | None = None,
+) -> Var:
     """Dispatch a Var to the appropriate transformation function.
 
     Args:
         field_name: The name of the field.
         var_data: The VarData associated with the Var.
         result_var_type: The type of the Var.
+        existing_var: The existing Var to transform. Optional.
 
     Returns:
         The transformed Var.
@@ -2741,15 +2766,32 @@ def dispatch(field_name: str, var_data: VarData, result_var_type: GenericType) -
         arg_type = arg_generic_args[0]
         fn_return_type = fn_return_generic_args[0]
 
-        var = Var(
-            field_name,
-            _var_data=var_data,
-            _var_type=resolve_arg_type_from_return_type(
-                arg_type, fn_return_type, result_var_type
-            ),
-        ).guess_type()
+        var = (
+            Var(
+                field_name,
+                _var_data=var_data,
+                _var_type=resolve_arg_type_from_return_type(
+                    arg_type, fn_return_type, result_var_type
+                ),
+            ).guess_type()
+            if existing_var is None
+            else existing_var._replace(
+                _var_type=resolve_arg_type_from_return_type(
+                    arg_type, fn_return_type, result_var_type
+                ),
+                _var_data=var_data,
+                _js_expr=field_name,
+            ).guess_type()
+        )
 
         return fn(var)
+
+    if existing_var is not None:
+        return existing_var._replace(
+            _js_expr=field_name,
+            _var_data=var_data,
+            _var_type=result_var_type,
+        ).guess_type()
     return Var(
         field_name,
         _var_data=var_data,

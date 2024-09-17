@@ -95,11 +95,10 @@ def load_dynamic_serializer():
         """
         unique_var_name = get_unique_variable_name()
 
-        return Var(
-            unique_var_name,
+        return js_string._replace(
+            _js_expr=unique_var_name,
             _var_type=Component,
-            _var_data=VarData.merge(
-                js_string._get_all_var_data(),
+            merge_var_data=VarData.merge(
                 VarData(
                     imports={
                         f"/{constants.Dirs.STATE_PATH}": [
