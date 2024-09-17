@@ -199,7 +199,6 @@ def run_backend(
     # Create a .nocompile file to skip compile for backend.
     if web_dir.exists():
         (web_dir / constants.NOCOMPILE_FILE).touch()
-
     # Run the backend in development mode.
     if should_use_granian():
         console.debug("Using Granian for backend")
@@ -215,6 +214,7 @@ def run_backend(
                 interface=Interfaces.ASGI,
                 log_level=LogLevels(loglevel.value),
                 reload=True,
+                reload_paths=[Path(get_config().app_name)],
                 reload_ignore_dirs=[".web"],
             ).serve()
         except ImportError:
