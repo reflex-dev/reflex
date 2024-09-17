@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Optional, Union, overload
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import RadixLoadingProp, RadixThemesComponent
 
@@ -19,22 +19,22 @@ class Skeleton(RadixLoadingProp, RadixThemesComponent):
         cls,
         *children,
         width: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         min_width: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         max_width: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         height: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         min_height: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         max_height: Optional[
-            Union[Var[Union[Breakpoints[str, str], str]], str, Breakpoints[str, str]]
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         loading: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,

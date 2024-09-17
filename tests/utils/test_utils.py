@@ -18,8 +18,8 @@ from reflex.utils import (
     types,
 )
 from reflex.utils import exec as utils_exec
-from reflex.utils.serializers import serialize
-from reflex.vars import Var
+from reflex.utils.exceptions import ReflexError
+from reflex.vars.base import Var
 
 
 def mock_event(arg):
@@ -538,11 +538,15 @@ def test_style_prop_with_event_handler_value(callable):
         callable: The callable function or event handler.
 
     """
+    import reflex as rx
+
     style = {
         "color": (
             EventHandler(fn=callable) if type(callable) != EventHandler else callable
         )
     }
 
-    with pytest.raises(TypeError):
-        serialize(style)  # type: ignore
+    with pytest.raises(ReflexError):
+        rx.box(
+            style=style,  # type: ignore
+        )

@@ -9,7 +9,7 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 LiteralSliderOrientation = Literal["horizontal", "vertical"]
 LiteralSliderDir = Literal["ltr", "rtl"]
@@ -89,17 +89,17 @@ class SliderRoot(SliderComponent):
     def create(  # type: ignore
         cls,
         *children,
-        default_value: Optional[Union[Var[List[int]], List[int]]] = None,
-        value: Optional[Union[Var[List[int]], List[int]]] = None,
+        default_value: Optional[Union[List[int], Var[List[int]]]] = None,
+        value: Optional[Union[List[int], Var[List[int]]]] = None,
         name: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         orientation: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
-        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
+        dir: Optional[Union[Literal["ltr", "rtl"], Var[Literal["ltr", "rtl"]]]] = None,
         inverted: Optional[Union[Var[bool], bool]] = None,
         min: Optional[Union[Var[int], int]] = None,
         max: Optional[Union[Var[int], int]] = None,

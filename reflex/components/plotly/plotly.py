@@ -9,7 +9,7 @@ from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond
 from reflex.event import EventHandler
 from reflex.utils import console
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
 
 try:
     from plotly.graph_objects import Figure, layout
@@ -30,7 +30,7 @@ def _event_data_signature(e0: Var) -> List[Any]:
     Returns:
         The event key extracted from the event data (if defined).
     """
-    return [Var.create_safe(f"{e0}?.event", _var_is_string=False)]
+    return [Var(_js_expr=f"{e0}?.event")]
 
 
 def _event_points_data_signature(e0: Var) -> List[Any]:
@@ -43,11 +43,8 @@ def _event_points_data_signature(e0: Var) -> List[Any]:
         The event data and the extracted points.
     """
     return [
-        Var.create_safe(f"{e0}?.event", _var_is_string=False),
-        Var.create_safe(
-            f"extractPoints({e0}?.points)",
-            _var_is_string=False,
-        ),
+        Var(_js_expr=f"{e0}?.event"),
+        Var(_js_expr=f"extractPoints({e0}?.points)"),
     ]
 
 
@@ -104,19 +101,19 @@ class Plotly(NoSSRComponent):
     is_default = True
 
     # The figure to display. This can be a plotly figure or a plotly data json.
-    data: Var[Figure]
+    data: Var[Figure]  # type: ignore
 
     # The layout of the graph.
     layout: Var[Dict]
 
     # The template for visual appearance of the graph.
-    template: Var[Template]
+    template: Var[Template]  # type: ignore
 
     # The config of the graph.
     config: Var[Dict]
 
     # If true, the graph will resize when the window is resized.
-    use_resize_handler: Var[bool] = Var.create_safe(True)
+    use_resize_handler: Var[bool] = LiteralVar.create(True)
 
     # Fired after the plot is redrawn.
     on_after_plot: EventHandler[_passthrough_signature]
@@ -242,8 +239,8 @@ const extractPoints = (points) => {
         from plotly.io import templates
 
         responsive_template = color_mode_cond(
-            light=Var.create_safe(templates["plotly"]).to(dict),
-            dark=Var.create_safe(templates["plotly_dark"]).to(dict),
+            light=LiteralVar.create(templates["plotly"]),
+            dark=LiteralVar.create(templates["plotly_dark"]),
         )
         if isinstance(responsive_template, Var):
             # Mark the conditional Var as a Template to avoid type mismatch
@@ -263,30 +260,20 @@ const extractPoints = (points) => {
             # Why is this not a literal dict? Great question... it didn't work
             # reliably because of how _var_name_unwrapped strips the outer curly
             # brackets if any of the contained Vars depend on state.
-            layout_dict = Var.create_safe(
-                f"{{'layout': {self.layout.to(dict)._var_name_unwrapped}}}"
-            ).to(dict)
+            layout_dict = LiteralVar.create({"layout": self.layout})
             merge_dicts.append(layout_dict)
         if self.template is not None:
-            template_dict = Var.create_safe(
-                {"layout": {"template": self.template.to(dict)}}
-            )
-            template_dict._var_data = None  # To avoid stripping outer curly brackets
-            merge_dicts.append(template_dict)
+            template_dict = LiteralVar.create({"layout": {"template": self.template}})
+            merge_dicts.append(template_dict.without_data())
         if merge_dicts:
-            tag.special_props.add(
+            tag.special_props.append(
                 # Merge all dictionaries and spread the result over props.
-                Var.create_safe(
-                    f"{{...mergician({figure._var_name_unwrapped},"
-                    f"{','.join(md._var_name_unwrapped for md in merge_dicts)})}}",
-                    _var_is_string=False,
+                Var(
+                    _js_expr=f"{{...mergician({str(figure)},"
+                    f"{','.join(str(md) for md in merge_dicts)})}}",
                 ),
             )
         else:
             # Spread the figure dict over props, nothing to merge.
-            tag.special_props.add(
-                Var.create_safe(
-                    f"{{...{figure._var_name_unwrapped}}}", _var_is_string=False
-                )
-            )
+            tag.special_props.append(Var(_js_expr=f"{{...{str(figure)}}}"))
         return tag

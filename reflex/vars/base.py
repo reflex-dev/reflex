@@ -9,8 +9,10 @@ import dis
 import functools
 import inspect
 import json
+import random
+import re
+import string
 import sys
-import warnings
 from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -18,6 +20,7 @@ from typing import (
     Callable,
     Dict,
     Generic,
+    Iterable,
     List,
     Literal,
     NoReturn,
@@ -32,24 +35,26 @@ from typing import (
     overload,
 )
 
-from typing_extensions import ParamSpec, get_type_hints, override
+from typing_extensions import ParamSpec, TypeGuard, deprecated, get_type_hints, override
 
 from reflex import constants
 from reflex.base import Base
-from reflex.constants.colors import Color
 from reflex.utils import console, imports, serializers, types
-from reflex.utils.exceptions import VarDependencyError, VarTypeError, VarValueError
-from reflex.utils.format import format_state_name
-from reflex.utils.types import get_origin
-from reflex.vars import (
-    ComputedVar,
-    ImmutableVarData,
-    Var,
-    VarData,
-    _decode_var_immutable,
-    _extract_var_data,
-    _global_vars,
+from reflex.utils.exceptions import (
+    VarAttributeError,
+    VarDependencyError,
+    VarTypeError,
+    VarValueError,
 )
+from reflex.utils.format import format_state_name
+from reflex.utils.imports import (
+    ImmutableParsedImportDict,
+    ImportDict,
+    ImportVar,
+    ParsedImportDict,
+    parse_imports,
+)
+from reflex.utils.types import GenericType, Self, get_origin
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -65,25 +70,24 @@ if TYPE_CHECKING:
     from .sequence import ArrayVar, StringVar, ToArrayOperation, ToStringOperation
 
 
-VAR_TYPE = TypeVar("VAR_TYPE")
+VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
 
 
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ImmutableVar(Var, Generic[VAR_TYPE]):
+class Var(Generic[VAR_TYPE]):
     """Base class for immutable vars."""
 
     # The name of the var.
-    _var_name: str = dataclasses.field()
+    _js_expr: str = dataclasses.field()
 
     # The type of the var.
     _var_type: types.GenericType = dataclasses.field(default=Any)
 
     # Extra metadata associated with the Var
-    _var_data: Optional[ImmutableVarData] = dataclasses.field(default=None)
+    _var_data: Optional[VarData] = dataclasses.field(default=None)
 
     def __str__(self) -> str:
         """String representation of the var. Guaranteed to be a valid Javascript expression.
@@ -91,7 +95,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             The name of the var.
         """
-        return self._var_name
+        return self._js_expr
 
     @property
     def _var_is_local(self) -> bool:
@@ -103,17 +107,18 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         return False
 
     @property
-    def _var_is_string(self) -> bool:
-        """Whether the var is a string literal.
+    @deprecated("Use `_js_expr` instead.")
+    def _var_name(self) -> str:
+        """The name of the var.
 
         Returns:
-            False
+            The name of the var.
         """
-        return False
+        return self._js_expr
 
     @property
-    def _var_full_name_needs_state_prefix(self) -> bool:
-        """Whether the full name of the var needs a _var_state prefix.
+    def _var_is_string(self) -> bool:
+        """Whether the var is a string literal.
 
         Returns:
             False
@@ -123,13 +128,13 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
     def __post_init__(self):
         """Post-initialize the var."""
         # Decode any inline Var markup and apply it to the instance
-        _var_data, _var_name = _decode_var_immutable(self._var_name)
+        _var_data, _js_expr = _decode_var_immutable(self._js_expr)
 
-        if _var_data or _var_name != self._var_name:
+        if _var_data or _js_expr != self._js_expr:
             self.__init__(
-                _var_name=_var_name,
+                _js_expr=_js_expr,
                 _var_type=self._var_type,
-                _var_data=ImmutableVarData.merge(self._var_data, _var_data),
+                _var_data=VarData.merge(self._var_data, _var_data),
             )
 
     def __hash__(self) -> int:
@@ -138,15 +143,30 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             The hash of the var.
         """
-        return hash((self._var_name, self._var_type, self._var_data))
+        return hash((self._js_expr, self._var_type, self._var_data))
 
-    def _get_all_var_data(self) -> ImmutableVarData | None:
+    def _get_all_var_data(self) -> VarData | None:
         """Get all VarData associated with the Var.
 
         Returns:
             The VarData of the components and all of its children.
         """
         return self._var_data
+
+    def equals(self, other: Var) -> bool:
+        """Check if two vars are equal.
+
+        Args:
+            other: The other var to compare.
+
+        Returns:
+            Whether the vars are equal.
+        """
+        return (
+            self._js_expr == other._js_expr
+            and self._var_type == other._var_type
+            and self._get_all_var_data() == other._get_all_var_data()
+        )
 
     def _replace(self, merge_var_data=None, **kwargs: Any):
         """Make a copy of this Var with updated fields.
@@ -156,29 +176,25 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             **kwargs: Var fields to update.
 
         Returns:
-            A new ImmutableVar with the updated fields overwriting the corresponding fields in this Var.
+            A new Var with the updated fields overwriting the corresponding fields in this Var.
 
         Raises:
             TypeError: If _var_is_local, _var_is_string, or _var_full_name_needs_state_prefix is not None.
         """
         if kwargs.get("_var_is_local", False) is not False:
-            raise TypeError(
-                "The _var_is_local argument is not supported for ImmutableVar."
-            )
+            raise TypeError("The _var_is_local argument is not supported for Var.")
 
         if kwargs.get("_var_is_string", False) is not False:
-            raise TypeError(
-                "The _var_is_string argument is not supported for ImmutableVar."
-            )
+            raise TypeError("The _var_is_string argument is not supported for Var.")
 
         if kwargs.get("_var_full_name_needs_state_prefix", False) is not False:
             raise TypeError(
-                "The _var_full_name_needs_state_prefix argument is not supported for ImmutableVar."
+                "The _var_full_name_needs_state_prefix argument is not supported for Var."
             )
 
         return dataclasses.replace(
             self,
-            _var_data=ImmutableVarData.merge(
+            _var_data=VarData.merge(
                 kwargs.get("_var_data", self._var_data), merge_var_data
             ),
             **kwargs,
@@ -191,7 +207,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         _var_is_local: bool | None = None,
         _var_is_string: bool | None = None,
         _var_data: VarData | None = None,
-    ) -> ImmutableVar | Var | None:
+    ) -> Var:
         """Create a var from a value.
 
         Args:
@@ -202,26 +218,23 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
 
         Returns:
             The var.
-
-        Raises:
-            VarTypeError: If the value is JSON-unserializable.
-            TypeError: If _var_is_local or _var_is_string is not None.
         """
         if _var_is_local is not None:
-            raise TypeError(
-                "The _var_is_local argument is not supported for ImmutableVar."
+            console.deprecate(
+                feature_name="_var_is_local",
+                reason="The _var_is_local argument is not supported for Var."
+                "If you want to create a Var from a raw Javascript expression, use the constructor directly",
+                deprecation_version="0.6.0",
+                removal_version="0.7.0",
             )
-
         if _var_is_string is not None:
-            raise TypeError(
-                "The _var_is_string argument is not supported for ImmutableVar."
+            console.deprecate(
+                feature_name="_var_is_string",
+                reason="The _var_is_string argument is not supported for Var."
+                "If you want to create a Var from a raw Javascript expression, use the constructor directly",
+                deprecation_version="0.6.0",
+                removal_version="0.7.0",
             )
-
-        from reflex.utils import format
-
-        # Check for none values.
-        if value is None:
-            return None
 
         # If the value is already a var, do nothing.
         if isinstance(value, Var):
@@ -229,61 +242,33 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
 
         # Try to pull the imports and hooks from contained values.
         if not isinstance(value, str):
-            _var_data = VarData.merge(*_extract_var_data(value), _var_data)
+            return LiteralVar.create(value)
 
-        # Try to serialize the value.
-        type_ = type(value)
-        if type_ in types.JSONType:
-            name = value
-        else:
-            name, _serialized_type = serializers.serialize(value, get_type=True)
-        if name is None:
-            raise VarTypeError(
-                f"No JSON serializer found for var {value} of type {type_}."
+        if _var_is_string is False or _var_is_local is True:
+            return cls(
+                _js_expr=value,
+                _var_data=_var_data,
             )
-        name = name if isinstance(name, str) else format.json_dumps(name)
 
-        return cls(
-            _var_name=name,
-            _var_type=type_,
-            _var_data=(
-                ImmutableVarData(
-                    state=_var_data.state,
-                    imports=_var_data.imports,
-                    hooks=_var_data.hooks,
-                )
-                if _var_data
-                else None
-            ),
-        )
+        return LiteralVar.create(value, _var_data=_var_data)
 
     @classmethod
+    @deprecated("Use `.create()` instead.")
     def create_safe(
         cls,
-        value: Any,
-        _var_is_local: bool | None = None,
-        _var_is_string: bool | None = None,
-        _var_data: VarData | None = None,
-    ) -> Var | ImmutableVar:
-        """Create a var from a value, asserting that it is not None.
+        *args: Any,
+        **kwargs: Any,
+    ) -> Var:
+        """Create a var from a value.
 
         Args:
-            value: The value to create the var from.
-            _var_is_local: Whether the var is local. Deprecated.
-            _var_is_string: Whether the var is a string literal. Deprecated.
-            _var_data: Additional hooks and imports associated with the Var.
+            *args: The arguments to create the var from.
+            **kwargs: The keyword arguments to create the var from.
 
         Returns:
             The var.
         """
-        var = cls.create(
-            value,
-            _var_is_local=_var_is_local,
-            _var_is_string=_var_is_string,
-            _var_data=_var_data,
-        )
-        assert var is not None
-        return var
+        return cls.create(*args, **kwargs)
 
     def __format__(self, format_spec: str) -> str:
         """Format the var into a Javascript equivalent to an f-string.
@@ -299,7 +284,16 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         _global_vars[hashed_var] = self
 
         # Encode the _var_data into the formatted output for tracking purposes.
-        return f"{constants.REFLEX_VAR_OPENING_TAG}{hashed_var}{constants.REFLEX_VAR_CLOSING_TAG}{self._var_name}"
+        return f"{constants.REFLEX_VAR_OPENING_TAG}{hashed_var}{constants.REFLEX_VAR_CLOSING_TAG}{self._js_expr}"
+
+    @overload
+    def to(self, output: Type[StringVar]) -> ToStringOperation: ...
+
+    @overload
+    def to(self, output: Type[str]) -> ToStringOperation: ...
+
+    @overload
+    def to(self, output: Type[BooleanVar]) -> ToBooleanVarOperation: ...
 
     @overload
     def to(
@@ -307,17 +301,11 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
     ) -> ToNumberVarOperation: ...
 
     @overload
-    def to(self, output: Type[BooleanVar]) -> ToBooleanVarOperation: ...
-
-    @overload
     def to(
         self,
         output: Type[ArrayVar],
         var_type: type[list] | type[tuple] | type[set] = list,
     ) -> ToArrayOperation: ...
-
-    @overload
-    def to(self, output: Type[StringVar]) -> ToStringOperation: ...
 
     @overload
     def to(
@@ -382,6 +370,17 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             return self.to(StringVar, output)
         if fixed_output_type is bool:
             return self.to(BooleanVar, output)
+        if fixed_output_type is None:
+            return ToNoneOperation.create(self)
+        if issubclass(fixed_output_type, Base):
+            return self.to(ObjectVar, output)
+        if dataclasses.is_dataclass(fixed_output_type) and not issubclass(
+            fixed_output_type, Var
+        ):
+            return self.to(ObjectVar, output)
+
+        if issubclass(output, BooleanVar):
+            return ToBooleanVarOperation.create(self)
 
         if issubclass(output, NumberVar):
             if fixed_type is not None:
@@ -398,9 +397,6 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
                     )
             return ToNumberVarOperation.create(self, var_type or float)
 
-        if issubclass(output, BooleanVar):
-            return ToBooleanVarOperation.create(self)
-
         if issubclass(output, ArrayVar):
             if fixed_type is not None and not issubclass(
                 fixed_type, (list, tuple, set)
@@ -411,9 +407,12 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             return ToArrayOperation.create(self, var_type or list)
 
         if issubclass(output, StringVar):
-            return ToStringOperation.create(self)
+            return ToStringOperation.create(self, var_type or str)
 
         if issubclass(output, (ObjectVar, Base)):
+            return ToObjectOperation.create(self, var_type or dict)
+
+        if dataclasses.is_dataclass(output):
             return ToObjectOperation.create(self, var_type or dict)
 
         if issubclass(output, FunctionVar):
@@ -422,6 +421,9 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
             #         f"Unsupported type {var_type} for FunctionVar. Must be Callable."
             #     )
             return ToFunctionOperation.create(self, var_type or Callable)
+
+        if issubclass(output, NoneVar):
+            return ToNoneOperation.create(self)
 
         # If we can't determine the first argument, we just replace the _var_type.
         if not issubclass(output, Var) or var_type is None:
@@ -439,11 +441,11 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
 
         return self
 
-    def guess_type(self) -> ImmutableVar:
+    def guess_type(self) -> Var:
         """Guesses the type of the variable based on its `_var_type` attribute.
 
         Returns:
-            ImmutableVar: The guessed type of the variable.
+            Var: The guessed type of the variable.
 
         Raises:
             TypeError: If the type is not supported for guessing.
@@ -453,6 +455,8 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         from .sequence import ArrayVar, StringVar
 
         var_type = self._var_type
+        if var_type is None:
+            return self.to(None)
         if types.is_optional(var_type):
             var_type = types.get_args(var_type)[0]
 
@@ -463,8 +467,19 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
 
         if fixed_type is Union:
             inner_types = get_args(var_type)
-            if int in inner_types and float in inner_types:
+
+            if all(
+                inspect.isclass(t) and issubclass(t, (int, float)) for t in inner_types
+            ):
                 return self.to(NumberVar, self._var_type)
+
+            if all(
+                inspect.isclass(t)
+                and (issubclass(t, Base) or dataclasses.is_dataclass(t))
+                for t in inner_types
+            ):
+                return self.to(ObjectVar, self._var_type)
+
             return self
 
         if not inspect.isclass(fixed_type):
@@ -479,8 +494,10 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         if issubclass(fixed_type, (list, tuple, set)):
             return self.to(ArrayVar, self._var_type)
         if issubclass(fixed_type, str):
-            return self.to(StringVar)
+            return self.to(StringVar, self._var_type)
         if issubclass(fixed_type, Base):
+            return self.to(ObjectVar, self._var_type)
+        if dataclasses.is_dataclass(fixed_type):
             return self.to(ObjectVar, self._var_type)
         return self
 
@@ -536,13 +553,14 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             The name of the setter function.
         """
-        var_name_parts = self._var_name.split(".")
+        var_name_parts = self._js_expr.split(".")
         setter = constants.SETTER_PREFIX + var_name_parts[-1]
-        if self._var_data is None:
+        var_data = self._get_all_var_data()
+        if var_data is None:
             return setter
-        if not include_state or self._var_data.state == "":
+        if not include_state or var_data.state == "":
             return setter
-        return ".".join((self._var_data.state, setter))
+        return ".".join((var_data.state, setter))
 
     def get_setter(self) -> Callable[[BaseState, Any], None]:
         """Get the var's setter function.
@@ -550,7 +568,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         Returns:
             A function that that creates a setter for the var.
         """
-        actual_name = self._var_name.split(".")[-1]
+        actual_name = self._js_expr.split(".")[-1]
 
         def setter(state: BaseState, value: Any):
             """Get the setter for the var.
@@ -565,7 +583,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
                     setattr(state, actual_name, value)
                 except ValueError:
                     console.debug(
-                        f"{type(state).__name__}.{self._var_name}: Failed conversion of {value} to '{self._var_type.__name__}'. Value not set.",
+                        f"{type(state).__name__}.{self._js_expr}: Failed conversion of {value} to '{self._var_type.__name__}'. Value not set.",
                     )
             else:
                 setattr(state, actual_name, value)
@@ -573,6 +591,27 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         setter.__qualname__ = self.get_setter_name()
 
         return setter
+
+    def _var_set_state(self, state: type[BaseState] | str):
+        """Set the state of the var.
+
+        Args:
+            state: The state to set.
+
+        Returns:
+            The var with the state set.
+        """
+        formatted_state_name = (
+            state
+            if isinstance(state, str)
+            else format_state_name(state.get_full_name())
+        )
+
+        return StateOperation.create(
+            formatted_state_name,
+            self,
+            _var_data=VarData.merge(VarData.from_state(state), self._var_data),
+        ).guess_type()
 
     def __eq__(self, other: Var | Any) -> BooleanVar:
         """Check if the current variable is equal to the given variable.
@@ -600,58 +639,6 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
 
         return ~equal_operation(self, other)
 
-    def __gt__(self, other: Var | Any) -> BooleanVar:
-        """Compare the current instance with another variable and return a BooleanVar representing the result of the greater than operation.
-
-        Args:
-            other (Var | Any): The variable to compare with.
-
-        Returns:
-            BooleanVar: A BooleanVar representing the result of the greater than operation.
-        """
-        from .number import greater_than_operation
-
-        return greater_than_operation(self, other)
-
-    def __ge__(self, other: Var | Any) -> BooleanVar:
-        """Check if the value of this variable is greater than or equal to the value of another variable or object.
-
-        Args:
-            other (Var | Any): The variable or object to compare with.
-
-        Returns:
-            BooleanVar: A BooleanVar object representing the result of the comparison.
-        """
-        from .number import greater_than_or_equal_operation
-
-        return greater_than_or_equal_operation(self, other)
-
-    def __lt__(self, other: Var | Any) -> BooleanVar:
-        """Compare the current instance with another variable using the less than (<) operator.
-
-        Args:
-            other: The variable to compare with.
-
-        Returns:
-            A `BooleanVar` object representing the result of the comparison.
-        """
-        from .number import less_than_operation
-
-        return less_than_operation(self, other)
-
-    def __le__(self, other: Var | Any) -> BooleanVar:
-        """Compare if the current instance is less than or equal to the given value.
-
-        Args:
-            other: The value to compare with.
-
-        Returns:
-            A BooleanVar object representing the result of the comparison.
-        """
-        from .number import less_than_or_equal_operation
-
-        return less_than_or_equal_operation(self, other)
-
     def bool(self) -> BooleanVar:
         """Convert the var to a boolean.
 
@@ -662,7 +649,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
 
         return boolify(self)
 
-    def __and__(self, other: Var | Any) -> ImmutableVar:
+    def __and__(self, other: Var | Any) -> Var:
         """Perform a logical AND operation on the current instance and another variable.
 
         Args:
@@ -673,7 +660,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         """
         return and_operation(self, other)
 
-    def __rand__(self, other: Var | Any) -> ImmutableVar:
+    def __rand__(self, other: Var | Any) -> Var:
         """Perform a logical AND operation on the current instance and another variable.
 
         Args:
@@ -684,7 +671,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         """
         return and_operation(other, self)
 
-    def __or__(self, other: Var | Any) -> ImmutableVar:
+    def __or__(self, other: Var | Any) -> Var:
         """Perform a logical OR operation on the current instance and another variable.
 
         Args:
@@ -695,7 +682,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         """
         return or_operation(self, other)
 
-    def __ror__(self, other: Var | Any) -> ImmutableVar:
+    def __ror__(self, other: Var | Any) -> Var:
         """Perform a logical OR operation on the current instance and another variable.
 
         Args:
@@ -714,7 +701,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         """
         return ~self.bool()
 
-    def to_string(self) -> ImmutableVar:
+    def to_string(self):
         """Convert the var to a string.
 
         Returns:
@@ -725,7 +712,7 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
 
         return JSON_STRINGIFY.call(self).to(StringVar)
 
-    def as_ref(self) -> ImmutableVar:
+    def as_ref(self) -> Var:
         """Get a reference to the var.
 
         Returns:
@@ -733,18 +720,30 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         """
         from .object import ObjectVar
 
-        refs = ImmutableVar(
-            _var_name="refs",
-            _var_data=ImmutableVarData(
+        refs = Var(
+            _js_expr="refs",
+            _var_data=VarData(
                 imports={
                     f"/{constants.Dirs.STATE_PATH}": [imports.ImportVar(tag="refs")]
                 }
             ),
-        ).to(ObjectVar)
+        ).to(ObjectVar, Dict[str, str])
         return refs[LiteralVar.create(str(self))]
 
+    @deprecated("Use `.js_type()` instead.")
     def _type(self) -> StringVar:
         """Returns the type of the object.
+
+        This method uses the `typeof` function from the `FunctionStringVar` class
+        to determine the type of the object.
+
+        Returns:
+            StringVar: A string variable representing the type of the object.
+        """
+        return self.js_type()
+
+    def js_type(self) -> StringVar:
+        """Returns the javascript type of the object.
 
         This method uses the `typeof` function from the `FunctionStringVar` class
         to determine the type of the object.
@@ -758,11 +757,186 @@ class ImmutableVar(Var, Generic[VAR_TYPE]):
         type_of = FunctionStringVar("typeof")
         return type_of.call(self).to(StringVar)
 
+    def without_data(self):
+        """Create a copy of the var without the data.
 
-OUTPUT = TypeVar("OUTPUT", bound=ImmutableVar)
+        Returns:
+            The var without the data.
+        """
+        return dataclasses.replace(self, _var_data=None)
+
+    def contains(self, value: Any = None, field: Any = None):
+        """Get an attribute of the var.
+
+        Args:
+            value: The value to check for.
+            field: The field to check for.
+
+        Raises:
+            TypeError: If the var does not support contains check.
+        """
+        raise TypeError(
+            f"Var of type {self._var_type} does not support contains check."
+        )
+
+    def __get__(self, instance: Any, owner: Any):
+        """Get the var.
+
+        Args:
+            instance: The instance to get the var from.
+            owner: The owner of the var.
+
+        Returns:
+            The var.
+        """
+        return self
+
+    def reverse(self):
+        """Reverse the var.
+
+        Raises:
+            TypeError: If the var does not support reverse.
+        """
+        raise TypeError("Cannot reverse non-list var.")
+
+    def __getattr__(self, name: str):
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute.
+
+        Raises:
+            VarAttributeError: If the attribute does not exist.
+            TypeError: If the var type is Any.
+        """
+        if name.startswith("_"):
+            return self.__getattribute__(name)
+
+        if self._var_type is Any:
+            raise TypeError(
+                f"You must provide an annotation for the state var `{str(self)}`. Annotation cannot be `{self._var_type}`."
+            )
+
+        if name in REPLACED_NAMES:
+            raise VarAttributeError(
+                f"Field {name!r} was renamed to {REPLACED_NAMES[name]!r}"
+            )
+
+        raise VarAttributeError(
+            f"The State var has no attribute '{name}' or may have been annotated wrongly.",
+        )
+
+    def _decode(self) -> Any:
+        """Decode Var as a python value.
+
+        Note that Var with state set cannot be decoded python-side and will be
+        returned as full_name.
+
+        Returns:
+            The decoded value or the Var name.
+        """
+        if isinstance(self, LiteralVar):
+            return self._var_value  # type: ignore
+        try:
+            return json.loads(str(self))
+        except ValueError:
+            try:
+                return json.loads(self.json())
+            except (ValueError, NotImplementedError):
+                return str(self)
+
+    @property
+    def _var_state(self) -> str:
+        """Compat method for getting the state.
+
+        Returns:
+            The state name associated with the var.
+        """
+        var_data = self._get_all_var_data()
+        return var_data.state if var_data else ""
+
+    @overload
+    @classmethod
+    def range(cls, stop: int | NumberVar, /) -> ArrayVar[List[int]]: ...
+
+    @overload
+    @classmethod
+    def range(
+        cls,
+        start: int | NumberVar,
+        end: int | NumberVar,
+        step: int | NumberVar = 1,
+        /,
+    ) -> ArrayVar[List[int]]: ...
+
+    @classmethod
+    def range(
+        cls,
+        first_endpoint: int | NumberVar,
+        second_endpoint: int | NumberVar | None = None,
+        step: int | NumberVar | None = None,
+    ) -> ArrayVar[List[int]]:
+        """Create a range of numbers.
+
+        Args:
+            first_endpoint: The end of the range if second_endpoint is not provided, otherwise the start of the range.
+            second_endpoint: The end of the range.
+            step: The step of the range.
+
+        Returns:
+            The range of numbers.
+        """
+        from .sequence import ArrayVar
+
+        return ArrayVar.range(first_endpoint, second_endpoint, step)
+
+    def __bool__(self) -> bool:
+        """Raise exception if using Var in a boolean context.
+
+        Raises:
+            VarTypeError: when attempting to bool-ify the Var.
+        """
+        raise VarTypeError(
+            f"Cannot convert Var {str(self)!r} to bool for use with `if`, `and`, `or`, and `not`. "
+            "Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert)."
+        )
+
+    def __iter__(self) -> Any:
+        """Raise exception if using Var in an iterable context.
+
+        Raises:
+            VarTypeError: when attempting to iterate over the Var.
+        """
+        raise VarTypeError(
+            f"Cannot iterate over Var {str(self)!r}. Instead use `rx.foreach`."
+        )
+
+    def __contains__(self, _: Any) -> Var:
+        """Override the 'in' operator to alert the user that it is not supported.
+
+        Raises:
+            VarTypeError: the operation is not supported
+        """
+        raise VarTypeError(
+            "'in' operator not supported for Var types, use Var.contains() instead."
+        )
+
+    def json(self) -> str:
+        """Serialize the var to a JSON string.
+
+        Raises:
+            NotImplementedError: If the method is not implemented.
+        """
+        raise NotImplementedError("Var subclasses must implement the json method.")
 
 
-class LiteralVar(ImmutableVar):
+OUTPUT = TypeVar("OUTPUT", bound=Var)
+
+
+class LiteralVar(Var):
     """Base class for immutable literal vars."""
 
     @classmethod
@@ -804,16 +978,13 @@ class LiteralVar(ImmutableVar):
         if isinstance(value, dict):
             return LiteralObjectVar.create(value, _var_data=_var_data)
 
-        if isinstance(value, Color):
-            return LiteralStringVar.create(f"{value}", _var_data=_var_data)
-
         if isinstance(value, (list, tuple, set)):
             return LiteralArrayVar.create(value, _var_data=_var_data)
 
         if value is None:
-            return ImmutableVar.create_safe("null", _var_data=_var_data)
+            return LiteralNoneVar.create(_var_data=_var_data)
 
-        from reflex.event import EventChain, EventSpec
+        from reflex.event import EventChain, EventHandler, EventSpec
         from reflex.utils.format import get_event_handler_parts
 
         from .function import ArgsFunctionOperation, FunctionStringVar
@@ -837,14 +1008,12 @@ class LiteralVar(ImmutableVar):
             sig = inspect.signature(value.args_spec)  # type: ignore
             if sig.parameters:
                 arg_def = tuple((f"_{p}" for p in sig.parameters))
-                arg_def_expr = LiteralVar.create(
-                    [ImmutableVar.create_safe(arg) for arg in arg_def]
-                )
+                arg_def_expr = LiteralVar.create([Var(_js_expr=arg) for arg in arg_def])
             else:
                 # add a default argument for addEvents if none were specified in value.args_spec
                 # used to trigger the preventDefault() on the event.
                 arg_def = ("...args",)
-                arg_def_expr = ImmutableVar.create_safe("args")
+                arg_def_expr = Var(_js_expr="args")
 
             return ArgsFunctionOperation.create(
                 arg_def,
@@ -857,63 +1026,44 @@ class LiteralVar(ImmutableVar):
                 ),
             )
 
-        try:
-            from plotly.graph_objects import Figure, layout
-            from plotly.io import to_json
-
-            if isinstance(value, Figure):
-                return LiteralObjectVar.create(
-                    json.loads(str(to_json(value))),
-                    _var_type=Figure,
-                    _var_data=_var_data,
-                )
-
-            if isinstance(value, layout.Template):
-                return LiteralObjectVar.create(
-                    {
-                        "data": json.loads(str(to_json(value.data))),
-                        "layout": json.loads(str(to_json(value.layout))),
-                    },
-                    _var_type=layout.Template,
-                    _var_data=_var_data,
-                )
-        except ImportError:
-            pass
-
-        try:
-            import base64
-            import io
-
-            from PIL.Image import MIME
-            from PIL.Image import Image as Img
-
-            if isinstance(value, Img):
-                with io.BytesIO() as buffer:
-                    image_format = getattr(value, "format", None) or "PNG"
-                    value.save(buffer, format=image_format)
-                    try:
-                        # Newer method to get the mime type, but does not always work.
-                        mimetype = value.get_format_mimetype()  # type: ignore
-                    except AttributeError:
-                        try:
-                            # Fallback method
-                            mimetype = MIME[image_format]
-                        except KeyError:
-                            # Unknown mime_type: warn and return image/png and hope the browser can sort it out.
-                            warnings.warn(  # noqa: B028
-                                f"Unknown mime type for {value} {image_format}. Defaulting to image/png"
-                            )
-                            mimetype = "image/png"
-                    return LiteralStringVar.create(
-                        f"data:{mimetype};base64,{base64.b64encode(buffer.getvalue()).decode()}",
-                        _var_data=_var_data,
-                    )
-        except ImportError:
-            pass
+        if isinstance(value, EventHandler):
+            return Var(_js_expr=".".join(filter(None, get_event_handler_parts(value))))
 
         if isinstance(value, Base):
+            # get the fields of the pydantic class
+            fields = value.__fields__.keys()
+            one_level_dict = {field: getattr(value, field) for field in fields}
+
             return LiteralObjectVar.create(
-                {k: (None if callable(v) else v) for k, v in value.dict().items()},
+                {
+                    field: value
+                    for field, value in one_level_dict.items()
+                    if not callable(value)
+                },
+                _var_type=type(value),
+                _var_data=_var_data,
+            )
+
+        serialized_value = serializers.serialize(value)
+        if serialized_value is not None:
+            if isinstance(serialized_value, dict):
+                return LiteralObjectVar.create(
+                    serialized_value,
+                    _var_type=type(value),
+                    _var_data=_var_data,
+                )
+            if isinstance(serialized_value, str):
+                return LiteralStringVar.create(
+                    serialized_value, _var_type=type(value), _var_data=_var_data
+                )
+            return LiteralVar.create(serialized_value, _var_data=_var_data)
+
+        if dataclasses.is_dataclass(value) and not isinstance(value, type):
+            return LiteralObjectVar.create(
+                {
+                    k: (None if callable(v) else v)
+                    for k, v in dataclasses.asdict(value).items()
+                },
                 _var_type=type(value),
                 _var_data=_var_data,
             )
@@ -936,6 +1086,19 @@ class LiteralVar(ImmutableVar):
         )
 
 
+@serializers.serializer
+def serialize_literal(value: LiteralVar):
+    """Serialize a Literal type.
+
+    Args:
+        value: The Literal to serialize.
+
+    Returns:
+        The serialized Literal.
+    """
+    return serializers.serialize(value._var_value)
+
+
 P = ParamSpec("P")
 T = TypeVar("T")
 
@@ -944,7 +1107,7 @@ T = TypeVar("T")
 @overload
 def var_operation(
     func: Callable[P, CustomVarOperationReturn[NoReturn]],
-) -> Callable[P, ImmutableVar]: ...
+) -> Callable[P, Var]: ...
 
 
 @overload
@@ -988,7 +1151,7 @@ def var_operation(
 
 def var_operation(
     func: Callable[P, CustomVarOperationReturn[T]],
-) -> Callable[P, ImmutableVar[T]]:
+) -> Callable[P, Var[T]]:
     """Decorator for creating a var operation.
 
     Example:
@@ -1006,7 +1169,7 @@ def var_operation(
     """
 
     @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> ImmutableVar[T]:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Var[T]:
         func_args = list(inspect.signature(func).parameters)
         args_vars = {
             func_args[i]: (LiteralVar.create(arg) if not isinstance(arg, Var) else arg)
@@ -1085,7 +1248,7 @@ class CachedVarOperation:
 
     def __post_init__(self):
         """Post-initialize the CachedVarOperation."""
-        object.__delattr__(self, "_var_name")
+        object.__delattr__(self, "_js_expr")
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -1096,16 +1259,16 @@ class CachedVarOperation:
         Returns:
             The attribute.
         """
-        if name == "_var_name":
+        if name == "_js_expr":
             return self._cached_var_name
 
         parent_classes = inspect.getmro(self.__class__)
 
-        return parent_classes[parent_classes.index(CachedVarOperation) + 1].__getattr__(  # type: ignore
-            self, name
-        )
+        next_class = parent_classes[parent_classes.index(CachedVarOperation) + 1]
 
-    def _get_all_var_data(self) -> ImmutableVarData | None:
+        return next_class.__getattr__(self, name)  # type: ignore
+
+    def _get_all_var_data(self) -> VarData | None:
         """Get all VarData associated with the Var.
 
         Returns:
@@ -1114,13 +1277,13 @@ class CachedVarOperation:
         return self._cached_get_all_var_data
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+    def _cached_get_all_var_data(self) -> VarData | None:
         """Get the cached VarData.
 
         Returns:
             The cached VarData.
         """
-        return ImmutableVarData.merge(
+        return VarData.merge(
             *map(
                 lambda value: (
                     value._get_all_var_data() if isinstance(value, Var) else None
@@ -1145,13 +1308,13 @@ class CachedVarOperation:
                 *[
                     getattr(self, field.name)
                     for field in dataclasses.fields(self)  # type: ignore
-                    if field.name not in ["_var_name", "_var_data", "_var_type"]
+                    if field.name not in ["_js_expr", "_var_data", "_var_type"]
                 ],
             )
         )
 
 
-def and_operation(a: Var | Any, b: Var | Any) -> ImmutableVar:
+def and_operation(a: Var | Any, b: Var | Any) -> Var:
     """Perform a logical AND operation on two variables.
 
     Args:
@@ -1165,7 +1328,7 @@ def and_operation(a: Var | Any, b: Var | Any) -> ImmutableVar:
 
 
 @var_operation
-def _and_operation(a: ImmutableVar, b: ImmutableVar):
+def _and_operation(a: Var, b: Var):
     """Perform a logical AND operation on two variables.
 
     Args:
@@ -1181,7 +1344,7 @@ def _and_operation(a: ImmutableVar, b: ImmutableVar):
     )
 
 
-def or_operation(a: Var | Any, b: Var | Any) -> ImmutableVar:
+def or_operation(a: Var | Any, b: Var | Any) -> Var:
     """Perform a logical OR operation on two variables.
 
     Args:
@@ -1195,7 +1358,7 @@ def or_operation(a: Var | Any, b: Var | Any) -> ImmutableVar:
 
 
 @var_operation
-def _or_operation(a: ImmutableVar, b: ImmutableVar):
+def _or_operation(a: Var, b: Var):
     """Perform a logical OR operation on two variables.
 
     Args:
@@ -1216,7 +1379,7 @@ def _or_operation(a: ImmutableVar, b: ImmutableVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ImmutableCallableVar(ImmutableVar):
+class CallableVar(Var):
     """Decorate a Var-returning function to act as both a Var and a function.
 
     This is used as a compatibility shim for replacing Var objects in the
@@ -1224,10 +1387,10 @@ class ImmutableCallableVar(ImmutableVar):
     """
 
     fn: Callable[..., Var] = dataclasses.field(
-        default_factory=lambda: lambda: ImmutableVar(_var_name="undefined")
+        default_factory=lambda: lambda: Var(_js_expr="undefined")
     )
     original_var: Var = dataclasses.field(
-        default_factory=lambda: ImmutableVar(_var_name="undefined")
+        default_factory=lambda: Var(_js_expr="undefined")
     )
 
     def __init__(self, fn: Callable[..., Var]):
@@ -1237,10 +1400,10 @@ class ImmutableCallableVar(ImmutableVar):
             fn: The function to decorate (must return Var)
         """
         original_var = fn()
-        super(ImmutableCallableVar, self).__init__(
-            _var_name=original_var._var_name,
+        super(CallableVar, self).__init__(
+            _js_expr=original_var._js_expr,
             _var_type=original_var._var_type,
-            _var_data=ImmutableVarData.merge(original_var._get_all_var_data()),
+            _var_data=VarData.merge(original_var._get_all_var_data()),
         )
         object.__setattr__(self, "fn", fn)
         object.__setattr__(self, "original_var", original_var)
@@ -1274,12 +1437,30 @@ DICT_VAL = TypeVar("DICT_VAL")
 LIST_INSIDE = TypeVar("LIST_INSIDE")
 
 
+class FakeComputedVarBaseClass(property):
+    """A fake base class for ComputedVar to avoid inheriting from property."""
+
+    __pydantic_run_validation__ = False
+
+
+def is_computed_var(obj: Any) -> TypeGuard[ComputedVar]:
+    """Check if the object is a ComputedVar.
+
+    Args:
+        obj: The object to check.
+
+    Returns:
+        Whether the object is a ComputedVar.
+    """
+    return isinstance(obj, FakeComputedVarBaseClass)
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
+class ComputedVar(Var[RETURN_TYPE]):
     """A field with computed getters."""
 
     # Whether to track dependencies and cache computed values
@@ -1333,13 +1514,14 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
         hints = get_type_hints(fget)
         hint = hints.get("return", Any)
 
-        kwargs["_var_name"] = kwargs.pop("_var_name", fget.__name__)
+        kwargs["_js_expr"] = kwargs.pop("_js_expr", fget.__name__)
         kwargs["_var_type"] = kwargs.pop("_var_type", hint)
 
-        super(ImmutableComputedVar, self).__init__(
-            _var_name=kwargs.pop("_var_name"),
+        Var.__init__(
+            self,
+            _js_expr=kwargs.pop("_js_expr"),
             _var_type=kwargs.pop("_var_type"),
-            _var_data=ImmutableVarData.merge(kwargs.pop("_var_data", None)),
+            _var_data=kwargs.pop("_var_data", None),
         )
 
         if backend is None:
@@ -1368,14 +1550,14 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
         object.__setattr__(
             self,
             "_static_deps",
-            {dep._var_name if isinstance(dep, Var) else dep for dep in deps},
+            {dep._js_expr if isinstance(dep, Var) else dep for dep in deps},
         )
         object.__setattr__(self, "_auto_deps", auto_deps)
 
         object.__setattr__(self, "_fget", fget)
 
     @override
-    def _replace(self, merge_var_data=None, **kwargs: Any) -> ImmutableComputedVar:
+    def _replace(self, merge_var_data=None, **kwargs: Any) -> Self:
         """Replace the attributes of the ComputedVar.
 
         Args:
@@ -1396,7 +1578,7 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
             auto_deps=kwargs.pop("auto_deps", self._auto_deps),
             interval=kwargs.pop("interval", self._update_interval),
             backend=kwargs.pop("backend", self._backend),
-            _var_name=kwargs.pop("_var_name", self._var_name),
+            _js_expr=kwargs.pop("_js_expr", self._js_expr),
             _var_type=kwargs.pop("_var_type", self._var_type),
             _var_data=kwargs.pop(
                 "_var_data", VarData.merge(self._var_data, merge_var_data)
@@ -1407,7 +1589,7 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
             unexpected_kwargs = ", ".join(kwargs.keys())
             raise TypeError(f"Unexpected keyword arguments: {unexpected_kwargs}")
 
-        return ImmutableComputedVar(**field_values)
+        return type(self)(**field_values)
 
     @property
     def _cache_attr(self) -> str:
@@ -1416,7 +1598,7 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
         Returns:
             An attribute name.
         """
-        return f"__cached_{self._var_name}"
+        return f"__cached_{self._js_expr}"
 
     @property
     def _last_updated_attr(self) -> str:
@@ -1425,7 +1607,7 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
         Returns:
             An attribute name.
         """
-        return f"__last_updated_{self._var_name}"
+        return f"__last_updated_{self._js_expr}"
 
     def needs_update(self, instance: BaseState) -> bool:
         """Check if the computed var needs to be updated.
@@ -1445,50 +1627,48 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: ImmutableComputedVar[int] | ImmutableComputedVar[float],
+        self: ComputedVar[int] | ComputedVar[float],
         instance: None,
         owner: Type,
     ) -> NumberVar: ...
 
     @overload
     def __get__(
-        self: ImmutableComputedVar[str],
+        self: ComputedVar[str],
         instance: None,
         owner: Type,
     ) -> StringVar: ...
 
     @overload
     def __get__(
-        self: ImmutableComputedVar[dict[DICT_KEY, DICT_VAL]],
+        self: ComputedVar[dict[DICT_KEY, DICT_VAL]],
         instance: None,
         owner: Type,
     ) -> ObjectVar[dict[DICT_KEY, DICT_VAL]]: ...
 
     @overload
     def __get__(
-        self: ImmutableComputedVar[list[LIST_INSIDE]],
+        self: ComputedVar[list[LIST_INSIDE]],
         instance: None,
         owner: Type,
     ) -> ArrayVar[list[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
-        self: ImmutableComputedVar[set[LIST_INSIDE]],
+        self: ComputedVar[set[LIST_INSIDE]],
         instance: None,
         owner: Type,
     ) -> ArrayVar[set[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
-        self: ImmutableComputedVar[tuple[LIST_INSIDE, ...]],
+        self: ComputedVar[tuple[LIST_INSIDE, ...]],
         instance: None,
         owner: Type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
 
     @overload
-    def __get__(
-        self, instance: None, owner: Type
-    ) -> ImmutableComputedVar[RETURN_TYPE]: ...
+    def __get__(self, instance: None, owner: Type) -> ComputedVar[RETURN_TYPE]: ...
 
     @overload
     def __get__(self, instance: BaseState, owner: Type) -> RETURN_TYPE: ...
@@ -1507,14 +1687,14 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
         """
         if instance is None:
             state_where_defined = owner
-            while self.fget.__name__ in state_where_defined.inherited_vars:
+            while self._js_expr in state_where_defined.inherited_vars:
                 state_where_defined = state_where_defined.get_parent_state()
 
             return self._replace(
-                _var_name=format_state_name(state_where_defined.get_full_name())
+                _js_expr=format_state_name(state_where_defined.get_full_name())
                 + "."
-                + self._var_name,
-                merge_var_data=ImmutableVarData.from_state(state_where_defined),
+                + self._js_expr,
+                merge_var_data=VarData.from_state(state_where_defined),
             ).guess_type()
 
         if not self._cache:
@@ -1601,7 +1781,7 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
                     ref_obj = None
                 if instruction.argval in invalid_names:
                     raise VarValueError(
-                        f"Cached var {self._var_full_name} cannot access arbitrary state via `{instruction.argval}`."
+                        f"Cached var {str(self)} cannot access arbitrary state via `{instruction.argval}`."
                     )
                 if callable(ref_obj):
                     # recurse into callable attributes
@@ -1613,7 +1793,7 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
                     )
                 # recurse into property fget functions
                 elif isinstance(ref_obj, property) and not isinstance(
-                    ref_obj, ImmutableComputedVar
+                    ref_obj, ComputedVar
                 ):
                     d.update(
                         self._deps(
@@ -1669,7 +1849,7 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
         Returns:
             The class of the var.
         """
-        return ComputedVar
+        return FakeComputedVarBaseClass
 
     @property
     def fget(self) -> Callable[[BaseState], RETURN_TYPE]:
@@ -1681,12 +1861,18 @@ class ImmutableComputedVar(ImmutableVar[RETURN_TYPE]):
         return self._fget
 
 
+class DynamicRouteVar(ComputedVar[Union[str, List[str]]]):
+    """A ComputedVar that represents a dynamic route."""
+
+    pass
+
+
 if TYPE_CHECKING:
     BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
 
 
 @overload
-def immutable_computed_var(
+def computed_var(
     fget: None = None,
     initial_value: Any | types.Unset = types.Unset(),
     cache: bool = False,
@@ -1695,13 +1881,11 @@ def immutable_computed_var(
     interval: Optional[Union[datetime.timedelta, int]] = None,
     backend: bool | None = None,
     **kwargs,
-) -> Callable[
-    [Callable[[BASE_STATE], RETURN_TYPE]], ImmutableComputedVar[RETURN_TYPE]
-]: ...
+) -> Callable[[Callable[[BASE_STATE], RETURN_TYPE]], ComputedVar[RETURN_TYPE]]: ...
 
 
 @overload
-def immutable_computed_var(
+def computed_var(
     fget: Callable[[BASE_STATE], RETURN_TYPE],
     initial_value: RETURN_TYPE | types.Unset = types.Unset(),
     cache: bool = False,
@@ -1710,10 +1894,10 @@ def immutable_computed_var(
     interval: Optional[Union[datetime.timedelta, int]] = None,
     backend: bool | None = None,
     **kwargs,
-) -> ImmutableComputedVar[RETURN_TYPE]: ...
+) -> ComputedVar[RETURN_TYPE]: ...
 
 
-def immutable_computed_var(
+def computed_var(
     fget: Callable[[BASE_STATE], Any] | None = None,
     initial_value: Any | types.Unset = types.Unset(),
     cache: bool = False,
@@ -1722,9 +1906,7 @@ def immutable_computed_var(
     interval: Optional[Union[datetime.timedelta, int]] = None,
     backend: bool | None = None,
     **kwargs,
-) -> (
-    ImmutableComputedVar | Callable[[Callable[[BASE_STATE], Any]], ImmutableComputedVar]
-):
+) -> ComputedVar | Callable[[Callable[[BASE_STATE], Any]], ComputedVar]:
     """A ComputedVar decorator with or without kwargs.
 
     Args:
@@ -1751,10 +1933,10 @@ def immutable_computed_var(
         raise VarDependencyError("Cannot track dependencies without caching.")
 
     if fget is not None:
-        return ImmutableComputedVar(fget, cache=cache)
+        return ComputedVar(fget, cache=cache)
 
-    def wrapper(fget: Callable[[BASE_STATE], Any]) -> ImmutableComputedVar:
-        return ImmutableComputedVar(
+    def wrapper(fget: Callable[[BASE_STATE], Any]) -> ComputedVar:
+        return ComputedVar(
             fget,
             initial_value=initial_value,
             cache=cache,
@@ -1771,7 +1953,7 @@ def immutable_computed_var(
 RETURN = TypeVar("RETURN")
 
 
-class CustomVarOperationReturn(ImmutableVar[RETURN]):
+class CustomVarOperationReturn(Var[RETURN]):
     """Base class for custom var operations."""
 
     @classmethod
@@ -1792,9 +1974,9 @@ class CustomVarOperationReturn(ImmutableVar[RETURN]):
             The CustomVarOperation.
         """
         return CustomVarOperationReturn(
-            _var_name=js_expression,
+            _js_expr=js_expression,
             _var_type=_var_type or Any,
-            _var_data=ImmutableVarData.merge(_var_data),
+            _var_data=_var_data,
         )
 
 
@@ -1819,7 +2001,7 @@ def var_operation_return(
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class CustomVarOperation(CachedVarOperation, ImmutableVar[T]):
+class CustomVarOperation(CachedVarOperation, Var[T]):
     """Base class for custom var operations."""
 
     _args: Tuple[Tuple[str, Var], ...] = dataclasses.field(default_factory=tuple)
@@ -1838,13 +2020,13 @@ class CustomVarOperation(CachedVarOperation, ImmutableVar[T]):
         return str(self._return)
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> ImmutableVarData | None:
+    def _cached_get_all_var_data(self) -> VarData | None:
         """Get the cached VarData.
 
         Returns:
             The cached VarData.
         """
-        return ImmutableVarData.merge(
+        return VarData.merge(
             *map(
                 lambda arg: arg[1]._get_all_var_data(),
                 self._args,
@@ -1871,9 +2053,489 @@ class CustomVarOperation(CachedVarOperation, ImmutableVar[T]):
             The CustomVarOperation.
         """
         return CustomVarOperation(
-            _var_name="",
+            _js_expr="",
             _var_type=return_var._var_type,
-            _var_data=ImmutableVarData.merge(_var_data),
+            _var_data=_var_data,
             _args=args,
             _return=return_var,
         )
+
+
+class NoneVar(Var[None]):
+    """A var representing None."""
+
+
+class LiteralNoneVar(LiteralVar, NoneVar):
+    """A var representing None."""
+
+    def json(self) -> str:
+        """Serialize the var to a JSON string.
+
+        Returns:
+            The JSON string.
+        """
+        return "null"
+
+    @classmethod
+    def create(
+        cls,
+        _var_data: VarData | None = None,
+    ) -> LiteralNoneVar:
+        """Create a var from a value.
+
+        Args:
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return LiteralNoneVar(
+            _js_expr="null",
+            _var_type=None,
+            _var_data=_var_data,
+        )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ToNoneOperation(CachedVarOperation, NoneVar):
+    """A var operation that converts a var to None."""
+
+    _original_var: Var = dataclasses.field(
+        default_factory=lambda: LiteralNoneVar.create()
+    )
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """Get the cached var name.
+
+        Returns:
+            The cached var name.
+        """
+        return str(self._original_var)
+
+    @classmethod
+    def create(
+        cls,
+        var: Var,
+        _var_data: VarData | None = None,
+    ) -> ToNoneOperation:
+        """Create a ToNoneOperation.
+
+        Args:
+            var: The var to convert to None.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The ToNoneOperation.
+        """
+        return ToNoneOperation(
+            _js_expr="",
+            _var_type=None,
+            _var_data=_var_data,
+            _original_var=var,
+        )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class StateOperation(CachedVarOperation, Var):
+    """A var operation that accesses a field on an object."""
+
+    _state_name: str = dataclasses.field(default="")
+    _field: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """Get the cached var name.
+
+        Returns:
+            The cached var name.
+        """
+        return f"{str(self._state_name)}.{str(self._field)}"
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute.
+        """
+        if name == "_js_expr":
+            return self._cached_var_name
+
+        return getattr(self._field, name)
+
+    @classmethod
+    def create(
+        cls,
+        state_name: str,
+        field: Var,
+        _var_data: VarData | None = None,
+    ) -> StateOperation:
+        """Create a DotOperation.
+
+        Args:
+            state_name: The name of the state.
+            field: The field of the state.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The DotOperation.
+        """
+        return StateOperation(
+            _js_expr="",
+            _var_type=field._var_type,
+            _var_data=_var_data,
+            _state_name=state_name,
+            _field=field,
+        )
+
+
+class ToOperation:
+    """A var operation that converts a var to another type."""
+
+    def __getattr__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute of the var.
+        """
+        return getattr(object.__getattribute__(self, "_original"), name)
+
+    def __post_init__(self):
+        """Post initialization."""
+        object.__delattr__(self, "_js_expr")
+
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash(object.__getattribute__(self, "_original"))
+
+    def _get_all_var_data(self) -> VarData | None:
+        """Get all the var data.
+
+        Returns:
+            The var data.
+        """
+        return VarData.merge(
+            object.__getattribute__(self, "_original")._get_all_var_data(),
+            self._var_data,  # type: ignore
+        )
+
+    @classmethod
+    def create(
+        cls,
+        value: Var,
+        _var_type: GenericType | None = None,
+        _var_data: VarData | None = None,
+    ):
+        """Create a ToOperation.
+
+        Args:
+            value: The value of the var.
+            _var_type: The type of the Var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The ToOperation.
+        """
+        return cls(
+            _js_expr="",  # type: ignore
+            _var_data=_var_data,  # type: ignore
+            _var_type=_var_type or cls._default_var_type,  # type: ignore
+            _original=value,  # type: ignore
+        )
+
+
+def get_uuid_string_var() -> Var:
+    """Return a Var that generates a single memoized UUID via .web/utils/state.js.
+
+    useMemo with an empty dependency array ensures that the generated UUID is
+    consistent across re-renders of the component.
+
+    Returns:
+        A Var that generates a UUID at runtime.
+    """
+    from reflex.utils.imports import ImportVar
+    from reflex.vars import Var
+
+    unique_uuid_var = get_unique_variable_name()
+    unique_uuid_var_data = VarData(
+        imports={
+            f"/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")},  # type: ignore
+            "react": "useMemo",
+        },
+        hooks={f"const {unique_uuid_var} = useMemo(generateUUID, [])": None},
+    )
+
+    return Var(
+        _js_expr=unique_uuid_var,
+        _var_type=str,
+        _var_data=unique_uuid_var_data,
+    )
+
+
+# Set of unique variable names.
+USED_VARIABLES = set()
+
+
+def get_unique_variable_name() -> str:
+    """Get a unique variable name.
+
+    Returns:
+        The unique variable name.
+    """
+    name = "".join([random.choice(string.ascii_lowercase) for _ in range(8)])
+    if name not in USED_VARIABLES:
+        USED_VARIABLES.add(name)
+        return name
+    return get_unique_variable_name()
+
+
+@dataclasses.dataclass(
+    eq=True,
+    frozen=True,
+)
+class VarData:
+    """Metadata associated with a x."""
+
+    # The name of the enclosing state.
+    state: str = dataclasses.field(default="")
+
+    # Imports needed to render this var
+    imports: ImmutableParsedImportDict = dataclasses.field(default_factory=tuple)
+
+    # Hooks that need to be present in the component to render this var
+    hooks: Tuple[str, ...] = dataclasses.field(default_factory=tuple)
+
+    def __init__(
+        self,
+        state: str = "",
+        imports: ImportDict | ParsedImportDict | None = None,
+        hooks: dict[str, None] | None = None,
+    ):
+        """Initialize the var data.
+
+        Args:
+            state: The name of the enclosing state.
+            imports: Imports needed to render this var.
+            hooks: Hooks that need to be present in the component to render this var.
+        """
+        immutable_imports: ImmutableParsedImportDict = tuple(
+            sorted(
+                ((k, tuple(sorted(v))) for k, v in parse_imports(imports or {}).items())
+            )
+        )
+        object.__setattr__(self, "state", state)
+        object.__setattr__(self, "imports", immutable_imports)
+        object.__setattr__(self, "hooks", tuple(hooks or {}))
+
+    def old_school_imports(self) -> ImportDict:
+        """Return the imports as a mutable dict.
+
+        Returns:
+            The imports as a mutable dict.
+        """
+        return dict((k, list(v)) for k, v in self.imports)
+
+    @classmethod
+    def merge(cls, *others: VarData | None) -> VarData | None:
+        """Merge multiple var data objects.
+
+        Args:
+            *others: The var data objects to merge.
+
+        Returns:
+            The merged var data object.
+        """
+        state = ""
+        _imports = {}
+        hooks = {}
+        for var_data in others:
+            if var_data is None:
+                continue
+            state = state or var_data.state
+            _imports = imports.merge_imports(_imports, var_data.imports)
+            hooks.update(
+                var_data.hooks
+                if isinstance(var_data.hooks, dict)
+                else {k: None for k in var_data.hooks}
+            )
+
+        if state or _imports or hooks:
+            return VarData(
+                state=state,
+                imports=_imports,
+                hooks=hooks,
+            )
+        return None
+
+    def __bool__(self) -> bool:
+        """Check if the var data is non-empty.
+
+        Returns:
+            True if any field is set to a non-default value.
+        """
+        return bool(self.state or self.imports or self.hooks)
+
+    def __eq__(self, other: Any) -> bool:
+        """Check if two var data objects are equal.
+
+        Args:
+            other: The other var data object to compare.
+
+        Returns:
+            True if all fields are equal and collapsed imports are equal.
+        """
+        if not isinstance(other, VarData):
+            return False
+
+        # Don't compare interpolations - that's added in by the decoder, and
+        # not part of the vardata itself.
+        return (
+            self.state == other.state
+            and self.hooks
+            == (
+                other.hooks if isinstance(other, VarData) else tuple(other.hooks.keys())
+            )
+            and imports.collapse_imports(self.imports)
+            == imports.collapse_imports(other.imports)
+        )
+
+    @classmethod
+    def from_state(cls, state: Type[BaseState] | str) -> VarData:
+        """Set the state of the var.
+
+        Args:
+            state: The state to set or the full name of the state.
+
+        Returns:
+            The var with the set state.
+        """
+        from reflex.utils import format
+
+        state_name = state if isinstance(state, str) else state.get_full_name()
+        new_var_data = VarData(
+            state=state_name,
+            hooks={
+                "const {0} = useContext(StateContexts.{0})".format(
+                    format.format_state_name(state_name)
+                ): None
+            },
+            imports={
+                f"/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="StateContexts")],
+                "react": [ImportVar(tag="useContext")],
+            },
+        )
+        return new_var_data
+
+
+def _decode_var_immutable(value: str) -> tuple[VarData | None, str]:
+    """Decode the state name from a formatted var.
+
+    Args:
+        value: The value to extract the state name from.
+
+    Returns:
+        The extracted state name and the value without the state name.
+    """
+    var_datas = []
+    if isinstance(value, str):
+        # fast path if there is no encoded VarData
+        if constants.REFLEX_VAR_OPENING_TAG not in value:
+            return None, value
+
+        offset = 0
+
+        # Find all tags.
+        while m := _decode_var_pattern.search(value):
+            start, end = m.span()
+            value = value[:start] + value[end:]
+
+            serialized_data = m.group(1)
+
+            if serialized_data.isnumeric() or (
+                serialized_data[0] == "-" and serialized_data[1:].isnumeric()
+            ):
+                # This is a global immutable var.
+                var = _global_vars[int(serialized_data)]
+                var_data = var._get_all_var_data()
+
+                if var_data is not None:
+                    var_datas.append(var_data)
+            offset += end - start
+
+    return VarData.merge(*var_datas) if var_datas else None, value
+
+
+# Compile regex for finding reflex var tags.
+_decode_var_pattern_re = (
+    rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
+)
+_decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
+
+# Defined global immutable vars.
+_global_vars: Dict[int, Var] = {}
+
+
+def _extract_var_data(value: Iterable) -> list[VarData | None]:
+    """Extract the var imports and hooks from an iterable containing a Var.
+
+    Args:
+        value: The iterable to extract the VarData from
+
+    Returns:
+        The extracted VarDatas.
+    """
+    from reflex.style import Style
+    from reflex.vars import Var
+
+    var_datas = []
+    with contextlib.suppress(TypeError):
+        for sub in value:
+            if isinstance(sub, Var):
+                var_datas.append(sub._var_data)
+            elif not isinstance(sub, str):
+                # Recurse into dict values.
+                if hasattr(sub, "values") and callable(sub.values):
+                    var_datas.extend(_extract_var_data(sub.values()))
+                # Recurse into iterable values (or dict keys).
+                var_datas.extend(_extract_var_data(sub))
+
+    # Style objects should already have _var_data.
+    if isinstance(value, Style):
+        var_datas.append(value._var_data)
+    else:
+        # Recurse when value is a dict itself.
+        values = getattr(value, "values", None)
+        if callable(values):
+            var_datas.extend(_extract_var_data(values()))
+    return var_datas
+
+
+# These names were changed in reflex 0.3.0
+REPLACED_NAMES = {
+    "full_name": "_var_full_name",
+    "name": "_js_expr",
+    "state": "_var_data.state",
+    "type_": "_var_type",
+    "is_local": "_var_is_local",
+    "is_string": "_var_is_string",
+    "set_state": "_var_set_state",
+    "deps": "_deps",
+}

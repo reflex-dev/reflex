@@ -17,14 +17,13 @@ rx.text(
 
 from __future__ import annotations
 
-from typing import Literal, get_args
+from typing import Dict, List, Literal, get_args
 
 from reflex.components.component import BaseComponent
 from reflex.components.core.cond import Cond, color_mode_cond, cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.dropdown_menu import dropdown_menu
 from reflex.components.radix.themes.components.switch import Switch
-from reflex.ivars.base import ImmutableVar
 from reflex.style import (
     LIGHT_COLOR_MODE,
     color_mode,
@@ -32,7 +31,8 @@ from reflex.style import (
     set_color_mode,
     toggle_color_mode,
 )
-from reflex.vars import Var
+from reflex.vars.base import Var
+from reflex.vars.sequence import LiteralArrayVar
 
 from .components.icon_button import IconButton
 
@@ -66,9 +66,9 @@ class ColorModeIcon(Cond):
 
 LiteralPosition = Literal["top-left", "top-right", "bottom-left", "bottom-right"]
 
-position_values = get_args(LiteralPosition)
+position_values: List[str] = list(get_args(LiteralPosition))
 
-position_map = {
+position_map: Dict[str, List[str]] = {
     "position": position_values,
     "left": ["top-left", "bottom-left"],
     "right": ["top-right", "bottom-right"],
@@ -78,8 +78,8 @@ position_map = {
 
 
 # needed to inverse contains for find
-def _find(const, var):
-    return Var.create_safe(const, _var_is_string=False).contains(var)
+def _find(const: List[str], var):
+    return LiteralArrayVar.create(const).contains(var)
 
 
 def _set_var_default(props, position, prop, default1, default2=""):
@@ -184,7 +184,7 @@ class ColorModeSwitch(Switch):
         )
 
 
-class ColorModeNamespace(ImmutableVar):
+class ColorModeNamespace(Var):
     """Namespace for color mode components."""
 
     icon = staticmethod(ColorModeIcon.create)
@@ -193,7 +193,7 @@ class ColorModeNamespace(ImmutableVar):
 
 
 color_mode = color_mode_var_and_namespace = ColorModeNamespace(
-    _var_name=color_mode._var_name,
+    _js_expr=color_mode._js_expr,
     _var_type=color_mode._var_type,
     _var_data=color_mode.get_default_value(),
 )

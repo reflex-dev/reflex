@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Optional, Union, overload
 
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import RadixThemesComponent
 

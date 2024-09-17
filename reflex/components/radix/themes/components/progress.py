@@ -4,7 +4,8 @@ from typing import Literal
 
 from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
-from reflex.vars import Var
+from reflex.style import Style
+from reflex.vars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -38,6 +39,21 @@ class Progress(RadixThemesComponent):
     # The duration of the progress bar animation. Once the duration times out, the progress bar will start an indeterminate animation.
     duration: Var[str]
 
+    # The color of the progress bar fill animation.
+    fill_color: Var[str]
+
+    @staticmethod
+    def _color_selector(color: str) -> Style:
+        """Return a style object with the correct color and css selector.
+
+        Args:
+            color: Color of the fill part.
+
+        Returns:
+            Style: Style object with the correct css selector and color.
+        """
+        return Style({".rt-ProgressIndicator": {"background_color": color}})
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create a Progress component.
@@ -50,6 +66,12 @@ class Progress(RadixThemesComponent):
             The Progress Component.
         """
         props.setdefault("width", "100%")
+        if "fill_color" in props:
+            color = props.get("fill_color", "")
+            style = props.get("style", {})
+            style = style | cls._color_selector(color)
+            props["style"] = style
+
         return super().create(*children, **props)
 
 

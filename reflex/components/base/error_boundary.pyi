@@ -9,7 +9,7 @@ from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 class ErrorBoundary(Component):
     def add_imports(self) -> dict[str, list[ImportVar]]: ...
@@ -20,7 +20,7 @@ class ErrorBoundary(Component):
     def create(  # type: ignore
         cls,
         *children,
-        Fallback_component: Optional[Union[Var[Component], Component]] = None,
+        Fallback_component: Optional[Union[Component, Var[Component]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

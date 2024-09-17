@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 
 class ReactPlayer(NoSSRComponent):

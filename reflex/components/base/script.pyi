@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Literal, Optional, Union, overload
 from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 class Script(Component):
     @overload
@@ -19,8 +19,8 @@ class Script(Component):
         src: Optional[Union[Var[str], str]] = None,
         strategy: Optional[
             Union[
-                Var[Literal["afterInteractive", "beforeInteractive", "lazyOnload"]],
                 Literal["afterInteractive", "beforeInteractive", "lazyOnload"],
+                Var[Literal["afterInteractive", "beforeInteractive", "lazyOnload"]],
             ]
         ] = None,
         style: Optional[Style] = None,

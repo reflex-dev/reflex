@@ -6,10 +6,9 @@ import pytest
 from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond, cond
 from reflex.components.radix.themes.typography.text import Text
-from reflex.ivars.base import ImmutableVar, LiteralVar, immutable_computed_var
 from reflex.state import BaseState, State
 from reflex.utils.format import format_state_name
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var, computed_var
 
 
 @pytest.fixture
@@ -76,7 +75,7 @@ def test_validate_cond(cond_state: BaseState):
         (32, 0),
         ("hello", ""),
         (2.3, 0.0),
-        (Var.create("a"), Var.create("b")),
+        (LiteralVar.create("a"), LiteralVar.create("b")),
     ],
 )
 def test_prop_cond(c1: Any, c2: Any):
@@ -97,13 +96,13 @@ def test_prop_cond(c1: Any, c2: Any):
         c1 = json.dumps(c1)
     if not isinstance(c2, Var):
         c2 = json.dumps(c2)
-    assert str(prop_cond) == f"(true ? {c1} : {c2})"
+    assert str(prop_cond) == f"(true ? {str(c1)} : {str(c2)})"
 
 
 def test_cond_no_mix():
     """Test if cond can't mix components and props."""
     with pytest.raises(ValueError):
-        cond(True, Var.create("hello"), Text.create("world"))
+        cond(True, LiteralVar.create("hello"), Text.create("world"))
 
 
 def test_cond_no_else():
@@ -126,18 +125,18 @@ def test_cond_computed_var():
     """Test if cond works with computed vars."""
 
     class CondStateComputed(State):
-        @immutable_computed_var
+        @computed_var
         def computed_int(self) -> int:
             return 0
 
-        @immutable_computed_var
+        @computed_var
         def computed_str(self) -> str:
             return "a string"
 
     comp = cond(True, CondStateComputed.computed_int, CondStateComputed.computed_str)
 
     # TODO: shouln't this be a ComputedVar?
-    assert isinstance(comp, ImmutableVar)
+    assert isinstance(comp, Var)
 
     state_name = format_state_name(CondStateComputed.get_full_name())
     assert (

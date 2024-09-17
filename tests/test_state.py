@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import dataclasses
 import datetime
 import functools
 import json
@@ -41,7 +42,7 @@ from reflex.state import (
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
-from reflex.vars import BaseVar, ComputedVar, Var
+from reflex.vars.base import ComputedVar, Var
 from tests.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState
@@ -58,6 +59,7 @@ formatted_router = {
         "origin": "",
         "upgrade": "",
         "connection": "",
+        "cookie": "",
         "pragma": "",
         "cache_control": "",
         "user_agent": "",
@@ -268,7 +270,7 @@ def test_base_class_vars(test_state):
             continue
         prop = getattr(cls, field)
         assert isinstance(prop, Var)
-        assert prop._var_name.split(".")[-1] == field
+        assert prop._js_expr.split(".")[-1] == field
 
     assert cls.num1._var_type == int
     assert cls.num2._var_type == float
@@ -282,7 +284,7 @@ def test_computed_class_var(test_state):
         test_state: A state.
     """
     cls = type(test_state)
-    vars = [(prop._var_name, prop._var_type) for prop in cls.computed_vars.values()]
+    vars = [(prop._js_expr, prop._var_type) for prop in cls.computed_vars.values()]
     assert ("sum", float) in vars
     assert ("upper", str) in vars
 
@@ -517,11 +519,9 @@ def test_set_class_var():
     """Test setting the var of a class."""
     with pytest.raises(AttributeError):
         TestState.num3  # type: ignore
-    TestState._set_var(
-        BaseVar(_var_name="num3", _var_type=int)._var_set_state(TestState)
-    )
+    TestState._set_var(Var(_js_expr="num3", _var_type=int)._var_set_state(TestState))
     var = TestState.num3  # type: ignore
-    assert var._var_name == "num3"
+    assert var._js_expr == TestState.get_full_name() + ".num3"
     assert var._var_type == int
     assert var._var_state == TestState.get_full_name()
 
@@ -865,8 +865,10 @@ def test_get_headers(test_state, router_data, router_data_headers):
         router_data: The router data fixture.
         router_data_headers: The expected headers.
     """
+    print(router_data_headers)
     test_state.router = RouterData(router_data)
-    assert test_state.router.headers.dict() == {
+    print(test_state.router.headers)
+    assert dataclasses.asdict(test_state.router.headers) == {
         format.to_snake_case(k): v for k, v in router_data_headers.items()
     }
 
@@ -1908,19 +1910,21 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     mock_app.event_namespace.emit.assert_called_once()
     mcall = mock_app.event_namespace.emit.mock_calls[0]
     assert mcall.args[0] == str(SocketEvent.EVENT)
-    assert json.loads(mcall.args[1]) == StateUpdate(
-        delta={
-            parent_state.get_full_name(): {
-                "upper": "",
-                "sum": 3.14,
-            },
-            grandchild_state.get_full_name(): {
-                "value2": "42",
-            },
-            GrandchildState3.get_full_name(): {
-                "computed": "",
-            },
-        }
+    assert json.loads(mcall.args[1]) == dataclasses.asdict(
+        StateUpdate(
+            delta={
+                parent_state.get_full_name(): {
+                    "upper": "",
+                    "sum": 3.14,
+                },
+                grandchild_state.get_full_name(): {
+                    "value2": "42",
+                },
+                GrandchildState3.get_full_name(): {
+                    "computed": "",
+                },
+            }
+        )
     )
     assert mcall.kwargs["to"] == grandchild_state.router.session.session_id
 
