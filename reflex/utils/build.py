@@ -8,7 +8,8 @@ import subprocess
 import zipfile
 from pathlib import Path
 
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
+from tqdm import tqdm
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 from reflex import constants
 from reflex.config import get_config
@@ -113,20 +114,13 @@ def _zip(
         ]
 
     # Create a progress bar for zipping the component.
-    progress = Progress(
-        *Progress.get_default_columns()[:-1],
-        MofNCompleteColumn(),
-        TimeElapsedColumn(),
-    )
-    task = progress.add_task(
-        f"Zipping {component_name.value}:", total=len(files_to_zip)
-    )
-
-    with progress, zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as zipf:
-        for file in files_to_zip:
-            console.debug(f"{target}: {file}", progress=progress)
-            progress.advance(task)
-            zipf.write(file, os.path.relpath(file, root_dir))
+    with logging_redirect_tqdm():
+        with tqdm(total=len(files_to_zip), desc=f"Zipping {component_name.value}") as pbar:
+            with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as zipf:
+                for file in files_to_zip:
+                    console.debug(f"{target}: {file}")
+                    pbar.update(1)
+                    zipf.write(file, os.path.relpath(file, root_dir))
 
 
 def zip_app(
