@@ -26,6 +26,7 @@ import reflex.state
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
 from reflex.components.core.breakpoints import Breakpoints
+from reflex.components.dynamic import load_dynamic_serializer
 from reflex.components.tags import Tag
 from reflex.constants import (
     Dirs,
@@ -53,7 +54,6 @@ from reflex.utils.imports import (
     ParsedImportDict,
     parse_imports,
 )
-from reflex.utils.serializers import serializer
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 
@@ -2300,4 +2300,4 @@ class MemoizationLeaf(Component):
         return comp
 
 
-import reflex.components.dynamic
+load_dynamic_serializer()
