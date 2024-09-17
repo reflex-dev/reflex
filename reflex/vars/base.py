@@ -189,7 +189,7 @@ class Var(Generic[VAR_TYPE]):
     @overload
     def _replace(
         self, _var_type: GenericType | None = None, merge_var_data=None, **kwargs: Any
-    ): ...
+    ) -> Self: ...
 
     def _replace(
         self, _var_type: GenericType | None = None, merge_var_data=None, **kwargs: Any
@@ -219,6 +219,7 @@ class Var(Generic[VAR_TYPE]):
 
         value_with_replaced = dataclasses.replace(
             self,
+            _var_type=_var_type or self._var_type,
             _var_data=VarData.merge(
                 kwargs.get("_var_data", self._var_data), merge_var_data
             ),
