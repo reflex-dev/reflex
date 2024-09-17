@@ -1048,6 +1048,27 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         }
 
     @classmethod
+    def _update_substate_inherited_vars(cls, vars_to_add: dict[str, Var]):
+        """Update the inherited vars of substates recursively when new vars are added.
+
+        Also updates the var dependency tracking dicts after adding vars.
+
+        Args:
+            vars_to_add: names to Var instances to add to substates
+        """
+        for substate_class in cls.class_subclasses:
+            for name, var in vars_to_add.items():
+                if types.is_backend_base_variable(name, cls):
+                    substate_class.backend_vars.setdefault(name, var)
+                    substate_class.inherited_backend_vars.setdefault(name, var)
+                else:
+                    substate_class.vars.setdefault(name, var)
+                    substate_class.inherited_vars.setdefault(name, var)
+                substate_class._update_substate_inherited_vars(vars_to_add)
+        # Reinitialize dependency tracking dicts.
+        cls._init_var_dependency_dicts()
+
+    @classmethod
     def setup_dynamic_args(cls, args: dict[str, str]):
         """Set up args for easy access in renderer.
 
@@ -1063,14 +1084,15 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             def inner_func(self) -> str:
                 return self.router.page.params.get(param, "")
 
-            return DynamicRouteVar(fget=inner_func, cache=True)
+            return inner_func
 
         def arglist_factory(param):
             def inner_func(self) -> List[str]:
                 return self.router.page.params.get(param, [])
 
-            return DynamicRouteVar(fget=inner_func, cache=True)
+            return inner_func
 
+        dynamic_vars = {}
         for param, value in args.items():
             if value == constants.RouteArgType.SINGLE:
                 func = argsingle_factory(param)
@@ -1078,16 +1100,18 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 func = arglist_factory(param)
             else:
                 continue
-            # to allow passing as a prop, evade python frozen rules (bad practice)
-            object.__setattr__(func, "_js_expr", param)
-            # cls.vars[param] = cls.computed_vars[param] = func._var_set_state(cls)  # type: ignore
-            cls.vars[param] = cls.computed_vars[param] = func._replace(
-                _var_data=VarData.from_state(cls)
+            dynamic_vars[param] = DynamicRouteVar(
+                fget=func,
+                cache=True,
+                _js_expr=param,
+                _var_data=VarData.from_state(cls),
             )
-            setattr(cls, param, func)
+            setattr(cls, param, dynamic_vars[param])
 
-        # Reinitialize dependency tracking dicts.
-        cls._init_var_dependency_dicts()
+        # Update tracking dicts.
+        cls.computed_vars.update(dynamic_vars)
+        cls.vars.update(dynamic_vars)
+        cls._update_substate_inherited_vars(dynamic_vars)
 
     @classmethod
     def _check_overwritten_dynamic_args(cls, args: list[str]):
