@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import math
 import sys
 from typing import (
     TYPE_CHECKING,
@@ -1038,7 +1039,12 @@ class LiteralNumberVar(LiteralVar, NumberVar):
 
         Returns:
             The JSON representation of the var.
+
+        Raises:
+            ValueError: The JSON representation is invalid.
         """
+        if math.isinf(self._var_value) or math.isnan(self._var_value):
+            raise ValueError(f"Invalid JSON representation for {self}")
         return json.dumps(self._var_value)
 
     def __hash__(self) -> int:
@@ -1060,8 +1066,15 @@ class LiteralNumberVar(LiteralVar, NumberVar):
         Returns:
             The number var.
         """
+        if math.isinf(value):
+            js_expr = "Infinity" if value > 0 else "-Infinity"
+        elif math.isnan(value):
+            js_expr = "NaN"
+        else:
+            js_expr = str(value)
+
         return cls(
-            _js_expr=str(value),
+            _js_expr=js_expr,
             _var_type=type(value),
             _var_data=_var_data,
             _var_value=value,
