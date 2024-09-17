@@ -86,6 +86,7 @@ from reflex.state import (
 from reflex.utils import codespaces, console, exceptions, format, prerequisites, types
 from reflex.utils.exec import is_prod_mode, is_testing_env, should_skip_compile
 from reflex.utils.imports import ImportVar
+from sitemap import serve_sitemap
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -270,6 +271,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             )
         super().__init__(**kwargs)
         base_state_subclasses = BaseState.__subclasses__()
+        self.add_sitemap()
 
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
         if not is_testing_env() and len(base_state_subclasses) > 1:
@@ -302,6 +304,11 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             from reflex.utils.compat import windows_hot_reload_lifespan_hack
 
             self.register_lifespan_task(windows_hot_reload_lifespan_hack)
+    
+    def add_sitemap(self):
+        @self.api.get("/sitemap.xml")
+        async def sitemap():
+            return await serve_sitemap(self)
 
     def _enable_state(self) -> None:
         """Enable state for the app."""
@@ -462,6 +469,8 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             EventHandler | EventSpec | list[EventHandler | EventSpec] | None
         ) = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
+        sitemap_priority: Optional[float] = None,
+        sitemap_changefreq: Optional[str] = None,
     ):
         """Add a page to the app.
 
@@ -476,6 +485,8 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             image: The image to display on the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
+            sitemap_priority: sitemap priority
+            sitemap_changefreq: sitemap change frequency
 
         Raises:
             ValueError: When the specified route name already exists.
@@ -522,6 +533,19 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         if isinstance(component, tuple):
             component = Fragment.create(*component)
 
+        # Set explicit sitemap attributes if provided
+        if sitemap_priority is not None:
+            component.sitemap_priority = sitemap_priority
+        if sitemap_changefreq is not None:
+            component.sitemap_changefreq = sitemap_changefreq
+
+        # Auto-detect priority if not explicitly set
+        if not hasattr(component, 'sitemap_priority'):
+            component.sitemap_priority = self._auto_detect_priority(route)
+        
+        # Set default changefreq if not explicitly set
+        if not hasattr(component, 'sitemap_changefreq'):
+            component.sitemap_changefreq = "weekly"
         # Ensure state is enabled if this page uses state.
         if self.state is None:
             if on_load or component._has_stateful_event_triggers():
@@ -567,6 +591,14 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 on_load = [on_load]
             self.load_events[route] = on_load
 
+
+    def _auto_detect_priority(self, route: Optional[str]) -> float:
+        """Auto detect sitemap priority"""
+        if route is None or route == "/" or route == "index":
+            return 1.0
+        depth = route.count("/")
+        return max(0.1, 1.0 - (depth * 0.2))
+    
     def get_load_events(self, route: str) -> list[EventHandler | EventSpec]:
         """Get the load events for a route.
 
