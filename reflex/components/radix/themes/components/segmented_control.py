@@ -23,6 +23,7 @@ class SegmentedControlRoot(RadixThemesComponent):
     # Variant of button: "classic" | "surface"
     variant: Var[Literal["classic", "surface"]]
 
+    # The type of the segmented control, either "single" for selecting one option or "multiple" for selecting multiple options.
     type: Var[Literal["single", "multiple"]]
 
     # Override theme color for button
