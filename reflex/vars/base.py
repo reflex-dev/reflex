@@ -1709,12 +1709,10 @@ class ComputedVar(Var[RETURN_TYPE]):
                 + self._js_expr
             )
 
-            var_type = get_origin(self._var_type) or self._var_type
-
             return dispatch(
                 field_name,
                 var_data=VarData.from_state(state_where_defined, self._js_expr),
-                result_var_type=var_type,
+                result_var_type=self._var_type,
             )
 
         if not self._cache:
