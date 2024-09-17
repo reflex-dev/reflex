@@ -8,7 +8,14 @@ def load_dynamic_serializer():
 
     @serializer
     def make_component(component: Component) -> str:
-        """Generate the code for a dynamic component."""
+        """Generate the code for a dynamic component.
+
+        Args:
+            component: The component to generate code for.
+
+        Returns:
+            The generated code
+        """
         from reflex.compiler import templates, utils
 
         rendered_components = {}
