@@ -958,6 +958,21 @@ def test_all_number_operations():
     )
 
 
+@pytest.mark.parametrize(
+    ("var", "expected"),
+    [
+        (Var.create(False), "false"),
+        (Var.create(True), "true"),
+        (Var.create("false"), '("false".split("").length !== 0)'),
+        (Var.create([1, 2, 3]), "isTrue([1, 2, 3])"),
+        (Var.create({"a": 1, "b": 2}), 'isTrue(({ ["a"] : 1, ["b"] : 2 }))'),
+        (Var("mysterious_var"), "isTrue(mysterious_var)"),
+    ],
+)
+def test_boolify_operations(var, expected):
+    assert str(var.bool()) == expected
+
+
 def test_index_operation():
     array_var = LiteralArrayVar.create([1, 2, 3, 4, 5])
     assert str(array_var[0]) == "[1, 2, 3, 4, 5].at(0)"
