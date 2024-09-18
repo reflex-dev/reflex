@@ -1199,7 +1199,13 @@ def unionize(*args: Type) -> Type:
     """
     if not args:
         return Any
-    return Union[*args]  # type: ignore
+    if len(args) == 1:
+        return args[0]
+    # We are bisecting the args list here to avoid hitting the recursion limit
+    # In Python versions >= 3.11, we can simply do `return Union[*args]`
+    midpoint = len(args) // 2
+    first_half, second_half = args[:midpoint], args[midpoint:]
+    return Union[unionize(*first_half), unionize(*second_half)]
 
 
 def figure_out_type(value: Any) -> types.GenericType:
