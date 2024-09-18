@@ -18,7 +18,7 @@ from typing import (
     overload,
 )
 
-from reflex.utils.exceptions import VarTypeError
+from reflex.utils.exceptions import PrimitiveUnserializableToJSON, VarTypeError
 
 from .base import (
     CustomVarOperationReturn,
@@ -1041,10 +1041,12 @@ class LiteralNumberVar(LiteralVar, NumberVar):
             The JSON representation of the var.
 
         Raises:
-            ValueError: The JSON representation is invalid.
+            PrimitiveUnserializableToJSON: If the var is unserializable to JSON.
         """
         if math.isinf(self._var_value) or math.isnan(self._var_value):
-            raise ValueError(f"Invalid JSON representation for {self}")
+            raise PrimitiveUnserializableToJSON(
+                f"No valid JSON representation for {self}"
+            )
         return json.dumps(self._var_value)
 
     def __hash__(self) -> int:

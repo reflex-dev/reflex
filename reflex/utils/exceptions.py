@@ -107,3 +107,7 @@ class EventHandlerShadowsBuiltInStateMethod(ReflexError, NameError):
 
 class GeneratedCodeHasNoFunctionDefs(ReflexError):
     """Raised when refactored code generated with flexgen has no functions defined."""
+
+
+class PrimitiveUnserializableToJSON(ReflexError, ValueError):
+    """Raised when a primitive type is unserializable to JSON. Usually with NaN and Infinity."""
