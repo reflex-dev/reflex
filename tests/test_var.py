@@ -958,15 +958,19 @@ def test_all_number_operations():
     )
 
 
-def test_boolify_operations():
-    assert str(Var.create(False).bool()) == "false"
-    assert str(Var.create(True).bool()) == "true"
-    assert str(Var.create("false").bool()) == '("false".split("").length !== 0)'
-    assert str(Var.create([1, 2, 3]).bool()) == "isTrue([1, 2, 3])"
-    assert (
-        str(Var.create({"a": 1, "b": 2}).bool()) == 'isTrue(({ ["a"] : 1, ["b"] : 2 }))'
-    )
-    assert str(Var("mysterious_var").bool()) == "isTrue(mysterious_var)"
+@pytest.mark.parametrize(
+    "var,expected",
+    [
+        (Var.create(False), "false"),
+        (Var.create(True), "true"),
+        (Var.create("false"), '("false".split("").length !== 0)'),
+        (Var.create([1, 2, 3]), "isTrue([1, 2, 3])"),
+        (Var.create({"a": 1, "b": 2}), 'isTrue(({ ["a"] : 1, ["b"] : 2 }))'),
+        (Var("mysterious_var"), "isTrue(mysterious_var)"),
+    ],
+)
+def test_boolify_operations(var, expected):
+    assert str(var.bool()) == expected
 
 
 def test_index_operation():
