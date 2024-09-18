@@ -18,7 +18,9 @@ from typing import (
     overload,
 )
 
+from reflex.constants.base import Dirs
 from reflex.utils.exceptions import PrimitiveUnserializableToJSON, VarTypeError
+from reflex.utils.imports import ImportDict, ImportVar
 
 from .base import (
     CustomVarOperationReturn,
@@ -1113,6 +1115,11 @@ class ToBooleanVarOperation(ToOperation, BooleanVar):
     _default_var_type: ClassVar[Type] = bool
 
 
+_IS_TRUE_IMPORT: ImportDict = {
+    f"/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
+}
+
+
 @var_operation
 def boolify(value: Var):
     """Convert the value to a boolean.
@@ -1124,8 +1131,9 @@ def boolify(value: Var):
         The boolean value.
     """
     return var_operation_return(
-        js_expression=f"Boolean({value})",
+        js_expression=f"isTrue({value})",
         var_type=bool,
+        var_data=VarData(imports=_IS_TRUE_IMPORT),
     )
 
 
