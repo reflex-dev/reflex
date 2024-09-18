@@ -1199,10 +1199,7 @@ def unionize(*args: Type) -> Type:
     """
     if not args:
         return Any
-    first, *rest = args
-    if not rest:
-        return first
-    return Union[first, unionize(*rest)]
+    return Union[*args]  # type: ignore
 
 
 def figure_out_type(value: Any) -> types.GenericType:
