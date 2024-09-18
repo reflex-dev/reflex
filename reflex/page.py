@@ -63,15 +63,3 @@ def page(
         return render_fn
 
     return decorator
-
-
-def get_decorated_pages() -> list[dict]:
-    """Get the decorated pages.
-
-    Returns:
-        The decorated pages.
-    """
-    return sorted(
-        [page_data for _, page_data in DECORATED_PAGES[get_config().app_name]],
-        key=lambda x: x["route"],
-    )
