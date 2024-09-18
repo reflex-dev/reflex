@@ -1983,17 +1983,23 @@ class CustomVarOperationReturn(Var[RETURN]):
 def var_operation_return(
     js_expression: str,
     var_type: Type[RETURN] | None = None,
+    var_data: VarData | None = None,
 ) -> CustomVarOperationReturn[RETURN]:
     """Shortcut for creating a CustomVarOperationReturn.
 
     Args:
         js_expression: The JavaScript expression to evaluate.
         var_type: The type of the var.
+        var_data: Additional hooks and imports associated with the Var.
 
     Returns:
         The CustomVarOperationReturn.
     """
-    return CustomVarOperationReturn.create(js_expression, var_type)
+    return CustomVarOperationReturn.create(
+        js_expression,
+        var_type,
+        var_data,
+    )
 
 
 @dataclasses.dataclass(
