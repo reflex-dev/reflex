@@ -9,6 +9,7 @@ from pandas import DataFrame
 from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.state import BaseState
+from reflex.utils.exceptions import PrimitiveUnserializableToJSON
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import (
@@ -987,6 +988,22 @@ def test_index_operation():
     )
     assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].slice().reverse()"
     assert str(array_var[0].to(NumberVar) + 9) == "([1, 2, 3, 4, 5].at(0) + 9)"
+
+
+@pytest.mark.parametrize(
+    "var, expected_js",
+    [
+        (Var.create(float("inf")), "Infinity"),
+        (Var.create(-float("inf")), "-Infinity"),
+        (Var.create(float("nan")), "NaN"),
+    ],
+)
+def test_inf_and_nan(var, expected_js):
+    assert str(var) == expected_js
+    assert isinstance(var, NumberVar)
+    assert isinstance(var, LiteralVar)
+    with pytest.raises(PrimitiveUnserializableToJSON):
+        var.json()
 
 
 def test_array_operations():
