@@ -13,6 +13,7 @@ import random
 import re
 import string
 import sys
+import warnings
 from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -71,6 +72,8 @@ if TYPE_CHECKING:
 
 
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
+
+warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
 
 @dataclasses.dataclass(
