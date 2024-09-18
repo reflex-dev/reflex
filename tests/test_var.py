@@ -959,7 +959,7 @@ def test_all_number_operations():
 
 
 @pytest.mark.parametrize(
-    "var,expected",
+    ("var", "expected"),
     [
         (Var.create(False), "false"),
         (Var.create(True), "true"),
