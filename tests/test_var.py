@@ -958,6 +958,17 @@ def test_all_number_operations():
     )
 
 
+def test_boolify_operations():
+    assert str(Var.create(False).bool()) == "false"
+    assert str(Var.create(True).bool()) == "true"
+    assert str(Var.create("false").bool()) == '("false".split("").length !== 0)'
+    assert str(Var.create([1, 2, 3]).bool()) == "isTrue([1, 2, 3])"
+    assert (
+        str(Var.create({"a": 1, "b": 2}).bool()) == 'isTrue(({ ["a"] : 1, ["b"] : 2 }))'
+    )
+    assert str(Var("mysterious_var").bool()) == "isTrue(mysterious_var)"
+
+
 def test_index_operation():
     array_var = LiteralArrayVar.create([1, 2, 3, 4, 5])
     assert str(array_var[0]) == "[1, 2, 3, 4, 5].at(0)"
