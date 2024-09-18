@@ -6,7 +6,7 @@ from typing import Any, Dict, Literal, Optional, Union
 
 from typing_extensions import get_args
 
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.cond import color_mode_cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.button import Button
@@ -14,7 +14,7 @@ from reflex.components.radix.themes.layout.box import Box
 from reflex.constants.colors import Color
 from reflex.event import set_clipboard
 from reflex.style import Style
-from reflex.utils import format
+from reflex.utils import console, format
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import LiteralVar, Var, VarData
 
@@ -448,9 +448,6 @@ class CodeBlock(Component):
 
         Returns:
             The text component.
-
-        Raises:
-            ValueError: If the theme prop is not a Var instance.
         """
         # This component handles style in a special prop.
         custom_style = props.pop("custom_style", {})
@@ -465,8 +462,12 @@ class CodeBlock(Component):
         # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
         # themes respectively to ensure code compatibility.
         if "theme" in props and not isinstance(props["theme"], Var):
-            raise ValueError(
-                "The theme prop must be a Var instance. Use Themes to select a theme."
+            props["theme"] = getattr(Themes, format.to_snake_case(props["theme"]))  # type: ignore
+            console.deprecate(
+                feature_name="theme prop as string",
+                reason="Use code_block.themes instead.",
+                deprecation_version="0.6.0",
+                removal_version="0.7.0",
             )
 
         if can_copy:
@@ -607,7 +608,7 @@ class Themes:
     z_touch = construct_theme_var("zTouch")
 
 
-class CodeblockNamespace:
+class CodeblockNamespace(ComponentNamespace):
     """Namespace for the CodeBlock component."""
 
     themes = Themes
