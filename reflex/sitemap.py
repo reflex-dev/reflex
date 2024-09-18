@@ -5,7 +5,6 @@ from reflex.config import get_config
 from fastapi import Response
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom import minidom
-import reflex as rx
 
 
 def generate_xml(links: List[Dict[str, Any]]) -> str:
@@ -24,7 +23,6 @@ def generate_xml(links: List[Dict[str, Any]]) -> str:
 
 
 def generate_sitemap(app: "rx.App") -> str:
-    import reflex as rx
 
     links = []
     for route, component in app.pages.items():
@@ -56,7 +54,6 @@ def generate_sitemap(app: "rx.App") -> str:
 
 
 async def serve_sitemap(app: "rx.App") -> Response:
-    import reflex as rx
 
     sitemap_content = generate_sitemap(app)
     domain = get_config().deploy_url or "http://localhost:3000"
