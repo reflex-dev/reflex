@@ -452,7 +452,7 @@ class Component(BaseComponent, ABC):
                 ):
                     value_name = value._js_expr if isinstance(value, Var) else value
                     raise TypeError(
-                        f"Invalid var passed for prop {type(self).__name__}.{key}, expected type {expected_type}, got value {value_name} of type {passed_types or passed_type}."
+                        f"Invalid var passed for prop {type(self).__name__}.{key}, expected type {expected_type}, got value {value_name} of type {passed_type}."
                     )
             # Check if the key is an event trigger.
             if key in component_specific_triggers:
