@@ -7,6 +7,18 @@ from reflex.vars import Var, get_unique_variable_name
 from reflex.vars.base import VarData, transform
 
 
+def get_cdn_url(lib: str) -> str:
+    """Get the CDN URL for a library.
+
+    Args:
+        lib: The library to get the CDN URL for.
+
+    Returns:
+        The CDN URL for the library.
+    """
+    return f"https://cdn.jsdelivr.net/npm/{lib}" + "/+esm"
+
+
 def load_dynamic_serializer():
     """Load the serializer for dynamic components."""
     # Causes a circular import, so we import here.
@@ -52,7 +64,7 @@ def load_dynamic_serializer():
                 and not lib.startswith("http")
                 and lib != "react"
             ):
-                imports[f"https://cdn.jsdelivr.net/npm/{lib}" + "/+esm"] = names
+                imports[get_cdn_url(lib)] = names
             else:
                 imports[lib] = names
 

@@ -40,6 +40,7 @@ from reflex.vars.base import (
     DynamicRouteVar,
     Var,
     computed_var,
+    dispatch,
     is_computed_var,
 )
 
@@ -340,6 +341,25 @@ if TYPE_CHECKING:
     from pydantic.v1.fields import ModelField
 
 
+def get_var_for_field(cls: Type[BaseState], f: ModelField):
+    """Get a Var instance for a Pydantic field.
+
+    Args:
+        cls: The state class.
+        f: The Pydantic field.
+
+    Returns:
+        The Var instance.
+    """
+    field_name = format.format_state_name(cls.get_full_name()) + "." + f.name
+
+    return dispatch(
+        field_name=field_name,
+        var_data=VarData.from_state(cls, f.name),
+        result_var_type=f.outer_type_,
+    )
+
+
 class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
@@ -558,20 +578,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             **new_backend_vars,
         }
 
-        def get_var_for_field(f: ModelField):
-            from reflex.vars.base import dispatch
-
-            field_name = format.format_state_name(cls.get_full_name()) + "." + f.name
-
-            return dispatch(
-                field_name=field_name,
-                var_data=VarData.from_state(cls, f.name),
-                result_var_type=f.outer_type_,
-            )
-
         # Set the base and computed vars.
         cls.base_vars = {
-            f.name: get_var_for_field(f)
+            f.name: get_var_for_field(cls, f)
             for f in cls.get_fields().values()
             if f.name not in cls.get_skip_vars()
         }
