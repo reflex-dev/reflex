@@ -28,7 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-12]
-        python-version: ['3.8.18', '3.9.18', '3.10.13', '3.11.5', '3.12.0']
+        python-version: ['3.10.13', '3.11.5', '3.12.0']
         # Windows is a bit behind on Python version availability in Github
         exclude:
           - os: windows-latest

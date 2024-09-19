@@ -81,19 +81,11 @@ jobs:
       matrix:
         # Show OS combos first in GUI
         os: [ubuntu-latest, windows-latest, macos-12]
-        python-version: ['3.8.18', '3.9.18', '3.10.13', '3.11.5', '3.12.0']
+        python-version: ['3.10.13', '3.11.5', '3.12.0']
         exclude:
           - os: windows-latest
             python-version: '3.10.13'
-          - os: windows-latest
-            python-version: '3.9.18'
-          - os: windows-latest
-            python-version: '3.8.18'
           # keep only one python version for MacOS
-          - os: macos-latest
-            python-version: '3.8.18'
-          - os: macos-latest
-            python-version: '3.9.18'
           - os: macos-latest
             python-version: '3.10.13'
           - os: macos-12
@@ -101,11 +93,7 @@ jobs:
         include:
           - os: windows-latest
             python-version: '3.10.11'
-          - os: windows-latest
-            python-version: '3.9.13'
-          - os: windows-latest
-            python-version: '3.8.10'
-
+          
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
