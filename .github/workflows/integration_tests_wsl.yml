@@ -27,7 +27,7 @@ jobs:
     # 2019 is more stable with WSL in GH actions
     # https://github.com/actions/runner-images/issues/5151
     # Confirmed through trial and error. 2022 has >80% failure rate (probably BSOD)
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
       - name: Clone Reflex Examples Repo
