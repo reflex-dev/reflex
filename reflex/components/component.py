@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import copy
 import typing
-import warnings
 from abc import ABC, abstractmethod
 from functools import lru_cache, wraps
 from hashlib import md5
@@ -169,8 +168,6 @@ ComponentStyle = Dict[
     Union[str, Type[BaseComponent], Callable, ComponentNamespace], Any
 ]
 ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
-
-warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
 
 class Component(BaseComponent, ABC):
