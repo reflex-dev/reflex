@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Set, Tuple, Union, cast
 import pytest
 from pandas import DataFrame
 
+import reflex as rx
 from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.state import BaseState
@@ -1050,6 +1051,29 @@ def test_object_operations():
         str(object_var.merge(LiteralObjectVar.create({"c": 4, "d": 5})))
         == '({...({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }), ...({ ["c"] : 4, ["d"] : 5 })})'
     )
+
+
+def test_var_component():
+    class ComponentVarState(rx.State):
+        field_var: rx.Component = rx.text("I am a field var")
+
+        @rx.var
+        def computed_var(self) -> rx.Component:
+            return rx.text("I am a computed var")
+
+    def has_eval_react_component(var: Var):
+        var_data = var._get_all_var_data()
+        assert var_data is not None
+        assert any(
+            any(
+                imported_object.name == "evalReactComponent"
+                for imported_object in imported_objects
+            )
+            for _, imported_objects in var_data.imports
+        )
+
+    has_eval_react_component(ComponentVarState.field_var)  # type: ignore
+    has_eval_react_component(ComponentVarState.computed_var)
 
 
 def test_type_chains():
