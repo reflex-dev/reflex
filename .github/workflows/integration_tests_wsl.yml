@@ -37,6 +37,8 @@ jobs:
           path: reflex-examples
 
       - uses: Vampire/setup-wsl@v3
+        with:
+            distribution: Ubuntu-24.04
 
       - name: Install Python
         shell: wsl-bash {0}
