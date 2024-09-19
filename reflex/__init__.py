@@ -328,6 +328,7 @@ _MAPPING: dict = {
         "ComponentState",
         "State",
     ],
+    "istate": ["get_state"],
     "style": ["Style", "toggle_color_mode"],
     "utils.imports": ["ImportVar"],
     "utils.serializers": ["serializer"],

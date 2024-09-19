@@ -174,6 +174,7 @@ from .event import stop_propagation as stop_propagation
 from .event import upload_files as upload_files
 from .event import window_alert as window_alert
 from .experimental import _x as _x
+from .istate import get_state as get_state
 from .middleware import Middleware as Middleware
 from .middleware import middleware as middleware
 from .model import Model as Model
