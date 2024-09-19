@@ -27,7 +27,7 @@ jobs:
     # 2019 is more stable with WSL in GH actions
     # https://github.com/actions/runner-images/issues/5151
     # Confirmed through trial and error. 2022 has >80% failure rate (probably BSOD)
-    runs-on: windows-2022
+    runs-on: windows-2019
     steps:
       - uses: actions/checkout@v4
       - name: Clone Reflex Examples Repo
@@ -43,12 +43,14 @@ jobs:
         run: |
           apt update
           apt install -y software-properties-common
-          add-apt-repository ppa:deadsnakes/ppa
-          apt update
-          apt install -y python3.10 python3.10-distutils python3.10-dev python3-pip
-          update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
-          update-alternatives --set python3 /usr/bin/python3.10
-          apt install -y curl dos2unix zip unzip
+          lsb_release -a
+          exit 1
+        #   add-apt-repository ppa:deadsnakes/ppa
+        #   apt update
+        #   apt install -y python3.10 python3.10-distutils python3.10-dev python3-pip
+        #   update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
+        #   update-alternatives --set python3 /usr/bin/python3.10
+        #   apt install -y curl dos2unix zip unzip
 
       - name: Install Poetry
         shell: wsl-bash {0}
