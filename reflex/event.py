@@ -217,7 +217,7 @@ class EventHandler(EventActionsMixin):
                 raise EventHandlerTypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
                 ) from e
-        payload = tuple(zip(fn_args, values))
+        payload = tuple(zip(fn_args, values, strict=False))
 
         # Return the event spec.
         return EventSpec(
@@ -310,7 +310,7 @@ class EventSpec(EventActionsMixin):
                 raise EventHandlerTypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
                 ) from e
-        new_payload = tuple(zip(fn_args, values))
+        new_payload = tuple(zip(fn_args, values, strict=False))
         return self.with_args(self.args + new_payload)
 
 

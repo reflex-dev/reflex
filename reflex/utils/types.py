@@ -632,7 +632,7 @@ def validate_parameter_literals(func):
         annotations = {param[0]: param[1].annotation for param in func_params}
 
         # validate args
-        for param, arg in zip(annotations, args):
+        for param, arg in zip(annotations, args, strict=False):
             if annotations[param] is inspect.Parameter.empty:
                 continue
             validate_literal(param, arg, annotations[param], func.__name__)

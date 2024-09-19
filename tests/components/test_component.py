@@ -1403,6 +1403,7 @@ def test_get_vars(component, exp_vars):
     for comp_var, exp_var in zip(
         comp_vars,
         sorted(exp_vars, key=lambda v: v._js_expr),
+        strict=False,
     ):
         # print(str(comp_var), str(exp_var))
         # print(comp_var._get_all_var_data(), exp_var._get_all_var_data())
@@ -1792,6 +1793,7 @@ def test_custom_component_declare_event_handlers_in_fields():
         for v1, v2 in zip(
             parse_args_spec(test_triggers[trigger_name]),
             parse_args_spec(custom_triggers[trigger_name]),
+            strict=False,
         ):
             assert v1.equals(v2)
 

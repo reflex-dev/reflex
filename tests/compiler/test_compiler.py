@@ -100,7 +100,7 @@ def test_compile_imports(import_dict: ParsedImportDict, test_dicts: List[dict]):
         test_dicts: The expected output.
     """
     imports = utils.compile_imports(import_dict)
-    for import_dict, test_dict in zip(imports, test_dicts):
+    for import_dict, test_dict in zip(imports, test_dicts, strict=False):
         assert import_dict["lib"] == test_dict["lib"]
         assert import_dict["default"] == test_dict["default"]
         assert sorted(import_dict["rest"]) == test_dict["rest"]  # type: ignore

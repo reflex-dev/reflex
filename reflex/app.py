@@ -606,7 +606,10 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         for route in self.pages:
             replaced_route = replace_brackets_with_keywords(route)
             for rw, r, nr in zip(
-                replaced_route.split("/"), route.split("/"), new_route.split("/")
+                replaced_route.split("/"),
+                route.split("/"),
+                new_route.split("/"),
+                strict=False,
             ):
                 if rw in segments and r != nr:
                     # If the slugs in the segments of both routes are not the same, then the route is invalid
@@ -955,7 +958,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
 
         # Prepopulate the global ExecutorSafeFunctions class with input data required by the compile functions.
         # This is required for multiprocessing to work, in presence of non-picklable inputs.
-        for route, component in zip(self.pages, page_components):
+        for route, component in zip(self.pages, page_components, strict=False):
             ExecutorSafeFunctions.COMPILE_PAGE_ARGS_BY_ROUTE[route] = (
                 route,
                 component,
@@ -1169,6 +1172,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 FRONTEND_ARG_SPEC,
                 BACKEND_ARG_SPEC,
             ],
+            strict=False,
         ):
             if hasattr(handler_fn, "__name__"):
                 _fn_name = handler_fn.__name__
