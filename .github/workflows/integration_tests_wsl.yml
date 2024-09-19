@@ -43,14 +43,10 @@ jobs:
         run: |
           apt update
           apt install -y software-properties-common
-          lsb_release -a
-          exit 1
-        #   add-apt-repository ppa:deadsnakes/ppa
-        #   apt update
-        #   apt install -y python3.10 python3.10-distutils python3.10-dev python3-pip
-        #   update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
-        #   update-alternatives --set python3 /usr/bin/python3.10
-        #   apt install -y curl dos2unix zip unzip
+          echo 'deb http://deb.debian.org/debian bullseye-backports main' | sudo tee /etc/apt/sources.list.d/backports.list
+          apt update
+          apt -t bullseye-backports install python3.10 python3.10-venv python3.10-dev
+          apt install -y curl dos2unix zip unzip
 
       - name: Install Poetry
         shell: wsl-bash {0}
