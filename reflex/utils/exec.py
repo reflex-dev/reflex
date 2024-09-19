@@ -190,6 +190,15 @@ def get_app_module():
     return f"reflex.app_module_for_backend:{constants.CompileVars.APP}"
 
 
+def get_granian_target():
+    """Get the Granian target for the backend.
+
+    Returns:
+        The Granian target for the backend.
+    """
+    return get_app_module() + f".{constants.CompileVars.API}"
+
+
 def run_backend(
     host: str,
     port: int,
@@ -248,7 +257,7 @@ def run_granian_backend(host, port, loglevel):
         from granian.log import LogLevels  # type: ignore
 
         Granian(
-            target=f"{get_app_module()}.{constants.CompileVars.API}",
+            target=get_granian_target(),
             address=host,
             port=port,
             interface=Interfaces.ASGI,
@@ -368,7 +377,7 @@ def run_granian_backend_prod(host, port, loglevel):
             str(port),
             "--interface",
             str(Interfaces.ASGI),
-            get_app_module(),
+            get_granian_target(),
         ]
         processes.new_process(
             command,
