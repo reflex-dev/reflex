@@ -120,6 +120,16 @@ class Var(Generic[VAR_TYPE]):
         return self._js_expr
 
     @property
+    @deprecated("Use `_js_expr` instead.")
+    def _var_name_unwrapped(self) -> str:
+        """The name of the var without extra curly braces.
+
+        Returns:
+            The name of the var.
+        """
+        return self._js_expr
+
+    @property
     def _var_is_string(self) -> bool:
         """Whether the var is a string literal.
 
