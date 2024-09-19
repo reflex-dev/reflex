@@ -103,7 +103,11 @@ def load_dynamic_serializer():
                     imports={
                         f"/{constants.Dirs.STATE_PATH}": [
                             imports.ImportVar(tag="evalReactComponent"),
-                        ]
+                        ],
+                        "react": [
+                            imports.ImportVar(tag="useState"),
+                            imports.ImportVar(tag="useEffect"),
+                        ],
                     },
                     hooks={
                         f"const [{unique_var_name}, set_{unique_var_name}] = useState(null);": None,
