@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import enum
 from typing import Any, Dict, Literal, Optional, Union
 
 from typing_extensions import get_args
@@ -455,14 +456,14 @@ class CodeBlock(Component):
         if "theme" not in props:
             # Default color scheme responds to global color mode.
             props["theme"] = color_mode_cond(
-                light=Themes.one_light,
-                dark=Themes.one_dark,
+                light=Theme.one_light,
+                dark=Theme.one_dark,
             )
 
         # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
         # themes respectively to ensure code compatibility.
         if "theme" in props and not isinstance(props["theme"], Var):
-            props["theme"] = getattr(Themes, format.to_snake_case(props["theme"]))  # type: ignore
+            props["theme"] = getattr(Theme, format.to_snake_case(props["theme"]))  # type: ignore
             console.deprecate(
                 feature_name="theme prop as string",
                 reason="Use code_block.themes instead.",
@@ -558,7 +559,7 @@ def construct_theme_var(theme: str) -> Var:
     )
 
 
-class Themes:
+class Theme(enum.Enum):
     """Themes for the CodeBlock component."""
 
     a11y_dark = construct_theme_var("a11yDark")
@@ -611,7 +612,7 @@ class Themes:
 class CodeblockNamespace(ComponentNamespace):
     """Namespace for the CodeBlock component."""
 
-    themes = Themes
+    themes = Theme
 
     __call__ = CodeBlock.create
 

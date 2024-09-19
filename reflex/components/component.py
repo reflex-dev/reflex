@@ -615,8 +615,7 @@ class Component(BaseComponent, ABC):
             if types._issubclass(field.type_, EventHandler):
                 args_spec = None
                 annotation = field.annotation
-                metadata = getattr(annotation, "__metadata__", None)
-                if metadata is not None:
+                if (metadata := getattr(annotation, "__metadata__", None)) is not None:
                     args_spec = metadata[0]
                 default_triggers[field.name] = args_spec or (lambda: [])
         return default_triggers

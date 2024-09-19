@@ -137,13 +137,3 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
             # If the user wants a field that we know of, get it and pass it off to _get_value
             key = getattr(self, key)
         return key
-        return self._get_value(
-            key,
-            to_dict=True,
-            by_alias=False,
-            include=None,
-            exclude=None,
-            exclude_unset=False,
-            exclude_defaults=False,
-            exclude_none=False,
-        )

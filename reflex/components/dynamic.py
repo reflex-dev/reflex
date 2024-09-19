@@ -1,16 +1,16 @@
 """Components that are dynamically generated on the backend."""
 
-from reflex.vars.base import VarData
+from reflex import constants
+from reflex.utils import imports
+from reflex.utils.serializers import serializer
+from reflex.vars import Var, get_unique_variable_name
+from reflex.vars.base import VarData, transform
 
 
 def load_dynamic_serializer():
     """Load the serializer for dynamic components."""
-    from reflex import constants
+    # Causes a circular import, so we import here.
     from reflex.components.component import Component
-    from reflex.utils import imports
-    from reflex.utils.serializers import serializer
-    from reflex.vars import Var, get_unique_variable_name
-    from reflex.vars.base import transform
 
     @serializer
     def make_component(component: Component) -> str:
@@ -22,6 +22,7 @@ def load_dynamic_serializer():
         Returns:
             The generated code
         """
+        # Causes a circular import, so we import here.
         from reflex.compiler import templates, utils
 
         rendered_components = {}
