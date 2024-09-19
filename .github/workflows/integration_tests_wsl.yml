@@ -42,12 +42,8 @@ jobs:
         shell: wsl-bash {0}
         run: |
           apt update
-          apt install -y software-properties-common
-          echo 'deb http://deb.debian.org/debian bullseye-backports main' | sudo tee /etc/apt/sources.list.d/backports.list
-          apt update
-          apt -t bullseye-backports install python3.10 python3.10-venv python3.10-dev
-          apt install -y curl dos2unix zip unzip
-
+          apt install -y python3.10 python3.10-pip curl dos2unix zip unzip
+          
       - name: Install Poetry
         shell: wsl-bash {0}
         run: |
