@@ -33,17 +33,9 @@ jobs:
         exclude:
           - os: windows-latest
             python-version: '3.10.13'
-          - os: windows-latest
-            python-version: '3.9.18'
-          - os: windows-latest
-            python-version: '3.8.18'
         include:
           - os: windows-latest
             python-version: '3.10.11'
-          - os: windows-latest
-            python-version: '3.9.13'
-          - os: windows-latest
-            python-version: '3.8.10'
     runs-on: ${{ matrix.os }}
     # Service containers to run with `runner-job`
     services:
