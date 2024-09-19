@@ -13,6 +13,7 @@ import random
 import re
 import string
 import sys
+import warnings
 from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -74,6 +75,8 @@ if TYPE_CHECKING:
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
 OTHER_VAR_TYPE = TypeVar("OTHER_VAR_TYPE")
 
+warnings.filterwarnings("ignore", message="fields may not start with an underscore")
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -128,6 +131,16 @@ class Var(Generic[VAR_TYPE]):
         var_data = self._get_all_var_data()
         field_name = var_data.field_name if var_data else None
         return field_name or self._js_expr
+
+    @property
+    @deprecated("Use `_js_expr` instead.")
+    def _var_name_unwrapped(self) -> str:
+        """The name of the var without extra curly braces.
+
+        Returns:
+            The name of the var.
+        """
+        return self._js_expr
 
     @property
     def _var_is_string(self) -> bool:
@@ -1231,10 +1244,13 @@ def unionize(*args: Type) -> Type:
     """
     if not args:
         return Any
-    first, *rest = args
-    if not rest:
-        return first
-    return Union[first, unionize(*rest)]
+    if len(args) == 1:
+        return args[0]
+    # We are bisecting the args list here to avoid hitting the recursion limit
+    # In Python versions >= 3.11, we can simply do `return Union[*args]`
+    midpoint = len(args) // 2
+    first_half, second_half = args[:midpoint], args[midpoint:]
+    return Union[unionize(*first_half), unionize(*second_half)]
 
 
 def figure_out_type(value: Any) -> types.GenericType:
@@ -2021,17 +2037,23 @@ class CustomVarOperationReturn(Var[RETURN]):
 def var_operation_return(
     js_expression: str,
     var_type: Type[RETURN] | None = None,
+    var_data: VarData | None = None,
 ) -> CustomVarOperationReturn[RETURN]:
     """Shortcut for creating a CustomVarOperationReturn.
 
     Args:
         js_expression: The JavaScript expression to evaluate.
         var_type: The type of the var.
+        var_data: Additional hooks and imports associated with the Var.
 
     Returns:
         The CustomVarOperationReturn.
     """
-    return CustomVarOperationReturn.create(js_expression, var_type)
+    return CustomVarOperationReturn.create(
+        js_expression,
+        var_type,
+        var_data,
+    )
 
 
 @dataclasses.dataclass(

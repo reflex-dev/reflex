@@ -9,6 +9,7 @@ from pandas import DataFrame
 from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.state import BaseState
+from reflex.utils.exceptions import PrimitiveUnserializableToJSON
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import (
@@ -958,6 +959,21 @@ def test_all_number_operations():
     )
 
 
+@pytest.mark.parametrize(
+    ("var", "expected"),
+    [
+        (Var.create(False), "false"),
+        (Var.create(True), "true"),
+        (Var.create("false"), '("false".split("").length !== 0)'),
+        (Var.create([1, 2, 3]), "isTrue([1, 2, 3])"),
+        (Var.create({"a": 1, "b": 2}), 'isTrue(({ ["a"] : 1, ["b"] : 2 }))'),
+        (Var("mysterious_var"), "isTrue(mysterious_var)"),
+    ],
+)
+def test_boolify_operations(var, expected):
+    assert str(var.bool()) == expected
+
+
 def test_index_operation():
     array_var = LiteralArrayVar.create([1, 2, 3, 4, 5])
     assert str(array_var[0]) == "[1, 2, 3, 4, 5].at(0)"
@@ -972,6 +988,22 @@ def test_index_operation():
     )
     assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].slice().reverse()"
     assert str(array_var[0].to(NumberVar) + 9) == "([1, 2, 3, 4, 5].at(0) + 9)"
+
+
+@pytest.mark.parametrize(
+    "var, expected_js",
+    [
+        (Var.create(float("inf")), "Infinity"),
+        (Var.create(-float("inf")), "-Infinity"),
+        (Var.create(float("nan")), "NaN"),
+    ],
+)
+def test_inf_and_nan(var, expected_js):
+    assert str(var) == expected_js
+    assert isinstance(var, NumberVar)
+    assert isinstance(var, LiteralVar)
+    with pytest.raises(PrimitiveUnserializableToJSON):
+        var.json()
 
 
 def test_array_operations():

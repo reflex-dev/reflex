@@ -167,7 +167,7 @@ class ZAxis(Recharts):
 
     tag = "ZAxis"
 
-    alias = "RechartszAxis"
+    alias = "RechartsZAxis"
 
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]

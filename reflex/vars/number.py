@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import math
 import sys
 from typing import (
     TYPE_CHECKING,
@@ -17,7 +18,9 @@ from typing import (
     overload,
 )
 
-from reflex.utils.exceptions import VarTypeError
+from reflex.constants.base import Dirs
+from reflex.utils.exceptions import PrimitiveUnserializableToJSON, VarTypeError
+from reflex.utils.imports import ImportDict, ImportVar
 
 from .base import (
     CustomVarOperationReturn,
@@ -1038,7 +1041,14 @@ class LiteralNumberVar(LiteralVar, NumberVar):
 
         Returns:
             The JSON representation of the var.
+
+        Raises:
+            PrimitiveUnserializableToJSON: If the var is unserializable to JSON.
         """
+        if math.isinf(self._var_value) or math.isnan(self._var_value):
+            raise PrimitiveUnserializableToJSON(
+                f"No valid JSON representation for {self}"
+            )
         return json.dumps(self._var_value)
 
     def __hash__(self) -> int:
@@ -1060,8 +1070,15 @@ class LiteralNumberVar(LiteralVar, NumberVar):
         Returns:
             The number var.
         """
+        if math.isinf(value):
+            js_expr = "Infinity" if value > 0 else "-Infinity"
+        elif math.isnan(value):
+            js_expr = "NaN"
+        else:
+            js_expr = str(value)
+
         return cls(
-            _js_expr=str(value),
+            _js_expr=js_expr,
             _var_type=type(value),
             _var_data=_var_data,
             _var_value=value,
@@ -1098,6 +1115,11 @@ class ToBooleanVarOperation(ToOperation, BooleanVar):
     _default_var_type: ClassVar[Type] = bool
 
 
+_IS_TRUE_IMPORT: ImportDict = {
+    f"/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
+}
+
+
 @var_operation
 def boolify(value: Var):
     """Convert the value to a boolean.
@@ -1109,8 +1131,9 @@ def boolify(value: Var):
         The boolean value.
     """
     return var_operation_return(
-        js_expression=f"Boolean({value})",
+        js_expression=f"isTrue({value})",
         var_type=bool,
+        var_data=VarData(imports=_IS_TRUE_IMPORT),
     )
 
 
