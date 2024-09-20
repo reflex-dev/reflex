@@ -317,6 +317,20 @@ class Svg(BaseHTML):
     xmlns: Var[str]
 
 
+class Line(BaseHTML):
+    """The SVG line component."""
+
+    tag = "line"
+    # The x-axis coordinate of the start of the line.
+    x1: Var[Union[str, int]]
+    # The y-axis coordinate of the start of the line.
+    y1: Var[Union[str, int]]
+    # The x-axis coordinate of the end of the line.
+    x2: Var[Union[str, int]]
+    # The y-axis coordinate of the end of the line.
+    y2: Var[Union[str, int]]
+
+
 class Circle(BaseHTML):
     """The SVG circle component."""
 
@@ -421,6 +435,7 @@ class Path(BaseHTML):
 class SVG(ComponentNamespace):
     """SVG component namespace."""
 
+    line = staticmethod(Line.create)
     circle = staticmethod(Circle.create)
     rect = staticmethod(Rect.create)
     polygon = staticmethod(Polygon.create)
