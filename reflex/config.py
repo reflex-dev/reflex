@@ -6,6 +6,7 @@ import importlib
 import os
 import sys
 import urllib.parse
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 try:
@@ -188,7 +189,7 @@ class Config(Base):
     telemetry_enabled: bool = True
 
     # The bun path
-    bun_path: str = constants.Bun.DEFAULT_PATH
+    bun_path: str | Path = constants.Bun.DEFAULT_PATH
 
     # List of origins that are allowed to connect to the backend API.
     cors_allowed_origins: List[str] = ["*"]

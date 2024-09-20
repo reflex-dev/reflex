@@ -114,9 +114,6 @@ def _init(
             app_name, generation_hash=generation_hash
         )
 
-    # Migrate Pynecone projects to Reflex.
-    prerequisites.migrate_to_reflex()
-
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()
 

@@ -156,7 +156,7 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     Raises:
         Exit: When attempting to run a command with a None value.
     """
-    node_bin_path = path_ops.get_node_bin_path()
+    node_bin_path = str(path_ops.get_node_bin_path())
     if not node_bin_path and not prerequisites.CURRENTLY_INSTALLING_NODE:
         console.warn(
             "The path to the Node binary could not be found. Please ensure that Node is properly "
