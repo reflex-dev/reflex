@@ -37,7 +37,7 @@ Reflex 是一個可以用純 Python 構建全端網頁應用程式的函式庫�
 
 ## ⚙️ 安裝
 
-開啟一個終端機並且執行 (需要 Python 3.8+):
+開啟一個終端機並且執行 (需要 Python 3.10+):
 
 ```bash
 pip install reflex
