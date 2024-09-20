@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Optional, Union, overload
 from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 class RadixPrimitiveComponent(Component):
     @overload

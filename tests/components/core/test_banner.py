@@ -19,12 +19,14 @@ def test_websocket_target_url():
 def test_connection_banner():
     banner = ConnectionBanner.create()
     _imports = banner._get_all_imports(collapse=True)
-    assert tuple(_imports) == (
-        "react",
-        "/utils/context",
-        "/utils/state",
-        "@radix-ui/themes@^3.0.0",
-        "/env.json",
+    assert sorted(tuple(_imports)) == sorted(
+        (
+            "react",
+            "/utils/context",
+            "/utils/state",
+            "@radix-ui/themes@^3.0.0",
+            "/env.json",
+        )
     )
 
     msg = "Connection error"
@@ -35,12 +37,14 @@ def test_connection_banner():
 def test_connection_modal():
     modal = ConnectionModal.create()
     _imports = modal._get_all_imports(collapse=True)
-    assert tuple(_imports) == (
-        "react",
-        "/utils/context",
-        "/utils/state",
-        "@radix-ui/themes@^3.0.0",
-        "/env.json",
+    assert sorted(tuple(_imports)) == sorted(
+        (
+            "react",
+            "/utils/context",
+            "/utils/state",
+            "@radix-ui/themes@^3.0.0",
+            "/env.json",
+        )
     )
 
     msg = "Connection error"

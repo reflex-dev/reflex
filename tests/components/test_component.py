@@ -2,8 +2,6 @@ from contextlib import nullcontext
 from typing import Any, Dict, List, Optional, Type, Union
 
 import pytest
-import reflex_chakra as rc
-from reflex_chakra.components.layout.box import Box
 
 import reflex as rx
 from reflex.base import Base
@@ -16,14 +14,16 @@ from reflex.components.component import (
     StatefulComponent,
     custom_component,
 )
+from reflex.components.radix.themes.layout.box import Box
 from reflex.constants import EventTriggers
 from reflex.event import EventChain, EventHandler, parse_args_spec
-from reflex.ivars.base import LiteralVar
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
+from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
-from reflex.vars import BaseVar, Var, VarData
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
 
 
 @pytest.fixture
@@ -78,6 +78,8 @@ def component2() -> Type[Component]:
     class TestComponent2(Component):
         # A test list prop.
         arr: Var[List[str]]
+
+        on_prop_event: EventHandler[lambda e0: [e0]]
 
         def get_event_triggers(self) -> Dict[str, Any]:
             """Test controlled triggers.
@@ -267,121 +269,121 @@ def test_create_component(component1):
     [
         pytest.param(
             "text",
-            Var.create("hello"),
+            LiteralVar.create("hello"),
             None,
             id="text",
         ),
         pytest.param(
             "text",
-            BaseVar(_var_name="hello", _var_type=Optional[str]),
+            Var(_js_expr="hello", _var_type=Optional[str]),
             None,
             id="text-optional",
         ),
         pytest.param(
             "text",
-            BaseVar(_var_name="hello", _var_type=Union[str, None]),
+            Var(_js_expr="hello", _var_type=Union[str, None]),
             None,
             id="text-union-str-none",
         ),
         pytest.param(
             "text",
-            BaseVar(_var_name="hello", _var_type=Union[None, str]),
+            Var(_js_expr="hello", _var_type=Union[None, str]),
             None,
             id="text-union-none-str",
         ),
         pytest.param(
             "text",
-            Var.create(1),
+            LiteralVar.create(1),
             TypeError,
             id="text-int",
         ),
         pytest.param(
             "number",
-            Var.create(1),
+            LiteralVar.create(1),
             None,
             id="number",
         ),
         pytest.param(
             "number",
-            BaseVar(_var_name="1", _var_type=Optional[int]),
+            Var(_js_expr="1", _var_type=Optional[int]),
             None,
             id="number-optional",
         ),
         pytest.param(
             "number",
-            BaseVar(_var_name="1", _var_type=Union[int, None]),
+            Var(_js_expr="1", _var_type=Union[int, None]),
             None,
             id="number-union-int-none",
         ),
         pytest.param(
             "number",
-            BaseVar(_var_name="1", _var_type=Union[None, int]),
+            Var(_js_expr="1", _var_type=Union[None, int]),
             None,
             id="number-union-none-int",
         ),
         pytest.param(
             "number",
-            Var.create("1"),
+            LiteralVar.create("1"),
             TypeError,
             id="number-str",
         ),
         pytest.param(
             "text_or_number",
-            Var.create("hello"),
+            LiteralVar.create("hello"),
             None,
             id="text_or_number-str",
         ),
         pytest.param(
             "text_or_number",
-            Var.create(1),
+            LiteralVar.create(1),
             None,
             id="text_or_number-int",
         ),
         pytest.param(
             "text_or_number",
-            BaseVar(_var_name="hello", _var_type=Optional[str]),
+            Var(_js_expr="hello", _var_type=Optional[str]),
             None,
             id="text_or_number-optional-str",
         ),
         pytest.param(
             "text_or_number",
-            BaseVar(_var_name="hello", _var_type=Union[str, None]),
+            Var(_js_expr="hello", _var_type=Union[str, None]),
             None,
             id="text_or_number-union-str-none",
         ),
         pytest.param(
             "text_or_number",
-            BaseVar(_var_name="hello", _var_type=Union[None, str]),
+            Var(_js_expr="hello", _var_type=Union[None, str]),
             None,
             id="text_or_number-union-none-str",
         ),
         pytest.param(
             "text_or_number",
-            BaseVar(_var_name="1", _var_type=Optional[int]),
+            Var(_js_expr="1", _var_type=Optional[int]),
             None,
             id="text_or_number-optional-int",
         ),
         pytest.param(
             "text_or_number",
-            BaseVar(_var_name="1", _var_type=Union[int, None]),
+            Var(_js_expr="1", _var_type=Union[int, None]),
             None,
             id="text_or_number-union-int-none",
         ),
         pytest.param(
             "text_or_number",
-            BaseVar(_var_name="1", _var_type=Union[None, int]),
+            Var(_js_expr="1", _var_type=Union[None, int]),
             None,
             id="text_or_number-union-none-int",
         ),
         pytest.param(
             "text_or_number",
-            Var.create(1.0),
+            LiteralVar.create(1.0),
             TypeError,
             id="text_or_number-float",
         ),
         pytest.param(
             "text_or_number",
-            BaseVar(_var_name="hello", _var_type=Optional[Union[str, int]]),
+            Var(_js_expr="hello", _var_type=Optional[Union[str, int]]),
             None,
             id="text_or_number-optional-union-str-int",
         ),
@@ -496,7 +498,7 @@ def test_get_props(component1, component2):
         component2: A test component.
     """
     assert component1.get_props() == {"text", "number", "text_or_number"}
-    assert component2.get_props() == {"arr"}
+    assert component2.get_props() == {"arr", "on_prop_event"}
 
 
 @pytest.mark.parametrize(
@@ -574,7 +576,7 @@ def test_get_event_triggers(component1, component2):
     assert component1().get_event_triggers().keys() == default_triggers
     assert (
         component2().get_event_triggers().keys()
-        == {"on_open", "on_close"} | default_triggers
+        == {"on_open", "on_close", "on_prop_event"} | default_triggers
     )
 
 
@@ -635,21 +637,21 @@ def test_component_create_unallowed_types(children, test_component):
                 "props": [],
                 "contents": "",
                 "args": None,
-                "special_props": set(),
+                "special_props": [],
                 "children": [
                     {
                         "name": "RadixThemesText",
                         "props": ['as={"p"}'],
                         "contents": "",
                         "args": None,
-                        "special_props": set(),
+                        "special_props": [],
                         "children": [
                             {
                                 "name": "",
                                 "props": [],
                                 "contents": '{"first_text"}',
                                 "args": None,
-                                "special_props": set(),
+                                "special_props": [],
                                 "children": [],
                                 "autofocus": False,
                             }
@@ -677,13 +679,13 @@ def test_component_create_unallowed_types(children, test_component):
                                 "contents": '{"first_text"}',
                                 "name": "",
                                 "props": [],
-                                "special_props": set(),
+                                "special_props": [],
                             }
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as={"p"}'],
-                        "special_props": set(),
+                        "special_props": [],
                     },
                     {
                         "args": None,
@@ -696,19 +698,19 @@ def test_component_create_unallowed_types(children, test_component):
                                 "contents": '{"second_text"}',
                                 "name": "",
                                 "props": [],
-                                "special_props": set(),
+                                "special_props": [],
                             }
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as={"p"}'],
-                        "special_props": set(),
+                        "special_props": [],
                     },
                 ],
                 "contents": "",
                 "name": "Fragment",
                 "props": [],
-                "special_props": set(),
+                "special_props": [],
             },
         ),
         (
@@ -728,13 +730,13 @@ def test_component_create_unallowed_types(children, test_component):
                                 "contents": '{"first_text"}',
                                 "name": "",
                                 "props": [],
-                                "special_props": set(),
+                                "special_props": [],
                             }
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as={"p"}'],
-                        "special_props": set(),
+                        "special_props": [],
                     },
                     {
                         "args": None,
@@ -755,31 +757,31 @@ def test_component_create_unallowed_types(children, test_component):
                                                 "contents": '{"second_text"}',
                                                 "name": "",
                                                 "props": [],
-                                                "special_props": set(),
+                                                "special_props": [],
                                             }
                                         ],
                                         "contents": "",
                                         "name": "RadixThemesText",
                                         "props": ['as={"p"}'],
-                                        "special_props": set(),
+                                        "special_props": [],
                                     }
                                 ],
                                 "contents": "",
                                 "name": "Fragment",
                                 "props": [],
-                                "special_props": set(),
+                                "special_props": [],
                             }
                         ],
                         "contents": "",
                         "name": "RadixThemesBox",
                         "props": [],
-                        "special_props": set(),
+                        "special_props": [],
                     },
                 ],
                 "contents": "",
                 "name": "Fragment",
                 "props": [],
-                "special_props": set(),
+                "special_props": [],
             },
         ),
     ],
@@ -871,7 +873,7 @@ def test_custom_component_wrapper():
     from reflex.components.radix.themes.typography.text import Text
 
     ccomponent = my_component(
-        rx.text("child"), width=Var.create(1), color=Var.create("red")
+        rx.text("child"), width=LiteralVar.create(1), color=LiteralVar.create("red")
     )
     assert isinstance(ccomponent, CustomComponent)
     assert len(ccomponent.children) == 1
@@ -888,18 +890,105 @@ def test_invalid_event_handler_args(component2, test_state):
         component2: A test component.
         test_state: A test state.
     """
-    # Uncontrolled event handlers should not take args.
-    # This is okay.
-    component2.create(on_click=test_state.do_something)
-    # This is not okay.
-    with pytest.raises(ValueError):
+    # EventHandler args must match
+    with pytest.raises(EventHandlerArgMismatch):
         component2.create(on_click=test_state.do_something_arg)
+    with pytest.raises(EventHandlerArgMismatch):
         component2.create(on_open=test_state.do_something)
+    with pytest.raises(EventHandlerArgMismatch):
+        component2.create(on_prop_event=test_state.do_something)
+
+    # Multiple EventHandler args: all must match
+    with pytest.raises(EventHandlerArgMismatch):
+        component2.create(
+            on_click=[test_state.do_something_arg, test_state.do_something]
+        )
+    with pytest.raises(EventHandlerArgMismatch):
         component2.create(
             on_open=[test_state.do_something_arg, test_state.do_something]
         )
-    # However lambdas are okay.
+    with pytest.raises(EventHandlerArgMismatch):
+        component2.create(
+            on_prop_event=[test_state.do_something_arg, test_state.do_something]
+        )
+
+    # lambda cannot return weird values.
+    with pytest.raises(ValueError):
+        component2.create(on_click=lambda: 1)
+    with pytest.raises(ValueError):
+        component2.create(on_click=lambda: [1])
+    with pytest.raises(ValueError):
+        component2.create(
+            on_click=lambda: (test_state.do_something_arg(1), test_state.do_something)
+        )
+
+    # lambda signature must match event trigger.
+    with pytest.raises(EventFnArgMismatch):
+        component2.create(on_click=lambda _: test_state.do_something_arg(1))
+    with pytest.raises(EventFnArgMismatch):
+        component2.create(on_open=lambda: test_state.do_something)
+    with pytest.raises(EventFnArgMismatch):
+        component2.create(on_prop_event=lambda: test_state.do_something)
+
+    # lambda returning EventHandler must match spec
+    with pytest.raises(EventHandlerArgMismatch):
+        component2.create(on_click=lambda: test_state.do_something_arg)
+    with pytest.raises(EventHandlerArgMismatch):
+        component2.create(on_open=lambda _: test_state.do_something)
+    with pytest.raises(EventHandlerArgMismatch):
+        component2.create(on_prop_event=lambda _: test_state.do_something)
+
+    # Mixed EventSpec and EventHandler must match spec.
+    with pytest.raises(EventHandlerArgMismatch):
+        component2.create(
+            on_click=lambda: [
+                test_state.do_something_arg(1),
+                test_state.do_something_arg,
+            ]
+        )
+    with pytest.raises(EventHandlerArgMismatch):
+        component2.create(
+            on_open=lambda _: [test_state.do_something_arg(1), test_state.do_something]
+        )
+    with pytest.raises(EventHandlerArgMismatch):
+        component2.create(
+            on_prop_event=lambda _: [
+                test_state.do_something_arg(1),
+                test_state.do_something,
+            ]
+        )
+
+
+def test_valid_event_handler_args(component2, test_state):
+    """Test that an valid event handler args do not raise exception.
+
+    Args:
+        component2: A test component.
+        test_state: A test state.
+    """
+    # Uncontrolled event handlers should not take args.
+    component2.create(on_click=test_state.do_something)
+    component2.create(on_click=test_state.do_something_arg(1))
+
+    # Controlled event handlers should take args.
+    component2.create(on_open=test_state.do_something_arg)
+    component2.create(on_prop_event=test_state.do_something_arg)
+
+    # Using a partial event spec bypasses arg validation (ignoring the args).
+    component2.create(on_open=test_state.do_something())
+    component2.create(on_prop_event=test_state.do_something())
+
+    # lambda returning EventHandler is okay if the spec matches.
+    component2.create(on_click=lambda: test_state.do_something)
+    component2.create(on_open=lambda _: test_state.do_something_arg)
+    component2.create(on_prop_event=lambda _: test_state.do_something_arg)
+
+    # lambda can always return an EventSpec.
     component2.create(on_click=lambda: test_state.do_something_arg(1))
+    component2.create(on_open=lambda _: test_state.do_something_arg(1))
+    component2.create(on_prop_event=lambda _: test_state.do_something_arg(1))
+
+    # Return EventSpec and EventHandler (no arg).
     component2.create(
         on_click=lambda: [test_state.do_something_arg(1), test_state.do_something]
     )
@@ -907,9 +996,24 @@ def test_invalid_event_handler_args(component2, test_state):
         on_click=lambda: [test_state.do_something_arg(1), test_state.do_something()]
     )
 
-    # Controlled event handlers should take args.
-    # This is okay.
-    component2.create(on_open=test_state.do_something_arg)
+    # Return 2 EventSpec.
+    component2.create(
+        on_open=lambda _: [test_state.do_something_arg(1), test_state.do_something()]
+    )
+    component2.create(
+        on_prop_event=lambda _: [
+            test_state.do_something_arg(1),
+            test_state.do_something(),
+        ]
+    )
+
+    # Return EventHandler (1 arg) and EventSpec.
+    component2.create(
+        on_open=lambda _: [test_state.do_something_arg, test_state.do_something()]
+    )
+    component2.create(
+        on_prop_event=lambda _: [test_state.do_something_arg, test_state.do_something()]
+    )
 
 
 def test_get_hooks_nested(component1, component2, component3):
@@ -1009,8 +1113,8 @@ def test_component_with_only_valid_children(fixture, request):
     [
         (rx.text("hi"), '<RadixThemesText as={"p"}>\n  {"hi"}\n</RadixThemesText>'),
         (
-            rx.box(rc.heading("test", size="md")),
-            '<RadixThemesBox>\n  <Heading size={"md"}>\n  {"test"}\n</Heading>\n</RadixThemesBox>',
+            rx.box(rx.heading("test", size="3")),
+            '<RadixThemesBox>\n  <RadixThemesHeading size={"3"}>\n  {"test"}\n</RadixThemesHeading>\n</RadixThemesBox>',
         ),
     ],
 )
@@ -1070,13 +1174,12 @@ TEST_VAR = LiteralVar.create("test")._replace(
         hooks={"useTest": None},
         imports={"test": [ImportVar(tag="test")]},
         state="Test",
-        interpolations=[],
     )
 )
 FORMATTED_TEST_VAR = LiteralVar.create(f"foo{TEST_VAR}bar")
-STYLE_VAR = TEST_VAR._replace(_var_name="style")
+STYLE_VAR = TEST_VAR._replace(_js_expr="style")
 EVENT_CHAIN_VAR = TEST_VAR._replace(_var_type=EventChain)
-ARG_VAR = Var.create("arg")
+ARG_VAR = Var(_js_expr="arg")
 
 TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "test"}})._replace(
     merge_var_data=TEST_VAR._var_data
@@ -1186,12 +1289,12 @@ class EventState(rx.State):
             id="fstring-class_name",
         ),
         pytest.param(
-            rx.fragment(special_props={TEST_VAR}),
+            rx.fragment(special_props=[TEST_VAR]),
             [TEST_VAR],
             id="direct-special_props",
         ),
         pytest.param(
-            rx.fragment(special_props={LiteralVar.create(f"foo{TEST_VAR}bar")}),
+            rx.fragment(special_props=[LiteralVar.create(f"foo{TEST_VAR}bar")]),
             [FORMATTED_TEST_VAR],
             id="fstring-special_props",
         ),
@@ -1294,11 +1397,13 @@ class EventState(rx.State):
     ),
 )
 def test_get_vars(component, exp_vars):
-    comp_vars = sorted(component._get_vars(), key=lambda v: v._var_name)
+    comp_vars = sorted(component._get_vars(), key=lambda v: v._js_expr)
     assert len(comp_vars) == len(exp_vars)
+    print(comp_vars, exp_vars)
     for comp_var, exp_var in zip(
         comp_vars,
-        sorted(exp_vars, key=lambda v: v._var_name),
+        sorted(exp_vars, key=lambda v: v._js_expr),
+        strict=False,
     ):
         # print(str(comp_var), str(exp_var))
         # print(comp_var._get_all_var_data(), exp_var._get_all_var_data())
@@ -1413,7 +1518,7 @@ def test_validate_valid_children():
             True,
             rx.fragment(valid_component2()),
             rx.fragment(
-                rx.foreach(Var.create([1, 2, 3]), lambda x: valid_component2(x))  # type: ignore
+                rx.foreach(LiteralVar.create([1, 2, 3]), lambda x: valid_component2(x))  # type: ignore
             ),
         )
     )
@@ -1473,7 +1578,7 @@ def test_validate_valid_parents():
             rx.fragment(valid_component3()),
             rx.fragment(
                 rx.foreach(
-                    Var.create([1, 2, 3]),  # type: ignore
+                    LiteralVar.create([1, 2, 3]),  # type: ignore
                     lambda x: valid_component2(valid_component3(x)),
                 )
             ),
@@ -1540,7 +1645,9 @@ def test_validate_invalid_children():
                 True,
                 rx.fragment(invalid_component()),
                 rx.fragment(
-                    rx.foreach(Var.create([1, 2, 3]), lambda x: invalid_component(x))  # type: ignore
+                    rx.foreach(
+                        LiteralVar.create([1, 2, 3]), lambda x: invalid_component(x)
+                    )  # type: ignore
                 ),
             )
         )
@@ -1611,62 +1718,6 @@ def test_rename_props():
     assert 'renamed_prop1={"prop1_2"}' in rendered_c2["props"]
     assert 'subclass_prop2={"prop2_2"}' in rendered_c2["props"]
     assert 'renamed_prop3={"prop3_2"}' in rendered_c2["props"]
-
-
-def test_deprecated_props(capsys):
-    """Assert that deprecated underscore suffix props are translated.
-
-    Args:
-        capsys: Pytest fixture for capturing stdout and stderr.
-    """
-
-    class C1(Component):
-        tag = "C1"
-
-        type: Var[str]
-        min: Var[str]
-        max: Var[str]
-
-    # No warnings are emitted when using the new prop names.
-    c1_1 = C1.create(type="type1", min="min1", max="max1")
-    out_err = capsys.readouterr()
-    assert not out_err.err
-    assert not out_err.out
-
-    c1_1_render = c1_1.render()
-    assert 'type={"type1"}' in c1_1_render["props"]
-    assert 'min={"min1"}' in c1_1_render["props"]
-    assert 'max={"max1"}' in c1_1_render["props"]
-
-    # Deprecation warning is emitted with underscore suffix,
-    # but the component still works.
-    c1_2 = C1.create(type_="type2", min_="min2", max_="max2")
-    out_err = capsys.readouterr()
-    assert out_err.out.count("DeprecationWarning:") == 3
-    assert not out_err.err
-
-    c1_2_render = c1_2.render()
-    assert 'type={"type2"}' in c1_2_render["props"]
-    assert 'min={"min2"}' in c1_2_render["props"]
-    assert 'max={"max2"}' in c1_2_render["props"]
-
-    class C2(Component):
-        tag = "C2"
-
-        type_: Var[str]
-        min_: Var[str]
-        max_: Var[str]
-
-    # No warnings are emitted if the actual prop has an underscore suffix
-    c2_1 = C2.create(type_="type1", min_="min1", max_="max1")
-    out_err = capsys.readouterr()
-    assert not out_err.err
-    assert not out_err.out
-
-    c2_1_render = c2_1.render()
-    assert 'type={"type1"}' in c2_1_render["props"]
-    assert 'min={"min1"}' in c2_1_render["props"]
-    assert 'max={"max1"}' in c2_1_render["props"]
 
 
 def test_custom_component_get_imports():
@@ -1742,6 +1793,7 @@ def test_custom_component_declare_event_handlers_in_fields():
         for v1, v2 in zip(
             parse_args_spec(test_triggers[trigger_name]),
             parse_args_spec(custom_triggers[trigger_name]),
+            strict=False,
         ):
             assert v1.equals(v2)
 
@@ -1978,8 +2030,8 @@ def test_component_add_hooks_var():
             return [
                 "const hook3 = useRef(null)",
                 "const hook1 = 42",
-                Var.create(
-                    "useEffect(() => () => {}, [])",
+                Var(
+                    _js_expr="useEffect(() => () => {}, [])",
                     _var_data=VarData(
                         hooks={
                             "const hook2 = 43": None,
@@ -1988,11 +2040,9 @@ def test_component_add_hooks_var():
                         imports={"react": [ImportVar(tag="useEffect")]},
                     ),
                 ),
-                Var.create(
-                    "const hook3 = useRef(null)",
-                    _var_data=VarData(
-                        imports={"react": [ImportVar(tag="useRef")]},
-                    ),
+                Var(
+                    _js_expr="const hook3 = useRef(null)",
+                    _var_data=VarData(imports={"react": [ImportVar(tag="useRef")]}),
                 ),
             ]
 
@@ -2101,7 +2151,7 @@ class TriggerState(rx.State):
                 rx.text("random text", on_click=TriggerState.do_something),
                 rx.text(
                     "random text",
-                    on_click=BaseVar(_var_name="toggleColorMode", _var_type=EventChain),
+                    on_click=Var(_js_expr="toggleColorMode", _var_type=EventChain),
                 ),
             ),
             True,
@@ -2111,7 +2161,7 @@ class TriggerState(rx.State):
                 rx.text("random text", on_click=rx.console_log("log")),
                 rx.text(
                     "random text",
-                    on_click=BaseVar(_var_name="toggleColorMode", _var_type=EventChain),
+                    on_click=Var(_js_expr="toggleColorMode", _var_type=EventChain),
                 ),
             ),
             False,

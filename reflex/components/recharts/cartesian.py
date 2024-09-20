@@ -7,8 +7,7 @@ from typing import Any, Dict, List, Union
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
 from reflex.event import EventHandler
-from reflex.ivars.base import LiteralVar
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
 
 from .recharts import (
     LiteralAnimationEasing,
@@ -168,7 +167,7 @@ class ZAxis(Recharts):
 
     tag = "ZAxis"
 
-    alias = "RechartszAxis"
+    alias = "RechartsZAxis"
 
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]

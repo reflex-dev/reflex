@@ -32,10 +32,32 @@ class ExperimentalNamespace(SimpleNamespace):
         Returns:
             The toast namespace.
         """
-        if "toast" not in _EMITTED_PROMOTION_WARNINGS:
-            _EMITTED_PROMOTION_WARNINGS.add("toast")
-            warn(f"`rx._x.toast` was promoted to `rx.toast`.")
+        self.register_component_warning("toast")
         return toast
+
+    @property
+    def progress(self):
+        """Temporary property returning the toast namespace.
+
+        Remove this property when toast is fully promoted.
+
+        Returns:
+            The toast namespace.
+        """
+        self.register_component_warning("progress")
+        return progress
+
+    @staticmethod
+    def register_component_warning(component_name: str):
+        """Add component to emitted warnings and throw a warning if it
+        doesn't exist.
+
+        Args:
+             component_name: name of the component.
+        """
+        if component_name not in _EMITTED_PROMOTION_WARNINGS:
+            _EMITTED_PROMOTION_WARNINGS.add(component_name)
+            warn(f"`rx._x.{component_name}` was promoted to `rx.{component_name}`.")
 
 
 _x = ExperimentalNamespace(
@@ -43,7 +65,6 @@ _x = ExperimentalNamespace(
     client_state=ClientStateVar.create,
     hooks=hooks,
     layout=layout,
-    progress=progress,
     PropsBase=PropsBase,
     run_in_thread=run_in_thread,
 )

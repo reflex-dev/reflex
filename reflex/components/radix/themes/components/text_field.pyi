@@ -5,12 +5,12 @@
 # ------------------------------------------------------
 from typing import Any, Callable, Dict, Literal, Optional, Union, overload
 
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.el import elements
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import RadixThemesComponent
 
@@ -25,87 +25,87 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
         *children,
         size: Optional[
             Union[
+                Breakpoints[str, Literal["1", "2", "3"]],
+                Literal["1", "2", "3"],
                 Var[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
                 ],
-                Literal["1", "2", "3"],
-                Breakpoints[str, Literal["1", "2", "3"]],
             ]
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
-                Literal["classic", "surface", "soft"],
+                Literal["classic", "soft", "surface"],
+                Var[Literal["classic", "soft", "surface"]],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
-                    Literal[
-                        "tomato",
-                        "red",
-                        "ruby",
-                        "crimson",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "violet",
-                        "iris",
-                        "indigo",
-                        "blue",
-                        "cyan",
-                        "teal",
-                        "jade",
-                        "green",
-                        "grass",
-                        "brown",
-                        "orange",
-                        "sky",
-                        "mint",
-                        "lime",
-                        "yellow",
-                        "amber",
-                        "gold",
-                        "bronze",
-                        "gray",
-                    ]
-                ],
                 Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
+                    "amber",
+                    "blue",
+                    "bronze",
+                    "brown",
                     "crimson",
+                    "cyan",
+                    "gold",
+                    "grass",
+                    "gray",
+                    "green",
+                    "indigo",
+                    "iris",
+                    "jade",
+                    "lime",
+                    "mint",
+                    "orange",
                     "pink",
                     "plum",
                     "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
+                    "red",
+                    "ruby",
                     "sky",
-                    "mint",
-                    "lime",
+                    "teal",
+                    "tomato",
+                    "violet",
                     "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
+                ],
+                Var[
+                    Literal[
+                        "amber",
+                        "blue",
+                        "bronze",
+                        "brown",
+                        "crimson",
+                        "cyan",
+                        "gold",
+                        "grass",
+                        "gray",
+                        "green",
+                        "indigo",
+                        "iris",
+                        "jade",
+                        "lime",
+                        "mint",
+                        "orange",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "red",
+                        "ruby",
+                        "sky",
+                        "teal",
+                        "tomato",
+                        "violet",
+                        "yellow",
+                    ]
                 ],
             ]
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
-                Literal["none", "small", "medium", "large", "full"],
+                Literal["full", "large", "medium", "none", "small"],
+                Var[Literal["full", "large", "medium", "none", "small"]],
             ]
         ] = None,
         auto_complete: Optional[Union[Var[bool], bool]] = None,
@@ -118,31 +118,31 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
         read_only: Optional[Union[Var[bool], bool]] = None,
         required: Optional[Union[Var[bool], bool]] = None,
         type: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[Union[float, int, str]], str, int, float]] = None,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        value: Optional[Union[Var[Union[float, int, str]], float, int, str]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], bool, int, str]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], bool, int, str]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], bool, int, str]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], bool, int, str]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -239,11 +239,6 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
         """
         ...
 
-    @classmethod
-    def create_root_deprecated(cls, *children, **props) -> Component: ...
-    @classmethod
-    def create_input_deprecated(cls, *children, **props) -> Component: ...
-
 class TextFieldSlot(RadixThemesComponent):
     @overload
     @classmethod
@@ -252,63 +247,63 @@ class TextFieldSlot(RadixThemesComponent):
         *children,
         color_scheme: Optional[
             Union[
-                Var[
-                    Literal[
-                        "tomato",
-                        "red",
-                        "ruby",
-                        "crimson",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "violet",
-                        "iris",
-                        "indigo",
-                        "blue",
-                        "cyan",
-                        "teal",
-                        "jade",
-                        "green",
-                        "grass",
-                        "brown",
-                        "orange",
-                        "sky",
-                        "mint",
-                        "lime",
-                        "yellow",
-                        "amber",
-                        "gold",
-                        "bronze",
-                        "gray",
-                    ]
-                ],
                 Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
+                    "amber",
+                    "blue",
+                    "bronze",
+                    "brown",
                     "crimson",
+                    "cyan",
+                    "gold",
+                    "grass",
+                    "gray",
+                    "green",
+                    "indigo",
+                    "iris",
+                    "jade",
+                    "lime",
+                    "mint",
+                    "orange",
                     "pink",
                     "plum",
                     "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
+                    "red",
+                    "ruby",
                     "sky",
-                    "mint",
-                    "lime",
+                    "teal",
+                    "tomato",
+                    "violet",
                     "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
+                ],
+                Var[
+                    Literal[
+                        "amber",
+                        "blue",
+                        "bronze",
+                        "brown",
+                        "crimson",
+                        "cyan",
+                        "gold",
+                        "grass",
+                        "gray",
+                        "green",
+                        "indigo",
+                        "iris",
+                        "jade",
+                        "lime",
+                        "mint",
+                        "orange",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "red",
+                        "ruby",
+                        "sky",
+                        "teal",
+                        "tomato",
+                        "violet",
+                        "yellow",
+                    ]
                 ],
             ]
         ] = None,
@@ -377,8 +372,6 @@ class TextFieldSlot(RadixThemesComponent):
         ...
 
 class TextField(ComponentNamespace):
-    root = staticmethod(TextFieldRoot.create_root_deprecated)
-    input = staticmethod(TextFieldRoot.create_input_deprecated)
     slot = staticmethod(TextFieldSlot.create)
 
     @staticmethod
@@ -386,87 +379,87 @@ class TextField(ComponentNamespace):
         *children,
         size: Optional[
             Union[
+                Breakpoints[str, Literal["1", "2", "3"]],
+                Literal["1", "2", "3"],
                 Var[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
                 ],
-                Literal["1", "2", "3"],
-                Breakpoints[str, Literal["1", "2", "3"]],
             ]
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "surface", "soft"]],
-                Literal["classic", "surface", "soft"],
+                Literal["classic", "soft", "surface"],
+                Var[Literal["classic", "soft", "surface"]],
             ]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
-                    Literal[
-                        "tomato",
-                        "red",
-                        "ruby",
-                        "crimson",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "violet",
-                        "iris",
-                        "indigo",
-                        "blue",
-                        "cyan",
-                        "teal",
-                        "jade",
-                        "green",
-                        "grass",
-                        "brown",
-                        "orange",
-                        "sky",
-                        "mint",
-                        "lime",
-                        "yellow",
-                        "amber",
-                        "gold",
-                        "bronze",
-                        "gray",
-                    ]
-                ],
                 Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
+                    "amber",
+                    "blue",
+                    "bronze",
+                    "brown",
                     "crimson",
+                    "cyan",
+                    "gold",
+                    "grass",
+                    "gray",
+                    "green",
+                    "indigo",
+                    "iris",
+                    "jade",
+                    "lime",
+                    "mint",
+                    "orange",
                     "pink",
                     "plum",
                     "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
+                    "red",
+                    "ruby",
                     "sky",
-                    "mint",
-                    "lime",
+                    "teal",
+                    "tomato",
+                    "violet",
                     "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
+                ],
+                Var[
+                    Literal[
+                        "amber",
+                        "blue",
+                        "bronze",
+                        "brown",
+                        "crimson",
+                        "cyan",
+                        "gold",
+                        "grass",
+                        "gray",
+                        "green",
+                        "indigo",
+                        "iris",
+                        "jade",
+                        "lime",
+                        "mint",
+                        "orange",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "red",
+                        "ruby",
+                        "sky",
+                        "teal",
+                        "tomato",
+                        "violet",
+                        "yellow",
+                    ]
                 ],
             ]
         ] = None,
         radius: Optional[
             Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
-                Literal["none", "small", "medium", "large", "full"],
+                Literal["full", "large", "medium", "none", "small"],
+                Var[Literal["full", "large", "medium", "none", "small"]],
             ]
         ] = None,
         auto_complete: Optional[Union[Var[bool], bool]] = None,
@@ -479,31 +472,31 @@ class TextField(ComponentNamespace):
         read_only: Optional[Union[Var[bool], bool]] = None,
         required: Optional[Union[Var[bool], bool]] = None,
         type: Optional[Union[Var[str], str]] = None,
-        value: Optional[Union[Var[Union[float, int, str]], str, int, float]] = None,
-        access_key: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        value: Optional[Union[Var[Union[float, int, str]], float, int, str]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], bool, int, str]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], bool, int, str]
         ] = None,
         context_menu: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], bool, int, str]
         ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], str, int, bool]
+            Union[Var[Union[bool, int, str]], bool, int, str]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], str, int, bool]] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

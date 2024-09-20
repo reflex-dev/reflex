@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import dataclasses
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple, Union
-
-from reflex.base import Base
+from typing import DefaultDict, Dict, List, Optional, Tuple, Union
 
 
 def merge_imports(
@@ -19,12 +18,22 @@ def merge_imports(
     Returns:
         The merged import dicts.
     """
-    all_imports = defaultdict(list)
+    all_imports: DefaultDict[str, List[ImportVar]] = defaultdict(list)
     for import_dict in imports:
         for lib, fields in (
             import_dict if isinstance(import_dict, tuple) else import_dict.items()
         ):
-            all_imports[lib].extend(fields)
+            if isinstance(fields, (list, tuple, set)):
+                all_imports[lib].extend(
+                    (
+                        ImportVar(field) if isinstance(field, str) else field
+                        for field in fields
+                    )
+                )
+            else:
+                all_imports[lib].append(
+                    ImportVar(fields) if isinstance(fields, str) else fields
+                )
     return all_imports
 
 
@@ -75,7 +84,8 @@ def collapse_imports(
     }
 
 
-class ImportVar(Base):
+@dataclasses.dataclass(order=True, frozen=True)
+class ImportVar:
     """An import var."""
 
     # The name of the import tag.
@@ -110,73 +120,6 @@ class ImportVar(Base):
             )
         else:
             return self.tag or ""
-
-    def __lt__(self, other: ImportVar) -> bool:
-        """Compare two ImportVar objects.
-
-        Args:
-            other: The other ImportVar object to compare.
-
-        Returns:
-            Whether this ImportVar object is less than the other.
-        """
-        return (
-            self.tag,
-            self.is_default,
-            self.alias,
-            self.install,
-            self.render,
-            self.transpile,
-        ) < (
-            other.tag,
-            other.is_default,
-            other.alias,
-            other.install,
-            other.render,
-            other.transpile,
-        )
-
-    def __eq__(self, other: ImportVar) -> bool:
-        """Check if two ImportVar objects are equal.
-
-        Args:
-            other: The other ImportVar object to compare.
-
-        Returns:
-            Whether the two ImportVar objects are equal.
-        """
-        return (
-            self.tag,
-            self.is_default,
-            self.alias,
-            self.install,
-            self.render,
-            self.transpile,
-        ) == (
-            other.tag,
-            other.is_default,
-            other.alias,
-            other.install,
-            other.render,
-            other.transpile,
-        )
-
-    def __hash__(self) -> int:
-        """Hash the ImportVar object.
-
-        Returns:
-            The hash of the ImportVar object.
-        """
-        return hash(
-            (
-                self.tag,
-                self.is_default,
-                self.alias,
-                self.install,
-                self.render,
-                self.transpile,
-            )
-        )
 
 
 ImportTypes = Union[str, ImportVar, List[Union[str, ImportVar]], List[ImportVar]]

@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, Literal, Optional, Union, overload
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import RadixThemesComponent
 
@@ -22,83 +22,88 @@ class RadioCardsRoot(RadixThemesComponent):
         as_child: Optional[Union[Var[bool], bool]] = None,
         size: Optional[
             Union[
+                Breakpoints[str, Literal["1", "2", "3"]],
+                Literal["1", "2", "3"],
                 Var[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
                 ],
-                Literal["1", "2", "3"],
-                Breakpoints[str, Literal["1", "2", "3"]],
             ]
         ] = None,
         variant: Optional[
-            Union[Var[Literal["classic", "surface"]], Literal["classic", "surface"]]
+            Union[Literal["classic", "surface"], Var[Literal["classic", "surface"]]]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
-                    Literal[
-                        "tomato",
-                        "red",
-                        "ruby",
-                        "crimson",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "violet",
-                        "iris",
-                        "indigo",
-                        "blue",
-                        "cyan",
-                        "teal",
-                        "jade",
-                        "green",
-                        "grass",
-                        "brown",
-                        "orange",
-                        "sky",
-                        "mint",
-                        "lime",
-                        "yellow",
-                        "amber",
-                        "gold",
-                        "bronze",
-                        "gray",
-                    ]
-                ],
                 Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
+                    "amber",
+                    "blue",
+                    "bronze",
+                    "brown",
                     "crimson",
+                    "cyan",
+                    "gold",
+                    "grass",
+                    "gray",
+                    "green",
+                    "indigo",
+                    "iris",
+                    "jade",
+                    "lime",
+                    "mint",
+                    "orange",
                     "pink",
                     "plum",
                     "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
+                    "red",
+                    "ruby",
                     "sky",
-                    "mint",
-                    "lime",
+                    "teal",
+                    "tomato",
+                    "violet",
                     "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
+                ],
+                Var[
+                    Literal[
+                        "amber",
+                        "blue",
+                        "bronze",
+                        "brown",
+                        "crimson",
+                        "cyan",
+                        "gold",
+                        "grass",
+                        "gray",
+                        "green",
+                        "indigo",
+                        "iris",
+                        "jade",
+                        "lime",
+                        "mint",
+                        "orange",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "red",
+                        "ruby",
+                        "sky",
+                        "teal",
+                        "tomato",
+                        "violet",
+                        "yellow",
+                    ]
                 ],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         columns: Optional[
             Union[
+                Breakpoints[
+                    str,
+                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
+                ],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
                 Var[
                     Union[
                         Breakpoints[
@@ -113,15 +118,15 @@ class RadioCardsRoot(RadixThemesComponent):
                     ]
                 ],
                 str,
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Breakpoints[
-                    str,
-                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
-                ],
             ]
         ] = None,
         gap: Optional[
             Union[
+                Breakpoints[
+                    str,
+                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
+                ],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
                 Var[
                     Union[
                         Breakpoints[
@@ -136,11 +141,6 @@ class RadioCardsRoot(RadixThemesComponent):
                     ]
                 ],
                 str,
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Breakpoints[
-                    str,
-                    Union[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"], str],
-                ],
             ]
         ] = None,
         default_value: Optional[Union[Var[str], str]] = None,
@@ -150,11 +150,11 @@ class RadioCardsRoot(RadixThemesComponent):
         required: Optional[Union[Var[bool], bool]] = None,
         orientation: Optional[
             Union[
-                Var[Literal["horizontal", "vertical", "undefined"]],
-                Literal["horizontal", "vertical", "undefined"],
+                Literal["horizontal", "undefined", "vertical"],
+                Var[Literal["horizontal", "undefined", "vertical"]],
             ]
         ] = None,
-        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
+        dir: Optional[Union[Literal["ltr", "rtl"], Var[Literal["ltr", "rtl"]]]] = None,
         loop: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

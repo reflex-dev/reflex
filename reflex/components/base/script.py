@@ -9,8 +9,7 @@ from typing import Literal
 
 from reflex.components.component import Component
 from reflex.event import EventHandler
-from reflex.ivars.base import LiteralVar
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
 
 
 class Script(Component):

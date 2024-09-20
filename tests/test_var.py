@@ -1,50 +1,46 @@
 import json
 import math
 import typing
-from typing import Dict, List, Set, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union, cast
 
 import pytest
 from pandas import DataFrame
 
+import reflex as rx
 from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
-from reflex.ivars.base import (
-    ImmutableVar,
+from reflex.state import BaseState
+from reflex.utils.exceptions import PrimitiveUnserializableToJSON
+from reflex.utils.imports import ImportVar
+from reflex.vars import VarData
+from reflex.vars.base import (
+    ComputedVar,
     LiteralVar,
+    Var,
+    computed_var,
     var_operation,
+    var_operation_return,
 )
-from reflex.ivars.function import ArgsFunctionOperation, FunctionStringVar
-from reflex.ivars.number import (
+from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar
+from reflex.vars.number import (
     LiteralBooleanVar,
     LiteralNumberVar,
     NumberVar,
 )
-from reflex.ivars.object import LiteralObjectVar
-from reflex.ivars.sequence import (
+from reflex.vars.object import LiteralObjectVar, ObjectVar
+from reflex.vars.sequence import (
     ArrayVar,
     ConcatVarOperation,
     LiteralArrayVar,
     LiteralStringVar,
 )
-from reflex.state import BaseState
-from reflex.utils.imports import ImportVar
-from reflex.vars import (
-    BaseVar,
-    ComputedVar,
-    ImmutableVarData,
-    Var,
-    VarData,
-    computed_var,
-)
 
 test_vars = [
-    BaseVar(_var_name="prop1", _var_type=int),
-    BaseVar(_var_name="key", _var_type=str),
-    BaseVar(_var_name="value", _var_type=str)._var_set_state("state"),
-    BaseVar(_var_name="local", _var_type=str, _var_is_local=True)._var_set_state(
-        "state"
-    ),
-    BaseVar(_var_name="local2", _var_type=str, _var_is_local=True),
+    Var(_js_expr="prop1", _var_type=int),
+    Var(_js_expr="key", _var_type=str),
+    Var(_js_expr="value", _var_type=str)._var_set_state("state"),
+    Var(_js_expr="local", _var_type=str)._var_set_state("state"),
+    Var(_js_expr="local2", _var_type=str),
 ]
 
 
@@ -82,6 +78,11 @@ def ChildState(ParentState, TestObj):
     class ChildState(ParentState):
         @computed_var
         def var_without_annotation(self):
+            """This shadows ParentState.var_without_annotation.
+
+            Returns:
+                TestObj: Test object.
+            """
             return TestObj
 
     return ChildState
@@ -92,6 +93,11 @@ def GrandChildState(ChildState, TestObj):
     class GrandChildState(ChildState):
         @computed_var
         def var_without_annotation(self):
+            """This shadows ChildState.var_without_annotation.
+
+            Returns:
+                TestObj: Test object.
+            """
             return TestObj
 
     return GrandChildState
@@ -178,6 +184,7 @@ def ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
             "state.local",
             "local2",
         ],
+        strict=False,
     ),
 )
 def test_full_name(prop, expected):
@@ -187,14 +194,15 @@ def test_full_name(prop, expected):
         prop: The var to test.
         expected: The expected full name.
     """
-    assert prop._var_full_name == expected
+    assert str(prop) == expected
 
 
 @pytest.mark.parametrize(
     "prop,expected",
     zip(
         test_vars,
-        ["{prop1}", "{key}", "{state.value}", "state.local", "local2"],
+        ["prop1", "key", "state.value", "state.local", "local2"],
+        strict=False,
     ),
 )
 def test_str(prop, expected):
@@ -210,14 +218,14 @@ def test_str(prop, expected):
 @pytest.mark.parametrize(
     "prop,expected",
     [
-        (BaseVar(_var_name="p", _var_type=int), 0),
-        (BaseVar(_var_name="p", _var_type=float), 0.0),
-        (BaseVar(_var_name="p", _var_type=str), ""),
-        (BaseVar(_var_name="p", _var_type=bool), False),
-        (BaseVar(_var_name="p", _var_type=list), []),
-        (BaseVar(_var_name="p", _var_type=dict), {}),
-        (BaseVar(_var_name="p", _var_type=tuple), ()),
-        (BaseVar(_var_name="p", _var_type=set), set()),
+        (Var(_js_expr="p", _var_type=int), 0),
+        (Var(_js_expr="p", _var_type=float), 0.0),
+        (Var(_js_expr="p", _var_type=str), ""),
+        (Var(_js_expr="p", _var_type=bool), False),
+        (Var(_js_expr="p", _var_type=list), []),
+        (Var(_js_expr="p", _var_type=dict), {}),
+        (Var(_js_expr="p", _var_type=tuple), ()),
+        (Var(_js_expr="p", _var_type=set), set()),
     ],
 )
 def test_default_value(prop, expected):
@@ -241,6 +249,7 @@ def test_default_value(prop, expected):
             "state.set_local",
             "set_local2",
         ],
+        strict=False,
     ),
 )
 def test_get_setter(prop, expected):
@@ -256,14 +265,14 @@ def test_get_setter(prop, expected):
 @pytest.mark.parametrize(
     "value,expected",
     [
-        (None, None),
-        (1, BaseVar(_var_name="1", _var_type=int, _var_is_local=True)),
-        ("key", BaseVar(_var_name="key", _var_type=str, _var_is_local=True)),
-        (3.14, BaseVar(_var_name="3.14", _var_type=float, _var_is_local=True)),
-        ([1, 2, 3], BaseVar(_var_name="[1, 2, 3]", _var_type=list, _var_is_local=True)),
+        (None, Var(_js_expr="null", _var_type=None)),
+        (1, Var(_js_expr="1", _var_type=int)),
+        ("key", Var(_js_expr='"key"', _var_type=str)),
+        (3.14, Var(_js_expr="3.14", _var_type=float)),
+        ([1, 2, 3], Var(_js_expr="[1, 2, 3]", _var_type=List[int])),
         (
             {"a": 1, "b": 2},
-            BaseVar(_var_name='{"a": 1, "b": 2}', _var_type=dict, _var_is_local=True),
+            Var(_js_expr='({ ["a"] : 1, ["b"] : 2 })', _var_type=Dict[str, int]),
         ),
     ],
 )
@@ -274,11 +283,8 @@ def test_create(value, expected):
         value: The value to create a var from.
         expected: The expected name of the setter function.
     """
-    prop = Var.create(value)
-    if value is None:
-        assert prop == expected
-    else:
-        assert prop.equals(expected)  # type: ignore
+    prop = LiteralVar.create(value)
+    assert prop.equals(expected)  # type: ignore
 
 
 def test_create_type_error():
@@ -290,17 +296,11 @@ def test_create_type_error():
     value = ErrorType()
 
     with pytest.raises(TypeError):
-        Var.create(value)
+        LiteralVar.create(value)
 
 
 def v(value) -> Var:
-    val = (
-        Var.create(json.dumps(value), _var_is_string=True, _var_is_local=False)
-        if isinstance(value, str)
-        else Var.create(value, _var_is_local=False)
-    )
-    assert val is not None
-    return val
+    return LiteralVar.create(value)
 
 
 def test_basic_operations(TestObj):
@@ -309,130 +309,65 @@ def test_basic_operations(TestObj):
     Args:
         TestObj: The test object.
     """
-    assert str(v(1) == v(2)) == "{((1) === (2))}"
-    assert str(v(1) != v(2)) == "{((1) !== (2))}"
-    assert str(v(1) < v(2)) == "{((1) < (2))}"
-    assert str(v(1) <= v(2)) == "{((1) <= (2))}"
-    assert str(v(1) > v(2)) == "{((1) > (2))}"
-    assert str(v(1) >= v(2)) == "{((1) >= (2))}"
-    assert str(v(1) + v(2)) == "{((1) + (2))}"
-    assert str(v(1) - v(2)) == "{((1) - (2))}"
-    assert str(v(1) * v(2)) == "{((1) * (2))}"
-    assert str(v(1) / v(2)) == "{((1) / (2))}"
-    assert str(v(1) // v(2)) == "{Math.floor((1) / (2))}"
-    assert str(v(1) % v(2)) == "{((1) % (2))}"
-    assert str(v(1) ** v(2)) == "{Math.pow((1) , (2))}"
-    assert str(v(1) & v(2)) == "{((1) && (2))}"
-    assert str(v(1) | v(2)) == "{((1) || (2))}"
-    assert str(v([1, 2, 3])[v(0)]) == "{[1, 2, 3].at(0)}"
-    assert str(v({"a": 1, "b": 2})["a"]) == '{{"a": 1, "b": 2}["a"]}'
-    assert str(v("foo") == v("bar")) == '{(("foo") === ("bar"))}'
+    assert str(v(1) == v(2)) == "(1 === 2)"
+    assert str(v(1) != v(2)) == "(1 !== 2)"
+    assert str(LiteralNumberVar.create(1) < 2) == "(1 < 2)"
+    assert str(LiteralNumberVar.create(1) <= 2) == "(1 <= 2)"
+    assert str(LiteralNumberVar.create(1) > 2) == "(1 > 2)"
+    assert str(LiteralNumberVar.create(1) >= 2) == "(1 >= 2)"
+    assert str(LiteralNumberVar.create(1) + 2) == "(1 + 2)"
+    assert str(LiteralNumberVar.create(1) - 2) == "(1 - 2)"
+    assert str(LiteralNumberVar.create(1) * 2) == "(1 * 2)"
+    assert str(LiteralNumberVar.create(1) / 2) == "(1 / 2)"
+    assert str(LiteralNumberVar.create(1) // 2) == "Math.floor(1 / 2)"
+    assert str(LiteralNumberVar.create(1) % 2) == "(1 % 2)"
+    assert str(LiteralNumberVar.create(1) ** 2) == "(1 ** 2)"
+    assert str(LiteralNumberVar.create(1) & v(2)) == "(1 && 2)"
+    assert str(LiteralNumberVar.create(1) | v(2)) == "(1 || 2)"
+    assert str(LiteralArrayVar.create([1, 2, 3])[0]) == "[1, 2, 3].at(0)"
+    assert (
+        str(LiteralObjectVar.create({"a": 1, "b": 2})["a"])
+        == '({ ["a"] : 1, ["b"] : 2 })["a"]'
+    )
+    assert str(v("foo") == v("bar")) == '("foo" === "bar")'
+    assert str(Var(_js_expr="foo") == Var(_js_expr="bar")) == "(foo === bar)"
+    assert (
+        str(LiteralVar.create("foo") == LiteralVar.create("bar")) == '("foo" === "bar")'
+    )
+    print(Var(_js_expr="foo").to(ObjectVar, TestObj)._var_set_state("state"))
     assert (
         str(
-            Var.create("foo", _var_is_local=False)
-            == Var.create("bar", _var_is_local=False)
+            Var(_js_expr="foo").to(ObjectVar, TestObj)._var_set_state("state").bar
+            == LiteralVar.create("bar")
         )
-        == "{((foo) === (bar))}"
+        == '(state.foo["bar"] === "bar")'
     )
     assert (
-        str(
-            BaseVar(
-                _var_name="foo", _var_type=str, _var_is_string=True, _var_is_local=True
-            )
-            == BaseVar(
-                _var_name="bar", _var_type=str, _var_is_string=True, _var_is_local=True
-            )
-        )
-        == "((`foo`) === (`bar`))"
+        str(Var(_js_expr="foo").to(ObjectVar, TestObj)._var_set_state("state").bar)
+        == 'state.foo["bar"]'
     )
+    assert str(abs(LiteralNumberVar.create(1))) == "Math.abs(1)"
+    assert str(LiteralArrayVar.create([1, 2, 3]).length()) == "[1, 2, 3].length"
     assert (
-        str(
-            BaseVar(
-                _var_name="foo",
-                _var_type=TestObj,
-                _var_is_string=True,
-                _var_is_local=False,
-            )
-            ._var_set_state("state")
-            .bar
-            == BaseVar(
-                _var_name="bar", _var_type=str, _var_is_string=True, _var_is_local=True
-            )
-        )
-        == "{((state.foo.bar) === (`bar`))}"
+        str(LiteralArrayVar.create([1, 2]) + LiteralArrayVar.create([3, 4]))
+        == "[...[1, 2], ...[3, 4]]"
     )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=TestObj)._var_set_state("state").bar)
-        == "{state.foo.bar}"
-    )
-    assert str(abs(v(1))) == "{Math.abs(1)}"
-    assert str(v([1, 2, 3]).length()) == "{[1, 2, 3].length}"
-    assert str(v([1, 2]) + v([3, 4])) == "{spreadArraysOrObjects(([1, 2]) , ([3, 4]))}"
 
     # Tests for reverse operation
-    assert str(v([1, 2, 3]).reverse()) == "{[...[1, 2, 3]].reverse()}"
-    assert str(v(["1", "2", "3"]).reverse()) == '{[...["1", "2", "3"]].reverse()}'
     assert (
-        str(BaseVar(_var_name="foo", _var_type=list)._var_set_state("state").reverse())
-        == "{[...state.foo].reverse()}"
+        str(LiteralArrayVar.create([1, 2, 3]).reverse())
+        == "[1, 2, 3].slice().reverse()"
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=list).reverse())
-        == "{[...foo].reverse()}"
-    )
-    assert str(BaseVar(_var_name="foo", _var_type=str)._type()) == "{typeof foo}"  # type: ignore
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() == str)  # type: ignore
-        == "{((typeof foo) === (`string`))}"
+        str(LiteralArrayVar.create(["1", "2", "3"]).reverse())
+        == '["1", "2", "3"].slice().reverse()'
     )
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() == str)  # type: ignore
-        == "{((typeof foo) === (`string`))}"
+        str(Var(_js_expr="foo")._var_set_state("state").to(list).reverse())
+        == "state.foo.slice().reverse()"
     )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() == int)  # type: ignore
-        == "{((typeof foo) === (`number`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() == list)  # type: ignore
-        == "{((typeof foo) === (`Array`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() == float)  # type: ignore
-        == "{((typeof foo) === (`number`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() == tuple)  # type: ignore
-        == "{((typeof foo) === (`Array`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() == dict)  # type: ignore
-        == "{((typeof foo) === (`Object`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() != str)  # type: ignore
-        == "{((typeof foo) !== (`string`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() != int)  # type: ignore
-        == "{((typeof foo) !== (`number`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() != list)  # type: ignore
-        == "{((typeof foo) !== (`Array`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() != float)  # type: ignore
-        == "{((typeof foo) !== (`number`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() != tuple)  # type: ignore
-        == "{((typeof foo) !== (`Array`))}"
-    )
-    assert (
-        str(BaseVar(_var_name="foo", _var_type=str)._type() != dict)  # type: ignore
-        == "{((typeof foo) !== (`Object`))}"
-    )
+    assert str(Var(_js_expr="foo").to(list).reverse()) == "foo.slice().reverse()"
+    assert str(Var(_js_expr="foo", _var_type=str).js_type()) == "(typeof(foo))"
 
 
 @pytest.mark.parametrize(
@@ -441,76 +376,79 @@ def test_basic_operations(TestObj):
         (v([1, 2, 3]), "[1, 2, 3]"),
         (v(set([1, 2, 3])), "[1, 2, 3]"),
         (v(["1", "2", "3"]), '["1", "2", "3"]'),
-        (BaseVar(_var_name="foo", _var_type=list)._var_set_state("state"), "state.foo"),
-        (BaseVar(_var_name="foo", _var_type=list), "foo"),
+        (
+            Var(_js_expr="foo")._var_set_state("state").to(list),
+            "state.foo",
+        ),
+        (Var(_js_expr="foo").to(list), "foo"),
         (v((1, 2, 3)), "[1, 2, 3]"),
         (v(("1", "2", "3")), '["1", "2", "3"]'),
         (
-            BaseVar(_var_name="foo", _var_type=tuple)._var_set_state("state"),
+            Var(_js_expr="foo")._var_set_state("state").to(tuple),
             "state.foo",
         ),
-        (BaseVar(_var_name="foo", _var_type=tuple), "foo"),
+        (Var(_js_expr="foo").to(tuple), "foo"),
     ],
 )
 def test_list_tuple_contains(var, expected):
-    assert str(var.contains(1)) == f"{{{expected}.includes(1)}}"
-    assert str(var.contains("1")) == f'{{{expected}.includes("1")}}'
-    assert str(var.contains(v(1))) == f"{{{expected}.includes(1)}}"
-    assert str(var.contains(v("1"))) == f'{{{expected}.includes("1")}}'
-    other_state_var = BaseVar(_var_name="other", _var_type=str)._var_set_state("state")
-    other_var = BaseVar(_var_name="other", _var_type=str)
-    assert str(var.contains(other_state_var)) == f"{{{expected}.includes(state.other)}}"
-    assert str(var.contains(other_var)) == f"{{{expected}.includes(other)}}"
+    assert str(var.contains(1)) == f"{expected}.includes(1)"
+    assert str(var.contains("1")) == f'{expected}.includes("1")'
+    assert str(var.contains(v(1))) == f"{expected}.includes(1)"
+    assert str(var.contains(v("1"))) == f'{expected}.includes("1")'
+    other_state_var = Var(_js_expr="other", _var_type=str)._var_set_state("state")
+    other_var = Var(_js_expr="other", _var_type=str)
+    assert str(var.contains(other_state_var)) == f"{expected}.includes(state.other)"
+    assert str(var.contains(other_var)) == f"{expected}.includes(other)"
 
 
 @pytest.mark.parametrize(
     "var, expected",
     [
         (v("123"), json.dumps("123")),
-        (BaseVar(_var_name="foo", _var_type=str)._var_set_state("state"), "state.foo"),
-        (BaseVar(_var_name="foo", _var_type=str), "foo"),
+        (Var(_js_expr="foo")._var_set_state("state").to(str), "state.foo"),
+        (Var(_js_expr="foo").to(str), "foo"),
     ],
 )
 def test_str_contains(var, expected):
-    assert str(var.contains("1")) == f'{{{expected}.includes("1")}}'
-    assert str(var.contains(v("1"))) == f'{{{expected}.includes("1")}}'
-    other_state_var = BaseVar(_var_name="other", _var_type=str)._var_set_state("state")
-    other_var = BaseVar(_var_name="other", _var_type=str)
-    assert str(var.contains(other_state_var)) == f"{{{expected}.includes(state.other)}}"
-    assert str(var.contains(other_var)) == f"{{{expected}.includes(other)}}"
+    assert str(var.contains("1")) == f'{expected}.includes("1")'
+    assert str(var.contains(v("1"))) == f'{expected}.includes("1")'
+    other_state_var = Var(_js_expr="other")._var_set_state("state").to(str)
+    other_var = Var(_js_expr="other").to(str)
+    assert str(var.contains(other_state_var)) == f"{expected}.includes(state.other)"
+    assert str(var.contains(other_var)) == f"{expected}.includes(other)"
     assert (
-        str(var.contains("1", "hello")) == f'{{{expected}.some(e=>e[`hello`]==="1")}}'
+        str(var.contains("1", "hello"))
+        == f'{expected}.some(obj => obj["hello"] === "1")'
     )
 
 
 @pytest.mark.parametrize(
     "var, expected",
     [
-        (v({"a": 1, "b": 2}), '{"a": 1, "b": 2}'),
-        (BaseVar(_var_name="foo", _var_type=dict)._var_set_state("state"), "state.foo"),
-        (BaseVar(_var_name="foo", _var_type=dict), "foo"),
+        (v({"a": 1, "b": 2}), '({ ["a"] : 1, ["b"] : 2 })'),
+        (Var(_js_expr="foo")._var_set_state("state").to(dict), "state.foo"),
+        (Var(_js_expr="foo").to(dict), "foo"),
     ],
 )
 def test_dict_contains(var, expected):
-    assert str(var.contains(1)) == f"{{{expected}.hasOwnProperty(1)}}"
-    assert str(var.contains("1")) == f'{{{expected}.hasOwnProperty("1")}}'
-    assert str(var.contains(v(1))) == f"{{{expected}.hasOwnProperty(1)}}"
-    assert str(var.contains(v("1"))) == f'{{{expected}.hasOwnProperty("1")}}'
-    other_state_var = BaseVar(_var_name="other", _var_type=str)._var_set_state("state")
-    other_var = BaseVar(_var_name="other", _var_type=str)
+    assert str(var.contains(1)) == f"{expected}.hasOwnProperty(1)"
+    assert str(var.contains("1")) == f'{expected}.hasOwnProperty("1")'
+    assert str(var.contains(v(1))) == f"{expected}.hasOwnProperty(1)"
+    assert str(var.contains(v("1"))) == f'{expected}.hasOwnProperty("1")'
+    other_state_var = Var(_js_expr="other")._var_set_state("state").to(str)
+    other_var = Var(_js_expr="other").to(str)
     assert (
-        str(var.contains(other_state_var))
-        == f"{{{expected}.hasOwnProperty(state.other)}}"
+        str(var.contains(other_state_var)) == f"{expected}.hasOwnProperty(state.other)"
     )
-    assert str(var.contains(other_var)) == f"{{{expected}.hasOwnProperty(other)}}"
+    assert str(var.contains(other_var)) == f"{expected}.hasOwnProperty(other)"
 
 
 @pytest.mark.parametrize(
     "var",
     [
-        BaseVar(_var_name="list", _var_type=List[int]),
-        BaseVar(_var_name="tuple", _var_type=Tuple[int, int]),
-        BaseVar(_var_name="str", _var_type=str),
+        Var(_js_expr="list", _var_type=List[int]).guess_type(),
+        Var(_js_expr="tuple", _var_type=Tuple[int, int]).guess_type(),
+        Var(_js_expr="str", _var_type=str).guess_type(),
     ],
 )
 def test_var_indexing_lists(var):
@@ -520,18 +458,21 @@ def test_var_indexing_lists(var):
         var : The str, list or tuple base var.
     """
     # Test basic indexing.
-    assert str(var[0]) == f"{{{var._var_name}.at(0)}}"
-    assert str(var[1]) == f"{{{var._var_name}.at(1)}}"
+    assert str(var[0]) == f"{var._js_expr}.at(0)"
+    assert str(var[1]) == f"{var._js_expr}.at(1)"
 
     # Test negative indexing.
-    assert str(var[-1]) == f"{{{var._var_name}.at(-1)}}"
+    assert str(var[-1]) == f"{var._js_expr}.at(-1)"
 
 
 @pytest.mark.parametrize(
     "var, type_",
     [
-        (BaseVar(_var_name="list", _var_type=List[int]), [int, int]),
-        (BaseVar(_var_name="tuple", _var_type=Tuple[int, str]), [int, str]),
+        (Var(_js_expr="list", _var_type=List[int]).guess_type(), [int, int]),
+        (
+            Var(_js_expr="tuple", _var_type=Tuple[int, str]).guess_type(),
+            [int, str],
+        ),
     ],
 )
 def test_var_indexing_types(var, type_):
@@ -548,31 +489,31 @@ def test_var_indexing_types(var, type_):
 
 def test_var_indexing_str():
     """Test that we can index into str vars."""
-    str_var = BaseVar(_var_name="str", _var_type=str)
+    str_var = Var(_js_expr="str").to(str)
 
     # Test that indexing gives a type of Var[str].
     assert isinstance(str_var[0], Var)
     assert str_var[0]._var_type == str
 
     # Test basic indexing.
-    assert str(str_var[0]) == "{str.at(0)}"
-    assert str(str_var[1]) == "{str.at(1)}"
+    assert str(str_var[0]) == "str.at(0)"
+    assert str(str_var[1]) == "str.at(1)"
 
     # Test negative indexing.
-    assert str(str_var[-1]) == "{str.at(-1)}"
+    assert str(str_var[-1]) == "str.at(-1)"
 
 
 @pytest.mark.parametrize(
     "var",
     [
-        (BaseVar(_var_name="foo", _var_type=int)),
-        (BaseVar(_var_name="bar", _var_type=float)),
+        (Var(_js_expr="foo", _var_type=int).guess_type()),
+        (Var(_js_expr="bar", _var_type=float).guess_type()),
     ],
 )
 def test_var_replace_with_invalid_kwargs(var):
     with pytest.raises(TypeError) as excinfo:
         var._replace(_this_should_fail=True)
-    assert "Unexpected keyword arguments" in str(excinfo.value)
+    assert "unexpected keyword argument" in str(excinfo.value)
 
 
 def test_computed_var_replace_with_invalid_kwargs():
@@ -582,65 +523,71 @@ def test_computed_var_replace_with_invalid_kwargs():
 
     with pytest.raises(TypeError) as excinfo:
         test_var._replace(_random_kwarg=True)
-    assert "Unexpected keyword arguments" in str(excinfo.value)
+    assert "Unexpected keyword argument" in str(excinfo.value)
 
 
 @pytest.mark.parametrize(
     "var, index",
     [
-        (BaseVar(_var_name="lst", _var_type=List[int]), [1, 2]),
-        (BaseVar(_var_name="lst", _var_type=List[int]), {"name": "dict"}),
-        (BaseVar(_var_name="lst", _var_type=List[int]), {"set"}),
+        (Var(_js_expr="lst", _var_type=List[int]).guess_type(), [1, 2]),
         (
-            BaseVar(_var_name="lst", _var_type=List[int]),
+            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
+            {"name": "dict"},
+        ),
+        (Var(_js_expr="lst", _var_type=List[int]).guess_type(), {"set"}),
+        (
+            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
             (
                 1,
                 2,
             ),
         ),
-        (BaseVar(_var_name="lst", _var_type=List[int]), 1.5),
-        (BaseVar(_var_name="lst", _var_type=List[int]), "str"),
+        (Var(_js_expr="lst", _var_type=List[int]).guess_type(), 1.5),
+        (Var(_js_expr="lst", _var_type=List[int]).guess_type(), "str"),
         (
-            BaseVar(_var_name="lst", _var_type=List[int]),
-            BaseVar(_var_name="string_var", _var_type=str),
+            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
+            Var(_js_expr="string_var", _var_type=str).guess_type(),
         ),
         (
-            BaseVar(_var_name="lst", _var_type=List[int]),
-            BaseVar(_var_name="float_var", _var_type=float),
+            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
+            Var(_js_expr="float_var", _var_type=float).guess_type(),
         ),
         (
-            BaseVar(_var_name="lst", _var_type=List[int]),
-            BaseVar(_var_name="list_var", _var_type=List[int]),
+            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
+            Var(_js_expr="list_var", _var_type=List[int]).guess_type(),
         ),
         (
-            BaseVar(_var_name="lst", _var_type=List[int]),
-            BaseVar(_var_name="set_var", _var_type=Set[str]),
+            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
+            Var(_js_expr="set_var", _var_type=Set[str]).guess_type(),
         ),
         (
-            BaseVar(_var_name="lst", _var_type=List[int]),
-            BaseVar(_var_name="dict_var", _var_type=Dict[str, str]),
+            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
+            Var(_js_expr="dict_var", _var_type=Dict[str, str]).guess_type(),
         ),
-        (BaseVar(_var_name="str", _var_type=str), [1, 2]),
-        (BaseVar(_var_name="lst", _var_type=str), {"name": "dict"}),
-        (BaseVar(_var_name="lst", _var_type=str), {"set"}),
+        (Var(_js_expr="str", _var_type=str).guess_type(), [1, 2]),
+        (Var(_js_expr="lst", _var_type=str).guess_type(), {"name": "dict"}),
+        (Var(_js_expr="lst", _var_type=str).guess_type(), {"set"}),
         (
-            BaseVar(_var_name="lst", _var_type=str),
-            BaseVar(_var_name="string_var", _var_type=str),
-        ),
-        (
-            BaseVar(_var_name="lst", _var_type=str),
-            BaseVar(_var_name="float_var", _var_type=float),
-        ),
-        (BaseVar(_var_name="str", _var_type=Tuple[str]), [1, 2]),
-        (BaseVar(_var_name="lst", _var_type=Tuple[str]), {"name": "dict"}),
-        (BaseVar(_var_name="lst", _var_type=Tuple[str]), {"set"}),
-        (
-            BaseVar(_var_name="lst", _var_type=Tuple[str]),
-            BaseVar(_var_name="string_var", _var_type=str),
+            Var(_js_expr="lst", _var_type=str).guess_type(),
+            Var(_js_expr="string_var", _var_type=str).guess_type(),
         ),
         (
-            BaseVar(_var_name="lst", _var_type=Tuple[str]),
-            BaseVar(_var_name="float_var", _var_type=float),
+            Var(_js_expr="lst", _var_type=str).guess_type(),
+            Var(_js_expr="float_var", _var_type=float).guess_type(),
+        ),
+        (Var(_js_expr="str", _var_type=Tuple[str]).guess_type(), [1, 2]),
+        (
+            Var(_js_expr="lst", _var_type=Tuple[str]).guess_type(),
+            {"name": "dict"},
+        ),
+        (Var(_js_expr="lst", _var_type=Tuple[str]).guess_type(), {"set"}),
+        (
+            Var(_js_expr="lst", _var_type=Tuple[str]).guess_type(),
+            Var(_js_expr="string_var", _var_type=str).guess_type(),
+        ),
+        (
+            Var(_js_expr="lst", _var_type=Tuple[str]).guess_type(),
+            Var(_js_expr="float_var", _var_type=float).guess_type(),
         ),
     ],
 )
@@ -658,9 +605,8 @@ def test_var_unsupported_indexing_lists(var, index):
 @pytest.mark.parametrize(
     "var",
     [
-        BaseVar(_var_name="lst", _var_type=List[int]),
-        BaseVar(_var_name="tuple", _var_type=Tuple[int, int]),
-        BaseVar(_var_name="str", _var_type=str),
+        Var(_js_expr="lst", _var_type=List[int]).guess_type(),
+        Var(_js_expr="tuple", _var_type=Tuple[int, int]).guess_type(),
     ],
 )
 def test_var_list_slicing(var):
@@ -669,84 +615,105 @@ def test_var_list_slicing(var):
     Args:
         var : The str, list or tuple base var.
     """
-    assert str(var[:1]) == f"{{{var._var_name}.slice(0, 1)}}"
-    assert str(var[:1]) == f"{{{var._var_name}.slice(0, 1)}}"
-    assert str(var[:]) == f"{{{var._var_name}.slice(0, undefined)}}"
+    assert str(var[:1]) == f"{var._js_expr}.slice(undefined, 1)"
+    assert str(var[1:]) == f"{var._js_expr}.slice(1, undefined)"
+    assert str(var[:]) == f"{var._js_expr}.slice(undefined, undefined)"
+
+
+def test_str_var_slicing():
+    """Test that we can slice into str vars."""
+    str_var = Var(_js_expr="str").to(str)
+
+    # Test that slicing gives a type of Var[str].
+    assert isinstance(str_var[:1], Var)
+    assert str_var[:1]._var_type == str
+
+    # Test basic slicing.
+    assert str(str_var[:1]) == 'str.split("").slice(undefined, 1).join("")'
+    assert str(str_var[1:]) == 'str.split("").slice(1, undefined).join("")'
+    assert str(str_var[:]) == 'str.split("").slice(undefined, undefined).join("")'
+    assert str(str_var[1:2]) == 'str.split("").slice(1, 2).join("")'
+
+    # Test negative slicing.
+    assert str(str_var[:-1]) == 'str.split("").slice(undefined, -1).join("")'
+    assert str(str_var[-1:]) == 'str.split("").slice(-1, undefined).join("")'
+    assert str(str_var[:-2]) == 'str.split("").slice(undefined, -2).join("")'
+    assert str(str_var[-2:]) == 'str.split("").slice(-2, undefined).join("")'
 
 
 def test_dict_indexing():
     """Test that we can index into dict vars."""
-    dct = BaseVar(_var_name="dct", _var_type=Dict[str, int])
+    dct = Var(_js_expr="dct").to(ObjectVar, Dict[str, str])
 
     # Check correct indexing.
-    assert str(dct["a"]) == '{dct["a"]}'
-    assert str(dct["asdf"]) == '{dct["asdf"]}'
+    assert str(dct["a"]) == 'dct["a"]'
+    assert str(dct["asdf"]) == 'dct["asdf"]'
 
 
 @pytest.mark.parametrize(
     "var, index",
     [
         (
-            BaseVar(_var_name="dict", _var_type=Dict[str, str]),
+            Var(_js_expr="dict", _var_type=Dict[str, str]).guess_type(),
             [1, 2],
         ),
         (
-            BaseVar(_var_name="dict", _var_type=Dict[str, str]),
+            Var(_js_expr="dict", _var_type=Dict[str, str]).guess_type(),
             {"name": "dict"},
         ),
         (
-            BaseVar(_var_name="dict", _var_type=Dict[str, str]),
+            Var(_js_expr="dict", _var_type=Dict[str, str]).guess_type(),
             {"set"},
         ),
         (
-            BaseVar(_var_name="dict", _var_type=Dict[str, str]),
+            Var(_js_expr="dict", _var_type=Dict[str, str]).guess_type(),
             (
                 1,
                 2,
             ),
         ),
         (
-            BaseVar(_var_name="lst", _var_type=Dict[str, str]),
-            BaseVar(_var_name="list_var", _var_type=List[int]),
+            Var(_js_expr="lst", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="list_var", _var_type=List[int]).guess_type(),
         ),
         (
-            BaseVar(_var_name="lst", _var_type=Dict[str, str]),
-            BaseVar(_var_name="set_var", _var_type=Set[str]),
+            Var(_js_expr="lst", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="set_var", _var_type=Set[str]).guess_type(),
         ),
         (
-            BaseVar(_var_name="lst", _var_type=Dict[str, str]),
-            BaseVar(_var_name="dict_var", _var_type=Dict[str, str]),
+            Var(_js_expr="lst", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="dict_var", _var_type=Dict[str, str]).guess_type(),
         ),
         (
-            BaseVar(_var_name="df", _var_type=DataFrame),
+            Var(_js_expr="df", _var_type=DataFrame).guess_type(),
             [1, 2],
         ),
         (
-            BaseVar(_var_name="df", _var_type=DataFrame),
+            Var(_js_expr="df", _var_type=DataFrame).guess_type(),
             {"name": "dict"},
         ),
         (
-            BaseVar(_var_name="df", _var_type=DataFrame),
+            Var(_js_expr="df", _var_type=DataFrame).guess_type(),
             {"set"},
         ),
         (
-            BaseVar(_var_name="df", _var_type=DataFrame),
+            Var(_js_expr="df", _var_type=DataFrame).guess_type(),
             (
                 1,
                 2,
             ),
         ),
         (
-            BaseVar(_var_name="df", _var_type=DataFrame),
-            BaseVar(_var_name="list_var", _var_type=List[int]),
+            Var(_js_expr="df", _var_type=DataFrame).guess_type(),
+            Var(_js_expr="list_var", _var_type=List[int]).guess_type(),
         ),
         (
-            BaseVar(_var_name="df", _var_type=DataFrame),
-            BaseVar(_var_name="set_var", _var_type=Set[str]),
+            Var(_js_expr="df", _var_type=DataFrame).guess_type(),
+            Var(_js_expr="set_var", _var_type=Set[str]).guess_type(),
         ),
         (
-            BaseVar(_var_name="df", _var_type=DataFrame),
-            BaseVar(_var_name="dict_var", _var_type=Dict[str, str]),
+            Var(_js_expr="df", _var_type=DataFrame).guess_type(),
+            Var(_js_expr="dict_var", _var_type=Dict[str, str]).guess_type(),
         ),
     ],
 )
@@ -765,8 +732,6 @@ def test_var_unsupported_indexing_dicts(var, index):
     "fixture",
     [
         "ParentState",
-        "ChildState",
-        "GrandChildState",
         "StateWithAnyVar",
     ],
 )
@@ -786,6 +751,26 @@ def test_computed_var_without_annotation_error(request, fixture):
             err.value.args[0]
             == f"You must provide an annotation for the state var `{full_name}`. Annotation cannot be `typing.Any`"
         )
+
+
+@pytest.mark.parametrize(
+    "fixture",
+    [
+        "ChildState",
+        "GrandChildState",
+    ],
+)
+def test_shadow_computed_var_error(request: pytest.FixtureRequest, fixture: str):
+    """Test that a name error is thrown when an attribute of a computed var is
+    shadowed by another attribute.
+
+    Args:
+        request: Fixture Request.
+        fixture: The state fixture.
+    """
+    with pytest.raises(NameError):
+        state = request.getfixturevalue(fixture)
+        state.var_without_annotation.foo
 
 
 @pytest.mark.parametrize(
@@ -898,8 +883,8 @@ def test_function_var():
     manual_addition_func = ArgsFunctionOperation.create(
         ("a", "b"),
         {
-            "args": [ImmutableVar.create_safe("a"), ImmutableVar.create_safe("b")],
-            "result": ImmutableVar.create_safe("a + b"),
+            "args": [Var(_js_expr="a"), Var(_js_expr="b")],
+            "result": Var(_js_expr="a + b"),
         },
     )
     assert (
@@ -914,7 +899,7 @@ def test_function_var():
     )
 
     create_hello_statement = ArgsFunctionOperation.create(
-        ("name",), f"Hello, {ImmutableVar.create_safe('name')}!"
+        ("name",), f"Hello, {Var(_js_expr='name')}!"
     )
     first_name = LiteralStringVar.create("Steven")
     last_name = LiteralStringVar.create("Universe")
@@ -925,9 +910,9 @@ def test_function_var():
 
 
 def test_var_operation():
-    @var_operation(output=NumberVar)
-    def add(a: Union[NumberVar, int], b: Union[NumberVar, int]) -> str:
-        return f"({a} + {b})"
+    @var_operation
+    def add(a: Union[NumberVar, int], b: Union[NumberVar, int]):
+        return var_operation_return(js_expression=f"({a} + {b})", var_type=int)
 
     assert str(add(1, 2)) == "(1 + 2)"
     assert str(add(a=4, b=-9)) == "(4 + -9)"
@@ -967,15 +952,30 @@ def test_all_number_operations():
 
     assert (
         str(even_more_complicated_number)
-        == "!(Boolean((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) || (2 && Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))))))"
+        == "!(((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) || (2 && Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)))) !== 0))"
     )
 
     assert str(LiteralNumberVar.create(5) > False) == "(5 > 0)"
-    assert str(LiteralBooleanVar.create(False) < 5) == "((false ? 1 : 0) < 5)"
+    assert str(LiteralBooleanVar.create(False) < 5) == "(Number(false) < 5)"
     assert (
         str(LiteralBooleanVar.create(False) < LiteralBooleanVar.create(True))
-        == "((false ? 1 : 0) < (true ? 1 : 0))"
+        == "(Number(false) < Number(true))"
     )
+
+
+@pytest.mark.parametrize(
+    ("var", "expected"),
+    [
+        (Var.create(False), "false"),
+        (Var.create(True), "true"),
+        (Var.create("false"), '("false".split("").length !== 0)'),
+        (Var.create([1, 2, 3]), "isTrue([1, 2, 3])"),
+        (Var.create({"a": 1, "b": 2}), 'isTrue(({ ["a"] : 1, ["b"] : 2 }))'),
+        (Var("mysterious_var"), "isTrue(mysterious_var)"),
+    ],
+)
+def test_boolify_operations(var, expected):
+    assert str(var.bool()) == expected
 
 
 def test_index_operation():
@@ -992,6 +992,22 @@ def test_index_operation():
     )
     assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].slice().reverse()"
     assert str(array_var[0].to(NumberVar) + 9) == "([1, 2, 3, 4, 5].at(0) + 9)"
+
+
+@pytest.mark.parametrize(
+    "var, expected_js",
+    [
+        (Var.create(float("inf")), "Infinity"),
+        (Var.create(-float("inf")), "-Infinity"),
+        (Var.create(float("nan")), "NaN"),
+    ],
+)
+def test_inf_and_nan(var, expected_js):
+    assert str(var) == expected_js
+    assert isinstance(var, NumberVar)
+    assert isinstance(var, LiteralVar)
+    with pytest.raises(PrimitiveUnserializableToJSON):
+        var.json()
 
 
 def test_array_operations():
@@ -1040,6 +1056,29 @@ def test_object_operations():
     )
 
 
+def test_var_component():
+    class ComponentVarState(rx.State):
+        field_var: rx.Component = rx.text("I am a field var")
+
+        @rx.var
+        def computed_var(self) -> rx.Component:
+            return rx.text("I am a computed var")
+
+    def has_eval_react_component(var: Var):
+        var_data = var._get_all_var_data()
+        assert var_data is not None
+        assert any(
+            any(
+                imported_object.name == "evalReactComponent"
+                for imported_object in imported_objects
+            )
+            for _, imported_objects in var_data.imports
+        )
+
+    has_eval_react_component(ComponentVarState.field_var)  # type: ignore
+    has_eval_react_component(ComponentVarState.computed_var)
+
+
 def test_type_chains():
     object_var = LiteralObjectVar.create({"a": 1, "b": 2, "c": 3})
     assert (object_var._key_type(), object_var._value_type()) == (str, int)
@@ -1078,7 +1117,9 @@ def nested_base():
         bar: Boo
         baz: int
 
-    parent_obj = LiteralVar.create(Foo(bar=Boo(foo="bar", bar=5), baz=5))
+    parent_obj = LiteralObjectVar.create(
+        Foo(bar=Boo(foo="bar", bar=5), baz=5).dict(), Foo
+    )
 
     assert (
         str(parent_obj.bar.foo)
@@ -1087,7 +1128,7 @@ def nested_base():
 
 
 def test_retrival():
-    var_without_data = ImmutableVar.create("test")
+    var_without_data = Var(_js_expr="test")
     assert var_without_data is not None
 
     original_var_data = VarData(
@@ -1103,8 +1144,8 @@ def test_retrival():
     assert REFLEX_VAR_OPENING_TAG in f_string
     assert REFLEX_VAR_CLOSING_TAG in f_string
 
-    result_var_data = Var.create_safe(f_string)._var_data
-    result_immutable_var_data = ImmutableVar.create_safe(f_string)._var_data
+    result_var_data = LiteralVar.create(f_string)._get_all_var_data()
+    result_immutable_var_data = Var(_js_expr=f_string)._var_data
     assert result_var_data is not None and result_immutable_var_data is not None
     assert (
         result_var_data.state
@@ -1113,35 +1154,23 @@ def test_retrival():
     )
     assert (
         result_var_data.imports
-        == (
-            result_immutable_var_data.imports
-            if isinstance(result_immutable_var_data.imports, dict)
-            else {
-                k: list(v)
-                for k, v in result_immutable_var_data.imports
-                if k in original_var_data.imports
-            }
-        )
+        == result_immutable_var_data.imports
         == original_var_data.imports
     )
     assert (
-        list(result_var_data.hooks.keys())
-        == (
-            list(result_immutable_var_data.hooks.keys())
-            if isinstance(result_immutable_var_data.hooks, dict)
-            else list(result_immutable_var_data.hooks)
-        )
-        == list(original_var_data.hooks.keys())
+        tuple(result_var_data.hooks)
+        == tuple(result_immutable_var_data.hooks)
+        == tuple(original_var_data.hooks)
     )
 
 
 def test_fstring_concat():
-    original_var_with_data = Var.create_safe(
+    original_var_with_data = LiteralVar.create(
         "imagination", _var_data=VarData(state="fear")
     )
 
-    immutable_var_with_data = ImmutableVar.create_safe(
-        "consequences",
+    immutable_var_with_data = Var(
+        _js_expr="consequences",
         _var_data=VarData(
             imports={
                 "react": [ImportVar(tag="useRef")],
@@ -1159,9 +1188,9 @@ def test_fstring_concat():
         ),
     )
 
-    assert str(string_concat) == '("foo"+imagination+"bar"+consequences+"baz")'
+    assert str(string_concat) == '("fooimaginationbar"+consequences+"baz")'
     assert isinstance(string_concat, ConcatVarOperation)
-    assert string_concat._get_all_var_data() == ImmutableVarData(
+    assert string_concat._get_all_var_data() == VarData(
         state="fear",
         imports={
             "react": [ImportVar(tag="useRef")],
@@ -1171,17 +1200,22 @@ def test_fstring_concat():
     )
 
 
+var = Var(_js_expr="var", _var_type=str)
+myvar = Var(_js_expr="myvar", _var_type=int)._var_set_state("state")
+x = Var(_js_expr="x", _var_type=str)
+
+
 @pytest.mark.parametrize(
     "out, expected",
     [
-        (f"{BaseVar(_var_name='var', _var_type=str)}", "${var}"),
+        (f"{var}", f"<reflex.Var>{hash(var)}</reflex.Var>var"),
         (
-            f"testing f-string with {BaseVar(_var_name='myvar', _var_type=int)._var_set_state('state')}",
-            'testing f-string with $<reflex.Var>{"state": "state", "interpolations": [], "imports": {"/utils/context": [{"tag": "StateContexts", "is_default": false, "alias": null, "install": true, "render": true, "transpile": false}], "react": [{"tag": "useContext", "is_default": false, "alias": null, "install": true, "render": true, "transpile": false}]}, "hooks": {"const state = useContext(StateContexts.state)": null}, "string_length": 13}</reflex.Var>{state.myvar}',
+            f"testing f-string with {myvar}",
+            f"testing f-string with <reflex.Var>{hash(myvar)}</reflex.Var>state.myvar",
         ),
         (
-            f"testing local f-string {BaseVar(_var_name='x', _var_is_local=True, _var_type=str)}",
-            "testing local f-string x",
+            f"testing local f-string {x}",
+            f"testing local f-string <reflex.Var>{hash(x)}</reflex.Var>x",
         ),
     ],
 )
@@ -1194,8 +1228,8 @@ def test_fstrings(out, expected):
     [
         ([1], ""),
         ({"a": 1}, ""),
-        ([Var.create_safe(1)._var_set_state("foo")], "foo"),
-        ({"a": Var.create_safe(1)._var_set_state("foo")}, "foo"),
+        ([LiteralVar.create(1)._var_set_state("foo")], "foo"),
+        ({"a": LiteralVar.create(1)._var_set_state("foo")}, "foo"),
     ],
 )
 def test_extract_state_from_container(value, expect_state):
@@ -1205,7 +1239,9 @@ def test_extract_state_from_container(value, expect_state):
         value: The value to create a var from.
         expect_state: The expected state.
     """
-    assert Var.create_safe(value)._var_state == expect_state
+    var_data = LiteralVar.create(value)._get_all_var_data()
+    var_state = var_data.state if var_data else ""
+    assert var_state == expect_state
 
 
 @pytest.mark.parametrize(
@@ -1221,25 +1257,21 @@ def test_fstring_roundtrip(value):
     Args:
         value: The value to create a Var from.
     """
-    var = BaseVar.create_safe(value)._var_set_state("state")
-    rt_var = Var.create_safe(f"{var}")
+    var = Var(_js_expr=value)._var_set_state("state")
+    rt_var = LiteralVar.create(f"{var}")
     assert var._var_state == rt_var._var_state
-    assert var._var_full_name_needs_state_prefix
-    assert not rt_var._var_full_name_needs_state_prefix
-    assert rt_var._var_name == var._var_full_name
+    assert str(rt_var) == str(var)
 
 
 @pytest.mark.parametrize(
     "var",
     [
-        BaseVar(_var_name="var", _var_type=int),
-        BaseVar(_var_name="var", _var_type=float),
-        BaseVar(_var_name="var", _var_type=str),
-        BaseVar(_var_name="var", _var_type=bool),
-        BaseVar(_var_name="var", _var_type=dict),
-        BaseVar(_var_name="var", _var_type=tuple),
-        BaseVar(_var_name="var", _var_type=set),
-        BaseVar(_var_name="var", _var_type=None),
+        Var(_js_expr="var", _var_type=int).guess_type(),
+        Var(_js_expr="var", _var_type=float).guess_type(),
+        Var(_js_expr="var", _var_type=str).guess_type(),
+        Var(_js_expr="var", _var_type=bool).guess_type(),
+        Var(_js_expr="var", _var_type=dict).guess_type(),
+        Var(_js_expr="var", _var_type=None).guess_type(),
     ],
 )
 def test_unsupported_types_for_reverse(var):
@@ -1250,16 +1282,16 @@ def test_unsupported_types_for_reverse(var):
     """
     with pytest.raises(TypeError) as err:
         var.reverse()
-    assert err.value.args[0] == f"Cannot reverse non-list var var."
+    assert err.value.args[0] == f"Cannot reverse non-list var."
 
 
 @pytest.mark.parametrize(
     "var",
     [
-        BaseVar(_var_name="var", _var_type=int),
-        BaseVar(_var_name="var", _var_type=float),
-        BaseVar(_var_name="var", _var_type=bool),
-        BaseVar(_var_name="var", _var_type=None),
+        Var(_js_expr="var", _var_type=int).guess_type(),
+        Var(_js_expr="var", _var_type=float).guess_type(),
+        Var(_js_expr="var", _var_type=bool).guess_type(),
+        Var(_js_expr="var", _var_type=None).guess_type(),
     ],
 )
 def test_unsupported_types_for_contains(var):
@@ -1272,34 +1304,34 @@ def test_unsupported_types_for_contains(var):
         assert var.contains(1)
     assert (
         err.value.args[0]
-        == f"Var var of type {var._var_type} does not support contains check."
+        == f"Var of type {var._var_type} does not support contains check."
     )
 
 
 @pytest.mark.parametrize(
     "other",
     [
-        BaseVar(_var_name="other", _var_type=int),
-        BaseVar(_var_name="other", _var_type=float),
-        BaseVar(_var_name="other", _var_type=bool),
-        BaseVar(_var_name="other", _var_type=list),
-        BaseVar(_var_name="other", _var_type=dict),
-        BaseVar(_var_name="other", _var_type=tuple),
-        BaseVar(_var_name="other", _var_type=set),
+        Var(_js_expr="other", _var_type=int).guess_type(),
+        Var(_js_expr="other", _var_type=float).guess_type(),
+        Var(_js_expr="other", _var_type=bool).guess_type(),
+        Var(_js_expr="other", _var_type=list).guess_type(),
+        Var(_js_expr="other", _var_type=dict).guess_type(),
+        Var(_js_expr="other", _var_type=tuple).guess_type(),
+        Var(_js_expr="other", _var_type=set).guess_type(),
     ],
 )
 def test_unsupported_types_for_string_contains(other):
     with pytest.raises(TypeError) as err:
-        assert BaseVar(_var_name="var", _var_type=str).contains(other)
+        assert Var(_js_expr="var").to(str).contains(other)
     assert (
         err.value.args[0]
-        == f"'in <string>' requires string as left operand, not {other._var_type}"
+        == f"Unsupported Operand type(s) for contains: ToStringOperation, {type(other).__name__}"
     )
 
 
 def test_unsupported_default_contains():
     with pytest.raises(TypeError) as err:
-        assert 1 in BaseVar(_var_name="var", _var_type=str)
+        assert 1 in Var(_js_expr="var", _var_type=str).guess_type()
     assert (
         err.value.args[0]
         == "'in' operator not supported for Var types, use Var.contains() instead."
@@ -1310,8 +1342,8 @@ def test_unsupported_default_contains():
     "operand1_var,operand2_var,operators",
     [
         (
-            Var.create(10),
-            Var.create(5),
+            LiteralVar.create(10),
+            LiteralVar.create(5),
             [
                 "+",
                 "-",
@@ -1329,13 +1361,13 @@ def test_unsupported_default_contains():
             ],
         ),
         (
-            Var.create(10.5),
-            Var.create(5),
+            LiteralVar.create(10.5),
+            LiteralVar.create(5),
             ["+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="],
         ),
         (
-            Var.create(5),
-            Var.create(True),
+            LiteralVar.create(5),
+            LiteralVar.create(True),
             [
                 "+",
                 "-",
@@ -1353,22 +1385,26 @@ def test_unsupported_default_contains():
             ],
         ),
         (
-            Var.create(10.5),
-            Var.create(5.5),
+            LiteralVar.create(10.5),
+            LiteralVar.create(5.5),
             ["+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="],
         ),
         (
-            Var.create(10.5),
-            Var.create(True),
+            LiteralVar.create(10.5),
+            LiteralVar.create(True),
             ["+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="],
         ),
-        (Var.create("10"), Var.create("5"), ["+", ">", "<", "<=", ">="]),
-        (Var.create([10, 20]), Var.create([5, 6]), ["+", ">", "<", "<=", ">="]),
-        (Var.create([10, 20]), Var.create(5), ["*"]),
-        (Var.create([10, 20]), Var.create(True), ["*"]),
+        (LiteralVar.create("10"), LiteralVar.create("5"), ["+", ">", "<", "<=", ">="]),
         (
-            Var.create(True),
-            Var.create(True),
+            LiteralVar.create([10, 20]),
+            LiteralVar.create([5, 6]),
+            ["+", ">", "<", "<=", ">="],
+        ),
+        (LiteralVar.create([10, 20]), LiteralVar.create(5), ["*"]),
+        (LiteralVar.create([10, 20]), LiteralVar.create(True), ["*"]),
+        (
+            LiteralVar.create(True),
+            LiteralVar.create(True),
             [
                 "+",
                 "-",
@@ -1396,16 +1432,28 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
         operators: list of supported operators.
     """
     for operator in operators:
-        operand1_var.operation(op=operator, other=operand2_var)
-        operand1_var.operation(op=operator, other=operand2_var, flip=True)
+        print(
+            "testing",
+            operator,
+            "on",
+            operand1_var,
+            operand2_var,
+            " of types",
+            type(operand1_var),
+            type(operand2_var),
+        )
+        eval(f"operand1_var {operator} operand2_var")
+        eval(f"operand2_var {operator} operand1_var")
+        # operand1_var.operation(op=operator, other=operand2_var)
+        # operand1_var.operation(op=operator, other=operand2_var, flip=True)
 
 
 @pytest.mark.parametrize(
     "operand1_var,operand2_var,operators",
     [
         (
-            Var.create(10),
-            Var.create(5),
+            LiteralVar.create(10),
+            LiteralVar.create(5),
             [
                 "^",
                 "<<",
@@ -1413,41 +1461,35 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
             ],
         ),
         (
-            Var.create(10.5),
-            Var.create(5),
+            LiteralVar.create(10.5),
+            LiteralVar.create(5),
             [
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create(10.5),
-            Var.create(True),
+            LiteralVar.create(10.5),
+            LiteralVar.create(True),
             [
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create(10.5),
-            Var.create(5.5),
+            LiteralVar.create(10.5),
+            LiteralVar.create(5.5),
             [
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create("10"),
-            Var.create("5"),
+            LiteralVar.create("10"),
+            LiteralVar.create("5"),
             [
                 "-",
                 "/",
@@ -1455,16 +1497,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "*",
                 "%",
                 "**",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create([5, 6]),
+            LiteralVar.create([10, 20]),
+            LiteralVar.create([5, 6]),
             [
                 "-",
                 "/",
@@ -1472,16 +1512,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "*",
                 "%",
                 "**",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create(5),
+            LiteralVar.create([10, 20]),
+            LiteralVar.create(5),
             [
                 "+",
                 "-",
@@ -1493,16 +1531,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create(True),
+            LiteralVar.create([10, 20]),
+            LiteralVar.create(True),
             [
                 "+",
                 "-",
@@ -1514,16 +1550,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create("5"),
+            LiteralVar.create([10, 20]),
+            LiteralVar.create("5"),
             [
                 "+",
                 "-",
@@ -1536,16 +1570,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create({"key": "value"}),
+            LiteralVar.create([10, 20]),
+            LiteralVar.create({"key": "value"}),
             [
                 "+",
                 "-",
@@ -1558,16 +1590,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create(5.5),
+            LiteralVar.create([10, 20]),
+            LiteralVar.create(5.5),
             [
                 "+",
                 "-",
@@ -1580,16 +1610,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create({"key": "value"}),
-            Var.create({"another_key": "another_value"}),
+            LiteralVar.create({"key": "value"}),
+            LiteralVar.create({"another_key": "another_value"}),
             [
                 "+",
                 "-",
@@ -1602,16 +1630,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create({"key": "value"}),
-            Var.create(5),
+            LiteralVar.create({"key": "value"}),
+            LiteralVar.create(5),
             [
                 "+",
                 "-",
@@ -1624,16 +1650,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create({"key": "value"}),
-            Var.create(True),
+            LiteralVar.create({"key": "value"}),
+            LiteralVar.create(True),
             [
                 "+",
                 "-",
@@ -1646,16 +1670,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create({"key": "value"}),
-            Var.create(5.5),
+            LiteralVar.create({"key": "value"}),
+            LiteralVar.create(5.5),
             [
                 "+",
                 "-",
@@ -1668,16 +1690,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
         (
-            Var.create({"key": "value"}),
-            Var.create("5"),
+            LiteralVar.create({"key": "value"}),
+            LiteralVar.create("5"),
             [
                 "+",
                 "-",
@@ -1690,44 +1710,48 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
-                "|",
                 "^",
                 "<<",
                 ">>",
-                "&",
             ],
         ),
     ],
 )
 def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List[str]):
     for operator in operators:
+        print(f"testing {operator} on {str(operand1_var)} and {str(operand2_var)}")
         with pytest.raises(TypeError):
-            operand1_var.operation(op=operator, other=operand2_var)
+            print(eval(f"operand1_var {operator} operand2_var"))
+            # operand1_var.operation(op=operator, other=operand2_var)
 
         with pytest.raises(TypeError):
-            operand1_var.operation(op=operator, other=operand2_var, flip=True)
+            print(eval(f"operand2_var {operator} operand1_var"))
+            # operand1_var.operation(op=operator, other=operand2_var, flip=True)
 
 
 @pytest.mark.parametrize(
     "var, expected",
     [
-        (Var.create("string_value", _var_is_string=True), "`string_value`"),
-        (Var.create(1), "1"),
-        (Var.create([1, 2, 3]), "[1, 2, 3]"),
-        (Var.create({"foo": "bar"}), '{"foo": "bar"}'),
+        (LiteralVar.create("string_value"), '"string_value"'),
+        (LiteralVar.create(1), "1"),
+        (LiteralVar.create([1, 2, 3]), "[1, 2, 3]"),
+        (LiteralVar.create({"foo": "bar"}), '({ ["foo"] : "bar" })'),
         (
-            Var.create(ATestState.value, _var_is_string=True),
+            LiteralVar.create(ATestState.value),
             f"{ATestState.get_full_name()}.value",
         ),
         (
             LiteralVar.create(f"{ATestState.value} string"),
             f'({ATestState.get_full_name()}.value+" string")',
         ),
-        (Var.create(ATestState.dict_val), f"{ATestState.get_full_name()}.dict_val"),
+        (
+            LiteralVar.create(ATestState.dict_val),
+            f"{ATestState.get_full_name()}.dict_val",
+        ),
     ],
 )
 def test_var_name_unwrapped(var, expected):
-    assert var._var_name_unwrapped == expected
+    assert str(var) == expected
 
 
 def cv_fget(state: BaseState) -> int:
@@ -1770,3 +1794,21 @@ def test_invalid_computed_var_deps(deps: List):
         )
         def test_var(state) -> int:
             return 1
+
+
+def test_to_string_operation():
+    class Email(str): ...
+
+    class TestState(BaseState):
+        optional_email: Optional[Email] = None
+        email: Email = Email("test@reflex.dev")
+
+    assert (
+        str(TestState.optional_email) == f"{TestState.get_full_name()}.optional_email"
+    )
+    my_state = TestState()
+    assert my_state.optional_email is None
+    assert my_state.email == "test@reflex.dev"
+
+    assert cast(Var, TestState.email)._var_type == Email
+    assert cast(Var, TestState.optional_email)._var_type == Optional[Email]

@@ -140,6 +140,7 @@ RADIX_THEMES_COMPONENTS_MAPPING: dict = {
     "components.radix.themes.components.radio_group": ["radio", "radio_group"],
     "components.radix.themes.components.dropdown_menu": ["menu", "dropdown_menu"],
     "components.radix.themes.components.separator": ["divider", "separator"],
+    "components.radix.themes.components.progress": ["progress"],
 }
 
 RADIX_THEMES_LAYOUT_MAPPING: dict = {
@@ -205,7 +206,13 @@ RADIX_PRIMITIVES_MAPPING: dict = {
     "components.radix.primitives.form": [
         "form",
     ],
-    "components.radix.primitives.progress": ["progress"],
+    "components.radix.primitives.progress": [
+        "progress",
+    ],
+}
+
+RADIX_PRIMITIVES_SHORTCUT_MAPPING: dict = {
+    k: v for k, v in RADIX_PRIMITIVES_MAPPING.items() if "progress" not in k
 }
 
 COMPONENTS_CORE_MAPPING: dict = {
@@ -248,7 +255,7 @@ RADIX_MAPPING: dict = {
     **RADIX_THEMES_COMPONENTS_MAPPING,
     **RADIX_THEMES_TYPOGRAPHY_MAPPING,
     **RADIX_THEMES_LAYOUT_MAPPING,
-    **RADIX_PRIMITIVES_MAPPING,
+    **RADIX_PRIMITIVES_SHORTCUT_MAPPING,
 }
 
 _MAPPING: dict = {
@@ -338,7 +345,6 @@ _SUBMODULES: set[str] = {
     "testing",
     "utils",
     "vars",
-    "ivars",
     "config",
     "compiler",
 }

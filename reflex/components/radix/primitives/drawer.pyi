@@ -9,7 +9,7 @@ from reflex.components.component import ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 class DrawerComponent(RadixPrimitiveComponent):
     @overload
@@ -96,8 +96,8 @@ class DrawerRoot(DrawerComponent):
         modal: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
             Union[
-                Var[Literal["top", "bottom", "left", "right"]],
-                Literal["top", "bottom", "left", "right"],
+                Literal["bottom", "left", "right", "top"],
+                Var[Literal["bottom", "left", "right", "top"]],
             ]
         ] = None,
         preventScrollRestoration: Optional[Union[Var[bool], bool]] = None,
@@ -678,8 +678,8 @@ class Drawer(ComponentNamespace):
         modal: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
             Union[
-                Var[Literal["top", "bottom", "left", "right"]],
-                Literal["top", "bottom", "left", "right"],
+                Literal["bottom", "left", "right", "top"],
+                Var[Literal["bottom", "left", "right", "top"]],
             ]
         ] = None,
         preventScrollRestoration: Optional[Union[Var[bool], bool]] = None,

@@ -14,12 +14,12 @@ from reflex.event import (
     EventSpec,
     call_script,
 )
-from reflex.ivars.base import LiteralVar
 from reflex.style import Style, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serialize, serializer
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
 
 LiteralPosition = Literal[
     "top-left",
@@ -30,7 +30,7 @@ LiteralPosition = Literal[
     "bottom-right",
 ]
 
-toast_ref = Var.create_safe("refs['__toast']", _var_is_string=False)
+toast_ref = Var(_js_expr="refs['__toast']")
 
 
 class ToastAction(Base):
@@ -66,15 +66,17 @@ def _toast_callback_signature(toast: Var) -> list[Var]:
         A function call stripping non-serializable members of the toast object.
     """
     return [
-        Var.create_safe(
-            f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {toast}; return rest}})()",
-            _var_is_string=False,
+        Var(
+            _js_expr=f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {str(toast)}; return rest}})()"
         )
     ]
 
 
 class ToastProps(PropsBase):
     """Props for the toast component."""
+
+    # Toast's title, renders above the description.
+    title: Optional[Union[str, Var]]
 
     # Toast's description, renders underneath the title.
     description: Optional[Union[str, Var]]
@@ -169,12 +171,12 @@ class ToastProps(PropsBase):
             d["cancel"] = self.cancel
             if isinstance(self.cancel, dict):
                 d["cancel"] = ToastAction(**self.cancel)
-        if "on_dismiss" in d:
-            d["on_dismiss"] = format.format_queue_events(
+        if "onDismiss" in d:
+            d["onDismiss"] = format.format_queue_events(
                 self.on_dismiss, _toast_callback_signature
             )
-        if "on_auto_close" in d:
-            d["on_auto_close"] = format.format_queue_events(
+        if "onAutoClose" in d:
+            d["onAutoClose"] = format.format_queue_events(
                 self.on_auto_close, _toast_callback_signature
             )
         return d
@@ -245,10 +247,8 @@ class Toaster(Component):
         Returns:
             The hooks for the toaster component.
         """
-        hook = Var.create_safe(
-            f"{toast_ref} = toast",
-            _var_is_local=True,
-            _var_is_string=False,
+        hook = Var(
+            _js_expr=f"{toast_ref} = toast",
             _var_data=VarData(
                 imports={
                     "/utils/state": [ImportVar(tag="refs")],
@@ -286,11 +286,11 @@ class Toaster(Component):
         else:
             toast = f"{toast_command}(`{message}`)"
 
-        toast_action = Var.create_safe(toast, _var_is_string=False, _var_is_local=True)
+        toast_action = Var(_js_expr=toast)
         return call_script(toast_action)
 
     @staticmethod
-    def toast_info(message: str, **kwargs):
+    def toast_info(message: str = "", **kwargs):
         """Display an info toast message.
 
         Args:
@@ -303,7 +303,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="info", **kwargs)
 
     @staticmethod
-    def toast_warning(message: str, **kwargs):
+    def toast_warning(message: str = "", **kwargs):
         """Display a warning toast message.
 
         Args:
@@ -316,7 +316,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="warning", **kwargs)
 
     @staticmethod
-    def toast_error(message: str, **kwargs):
+    def toast_error(message: str = "", **kwargs):
         """Display an error toast message.
 
         Args:
@@ -329,7 +329,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="error", **kwargs)
 
     @staticmethod
-    def toast_success(message: str, **kwargs):
+    def toast_success(message: str = "", **kwargs):
         """Display a success toast message.
 
         Args:
@@ -354,17 +354,14 @@ class Toaster(Component):
         dismiss_var_data = None
 
         if isinstance(id, Var):
-            dismiss = f"{toast_ref}.dismiss({id._var_name_unwrapped})"
+            dismiss = f"{toast_ref}.dismiss({str(id)})"
             dismiss_var_data = id._get_all_var_data()
         elif isinstance(id, str):
             dismiss = f"{toast_ref}.dismiss('{id}')"
         else:
             dismiss = f"{toast_ref}.dismiss()"
-        dismiss_action = Var.create_safe(
-            dismiss,
-            _var_is_string=False,
-            _var_is_local=True,
-            _var_data=VarData.merge(dismiss_var_data),
+        dismiss_action = Var(
+            _js_expr=dismiss, _var_data=VarData.merge(dismiss_var_data)
         )
         return call_script(dismiss_action)
 
