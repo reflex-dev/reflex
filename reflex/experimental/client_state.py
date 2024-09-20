@@ -174,15 +174,13 @@ class ClientStateVar(Var):
             else self._setter_name
         )
         if value is not NoValue:
-            import re
-
             # This is a hack to make it work like an EventSpec taking an arg
-            value_str = str(LiteralVar.create(value))
+            var = LiteralVar.create(value)
 
-            # remove patterns of ["*"] from the value_str using regex
-            arg = re.sub(r"\[\".*\"\]", "", value_str)
-
-            setter = f"({arg}) => {setter}({str(value)})"
+            if str(var).startswith("_"):
+                setter = f"(({str(var)}) => {setter}({str(var)}))"
+            else:
+                setter = f"(() => {setter}({str(var)}))"
         return Var(
             _js_expr=setter,
             _var_data=VarData(imports=_refs_import if self._global_ref else {}),
