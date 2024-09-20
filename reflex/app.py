@@ -66,7 +66,7 @@ from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
 )
-from reflex.components.core.upload import Upload, get_upload_dir
+from reflex.components.core.upload import get_upload_dir
 from reflex.components.radix import themes
 from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec, window_alert
@@ -404,15 +404,15 @@ class App(MiddlewareMixin, LifespanMixin, Base):
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
         # To upload files.
-        if Upload.is_used:
-            self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
 
-            # To access uploaded files.
-            self.api.mount(
-                str(constants.Endpoint.UPLOAD),
-                StaticFiles(directory=get_upload_dir()),
-                name="uploaded_files",
-            )
+        self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
+
+        # To access uploaded files.
+        self.api.mount(
+            str(constants.Endpoint.UPLOAD),
+            StaticFiles(directory=get_upload_dir()),
+            name="uploaded_files",
+        )
         if codespaces.is_running_in_codespaces():
             self.api.get(str(constants.Endpoint.AUTH_CODESPACE))(
                 codespaces.auth_codespace
