@@ -1074,6 +1074,20 @@ class LiteralVar(Var):
         if isinstance(value, EventHandler):
             return Var(_js_expr=".".join(filter(None, get_event_handler_parts(value))))
 
+        serialized_value = serializers.serialize(value)
+        if serialized_value is not None:
+            if isinstance(serialized_value, dict):
+                return LiteralObjectVar.create(
+                    serialized_value,
+                    _var_type=type(value),
+                    _var_data=_var_data,
+                )
+            if isinstance(serialized_value, str):
+                return LiteralStringVar.create(
+                    serialized_value, _var_type=type(value), _var_data=_var_data
+                )
+            return LiteralVar.create(serialized_value, _var_data=_var_data)
+
         if isinstance(value, Base):
             # get the fields of the pydantic class
             fields = value.__fields__.keys()
@@ -1088,20 +1102,6 @@ class LiteralVar(Var):
                 _var_type=type(value),
                 _var_data=_var_data,
             )
-
-        serialized_value = serializers.serialize(value)
-        if serialized_value is not None:
-            if isinstance(serialized_value, dict):
-                return LiteralObjectVar.create(
-                    serialized_value,
-                    _var_type=type(value),
-                    _var_data=_var_data,
-                )
-            if isinstance(serialized_value, str):
-                return LiteralStringVar.create(
-                    serialized_value, _var_type=type(value), _var_data=_var_data
-                )
-            return LiteralVar.create(serialized_value, _var_data=_var_data)
 
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
             return LiteralObjectVar.create(
