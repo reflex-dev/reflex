@@ -45,10 +45,7 @@ alembic = ">=1.11.1,<2.0"
 platformdirs = ">=3.10.0,<5.0"
 distro = {version = ">=1.8.0,<2.0", platform = "linux"}
 python-engineio = "!=4.6.0"
-wrapt = [
-    {version = ">=1.14.0,<2.0", python = ">=3.11"},
-    {version = ">=1.11.0,<2.0", python = "<3.11"},
-]
+wrapt = "^1.16.0"
 packaging = ">=23.1,<25.0"
 reflex-hosting-cli = ">=0.1.2,<2.0"
 charset-normalizer = ">=3.3.2,<4.0"
