@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
 from reflex import constants
 from reflex.utils import exceptions, types
+from reflex.utils.console import deprecate
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
@@ -500,6 +501,37 @@ def format_event(event_spec: EventSpec) -> str:
 
 if TYPE_CHECKING:
     from reflex.vars import Var
+
+
+def format_event_chain(
+    event_chain: EventChain | Var[EventChain],
+    event_arg: Var | None = None,
+) -> str:
+    """DEPRECATED: format an event chain as a javascript invocation.
+
+    Use str(rx.Var.create(event_chain)) instead.
+
+    Args:
+        event_chain: The event chain to format.
+        event_arg: this argument is ignored.
+
+    Returns:
+        Compiled javascript code to queue the given event chain on the frontend.
+    """
+    deprecate(
+        feature_name="format_event_chain",
+        reason="Use str(rx.Var.create(event_chain)) instead",
+        deprecation_version="0.6.0",
+        removal_version="0.7.0",
+    )
+
+    from reflex.vars import Var
+    from reflex.vars.function import ArgsFunctionOperation
+
+    result = Var.create(event_chain)
+    if isinstance(result, ArgsFunctionOperation):
+        result = result._return_expr
+    return str(result)
 
 
 def format_queue_events(
