@@ -345,6 +345,20 @@ class Circle(BaseHTML):
     path_length: Var[int]
 
 
+class Ellipse(BaseHTML):
+    """The SVG ellipse component."""
+
+    tag = "ellipse"
+    # The x-axis coordinate of the center of the ellipse.
+    cx: Var[Union[str, int]]
+    # The y-axis coordinate of the center of the ellipse.
+    cy: Var[Union[str, int]]
+    # The x-axis radius of the ellipse.
+    rx: Var[Union[str, int]]
+    # The y-axis radius of the ellipse.
+    ry: Var[Union[str, int]]
+
+
 class Rect(BaseHTML):
     """The SVG rect component."""
 
@@ -437,6 +451,7 @@ class SVG(ComponentNamespace):
 
     line = staticmethod(Line.create)
     circle = staticmethod(Circle.create)
+    ellipse = staticmethod(Ellipse.create)
     rect = staticmethod(Rect.create)
     polygon = staticmethod(Polygon.create)
     path = staticmethod(Path.create)
