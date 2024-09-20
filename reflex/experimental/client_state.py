@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import re
 import sys
 from typing import Any, Callable, Union
 
@@ -178,7 +179,9 @@ class ClientStateVar(Var):
             value_str = str(LiteralVar.create(value))
 
             if value_str.startswith("_"):
-                setter = f"(({value_str}) => {setter}({value_str}))"
+                # remove patterns of ["*"] from the value_str using regex
+                arg = re.sub(r"\[\".*\"\]", "", value_str)
+                setter = f"(({arg}) => {setter}({value_str}))"
             else:
                 setter = f"(() => {setter}({value_str}))"
         return Var(
