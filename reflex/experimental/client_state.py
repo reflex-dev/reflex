@@ -175,12 +175,12 @@ class ClientStateVar(Var):
         )
         if value is not NoValue:
             # This is a hack to make it work like an EventSpec taking an arg
-            var = LiteralVar.create(value)
+            value_str = str(LiteralVar.create(value))
 
-            if str(var).startswith("_"):
-                setter = f"(({str(var)}) => {setter}({str(var)}))"
+            if value_str.startswith("_"):
+                setter = f"(({value_str}) => {setter}({value_str}))"
             else:
-                setter = f"(() => {setter}({str(var)}))"
+                setter = f"(() => {setter}({value_str}))"
         return Var(
             _js_expr=setter,
             _var_data=VarData(imports=_refs_import if self._global_ref else {}),
