@@ -65,7 +65,9 @@ def _create_package_config(module_name: str, package_name: str):
     with open(CustomComponents.PYPROJECT_TOML, "w") as f:
         f.write(
             templates.CUSTOM_COMPONENTS_PYPROJECT_TOML.render(
-                module_name=module_name, package_name=package_name
+                module_name=module_name,
+                package_name=package_name,
+                reflex_version=constants.Reflex.VERSION,
             )
         )
 
