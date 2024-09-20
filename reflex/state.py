@@ -40,6 +40,7 @@ from reflex.vars.base import (
     DynamicRouteVar,
     Var,
     computed_var,
+    dispatch,
     is_computed_var,
 )
 
@@ -336,6 +337,29 @@ class EventHandlerSetVar(EventHandler):
         return super().__call__(*args)
 
 
+if TYPE_CHECKING:
+    from pydantic.v1.fields import ModelField
+
+
+def get_var_for_field(cls: Type[BaseState], f: ModelField):
+    """Get a Var instance for a Pydantic field.
+
+    Args:
+        cls: The state class.
+        f: The Pydantic field.
+
+    Returns:
+        The Var instance.
+    """
+    field_name = format.format_state_name(cls.get_full_name()) + "." + f.name
+
+    return dispatch(
+        field_name=field_name,
+        var_data=VarData.from_state(cls, f.name),
+        result_var_type=f.outer_type_,
+    )
+
+
 class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
@@ -556,11 +580,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Set the base and computed vars.
         cls.base_vars = {
-            f.name: Var(
-                _js_expr=format.format_state_name(cls.get_full_name()) + "." + f.name,
-                _var_type=f.outer_type_,
-                _var_data=VarData.from_state(cls),
-            ).guess_type()
+            f.name: get_var_for_field(cls, f)
             for f in cls.get_fields().values()
             if f.name not in cls.get_skip_vars()
         }
@@ -948,7 +968,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         var = Var(
             _js_expr=format.format_state_name(cls.get_full_name()) + "." + name,
             _var_type=type_,
-            _var_data=VarData.from_state(cls),
+            _var_data=VarData.from_state(cls, name),
         ).guess_type()
 
         # add the pydantic field dynamically (must be done before _init_var)
@@ -974,10 +994,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             prop: The var instance to set.
         """
-        acutal_var_name = (
-            prop._js_expr if "." not in prop._js_expr else prop._js_expr.split(".")[-1]
-        )
-        setattr(cls, acutal_var_name, prop)
+        setattr(cls, prop._var_field_name, prop)
 
     @classmethod
     def _create_event_handler(cls, fn):
@@ -1017,10 +1034,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             prop: The var to set the default value for.
         """
         # Get the pydantic field for the var.
-        if "." in prop._js_expr:
-            field = cls.get_fields()[prop._js_expr.split(".")[-1]]
-        else:
-            field = cls.get_fields()[prop._js_expr]
+        field = cls.get_fields()[prop._var_field_name]
         if field.required:
             default_value = prop.get_default_value()
             if default_value is not None:
@@ -1761,11 +1775,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             .union(self._always_dirty_computed_vars)
         )
 
-        subdelta = {
-            prop: getattr(self, prop)
+        subdelta: Dict[str, Any] = {
+            prop: self.get_value(getattr(self, prop))
             for prop in delta_vars
             if not types.is_backend_base_variable(prop, type(self))
         }
+
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
 

@@ -7,6 +7,10 @@ import '/styles/styles.css'
 {% block declaration %}
 import { EventLoopProvider, StateProvider, defaultColorMode } from "/utils/context.js";
 import { ThemeProvider } from 'next-themes'
+import * as React from "react";
+import * as utils_context from "/utils/context.js";
+import * as utils_state from "/utils/state.js";
+import * as radix from "@radix-ui/themes";
 
 {% for custom_code in custom_codes %}
 {{custom_code}}
@@ -26,6 +30,16 @@ function AppWrap({children}) {
 }
 
 export default function MyApp({ Component, pageProps }) {
+  React.useEffect(() => {
+    // Make contexts and state objects available globally for dynamic eval'd components
+    let windowImports = {
+      "react": React,
+      "@radix-ui/themes": radix,
+      "/utils/context": utils_context,
+      "/utils/state": utils_state,
+    };
+    window["__reflex"] = windowImports;
+  }, []);
   return (
     <ThemeProvider defaultTheme={ defaultColorMode } attribute="class">
       <AppWrap>

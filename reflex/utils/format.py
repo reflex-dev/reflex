@@ -672,6 +672,8 @@ def format_library_name(library_fullname: str):
     Returns:
         The name without the @version if it was part of the name
     """
+    if library_fullname.startswith("https://"):
+        return library_fullname
     lib, at, version = library_fullname.rpartition("@")
     if not lib:
         lib = at + version

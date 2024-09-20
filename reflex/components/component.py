@@ -25,6 +25,7 @@ import reflex.state
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
 from reflex.components.core.breakpoints import Breakpoints
+from reflex.components.dynamic import load_dynamic_serializer
 from reflex.components.tags import Tag
 from reflex.constants import (
     Dirs,
@@ -52,7 +53,6 @@ from reflex.utils.imports import (
     ParsedImportDict,
     parse_imports,
 )
-from reflex.utils.serializers import serializer
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 
@@ -615,8 +615,8 @@ class Component(BaseComponent, ABC):
             if types._issubclass(field.type_, EventHandler):
                 args_spec = None
                 annotation = field.annotation
-                if hasattr(annotation, "__metadata__"):
-                    args_spec = annotation.__metadata__[0]
+                if (metadata := getattr(annotation, "__metadata__", None)) is not None:
+                    args_spec = metadata[0]
                 default_triggers[field.name] = args_spec or (lambda: [])
         return default_triggers
 
@@ -1882,19 +1882,6 @@ class NoSSRComponent(Component):
         return "".join((library_import, mod_import, opts_fragment))
 
 
-@serializer
-def serialize_component(comp: Component):
-    """Serialize a component.
-
-    Args:
-        comp: The component to serialize.
-
-    Returns:
-        The serialized component.
-    """
-    return str(comp)
-
-
 class StatefulComponent(BaseComponent):
     """A component that depends on state and is rendered outside of the page component.
 
@@ -2307,3 +2294,6 @@ class MemoizationLeaf(Component):
                 update={"disposition": MemoizationDisposition.ALWAYS}
             )
         return comp
+
+
+load_dynamic_serializer()

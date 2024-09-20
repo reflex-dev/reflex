@@ -2520,7 +2520,7 @@ def test_json_dumps_with_mutables():
         items: List[Foo] = [Foo()]
 
     dict_val = MutableContainsBase().dict()
-    assert isinstance(dict_val[MutableContainsBase.get_full_name()]["items"][0], dict)
+    assert isinstance(dict_val[MutableContainsBase.get_full_name()]["items"][0], Foo)
     val = json_dumps(dict_val)
     f_items = '[{"tags": ["123", "456"]}]'
     f_formatted_router = str(formatted_router).replace("'", '"')
