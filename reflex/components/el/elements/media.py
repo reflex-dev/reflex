@@ -321,14 +321,16 @@ class Line(BaseHTML):
     """The SVG line component."""
 
     tag = "line"
-    # The x-axis coordinate of the start of the line.
+    # The x-axis coordinate of the line starting point.
     x1: Var[Union[str, int]]
-    # The y-axis coordinate of the start of the line.
-    y1: Var[Union[str, int]]
-    # The x-axis coordinate of the end of the line.
+    # The x-axis coordinate of the the line ending point.
     x2: Var[Union[str, int]]
-    # The y-axis coordinate of the end of the line.
+    # The y-axis coordinate of the line starting point.
+    y1: Var[Union[str, int]]
+    # The y-axis coordinate of the the line ending point.
     y2: Var[Union[str, int]]
+    # The total path length, in user units.
+    path_length: Var[int]
 
 
 class Circle(BaseHTML):
@@ -349,14 +351,16 @@ class Ellipse(BaseHTML):
     """The SVG ellipse component."""
 
     tag = "ellipse"
-    # The x-axis coordinate of the center of the ellipse.
+    # The x position of the center of the ellipse.
     cx: Var[Union[str, int]]
-    # The y-axis coordinate of the center of the ellipse.
+    # The y position of the center of the ellipse.
     cy: Var[Union[str, int]]
-    # The x-axis radius of the ellipse.
+    # The radius of the ellipse on the x axis.
     rx: Var[Union[str, int]]
-    # The y-axis radius of the ellipse.
+    # The radius of the ellipse on the y axis.
     ry: Var[Union[str, int]]
+    # The total length for the ellipse's circumference, in user units.
+    path_length: Var[int]
 
 
 class Rect(BaseHTML):
