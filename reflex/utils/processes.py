@@ -174,7 +174,7 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
         ),  # type: ignore
         **kwargs.pop("env", {}),
     }
-
+    print(env)
     kwargs = {
         "env": env,
         "stderr": None if show_logs else subprocess.STDOUT,
