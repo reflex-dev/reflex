@@ -845,7 +845,7 @@ def install_bun():
         download_and_run(
             constants.Bun.INSTALL_URL,
             f"bun-v{constants.Bun.VERSION}",
-            BUN_INSTALL=constants.Bun.ROOT_PATH,
+            BUN_INSTALL=str(constants.Bun.ROOT_PATH),
         )
 
 
