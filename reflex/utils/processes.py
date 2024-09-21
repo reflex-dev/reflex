@@ -167,13 +167,14 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
         console.error(f"Invalid command: {args}")
         raise typer.Exit(1)
     # Add the node bin path to the PATH environment variable.
-    env = {
+    env: dict[str, str] = {
         **os.environ,
         "PATH": os.pathsep.join(
             [node_bin_path if node_bin_path else "", os.environ["PATH"]]
         ),  # type: ignore
         **kwargs.pop("env", {}),
     }
+
     kwargs = {
         "env": env,
         "stderr": None if show_logs else subprocess.STDOUT,
