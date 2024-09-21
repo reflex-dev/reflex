@@ -4,7 +4,7 @@ import argparse
 import os
 from pathlib import Path
 
-from .utils import get_directory_size, get_python_version, send_data_to_posthog
+from utils import get_directory_size, get_python_version, send_data_to_posthog
 
 
 def get_package_size(venv_path: Path, os_name):

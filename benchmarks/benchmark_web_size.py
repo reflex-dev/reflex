@@ -4,7 +4,7 @@ import argparse
 import os
 from pathlib import Path
 
-from .utils import get_directory_size, send_data_to_posthog
+from utils import get_directory_size, send_data_to_posthog
 
 
 def insert_benchmarking_data(
