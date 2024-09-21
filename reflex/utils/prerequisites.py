@@ -829,7 +829,7 @@ def install_bun():
                 f"irm {constants.Bun.WINDOWS_INSTALL_URL}|iex",
             ],
             env={
-                "BUN_INSTALL": constants.Bun.ROOT_PATH,
+                "BUN_INSTALL": str(constants.Bun.ROOT_PATH),
                 "BUN_VERSION": constants.Bun.VERSION,
             },
             shell=True,
