@@ -1481,13 +1481,20 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
 
     main_module_path = Path(app_name, app_name + constants.Ext.PY)
     main_module_code = main_module_path.read_text()
-    main_module_path.write_text(
-        re.sub(
-            r"def index\(\).*:\n([^\n]\s+.*\n+)+",
-            replace_content,
-            main_module_code,
-        )
+
+    main_module_code = re.sub(
+        r"def index\(\).*:\n([^\n]\s+.*\n+)+",
+        replace_content,
+        main_module_code,
     )
+    # Make the app use light mode until flexgen enforces the conversion of
+    # tailwind colors to radix colors.
+    main_module_code = re.sub(
+        r"app\s*=\s*rx\.App\(\s*\)",
+        'app = rx.App(theme=rx.theme(color_mode="light"))',
+        main_module_code,
+    )
+    main_module_path.write_text(main_module_code)
 
 
 def format_address_width(address_width) -> int | None:
