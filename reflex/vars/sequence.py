@@ -194,14 +194,6 @@ class StringVar(Var[str]):
         """
         return string_strip_operation(self)
 
-    def bool(self):
-        """Boolean conversion.
-
-        Returns:
-            The boolean value of the string.
-        """
-        return self.length() != 0
-
     def reversed(self) -> StringVar:
         """Reverse the string.
 
