@@ -304,7 +304,7 @@ def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     """
     app_module = get_app(reload=reload)
     app = getattr(app_module, constants.CompileVars.APP)
-    # For py3.8 and py3.9 compatibility when redis is used, we MUST add any decorator pages
+    # For py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).
     app._apply_decorated_pages()
     app._compile(export=export)
