@@ -125,7 +125,6 @@ class Axis(Recharts):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -288,7 +287,6 @@ class XAxis(Axis):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -454,7 +452,6 @@ class YAxis(Axis):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -590,7 +587,6 @@ class ZAxis(Recharts):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -759,7 +755,6 @@ class Cartesian(Recharts):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -924,7 +919,6 @@ class Area(Cartesian):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -1072,7 +1066,6 @@ class Bar(Cartesian):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -1252,7 +1245,6 @@ class Line(Cartesian):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -1402,7 +1394,6 @@ class Scatter(Recharts):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -1533,7 +1524,6 @@ class Funnel(Recharts):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -1615,7 +1605,6 @@ class ErrorBar(Recharts):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -1696,7 +1685,6 @@ class Reference(Recharts):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -1782,7 +1770,6 @@ class ReferenceLine(Reference):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -1873,7 +1860,6 @@ class ReferenceDot(Reference):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -1965,7 +1951,6 @@ class ReferenceArea(Recharts):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -2046,7 +2031,6 @@ class Grid(Recharts):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -2132,7 +2116,6 @@ class CartesianGrid(Grid):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -2233,7 +2216,6 @@ class CartesianAxis(Grid):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,

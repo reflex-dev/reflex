@@ -144,7 +144,6 @@ class RadioGroupRoot(RadixThemesComponent):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -225,7 +224,6 @@ class RadioGroupItem(RadixThemesComponent):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -387,7 +385,6 @@ class HighLevelRadioGroup(RadixThemesComponent):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -559,7 +556,6 @@ class RadioGroup(ComponentNamespace):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,

@@ -58,7 +58,6 @@ class SliderComponent(RadixPrimitiveComponentWithClassName):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -143,7 +142,6 @@ class SliderRoot(SliderComponent):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -218,7 +216,6 @@ class SliderTrack(SliderComponent):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -287,7 +284,6 @@ class SliderRange(SliderComponent):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -356,7 +352,6 @@ class SliderThumb(SliderComponent):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,

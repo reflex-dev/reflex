@@ -209,7 +209,6 @@ class DataEditor(NoSSRComponent):
         on_row_appended: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_selection_cleared: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,

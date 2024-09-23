@@ -152,7 +152,6 @@ class Toaster(Component):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,

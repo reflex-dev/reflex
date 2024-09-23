@@ -102,7 +102,6 @@ class Button(BaseHTML):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -219,7 +218,6 @@ class Datalist(BaseHTML):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -304,7 +302,6 @@ class Fieldset(Element):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -412,7 +409,6 @@ class Form(BaseHTML):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_submit: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
@@ -577,7 +573,6 @@ class Input(BaseHTML):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -718,7 +713,6 @@ class Label(BaseHTML):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -826,7 +820,6 @@ class Legend(BaseHTML):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -939,7 +932,6 @@ class Meter(BaseHTML):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -1054,7 +1046,6 @@ class Optgroup(BaseHTML):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -1166,7 +1157,6 @@ class Option(BaseHTML):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -1279,7 +1269,6 @@ class Output(BaseHTML):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -1391,7 +1380,6 @@ class Progress(BaseHTML):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -1511,7 +1499,6 @@ class Select(BaseHTML):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
@@ -1652,7 +1639,6 @@ class Textarea(BaseHTML):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,

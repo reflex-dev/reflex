@@ -111,7 +111,6 @@ class Plotly(NoSSRComponent):
         on_restyle: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_selected: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
