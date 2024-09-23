@@ -250,7 +250,7 @@ def serialize_base(value: Base) -> dict:
     Returns:
         The serialized Base.
     """
-    return {k: serialize(v) for k, v in value.dict().items() if not callable(v)}
+    return {k: v for k, v in value.dict().items() if not callable(v)}
 
 
 @serializer
@@ -263,7 +263,7 @@ def serialize_list(value: Union[List, Tuple, Set]) -> list:
     Returns:
         The serialized list.
     """
-    return [serialize(item) for item in value]
+    return [item for item in value]
 
 
 @serializer
@@ -276,7 +276,7 @@ def serialize_dict(prop: Dict[str, Any]) -> dict:
     Returns:
         The serialized dictionary.
     """
-    return {k: serialize(v) for k, v in prop.items()}
+    return {k: v for k, v in prop.items()}
 
 
 @serializer(to=str)

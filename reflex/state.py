@@ -1790,9 +1790,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for substate in self.dirty_substates.union(self._always_dirty_substates):
             delta.update(substates[substate].get_delta())
 
-        # Format the delta.
-        delta = format.format_state(delta)
-
         # Return the delta.
         return delta
 

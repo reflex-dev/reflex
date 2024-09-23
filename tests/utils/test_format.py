@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import json
 from typing import Any, List
 
 import plotly.graph_objects as go
@@ -621,7 +622,7 @@ def test_format_state(input, output):
         input: The state to format.
         output: The expected formatted state.
     """
-    assert format.format_state(input) == output
+    assert json.loads(format.json_dumps(input)) == json.loads(format.json_dumps(output))
 
 
 @pytest.mark.parametrize(
