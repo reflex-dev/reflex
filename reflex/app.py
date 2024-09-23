@@ -66,7 +66,7 @@ from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
 )
-from reflex.components.core.upload import get_upload_dir
+from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
 from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec, window_alert
@@ -408,11 +408,12 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
 
         # To access uploaded files.
-        self.api.mount(
-            str(constants.Endpoint.UPLOAD),
-            StaticFiles(directory=get_upload_dir()),
-            name="uploaded_files",
-        )
+        if Upload.is_used:
+            self.api.mount(
+                str(constants.Endpoint.UPLOAD),
+                StaticFiles(directory=get_upload_dir()),
+                name="uploaded_files",
+            )
         if codespaces.is_running_in_codespaces():
             self.api.get(str(constants.Endpoint.AUTH_CODESPACE))(
                 codespaces.auth_codespace
@@ -855,11 +856,11 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         if constants.Page404.SLUG not in self.unevaluated_pages:
             self.add_custom_404_page()
 
-        # Add the optional endpoints (_upload)
-        self._add_optional_endpoints()
-
         for route in self.unevaluated_pages:
             self._compile_page(route)
+
+        # Add the optional endpoints (_upload)
+        self._add_optional_endpoints()
 
         if not self._should_compile():
             return
