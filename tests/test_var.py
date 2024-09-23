@@ -968,7 +968,7 @@ def test_all_number_operations():
     [
         (Var.create(False), "false"),
         (Var.create(True), "true"),
-        (Var.create("false"), '("false".split("").length !== 0)'),
+        (Var.create("false"), 'isTrue("false")'),
         (Var.create([1, 2, 3]), "isTrue([1, 2, 3])"),
         (Var.create({"a": 1, "b": 2}), 'isTrue(({ ["a"] : 1, ["b"] : 2 }))'),
         (Var("mysterious_var"), "isTrue(mysterious_var)"),
