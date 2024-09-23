@@ -8,7 +8,7 @@ Here is a quick guide on how to run Reflex repo locally so you can start contrib
 
 **Prerequisites:**
 
-- Python >= 3.8
+- Python >= 3.9
 - Poetry version >= 1.4.0 and add it to your path (see [Poetry Docs](https://python-poetry.org/docs/#installation) for more info).
 
 **1. Fork this repository:**
@@ -87,7 +87,7 @@ poetry run ruff format .
 ```
 
 Consider installing git pre-commit hooks so Ruff, Pyright, Darglint and `make_pyi` will run automatically before each commit.
-Note that pre-commit will only be installed when you use a Python version >= 3.8.
+Note that pre-commit will only be installed when you use a Python version >= 3.9.
 
 ``` bash
 pre-commit install
