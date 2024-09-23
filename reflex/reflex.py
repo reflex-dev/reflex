@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import atexit
 import os
-import sys
 import webbrowser
 from pathlib import Path
 from typing import List, Optional
@@ -34,18 +33,6 @@ except TypeError:
 config = get_config()
 
 
-def _python_version_check():
-    """Emit deprecation warning for deprecated python versions."""
-    # Check for end-of-life python versions.
-    if sys.version_info < (3, 10):
-        console.deprecate(
-            feature_name="Support for Python 3.9 and older",
-            reason="please upgrade to Python 3.10 or newer",
-            deprecation_version="0.6.0",
-            removal_version="0.7.0",
-        )
-
-
 def version(value: bool):
     """Get the Reflex version.
 
@@ -55,7 +42,6 @@ def version(value: bool):
     Raises:
         typer.Exit: If the version flag was passed.
     """
-    _python_version_check()
     if value:
         console.print(constants.Reflex.VERSION)
         raise typer.Exit()
