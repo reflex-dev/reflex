@@ -34,7 +34,7 @@ Auf unserer [Architektur-Seite](https://reflex.dev/blog/2024-03-21-reflex-archit
 
 ## ⚙️ Installation
 
-Öffne ein Terminal und führe den folgenden Befehl aus (benötigt Python 3.10+):
+Öffne ein Terminal und führe den folgenden Befehl aus (benötigt Python 3.8+):
 
 ```bash
 pip install reflex
