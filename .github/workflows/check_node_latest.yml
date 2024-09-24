@@ -1,0 +1,37 @@
+name: Check Reflex run on Node.js Latest
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+
+env:
+    TELEMETRY_ENABLED: false
+
+jobs:
+    check_latest_node:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                python-version: ['python']
+                node-version: ['node']
+        steps:
+            - uses: actions/checkout@v4
+            - uses: ./.github/actions/setup_build_env
+              with:
+                python-version: ${{ matrix.python-version }}
+                run-poetry-install: true
+                create-venv-at-path: .venv
+            - uses: actions/setup-node@v4
+              with:
+                node-version: ${{ matrix.node-version }}
+            - run: |
+                poetry run uv pip install playwright pytest-playwright
+                playwright install --with-deps
+                poetry run pytest integration/test_node_version.py
+  
+
+

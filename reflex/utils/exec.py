@@ -281,7 +281,7 @@ def output_system_info():
 
     dependencies = [
         f"[Reflex {constants.Reflex.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
-        f"[Node {prerequisites.get_node_version()} (Expected: {constants.Node.VERSION}) (PATH:{path_ops.get_node_path()})]",
+        f"[Node {prerequisites.get_node_version()} (Expected: >={constants.Node.MIN_VERSION}) (PATH:{path_ops.get_node_path()})]",
     ]
 
     system = platform.system()
