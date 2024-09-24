@@ -188,7 +188,15 @@ def convert(
             out[k] = return_value
 
     for key, value in style_dict.items():
-        keys = format_style_key(key)
+        keys = (
+            format_style_key(key)
+            if not isinstance(value, dict)
+            or (
+                isinstance(value, Breakpoints)
+                and all(not isinstance(v, dict) for v in value.values())
+            )
+            else (key,)
+        )
         if isinstance(value, Var):
             return_val = value
             new_var_data = value._get_all_var_data()
