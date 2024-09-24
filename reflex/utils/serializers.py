@@ -125,12 +125,8 @@ def serialize(
     # If there is no serializer, return None.
     if serializer is None:
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
-            return serialize(
-                {
-                    k.name: serialize(getattr(value, k.name))
-                    for k in dataclasses.fields(value)
-                }
-            )
+            return {k.name: getattr(value, k.name) for k in dataclasses.fields(value)}
+
         if get_type:
             return None, None
         return None
@@ -216,32 +212,6 @@ def serialize_type(value: type) -> str:
         The serialized type.
     """
     return value.__name__
-
-
-@serializer
-def serialize_str(value: str) -> str:
-    """Serialize a string.
-
-    Args:
-        value: The string to serialize.
-
-    Returns:
-        The serialized string.
-    """
-    return value
-
-
-@serializer
-def serialize_primitive(value: Union[bool, int, float, None]):
-    """Serialize a primitive type.
-
-    Args:
-        value: The number/bool/None to serialize.
-
-    Returns:
-        The serialized number/bool/None.
-    """
-    return value
 
 
 @serializer

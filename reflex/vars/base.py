@@ -1141,7 +1141,7 @@ def serialize_literal(value: LiteralVar):
     Returns:
         The serialized Literal.
     """
-    return serializers.serialize(value._var_value)
+    return value._var_value
 
 
 P = ParamSpec("P")

@@ -2,7 +2,7 @@ import datetime
 import json
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 import pytest
 
@@ -15,7 +15,7 @@ from reflex.vars.base import LiteralVar
 
 @pytest.mark.parametrize(
     "type_,expected",
-    [(str, True), (dict, True), (Dict[int, int], True), (Enum, True)],
+    [(Enum, True)],
 )
 def test_has_serializer(type_: Type, expected: bool):
     """Test that has_serializer returns the correct value.
