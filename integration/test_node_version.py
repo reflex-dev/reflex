@@ -27,7 +27,7 @@ def TestNodeVersionApp():
 
     @app.add_page
     def index():
-        return rx.text("Node Version check ", TestNodeVersionState.node_version)
+        return rx.heading("Node Version check ", TestNodeVersionState.node_version)
 
 
 @pytest.fixture()
