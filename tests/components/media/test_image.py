@@ -1,4 +1,3 @@
-# PIL is only available in python 3.8+
 import numpy as np
 import PIL
 import pytest

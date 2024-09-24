@@ -74,6 +74,18 @@ def get_web_dir() -> Path:
     return workdir
 
 
+def _python_version_check():
+    """Emit deprecation warning for deprecated python versions."""
+    # Check for end-of-life python versions.
+    if sys.version_info < (3, 10):
+        console.deprecate(
+            feature_name="Support for Python 3.9 and older",
+            reason="please upgrade to Python 3.10 or newer",
+            deprecation_version="0.6.0",
+            removal_version="0.7.0",
+        )
+
+
 def check_latest_package_version(package_name: str):
     """Check if the latest version of the package is installed.
 
@@ -86,15 +98,16 @@ def check_latest_package_version(package_name: str):
         url = f"https://pypi.org/pypi/{package_name}/json"
         response = net.get(url)
         latest_version = response.json()["info"]["version"]
-        if (
-            version.parse(current_version) < version.parse(latest_version)
-            and not get_or_set_last_reflex_version_check_datetime()
-        ):
-            # only show a warning when the host version is outdated and
-            # the last_version_check_datetime is not set in reflex.json
+        if get_or_set_last_reflex_version_check_datetime():
+            # Versions were already checked and saved in reflex.json, no need to warn again
+            return
+        if version.parse(current_version) < version.parse(latest_version):
+            # Show a warning when the host version is older than PyPI version
             console.warn(
                 f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
             )
+        # Check for depreacted python versions
+        _python_version_check()
     except Exception:
         pass
 
@@ -287,7 +300,7 @@ def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     """
     app_module = get_app(reload=reload)
     app = getattr(app_module, constants.CompileVars.APP)
-    # For py3.8 and py3.9 compatibility when redis is used, we MUST add any decorator pages
+    # For py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).
     app._apply_decorated_pages()
     app._compile(export=export)
