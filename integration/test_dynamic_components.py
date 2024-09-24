@@ -4,7 +4,6 @@ import time
 from typing import Callable, Generator, TypeVar
 
 import pytest
-from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness
@@ -14,7 +13,6 @@ from reflex.testing import AppHarness
 
 def DynamicComponents():
     """App with var operations."""
-
     import reflex as rx
 
     class DynamicComponentsState(rx.State):
@@ -90,6 +88,9 @@ def poll_for_result(
 
     Args:
         f: function to call
+        exception: exception to catch
+        max_attempts: maximum number of attempts
+        seconds_between_attempts: seconds to wait between
 
     Returns:
         Result of the function
@@ -106,10 +107,10 @@ def poll_for_result(
 
 @pytest.fixture
 def driver(dynamic_components: AppHarness):
-    """Get an instance of the browser open to the var operations app.
+    """Get an instance of the browser open to the dynamic components app.
 
     Args:
-        var_operations: harness for VarOperations app
+        dynamic_components: AppHarness for the dynamic components
 
     Yields:
         WebDriver instance.
@@ -132,7 +133,7 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
 
     Args:
         driver: selenium WebDriver open to the app
-        var_operations: AppHarness for the var operations app
+        dynamic_components: AppHarness for the dynamic components
     """
     button = poll_for_result(lambda: driver.find_element(By.ID, "button"))
     assert button
