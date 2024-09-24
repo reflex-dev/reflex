@@ -29,7 +29,7 @@ jobs:
               with:
                 node-version: ${{ matrix.node-version }}
             - run: |
-                poetry run uv pip install playwright pytest-playwright
+                poetry run uv pip install playwright pytest-playwright pyvirtualdisplay pillow
                 poetry run playwright install --with-deps
                 poetry run pytest integration/test_node_version.py
   
