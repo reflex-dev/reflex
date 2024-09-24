@@ -501,7 +501,6 @@ class Component(BaseComponent, ABC):
                 class_name, _var_type=List[str]
             ).join(" ")
         elif isinstance(class_name, str) and class_name:
-            print("class_name", class_name)
             kwargs["class_name"] = LiteralVar.create(class_name)
 
         # Construct the component.
