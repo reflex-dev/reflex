@@ -72,6 +72,46 @@ class BaseComponent(Base, ABC):
     # The tag to use when rendering the component.
     tag: Optional[str] = None
 
+    def __getitem__(self, key: str):
+        """Get the value of a component attribute by key.
+
+        Args:
+            key: The key for the attribute to retrieve.
+
+        Returns:
+            The value associated with the key.
+
+        Raises:
+            KeyError: If the key is not found in the component's attributes.
+        """
+        if hasattr(self, key):
+            return getattr(self, key)
+        else:
+            raise KeyError(f"{key} not found in the component.")
+
+    def __setitem__(self, key: str, value):
+        """Set a component attribute by key.
+
+        Args:
+            key: The key for the attribute to set.
+            value: The value to associate with the key.
+        """
+        setattr(self, key, value)
+
+    def __delitem__(self, key: str):
+        """Delete a component attribute by key.
+
+        Args:
+            key: The key of the attribute to delete.
+
+        Raises:
+            KeyError: If the key is not found in the component's attributes.
+        """
+        if hasattr(self, key):
+            delattr(self, key)
+        else:
+            raise KeyError(f"{key} not found in the component.")
+
     @abstractmethod
     def render(self) -> dict:
         """Render the component.

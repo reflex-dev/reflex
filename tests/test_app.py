@@ -10,7 +10,7 @@ import uuid
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
 from typing import Generator, List, Tuple, Type
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 import reflex_chakra as rc
@@ -21,13 +21,16 @@ from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
 
 import reflex as rx
-from reflex import AdminDash, constants
+from reflex import AdminDash, config, constants
 from reflex.app import (
     App,
     ComponentCallable,
     OverlayFragment,
     default_overlay_component,
+    generate_sitemap,
+    generate_xml,
     process,
+    serve_sitemap,
     upload,
 )
 from reflex.components import Component
@@ -258,6 +261,33 @@ def test_add_page_set_route(app: App, index_page, windows_platform: bool):
     assert app.pages.keys() == {"test"}
 
 
+def test_add_page_with_sitemap_settings(app: App, index_page, about_page):
+    """Test adding a page with sitemap settings.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+        about_page: The about page.
+    """
+    assert app.pages == {}
+
+    # Add a page with custom sitemap settings
+    app.add_page(index_page, sitemap_priority=0.9, sitemap_changefreq="daily")
+
+    assert "index" in app.pages
+
+    index_page_obj = app.pages["index"]
+    assert index_page_obj["sitemap_priority"] == 0.9
+    assert index_page_obj["sitemap_changefreq"] == "daily"
+
+    app.add_page(about_page, sitemap_priority=0.5, sitemap_changefreq="weekly")
+
+    assert "about" in app.pages
+    about_page_obj = app.pages["about"]
+    assert about_page_obj["sitemap_priority"] == 0.5
+    assert about_page_obj["sitemap_changefreq"] == "weekly"
+
+
 def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
     """Test adding a page with dynamic route variable to an app.
 
@@ -292,28 +322,6 @@ def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool)
     assert app.pages == {}
     app.add_page(index_page, route=route)
     assert app.pages.keys() == {route.strip(os.path.sep)}
-
-
-def test_add_page_invalid_api_route(app: App, index_page):
-    """Test adding a page with an invalid route to an app.
-
-    Args:
-        app: The app to test.
-        index_page: The index page.
-    """
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="api")
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="/api")
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="/api/")
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="api/foo")
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="/api/foo")
-    # These should be fine
-    app.add_page(index_page, route="api2")
-    app.add_page(index_page, route="/foo/api")
 
 
 def page1():
@@ -1693,3 +1701,106 @@ def test_backend_exception_handler_validation(handler_fn, expected):
     """
     with expected:
         rx.App(backend_exception_handler=handler_fn)._validate_exception_handlers()
+
+
+def test_add_page_invalid_api_route(app: App, index_page):
+    """Test adding a page with an invalid route to an app.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+    """
+    with pytest.raises(ValueError):
+        app.add_page(index_page, route="api")
+    with pytest.raises(ValueError):
+        app.add_page(index_page, route="/api")
+    with pytest.raises(ValueError):
+        app.add_page(index_page, route="/api/")
+    with pytest.raises(ValueError):
+        app.add_page(index_page, route="api/foo")
+    with pytest.raises(ValueError):
+        app.add_page(index_page, route="/api/foo")
+    # These should be fine
+    app.add_page(index_page, route="api2")
+    app.add_page(index_page, route="/foo/api")
+
+
+# Test data for the generate_xml function
+test_links = [
+    {
+        "loc": "http://localhost:3000/",
+        "changefreq": "weekly",
+        "priority": 0.7,
+    },
+    {
+        "loc": "http://localhost:3000/about",
+        "changefreq": "yearly",
+        "priority": 0.9,
+    },
+]
+
+expected_xml = """<?xml version="1.0" ?>
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>http://localhost:3000/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>http://localhost:3000/about</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.9</priority>
+  </url>
+</urlset>"""
+
+
+def test_generate_xml():
+    """Test the generate_xml function."""
+    result = generate_xml(test_links)
+    assert result.strip() == expected_xml.strip()
+
+
+def test_generate_sitemap():
+    """Test the generate_sitemap function."""
+    app = Mock()
+    app.pages = {
+        "/": Mock(sitemap_priority=0.7, sitemap_changefreq="weekly"),
+        "/about": Mock(sitemap_priority=0.9, sitemap_changefreq="yearly"),
+        "/dynamic/[id]": Mock(),  # ignored
+        "404": Mock(),  # ignored
+    }
+
+    expected_sitemap = """<?xml version="1.0" ?>
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>{BASE_URL}/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>{BASE_URL}/about</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.9</priority>
+  </url>
+</urlset>"""
+
+    result = generate_sitemap(app)
+    assert result.strip() == expected_sitemap.strip()
+
+
+@pytest.mark.asyncio
+async def test_serve_sitemap():
+    """Test the serve_sitemap function."""
+    app = Mock()
+    app.pages = {
+        "/": Mock(sitemap_priority=0.7, sitemap_changefreq="weekly"),
+        "/about": Mock(sitemap_priority=0.9, sitemap_changefreq="yearly"),
+    }
+
+    mock_get_config = Mock(return_value=Mock(deploy_url="http://example.com"))
+
+    config.get_config = mock_get_config
+
+    response = await serve_sitemap(app)
+
+    assert response.media_type == "application/xml"

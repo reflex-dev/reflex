@@ -164,6 +164,7 @@ def default_error_boundary(*children: Component) -> Component:
     """
     return ErrorBoundary.create(*children)
 
+
 def generate_xml(links: List[Dict[str, Any]]) -> str:
     """Generate an XML sitemap from a list of links.
 
@@ -250,20 +251,6 @@ async def serve_sitemap(app: App) -> Response:
     domain = get_config().deploy_url or "http://localhost:3000"
     modified_sitemap = sitemap_content.replace("{BASE_URL}", domain)
     return Response(content=modified_sitemap, media_type="application/xml")
-
-
-def add_sitemap_to_app(app: App):
-    """Register the sitemap route in the application.
-
-    This function adds a route '/sitemap.xml' to the application that serves the generated sitemap
-    when requested.
-
-    Args:
-        app (App): The application instance to which the sitemap route is added.
-    """
-    @app.api.get("/sitemap.xml")
-    async def sitemap():
-        return await serve_sitemap(app)
 
 
 class OverlayFragment(Fragment):
@@ -391,7 +378,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         self._add_cors()
         self._add_default_endpoints()
 
-
         for clz in App.__mro__:
             if clz == App:
                 continue
@@ -408,19 +394,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             from reflex.utils.compat import windows_hot_reload_lifespan_hack
 
             self.register_lifespan_task(windows_hot_reload_lifespan_hack)
-
-    def add_sitemap(self):
-        """Register the `/sitemap.xml` endpoint in the application.
-        This method adds a route to the application that serves the dynamically generated sitemap.
-        When a GET request is made to `/sitemap.xml`, the `serve_sitemap` function is called to
-        generate and return the sitemap in XML format.
-
-        Args:
-            None
-        """
-        @self.api.get("/sitemap.xml")
-        async def sitemap():
-            return await serve_sitemap(self)
 
     def _enable_state(self) -> None:
         """Enable state for the app."""
@@ -692,24 +665,37 @@ class App(MiddlewareMixin, LifespanMixin, Base):
 
         # Set explicit sitemap attributes if provided
         if sitemap_priority is not None:
-            component.sitemap_priority = sitemap_priority
+            component["sitemap_priority"] = sitemap_priority
         if sitemap_changefreq is not None:
-            component.sitemap_changefreq = sitemap_changefreq
+            component["sitemap_changefreq"] = sitemap_changefreq
 
         # Auto-detect priority if not explicitly set
         if not hasattr(component, "sitemap_priority"):
-            component.sitemap_priority = self._auto_detect_priority(route)
+            component["sitemap_priority"] = self._auto_detect_priority(route)
 
         # Set default changefreq if not explicitly set
         if not hasattr(component, "sitemap_changefreq"):
-            component.sitemap_changefreq = "weekly"
+            component["sitemap_changefreq"] = "weekly"
 
+    def add_sitemap(self):
+        """Register the `/sitemap.xml` endpoint in the application.
+        This method adds a route to the application that serves the dynamically generated sitemap.
+        When a GET request is made to `/sitemap.xml`, the `serve_sitemap` function is called to
+        generate and return the sitemap in XML format.
+
+        Args:
+            None
+        """
+
+        @self.api.get("/sitemap.xml")
+        async def sitemap():
+            return await serve_sitemap(self)
 
     def _auto_detect_priority(self, route: Optional[str]) -> float:
         """Automatically detect the sitemap priority based on the route depth.
 
         Args:
-        route (Optional[str]): The route of the page (e.g., '/', '/about').
+            route: The route of the page (e.g., '/', '/about').
 
         Returns:
             float: The calculated priority, with a value between 0.1 and 1.0.
