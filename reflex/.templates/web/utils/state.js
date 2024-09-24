@@ -805,7 +805,9 @@ export const useEventLoop = (
  * @returns True if the value is truthy, false otherwise.
  */
 export const isTrue = (val) => {
-  return Array.isArray(val) ? val.length > 0 : !!val;
+  if (Array.isArray(val)) return val.length > 0;
+  if (val === Object(val)) return Object.keys(val).length > 0;
+  return Boolean(val);
 };
 
 /**
