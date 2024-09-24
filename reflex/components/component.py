@@ -497,9 +497,12 @@ class Component(BaseComponent, ABC):
         # Convert class_name to str if it's list
         class_name = kwargs.get("class_name", "")
         if isinstance(class_name, (List, tuple)):
-            kwargs["class_name"] = LiteralArrayVar.create(
-                class_name, _var_type=List[str]
-            ).join(" ")
+            if any(isinstance(c, Var) for c in class_name):
+                kwargs["class_name"] = LiteralArrayVar.create(
+                    class_name, _var_type=List[str]
+                ).join(" ")
+            else:
+                kwargs["class_name"] = " ".join(class_name)
         elif isinstance(class_name, str) and class_name:
             kwargs["class_name"] = LiteralVar.create(class_name)
 
