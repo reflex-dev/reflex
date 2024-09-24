@@ -592,6 +592,29 @@ class LiteralStringVar(LiteralVar, StringVar):
                 else:
                     return only_string.to(StringVar, only_string._var_type)
 
+            if len(
+                literal_strings := [
+                    s
+                    for s in filtered_strings_and_vals
+                    if isinstance(s, (str, LiteralStringVar))
+                ]
+            ) == len(filtered_strings_and_vals):
+                return LiteralStringVar.create(
+                    "".join(
+                        s._var_value if isinstance(s, LiteralStringVar) else s
+                        for s in literal_strings
+                    ),
+                    _var_type=_var_type,
+                    _var_data=VarData.merge(
+                        _var_data,
+                        *(
+                            s._get_all_var_data()
+                            for s in filtered_strings_and_vals
+                            if isinstance(s, Var)
+                        ),
+                    ),
+                )
+
             concat_result = ConcatVarOperation.create(
                 *filtered_strings_and_vals,
                 _var_data=_var_data,

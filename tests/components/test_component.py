@@ -1289,6 +1289,16 @@ class EventState(rx.State):
             id="fstring-class_name",
         ),
         pytest.param(
+            rx.fragment(class_name=f"foo{TEST_VAR}bar other-class"),
+            [LiteralVar.create(f"{FORMATTED_TEST_VAR} other-class")],
+            id="fstring-dual-class_name",
+        ),
+        pytest.param(
+            rx.fragment(class_name=[TEST_VAR, "other-class"]),
+            [LiteralVar.create([TEST_VAR, "other-class"]).join(" ")],
+            id="fstring-dual-class_name",
+        ),
+        pytest.param(
             rx.fragment(special_props=[TEST_VAR]),
             [TEST_VAR],
             id="direct-special_props",
