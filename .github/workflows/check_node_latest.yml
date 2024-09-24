@@ -31,6 +31,7 @@ jobs:
             - run: |
                 poetry run uv pip install playwright pytest-playwright pyvirtualdisplay pillow
                 poetry run playwright install --with-deps
+            - run: |
                 poetry run pytest integration/test_node_version.py
   
 

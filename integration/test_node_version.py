@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Generator
 
+import httpx
 import pytest
 from playwright.sync_api import Page, expect
 
@@ -54,6 +55,19 @@ def test_node_version(node_version_app: AppHarness, page: Page):
         node_version_app: running AppHarness instance
         page: playwright page instance
     """
+
+    def get_latest_node_version():
+        response = httpx.get("https://nodejs.org/dist/index.json")
+        versions = response.json()
+
+        # Assuming the first entry in the API response is the most recent version
+        if versions:
+            latest_version = versions[0]["version"]
+            return latest_version
+        return None
+
     assert node_version_app.frontend_url is not None
     page.goto(node_version_app.frontend_url)
-    expect(page.get_by_role("heading")).to_have_text("Node Version check 20.17.0")
+    expect(page.get_by_role("heading")).to_have_text(
+        f"Node Version check {get_latest_node_version()}"
+    )
