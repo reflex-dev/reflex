@@ -56,4 +56,4 @@ def test_node_version(node_version_app: AppHarness, page: Page):
     """
     assert node_version_app.frontend_url is not None
     page.goto(node_version_app.frontend_url)
-    expect(page.get_by_text("Node Version check 20.17.0")).to_be_visible()
+    expect(page.get_by_role("heading")).to_have_text("Node Version check 20.17.0")
