@@ -94,6 +94,9 @@ def poll_for_result(
 
     Returns:
         Result of the function
+
+    Raises:
+        AssertionError: if the function does not return a value
     """
     attempts = 0
     while attempts < max_attempts:
