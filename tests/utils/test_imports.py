@@ -54,17 +54,21 @@ def test_import_var(import_var, expected_name):
         (
             {"react": {"Component"}},
             {"react": {"Component"}, "react-dom": {"render"}},
-            {"react": {"Component"}, "react-dom": {"render"}},
+            {"react": {ImportVar("Component")}, "react-dom": {ImportVar("render")}},
         ),
         (
             {"react": {"Component"}, "next/image": {"Image"}},
             {"react": {"Component"}, "react-dom": {"render"}},
-            {"react": {"Component"}, "react-dom": {"render"}, "next/image": {"Image"}},
+            {
+                "react": {ImportVar("Component")},
+                "react-dom": {ImportVar("render")},
+                "next/image": {ImportVar("Image")},
+            },
         ),
         (
             {"react": {"Component"}},
             {"": {"some/custom.css"}},
-            {"react": {"Component"}, "": {"some/custom.css"}},
+            {"react": {ImportVar("Component")}, "": {ImportVar("some/custom.css")}},
         ),
     ],
 )

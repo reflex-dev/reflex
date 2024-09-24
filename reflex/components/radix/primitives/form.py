@@ -9,7 +9,7 @@ from reflex.components.core.debounce import DebounceInput
 from reflex.components.el.elements.forms import Form as HTMLForm
 from reflex.components.radix.themes.components.text_field import TextFieldRoot
 from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from .base import RadixPrimitiveComponentWithClassName
 

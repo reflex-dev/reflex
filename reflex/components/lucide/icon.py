@@ -2,7 +2,7 @@
 
 from reflex.components.component import Component
 from reflex.utils import format
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 
 class LucideIconComponent(Component):

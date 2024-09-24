@@ -11,7 +11,7 @@ from reflex.components.component import NoSSRComponent
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 class EditorButtonList(list, enum.Enum):
     BASIC = [["font", "fontSize"], ["fontColor"], ["horizontalRule"], ["link", "image"]]
@@ -53,50 +53,50 @@ class Editor(NoSSRComponent):
         *children,
         lang: Optional[
             Union[
+                Literal[
+                    "ckb",
+                    "da",
+                    "de",
+                    "en",
+                    "es",
+                    "fr",
+                    "he",
+                    "it",
+                    "ja",
+                    "ko",
+                    "lv",
+                    "pl",
+                    "pt_br",
+                    "ro",
+                    "ru",
+                    "se",
+                    "ua",
+                    "zh_cn",
+                ],
                 Var[
                     Union[
                         Literal[
-                            "en",
+                            "ckb",
                             "da",
                             "de",
+                            "en",
                             "es",
                             "fr",
-                            "ja",
-                            "ko",
-                            "pt_br",
-                            "ru",
-                            "zh_cn",
-                            "ro",
-                            "pl",
-                            "ckb",
-                            "lv",
-                            "se",
-                            "ua",
                             "he",
                             "it",
+                            "ja",
+                            "ko",
+                            "lv",
+                            "pl",
+                            "pt_br",
+                            "ro",
+                            "ru",
+                            "se",
+                            "ua",
+                            "zh_cn",
                         ],
                         dict,
                     ]
-                ],
-                Literal[
-                    "en",
-                    "da",
-                    "de",
-                    "es",
-                    "fr",
-                    "ja",
-                    "ko",
-                    "pt_br",
-                    "ru",
-                    "zh_cn",
-                    "ro",
-                    "pl",
-                    "ckb",
-                    "lv",
-                    "se",
-                    "ua",
-                    "he",
-                    "it",
                 ],
                 dict,
             ]
@@ -107,7 +107,7 @@ class Editor(NoSSRComponent):
         height: Optional[Union[Var[str], str]] = None,
         placeholder: Optional[Union[Var[str], str]] = None,
         auto_focus: Optional[Union[Var[bool], bool]] = None,
-        set_options: Optional[Union[Var[Dict], Dict]] = None,
+        set_options: Optional[Union[Dict, Var[Dict]]] = None,
         set_all_plugins: Optional[Union[Var[bool], bool]] = None,
         set_contents: Optional[Union[Var[str], str]] = None,
         append_contents: Optional[Union[Var[str], str]] = None,

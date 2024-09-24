@@ -18,8 +18,6 @@ def EventChain():
     import time
     from typing import List
 
-    import reflex_chakra as rc
-
     import reflex as rx
 
     # repeated here since the outer global isn't exported into the App module
@@ -129,7 +127,7 @@ def EventChain():
 
     app = rx.App(state=rx.State)
 
-    token_input = rc.input(
+    token_input = rx.input(
         value=State.router.session.client_token, is_read_only=True, id="token"
     )
 
@@ -137,7 +135,7 @@ def EventChain():
     def index():
         return rx.fragment(
             token_input,
-            rc.input(value=State.interim_value, is_read_only=True, id="interim_value"),
+            rx.input(value=State.interim_value, is_read_only=True, id="interim_value"),
             rx.button(
                 "Return Event",
                 id="return_event",

@@ -7,28 +7,38 @@ from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, List, Optional, Union, overload
 
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
+from reflex.constants import Dirs
 from reflex.event import (
     CallableEventSpec,
     EventHandler,
     EventSpec,
 )
-from reflex.ivars.base import ImmutableCallableVar, ImmutableVar
 from reflex.style import Style
-from reflex.vars import Var, VarData
+from reflex.utils.imports import ImportVar
+from reflex.vars import VarData
+from reflex.vars.base import CallableVar, Var
 
 DEFAULT_UPLOAD_ID: str
 upload_files_context_var_data: VarData
 
-@ImmutableCallableVar
-def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> ImmutableVar: ...
-@ImmutableCallableVar
-def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> ImmutableVar: ...
+@CallableVar
+def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var: ...
+@CallableVar
+def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> Var: ...
 @CallableEventSpec
 def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec: ...
 def cancel_upload(upload_id: str) -> EventSpec: ...
 def get_upload_dir() -> Path: ...
 
-uploaded_files_url_prefix: Var
+uploaded_files_url_prefix = Var(
+    _js_expr="getBackendURL(env.UPLOAD)",
+    _var_data=VarData(
+        imports={
+            f"/{Dirs.STATE_PATH}": "getBackendURL",
+            "/env.json": ImportVar(tag="env", is_default=True),
+        }
+    ),
+).to(str)
 
 def get_upload_url(file_path: str) -> Var[str]: ...
 
@@ -106,7 +116,7 @@ class Upload(MemoizationLeaf):
     def create(  # type: ignore
         cls,
         *children,
-        accept: Optional[Union[Var[Optional[Dict[str, List]]], Dict[str, List]]] = None,
+        accept: Optional[Union[Dict[str, List], Var[Optional[Dict[str, List]]]]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         max_files: Optional[Union[Var[int], int]] = None,
         max_size: Optional[Union[Var[int], int]] = None,
@@ -191,7 +201,7 @@ class StyledUpload(Upload):
     def create(  # type: ignore
         cls,
         *children,
-        accept: Optional[Union[Var[Optional[Dict[str, List]]], Dict[str, List]]] = None,
+        accept: Optional[Union[Dict[str, List], Var[Optional[Dict[str, List]]]]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         max_files: Optional[Union[Var[int], int]] = None,
         max_size: Optional[Union[Var[int], int]] = None,
@@ -276,7 +286,7 @@ class UploadNamespace(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        accept: Optional[Union[Var[Optional[Dict[str, List]]], Dict[str, List]]] = None,
+        accept: Optional[Union[Dict[str, List], Var[Optional[Dict[str, List]]]]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         max_files: Optional[Union[Var[int], int]] = None,
         max_size: Optional[Union[Var[int], int]] = None,

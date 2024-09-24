@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Literal, Optional, Union, overload
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import RadixLoadingProp, RadixThemesComponent
 
@@ -22,13 +22,13 @@ class Spinner(RadixLoadingProp, RadixThemesComponent):
         *children,
         size: Optional[
             Union[
+                Breakpoints[str, Literal["1", "2", "3"]],
+                Literal["1", "2", "3"],
                 Var[
                     Union[
                         Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
                     ]
                 ],
-                Literal["1", "2", "3"],
-                Breakpoints[str, Literal["1", "2", "3"]],
             ]
         ] = None,
         loading: Optional[Union[Var[bool], bool]] = None,

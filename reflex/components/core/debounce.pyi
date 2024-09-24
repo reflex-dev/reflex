@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Optional, Type, Union, overload
 from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 DEFAULT_DEBOUNCE_TIMEOUT = 300
 
@@ -22,9 +22,9 @@ class DebounceInput(Component):
         debounce_timeout: Optional[Union[Var[int], int]] = None,
         force_notify_by_enter: Optional[Union[Var[bool], bool]] = None,
         force_notify_on_blur: Optional[Union[Var[bool], bool]] = None,
-        value: Optional[Union[Var[Union[float, int, str]], str, int, float]] = None,
+        value: Optional[Union[Var[Union[float, int, str]], float, int, str]] = None,
         input_ref: Optional[Union[Var[str], str]] = None,
-        element: Optional[Union[Var[Type[Component]], Type[Component]]] = None,
+        element: Optional[Union[Type[Component], Var[Type[Component]]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

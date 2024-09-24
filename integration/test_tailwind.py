@@ -27,8 +27,6 @@ def TailwindApp(
     """
     from pathlib import Path
 
-    import reflex_chakra as rc
-
     import reflex as rx
 
     class UnusedState(rx.State):
@@ -36,7 +34,7 @@ def TailwindApp(
 
     def index():
         return rx.el.div(
-            rc.text(paragraph_text, class_name=paragraph_class_name),
+            rx.text(paragraph_text, class_name=paragraph_class_name),
             rx.el.p(paragraph_text, class_name=paragraph_class_name),
             rx.text(paragraph_text, as_="p", class_name=paragraph_class_name),
             rx.el.div("Test external stylesheet", class_name="external"),
@@ -109,7 +107,7 @@ def test_tailwind_app(tailwind_app: AppHarness, tailwind_disabled: bool):
     assert len(paragraphs) == 3
     for p in paragraphs:
         assert tailwind_app.poll_for_content(p, exp_not_equal="") == PARAGRAPH_TEXT
-        assert p.value_of_css_property("font-family") == '"monospace"'
+        assert p.value_of_css_property("font-family") == "monospace"
         if tailwind_disabled:
             # expect default color, not "text-red-500" from tailwind utility class
             assert p.value_of_css_property("color") not in TEXT_RED_500_COLOR

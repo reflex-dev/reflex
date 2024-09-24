@@ -4,7 +4,7 @@ from typing import Any, Union
 
 from reflex import Component, ComponentNamespace
 from reflex.constants.colors import Color
-from reflex.vars import Var as Var
+from reflex.vars.base import Var
 
 from .base import BaseHTML
 

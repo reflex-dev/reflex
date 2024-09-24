@@ -6,12 +6,12 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.tags import MatchTag, Tag
-from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style
 from reflex.utils import format, types
 from reflex.utils.exceptions import MatchTypeError
 from reflex.utils.imports import ImportDict
-from reflex.vars import ImmutableVarData, Var, VarData
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
 
 
 class Match(MemoizationLeaf):
@@ -187,7 +187,7 @@ class Match(MemoizationLeaf):
             if not types._issubclass(type(case[-1]), return_type):
                 raise MatchTypeError(
                     f"Match cases should have the same return types. Case {index} with return "
-                    f"value `{case[-1]._var_name if isinstance(case[-1], Var) else textwrap.shorten(str(case[-1]), width=250)}`"
+                    f"value `{case[-1]._js_expr if isinstance(case[-1], Var) else textwrap.shorten(str(case[-1]), width=250)}`"
                     f" of type {type(case[-1])!r} is not {return_type}"
                 )
 
@@ -232,14 +232,14 @@ class Match(MemoizationLeaf):
         ) or not types._isinstance(default, Var):
             raise ValueError("Return types of match cases should be Vars.")
 
-        return ImmutableVar(
-            _var_name=format.format_match(
-                cond=match_cond_var._var_name_unwrapped,
-                match_cases=match_cases,  # type: ignore
+        return Var(
+            _js_expr=format.format_match(
+                cond=str(match_cond_var),
+                match_cases=match_cases,
                 default=default,  # type: ignore
             ),
             _var_type=default._var_type,  # type: ignore
-            _var_data=ImmutableVarData.merge(
+            _var_data=VarData.merge(
                 match_cond_var._get_all_var_data(),
                 *[el._get_all_var_data() for case in match_cases for el in case],
                 default._get_all_var_data(),  # type: ignore
@@ -267,7 +267,8 @@ class Match(MemoizationLeaf):
         Returns:
             The import dict.
         """
-        return getattr(VarData.merge(self.cond._get_all_var_data()), "imports", {})
+        var_data = VarData.merge(self.cond._get_all_var_data())
+        return var_data.old_school_imports() if var_data else {}
 
 
 match = Match.create

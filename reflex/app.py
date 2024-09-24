@@ -9,6 +9,7 @@ import copy
 import functools
 import inspect
 import io
+import json
 import multiprocessing
 import os
 import platform
@@ -359,13 +360,12 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 "`connect_error_component` is deprecated, use `overlay_component` instead"
             )
         super().__init__(**kwargs)
-        base_state_subclasses = BaseState.__subclasses__()
 
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
-        if not is_testing_env() and len(base_state_subclasses) > 1:
-            # Only one Base State class is allowed.
+        if not is_testing_env() and BaseState.__subclasses__() != [State]:
+            # Only rx.State is allowed as Base State subclass.
             raise ValueError(
-                "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
+                "rx.BaseState cannot be subclassed directly. Use rx.State instead"
             )
 
         if "breakpoints" in self.style:
@@ -745,7 +745,10 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         for route in self.pages:
             replaced_route = replace_brackets_with_keywords(route)
             for rw, r, nr in zip(
-                replaced_route.split("/"), route.split("/"), new_route.split("/")
+                replaced_route.split("/"),
+                route.split("/"),
+                new_route.split("/"),
+                strict=False,
             ):
                 if rw in segments and r != nr:
                     # If the slugs in the segments of both routes are not the same, then the route is invalid
@@ -963,7 +966,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             for dep in deps:
                 if dep not in state.vars and dep not in state.backend_vars:
                     raise exceptions.VarDependencyError(
-                        f"ComputedVar {var._var_name} on state {state.__name__} has an invalid dependency {dep}"
+                        f"ComputedVar {var._js_expr} on state {state.__name__} has an invalid dependency {dep}"
                     )
 
         for substate in state.class_subclasses:
@@ -1094,7 +1097,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
 
         # Prepopulate the global ExecutorSafeFunctions class with input data required by the compile functions.
         # This is required for multiprocessing to work, in presence of non-picklable inputs.
-        for route, component in zip(self.pages, page_components):
+        for route, component in zip(self.pages, page_components, strict=False):
             ExecutorSafeFunctions.COMPILE_PAGE_ARGS_BY_ROUTE[route] = (
                 route,
                 component,
@@ -1308,6 +1311,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 FRONTEND_ARG_SPEC,
                 BACKEND_ARG_SPEC,
             ],
+            strict=False,
         ):
             if hasattr(handler_fn, "__name__"):
                 _fn_name = handler_fn.__name__
@@ -1671,8 +1675,9 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
             data: The event data.
         """
+        fields = json.loads(data)
         # Get the event.
-        event = Event.parse_raw(data)
+        event = Event(**{k: v for k, v in fields.items() if k != "handler"})
 
         self.token_to_sid[event.token] = sid
         self.sid_to_token[sid] = event.token

@@ -12,7 +12,7 @@ from reflex.components.props import PropsBase
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
 from reflex.utils.serializers import serializer
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 LiteralPosition = Literal[
     "top-left",
@@ -22,7 +22,7 @@ LiteralPosition = Literal[
     "bottom-center",
     "bottom-right",
 ]
-toast_ref = Var.create_safe("refs['__toast']", _var_is_string=False)
+toast_ref = Var(_js_expr="refs['__toast']")
 
 class ToastAction(Base):
     label: str
@@ -86,23 +86,23 @@ class Toaster(Component):
         visible_toasts: Optional[Union[Var[int], int]] = None,
         position: Optional[
             Union[
+                Literal[
+                    "bottom-center",
+                    "bottom-left",
+                    "bottom-right",
+                    "top-center",
+                    "top-left",
+                    "top-right",
+                ],
                 Var[
                     Literal[
-                        "top-left",
-                        "top-center",
-                        "top-right",
-                        "bottom-left",
                         "bottom-center",
+                        "bottom-left",
                         "bottom-right",
+                        "top-center",
+                        "top-left",
+                        "top-right",
                     ]
-                ],
-                Literal[
-                    "top-left",
-                    "top-center",
-                    "top-right",
-                    "bottom-left",
-                    "bottom-center",
-                    "bottom-right",
                 ],
             ]
         ] = None,
@@ -111,9 +111,9 @@ class Toaster(Component):
         dir: Optional[Union[Var[str], str]] = None,
         hotkey: Optional[Union[Var[str], str]] = None,
         invert: Optional[Union[Var[bool], bool]] = None,
-        toast_options: Optional[Union[Var[ToastProps], ToastProps]] = None,
+        toast_options: Optional[Union[ToastProps, Var[ToastProps]]] = None,
         gap: Optional[Union[Var[int], int]] = None,
-        loading_icon: Optional[Union[Var[Icon], Icon]] = None,
+        loading_icon: Optional[Union[Icon, Var[Icon]]] = None,
         pause_when_page_is_hidden: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

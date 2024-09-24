@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import dataclasses
 import datetime
 import functools
 import json
@@ -41,7 +42,7 @@ from reflex.state import (
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
-from reflex.vars import BaseVar, ComputedVar, Var
+from reflex.vars.base import ComputedVar, Var
 from tests.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState
@@ -58,6 +59,7 @@ formatted_router = {
         "origin": "",
         "upgrade": "",
         "connection": "",
+        "cookie": "",
         "pragma": "",
         "cache_control": "",
         "user_agent": "",
@@ -268,7 +270,7 @@ def test_base_class_vars(test_state):
             continue
         prop = getattr(cls, field)
         assert isinstance(prop, Var)
-        assert prop._var_name.split(".")[-1] == field
+        assert prop._js_expr.split(".")[-1] == field
 
     assert cls.num1._var_type == int
     assert cls.num2._var_type == float
@@ -282,7 +284,7 @@ def test_computed_class_var(test_state):
         test_state: A state.
     """
     cls = type(test_state)
-    vars = [(prop._var_name, prop._var_type) for prop in cls.computed_vars.values()]
+    vars = [(prop._js_expr, prop._var_type) for prop in cls.computed_vars.values()]
     assert ("sum", float) in vars
     assert ("upper", str) in vars
 
@@ -517,11 +519,9 @@ def test_set_class_var():
     """Test setting the var of a class."""
     with pytest.raises(AttributeError):
         TestState.num3  # type: ignore
-    TestState._set_var(
-        BaseVar(_var_name="num3", _var_type=int)._var_set_state(TestState)
-    )
+    TestState._set_var(Var(_js_expr="num3", _var_type=int)._var_set_state(TestState))
     var = TestState.num3  # type: ignore
-    assert var._var_name == "num3"
+    assert var._js_expr == TestState.get_full_name() + ".num3"
     assert var._var_type == int
     assert var._var_state == TestState.get_full_name()
 
@@ -649,7 +649,12 @@ def test_set_dirty_var(test_state):
     assert test_state.dirty_vars == set()
 
 
-def test_set_dirty_substate(test_state, child_state, child_state2, grandchild_state):
+def test_set_dirty_substate(
+    test_state: TestState,
+    child_state: ChildState,
+    child_state2: ChildState2,
+    grandchild_state: GrandchildState,
+):
     """Test changing substate vars marks the value as dirty.
 
     Args:
@@ -860,8 +865,10 @@ def test_get_headers(test_state, router_data, router_data_headers):
         router_data: The router data fixture.
         router_data_headers: The expected headers.
     """
+    print(router_data_headers)
     test_state.router = RouterData(router_data)
-    assert test_state.router.headers.dict() == {
+    print(test_state.router.headers)
+    assert dataclasses.asdict(test_state.router.headers) == {
         format.to_snake_case(k): v for k, v in router_data_headers.items()
     }
 
@@ -1903,19 +1910,21 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     mock_app.event_namespace.emit.assert_called_once()
     mcall = mock_app.event_namespace.emit.mock_calls[0]
     assert mcall.args[0] == str(SocketEvent.EVENT)
-    assert json.loads(mcall.args[1]) == StateUpdate(
-        delta={
-            parent_state.get_full_name(): {
-                "upper": "",
-                "sum": 3.14,
-            },
-            grandchild_state.get_full_name(): {
-                "value2": "42",
-            },
-            GrandchildState3.get_full_name(): {
-                "computed": "",
-            },
-        }
+    assert json.loads(mcall.args[1]) == dataclasses.asdict(
+        StateUpdate(
+            delta={
+                parent_state.get_full_name(): {
+                    "upper": "",
+                    "sum": 3.14,
+                },
+                grandchild_state.get_full_name(): {
+                    "value2": "42",
+                },
+                GrandchildState3.get_full_name(): {
+                    "computed": "",
+                },
+            }
+        )
     )
     assert mcall.kwargs["to"] == grandchild_state.router.session.session_id
 
@@ -2511,7 +2520,7 @@ def test_json_dumps_with_mutables():
         items: List[Foo] = [Foo()]
 
     dict_val = MutableContainsBase().dict()
-    assert isinstance(dict_val[MutableContainsBase.get_full_name()]["items"][0], dict)
+    assert isinstance(dict_val[MutableContainsBase.get_full_name()]["items"][0], Foo)
     val = json_dumps(dict_val)
     f_items = '[{"tags": ["123", "456"]}]'
     f_formatted_router = str(formatted_router).replace("'", '"')
@@ -3077,6 +3086,51 @@ def test_potentially_dirty_substates():
     assert C1._potentially_dirty_substates() == set()
 
 
+def test_router_var_dep() -> None:
+    """Test that router var dependencies are correctly tracked."""
+
+    class RouterVarParentState(State):
+        """A parent state for testing router var dependency."""
+
+        pass
+
+    class RouterVarDepState(RouterVarParentState):
+        """A state with a router var dependency."""
+
+        @rx.var(cache=True)
+        def foo(self) -> str:
+            return self.router.page.params.get("foo", "")
+
+    foo = RouterVarDepState.computed_vars["foo"]
+    State._init_var_dependency_dicts()
+
+    assert foo._deps(objclass=RouterVarDepState) == {"router"}
+    assert RouterVarParentState._potentially_dirty_substates() == {RouterVarDepState}
+    assert RouterVarParentState._substate_var_dependencies == {
+        "router": {RouterVarDepState.get_name()}
+    }
+    assert RouterVarDepState._computed_var_dependencies == {
+        "router": {"foo"},
+    }
+
+    rx_state = State()
+    parent_state = RouterVarParentState()
+    state = RouterVarDepState()
+
+    # link states
+    rx_state.substates = {RouterVarParentState.get_name(): parent_state}
+    parent_state.parent_state = rx_state
+    state.parent_state = parent_state
+    parent_state.substates = {RouterVarDepState.get_name(): state}
+
+    assert state.dirty_vars == set()
+
+    # Reassign router var
+    state.router = state.router
+    assert state.dirty_vars == {"foo", "router"}
+    assert parent_state.dirty_substates == {RouterVarDepState.get_name()}
+
+
 @pytest.mark.asyncio
 async def test_setvar(mock_app: rx.App, token: str):
     """Test that setvar works correctly.
@@ -3161,9 +3215,24 @@ class MixinState(State, mixin=True):
     num: int = 0
     _backend: int = 0
 
+    @rx.var(cache=True)
+    def computed(self) -> str:
+        """A computed var on mixin state.
+
+        Returns:
+            A computed value.
+        """
+        return ""
+
 
 class UsesMixinState(MixinState, State):
     """A state that uses the mixin state."""
+
+    pass
+
+
+class ChildUsesMixinState(UsesMixinState):
+    """A child state that uses the mixin state."""
 
     pass
 
@@ -3173,3 +3242,15 @@ def test_mixin_state() -> None:
     assert "num" in UsesMixinState.base_vars
     assert "num" in UsesMixinState.vars
     assert UsesMixinState.backend_vars == {"_backend": 0}
+
+    assert "computed" in UsesMixinState.computed_vars
+    assert "computed" in UsesMixinState.vars
+
+
+def test_child_mixin_state() -> None:
+    """Test that mixin vars are only applied to the highest state in the hierarchy."""
+    assert "num" in ChildUsesMixinState.inherited_vars
+    assert "num" not in ChildUsesMixinState.base_vars
+
+    assert "computed" in ChildUsesMixinState.inherited_vars
+    assert "computed" not in ChildUsesMixinState.computed_vars

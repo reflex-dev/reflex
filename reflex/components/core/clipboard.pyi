@@ -9,7 +9,7 @@ from reflex.components.base.fragment import Fragment
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 class Clipboard(Fragment):
     @overload
@@ -17,9 +17,9 @@ class Clipboard(Fragment):
     def create(  # type: ignore
         cls,
         *children,
-        targets: Optional[Union[Var[List[str]], List[str]]] = None,
+        targets: Optional[Union[List[str], Var[List[str]]]] = None,
         on_paste_event_actions: Optional[
-            Union[Var[Dict[str, Union[bool, int]]], Dict[str, Union[bool, int]]]
+            Union[Dict[str, Union[bool, int]], Var[Dict[str, Union[bool, int]]]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,

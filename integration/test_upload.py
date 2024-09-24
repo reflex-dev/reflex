@@ -16,8 +16,6 @@ def UploadFile():
     """App for testing dynamic routes."""
     from typing import Dict, List
 
-    import reflex_chakra as rc
-
     import reflex as rx
 
     class UploadState(rx.State):
@@ -46,7 +44,7 @@ def UploadFile():
 
     def index():
         return rx.vstack(
-            rc.input(
+            rx.input(
                 value=UploadState.router.session.client_token,
                 is_read_only=True,
                 id="token",
