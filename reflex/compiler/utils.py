@@ -29,7 +29,6 @@ from reflex.components.base import (
     Title,
 )
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.components.el.elements.metadata import Link
 from reflex.state import BaseState, Cookie, LocalStorage, SessionStorage
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
@@ -430,11 +429,8 @@ def add_meta(
     Returns:
         The component with the metadata added.
     """
-    if len(meta):
-        print(meta[0])
-
     meta_tags = [
-        item if isinstance(item, Link) else Meta.create(**item) for item in meta
+        item if isinstance(item, Component) else Meta.create(**item) for item in meta
     ]
 
     children: list[Any] = [Title.create(title)]
