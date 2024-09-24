@@ -126,7 +126,12 @@ def serialize(
     # If there is no serializer, return None.
     if serializer is None:
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
-            return serialize(dataclasses.asdict(value))
+            return serialize(
+                {
+                    k.name: serialize(getattr(value, k.name))
+                    for k in dataclasses.fields(value)
+                }
+            )
         if get_type:
             return None, None
         return None

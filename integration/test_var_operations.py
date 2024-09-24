@@ -793,8 +793,8 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("foreach_list_ix", "1\n2"),
         ("foreach_list_nested", "1\n1\n2"),
         # rx.memo component with state
-        ("memo_comp", "1210"),
-        ("memo_comp_nested", "345"),
+        ("memo_comp", "[1,2]10"),
+        ("memo_comp_nested", "[3,4]5"),
         # foreach in a match
         ("foreach_in_match", "first\nsecond\nthird"),
     ]

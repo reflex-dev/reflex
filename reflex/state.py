@@ -2430,7 +2430,7 @@ class StateUpdate:
         Returns:
             The state update as a JSON string.
         """
-        return format.json_dumps(dataclasses.asdict(self))
+        return format.json_dumps(self)
 
 
 class StateManager(Base, ABC):
