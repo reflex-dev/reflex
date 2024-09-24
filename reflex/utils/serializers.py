@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import (
     Any,
     Callable,
-    Dict,
     List,
     Literal,
     Optional,
@@ -259,29 +258,16 @@ def serialize_base(value: Base) -> dict:
 
 
 @serializer
-def serialize_list(value: Union[List, Tuple, Set]) -> list:
-    """Serialize a list to a JSON string.
+def serialize_set(value: Set) -> list:
+    """Serialize a set to a JSON serializable list.
 
     Args:
-        value: The list to serialize.
+        value: The set to serialize.
 
     Returns:
         The serialized list.
     """
-    return [item for item in value]
-
-
-@serializer
-def serialize_dict(prop: Dict[str, Any]) -> dict:
-    """Serialize a dictionary to a JSON string.
-
-    Args:
-        prop: The dictionary to serialize.
-
-    Returns:
-        The serialized dictionary.
-    """
-    return {k: v for k, v in prop.items()}
+    return list(value)
 
 
 @serializer(to=str)
