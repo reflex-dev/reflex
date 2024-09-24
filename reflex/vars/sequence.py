@@ -736,6 +736,26 @@ class ArrayVar(Var[ARRAY_VAR_TYPE]):
         """
         if not isinstance(sep, (StringVar, str)):
             raise_unsupported_operand_types("join", (type(self), type(sep)))
+        if (
+            isinstance(self, LiteralArrayVar)
+            and (
+                len(
+                    args := [
+                        x
+                        for x in self._var_value
+                        if isinstance(x, (LiteralStringVar, str))
+                    ]
+                )
+                == len(self._var_value)
+            )
+            and isinstance(sep, (LiteralStringVar, str))
+        ):
+            sep_str = sep._var_value if isinstance(sep, LiteralStringVar) else sep
+            return LiteralStringVar.create(
+                sep_str.join(
+                    i._var_value if isinstance(i, LiteralStringVar) else i for i in args
+                )
+            )
         return array_join_operation(self, sep)
 
     def reverse(self) -> ArrayVar[ARRAY_VAR_TYPE]:
