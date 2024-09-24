@@ -503,8 +503,6 @@ class Component(BaseComponent, ABC):
                 ).join(" ")
             else:
                 kwargs["class_name"] = " ".join(class_name)
-        elif isinstance(class_name, str) and class_name:
-            kwargs["class_name"] = LiteralVar.create(class_name)
 
         # Construct the component.
         super().__init__(*args, **kwargs)
