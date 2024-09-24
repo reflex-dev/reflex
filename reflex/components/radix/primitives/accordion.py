@@ -12,7 +12,8 @@ from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
 from reflex.event import EventHandler
 from reflex.style import Style
-from reflex.vars import Var, get_uuid_string_var
+from reflex.vars import get_uuid_string_var
+from reflex.vars.base import LiteralVar, Var
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
@@ -102,10 +103,10 @@ class AccordionRoot(AccordionComponent):
     radius: Var[LiteralRadius]
 
     # The time in milliseconds to animate open and close
-    duration: Var[int] = Var.create_safe(DEFAULT_ANIMATION_DURATION)
+    duration: Var[int] = LiteralVar.create(DEFAULT_ANIMATION_DURATION)
 
     # The easing function to use for the animation.
-    easing: Var[str] = Var.create_safe(DEFAULT_ANIMATION_EASING, _var_is_string=True)
+    easing: Var[str] = LiteralVar.create(DEFAULT_ANIMATION_EASING)
 
     # Whether to show divider lines between items.
     show_dividers: Var[bool]
@@ -464,14 +465,12 @@ to {
         Returns:
             The style of the component.
         """
-        slideDown = Var.create(
+        slideDown = LiteralVar.create(
             f"${{slideDown}} var(--animation-duration) var(--animation-easing)",
-            _var_is_string=True,
         )
 
-        slideUp = Var.create(
+        slideUp = LiteralVar.create(
             f"${{slideUp}} var(--animation-duration) var(--animation-easing)",
-            _var_is_string=True,
         )
 
         return {

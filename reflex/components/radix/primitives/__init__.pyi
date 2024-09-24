@@ -7,5 +7,3 @@ from .accordion import accordion as accordion
 from .drawer import drawer as drawer
 from .form import form as form
 from .progress import progress as progress
-from reflex import RADIX_PRIMITIVES_MAPPING
-from reflex.utils import lazy_loader

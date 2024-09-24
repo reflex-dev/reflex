@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import contextlib
+import dataclasses
 import inspect
 import sys
 import types
-from functools import cached_property, wraps
+from functools import cached_property, lru_cache, wraps
 from typing import (
     Any,
     Callable,
@@ -21,8 +22,10 @@ from typing import (
     Union,
     _GenericAlias,  # type: ignore
     get_args,
-    get_origin,
     get_type_hints,
+)
+from typing import (
+    get_origin as get_origin_og,
 )
 
 import sqlalchemy
@@ -49,7 +52,7 @@ from reflex.base import Base
 from reflex.utils import console
 
 if sys.version_info >= (3, 12):
-    from typing import override
+    from typing import override as override
 else:
 
     def override(func: Callable) -> Callable:
@@ -109,6 +112,11 @@ RESERVED_BACKEND_VAR_NAMES = {
     "_was_touched",
 }
 
+if sys.version_info >= (3, 11):
+    from typing import Self as Self
+else:
+    from typing_extensions import Self as Self
+
 
 class Unset:
     """A class to represent an unset value.
@@ -133,6 +141,20 @@ class Unset:
         return False
 
 
+@lru_cache()
+def get_origin(tp):
+    """Get the origin of a class.
+
+    Args:
+        tp: The class to get the origin of.
+
+    Returns:
+        The origin of the class.
+    """
+    return get_origin_og(tp)
+
+
+@lru_cache()
 def is_generic_alias(cls: GenericType) -> bool:
     """Check whether the class is a generic alias.
 
@@ -157,6 +179,7 @@ def is_none(cls: GenericType) -> bool:
     return cls is type(None) or cls is None
 
 
+@lru_cache()
 def is_union(cls: GenericType) -> bool:
     """Check if a class is a Union.
 
@@ -169,6 +192,7 @@ def is_union(cls: GenericType) -> bool:
     return get_origin(cls) in UnionTypes
 
 
+@lru_cache()
 def is_literal(cls: GenericType) -> bool:
     """Check if a class is a Literal.
 
@@ -222,9 +246,14 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     """
     from reflex.model import Model
 
-    attr = getattr(cls, name, None)
+    try:
+        attr = getattr(cls, name, None)
+    except NotImplementedError:
+        attr = None
+
     if hint := get_property_hint(attr):
         return hint
+
     if (
         hasattr(cls, "__fields__")
         and name in cls.__fields__
@@ -245,36 +274,41 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             # check for list types
             column = insp.columns[name]
             column_type = column.type
-            type_ = insp.columns[name].type.python_type
-            if hasattr(column_type, "item_type") and (
-                item_type := column_type.item_type.python_type  # type: ignore
-            ):
-                if type_ in PrimitiveToAnnotation:
-                    type_ = PrimitiveToAnnotation[type_]  # type: ignore
-                type_ = type_[item_type]  # type: ignore
-            if column.nullable:
-                type_ = Optional[type_]
-            return type_
-        if name not in insp.all_orm_descriptors:
-            return None
-        descriptor = insp.all_orm_descriptors[name]
-        if hint := get_property_hint(descriptor):
-            return hint
-        if isinstance(descriptor, QueryableAttribute):
-            prop = descriptor.property
-            if not isinstance(prop, Relationship):
-                return None
-            type_ = prop.mapper.class_
-            # TODO: check for nullable?
-            type_ = List[type_] if prop.uselist else Optional[type_]
-            return type_
-        if isinstance(attr, AssociationProxyInstance):
-            return List[
-                get_attribute_access_type(
-                    attr.target_class,
-                    attr.remote_attr.key,  # type: ignore[attr-defined]
-                )
-            ]
+            try:
+                type_ = insp.columns[name].type.python_type
+            except NotImplementedError:
+                type_ = None
+            if type_ is not None:
+                if hasattr(column_type, "item_type"):
+                    try:
+                        item_type = column_type.item_type.python_type  # type: ignore
+                    except NotImplementedError:
+                        item_type = None
+                    if item_type is not None:
+                        if type_ in PrimitiveToAnnotation:
+                            type_ = PrimitiveToAnnotation[type_]  # type: ignore
+                        type_ = type_[item_type]  # type: ignore
+                if column.nullable:
+                    type_ = Optional[type_]
+                return type_
+        if name in insp.all_orm_descriptors:
+            descriptor = insp.all_orm_descriptors[name]
+            if hint := get_property_hint(descriptor):
+                return hint
+            if isinstance(descriptor, QueryableAttribute):
+                prop = descriptor.property
+                if isinstance(prop, Relationship):
+                    type_ = prop.mapper.class_
+                    # TODO: check for nullable?
+                    type_ = List[type_] if prop.uselist else Optional[type_]
+                    return type_
+            if isinstance(attr, AssociationProxyInstance):
+                return List[
+                    get_attribute_access_type(
+                        attr.target_class,
+                        attr.remote_attr.key,  # type: ignore[attr-defined]
+                    )
+                ]
     elif isinstance(cls, type) and not is_generic_alias(cls) and issubclass(cls, Model):
         # Check in the annotations directly (for sqlmodel.Relationship)
         hints = get_type_hints(cls)
@@ -309,6 +343,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     return None  # Attribute is not accessible.
 
 
+@lru_cache()
 def get_base_class(cls: GenericType) -> Type:
     """Get the base class of a class.
 
@@ -446,7 +481,11 @@ def is_valid_var_type(type_: Type) -> bool:
 
     if is_union(type_):
         return all((is_valid_var_type(arg) for arg in get_args(type_)))
-    return _issubclass(type_, StateVar) or serializers.has_serializer(type_)
+    return (
+        _issubclass(type_, StateVar)
+        or serializers.has_serializer(type_)
+        or dataclasses.is_dataclass(type_)
+    )
 
 
 def is_backend_base_variable(name: str, cls: Type) -> bool:
@@ -480,17 +519,23 @@ def is_backend_base_variable(name: str, cls: Type) -> bool:
     if name in cls.inherited_backend_vars:
         return False
 
+    from reflex.vars.base import is_computed_var
+
     if name in cls.__dict__:
         value = cls.__dict__[name]
         if type(value) == classmethod:
             return False
         if callable(value):
             return False
-        from reflex.vars import ComputedVar
 
         if isinstance(
-            value, (types.FunctionType, property, cached_property, ComputedVar)
-        ):
+            value,
+            (
+                types.FunctionType,
+                property,
+                cached_property,
+            ),
+        ) or is_computed_var(value):
             return False
 
     return True
@@ -587,7 +632,7 @@ def validate_parameter_literals(func):
         annotations = {param[0]: param[1].annotation for param in func_params}
 
         # validate args
-        for param, arg in zip(annotations, args):
+        for param, arg in zip(annotations, args, strict=False):
             if annotations[param] is inspect.Parameter.empty:
                 continue
             validate_literal(param, arg, annotations[param], func.__name__)

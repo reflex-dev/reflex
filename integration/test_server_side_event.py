@@ -39,12 +39,12 @@ def ServerSideEvent():
     @app.add_page
     def index():
         return rx.fragment(
-            rx.chakra.input(
+            rx.input(
                 id="token", value=SSState.router.session.client_token, is_read_only=True
             ),
-            rx.chakra.input(default_value="a", id="a"),
-            rx.chakra.input(default_value="b", id="b"),
-            rx.chakra.input(default_value="c", id="c"),
+            rx.input(default_value="a", id="a"),
+            rx.input(default_value="b", id="b"),
+            rx.input(default_value="c", id="c"),
             rx.button(
                 "Clear Immediate",
                 id="clear_immediate",

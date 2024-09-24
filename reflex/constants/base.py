@@ -45,6 +45,8 @@ class Dirs(SimpleNamespace):
     REFLEX_JSON = "reflex.json"
     # The name of the postcss config file.
     POSTCSS_JS = "postcss.config.js"
+    # The name of the states directory.
+    STATES = "states"
 
 
 class Reflex(SimpleNamespace):
@@ -77,6 +79,8 @@ class Reflex(SimpleNamespace):
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
 
+    RELEASES_URL = f"https://api.github.com/repos/reflex-dev/templates/releases"
+
 
 class ReflexHostingCLI(SimpleNamespace):
     """Base constants concerning Reflex Hosting CLI."""
@@ -93,6 +97,29 @@ class Templates(SimpleNamespace):
 
     # The default template
     DEFAULT = "blank"
+
+    # The reflex.build frontend host
+    REFLEX_BUILD_FRONTEND = os.environ.get(
+        "REFLEX_BUILD_FRONTEND", "https://flexgen.reflex.run"
+    )
+
+    # The reflex.build backend host
+    REFLEX_BUILD_BACKEND = os.environ.get(
+        "REFLEX_BUILD_BACKEND", "https://flexgen-prod-flexgen.fly.dev"
+    )
+
+    # The URL to redirect to reflex.build
+    REFLEX_BUILD_URL = (
+        REFLEX_BUILD_FRONTEND + "/gen?reflex_init_token={reflex_init_token}"
+    )
+
+    # The URL to poll waiting for the user to select a generation.
+    REFLEX_BUILD_POLL_URL = REFLEX_BUILD_BACKEND + "/api/init/{reflex_init_token}"
+
+    # The URL to fetch the generation's reflex code
+    REFLEX_BUILD_CODE_URL = (
+        REFLEX_BUILD_BACKEND + "/api/gen/{generation_hash}/refactored"
+    )
 
     class Dirs(SimpleNamespace):
         """Folders used by the template system of Reflex."""

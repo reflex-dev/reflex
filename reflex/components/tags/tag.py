@@ -2,22 +2,23 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+import dataclasses
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from reflex.base import Base
 from reflex.event import EventChain
 from reflex.utils import format, types
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
 
 
-class Tag(Base):
+@dataclasses.dataclass()
+class Tag:
     """A React tag."""
 
     # The name of the tag.
     name: str = ""
 
     # The props of the tag.
-    props: Dict[str, Any] = {}
+    props: Dict[str, Any] = dataclasses.field(default_factory=dict)
 
     # The inner contents of the tag.
     contents: str = ""
@@ -26,25 +27,18 @@ class Tag(Base):
     args: Optional[Tuple[str, ...]] = None
 
     # Special props that aren't key value pairs.
-    special_props: Set[Var] = set()
+    special_props: List[Var] = dataclasses.field(default_factory=list)
 
     # The children components.
-    children: List[Any] = []
+    children: List[Any] = dataclasses.field(default_factory=list)
 
-    def __init__(self, *args, **kwargs):
-        """Initialize the tag.
-
-        Args:
-            *args: Args to initialize the tag.
-            **kwargs: Kwargs to initialize the tag.
-        """
-        # Convert any props to vars.
-        if "props" in kwargs:
-            kwargs["props"] = {
-                name: Var.create(value, _var_is_string=False)
-                for name, value in kwargs["props"].items()
-            }
-        super().__init__(*args, **kwargs)
+    def __post_init__(self):
+        """Post initialize the tag."""
+        object.__setattr__(
+            self,
+            "props",
+            {name: LiteralVar.create(value) for name, value in self.props.items()},
+        )
 
     def format_props(self) -> List:
         """Format the tag's props.
@@ -53,6 +47,29 @@ class Tag(Base):
             The formatted props list.
         """
         return format.format_props(*self.special_props, **self.props)
+
+    def set(self, **kwargs: Any):
+        """Set the tag's fields.
+
+        Args:
+            kwargs: The fields to set.
+
+        Returns:
+            The tag with the fields
+        """
+        for name, value in kwargs.items():
+            setattr(self, name, value)
+
+        return self
+
+    def __iter__(self):
+        """Iterate over the tag's fields.
+
+        Yields:
+            Tuple[str, Any]: The field name and value.
+        """
+        for field in dataclasses.fields(self):
+            yield field.name, getattr(self, field.name)
 
     def add_props(self, **kwargs: Optional[Any]) -> Tag:
         """Add props to the tag.
@@ -63,14 +80,12 @@ class Tag(Base):
         Returns:
             The tag with the props added.
         """
-        from reflex.components.core.colors import Color
-
         self.props.update(
             {
-                format.to_camel_case(name, allow_hyphens=True): prop
-                if types._isinstance(prop, Union[EventChain, dict])
-                else Var.create(
-                    prop, _var_is_string=isinstance(prop, Color)
+                format.to_camel_case(name, allow_hyphens=True): (
+                    prop
+                    if types._isinstance(prop, Union[EventChain, dict])
+                    else LiteralVar.create(prop)
                 )  # rx.color is always a string
                 for name, prop in kwargs.items()
                 if self.is_valid_prop(prop)

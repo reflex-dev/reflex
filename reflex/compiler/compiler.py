@@ -22,7 +22,7 @@ from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.imports import ImportVar
 from reflex.utils.prerequisites import get_web_dir
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
 
 
 def _compile_document_root(root: Component) -> str:
@@ -57,7 +57,7 @@ def _compile_app(app_root: Component) -> str:
     )
 
 
-def _compile_theme(theme: dict) -> str:
+def _compile_theme(theme: str) -> str:
     """Compile the theme.
 
     Args:
@@ -80,8 +80,8 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None)
         The compiled context file.
     """
     appearance = getattr(theme, "appearance", None)
-    if appearance is None or Var.create_safe(appearance)._var_name == "inherit":
-        appearance = SYSTEM_COLOR_MODE
+    if appearance is None or str(LiteralVar.create(appearance)) == '"inherit"':
+        appearance = LiteralVar.create(SYSTEM_COLOR_MODE)
 
     last_compiled_time = str(datetime.now())
     return (
@@ -377,7 +377,7 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
     theme = utils.create_theme(style)
 
     # Compile the theme.
-    code = _compile_theme(theme)
+    code = _compile_theme(str(LiteralVar.create(theme)))
     return output_path, code
 
 

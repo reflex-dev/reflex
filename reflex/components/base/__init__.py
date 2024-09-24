@@ -13,6 +13,10 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
         "Fragment",
         "fragment",
     ],
+    "error_boundary": [
+        "ErrorBoundary",
+        "error_boundary",
+    ],
     "head": [
         "head",
         "Head",

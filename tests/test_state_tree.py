@@ -237,7 +237,13 @@ def state_manager_redis(app_module_mock) -> Generator[StateManager, None, None]:
     [
         (
             Root,
-            ["tree_a", "tree_b", "tree_c", "tree_d", "tree_e"],
+            [
+                TreeA.get_name(),
+                TreeB.get_name(),
+                TreeC.get_name(),
+                TreeD.get_name(),
+                TreeE.get_name(),
+            ],
             [
                 TreeA.get_full_name(),
                 SubA_A.get_full_name(),
@@ -261,7 +267,7 @@ def state_manager_redis(app_module_mock) -> Generator[StateManager, None, None]:
         ),
         (
             TreeA,
-            ("tree_a", "tree_d", "tree_e"),
+            (TreeA.get_name(), TreeD.get_name(), TreeE.get_name()),
             [
                 TreeA.get_full_name(),
                 SubA_A.get_full_name(),
@@ -276,7 +282,7 @@ def state_manager_redis(app_module_mock) -> Generator[StateManager, None, None]:
         ),
         (
             SubA_A_A_A,
-            ["tree_a", "tree_d", "tree_e"],
+            [TreeA.get_name(), TreeD.get_name(), TreeE.get_name()],
             [
                 TreeA.get_full_name(),
                 SubA_A.get_full_name(),
@@ -288,7 +294,7 @@ def state_manager_redis(app_module_mock) -> Generator[StateManager, None, None]:
         ),
         (
             TreeB,
-            ["tree_b", "tree_d", "tree_e"],
+            [TreeB.get_name(), TreeD.get_name(), TreeE.get_name()],
             [
                 TreeB.get_full_name(),
                 SubB_A.get_full_name(),
@@ -300,7 +306,7 @@ def state_manager_redis(app_module_mock) -> Generator[StateManager, None, None]:
         ),
         (
             SubB_B,
-            ["tree_b", "tree_d", "tree_e"],
+            [TreeB.get_name(), TreeD.get_name(), TreeE.get_name()],
             [
                 TreeB.get_full_name(),
                 SubB_B.get_full_name(),
@@ -309,7 +315,7 @@ def state_manager_redis(app_module_mock) -> Generator[StateManager, None, None]:
         ),
         (
             SubB_C_A,
-            ["tree_b", "tree_d", "tree_e"],
+            [TreeB.get_name(), TreeD.get_name(), TreeE.get_name()],
             [
                 TreeB.get_full_name(),
                 SubB_C.get_full_name(),
@@ -319,7 +325,7 @@ def state_manager_redis(app_module_mock) -> Generator[StateManager, None, None]:
         ),
         (
             TreeC,
-            ["tree_c", "tree_d", "tree_e"],
+            [TreeC.get_name(), TreeD.get_name(), TreeE.get_name()],
             [
                 TreeC.get_full_name(),
                 SubC_A.get_full_name(),
@@ -328,14 +334,14 @@ def state_manager_redis(app_module_mock) -> Generator[StateManager, None, None]:
         ),
         (
             TreeD,
-            ["tree_d", "tree_e"],
+            [TreeD.get_name(), TreeE.get_name()],
             [
                 *ALWAYS_COMPUTED_DICT_KEYS,
             ],
         ),
         (
             TreeE,
-            ["tree_d", "tree_e"],
+            [TreeE.get_name(), TreeD.get_name()],
             [
                 # Extra siblings of computed var included now.
                 SubE_A_A_A_B.get_full_name(),

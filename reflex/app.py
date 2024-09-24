@@ -9,11 +9,14 @@ import copy
 import functools
 import inspect
 import io
+import json
 import multiprocessing
 import os
 import platform
 import sys
+import traceback
 from datetime import datetime
+from pathlib import Path
 from typing import (
     Any,
     AsyncIterator,
@@ -31,7 +34,7 @@ from typing import (
 
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware import cors
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
@@ -40,11 +43,13 @@ from starlette_admin.contrib.sqla.view import ModelView
 
 from reflex import constants
 from reflex.admin import AdminDash
+from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.compiler.compiler import ExecutorSafeFunctions
 from reflex.components.base.app_wrap import AppWrap
+from reflex.components.base.error_boundary import ErrorBoundary
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
     Component,
@@ -60,9 +65,8 @@ from reflex.components.core.client_side_routing import (
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
 from reflex.config import get_config
-from reflex.event import Event, EventHandler, EventSpec
-from reflex.middleware import HydrateMiddleware, Middleware
-from reflex.model import Model
+from reflex.event import Event, EventHandler, EventSpec, window_alert
+from reflex.model import Model, get_db_status
 from reflex.page import (
     DECORATED_PAGES,
 )
@@ -89,6 +93,51 @@ ComponentCallable = Callable[[], Component]
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
 
 
+def default_frontend_exception_handler(exception: Exception) -> None:
+    """Default frontend exception handler function.
+
+    Args:
+        exception: The exception.
+
+    """
+    console.error(f"[Reflex Frontend Exception]\n {exception}\n")
+
+
+def default_backend_exception_handler(exception: Exception) -> EventSpec:
+    """Default backend exception handler function.
+
+    Args:
+        exception: The exception.
+
+    Returns:
+        EventSpec: The window alert event.
+
+    """
+    from reflex.components.sonner.toast import Toaster, toast
+
+    error = traceback.format_exc()
+
+    console.error(f"[Reflex Backend Exception]\n {error}\n")
+
+    error_message = (
+        ["Contact the website administrator."]
+        if is_prod_mode()
+        else [f"{type(exception).__name__}: {exception}.", "See logs for details."]
+    )
+    if Toaster.is_used:
+        return toast(
+            "An error occurred.",
+            level="error",
+            description="<br/>".join(error_message),
+            position="top-center",
+            id="backend_error",
+            style={"width": "500px"},
+        )  # type: ignore
+    else:
+        error_message.insert(0, "An error occurred.")
+        return window_alert("\n".join(error_message))
+
+
 def default_overlay_component() -> Component:
     """Default overlay_component attribute for App.
 
@@ -102,56 +151,26 @@ def default_overlay_component() -> Component:
     )
 
 
+def default_error_boundary(*children: Component) -> Component:
+    """Default error_boundary attribute for App.
+
+    Args:
+        *children: The children to render in the error boundary.
+
+    Returns:
+        The default error_boundary, which is an ErrorBoundary.
+
+    """
+    return ErrorBoundary.create(*children)
+
+
 class OverlayFragment(Fragment):
     """Alias for Fragment, used to wrap the overlay_component."""
 
     pass
 
 
-class LifespanMixin(Base):
-    """A Mixin that allow tasks to run during the whole app lifespan."""
-
-    # Lifespan tasks that are planned to run.
-    lifespan_tasks: Set[Union[asyncio.Task, Callable]] = set()
-
-    @contextlib.asynccontextmanager
-    async def _run_lifespan_tasks(self, app: FastAPI):
-        running_tasks = []
-        try:
-            async with contextlib.AsyncExitStack() as stack:
-                for task in self.lifespan_tasks:
-                    if isinstance(task, asyncio.Task):
-                        running_tasks.append(task)
-                    else:
-                        signature = inspect.signature(task)
-                        if "app" in signature.parameters:
-                            task = functools.partial(task, app=app)
-                        _t = task()
-                        if isinstance(_t, contextlib._AsyncGeneratorContextManager):
-                            await stack.enter_async_context(_t)
-                        elif isinstance(_t, Coroutine):
-                            running_tasks.append(asyncio.create_task(_t))
-                yield
-        finally:
-            cancel_kwargs = (
-                {"msg": "lifespan_cleanup"} if sys.version_info >= (3, 9) else {}
-            )
-            for task in running_tasks:
-                task.cancel(**cancel_kwargs)
-
-    def register_lifespan_task(self, task: Callable | asyncio.Task, **task_kwargs):
-        """Register a task to run during the lifespan of the app.
-
-        Args:
-            task: The task to register.
-            task_kwargs: The kwargs of the task.
-        """
-        if task_kwargs:
-            task = functools.partial(task, **task_kwargs)  # type: ignore
-        self.lifespan_tasks.add(task)  # type: ignore
-
-
-class App(LifespanMixin, Base):
+class App(MiddlewareMixin, LifespanMixin, Base):
     """The main Reflex app that encapsulates the backend and frontend.
 
     Every Reflex app needs an app defined in its main module.
@@ -183,8 +202,11 @@ class App(LifespanMixin, Base):
 
     # A component that is present on every page (defaults to the Connection Error banner).
     overlay_component: Optional[Union[Component, ComponentCallable]] = (
-        default_overlay_component
+        default_overlay_component()
     )
+
+    # Error boundary component to wrap the app with.
+    error_boundary: Optional[ComponentCallable] = default_error_boundary
 
     # Components to add to the head of every page.
     head_components: List[Component] = []
@@ -210,9 +232,6 @@ class App(LifespanMixin, Base):
     # Class to manage many client states.
     _state_manager: Optional[StateManager] = None
 
-    # Middleware to add to the app. Users should use `add_middleware`. PRIVATE.
-    middleware: List[Middleware] = []
-
     # Mapping from a route to event handlers to trigger when the page loads. PRIVATE.
     load_events: Dict[str, List[Union[EventHandler, EventSpec]]] = {}
 
@@ -224,6 +243,16 @@ class App(LifespanMixin, Base):
 
     # Background tasks that are currently running. PRIVATE.
     background_tasks: Set[asyncio.Task] = set()
+
+    # Frontend Error Handler Function
+    frontend_exception_handler: Callable[[Exception], None] = (
+        default_frontend_exception_handler
+    )
+
+    # Backend Error Handler Function
+    backend_exception_handler: Callable[
+        [Exception], Union[EventSpec, List[EventSpec], None]
+    ] = default_backend_exception_handler
 
     def __init__(self, **kwargs):
         """Initialize the app.
@@ -241,25 +270,27 @@ class App(LifespanMixin, Base):
                 "`connect_error_component` is deprecated, use `overlay_component` instead"
             )
         super().__init__(**kwargs)
-        base_state_subclasses = BaseState.__subclasses__()
 
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
-        if not is_testing_env() and len(base_state_subclasses) > 1:
-            # Only one Base State class is allowed.
+        if not is_testing_env() and BaseState.__subclasses__() != [State]:
+            # Only rx.State is allowed as Base State subclass.
             raise ValueError(
-                "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
+                "rx.BaseState cannot be subclassed directly. Use rx.State instead"
             )
 
         if "breakpoints" in self.style:
             set_breakpoints(self.style.pop("breakpoints"))
 
-        # Add middleware.
-        self.middleware.append(HydrateMiddleware())
-
         # Set up the API.
         self.api = FastAPI(lifespan=self._run_lifespan_tasks)
         self._add_cors()
         self._add_default_endpoints()
+
+        for clz in App.__mro__:
+            if clz == App:
+                continue
+            if issubclass(clz, AppMixin):
+                clz._init_mixin(self)
 
         self._setup_state()
 
@@ -323,6 +354,9 @@ class App(LifespanMixin, Base):
         # Mount the socket app with the API.
         self.api.mount(str(constants.Endpoint.EVENT), socket_app)
 
+        # Check the exception handlers
+        self._validate_exception_handlers()
+
     def __repr__(self) -> str:
         """Get the string representation of the app.
 
@@ -343,6 +377,7 @@ class App(LifespanMixin, Base):
         """Add default api endpoints (ping)."""
         # To test the server.
         self.api.get(str(constants.Endpoint.PING))(ping)
+        self.api.get(str(constants.Endpoint.HEALTH))(health)
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
@@ -385,77 +420,6 @@ class App(LifespanMixin, Base):
             raise ValueError("The state manager has not been initialized.")
         return self._state_manager
 
-    async def _preprocess(self, state: BaseState, event: Event) -> StateUpdate | None:
-        """Preprocess the event.
-
-        This is where middleware can modify the event before it is processed.
-        Each middleware is called in the order it was added to the app.
-
-        If a middleware returns an update, the event is not processed and the
-        update is returned.
-
-        Args:
-            state: The state to preprocess.
-            event: The event to preprocess.
-
-        Returns:
-            An optional state to return.
-        """
-        for middleware in self.middleware:
-            if asyncio.iscoroutinefunction(middleware.preprocess):
-                out = await middleware.preprocess(app=self, state=state, event=event)  # type: ignore
-            else:
-                out = middleware.preprocess(app=self, state=state, event=event)  # type: ignore
-            if out is not None:
-                return out  # type: ignore
-
-    async def _postprocess(
-        self, state: BaseState, event: Event, update: StateUpdate
-    ) -> StateUpdate:
-        """Postprocess the event.
-
-        This is where middleware can modify the delta after it is processed.
-        Each middleware is called in the order it was added to the app.
-
-        Args:
-            state: The state to postprocess.
-            event: The event to postprocess.
-            update: The current state update.
-
-        Returns:
-            The state update to return.
-        """
-        for middleware in self.middleware:
-            if asyncio.iscoroutinefunction(middleware.postprocess):
-                out = await middleware.postprocess(
-                    app=self,  # type: ignore
-                    state=state,
-                    event=event,
-                    update=update,
-                )
-            else:
-                out = middleware.postprocess(
-                    app=self,  # type: ignore
-                    state=state,
-                    event=event,
-                    update=update,
-                )
-            if out is not None:
-                return out  # type: ignore
-        return update
-
-    def add_middleware(self, middleware: Middleware, index: int | None = None):
-        """Add middleware to the app.
-
-        Args:
-            middleware: The middleware to add.
-            index: The index to add the middleware at.
-        """
-        if index is None:
-            self.middleware.append(middleware)
-        else:
-            self.middleware.insert(index, middleware)
-
     @staticmethod
     def _generate_component(component: Component | ComponentCallable) -> Component:
         """Generate a component from a callable.
@@ -479,7 +443,7 @@ class App(LifespanMixin, Base):
             raise
         except TypeError as e:
             message = str(e)
-            if "BaseVar" in message or "ComputedVar" in message:
+            if "Var" in message:
                 raise VarOperationTypeError(
                     "You may be trying to use an invalid Python function on a state var. "
                     "When referencing a var inside your render code, only limited var operations are supported. "
@@ -564,9 +528,10 @@ class App(LifespanMixin, Base):
                 self._enable_state()
             else:
                 for var in component._get_vars(include_children=True):
-                    if not var._var_data:
+                    var_data = var._get_all_var_data()
+                    if not var_data:
                         continue
-                    if not var._var_data.state:
+                    if not var_data.state:
                         continue
                     self._enable_state()
                     break
@@ -641,7 +606,10 @@ class App(LifespanMixin, Base):
         for route in self.pages:
             replaced_route = replace_brackets_with_keywords(route)
             for rw, r, nr in zip(
-                replaced_route.split("/"), route.split("/"), new_route.split("/")
+                replaced_route.split("/"),
+                route.split("/"),
+                new_route.split("/"),
+                strict=False,
             ):
                 if rw in segments and r != nr:
                     # If the slugs in the segments of both routes are not the same, then the route is invalid
@@ -803,6 +771,25 @@ class App(LifespanMixin, Base):
         for k, component in self.pages.items():
             self.pages[k] = self._add_overlay_to_component(component)
 
+    def _add_error_boundary_to_component(self, component: Component) -> Component:
+        if self.error_boundary is None:
+            return component
+
+        component = self.error_boundary(*component.children)
+
+        return component
+
+    def _setup_error_boundary(self):
+        """If a State is not used and no error_boundary is specified, do not render the error boundary."""
+        if self.state is None and self.error_boundary is default_error_boundary:
+            self.error_boundary = None
+
+        for k, component in self.pages.items():
+            # Skip the 404 page
+            if k == constants.Page404.SLUG:
+                continue
+            self.pages[k] = self._add_error_boundary_to_component(component)
+
     def _apply_decorated_pages(self):
         """Add @rx.page decorated pages to the app.
 
@@ -840,7 +827,7 @@ class App(LifespanMixin, Base):
             for dep in deps:
                 if dep not in state.vars and dep not in state.backend_vars:
                     raise exceptions.VarDependencyError(
-                        f"ComputedVar {var._var_name} on state {state.__name__} has an invalid dependency {dep}"
+                        f"ComputedVar {var._js_expr} on state {state.__name__} has an invalid dependency {dep}"
                     )
 
         for substate in state.class_subclasses:
@@ -872,6 +859,7 @@ class App(LifespanMixin, Base):
 
         self._validate_var_dependencies()
         self._setup_overlay_component()
+        self._setup_error_boundary()
 
         # Create a progress bar.
         progress = Progress(
@@ -970,7 +958,7 @@ class App(LifespanMixin, Base):
 
         # Prepopulate the global ExecutorSafeFunctions class with input data required by the compile functions.
         # This is required for multiprocessing to work, in presence of non-picklable inputs.
-        for route, component in zip(self.pages, page_components):
+        for route, component in zip(self.pages, page_components, strict=False):
             ExecutorSafeFunctions.COMPILE_PAGE_ARGS_BY_ROUTE[route] = (
                 route,
                 component,
@@ -1055,9 +1043,6 @@ class App(LifespanMixin, Base):
 
         progress.advance(task)
 
-        # Empty the .web pages directory.
-        compiler.purge_web_pages_dir()
-
         progress.advance(task)
         progress.stop()
 
@@ -1074,6 +1059,19 @@ class App(LifespanMixin, Base):
             export=export,
             transpile_packages=transpile_packages,
         )
+
+        if is_prod_mode():
+            # Empty the .web pages directory.
+            compiler.purge_web_pages_dir()
+        else:
+            # In dev mode, delete removed pages and update existing pages.
+            keep_files = [Path(output_path) for output_path, _ in compile_results]
+            for p in Path(prerequisites.get_web_dir() / constants.Dirs.PAGES).rglob(
+                "*"
+            ):
+                if p.is_file() and p not in keep_files:
+                    # Remove pages that are no longer in the app.
+                    p.unlink()
 
         for output_path, code in compile_results:
             compiler_utils.write_page(output_path, code)
@@ -1120,6 +1118,7 @@ class App(LifespanMixin, Base):
             Task if the event was backgroundable, otherwise None
         """
         substate, handler = state._get_event_handler(event)
+
         if not handler.is_background:
             return None
 
@@ -1150,6 +1149,101 @@ class App(LifespanMixin, Base):
         # Clean up task from background_tasks set when complete.
         task.add_done_callback(self.background_tasks.discard)
         return task
+
+    def _validate_exception_handlers(self):
+        """Validate the custom event exception handlers for front- and backend.
+
+        Raises:
+            ValueError: If the custom exception handlers are invalid.
+
+        """
+        FRONTEND_ARG_SPEC = {
+            "exception": Exception,
+        }
+
+        BACKEND_ARG_SPEC = {
+            "exception": Exception,
+        }
+
+        for handler_domain, handler_fn, handler_spec in zip(
+            ["frontend", "backend"],
+            [self.frontend_exception_handler, self.backend_exception_handler],
+            [
+                FRONTEND_ARG_SPEC,
+                BACKEND_ARG_SPEC,
+            ],
+            strict=False,
+        ):
+            if hasattr(handler_fn, "__name__"):
+                _fn_name = handler_fn.__name__
+            else:
+                _fn_name = handler_fn.__class__.__name__
+
+            if isinstance(handler_fn, functools.partial):
+                raise ValueError(
+                    f"Provided custom {handler_domain} exception handler `{_fn_name}` is a partial function. Please provide a named function instead."
+                )
+
+            if not callable(handler_fn):
+                raise ValueError(
+                    f"Provided custom {handler_domain} exception handler `{_fn_name}` is not a function."
+                )
+
+            # Allow named functions only as lambda functions cannot be introspected
+            if _fn_name == "<lambda>":
+                raise ValueError(
+                    f"Provided custom {handler_domain} exception handler `{_fn_name}` is a lambda function. Please use a named function instead."
+                )
+
+            # Check if the function has the necessary annotations and types in the right order
+            argspec = inspect.getfullargspec(handler_fn)
+            arg_annotations = {
+                k: eval(v) if isinstance(v, str) else v
+                for k, v in argspec.annotations.items()
+                if k not in ["args", "kwargs", "return"]
+            }
+
+            for required_arg_index, required_arg in enumerate(handler_spec):
+                if required_arg not in arg_annotations:
+                    raise ValueError(
+                        f"Provided custom {handler_domain} exception handler `{_fn_name}` does not take the required argument `{required_arg}`"
+                    )
+                elif (
+                    not list(arg_annotations.keys())[required_arg_index] == required_arg
+                ):
+                    raise ValueError(
+                        f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong argument order."
+                        f"Expected `{required_arg}` as the {required_arg_index+1} argument but got `{list(arg_annotations.keys())[required_arg_index]}`"
+                    )
+
+                if not issubclass(arg_annotations[required_arg], Exception):
+                    raise ValueError(
+                        f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong type for {required_arg} argument."
+                        f"Expected to be `Exception` but got `{arg_annotations[required_arg]}`"
+                    )
+
+            # Check if the return type is valid for backend exception handler
+            if handler_domain == "backend":
+                sig = inspect.signature(self.backend_exception_handler)
+                return_type = (
+                    eval(sig.return_annotation)
+                    if isinstance(sig.return_annotation, str)
+                    else sig.return_annotation
+                )
+
+                valid = bool(
+                    return_type == EventSpec
+                    or return_type == Optional[EventSpec]
+                    or return_type == List[EventSpec]
+                    or return_type == inspect.Signature.empty
+                    or return_type is None
+                )
+
+                if not valid:
+                    raise ValueError(
+                        f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong return type."
+                        f"Expected `Union[EventSpec, List[EventSpec], None]` but got `{return_type}`"
+                    )
 
 
 async def process(
@@ -1216,6 +1310,8 @@ async def process(
                     yield update
     except Exception as ex:
         telemetry.send_error(ex, context="backend")
+
+        app.backend_exception_handler(ex)
         raise
 
 
@@ -1226,6 +1322,38 @@ async def ping() -> str:
         The response.
     """
     return "pong"
+
+
+async def health() -> JSONResponse:
+    """Health check endpoint to assess the status of the database and Redis services.
+
+    Returns:
+        JSONResponse: A JSON object with the health status:
+            - "status" (bool): Overall health, True if all checks pass.
+            - "db" (bool or str): Database status - True, False, or "NA".
+            - "redis" (bool or str): Redis status - True, False, or "NA".
+    """
+    health_status = {"status": True}
+    status_code = 200
+
+    db_status, redis_status = await asyncio.gather(
+        get_db_status(), prerequisites.get_redis_status()
+    )
+
+    health_status["db"] = db_status
+
+    if redis_status is None:
+        health_status["redis"] = False
+    else:
+        health_status["redis"] = redis_status
+
+    if not health_status["db"] or (
+        not health_status["redis"] and redis_status is not None
+    ):
+        health_status["status"] = False
+        status_code = 503
+
+    return JSONResponse(content=health_status, status_code=status_code)
 
 
 def upload(app: App):
@@ -1408,8 +1536,9 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
             data: The event data.
         """
+        fields = json.loads(data)
         # Get the event.
-        event = Event.parse_raw(data)
+        event = Event(**{k: v for k, v in fields.items() if k != "handler"})
 
         self.token_to_sid[event.token] = sid
         self.sid_to_token[sid] = event.token

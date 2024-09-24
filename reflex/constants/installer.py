@@ -51,6 +51,8 @@ class Bun(SimpleNamespace):
     WINDOWS_INSTALL_URL = (
         "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/install.ps1"
     )
+    # Path of the bunfig file
+    CONFIG_PATH = "bunfig.toml"
 
 
 # FNM config.
@@ -109,6 +111,7 @@ class PackageJson(SimpleNamespace):
     PATH = "package.json"
 
     DEPENDENCIES = {
+        "@babel/standalone": "7.25.3",
         "@emotion/react": "11.11.1",
         "axios": "1.6.0",
         "json5": "2.2.3",

@@ -7,7 +7,7 @@ from typing import Literal
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.style import STACK_CHILDREN_FULL_WIDTH
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
 
 from ..base import RadixThemesComponent
 
@@ -23,9 +23,7 @@ class Container(elements.Div, RadixThemesComponent):
     tag = "Container"
 
     # The size of the container: "1" - "4" (default "3")
-    size: Var[Responsive[LiteralContainerSize]] = Var.create_safe(
-        "3", _var_is_string=True
-    )
+    size: Var[Responsive[LiteralContainerSize]] = LiteralVar.create("3")
 
     @classmethod
     def create(

@@ -2,8 +2,12 @@
 
 from typing import Dict, List, Set, Union
 
+from sqlalchemy import ARRAY, JSON, String
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
 import reflex as rx
 from reflex.state import BaseState
+from reflex.utils.serializers import serializer
 
 
 class DictMutationTestState(BaseState):
@@ -145,15 +149,47 @@ class CustomVar(rx.Base):
     custom: OtherBase = OtherBase()
 
 
+class MutableSQLABase(DeclarativeBase):
+    """SQLAlchemy base model for mutable vars."""
+
+    pass
+
+
+class MutableSQLAModel(MutableSQLABase):
+    """SQLAlchemy model for mutable vars."""
+
+    __tablename__: str = "mutable_test_state"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    strlist: Mapped[List[str]] = mapped_column(ARRAY(String))
+    hashmap: Mapped[Dict[str, str]] = mapped_column(JSON)
+    test_set: Mapped[Set[str]] = mapped_column(ARRAY(String))
+
+
+@serializer
+def serialize_mutable_sqla_model(
+    model: MutableSQLAModel,
+) -> Dict[str, Union[List[str], Dict[str, str]]]:
+    """Serialize the MutableSQLAModel.
+
+    Args:
+        model: The MutableSQLAModel instance to serialize.
+
+    Returns:
+        The serialized model.
+    """
+    return {"strlist": model.strlist, "hashmap": model.hashmap}
+
+
 class MutableTestState(BaseState):
     """A test state."""
 
-    array: List[Union[str, List, Dict[str, str]]] = [
+    array: List[Union[str, int, List, Dict[str, str]]] = [
         "value",
         [1, 2, 3],
         {"key": "value"},
     ]
-    hashmap: Dict[str, Union[List, str, Dict[str, str]]] = {
+    hashmap: Dict[str, Union[List, str, Dict[str, Union[str, Dict]]]] = {
         "key": ["list", "of", "values"],
         "another_key": "another_value",
         "third_key": {"key": "value"},
@@ -161,6 +197,11 @@ class MutableTestState(BaseState):
     test_set: Set[Union[str, int]] = {1, 2, 3, 4, "five"}
     custom: CustomVar = CustomVar()
     _be_custom: CustomVar = CustomVar()
+    sqla_model: MutableSQLAModel = MutableSQLAModel(
+        strlist=["a", "b", "c"],
+        hashmap={"key": "value"},
+        test_set={"one", "two", "three"},
+    )
 
     def reassign_mutables(self):
         """Assign mutable fields to different values."""
@@ -171,3 +212,8 @@ class MutableTestState(BaseState):
             "mod_third_key": {"key": "value"},
         }
         self.test_set = {1, 2, 3, 4, "five"}
+        self.sqla_model = MutableSQLAModel(
+            strlist=["d", "e", "f"],
+            hashmap={"key": "value"},
+            test_set={"one", "two", "three"},
+        )

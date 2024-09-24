@@ -1,15 +1,16 @@
 import pytest
 
-from reflex.components.datadisplay.code import CodeBlock
+from reflex.components.datadisplay.code import CodeBlock, Theme
 
 
 @pytest.mark.parametrize(
-    "theme, expected", [("light", "one-light"), ("dark", "one-dark")]
+    "theme, expected",
+    [(Theme.one_light, "oneLight"), (Theme.one_dark, "oneDark")],
 )
 def test_code_light_dark_theme(theme, expected):
     code_block = CodeBlock.create(theme=theme)
 
-    assert code_block.theme._var_name == expected  # type: ignore
+    assert code_block.theme._js_expr == expected  # type: ignore
 
 
 def generate_custom_code(language, expected_case):

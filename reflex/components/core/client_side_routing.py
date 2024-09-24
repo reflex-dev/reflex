@@ -13,9 +13,9 @@ from __future__ import annotations
 from reflex import constants
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
-from reflex.vars import Var
+from reflex.vars.base import Var
 
-route_not_found: Var = Var.create_safe(constants.ROUTE_NOT_FOUND, _var_is_string=False)
+route_not_found: Var = Var(_js_expr=constants.ROUTE_NOT_FOUND)
 
 
 class ClientSideRouting(Component):

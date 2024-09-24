@@ -1,6 +1,7 @@
 import pytest
 
 from reflex.event import Event
+from reflex.state import State
 
 
 def create_event(name):
@@ -21,4 +22,4 @@ def create_event(name):
 
 @pytest.fixture
 def event1():
-    return create_event("state.hydrate")
+    return create_event(f"{State.get_name()}.hydrate")

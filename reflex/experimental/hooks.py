@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
+from reflex.vars.base import Var
 
 
 def _compose_react_imports(tags: list[str]) -> dict[str, list[ImportVar]]:
-    return {"react": [ImportVar(tag=tag, install=False) for tag in tags]}
+    return {"react": [ImportVar(tag=tag) for tag in tags]}
 
 
 def const(name, value) -> Var:
@@ -21,10 +22,8 @@ def const(name, value) -> Var:
         The constant Var.
     """
     if isinstance(name, list):
-        return Var.create_safe(
-            f"const [{', '.join(name)}] = {value}", _var_is_string=False
-        )
-    return Var.create_safe(f"const {name} = {value}", _var_is_string=False)
+        return Var(_js_expr=f"const [{', '.join(name)}] = {value}")
+    return Var(_js_expr=f"const {name} = {value}")
 
 
 def useCallback(func, deps) -> Var:
@@ -37,9 +36,8 @@ def useCallback(func, deps) -> Var:
     Returns:
         The useCallback hook.
     """
-    return Var.create_safe(
-        f"useCallback({func}, {deps})" if deps else f"useCallback({func})",
-        _var_is_string=False,
+    return Var(
+        _js_expr=f"useCallback({func}, {deps})" if deps else f"useCallback({func})",
         _var_data=VarData(imports=_compose_react_imports(["useCallback"])),
     )
 
@@ -53,9 +51,8 @@ def useContext(context) -> Var:
     Returns:
         The useContext hook.
     """
-    return Var.create_safe(
-        f"useContext({context})",
-        _var_is_string=False,
+    return Var(
+        _js_expr=f"useContext({context})",
         _var_data=VarData(imports=_compose_react_imports(["useContext"])),
     )
 
@@ -69,9 +66,8 @@ def useRef(default) -> Var:
     Returns:
         The useRef hook.
     """
-    return Var.create_safe(
-        f"useRef({default})",
-        _var_is_string=False,
+    return Var(
+        _js_expr=f"useRef({default})",
         _var_data=VarData(imports=_compose_react_imports(["useRef"])),
     )
 
@@ -88,9 +84,8 @@ def useState(var_name, default=None) -> Var:
     """
     return const(
         [var_name, f"set{var_name.capitalize()}"],
-        Var.create_safe(
-            f"useState({default})",
-            _var_is_string=False,
+        Var(
+            _js_expr=f"useState({default})",
             _var_data=VarData(imports=_compose_react_imports(["useState"])),
         ),
     )

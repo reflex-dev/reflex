@@ -35,28 +35,29 @@ def FormSubmit(form_component):
     @app.add_page
     def index():
         return rx.vstack(
-            rx.chakra.input(
+            rx.input(
                 value=FormState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
             eval(form_component)(
                 rx.vstack(
-                    rx.chakra.input(id="name_input"),
-                    rx.hstack(rx.chakra.pin_input(length=4, id="pin_input")),
-                    rx.chakra.number_input(id="number_input"),
+                    rx.input(id="name_input"),
                     rx.checkbox(id="bool_input"),
                     rx.switch(id="bool_input2"),
                     rx.checkbox(id="bool_input3"),
                     rx.switch(id="bool_input4"),
                     rx.slider(id="slider_input", default_value=[50], width="100%"),
-                    rx.chakra.range_slider(id="range_input"),
                     rx.radio(["option1", "option2"], id="radio_input"),
                     rx.radio(FormState.var_options, id="radio_input_var"),
-                    rx.chakra.select(["option1", "option2"], id="select_input"),
-                    rx.chakra.select(FormState.var_options, id="select_input_var"),
+                    rx.select(
+                        ["option1", "option2"],
+                        name="select_input",
+                        default_value="option1",
+                    ),
+                    rx.select(FormState.var_options, id="select_input_var"),
                     rx.text_area(id="text_area_input"),
-                    rx.chakra.input(
+                    rx.input(
                         id="debounce_input",
                         debounce_timeout=0,
                         on_change=rx.console_log,
@@ -94,22 +95,19 @@ def FormSubmitName(form_component):
     @app.add_page
     def index():
         return rx.vstack(
-            rx.chakra.input(
+            rx.input(
                 value=FormState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
             eval(form_component)(
                 rx.vstack(
-                    rx.chakra.input(name="name_input"),
-                    rx.hstack(rx.chakra.pin_input(length=4, name="pin_input")),
-                    rx.chakra.number_input(name="number_input"),
+                    rx.input(name="name_input"),
                     rx.checkbox(name="bool_input"),
                     rx.switch(name="bool_input2"),
                     rx.checkbox(name="bool_input3"),
                     rx.switch(name="bool_input4"),
                     rx.slider(name="slider_input", default_value=[50], width="100%"),
-                    rx.chakra.range_slider(name="range_input"),
                     rx.radio(FormState.options, name="radio_input"),
                     rx.select(
                         FormState.options,
@@ -117,21 +115,13 @@ def FormSubmitName(form_component):
                         default_value=FormState.options[0],
                     ),
                     rx.text_area(name="text_area_input"),
-                    rx.chakra.input_group(
-                        rx.chakra.input_left_element(rx.icon(tag="chevron_right")),
-                        rx.chakra.input(
-                            name="debounce_input",
-                            debounce_timeout=0,
-                            on_change=rx.console_log,
-                        ),
-                        rx.chakra.input_right_element(rx.icon(tag="chevron_left")),
+                    rx.input(
+                        name="debounce_input",
+                        debounce_timeout=0,
+                        on_change=rx.console_log,
                     ),
-                    rx.chakra.button_group(
-                        rx.button("Submit", type_="submit"),
-                        rx.icon_button(FormState.val, icon=rx.icon(tag="plus")),
-                        variant="outline",
-                        is_attached=True,
-                    ),
+                    rx.button("Submit", type_="submit"),
+                    rx.icon_button(FormState.val, icon=rx.icon(tag="plus")),
                 ),
                 on_submit=FormState.form_submit,
                 custom_attrs={"action": "/invalid"},
@@ -148,16 +138,12 @@ def FormSubmitName(form_component):
         functools.partial(FormSubmitName, form_component="rx.form.root"),
         functools.partial(FormSubmit, form_component="rx.el.form"),
         functools.partial(FormSubmitName, form_component="rx.el.form"),
-        functools.partial(FormSubmit, form_component="rx.chakra.form"),
-        functools.partial(FormSubmitName, form_component="rx.chakra.form"),
     ],
     ids=[
         "id-radix",
         "name-radix",
         "id-html",
         "name-html",
-        "id-chakra",
-        "name-chakra",
     ],
 )
 def form_submit(request, tmp_path_factory) -> Generator[AppHarness, None, None]:
@@ -220,16 +206,6 @@ async def test_submit(driver, form_submit: AppHarness):
     name_input = driver.find_element(by, "name_input")
     name_input.send_keys("foo")
 
-    pin_inputs = driver.find_elements(By.CLASS_NAME, "chakra-pin-input")
-    pin_values = ["8", "1", "6", "4"]
-    for i, pin_input in enumerate(pin_inputs):
-        pin_input.send_keys(pin_values[i])
-
-    number_input = driver.find_element(By.CLASS_NAME, "chakra-numberinput")
-    buttons = number_input.find_elements(By.XPATH, "//div[@role='button']")
-    for _ in range(3):
-        buttons[1].click()
-
     checkbox_input = driver.find_element(By.XPATH, "//button[@role='checkbox']")
     checkbox_input.click()
 
@@ -252,10 +228,13 @@ async def test_submit(driver, form_submit: AppHarness):
     submit_input = driver.find_element(By.CLASS_NAME, "rt-Button")
     submit_input.click()
 
+    state_name = form_submit.get_state_name("_form_state")
+    full_state_name = form_submit.get_full_state_name(["_form_state"])
+
     async def get_form_data():
         return (
-            (await form_submit.get_state(f"{token}_state.form_state"))
-            .substates["form_state"]
+            (await form_submit.get_state(f"{token}_{full_state_name}"))
+            .substates[state_name]
             .form_data
         )
 
@@ -265,16 +244,15 @@ async def test_submit(driver, form_submit: AppHarness):
 
     form_data = format.collect_form_dict_names(form_data)
 
+    print(form_data)
+
     assert form_data["name_input"] == "foo"
-    assert form_data["pin_input"] == pin_values
-    assert form_data["number_input"] == "-3"
     assert form_data["bool_input"]
     assert form_data["bool_input2"]
     assert not form_data.get("bool_input3", False)
     assert not form_data.get("bool_input4", False)
 
     assert form_data["slider_input"] == "50"
-    assert form_data["range_input"] == ["25", "75"]
     assert form_data["radio_input"] == "option2"
     assert form_data["select_input"] == "option1"
     assert form_data["text_area_input"] == "Some\nText"

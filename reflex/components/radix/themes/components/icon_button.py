@@ -10,7 +10,7 @@ from reflex.components.core.match import Match
 from reflex.components.el import elements
 from reflex.components.lucide import Icon
 from reflex.style import Style
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import (
     LiteralAccentColor,

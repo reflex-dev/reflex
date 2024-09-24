@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import dataclasses
+import functools
 import io
 import json
 import os.path
 import re
 import unittest.mock
 import uuid
+from contextlib import nullcontext as does_not_raise
 from pathlib import Path
 from typing import Generator, List, Tuple, Type
 from unittest.mock import AsyncMock
@@ -39,6 +42,7 @@ from reflex.state import (
     OnLoadInternalState,
     RouterData,
     State,
+    StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
     StateUpdate,
@@ -46,7 +50,7 @@ from reflex.state import (
 )
 from reflex.style import Style
 from reflex.utils import exceptions, format
-from reflex.vars import computed_var
+from reflex.vars.base import computed_var
 
 from .conftest import chdir
 from .states import (
@@ -65,7 +69,7 @@ class EmptyState(BaseState):
 
 
 @pytest.fixture
-def index_page():
+def index_page() -> ComponentCallable:
     """An index page.
 
     Returns:
@@ -79,7 +83,7 @@ def index_page():
 
 
 @pytest.fixture
-def about_page():
+def about_page() -> ComponentCallable:
     """An about page.
 
     Returns:
@@ -264,8 +268,6 @@ def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
     app = App(state=EmptyState)
     assert app.state is not None
     route = "/test/[dynamic]"
-    if windows_platform:
-        route.lstrip("/").replace("/", "\\")
     assert app.pages == {}
     app.add_page(index_page, route=route)
     assert app.pages.keys() == {"test/[dynamic]"}
@@ -483,20 +485,12 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
         pytest.param(
             [
                 (
-                    "list_mutation_test_state.make_friend",
-                    {
-                        "list_mutation_test_state": {
-                            "plain_friends": ["Tommy", "another-fd"]
-                        }
-                    },
+                    "make_friend",
+                    {"plain_friends": ["Tommy", "another-fd"]},
                 ),
                 (
-                    "list_mutation_test_state.change_first_friend",
-                    {
-                        "list_mutation_test_state": {
-                            "plain_friends": ["Jenny", "another-fd"]
-                        }
-                    },
+                    "change_first_friend",
+                    {"plain_friends": ["Jenny", "another-fd"]},
                 ),
             ],
             id="append then __setitem__",
@@ -504,12 +498,12 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
         pytest.param(
             [
                 (
-                    "list_mutation_test_state.unfriend_first_friend",
-                    {"list_mutation_test_state": {"plain_friends": []}},
+                    "unfriend_first_friend",
+                    {"plain_friends": []},
                 ),
                 (
-                    "list_mutation_test_state.make_friend",
-                    {"list_mutation_test_state": {"plain_friends": ["another-fd"]}},
+                    "make_friend",
+                    {"plain_friends": ["another-fd"]},
                 ),
             ],
             id="delitem then append",
@@ -517,24 +511,20 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
         pytest.param(
             [
                 (
-                    "list_mutation_test_state.make_friends_with_colleagues",
-                    {
-                        "list_mutation_test_state": {
-                            "plain_friends": ["Tommy", "Peter", "Jimmy"]
-                        }
-                    },
+                    "make_friends_with_colleagues",
+                    {"plain_friends": ["Tommy", "Peter", "Jimmy"]},
                 ),
                 (
-                    "list_mutation_test_state.remove_tommy",
-                    {"list_mutation_test_state": {"plain_friends": ["Peter", "Jimmy"]}},
+                    "remove_tommy",
+                    {"plain_friends": ["Peter", "Jimmy"]},
                 ),
                 (
-                    "list_mutation_test_state.remove_last_friend",
-                    {"list_mutation_test_state": {"plain_friends": ["Peter"]}},
+                    "remove_last_friend",
+                    {"plain_friends": ["Peter"]},
                 ),
                 (
-                    "list_mutation_test_state.unfriend_all_friends",
-                    {"list_mutation_test_state": {"plain_friends": []}},
+                    "unfriend_all_friends",
+                    {"plain_friends": []},
                 ),
             ],
             id="extend, remove, pop, clear",
@@ -542,28 +532,16 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
         pytest.param(
             [
                 (
-                    "list_mutation_test_state.add_jimmy_to_second_group",
-                    {
-                        "list_mutation_test_state": {
-                            "friends_in_nested_list": [["Tommy"], ["Jenny", "Jimmy"]]
-                        }
-                    },
+                    "add_jimmy_to_second_group",
+                    {"friends_in_nested_list": [["Tommy"], ["Jenny", "Jimmy"]]},
                 ),
                 (
-                    "list_mutation_test_state.remove_first_person_from_first_group",
-                    {
-                        "list_mutation_test_state": {
-                            "friends_in_nested_list": [[], ["Jenny", "Jimmy"]]
-                        }
-                    },
+                    "remove_first_person_from_first_group",
+                    {"friends_in_nested_list": [[], ["Jenny", "Jimmy"]]},
                 ),
                 (
-                    "list_mutation_test_state.remove_first_group",
-                    {
-                        "list_mutation_test_state": {
-                            "friends_in_nested_list": [["Jenny", "Jimmy"]]
-                        }
-                    },
+                    "remove_first_group",
+                    {"friends_in_nested_list": [["Jenny", "Jimmy"]]},
                 ),
             ],
             id="nested list",
@@ -571,24 +549,16 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
         pytest.param(
             [
                 (
-                    "list_mutation_test_state.add_jimmy_to_tommy_friends",
-                    {
-                        "list_mutation_test_state": {
-                            "friends_in_dict": {"Tommy": ["Jenny", "Jimmy"]}
-                        }
-                    },
+                    "add_jimmy_to_tommy_friends",
+                    {"friends_in_dict": {"Tommy": ["Jenny", "Jimmy"]}},
                 ),
                 (
-                    "list_mutation_test_state.remove_jenny_from_tommy",
-                    {
-                        "list_mutation_test_state": {
-                            "friends_in_dict": {"Tommy": ["Jimmy"]}
-                        }
-                    },
+                    "remove_jenny_from_tommy",
+                    {"friends_in_dict": {"Tommy": ["Jimmy"]}},
                 ),
                 (
-                    "list_mutation_test_state.tommy_has_no_fds",
-                    {"list_mutation_test_state": {"friends_in_dict": {"Tommy": []}}},
+                    "tommy_has_no_fds",
+                    {"friends_in_dict": {"Tommy": []}},
                 ),
             ],
             id="list in dict",
@@ -612,12 +582,14 @@ async def test_list_mutation_detection__plain_list(
         result = await list_mutation_state._process(
             Event(
                 token=token,
-                name=event_name,
+                name=f"{list_mutation_state.get_name()}.{event_name}",
                 router_data={"pathname": "/", "query": {}},
                 payload={},
             )
         ).__anext__()
 
+        # prefix keys in expected_delta with the state name
+        expected_delta = {list_mutation_state.get_name(): expected_delta}
         assert result.delta == expected_delta
 
 
@@ -628,24 +600,16 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                    "dict_mutation_test_state.add_age",
-                    {
-                        "dict_mutation_test_state": {
-                            "details": {"name": "Tommy", "age": 20}
-                        }
-                    },
+                    "add_age",
+                    {"details": {"name": "Tommy", "age": 20}},
                 ),
                 (
-                    "dict_mutation_test_state.change_name",
-                    {
-                        "dict_mutation_test_state": {
-                            "details": {"name": "Jenny", "age": 20}
-                        }
-                    },
+                    "change_name",
+                    {"details": {"name": "Jenny", "age": 20}},
                 ),
                 (
-                    "dict_mutation_test_state.remove_last_detail",
-                    {"dict_mutation_test_state": {"details": {"name": "Jenny"}}},
+                    "remove_last_detail",
+                    {"details": {"name": "Jenny"}},
                 ),
             ],
             id="update then __setitem__",
@@ -653,12 +617,12 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                    "dict_mutation_test_state.clear_details",
-                    {"dict_mutation_test_state": {"details": {}}},
+                    "clear_details",
+                    {"details": {}},
                 ),
                 (
-                    "dict_mutation_test_state.add_age",
-                    {"dict_mutation_test_state": {"details": {"age": 20}}},
+                    "add_age",
+                    {"details": {"age": 20}},
                 ),
             ],
             id="delitem then update",
@@ -666,20 +630,16 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                    "dict_mutation_test_state.add_age",
-                    {
-                        "dict_mutation_test_state": {
-                            "details": {"name": "Tommy", "age": 20}
-                        }
-                    },
+                    "add_age",
+                    {"details": {"name": "Tommy", "age": 20}},
                 ),
                 (
-                    "dict_mutation_test_state.remove_name",
-                    {"dict_mutation_test_state": {"details": {"age": 20}}},
+                    "remove_name",
+                    {"details": {"age": 20}},
                 ),
                 (
-                    "dict_mutation_test_state.pop_out_age",
-                    {"dict_mutation_test_state": {"details": {}}},
+                    "pop_out_age",
+                    {"details": {}},
                 ),
             ],
             id="add, remove, pop",
@@ -687,22 +647,16 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                    "dict_mutation_test_state.remove_home_address",
-                    {
-                        "dict_mutation_test_state": {
-                            "address": [{}, {"work": "work address"}]
-                        }
-                    },
+                    "remove_home_address",
+                    {"address": [{}, {"work": "work address"}]},
                 ),
                 (
-                    "dict_mutation_test_state.add_street_to_home_address",
+                    "add_street_to_home_address",
                     {
-                        "dict_mutation_test_state": {
-                            "address": [
-                                {"street": "street address"},
-                                {"work": "work address"},
-                            ]
-                        }
+                        "address": [
+                            {"street": "street address"},
+                            {"work": "work address"},
+                        ]
                     },
                 ),
             ],
@@ -711,34 +665,26 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                    "dict_mutation_test_state.change_friend_name",
+                    "change_friend_name",
                     {
-                        "dict_mutation_test_state": {
-                            "friend_in_nested_dict": {
-                                "name": "Nikhil",
-                                "friend": {"name": "Tommy"},
-                            }
+                        "friend_in_nested_dict": {
+                            "name": "Nikhil",
+                            "friend": {"name": "Tommy"},
                         }
                     },
                 ),
                 (
-                    "dict_mutation_test_state.add_friend_age",
+                    "add_friend_age",
                     {
-                        "dict_mutation_test_state": {
-                            "friend_in_nested_dict": {
-                                "name": "Nikhil",
-                                "friend": {"name": "Tommy", "age": 30},
-                            }
+                        "friend_in_nested_dict": {
+                            "name": "Nikhil",
+                            "friend": {"name": "Tommy", "age": 30},
                         }
                     },
                 ),
                 (
-                    "dict_mutation_test_state.remove_friend",
-                    {
-                        "dict_mutation_test_state": {
-                            "friend_in_nested_dict": {"name": "Nikhil"}
-                        }
-                    },
+                    "remove_friend",
+                    {"friend_in_nested_dict": {"name": "Nikhil"}},
                 ),
             ],
             id="nested dict",
@@ -762,11 +708,14 @@ async def test_dict_mutation_detection__plain_list(
         result = await dict_mutation_state._process(
             Event(
                 token=token,
-                name=event_name,
+                name=f"{dict_mutation_state.get_name()}.{event_name}",
                 router_data={"pathname": "/", "query": {}},
                 payload={},
             )
         ).__anext__()
+
+        # prefix keys in expected_delta with the state name
+        expected_delta = {dict_mutation_state.get_name(): expected_delta}
 
         assert result.delta == expected_delta
 
@@ -777,12 +726,16 @@ async def test_dict_mutation_detection__plain_list(
     [
         (
             FileUploadState,
-            {"state.file_upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}},
+            {
+                FileUploadState.get_full_name(): {
+                    "img_list": ["image1.jpg", "image2.jpg"]
+                }
+            },
         ),
         (
             ChildFileUploadState,
             {
-                "state.file_state_base1.child_file_upload_state": {
+                ChildFileUploadState.get_full_name(): {
                     "img_list": ["image1.jpg", "image2.jpg"]
                 }
             },
@@ -790,7 +743,7 @@ async def test_dict_mutation_detection__plain_list(
         (
             GrandChildFileUploadState,
             {
-                "state.file_state_base1.file_state_base2.grand_child_file_upload_state": {
+                GrandChildFileUploadState.get_full_name(): {
                     "img_list": ["image1.jpg", "image2.jpg"]
                 }
             },
@@ -951,7 +904,7 @@ class DynamicState(BaseState):
         """Increment the counter var."""
         self.counter = self.counter + 1
 
-    @computed_var
+    @computed_var(cache=True)
     def comp_dynamic(self) -> str:
         """A computed var that depends on the dynamic var.
 
@@ -964,9 +917,57 @@ class DynamicState(BaseState):
     on_load_internal = OnLoadInternalState.on_load_internal.fn
 
 
+def test_dynamic_arg_shadow(
+    index_page: ComponentCallable,
+    windows_platform: bool,
+    token: str,
+    app_module_mock: unittest.mock.Mock,
+    mocker,
+):
+    """Create app with dynamic route var and try to add a page with a dynamic arg that shadows a state var.
+
+    Args:
+        index_page: The index page.
+        windows_platform: Whether the system is windows.
+        token: a Token.
+        app_module_mock: Mocked app module.
+        mocker: pytest mocker object.
+    """
+    arg_name = "counter"
+    route = f"/test/[{arg_name}]"
+    app = app_module_mock.app = App(state=DynamicState)
+    assert app.state is not None
+    with pytest.raises(NameError):
+        app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
+
+
+def test_multiple_dynamic_args(
+    index_page: ComponentCallable,
+    windows_platform: bool,
+    token: str,
+    app_module_mock: unittest.mock.Mock,
+    mocker,
+):
+    """Create app with multiple dynamic route vars with the same name.
+
+    Args:
+        index_page: The index page.
+        windows_platform: Whether the system is windows.
+        token: a Token.
+        app_module_mock: Mocked app module.
+        mocker: pytest mocker object.
+    """
+    arg_name = "my_arg"
+    route = f"/test/[{arg_name}]"
+    route2 = f"/test2/[{arg_name}]"
+    app = app_module_mock.app = App(state=EmptyState)
+    app.add_page(index_page, route=route)
+    app.add_page(index_page, route=route2)
+
+
 @pytest.mark.asyncio
 async def test_dynamic_route_var_route_change_completed_on_load(
-    index_page,
+    index_page: ComponentCallable,
     windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
@@ -986,8 +987,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     """
     arg_name = "dynamic"
     route = f"/test/[{arg_name}]"
-    if windows_platform:
-        route.lstrip("/").replace("/", "\\")
     app = app_module_mock.app = App(state=DynamicState)
     assert app.state is not None
     assert arg_name not in app.state.vars
@@ -1054,7 +1053,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     f"comp_{arg_name}": exp_val,
                     constants.CompileVars.IS_HYDRATED: False,
                     # "side_effect_counter": exp_index,
-                    "router": exp_router,
+                    "router": dataclasses.asdict(exp_router),
                 }
             },
             events=[
@@ -1063,7 +1062,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     val=exp_val,
                 ),
                 _event(
-                    name="state.set_is_hydrated",
+                    name=f"{State.get_name()}.set_is_hydrated",
                     payload={"value": True},
                     val=exp_val,
                     router_data={},
@@ -1094,9 +1093,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         assert on_load_update == StateUpdate(
             delta={
                 state.get_name(): {
-                    # These computed vars _shouldn't_ be here, because they didn't change
-                    arg_name: exp_val,
-                    f"comp_{arg_name}": exp_val,
                     "loaded": exp_index + 1,
                 },
             },
@@ -1118,9 +1114,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         assert on_set_is_hydrated_update == StateUpdate(
             delta={
                 state.get_name(): {
-                    # These computed vars _shouldn't_ be here, because they didn't change
-                    arg_name: exp_val,
-                    f"comp_{arg_name}": exp_val,
                     "is_hydrated": True,
                 },
             },
@@ -1142,9 +1135,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         assert update == StateUpdate(
             delta={
                 state.get_name(): {
-                    # These computed vars _shouldn't_ be here, because they didn't change
-                    f"comp_{arg_name}": exp_val,
-                    arg_name: exp_val,
                     "counter": exp_index + 1,
                 }
             },
@@ -1186,7 +1176,10 @@ async def test_process_events(mocker, token: str):
     app = App(state=GenState)
     mocker.patch.object(app, "_postprocess", AsyncMock())
     event = Event(
-        token=token, name="gen_state.go", payload={"c": 5}, router_data=router_data
+        token=token,
+        name=f"{GenState.get_name()}.go",
+        payload={"c": 5},
+        router_data=router_data,
     )
 
     async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):
@@ -1295,7 +1288,7 @@ def test_app_wrap_compile_theme(compilable_app: tuple[App, Path]):
         "function AppWrap({children}) {"
         "return ("
         "<RadixThemesColorModeProvider>"
-        "<RadixThemesTheme accentColor={`plum`} css={{...theme.styles.global[':root'], ...theme.styles.global.body}}>"
+        "<RadixThemesTheme accentColor={\"plum\"} css={{...theme.styles.global[':root'], ...theme.styles.global.body}}>"
         "<Fragment>"
         "{children}"
         "</Fragment>"
@@ -1318,13 +1311,13 @@ def test_app_wrap_priority(compilable_app: tuple[App, Path]):
         tag = "Fragment1"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(99, "Box"): rx.chakra.box()}
+            return {(99, "Box"): rx.box()}
 
     class Fragment2(Component):
         tag = "Fragment2"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(50, "Text"): rx.chakra.text()}
+            return {(50, "Text"): rx.text()}
 
     class Fragment3(Component):
         tag = "Fragment3"
@@ -1344,19 +1337,17 @@ def test_app_wrap_priority(compilable_app: tuple[App, Path]):
     assert (
         "function AppWrap({children}) {"
         "return ("
-        "<Box>"
-        "<ChakraProvider theme={extendTheme(theme)}>"
-        "<ChakraColorModeProvider>"
-        "<Text>"
+        "<RadixThemesBox>"
+        '<RadixThemesText as={"p"}>'
+        "<RadixThemesColorModeProvider>"
         "<Fragment2>"
         "<Fragment>"
         "{children}"
         "</Fragment>"
         "</Fragment2>"
-        "</Text>"
-        "</ChakraColorModeProvider>"
-        "</ChakraProvider>"
-        "</Box>"
+        "</RadixThemesColorModeProvider>"
+        "</RadixThemesText>"
+        "</RadixThemesBox>"
         ")"
         "}"
     ) in "".join(app_js_lines)
@@ -1438,7 +1429,9 @@ def test_app_state_manager():
         app.state_manager
     app._enable_state()
     assert app.state_manager is not None
-    assert isinstance(app.state_manager, (StateManagerMemory, StateManagerRedis))
+    assert isinstance(
+        app.state_manager, (StateManagerMemory, StateManagerDisk, StateManagerRedis)
+    )
 
 
 def test_generate_component():
@@ -1477,16 +1470,16 @@ def test_add_page_component_returning_tuple():
 
     assert isinstance((fragment_wrapper := app.pages["index"].children[0]), Fragment)
     assert isinstance((first_text := fragment_wrapper.children[0]), Text)
-    assert str(first_text.children[0].contents) == "{`first`}"  # type: ignore
+    assert str(first_text.children[0].contents) == '"first"'  # type: ignore
     assert isinstance((second_text := fragment_wrapper.children[1]), Text)
-    assert str(second_text.children[0].contents) == "{`second`}"  # type: ignore
+    assert str(second_text.children[0].contents) == '"second"'  # type: ignore
 
     # Test page with trailing comma.
     assert isinstance(
         (page2_fragment_wrapper := app.pages["page2"].children[0]), Fragment
     )
     assert isinstance((third_text := page2_fragment_wrapper.children[0]), Text)
-    assert str(third_text.children[0].contents) == "{`third`}"  # type: ignore
+    assert str(third_text.children[0].contents) == '"third"'  # type: ignore
 
 
 @pytest.mark.parametrize("export", (True, False))
@@ -1571,3 +1564,165 @@ def test_app_with_invalid_var_dependencies(compilable_app: tuple[App, Path]):
     app.state = InvalidDepState
     with pytest.raises(exceptions.VarDependencyError):
         app._compile()
+
+
+# Test custom exception handlers
+
+
+def valid_custom_handler(exception: Exception, logger: str = "test"):
+    print("Custom Backend Exception")
+    print(exception)
+
+
+def custom_exception_handler_with_wrong_arg_order(
+    logger: str,
+    exception: Exception,  # Should be first
+):
+    print("Custom Backend Exception")
+    print(exception)
+
+
+def custom_exception_handler_with_wrong_argspec(
+    exception: str,  # Should be Exception
+):
+    print("Custom Backend Exception")
+    print(exception)
+
+
+class DummyExceptionHandler:
+    """Dummy exception handler class."""
+
+    def handle(self, exception: Exception):
+        """Handle the exception.
+
+        Args:
+            exception: The exception.
+
+        """
+        print("Custom Backend Exception")
+        print(exception)
+
+
+custom_exception_handlers = {
+    "lambda": lambda exception: print("Custom Exception Handler", exception),
+    "wrong_argspec": custom_exception_handler_with_wrong_argspec,
+    "wrong_arg_order": custom_exception_handler_with_wrong_arg_order,
+    "valid": valid_custom_handler,
+    "partial": functools.partial(valid_custom_handler, logger="test"),
+    "method": DummyExceptionHandler().handle,
+}
+
+
+@pytest.mark.parametrize(
+    "handler_fn, expected",
+    [
+        pytest.param(
+            custom_exception_handlers["partial"],
+            pytest.raises(ValueError),
+            id="partial",
+        ),
+        pytest.param(
+            custom_exception_handlers["lambda"],
+            pytest.raises(ValueError),
+            id="lambda",
+        ),
+        pytest.param(
+            custom_exception_handlers["wrong_argspec"],
+            pytest.raises(ValueError),
+            id="wrong_argspec",
+        ),
+        pytest.param(
+            custom_exception_handlers["wrong_arg_order"],
+            pytest.raises(ValueError),
+            id="wrong_arg_order",
+        ),
+        pytest.param(
+            custom_exception_handlers["valid"],
+            does_not_raise(),
+            id="valid_handler",
+        ),
+        pytest.param(
+            custom_exception_handlers["method"],
+            does_not_raise(),
+            id="valid_class_method",
+        ),
+    ],
+)
+def test_frontend_exception_handler_validation(handler_fn, expected):
+    """Test that the custom frontend exception handler is properly validated.
+
+    Args:
+        handler_fn: The handler function.
+        expected: The expected result.
+
+    """
+    with expected:
+        rx.App(frontend_exception_handler=handler_fn)._validate_exception_handlers()
+
+
+def backend_exception_handler_with_wrong_return_type(exception: Exception) -> int:
+    """Custom backend exception handler with wrong return type.
+
+    Args:
+        exception: The exception.
+
+    Returns:
+        int: The wrong return type.
+
+    """
+    print("Custom Backend Exception")
+    print(exception)
+
+    return 5
+
+
+@pytest.mark.parametrize(
+    "handler_fn, expected",
+    [
+        pytest.param(
+            backend_exception_handler_with_wrong_return_type,
+            pytest.raises(ValueError),
+            id="wrong_return_type",
+        ),
+        pytest.param(
+            custom_exception_handlers["partial"],
+            pytest.raises(ValueError),
+            id="partial",
+        ),
+        pytest.param(
+            custom_exception_handlers["lambda"],
+            pytest.raises(ValueError),
+            id="lambda",
+        ),
+        pytest.param(
+            custom_exception_handlers["wrong_argspec"],
+            pytest.raises(ValueError),
+            id="wrong_argspec",
+        ),
+        pytest.param(
+            custom_exception_handlers["wrong_arg_order"],
+            pytest.raises(ValueError),
+            id="wrong_arg_order",
+        ),
+        pytest.param(
+            custom_exception_handlers["valid"],
+            does_not_raise(),
+            id="valid_handler",
+        ),
+        pytest.param(
+            custom_exception_handlers["method"],
+            does_not_raise(),
+            id="valid_class_method",
+        ),
+    ],
+)
+def test_backend_exception_handler_validation(handler_fn, expected):
+    """Test that the custom backend exception handler is properly validated.
+
+    Args:
+        handler_fn: The handler function.
+        expected: The expected result.
+
+    """
+    with expected:
+        rx.App(backend_exception_handler=handler_fn)._validate_exception_handlers()

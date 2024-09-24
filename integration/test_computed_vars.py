@@ -183,8 +183,10 @@ async def test_computed_vars(
     """
     assert computed_vars.app_instance is not None
 
-    token = f"{token}_state.state"
-    state = (await computed_vars.get_state(token)).substates["state"]
+    state_name = computed_vars.get_state_name("_state")
+    full_state_name = computed_vars.get_full_state_name(["_state"])
+    token = f"{token}_{full_state_name}"
+    state = (await computed_vars.get_state(token)).substates[state_name]
     assert state is not None
     assert state.count1_backend == 0
     assert state._count1_backend == 0
@@ -236,7 +238,7 @@ async def test_computed_vars(
         computed_vars.poll_for_content(depends_on_count, timeout=2, exp_not_equal="0")
         == "1"
     )
-    state = (await computed_vars.get_state(token)).substates["state"]
+    state = (await computed_vars.get_state(token)).substates[state_name]
     assert state is not None
     assert state.count1_backend == 1
     assert count1_backend.text == ""

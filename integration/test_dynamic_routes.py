@@ -21,7 +21,6 @@ def DynamicRoute():
 
     class DynamicState(rx.State):
         order: List[str] = []
-        page_id: str = ""
 
         def on_load(self):
             self.order.append(f"{self.router.page.path}-{self.page_id or 'no page id'}")
@@ -40,15 +39,13 @@ def DynamicRoute():
 
     def index():
         return rx.fragment(
-            rx.chakra.input(
+            rx.input(
                 value=DynamicState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.chakra.input(
-                value=DynamicState.page_id, is_read_only=True, id="page_id"
-            ),
-            rx.chakra.input(
+            rx.input(value=rx.State.page_id, is_read_only=True, id="page_id"),  # type: ignore
+            rx.input(
                 value=DynamicState.router.page.raw_path,
                 is_read_only=True,
                 id="raw_path",
@@ -61,12 +58,70 @@ def DynamicRoute():
                 id="link_page_next",  # type: ignore
             ),
             rx.link("missing", href="/missing", id="link_missing"),
-            rx.chakra.list(
+            rx.list(  # type: ignore
                 rx.foreach(
                     DynamicState.order,  # type: ignore
-                    lambda i: rx.chakra.list_item(rx.text(i)),
+                    lambda i: rx.list_item(rx.text(i)),
                 ),
             ),
+        )
+
+    class ArgState(rx.State):
+        """The app state."""
+
+        @rx.var
+        def arg(self) -> int:
+            return int(self.arg_str or 0)
+
+    class ArgSubState(ArgState):
+        @rx.var(cache=True)
+        def cached_arg(self) -> int:
+            return self.arg
+
+        @rx.var(cache=True)
+        def cached_arg_str(self) -> str:
+            return self.arg_str
+
+    @rx.page(route="/arg/[arg_str]")
+    def arg() -> rx.Component:
+        return rx.vstack(
+            rx.data_list.root(
+                rx.data_list.item(
+                    rx.data_list.label("rx.State.arg_str (dynamic)"),
+                    rx.data_list.value(rx.State.arg_str, id="state-arg_str"),  # type: ignore
+                ),
+                rx.data_list.item(
+                    rx.data_list.label("ArgState.arg_str (dynamic) (inherited)"),
+                    rx.data_list.value(ArgState.arg_str, id="argstate-arg_str"),  # type: ignore
+                ),
+                rx.data_list.item(
+                    rx.data_list.label("ArgState.arg"),
+                    rx.data_list.value(ArgState.arg, id="argstate-arg"),
+                ),
+                rx.data_list.item(
+                    rx.data_list.label("ArgSubState.arg_str (dynamic) (inherited)"),
+                    rx.data_list.value(ArgSubState.arg_str, id="argsubstate-arg_str"),  # type: ignore
+                ),
+                rx.data_list.item(
+                    rx.data_list.label("ArgSubState.arg (inherited)"),
+                    rx.data_list.value(ArgSubState.arg, id="argsubstate-arg"),
+                ),
+                rx.data_list.item(
+                    rx.data_list.label("ArgSubState.cached_arg"),
+                    rx.data_list.value(
+                        ArgSubState.cached_arg, id="argsubstate-cached_arg"
+                    ),
+                ),
+                rx.data_list.item(
+                    rx.data_list.label("ArgSubState.cached_arg_str"),
+                    rx.data_list.value(
+                        ArgSubState.cached_arg_str, id="argsubstate-cached_arg_str"
+                    ),
+                ),
+            ),
+            rx.link("+", href=f"/arg/{ArgState.arg + 1}", id="next-page"),
+            align="center",
+            height="100vh",
         )
 
     @rx.page(route="/redirect-page/[page_id]", on_load=DynamicState.on_load_redir)  # type: ignore
@@ -74,9 +129,9 @@ def DynamicRoute():
         return rx.fragment(rx.text("redirecting..."))
 
     app = rx.App(state=rx.State)
-    app.add_page(index)
     app.add_page(index, route="/page/[page_id]", on_load=DynamicState.on_load)  # type: ignore
     app.add_page(index, route="/static/x", on_load=DynamicState.on_load)  # type: ignore
+    app.add_page(index)
     app.add_custom_404_page(on_load=DynamicState.on_load)  # type: ignore
 
 
@@ -154,18 +209,20 @@ def poll_for_order(
     Returns:
         An async function that polls for the order list to match the expected order.
     """
+    dynamic_state_name = dynamic_route.get_state_name("_dynamic_state")
+    dynamic_state_full_name = dynamic_route.get_full_state_name(["_dynamic_state"])
 
     async def _poll_for_order(exp_order: list[str]):
         async def _backend_state():
-            return await dynamic_route.get_state(f"{token}_state.dynamic_state")
+            return await dynamic_route.get_state(f"{token}_{dynamic_state_full_name}")
 
         async def _check():
             return (await _backend_state()).substates[
-                "dynamic_state"
+                dynamic_state_name
             ].order == exp_order
 
         await AppHarness._poll_for_async(_check)
-        assert (await _backend_state()).substates["dynamic_state"].order == exp_order
+        assert (await _backend_state()).substates[dynamic_state_name].order == exp_order
 
     return _poll_for_order
 
@@ -185,6 +242,7 @@ async def test_on_load_navigate(
         token: The token visible in the driver browser.
         poll_for_order: function that polls for the order list to match the expected order.
     """
+    dynamic_state_full_name = dynamic_route.get_full_state_name(["_dynamic_state"])
     assert dynamic_route.app_instance is not None
     is_prod = isinstance(dynamic_route, AppHarnessProd)
     link = driver.find_element(By.ID, "link_page_next")
@@ -234,7 +292,7 @@ async def test_on_load_navigate(
         driver.get(f"{driver.current_url}?foo=bar")
     await poll_for_order(exp_order)
     assert (
-        await dynamic_route.get_state(f"{token}_state.dynamic_state")
+        await dynamic_route.get_state(f"{token}_{dynamic_state_full_name}")
     ).router.page.params["foo"] == "bar"
 
     # hit a 404 and ensure we still hydrate
@@ -302,3 +360,50 @@ async def test_on_load_navigate_non_dynamic(
         link.click()
     assert urlsplit(driver.current_url).path == "/static/x/"
     await poll_for_order(["/static/x-no page id", "/static/x-no page id"])
+
+
+@pytest.mark.asyncio
+async def test_render_dynamic_arg(
+    dynamic_route: AppHarness,
+    driver: WebDriver,
+):
+    """Assert that dynamic arg var is rendered correctly in different contexts.
+
+    Args:
+        dynamic_route: harness for DynamicRoute app.
+        driver: WebDriver instance.
+    """
+    assert dynamic_route.app_instance is not None
+    with poll_for_navigation(driver):
+        driver.get(f"{dynamic_route.frontend_url}/arg/0")
+
+    def assert_content(expected: str, expect_not: str):
+        ids = [
+            "state-arg_str",
+            "argstate-arg",
+            "argstate-arg_str",
+            "argsubstate-arg_str",
+            "argsubstate-arg",
+            "argsubstate-cached_arg",
+            "argsubstate-cached_arg_str",
+        ]
+        for id in ids:
+            el = driver.find_element(By.ID, id)
+            assert el
+            assert (
+                dynamic_route.poll_for_content(el, exp_not_equal=expect_not) == expected
+            )
+
+    assert_content("0", "")
+    next_page_link = driver.find_element(By.ID, "next-page")
+    assert next_page_link
+    with poll_for_navigation(driver):
+        next_page_link.click()
+    assert driver.current_url == f"{dynamic_route.frontend_url}/arg/1/"
+    assert_content("1", "0")
+    next_page_link = driver.find_element(By.ID, "next-page")
+    assert next_page_link
+    with poll_for_navigation(driver):
+        next_page_link.click()
+    assert driver.current_url == f"{dynamic_route.frontend_url}/arg/2/"
+    assert_content("2", "1")

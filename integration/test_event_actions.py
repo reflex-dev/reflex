@@ -53,7 +53,7 @@ def TestEventAction():
 
     def index():
         return rx.vstack(
-            rx.chakra.input(
+            rx.input(
                 value=EventActionState.router.session.client_token,
                 is_read_only=True,
                 id="token",
@@ -146,10 +146,10 @@ def TestEventAction():
                     200
                 ).stop_propagation,
             ),
-            rx.chakra.list(
+            rx.list(  # type: ignore
                 rx.foreach(
                     EventActionState.order,  # type: ignore
-                    rx.chakra.list_item,
+                    rx.list_item,
                 ),
             ),
             on_click=EventActionState.on_click("outer"),  # type: ignore
@@ -229,20 +229,18 @@ def poll_for_order(
     Returns:
         An async function that polls for the order list to match the expected order.
     """
+    state_name = event_action.get_state_name("_event_action_state")
+    state_full_name = event_action.get_full_state_name(["_event_action_state"])
 
     async def _poll_for_order(exp_order: list[str]):
         async def _backend_state():
-            return await event_action.get_state(f"{token}_state.event_action_state")
+            return await event_action.get_state(f"{token}_{state_full_name}")
 
         async def _check():
-            return (await _backend_state()).substates[
-                "event_action_state"
-            ].order == exp_order
+            return (await _backend_state()).substates[state_name].order == exp_order
 
         await AppHarness._poll_for_async(_check)
-        assert (await _backend_state()).substates[
-            "event_action_state"
-        ].order == exp_order
+        assert (await _backend_state()).substates[state_name].order == exp_order
 
     return _poll_for_order
 

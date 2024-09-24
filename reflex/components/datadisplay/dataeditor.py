@@ -12,7 +12,9 @@ from reflex.event import EventHandler
 from reflex.utils import console, format, types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
-from reflex.vars import Var, get_unique_variable_name
+from reflex.vars import get_unique_variable_name
+from reflex.vars.base import Var
+from reflex.vars.sequence import ArrayVar
 
 
 # TODO: Fix the serialization issue for custom types.
@@ -293,14 +295,12 @@ class DataEditor(NoSSRComponent):
 
         # Define the name of the getData callback associated with this component and assign to get_cell_content.
         data_callback = f"getData_{editor_id}"
-        self.get_cell_content = Var.create(
-            data_callback, _var_is_local=False, _var_is_string=False
-        )  # type: ignore
+        self.get_cell_content = Var(_js_expr=data_callback)  # type: ignore
 
         code = [f"function {data_callback}([col, row])" "{"]
 
-        columns_path = f"{self.columns._var_full_name}"
-        data_path = f"{self.data._var_full_name}"
+        columns_path = str(self.columns)
+        data_path = str(self.data)
 
         code.extend(
             [
@@ -333,6 +333,10 @@ class DataEditor(NoSSRComponent):
 
         # If rows is not provided, determine from data.
         if rows is None:
+            if isinstance(data, Var) and not isinstance(data, ArrayVar):
+                raise ValueError(
+                    "DataEditor data must be an ArrayVar if rows is not provided."
+                )
             props["rows"] = data.length() if isinstance(data, Var) else len(data)
 
         if not isinstance(columns, Var) and len(columns):
@@ -403,9 +407,9 @@ def serialize_dataeditortheme(theme: DataEditorTheme):
     Returns:
         The serialized theme.
     """
-    return format.json_dumps(
-        {format.to_camel_case(k): v for k, v in theme.__dict__.items() if v is not None}
-    )
+    return {
+        format.to_camel_case(k): v for k, v in theme.__dict__.items() if v is not None
+    }
 
 
 data_editor = DataEditor.create

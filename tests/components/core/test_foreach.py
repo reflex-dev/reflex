@@ -13,7 +13,9 @@ from reflex.components.core.foreach import (
 from reflex.components.radix.themes.layout.box import box
 from reflex.components.radix.themes.typography.text import text
 from reflex.state import BaseState, ComponentState
-from reflex.vars import Var
+from reflex.vars.base import Var
+from reflex.vars.number import NumberVar
+from reflex.vars.sequence import ArrayVar
 
 
 class ForEachState(BaseState):
@@ -113,7 +115,7 @@ def display_colors_set(color):
     return box(text(color))
 
 
-def display_nested_list_element(element: Var[str], index: Var[int]):
+def display_nested_list_element(element: ArrayVar[List[str]], index: NumberVar[int]):
     assert element._var_type == List[str]
     assert index._var_type == int
     return box(text(element[index]))
@@ -134,7 +136,7 @@ seen_index_vars = set()
             ForEachState.colors_list,
             display_color,
             {
-                "iterable_state": "for_each_state.colors_list",
+                "iterable_state": f"{ForEachState.get_full_name()}.colors_list",
                 "iterable_type": "list",
             },
         ),
@@ -142,7 +144,7 @@ seen_index_vars = set()
             ForEachState.colors_dict_list,
             display_color_name,
             {
-                "iterable_state": "for_each_state.colors_dict_list",
+                "iterable_state": f"{ForEachState.get_full_name()}.colors_dict_list",
                 "iterable_type": "list",
             },
         ),
@@ -150,7 +152,7 @@ seen_index_vars = set()
             ForEachState.colors_nested_dict_list,
             display_shade,
             {
-                "iterable_state": "for_each_state.colors_nested_dict_list",
+                "iterable_state": f"{ForEachState.get_full_name()}.colors_nested_dict_list",
                 "iterable_type": "list",
             },
         ),
@@ -158,7 +160,7 @@ seen_index_vars = set()
             ForEachState.primary_color,
             display_primary_colors,
             {
-                "iterable_state": "for_each_state.primary_color",
+                "iterable_state": f"{ForEachState.get_full_name()}.primary_color",
                 "iterable_type": "dict",
             },
         ),
@@ -166,7 +168,7 @@ seen_index_vars = set()
             ForEachState.color_with_shades,
             display_color_with_shades,
             {
-                "iterable_state": "for_each_state.color_with_shades",
+                "iterable_state": f"{ForEachState.get_full_name()}.color_with_shades",
                 "iterable_type": "dict",
             },
         ),
@@ -174,7 +176,7 @@ seen_index_vars = set()
             ForEachState.nested_colors_with_shades,
             display_nested_color_with_shades,
             {
-                "iterable_state": "for_each_state.nested_colors_with_shades",
+                "iterable_state": f"{ForEachState.get_full_name()}.nested_colors_with_shades",
                 "iterable_type": "dict",
             },
         ),
@@ -182,7 +184,7 @@ seen_index_vars = set()
             ForEachState.nested_colors_with_shades,
             display_nested_color_with_shades_v2,
             {
-                "iterable_state": "for_each_state.nested_colors_with_shades",
+                "iterable_state": f"{ForEachState.get_full_name()}.nested_colors_with_shades",
                 "iterable_type": "dict",
             },
         ),
@@ -190,7 +192,7 @@ seen_index_vars = set()
             ForEachState.color_tuple,
             display_color_tuple,
             {
-                "iterable_state": "for_each_state.color_tuple",
+                "iterable_state": f"{ForEachState.get_full_name()}.color_tuple",
                 "iterable_type": "tuple",
             },
         ),
@@ -198,7 +200,7 @@ seen_index_vars = set()
             ForEachState.colors_set,
             display_colors_set,
             {
-                "iterable_state": "for_each_state.colors_set",
+                "iterable_state": f"{ForEachState.get_full_name()}.colors_set",
                 "iterable_type": "set",
             },
         ),
@@ -206,7 +208,7 @@ seen_index_vars = set()
             ForEachState.nested_colors_list,
             lambda el, i: display_nested_list_element(el, i),
             {
-                "iterable_state": "for_each_state.nested_colors_list",
+                "iterable_state": f"{ForEachState.get_full_name()}.nested_colors_list",
                 "iterable_type": "list",
             },
         ),
@@ -214,7 +216,7 @@ seen_index_vars = set()
             ForEachState.color_index_tuple,
             display_color_index_tuple,
             {
-                "iterable_state": "for_each_state.color_index_tuple",
+                "iterable_state": f"{ForEachState.get_full_name()}.color_index_tuple",
                 "iterable_type": "tuple",
             },
         ),
@@ -237,9 +239,9 @@ def test_foreach_render(state_var, render_fn, render_dict):
     # Make sure the index vars are unique.
     arg_index = rend["arg_index"]
     assert isinstance(arg_index, Var)
-    assert arg_index._var_name not in seen_index_vars
+    assert arg_index._js_expr not in seen_index_vars
     assert arg_index._var_type == int
-    seen_index_vars.add(arg_index._var_name)
+    seen_index_vars.add(arg_index._js_expr)
 
 
 def test_foreach_bad_annotations():
@@ -278,7 +280,7 @@ def test_foreach_component_styles():
         )
     )
     component._add_style_recursive({box: {"color": "red"}})
-    assert 'css={{"color": "red"}}' in str(component)
+    assert 'css={({ ["color"] : "red" })}' in str(component)
 
 
 def test_foreach_component_state():

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import collections
 import contextlib
+import importlib.metadata
 import os
 import signal
 import subprocess
@@ -58,8 +59,12 @@ def get_process_on_port(port) -> Optional[psutil.Process]:
     """
     for proc in psutil.process_iter(["pid", "name", "cmdline"]):
         try:
-            for conns in proc.connections(kind="inet"):
-                if conns.laddr.port == int(port):
+            if importlib.metadata.version("psutil") >= "6.0.0":
+                conns = proc.net_connections(kind="inet")  # type: ignore
+            else:
+                conns = proc.connections(kind="inet")
+            for conn in conns:
+                if conn.laddr.port == int(port):
                     return proc
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
