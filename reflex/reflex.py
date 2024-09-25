@@ -247,13 +247,13 @@ def _run(
 
     # In prod mode, run the backend on a separate thread.
     if backend and env == constants.Env.PROD:
-        commands.append((backend_cmd, backend_host, backend_port, frontend))
+        commands.append((backend_cmd, backend_host, backend_port, loglevel, frontend))
 
     # Start the frontend and backend.
     with processes.run_concurrently_context(*commands):
         # In dev mode, run the backend on the main thread.
         if backend and env == constants.Env.DEV:
-            backend_cmd(backend_host, int(backend_port), frontend_present=frontend)
+            backend_cmd(backend_host, int(backend_port), loglevel, frontend)
             # The windows uvicorn bug workaround
             # https://github.com/reflex-dev/reflex/issues/2335
             if constants.IS_WINDOWS and exec.frontend_process:
