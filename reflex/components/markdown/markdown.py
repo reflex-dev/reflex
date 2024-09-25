@@ -173,8 +173,8 @@ class Markdown(Component):
                 component(_MOCK_ARG)._get_all_imports()  # type: ignore
                 for component in self.component_map.values()
             ],
-            CodeBlock.create(theme=Theme.light)._get_imports(),  # type: ignore,
-            Code.create()._get_imports(),  # type: ignore,
+            CodeBlock.create(theme=Theme.light)._get_imports(),
+            Code.create()._get_imports(),
         ]
 
     def get_component(self, tag: str, **props) -> Component:
