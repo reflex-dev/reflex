@@ -12,6 +12,7 @@ import os
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from hashlib import md5
 from pathlib import Path
 from types import FunctionType, MethodType
 from typing import (
@@ -2704,7 +2705,7 @@ class StateManagerDisk(StateManager):
         Returns:
             The path for the token.
         """
-        return (self.states_directory / f"{token}.pkl").absolute()
+        return (self.states_directory / f"{md5(token.encode())}.pkl").absolute()
 
     async def load_state(self, token: str, root_state: BaseState) -> BaseState:
         """Load a state object based on the provided token.
