@@ -13,7 +13,7 @@ function do_export () {
     reflex init --template "$template"
     reflex export
     (
-        cd "$SCRIPTPATH/../.."
+        cd "$SCRIPTPATH/../../.."
         scripts/integration.sh ~/"$template" dev
         pkill -9 -f 'next-server|python3' || true
         sleep 10
