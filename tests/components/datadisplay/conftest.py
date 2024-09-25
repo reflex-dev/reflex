@@ -10,7 +10,7 @@ from reflex.state import BaseState
 
 
 @pytest.fixture
-def data_table_state(request):
+def data_table_state(request: pytest.FixtureRequest):
     """Get a data table state.
 
     Args:

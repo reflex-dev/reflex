@@ -113,14 +113,8 @@ class DataTable(Gridjs):
 
     def _render(self) -> Tag:
         if isinstance(self.data, Var) and types.is_dataframe(self.data._var_type):
-            self.columns = self.data._replace(
-                _js_expr=f"{self.data._js_expr}.columns",
-                _var_type=List[Any],
-            )
-            self.data = self.data._replace(
-                _js_expr=f"{self.data._js_expr}.data",
-                _var_type=List[List[Any]],
-            )
+            self.columns = self.data.columns
+            self.data = self.data.data
         if types.is_dataframe(type(self.data)):
             # If given a pandas df break up the data and columns
             data = serialize(self.data)
