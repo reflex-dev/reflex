@@ -60,6 +60,13 @@ def kill(proc_pid: int):
     process.kill()
 
 
+def notify_backend():
+    """Output a string notifying where the backend is running."""
+    console.print(
+        f"Backend running at: [bold green]http://0.0.0.0:{get_config().backend_port}[/bold green]"
+    )
+
+
 # run_process_and_launch_url is assumed to be used
 # only to launch the frontend
 # If this is not the case, might have to change the logic
@@ -103,9 +110,7 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
                             f"App running at: [bold green]{url}[/bold green]{' (Frontend-only mode)' if not backend_present else ''}"
                         )
                         if backend_present:
-                            console.print(
-                                f"Backend running at: [bold green]http://0.0.0.0:{get_config().backend_port}[/bold green]"
-                            )
+                            notify_backend()
                         first_run = False
                     else:
                         console.print("New packages detected: Updating app...")
@@ -203,6 +208,7 @@ def run_backend(
     host: str,
     port: int,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
+    frontend_present: bool = False,
 ):
     """Run the backend.
 
@@ -210,11 +216,16 @@ def run_backend(
         host: The app host
         port: The app port
         loglevel: The log level.
+        frontend_present: Whether the frontend is present.
     """
     web_dir = get_web_dir()
     # Create a .nocompile file to skip compile for backend.
     if web_dir.exists():
         (web_dir / constants.NOCOMPILE_FILE).touch()
+
+    if not frontend_present:
+        notify_backend()
+
     # Run the backend in development mode.
     if should_use_granian():
         run_granian_backend(host, port, loglevel)
@@ -288,6 +299,7 @@ def run_backend_prod(
     host: str,
     port: int,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
+    frontend_present: bool = False,
 ):
     """Run the backend.
 
@@ -295,7 +307,11 @@ def run_backend_prod(
         host: The app host
         port: The app port
         loglevel: The log level.
+        frontend_present: Whether the frontend is present.
     """
+    if not frontend_present:
+        notify_backend()
+
     if should_use_granian():
         run_granian_backend_prod(host, port, loglevel)
     else:
