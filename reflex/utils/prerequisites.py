@@ -141,7 +141,11 @@ def check_node_version() -> bool:
     current_version = get_node_version()
     if current_version:
         # Compare the version numbers
-        return current_version >= version.parse(constants.Node.MIN_VERSION)
+        return (
+            current_version >= version.parse(constants.Node.MIN_VERSION)
+            if constants.IS_WINDOWS
+            else current_version == version.parse(constants.Node.VERSION)
+        )
     return False
 
 
