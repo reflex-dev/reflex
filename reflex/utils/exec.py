@@ -172,6 +172,33 @@ def run_frontend_prod(root: Path, port: str, backend_present=True):
     )
 
 
+def should_use_granian():
+    """Whether to use Granian for backend.
+
+    Returns:
+        True if Granian should be used.
+    """
+    return os.getenv("REFLEX_USE_GRANIAN", "0") == "1"
+
+
+def get_app_module():
+    """Get the app module for the backend.
+
+    Returns:
+        The app module for the backend.
+    """
+    return f"reflex.app_module_for_backend:{constants.CompileVars.APP}"
+
+
+def get_granian_target():
+    """Get the Granian target for the backend.
+
+    Returns:
+        The Granian target for the backend.
+    """
+    return get_app_module() + f".{constants.CompileVars.API}"
+
+
 def run_backend(
     host: str,
     port: int,
@@ -184,24 +211,76 @@ def run_backend(
         port: The app port
         loglevel: The log level.
     """
-    import uvicorn
-
-    config = get_config()
-    app_module = f"reflex.app_module_for_backend:{constants.CompileVars.APP}"
-
     web_dir = get_web_dir()
     # Create a .nocompile file to skip compile for backend.
     if web_dir.exists():
         (web_dir / constants.NOCOMPILE_FILE).touch()
-
     # Run the backend in development mode.
+    if should_use_granian():
+        run_granian_backend(host, port, loglevel)
+    else:
+        run_uvicorn_backend(host, port, loglevel)
+
+
+def run_uvicorn_backend(host, port, loglevel):
+    """Run the backend in development mode using Uvicorn.
+
+    Args:
+        host: The app host
+        port: The app port
+        loglevel: The log level.
+    """
+    import uvicorn
+
     uvicorn.run(
-        app=f"{app_module}.{constants.CompileVars.API}",
+        app=f"{get_app_module()}.{constants.CompileVars.API}",
         host=host,
         port=port,
         log_level=loglevel.value,
         reload=True,
-        reload_dirs=[config.app_name],
+        reload_dirs=[get_config().app_name],
+    )
+
+
+def run_granian_backend(host, port, loglevel):
+    """Run the backend in development mode using Granian.
+
+    Args:
+        host: The app host
+        port: The app port
+        loglevel: The log level.
+    """
+    console.debug("Using Granian for backend")
+    try:
+        from granian import Granian  # type: ignore
+        from granian.constants import Interfaces  # type: ignore
+        from granian.log import LogLevels  # type: ignore
+
+        Granian(
+            target=get_granian_target(),
+            address=host,
+            port=port,
+            interface=Interfaces.ASGI,
+            log_level=LogLevels(loglevel.value),
+            reload=True,
+            reload_paths=[Path(get_config().app_name)],
+            reload_ignore_dirs=[".web"],
+        ).serve()
+    except ImportError:
+        console.error(
+            'InstallError: REFLEX_USE_GRANIAN is set but `granian` is not installed. (run `pip install "granian>=1.6.0"`)'
+        )
+        os._exit(1)
+
+
+def _get_backend_workers():
+    from reflex.utils import processes
+
+    config = get_config()
+    return (
+        processes.get_num_workers()
+        if not config.gunicorn_workers
+        else config.gunicorn_workers
     )
 
 
@@ -217,17 +296,28 @@ def run_backend_prod(
         port: The app port
         loglevel: The log level.
     """
+    if should_use_granian():
+        run_granian_backend_prod(host, port, loglevel)
+    else:
+        run_uvicorn_backend_prod(host, port, loglevel)
+
+
+def run_uvicorn_backend_prod(host, port, loglevel):
+    """Run the backend in production mode using Uvicorn.
+
+    Args:
+        host: The app host
+        port: The app port
+        loglevel: The log level.
+    """
     from reflex.utils import processes
 
     config = get_config()
-    num_workers = (
-        processes.get_num_workers()
-        if not config.gunicorn_workers
-        else config.gunicorn_workers
-    )
+
+    app_module = get_app_module()
+
     RUN_BACKEND_PROD = f"gunicorn --worker-class {config.gunicorn_worker_class} --preload --timeout {config.timeout} --log-level critical".split()
     RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {config.timeout}".split()
-    app_module = f"reflex.app_module_for_backend:{constants.CompileVars.APP}"
     command = (
         [
             *RUN_BACKEND_PROD_WINDOWS,
@@ -243,7 +333,7 @@ def run_backend_prod(
             "--bind",
             f"{host}:{port}",
             "--threads",
-            str(num_workers),
+            str(_get_backend_workers()),
             f"{app_module}()",
         ]
     )
@@ -252,7 +342,7 @@ def run_backend_prod(
         "--log-level",
         loglevel.value,
         "--workers",
-        str(num_workers),
+        str(_get_backend_workers()),
     ]
     processes.new_process(
         command,
@@ -260,6 +350,47 @@ def run_backend_prod(
         show_logs=True,
         env={constants.SKIP_COMPILE_ENV_VAR: "yes"},  # skip compile for prod backend
     )
+
+
+def run_granian_backend_prod(host, port, loglevel):
+    """Run the backend in production mode using Granian.
+
+    Args:
+        host: The app host
+        port: The app port
+        loglevel: The log level.
+    """
+    from reflex.utils import processes
+
+    try:
+        from granian.constants import Interfaces  # type: ignore
+
+        command = [
+            "granian",
+            "--workers",
+            str(_get_backend_workers()),
+            "--log-level",
+            "critical",
+            "--host",
+            host,
+            "--port",
+            str(port),
+            "--interface",
+            str(Interfaces.ASGI),
+            get_granian_target(),
+        ]
+        processes.new_process(
+            command,
+            run=True,
+            show_logs=True,
+            env={
+                constants.SKIP_COMPILE_ENV_VAR: "yes"
+            },  # skip compile for prod backend
+        )
+    except ImportError:
+        console.error(
+            'InstallError: REFLEX_USE_GRANIAN is set but `granian` is not installed. (run `pip install "granian>=1.6.0"`)'
+        )
 
 
 def output_system_info():
