@@ -1868,6 +1868,24 @@ docs = ["sphinx (>=5.3)", "sphinx-rtd-theme (>=1.0)"]
 testing = ["coverage (>=6.2)", "flaky (>=3.5.0)", "hypothesis (>=5.7.1)", "mypy (>=0.931)", "pytest-trio (>=0.7.0)"]
 
 [[package]]
+name = "pytest-base-url"
+version = "2.1.0"
+description = "pytest plugin for URL based testing"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pytest_base_url-2.1.0-py3-none-any.whl", hash = "sha256:3ad15611778764d451927b2a53240c1a7a591b521ea44cebfe45849d2d2812e6"},
+    {file = "pytest_base_url-2.1.0.tar.gz", hash = "sha256:02748589a54f9e63fcbe62301d6b0496da0d10231b753e950c63e03aee745d45"},
+]
+
+[package.dependencies]
+pytest = ">=7.0.0"
+requests = ">=2.9"
+
+[package.extras]
+test = ["black (>=22.1.0)", "flake8 (>=4.0.1)", "pre-commit (>=2.17.0)", "pytest-localserver (>=0.7.1)", "tox (>=3.24.5)"]
+
+[[package]]
 name = "pytest-benchmark"
 version = "4.0.0"
 description = "A ``pytest`` fixture for benchmarking code. It will group the tests into rounds that are calibrated to the chosen timer."
@@ -1923,6 +1941,23 @@ pytest = ">=6.2.5"
 dev = ["pre-commit", "pytest-asyncio", "tox"]
 
 [[package]]
+name = "pytest-playwright"
+version = "0.5.2"
+description = "A pytest wrapper with fixtures for Playwright to automate web browsers"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pytest_playwright-0.5.2-py3-none-any.whl", hash = "sha256:2c5720591364a1cdf66610b972ff8492512bc380953e043c85f705b78b2ed582"},
+    {file = "pytest_playwright-0.5.2.tar.gz", hash = "sha256:c6d603df9e6c50b35f057b0528e11d41c0963283e98c257267117f5ed6ba1924"},
+]
+
+[package.dependencies]
+playwright = ">=1.18"
+pytest = ">=6.2.4,<9.0.0"
+pytest-base-url = ">=1.0.0,<3.0.0"
+python-slugify = ">=6.0.0,<9.0.0"
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 description = "Extensions to the standard Python datetime module"
@@ -1965,6 +2000,23 @@ files = [
     {file = "python_multipart-0.0.10-py3-none-any.whl", hash = "sha256:2b06ad9e8d50c7a8db80e3b56dab590137b323410605af2be20d62a5f1ba1dc8"},
     {file = "python_multipart-0.0.10.tar.gz", hash = "sha256:46eb3c6ce6fdda5fb1a03c7e11d490e407c6930a2703fe7aef4da71c374688fa"},
 ]
+
+[[package]]
+name = "python-slugify"
+version = "8.0.4"
+description = "A Python slugify application that also handles Unicode"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "python-slugify-8.0.4.tar.gz", hash = "sha256:59202371d1d05b54a9e7720c5e038f928f45daaffe41dd10822f3907b937c856"},
+    {file = "python_slugify-8.0.4-py2.py3-none-any.whl", hash = "sha256:276540b79961052b66b7d116620b36518847f52d5fd9e3a70164fc8c50faa6b8"},
+]
+
+[package.dependencies]
+text-unidecode = ">=1.3"
+
+[package.extras]
+unidecode = ["Unidecode (>=1.1.1)"]
 
 [[package]]
 name = "python-socketio"
@@ -2109,13 +2161,13 @@ ocsp = ["cryptography (>=36.0.1)", "pyopenssl (==20.0.1)", "requests (>=2.26.0)"
 
 [[package]]
 name = "reflex-chakra"
-version = "0.6.0a7"
+version = "0.6.0"
 description = "reflex using chakra components"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "reflex_chakra-0.6.0a7-py3-none-any.whl", hash = "sha256:d693aee7323af13ce491165ffb4fe392344939e45516991671d5601727f749f4"},
-    {file = "reflex_chakra-0.6.0a7.tar.gz", hash = "sha256:fe17282e439fdfdfd507e24857a615258ef9789f15049aa0e70239fbcb4d5fbf"},
+    {file = "reflex_chakra-0.6.0-py3-none-any.whl", hash = "sha256:eca1593fca67289e05591dd21fbcc8632c119d64a08bdc41fd995055a114cc91"},
+    {file = "reflex_chakra-0.6.0.tar.gz", hash = "sha256:db1c7b48f1ba547bf91e5af103fce6fc7191d7225b414ebfbada7d983e33dd87"},
 ]
 
 [package.dependencies]
@@ -2518,6 +2570,17 @@ files = [
 [package.extras]
 doc = ["reno", "sphinx"]
 test = ["pytest", "tornado (>=4.5)", "typeguard"]
+
+[[package]]
+name = "text-unidecode"
+version = "1.3"
+description = "The most basic Text::Unidecode port"
+optional = false
+python-versions = "*"
+files = [
+    {file = "text-unidecode-1.3.tar.gz", hash = "sha256:bad6603bb14d279193107714b288be206cac565dfa49aa5b105294dd5c4aab93"},
+    {file = "text_unidecode-1.3-py2.py3-none-any.whl", hash = "sha256:1311f10e8b895935241623731c2ba64f4c455287888b18189350b67134a822e8"},
+]
 
 [[package]]
 name = "toml"
@@ -2948,4 +3011,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "819513428bd41bd944c2b26e26439e7506f3e6a13c0cf2bc35d29d154c4139e5"
+content-hash = "66cab75e57d02b3f7ec8120d778ddf87509178bb5fb1d0e658dd1eacd4e3714c"

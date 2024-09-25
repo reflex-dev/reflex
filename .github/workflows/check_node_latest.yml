@@ -1,4 +1,4 @@
-name: Check Reflex run on Node.js Latest
+name: integration-node-latest
 
 on:
     push:
@@ -33,6 +33,7 @@ jobs:
                 poetry run playwright install --with-deps
             - run: |
                 poetry run pytest tests/test_node_version.py
+                poetry run pytest integration
   
 
 
