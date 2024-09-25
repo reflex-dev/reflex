@@ -150,6 +150,7 @@ class Form(BaseHTML):
         """
         if "on_submit" not in props:
             props["on_submit"] = prevent_default
+
         if "handle_submit_unique_name" in props:
             return super().create(*children, **props)
 
