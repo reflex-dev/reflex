@@ -55,6 +55,7 @@ from reflex.utils.imports import (
 )
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
+from reflex.vars.sequence import LiteralArrayVar
 
 
 class BaseComponent(Base, ABC):
@@ -496,7 +497,12 @@ class Component(BaseComponent, ABC):
         # Convert class_name to str if it's list
         class_name = kwargs.get("class_name", "")
         if isinstance(class_name, (List, tuple)):
-            kwargs["class_name"] = " ".join(class_name)
+            if any(isinstance(c, Var) for c in class_name):
+                kwargs["class_name"] = LiteralArrayVar.create(
+                    class_name, _var_type=List[str]
+                ).join(" ")
+            else:
+                kwargs["class_name"] = " ".join(class_name)
 
         # Construct the component.
         super().__init__(*args, **kwargs)
