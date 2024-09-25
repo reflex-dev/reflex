@@ -929,12 +929,44 @@ def parse_args_spec(arg_spec: ArgsSpec):
     )
 
 
+def check_fn_match_arg_spec(fn: Callable, arg_spec: ArgsSpec):
+    """Ensures that the function signature matches the passed argument specification
+    or raises an EventFnArgMismatch if they do not.
+
+    Args:
+        fn (callable): The function to be validated.
+        arg_spec (Any): The argument specification for the event trigger.
+
+    Returns:
+        list: The parsed arguments from the argument specification.
+
+    Raises:
+        EventFnArgMismatch: Raised if the number of mandatory arguments in the
+        function's signature does not match the number of arguments in the argument specification.
+    """
+    fn_args = inspect.getfullargspec(fn).args
+    fn_defaults_args = inspect.getfullargspec(fn).defaults
+    n_fn_args = len(fn_args)
+    n_fn_defaults_args = len(fn_defaults_args) if fn_defaults_args else 0
+    if isinstance(fn, types.MethodType):
+        n_fn_args -= 1  # subtract 1 for bound self arg
+    parsed_args = parse_args_spec(arg_spec)
+    if not (n_fn_args - n_fn_defaults_args <= len(parsed_args) <= n_fn_args):
+        raise EventFnArgMismatch(
+            "The number of mandatory arguments accepted by "
+            f"{fn} ({n_fn_args - n_fn_defaults_args}) "
+            "does not match the arguments passed by the event trigger: "
+            f"{[str(v) for v in parsed_args]}\n"
+            "See https://reflex.dev/docs/events/event-arguments/"
+        )
+    return parsed_args
+
+
 def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | Var:
     """Call a function to a list of event specs.
 
     The function should return a single EventSpec, a list of EventSpecs, or a
-    single Var. The function signature must match the passed arg_spec or
-    EventFnArgsMismatch will be raised.
+    single Var.
 
     Args:
         fn: The function to call.
@@ -944,7 +976,6 @@ def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | Var:
         The event specs from calling the function or a Var.
 
     Raises:
-        EventFnArgMismatch: If the function signature doesn't match the arg spec.
         EventHandlerValueError: If the lambda returns an unusable value.
     """
     # Import here to avoid circular imports.
@@ -952,19 +983,7 @@ def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | Var:
     from reflex.utils.exceptions import EventHandlerValueError
 
     # Check that fn signature matches arg_spec
-    fn_args = inspect.getfullargspec(fn).args
-    n_fn_args = len(fn_args)
-    if isinstance(fn, types.MethodType):
-        n_fn_args -= 1  # subtract 1 for bound self arg
-    parsed_args = parse_args_spec(arg_spec)
-    if len(parsed_args) != n_fn_args:
-        raise EventFnArgMismatch(
-            "The number of arguments accepted by "
-            f"{fn} ({n_fn_args}) "
-            "does not match the arguments passed by the event trigger: "
-            f"{[str(v) for v in parsed_args]}\n"
-            "See https://reflex.dev/docs/events/event-arguments/"
-        )
+    parsed_args = check_fn_match_arg_spec(fn, arg_spec)
 
     # Call the function with the parsed args.
     out = fn(*parsed_args)
