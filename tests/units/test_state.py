@@ -43,7 +43,7 @@ from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
 from reflex.vars.base import ComputedVar, Var
-from tests.states.mutation import MutableSQLAModel, MutableTestState
+from tests.units.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState
 
