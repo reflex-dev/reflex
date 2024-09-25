@@ -448,8 +448,16 @@ class Component(BaseComponent, ABC):
                     and not types._issubclass(passed_type, expected_type, value)
                 ):
                     value_name = value._js_expr if isinstance(value, Var) else value
+
+                    additional_info = (
+                        " You can call `.bool()` on the value to convert it to a boolean."
+                        if expected_type is bool and isinstance(value, Var)
+                        else ""
+                    )
+
                     raise TypeError(
                         f"Invalid var passed for prop {type(self).__name__}.{key}, expected type {expected_type}, got value {value_name} of type {passed_type}."
+                        + additional_info
                     )
             # Check if the key is an event trigger.
             if key in component_specific_triggers:
@@ -469,7 +477,7 @@ class Component(BaseComponent, ABC):
             # Merge styles, the later ones overriding keys in the earlier ones.
             style = {k: v for style_dict in style for k, v in style_dict.items()}
 
-        if isinstance(style, Breakpoints):
+        if isinstance(style, (Breakpoints, Var)):
             style = {
                 # Assign the Breakpoints to the self-referential selector to avoid squashing down to a regular dict.
                 "&": style,

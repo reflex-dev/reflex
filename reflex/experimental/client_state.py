@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import re
 import sys
 from typing import Any, Callable, Union
 
@@ -174,15 +175,15 @@ class ClientStateVar(Var):
             else self._setter_name
         )
         if value is not NoValue:
-            import re
-
             # This is a hack to make it work like an EventSpec taking an arg
             value_str = str(LiteralVar.create(value))
 
-            # remove patterns of ["*"] from the value_str using regex
-            arg = re.sub(r"\[\".*\"\]", "", value_str)
-
-            setter = f"({arg}) => {setter}({str(value)})"
+            if value_str.startswith("_"):
+                # remove patterns of ["*"] from the value_str using regex
+                arg = re.sub(r"\[\".*\"\]", "", value_str)
+                setter = f"(({arg}) => {setter}({value_str}))"
+            else:
+                setter = f"(() => {setter}({value_str}))"
         return Var(
             _js_expr=setter,
             _var_data=VarData(imports=_refs_import if self._global_ref else {}),
