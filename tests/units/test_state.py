@@ -440,26 +440,28 @@ def test_get_substates():
 
 def test_get_name():
     """Test getting the name of a state."""
-    assert TestState.get_name() == "tests___test_state____test_state"
-    assert ChildState.get_name() == "tests___test_state____child_state"
-    assert ChildState2.get_name() == "tests___test_state____child_state2"
-    assert GrandchildState.get_name() == "tests___test_state____grandchild_state"
+    assert TestState.get_name() == "tests___units___test_state____test_state"
+    assert ChildState.get_name() == "tests___units___test_state____child_state"
+    assert ChildState2.get_name() == "tests___units___test_state____child_state2"
+    assert (
+        GrandchildState.get_name() == "tests___units___test_state____grandchild_state"
+    )
 
 
 def test_get_full_name():
     """Test getting the full name."""
-    assert TestState.get_full_name() == "tests___test_state____test_state"
+    assert TestState.get_full_name() == "tests___units___test_state____test_state"
     assert (
         ChildState.get_full_name()
-        == "tests___test_state____test_state.tests___test_state____child_state"
+        == "tests___units___test_state____test_state.tests___units___test_state____child_state"
     )
     assert (
         ChildState2.get_full_name()
-        == "tests___test_state____test_state.tests___test_state____child_state2"
+        == "tests___units___test_state____test_state.tests___units___test_state____child_state2"
     )
     assert (
         GrandchildState.get_full_name()
-        == "tests___test_state____test_state.tests___test_state____child_state.tests___test_state____grandchild_state"
+        == "tests___units___test_state____test_state.tests___units___test_state____child_state.tests___units___test_state____grandchild_state"
     )
 
 
