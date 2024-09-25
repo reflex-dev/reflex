@@ -147,7 +147,7 @@ class Markdown(Component):
         Returns:
             The imports for the markdown component.
         """
-        from reflex.components.datadisplay.code import CodeBlock
+        from reflex.components.datadisplay.code import CodeBlock, Theme
         from reflex.components.radix.themes.typography.code import Code
 
         return [
@@ -173,7 +173,7 @@ class Markdown(Component):
                 component(_MOCK_ARG)._get_all_imports()  # type: ignore
                 for component in self.component_map.values()
             ],
-            CodeBlock.create(theme="light")._get_imports(),  # type: ignore,
+            CodeBlock.create(theme=Theme.light)._get_imports(),  # type: ignore,
             Code.create()._get_imports(),  # type: ignore,
         ]
 
