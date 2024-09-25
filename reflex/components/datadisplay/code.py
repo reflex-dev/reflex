@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import enum
-from typing import Any, Dict, Literal, Optional, Union
-
-from typing_extensions import get_args
+import dataclasses
+from typing import ClassVar, Dict, Literal, Optional, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.cond import color_mode_cond
@@ -18,55 +16,6 @@ from reflex.style import Style
 from reflex.utils import console, format
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import LiteralVar, Var, VarData
-
-LiteralCodeBlockTheme = Literal[
-    "a11y-dark",
-    "atom-dark",
-    "cb",
-    "coldark-cold",
-    "coldark-dark",
-    "coy",
-    "coy-without-shadows",
-    "darcula",
-    "dark",
-    "dracula",
-    "duotone-dark",
-    "duotone-earth",
-    "duotone-forest",
-    "duotone-light",
-    "duotone-sea",
-    "duotone-space",
-    "funky",
-    "ghcolors",
-    "gruvbox-dark",
-    "gruvbox-light",
-    "holi-theme",
-    "hopscotch",
-    "light",  # not present in react-syntax-highlighter styles
-    "lucario",
-    "material-dark",
-    "material-light",
-    "material-oceanic",
-    "night-owl",
-    "nord",
-    "okaidia",
-    "one-dark",
-    "one-light",
-    "pojoaque",
-    "prism",
-    "shades-of-purple",
-    "solarized-dark-atom",
-    "solarizedlight",
-    "synthwave84",
-    "tomorrow",
-    "twilight",
-    "vs",
-    "vs-dark",
-    "vsc-dark-plus",
-    "xonokai",
-    "z-touch",
-]
-
 
 LiteralCodeLanguage = Literal[
     "abap",
@@ -351,18 +300,82 @@ LiteralCodeLanguage = Literal[
 ]
 
 
-def replace_quotes_with_camel_case(value: str) -> str:
-    """Replaces quotes in the given string with camel case format.
+def construct_theme_var(theme: str) -> Var[Theme]:
+    """Construct a theme var.
 
     Args:
-        value (str): The string to be processed.
+        theme: The theme to construct.
 
     Returns:
-        str: The processed string with quotes replaced by camel case.
+        The constructed theme var.
     """
-    for theme in get_args(LiteralCodeBlockTheme):
-        value = value.replace(f'"{theme}"', format.to_camel_case(theme))
-    return value
+    return Var(
+        theme,
+        _var_data=VarData(
+            imports={
+                f"react-syntax-highlighter/dist/cjs/styles/prism/{format.to_kebab_case(theme)}": [
+                    ImportVar(tag=theme, is_default=True, install=False)
+                ]
+            }
+        ),
+    )
+
+
+@dataclasses.dataclass(init=False)
+class Theme:
+    """Themes for the CodeBlock component."""
+
+    a11y_dark: ClassVar[Var[Theme]] = construct_theme_var("a11yDark")
+    atom_dark: ClassVar[Var[Theme]] = construct_theme_var("atomDark")
+    cb: ClassVar[Var[Theme]] = construct_theme_var("cb")
+    coldark_cold: ClassVar[Var[Theme]] = construct_theme_var("coldarkCold")
+    coldark_dark: ClassVar[Var[Theme]] = construct_theme_var("coldarkDark")
+    coy: ClassVar[Var[Theme]] = construct_theme_var("coy")
+    coy_without_shadows: ClassVar[Var[Theme]] = construct_theme_var("coyWithoutShadows")
+    darcula: ClassVar[Var[Theme]] = construct_theme_var("darcula")
+    dark: ClassVar[Var[Theme]] = construct_theme_var("oneDark")
+    dracula: ClassVar[Var[Theme]] = construct_theme_var("dracula")
+    duotone_dark: ClassVar[Var[Theme]] = construct_theme_var("duotoneDark")
+    duotone_earth: ClassVar[Var[Theme]] = construct_theme_var("duotoneEarth")
+    duotone_forest: ClassVar[Var[Theme]] = construct_theme_var("duotoneForest")
+    duotone_light: ClassVar[Var[Theme]] = construct_theme_var("duotoneLight")
+    duotone_sea: ClassVar[Var[Theme]] = construct_theme_var("duotoneSea")
+    duotone_space: ClassVar[Var[Theme]] = construct_theme_var("duotoneSpace")
+    funky: ClassVar[Var[Theme]] = construct_theme_var("funky")
+    ghcolors: ClassVar[Var[Theme]] = construct_theme_var("ghcolors")
+    gruvbox_dark: ClassVar[Var[Theme]] = construct_theme_var("gruvboxDark")
+    gruvbox_light: ClassVar[Var[Theme]] = construct_theme_var("gruvboxLight")
+    holi_theme: ClassVar[Var[Theme]] = construct_theme_var("holiTheme")
+    hopscotch: ClassVar[Var[Theme]] = construct_theme_var("hopscotch")
+    light: ClassVar[Var[Theme]] = construct_theme_var("oneLight")
+    lucario: ClassVar[Var[Theme]] = construct_theme_var("lucario")
+    material_dark: ClassVar[Var[Theme]] = construct_theme_var("materialDark")
+    material_light: ClassVar[Var[Theme]] = construct_theme_var("materialLight")
+    material_oceanic: ClassVar[Var[Theme]] = construct_theme_var("materialOceanic")
+    night_owl: ClassVar[Var[Theme]] = construct_theme_var("nightOwl")
+    nord: ClassVar[Var[Theme]] = construct_theme_var("nord")
+    okaidia: ClassVar[Var[Theme]] = construct_theme_var("okaidia")
+    one_dark: ClassVar[Var[Theme]] = construct_theme_var("oneDark")
+    one_light: ClassVar[Var[Theme]] = construct_theme_var("oneLight")
+    pojoaque: ClassVar[Var[Theme]] = construct_theme_var("pojoaque")
+    prism: ClassVar[Var[Theme]] = construct_theme_var("prism")
+    shades_of_purple: ClassVar[Var[Theme]] = construct_theme_var("shadesOfPurple")
+    solarized_dark_atom: ClassVar[Var[Theme]] = construct_theme_var("solarizedDarkAtom")
+    solarizedlight: ClassVar[Var[Theme]] = construct_theme_var("solarizedlight")
+    synthwave84: ClassVar[Var[Theme]] = construct_theme_var("synthwave84")
+    tomorrow: ClassVar[Var[Theme]] = construct_theme_var("tomorrow")
+    twilight: ClassVar[Var[Theme]] = construct_theme_var("twilight")
+    vs: ClassVar[Var[Theme]] = construct_theme_var("vs")
+    vs_dark: ClassVar[Var[Theme]] = construct_theme_var("vsDark")
+    vsc_dark_plus: ClassVar[Var[Theme]] = construct_theme_var("vscDarkPlus")
+    xonokai: ClassVar[Var[Theme]] = construct_theme_var("xonokai")
+    z_touch: ClassVar[Var[Theme]] = construct_theme_var("zTouch")
+
+
+for theme_name in dir(Theme):
+    if theme_name.startswith("_"):
+        continue
+    setattr(Theme, theme_name, getattr(Theme, theme_name)._replace(_var_type=Theme))
 
 
 class CodeBlock(Component):
@@ -375,7 +388,7 @@ class CodeBlock(Component):
     alias = "SyntaxHighlighter"
 
     # The theme to use ("light" or "dark").
-    theme: Var[Any] = "one-light"  # type: ignore
+    theme: Var[Union[Theme, str]] = Theme.one_light
 
     # The language to use.
     language: Var[LiteralCodeLanguage] = "python"  # type: ignore
@@ -522,91 +535,6 @@ class CodeBlock(Component):
         )
 
         return out
-
-    @staticmethod
-    def convert_theme_name(theme) -> str:
-        """Convert theme names to appropriate names.
-
-        Args:
-            theme: The theme name.
-
-        Returns:
-            The right theme name.
-        """
-        if theme in ["light", "dark"]:
-            return f"one-{theme}"
-        return theme
-
-
-def construct_theme_var(theme: str) -> Var:
-    """Construct a theme var.
-
-    Args:
-        theme: The theme to construct.
-
-    Returns:
-        The constructed theme var.
-    """
-    return Var(
-        theme,
-        _var_data=VarData(
-            imports={
-                f"react-syntax-highlighter/dist/cjs/styles/prism/{format.to_kebab_case(theme)}": [
-                    ImportVar(tag=theme, is_default=True, install=False)
-                ]
-            }
-        ),
-    )
-
-
-class Theme(enum.Enum):
-    """Themes for the CodeBlock component."""
-
-    a11y_dark = construct_theme_var("a11yDark")
-    atom_dark = construct_theme_var("atomDark")
-    cb = construct_theme_var("cb")
-    coldark_cold = construct_theme_var("coldarkCold")
-    coldark_dark = construct_theme_var("coldarkDark")
-    coy = construct_theme_var("coy")
-    coy_without_shadows = construct_theme_var("coyWithoutShadows")
-    darcula = construct_theme_var("darcula")
-    dark = construct_theme_var("oneDark")
-    dracula = construct_theme_var("dracula")
-    duotone_dark = construct_theme_var("duotoneDark")
-    duotone_earth = construct_theme_var("duotoneEarth")
-    duotone_forest = construct_theme_var("duotoneForest")
-    duotone_light = construct_theme_var("duotoneLight")
-    duotone_sea = construct_theme_var("duotoneSea")
-    duotone_space = construct_theme_var("duotoneSpace")
-    funky = construct_theme_var("funky")
-    ghcolors = construct_theme_var("ghcolors")
-    gruvbox_dark = construct_theme_var("gruvboxDark")
-    gruvbox_light = construct_theme_var("gruvboxLight")
-    holi_theme = construct_theme_var("holiTheme")
-    hopscotch = construct_theme_var("hopscotch")
-    light = construct_theme_var("oneLight")
-    lucario = construct_theme_var("lucario")
-    material_dark = construct_theme_var("materialDark")
-    material_light = construct_theme_var("materialLight")
-    material_oceanic = construct_theme_var("materialOceanic")
-    night_owl = construct_theme_var("nightOwl")
-    nord = construct_theme_var("nord")
-    okaidia = construct_theme_var("okaidia")
-    one_dark = construct_theme_var("oneDark")
-    one_light = construct_theme_var("oneLight")
-    pojoaque = construct_theme_var("pojoaque")
-    prism = construct_theme_var("prism")
-    shades_of_purple = construct_theme_var("shadesOfPurple")
-    solarized_dark_atom = construct_theme_var("solarizedDarkAtom")
-    solarizedlight = construct_theme_var("solarizedlight")
-    synthwave84 = construct_theme_var("synthwave84")
-    tomorrow = construct_theme_var("tomorrow")
-    twilight = construct_theme_var("twilight")
-    vs = construct_theme_var("vs")
-    vs_dark = construct_theme_var("vsDark")
-    vsc_dark_plus = construct_theme_var("vscDarkPlus")
-    xonokai = construct_theme_var("xonokai")
-    z_touch = construct_theme_var("zTouch")
 
 
 class CodeblockNamespace(ComponentNamespace):
