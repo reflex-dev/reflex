@@ -16,6 +16,7 @@ class Html(Div):
     def create(  # type: ignore
         cls,
         *children,
+        styled=False,
         dangerouslySetInnerHTML: Optional[
             Union[Dict[str, str], Var[Dict[str, str]]]
         ] = None,
@@ -90,6 +91,7 @@ class Html(Div):
 
         Args:
             *children: The children of the component.
+            styled: Whether the component should be styled with tailwind prose plugin.
             dangerouslySetInnerHTML: The HTML to render.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.

@@ -17,11 +17,12 @@ class Html(Div):
     dangerouslySetInnerHTML: Var[Dict[str, str]]
 
     @classmethod
-    def create(cls, *children, **props):
+    def create(cls, *children, styled=False, **props):
         """Create a html component.
 
         Args:
             *children: The children of the component.
+            styled: Whether the component should be styled with tailwind prose plugin.
             **props: The props to pass to the component.
 
         Returns:
@@ -40,7 +41,11 @@ class Html(Div):
         given_class_name = props.pop("class_name", [])
         if isinstance(given_class_name, str):
             given_class_name = [given_class_name]
-        props["class_name"] = ["rx-Html", "prose", *given_class_name]
+        default_classes = ["rx-Html"] + (["prose"] if styled else [])
+        props["class_name"] = [
+            *default_classes,
+            *given_class_name,
+        ]
 
         # Create the component.
         return super().create(**props)
