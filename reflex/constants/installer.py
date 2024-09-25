@@ -115,7 +115,7 @@ class PackageJson(SimpleNamespace):
         "@emotion/react": "11.11.1",
         "axios": "1.6.0",
         "json5": "2.2.3",
-        "next": "14.0.1",
+        "next": "14.2.13",
         "next-sitemap": "4.1.8",
         "next-themes": "0.2.1",
         "react": "18.2.0",
