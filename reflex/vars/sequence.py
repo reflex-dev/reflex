@@ -592,6 +592,29 @@ class LiteralStringVar(LiteralVar, StringVar):
                 else:
                     return only_string.to(StringVar, only_string._var_type)
 
+            if len(
+                literal_strings := [
+                    s
+                    for s in filtered_strings_and_vals
+                    if isinstance(s, (str, LiteralStringVar))
+                ]
+            ) == len(filtered_strings_and_vals):
+                return LiteralStringVar.create(
+                    "".join(
+                        s._var_value if isinstance(s, LiteralStringVar) else s
+                        for s in literal_strings
+                    ),
+                    _var_type=_var_type,
+                    _var_data=VarData.merge(
+                        _var_data,
+                        *(
+                            s._get_all_var_data()
+                            for s in filtered_strings_and_vals
+                            if isinstance(s, Var)
+                        ),
+                    ),
+                )
+
             concat_result = ConcatVarOperation.create(
                 *filtered_strings_and_vals,
                 _var_data=_var_data,
@@ -736,6 +759,26 @@ class ArrayVar(Var[ARRAY_VAR_TYPE]):
         """
         if not isinstance(sep, (StringVar, str)):
             raise_unsupported_operand_types("join", (type(self), type(sep)))
+        if (
+            isinstance(self, LiteralArrayVar)
+            and (
+                len(
+                    args := [
+                        x
+                        for x in self._var_value
+                        if isinstance(x, (LiteralStringVar, str))
+                    ]
+                )
+                == len(self._var_value)
+            )
+            and isinstance(sep, (LiteralStringVar, str))
+        ):
+            sep_str = sep._var_value if isinstance(sep, LiteralStringVar) else sep
+            return LiteralStringVar.create(
+                sep_str.join(
+                    i._var_value if isinstance(i, LiteralStringVar) else i for i in args
+                )
+            )
         return array_join_operation(self, sep)
 
     def reverse(self) -> ArrayVar[ARRAY_VAR_TYPE]:
