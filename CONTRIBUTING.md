@@ -69,7 +69,7 @@ In your `reflex` directory run make sure all the unit tests are still passing us
 This will fail if code coverage is below 70%.
 
 ``` bash
-poetry run pytest tests --cov --no-cov-on-fail --cov-report= 
+poetry run pytest tests/units --cov --no-cov-on-fail --cov-report= 
 ```
 
 Next make sure all the following tests pass. This ensures that every new change has proper documentation and type checking.

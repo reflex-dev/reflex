@@ -77,6 +77,8 @@ asynctest = ">=0.13.0,<1.0"
 pre-commit = ">=3.2.1"
 selenium = ">=4.11.0,<5.0"
 pytest-benchmark = ">=4.0.0,<5.0"
+playwright = ">=1.46.0"
+pytest-playwright = ">=0.5.1"
 
 [tool.poetry.scripts]
 reflex = "reflex.reflex:cli"

@@ -12,7 +12,7 @@ from reflex.testing import AppHarness, WebDriver
 def SharedStateApp():
     """Test that shared state works as expected."""
     import reflex as rx
-    from integration.shared.state import SharedState
+    from tests.integration.shared.state import SharedState
 
     class State(SharedState):
         pass
