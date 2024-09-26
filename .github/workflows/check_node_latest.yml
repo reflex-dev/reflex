@@ -10,6 +10,7 @@ on:
 
 env:
     TELEMETRY_ENABLED: false
+    REFLEX_USE_SYSTEM_NODE: true
 
 jobs:
     check_latest_node:
