@@ -3270,7 +3270,7 @@ def test_assignment_to_undeclared_vars():
     class State(BaseState):
         val: str
         _val: str
-        __val: str
+        __val: str  # type: ignore
 
         def handle_supported_regular_vars(self):
             self.val = "no underscore"
