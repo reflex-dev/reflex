@@ -1633,9 +1633,9 @@ class Line(BaseHTML):
         Args:
             *children: The children of the component.
             x1: The x-axis coordinate of the line starting point.
-            x2: The x-axis coordinate of the line ending point.
+            x2: The x-axis coordinate of the the line ending point.
             y1: The y-axis coordinate of the line starting point.
-            y2: The y-axis coordinate of the line ending point.
+            y2: The y-axis coordinate of the the line ending point.
             path_length: The total path length, in user units.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
