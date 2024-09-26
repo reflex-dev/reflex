@@ -318,9 +318,9 @@ def run_backend_prod(
         notify_backend()
 
     if should_not_use_granian():
-        run_granian_backend_prod(host, port, loglevel)
-    else:
         run_uvicorn_backend_prod(host, port, loglevel)
+    else:
+        run_granian_backend_prod(host, port, loglevel)
 
 
 def run_uvicorn_backend_prod(host, port, loglevel):
