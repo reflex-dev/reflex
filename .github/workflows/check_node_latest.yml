@@ -10,6 +10,7 @@ on:
 
 env:
     TELEMETRY_ENABLED: false
+    REFLEX_USE_SYSTEM_NODE: true
 
 jobs:
     check_latest_node:
@@ -32,7 +33,7 @@ jobs:
                 poetry run uv pip install pyvirtualdisplay pillow
                 poetry run playwright install --with-deps
             - run: |
-                # poetry run pytest tests/test_node_version.py
+                poetry run pytest tests/test_node_version.py
                 poetry run pytest tests/integration
   
 
