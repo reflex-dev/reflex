@@ -929,7 +929,7 @@ def parse_args_spec(arg_spec: ArgsSpec):
     )
 
 
-def check_fn_match_arg_spec(fn: Callable, arg_spec: ArgsSpec):
+def check_fn_match_arg_spec(fn: Callable | callable, arg_spec: ArgsSpec | Any):
     """Ensures that the function signature matches the passed argument specification
     or raises an EventFnArgMismatch if they do not.
 
@@ -941,8 +941,7 @@ def check_fn_match_arg_spec(fn: Callable, arg_spec: ArgsSpec):
         list: The parsed arguments from the argument specification.
 
     Raises:
-        EventFnArgMismatch: Raised if the number of mandatory arguments in the
-        function's signature does not match the number of arguments in the argument specification.
+        EventFnArgMismatch: Raised if the number of mandatory arguments do not match
     """
     fn_args = inspect.getfullargspec(fn).args
     fn_defaults_args = inspect.getfullargspec(fn).defaults
