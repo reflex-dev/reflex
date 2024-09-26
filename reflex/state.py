@@ -72,7 +72,7 @@ from reflex.utils.exceptions import (
     LockExpiredError,
 )
 from reflex.utils.exec import is_testing_env
-from reflex.utils.serializers import SerializedType, serialize, serializer
+from reflex.utils.serializers import serializer
 from reflex.utils.types import override
 from reflex.vars import VarData
 
@@ -3646,7 +3646,7 @@ class MutableProxy(wrapt.ObjectProxy):
 
 
 @serializer
-def serialize_mutable_proxy(mp: MutableProxy) -> SerializedType:
+def serialize_mutable_proxy(mp: MutableProxy):
     """Serialize the wrapped value of a MutableProxy.
 
     Args:
@@ -3658,10 +3658,7 @@ def serialize_mutable_proxy(mp: MutableProxy) -> SerializedType:
     Raises:
         ValueError: when the wrapped object is not serializable.
     """
-    value = serialize(mp.__wrapped__)
-    if value is None:
-        raise ValueError(f"Cannot serialize {type(mp.__wrapped__)}")
-    return value
+    return mp.__wrapped__
 
 
 class ImmutableMutableProxy(MutableProxy):
