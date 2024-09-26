@@ -3269,9 +3269,22 @@ def test_assignment_to_undeclared_vars():
 
     class State(BaseState):
         val: str
+        _val: str
+        __val: str
 
-        def handle(self):
+        def handle_supported_regular_vars(self):
+            self.val = "no underscore"
+            self._val = "single leading underscore"
+            self.__val = "double leading undercore"
+
+        def handle_regular_var(self):
             self.num = 5
+
+        def handle_backend_var(self):
+            self._num = 5
+
+        def handle_non_var(self):
+            self.__num = 5
 
     class Substate(State):
         def handle_var(self):
@@ -3281,7 +3294,16 @@ def test_assignment_to_undeclared_vars():
     sub_state = Substate()  # type: ignore
 
     with pytest.raises(AttributeError):
-        state.handle()
+        state.handle_regular_var()
 
     with pytest.raises(AttributeError):
         sub_state.handle_var()
+
+    # TODO: uncomment this if the case of backend vars are supported.
+    # with pytest.raises(AttributeError):
+    #     state.handle_backend_var()
+    #
+    # with pytest.raises(AttributeError):
+    #     state.handle_non_var()
+
+    state.handle_supported_regular_vars()
