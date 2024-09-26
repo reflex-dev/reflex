@@ -3265,7 +3265,8 @@ def test_child_mixin_state() -> None:
 
 
 def test_assignment_to_undeclared_vars():
-    """Test that an attribute error is thrown when undeclared vars are set"""
+    """Test that an attribute error is thrown when undeclared vars are set."""
+
     class State(BaseState):
         val: str
 
@@ -3273,7 +3274,6 @@ def test_assignment_to_undeclared_vars():
             self.num = 5
 
     class Substate(State):
-
         def handle_var(self):
             self.value = 20
 
@@ -3285,3 +3285,6 @@ def test_assignment_to_undeclared_vars():
 
     with pytest.raises(AttributeError):
         sub_state.handle()
+
+    with pytest.raises(AttributeError):
+        sub_state.handle_var()
