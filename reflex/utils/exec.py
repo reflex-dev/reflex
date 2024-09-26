@@ -178,13 +178,13 @@ def run_frontend_prod(root: Path, port: str, backend_present=True):
     )
 
 
-def should_use_granian():
+def should_not_use_granian():
     """Whether to use Granian for backend.
 
     Returns:
         True if Granian should be used.
     """
-    return os.getenv("REFLEX_USE_GRANIAN", "0") == "1"
+    return os.getenv("REFLEX_USE_GRANIAN", "1") == "0"
 
 
 def get_app_module():
@@ -232,10 +232,10 @@ def run_backend(
         notify_backend()
 
     # Run the backend in development mode.
-    if should_use_granian():
-        run_granian_backend(host, port, loglevel)
-    else:
+    if should_not_use_granian():
         run_uvicorn_backend(host, port, loglevel)
+    else:
+        run_granian_backend(host, port, loglevel)
 
 
 def run_uvicorn_backend(host, port, loglevel: LogLevel):
@@ -317,7 +317,7 @@ def run_backend_prod(
     if not frontend_present:
         notify_backend()
 
-    if should_use_granian():
+    if should_not_use_granian():
         run_granian_backend_prod(host, port, loglevel)
     else:
         run_uvicorn_backend_prod(host, port, loglevel)
