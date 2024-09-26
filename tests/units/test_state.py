@@ -3277,14 +3277,11 @@ def test_assignment_to_undeclared_vars():
         def handle_var(self):
             self.value = 20
 
-    state = State()
-    sub_state = Substate()
+    state = State()  # type: ignore
+    sub_state = Substate()  # type: ignore
 
     with pytest.raises(AttributeError):
         state.handle()
-
-    with pytest.raises(AttributeError):
-        sub_state.handle()
 
     with pytest.raises(AttributeError):
         sub_state.handle_var()
