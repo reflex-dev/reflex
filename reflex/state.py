@@ -1260,6 +1260,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             name: The name of the attribute.
             value: The value of the attribute.
+
+        Raises:
+            AttributeError: If a value of a var is set without first defining it.
         """
         if isinstance(value, MutableProxy):
             # unwrap proxy objects when assigning back to the state
