@@ -1,5 +1,5 @@
 from reflex.components.radix.primitives.form import Form
-from reflex.event import EventChain
+from reflex.event import EventChain, prevent_default
 from reflex.vars.base import Var
 
 
@@ -15,7 +15,6 @@ def test_render_on_submit():
 
 
 def test_render_no_on_submit():
-    """A form without on_submit should not render a submit handler."""
+    """A form without on_submit should render a prevent_default handler."""
     f = Form.create()
-    for prop in f.render()["props"]:
-        assert "onSubmit" not in prop
+    assert f.event_triggers["on_submit"] == prevent_default
