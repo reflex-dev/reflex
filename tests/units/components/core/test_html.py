@@ -19,7 +19,7 @@ def test_html_create():
     assert str(html.dangerouslySetInnerHTML) == '({ ["__html"] : "<p>Hello !</p>" })'  # type: ignore
     assert (
         str(html)
-        == '<div className={"rx-Html prose"} dangerouslySetInnerHTML={({ ["__html"] : "<p>Hello !</p>" })}/>'
+        == '<div className={"rx-Html"} dangerouslySetInnerHTML={({ ["__html"] : "<p>Hello !</p>" })}/>'
     )
 
 
@@ -37,5 +37,5 @@ def test_html_fstring_create():
     )
     assert (
         str(html)
-        == f'<div className={{"rx-Html prose"}} dangerouslySetInnerHTML={{{str(html.dangerouslySetInnerHTML)}}}/>'  # type: ignore
+        == f'<div className={{"rx-Html"}} dangerouslySetInnerHTML={{{str(html.dangerouslySetInnerHTML)}}}/>'  # type: ignore
     )
