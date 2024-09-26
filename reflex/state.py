@@ -3658,16 +3658,13 @@ class MutableProxy(wrapt.ObjectProxy):
 
 @serializer
 def serialize_mutable_proxy(mp: MutableProxy):
-    """Serialize the wrapped value of a MutableProxy.
+    """Return the wrapped value of a MutableProxy.
 
     Args:
         mp: The MutableProxy to serialize.
 
     Returns:
-        The serialized wrapped object.
-
-    Raises:
-        ValueError: when the wrapped object is not serializable.
+        The wrapped object.
     """
     return mp.__wrapped__
 
