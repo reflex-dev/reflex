@@ -426,6 +426,39 @@ class LinearGradient(BaseHTML):
     y2: Var[Union[str, int, bool]]
 
 
+class RadialGradient(BaseHTML):
+    """Display the radialGradient element."""
+
+    tag = "radialGradient"
+
+    # The x coordinate of the end circle of the radial gradient.
+    cx: Var[Union[str, int, bool]]
+
+    # The y coordinate of the end circle of the radial gradient.
+    cy: Var[Union[str, int, bool]]
+
+    # The radius of the start circle of the radial gradient.
+    fr: Var[Union[str, int, bool]]
+
+    # The x coordinate of the start circle of the radial gradient.
+    fx: Var[Union[str, int, bool]]
+
+    # The y coordinate of the start circle of the radial gradient.
+    fy: Var[Union[str, int, bool]]
+
+    # Units for the gradient.
+    gradient_units: Var[Union[str, bool]]
+
+    # Transform applied to the gradient.
+    gradient_transform: Var[Union[str, bool]]
+
+    # The radius of the end circle of the radial gradient.
+    r: Var[Union[str, int, bool]]
+
+    # Method used to spread the gradient.
+    spread_method: Var[Union[str, bool]]
+
+
 class Stop(BaseHTML):
     """Display the stop element."""
 
@@ -461,6 +494,7 @@ class SVG(ComponentNamespace):
     path = staticmethod(Path.create)
     stop = staticmethod(Stop.create)
     linear_gradient = staticmethod(LinearGradient.create)
+    radial_gradient = staticmethod(RadialGradient.create)
     defs = staticmethod(Defs.create)
     __call__ = staticmethod(Svg.create)
 
