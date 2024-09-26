@@ -8,6 +8,7 @@ import webbrowser
 from pathlib import Path
 from typing import List, Optional
 
+from reflex.constants.base import LogLevel
 import typer
 import typer.core
 from reflex_cli.deployments import deployments_cli
@@ -245,15 +246,30 @@ def _run(
         setup_frontend(Path.cwd())
         commands.append((frontend_cmd, Path.cwd(), frontend_port, backend))
 
+    # If no loglevel is specified, set the subprocesses loglevel to WARNING.
+    subprocesses_loglevel = (
+        loglevel if loglevel != LogLevel.DEFAULT else LogLevel.WARNING
+    )
+
     # In prod mode, run the backend on a separate thread.
     if backend and env == constants.Env.PROD:
-        commands.append((backend_cmd, backend_host, backend_port, loglevel, frontend))
+        commands.append(
+            (
+                backend_cmd,
+                backend_host,
+                backend_port,
+                subprocesses_loglevel,
+                frontend,
+            )
+        )
 
     # Start the frontend and backend.
     with processes.run_concurrently_context(*commands):
         # In dev mode, run the backend on the main thread.
         if backend and env == constants.Env.DEV:
-            backend_cmd(backend_host, int(backend_port), loglevel, frontend)
+            backend_cmd(
+                backend_host, int(backend_port), subprocesses_loglevel, frontend
+            )
             # The windows uvicorn bug workaround
             # https://github.com/reflex-dev/reflex/issues/2335
             if constants.IS_WINDOWS and exec.frontend_process:
