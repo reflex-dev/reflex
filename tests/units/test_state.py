@@ -3262,3 +3262,26 @@ def test_child_mixin_state() -> None:
 
     assert "computed" in ChildUsesMixinState.inherited_vars
     assert "computed" not in ChildUsesMixinState.computed_vars
+
+
+def test_assignment_to_undeclared_vars():
+    """Test that an attribute error is thrown when undeclared vars are set"""
+    class State(BaseState):
+        val: str
+
+        def handle(self):
+            self.num = 5
+
+    class Substate(State):
+
+        def handle_var(self):
+            self.value = 20
+
+    state = State()
+    sub_state = Substate()
+
+    with pytest.raises(AttributeError):
+        state.handle()
+
+    with pytest.raises(AttributeError):
+        sub_state.handle()

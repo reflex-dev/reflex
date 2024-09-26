@@ -1277,6 +1277,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self._mark_dirty()
             return
 
+        if not name in self.vars and not name in self._computed_var_dependencies and not name in self.get_skip_vars():
+            raise AttributeError(f"The state var '{name}' has not been defined in '{type(self).__name__}'. All state vars must be declared before they can be set.")
+
         # Set the attribute.
         super().__setattr__(name, value)
 
