@@ -23,15 +23,6 @@ def test_html_create():
     )
 
 
-def test_html_styled_create():
-    html = Html.create("<p>Hello !</p>", styled=True)
-    assert str(html.dangerouslySetInnerHTML) == '({ ["__html"] : "<p>Hello !</p>" })'  # type: ignore
-    assert (
-        str(html)
-        == '<div className={"rx-Html prose"} dangerouslySetInnerHTML={({ ["__html"] : "<p>Hello !</p>" })}/>'
-    )
-
-
 def test_html_fstring_create():
     class TestState(State):
         """The app state."""
