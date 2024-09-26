@@ -193,11 +193,7 @@ def get_app_module():
     Returns:
         The app module for the backend.
     """
-    import reflex
-
-    app_module_path = Path(reflex.__file__).parent / "app_module_for_backend.py"
-
-    return f"{str(app_module_path)}:{constants.CompileVars.APP}"
+    return f"reflex.app_module_for_backend:{constants.CompileVars.APP}"
 
 
 def get_granian_target():
@@ -206,7 +202,11 @@ def get_granian_target():
     Returns:
         The Granian target for the backend.
     """
-    return get_app_module() + f".{constants.CompileVars.API}"
+    import reflex
+
+    app_module_path = Path(reflex.__file__).parent / "app_module_for_backend.py"
+
+    return f"{str(app_module_path)}:{constants.CompileVars.APP}.{constants.CompileVars.API}"
 
 
 def run_backend(
