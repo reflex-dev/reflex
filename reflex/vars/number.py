@@ -526,7 +526,7 @@ class NumberVar(Var[NUMBER_T]):
             The boolean value of the number.
         """
         if is_optional(self._var_type):
-            return boolify((self != 0) & (self != None))  # noqa: E711
+            return boolify((self != None) & (self != 0))  # noqa: E711
         return self != 0
 
     def _is_strict_float(self) -> bool:
