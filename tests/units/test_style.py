@@ -15,9 +15,9 @@ test_style = [
     ({"a": 1}, {"a": 1}),
     ({"a": LiteralVar.create("abc")}, {"a": "abc"}),
     ({"test_case": 1}, {"testCase": 1}),
-    ({"test_case": {"a": 1}}, {"testCase": {"a": 1}}),
-    ({":test_case": {"a": 1}}, {":testCase": {"a": 1}}),
-    ({"::test_case": {"a": 1}}, {"::testCase": {"a": 1}}),
+    ({"test_case": {"a": 1}}, {"test_case": {"a": 1}}),
+    ({":test_case": {"a": 1}}, {":test_case": {"a": 1}}),
+    ({"::test_case": {"a": 1}}, {"::test_case": {"a": 1}}),
     (
         {"::-webkit-scrollbar": {"display": "none"}},
         {"::-webkit-scrollbar": {"display": "none"}},

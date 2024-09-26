@@ -429,11 +429,11 @@ def add_meta(
     Returns:
         The component with the metadata added.
     """
-    meta_tags = [Meta.create(**item) for item in meta]
-
-    children: list[Any] = [
-        Title.create(title),
+    meta_tags = [
+        item if isinstance(item, Component) else Meta.create(**item) for item in meta
     ]
+
+    children: list[Any] = [Title.create(title)]
     if description:
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))

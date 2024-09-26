@@ -14,7 +14,7 @@ from reflex.utils import format
 from reflex.utils.serializers import serialize_figure
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.object import ObjectVar
-from tests.test_state import (
+from tests.units.test_state import (
     ChildState,
     ChildState2,
     ChildState3,

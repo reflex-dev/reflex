@@ -12,6 +12,7 @@ import os
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from hashlib import md5
 from pathlib import Path
 from types import FunctionType, MethodType
 from typing import (
@@ -1316,7 +1317,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for part1, part2 in zip(
             cls.get_full_name().split("."),
             other.get_full_name().split("."),
-            strict=False,
         ):
             if part1 != part2:
                 break
@@ -2589,16 +2589,24 @@ def _serialize_type(type_: Any) -> str:
     return f"{type_.__module__}.{type_.__qualname__}"
 
 
+def is_serializable(value: Any) -> bool:
+    """Check if a value is serializable.
+
+    Args:
+        value: The value to check.
+
+    Returns:
+        Whether the value is serializable.
+    """
+    try:
+        return bool(dill.dumps(value))
+    except Exception:
+        return False
+
+
 def state_to_schema(
     state: BaseState,
-) -> List[
-    Tuple[
-        str,
-        str,
-        Any,
-        Union[bool, None],
-    ]
-]:
+) -> List[Tuple[str, str, Any, Union[bool, None], Any]]:
     """Convert a state to a schema.
 
     Args:
@@ -2618,6 +2626,7 @@ def state_to_schema(
                     if isinstance(model_field.required, bool)
                     else None
                 ),
+                (model_field.default if is_serializable(model_field.default) else None),
             )
             for field_name, model_field in state.__fields__.items()
         )
@@ -2702,7 +2711,9 @@ class StateManagerDisk(StateManager):
         Returns:
             The path for the token.
         """
-        return (self.states_directory / f"{token}.pkl").absolute()
+        return (
+            self.states_directory / f"{md5(token.encode()).hexdigest()}.pkl"
+        ).absolute()
 
     async def load_state(self, token: str, root_state: BaseState) -> BaseState:
         """Load a state object based on the provided token.

@@ -55,6 +55,7 @@ from reflex.utils.imports import (
 )
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
+from reflex.vars.sequence import LiteralArrayVar
 
 
 class BaseComponent(Base, ABC):
@@ -448,8 +449,16 @@ class Component(BaseComponent, ABC):
                     and not types._issubclass(passed_type, expected_type, value)
                 ):
                     value_name = value._js_expr if isinstance(value, Var) else value
+
+                    additional_info = (
+                        " You can call `.bool()` on the value to convert it to a boolean."
+                        if expected_type is bool and isinstance(value, Var)
+                        else ""
+                    )
+
                     raise TypeError(
                         f"Invalid var passed for prop {type(self).__name__}.{key}, expected type {expected_type}, got value {value_name} of type {passed_type}."
+                        + additional_info
                     )
             # Check if the key is an event trigger.
             if key in component_specific_triggers:
@@ -469,7 +478,7 @@ class Component(BaseComponent, ABC):
             # Merge styles, the later ones overriding keys in the earlier ones.
             style = {k: v for style_dict in style for k, v in style_dict.items()}
 
-        if isinstance(style, Breakpoints):
+        if isinstance(style, (Breakpoints, Var)):
             style = {
                 # Assign the Breakpoints to the self-referential selector to avoid squashing down to a regular dict.
                 "&": style,
@@ -488,7 +497,12 @@ class Component(BaseComponent, ABC):
         # Convert class_name to str if it's list
         class_name = kwargs.get("class_name", "")
         if isinstance(class_name, (List, tuple)):
-            kwargs["class_name"] = " ".join(class_name)
+            if any(isinstance(c, Var) for c in class_name):
+                kwargs["class_name"] = LiteralArrayVar.create(
+                    class_name, _var_type=List[str]
+                ).join(" ")
+            else:
+                kwargs["class_name"] = " ".join(class_name)
 
         # Construct the component.
         super().__init__(*args, **kwargs)

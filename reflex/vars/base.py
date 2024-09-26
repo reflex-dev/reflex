@@ -2667,7 +2667,7 @@ def generic_type_to_actual_type_map(
     # call recursively for nested generic types and merge the results
     return {
         k: v
-        for generic_arg, actual_arg in zip(generic_args, actual_args, strict=False)
+        for generic_arg, actual_arg in zip(generic_args, actual_args)
         for k, v in generic_type_to_actual_type_map(generic_arg, actual_arg).items()
     }
 
