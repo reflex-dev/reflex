@@ -18,10 +18,12 @@ from typing import (
     get_type_hints,
 )
 
+from typing_extensions import get_args, get_origin
+
 from reflex import constants
 from reflex.utils import format
 from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
-from reflex.utils.types import ArgsSpec
+from reflex.utils.types import ArgsSpec, GenericType
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import FunctionStringVar, FunctionVar
@@ -910,6 +912,20 @@ def call_event_handler(
         )
 
 
+def unwrap_var_annotation(annotation: GenericType):
+    """Unwrap a Var annotation or return it as is if it's not Var[X].
+
+    Args:
+        annotation: The annotation to unwrap.
+
+    Returns:
+        The unwrapped annotation.
+    """
+    if get_origin(annotation) is Var and (args := get_args(annotation)):
+        return args[0]
+    return annotation
+
+
 def parse_args_spec(arg_spec: ArgsSpec):
     """Parse the args provided in the ArgsSpec of an event trigger.
 
@@ -921,9 +937,12 @@ def parse_args_spec(arg_spec: ArgsSpec):
     """
     spec = inspect.getfullargspec(arg_spec)
     annotations = get_type_hints(arg_spec)
+
     return arg_spec(
         *[
-            Var(f"_{l_arg}").to(annotations.get(l_arg, FrontendEvent))
+            Var(f"_{l_arg}").to(
+                unwrap_var_annotation(annotations.get(l_arg, FrontendEvent))
+            )
             for l_arg in spec.args
         ]
     )
