@@ -73,7 +73,7 @@ from reflex.utils.exceptions import (
     LockExpiredError,
 )
 from reflex.utils.exec import is_testing_env
-from reflex.utils.serializers import SerializedType, serialize, serializer
+from reflex.utils.serializers import serializer
 from reflex.utils.types import override
 from reflex.vars import VarData
 
@@ -1790,9 +1790,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for substate in self.dirty_substates.union(self._always_dirty_substates):
             delta.update(substates[substate].get_delta())
 
-        # Format the delta.
-        delta = format.format_state(delta)
-
         # Return the delta.
         return delta
 
@@ -2433,7 +2430,7 @@ class StateUpdate:
         Returns:
             The state update as a JSON string.
         """
-        return format.json_dumps(dataclasses.asdict(self))
+        return format.json_dumps(self)
 
 
 class StateManager(Base, ABC):
@@ -3660,22 +3657,16 @@ class MutableProxy(wrapt.ObjectProxy):
 
 
 @serializer
-def serialize_mutable_proxy(mp: MutableProxy) -> SerializedType:
-    """Serialize the wrapped value of a MutableProxy.
+def serialize_mutable_proxy(mp: MutableProxy):
+    """Return the wrapped value of a MutableProxy.
 
     Args:
         mp: The MutableProxy to serialize.
 
     Returns:
-        The serialized wrapped object.
-
-    Raises:
-        ValueError: when the wrapped object is not serializable.
+        The wrapped object.
     """
-    value = serialize(mp.__wrapped__)
-    if value is None:
-        raise ValueError(f"Cannot serialize {type(mp.__wrapped__)}")
-    return value
+    return mp.__wrapped__
 
 
 class ImmutableMutableProxy(MutableProxy):
