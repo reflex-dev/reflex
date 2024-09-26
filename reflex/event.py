@@ -417,7 +417,7 @@ class FileUpload:
     on_upload_progress: Optional[Union[EventHandler, Callable]] = None
 
     @staticmethod
-    def on_upload_progress_args_spec(_prog: Dict[str, Union[int, float, bool]]):
+    def on_upload_progress_args_spec(_prog: Var[Dict[str, Union[int, float, bool]]]):
         """Args spec for on_upload_progress event handler.
 
         Returns:
@@ -929,16 +929,16 @@ def parse_args_spec(arg_spec: ArgsSpec):
     )
 
 
-def check_fn_match_arg_spec(fn: Callable | callable, arg_spec: ArgsSpec | Any):
+def check_fn_match_arg_spec(fn: Callable, arg_spec: ArgsSpec) -> List[Var]:
     """Ensures that the function signature matches the passed argument specification
     or raises an EventFnArgMismatch if they do not.
 
     Args:
-        fn (callable): The function to be validated.
-        arg_spec (Any): The argument specification for the event trigger.
+        fn: The function to be validated.
+        arg_spec: The argument specification for the event trigger.
 
     Returns:
-        list: The parsed arguments from the argument specification.
+        The parsed arguments from the argument specification.
 
     Raises:
         EventFnArgMismatch: Raised if the number of mandatory arguments do not match

@@ -97,7 +97,7 @@ def test_call_event_handler_partial():
 
     test_fn_with_args.__qualname__ = "test_fn_with_args"
 
-    def spec(a2: str) -> List[str]:
+    def spec(a2: Var[str]) -> List[Var[str]]:
         return [a2]
 
     handler = EventHandler(fn=test_fn_with_args)

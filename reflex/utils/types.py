@@ -9,6 +9,7 @@ import sys
 import types
 from functools import cached_property, lru_cache, wraps
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
@@ -96,8 +97,22 @@ PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
 StateVar = Union[PrimitiveType, Base, None]
 StateIterVar = Union[list, set, tuple]
 
-# ArgsSpec = Callable[[Var], list[Var]]
-ArgsSpec = Callable
+if TYPE_CHECKING:
+    from reflex.vars.base import Var
+
+    # ArgsSpec = Callable[[Var], list[Var]]
+    ArgsSpec = (
+        Callable[[], List[Var]]
+        | Callable[[Var], List[Var]]
+        | Callable[[Var, Var], List[Var]]
+        | Callable[[Var, Var, Var], List[Var]]
+        | Callable[[Var, Var, Var, Var], List[Var]]
+        | Callable[[Var, Var, Var, Var, Var], List[Var]]
+        | Callable[[Var, Var, Var, Var, Var, Var], List[Var]]
+        | Callable[[Var, Var, Var, Var, Var, Var, Var], List[Var]]
+    )
+else:
+    ArgsSpec = Callable[..., List[Any]]
 
 
 PrimitiveToAnnotation = {
