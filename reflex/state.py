@@ -2592,16 +2592,24 @@ def _serialize_type(type_: Any) -> str:
     return f"{type_.__module__}.{type_.__qualname__}"
 
 
+def is_serializable(value: Any) -> bool:
+    """Check if a value is serializable.
+
+    Args:
+        value: The value to check.
+
+    Returns:
+        Whether the value is serializable.
+    """
+    try:
+        return bool(dill.dumps(value))
+    except Exception:
+        return False
+
+
 def state_to_schema(
     state: BaseState,
-) -> List[
-    Tuple[
-        str,
-        str,
-        Any,
-        Union[bool, None],
-    ]
-]:
+) -> List[Tuple[str, str, Any, Union[bool, None], Any]]:
     """Convert a state to a schema.
 
     Args:
@@ -2621,6 +2629,7 @@ def state_to_schema(
                     if isinstance(model_field.required, bool)
                     else None
                 ),
+                (model_field.default if is_serializable(model_field.default) else None),
             )
             for field_name, model_field in state.__fields__.items()
         )
