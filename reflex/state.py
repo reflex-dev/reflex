@@ -24,7 +24,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Self,
     Sequence,
     Set,
     Tuple,
@@ -35,6 +34,7 @@ from typing import (
 
 import dill
 from sqlalchemy.orm import DeclarativeBase
+from typing_extensions import Self
 
 from reflex.config import get_config
 from reflex.vars.base import (
