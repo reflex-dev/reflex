@@ -173,6 +173,7 @@ class LogLevel(str, Enum):
     """The log levels."""
 
     DEBUG = "debug"
+    DEFAULT = "default"
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"

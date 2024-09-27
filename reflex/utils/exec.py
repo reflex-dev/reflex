@@ -16,6 +16,7 @@ import psutil
 
 from reflex import constants
 from reflex.config import get_config
+from reflex.constants.base import LogLevel
 from reflex.utils import console, path_ops
 from reflex.utils.prerequisites import get_web_dir
 
@@ -201,7 +202,11 @@ def get_granian_target():
     Returns:
         The Granian target for the backend.
     """
-    return get_app_module() + f".{constants.CompileVars.API}"
+    import reflex
+
+    app_module_path = Path(reflex.__file__).parent / "app_module_for_backend.py"
+
+    return f"{str(app_module_path)}:{constants.CompileVars.APP}.{constants.CompileVars.API}"
 
 
 def run_backend(
@@ -233,7 +238,7 @@ def run_backend(
         run_uvicorn_backend(host, port, loglevel)
 
 
-def run_uvicorn_backend(host, port, loglevel):
+def run_uvicorn_backend(host, port, loglevel: LogLevel):
     """Run the backend in development mode using Uvicorn.
 
     Args:
@@ -253,7 +258,7 @@ def run_uvicorn_backend(host, port, loglevel):
     )
 
 
-def run_granian_backend(host, port, loglevel):
+def run_granian_backend(host, port, loglevel: LogLevel):
     """Run the backend in development mode using Granian.
 
     Args:
