@@ -24,6 +24,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Self,
     Sequence,
     Set,
     Tuple,
@@ -42,6 +43,7 @@ from reflex.vars.base import (
     Var,
     computed_var,
     dispatch,
+    get_unique_variable_name,
     is_computed_var,
 )
 
@@ -77,8 +79,8 @@ from reflex.utils.serializers import serializer
 from reflex.utils.types import override
 from reflex.vars import VarData
 
-if TYPE_CHECKING:
-    from reflex.components.component import Component
+# if TYPE_CHECKING:
+#     from reflex.components.component import Component
 
 
 Delta = Dict[str, Any]
@@ -684,6 +686,33 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             and not isinstance(value, EventHandler)
             and hasattr(value, "__code__")
         )
+
+    @classmethod
+    def _evaluate(cls, f: Callable[[Self], Any]) -> Var:
+        """Evaluate a function to a ComputedVar. Experimental.
+
+        Args:
+            f: The function to evaluate.
+
+        Returns:
+            The ComputedVar.
+        """
+        from reflex.components.base.fragment import fragment
+        from reflex.components.component import Component
+
+        unique_var_name = get_unique_variable_name()
+
+        @computed_var(_js_expr=unique_var_name, return_type=Component)
+        def computed_var_func(state: Self):
+            return fragment(f(state))
+
+        setattr(cls, unique_var_name, computed_var_func)
+        cls.computed_vars[unique_var_name] = computed_var_func
+        cls.vars[unique_var_name] = computed_var_func
+        cls._update_substate_inherited_vars({unique_var_name: computed_var_func})
+        cls._always_dirty_computed_vars.add(unique_var_name)
+
+        return getattr(cls, unique_var_name)
 
     @classmethod
     def _mixins(cls) -> List[Type]:
