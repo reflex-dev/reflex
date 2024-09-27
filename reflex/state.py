@@ -79,8 +79,8 @@ from reflex.utils.serializers import serializer
 from reflex.utils.types import override
 from reflex.vars import VarData
 
-# if TYPE_CHECKING:
-#     from reflex.components.component import Component
+if TYPE_CHECKING:
+    from reflex.components.component import Component
 
 
 Delta = Dict[str, Any]
@@ -697,6 +697,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The ComputedVar.
         """
+        console.warn(
+            "The _evaluate method is experimental and may be removed in future versions."
+        )
         from reflex.components.base.fragment import fragment
         from reflex.components.component import Component
 
