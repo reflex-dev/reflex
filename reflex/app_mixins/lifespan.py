@@ -11,6 +11,7 @@ from typing import Callable, Coroutine, Set, Union
 from fastapi import FastAPI
 
 from reflex.utils import console
+from reflex.utils.exceptions import InvalidLifespanTaskType
 
 from .mixin import AppMixin
 
@@ -27,7 +28,7 @@ class LifespanMixin(AppMixin):
         try:
             async with contextlib.AsyncExitStack() as stack:
                 for task in self.lifespan_tasks:
-                    console.debug(f"Running lifespan task: {task}")
+                    run_msg = f"Started lifespan task: {task.__name__} as {{type}}"  # type: ignore
                     if isinstance(task, asyncio.Task):
                         running_tasks.append(task)
                     else:
@@ -37,11 +38,18 @@ class LifespanMixin(AppMixin):
                         _t = task()
                         if isinstance(_t, contextlib._AsyncGeneratorContextManager):
                             await stack.enter_async_context(_t)
+                            console.debug(run_msg.format(type="async context manager"))
                         elif isinstance(_t, Coroutine):
-                            running_tasks.append(asyncio.create_task(_t))
+                            task_ = asyncio.create_task(_t)
+                            task_.add_done_callback(lambda t: t.result())
+                            running_tasks.append(task_)
+                            console.debug(run_msg.format(type="coroutine"))
+                        else:
+                            console.debug(run_msg.format(type="function"))
                 yield
         finally:
             for task in running_tasks:
+                console.debug(f"Canceling lifespan task: {task}")
                 task.cancel(msg="lifespan_cleanup")
 
     def register_lifespan_task(self, task: Callable | asyncio.Task, **task_kwargs):
@@ -50,8 +58,16 @@ class LifespanMixin(AppMixin):
         Args:
             task: The task to register.
             task_kwargs: The kwargs of the task.
+
+        Raises:
+            InvalidLifespanTaskType: If the task is a generator function.
         """
+        if inspect.isgeneratorfunction(task) or inspect.isasyncgenfunction(task):
+            raise InvalidLifespanTaskType(
+                f"Task {task.__name__} of type generator must be decorated with contextlib.asynccontextmanager."
+            )
+
         if task_kwargs:
             task = functools.partial(task, **task_kwargs)  # type: ignore
         self.lifespan_tasks.add(task)  # type: ignore
-        console.debug(f"Registered lifespan task: {task}")
+        console.debug(f"Registered lifespan task: {task.__name__}")  # type: ignore
