@@ -797,7 +797,7 @@ class AppHarness:
             raise RuntimeError("App is not running.")
         state_manager = self.app_instance.state_manager
         if not isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
-            raise ValueError("Only works with memory state manager")
+            raise ValueError("Only works with memory or disk state manager")
         if not self._poll_for(
             target=lambda: state_manager.states,
             timeout=timeout,
