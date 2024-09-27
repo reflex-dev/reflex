@@ -38,7 +38,7 @@ class LifespanMixin(AppMixin):
                         _t = task()
                         if isinstance(_t, contextlib._AsyncGeneratorContextManager):
                             await stack.enter_async_context(_t)
-                            console.debug(run_msg.format(type="async context manager"))
+                            console.debug(run_msg.format(type="asynccontextmanager"))
                         elif isinstance(_t, Coroutine):
                             task_ = asyncio.create_task(_t)
                             task_.add_done_callback(lambda t: t.result())
@@ -68,6 +68,8 @@ class LifespanMixin(AppMixin):
             )
 
         if task_kwargs:
+            original_task = task
             task = functools.partial(task, **task_kwargs)  # type: ignore
+            functools.update_wrapper(task, original_task)  # type: ignore
         self.lifespan_tasks.add(task)  # type: ignore
         console.debug(f"Registered lifespan task: {task.__name__}")  # type: ignore
