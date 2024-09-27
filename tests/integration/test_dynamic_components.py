@@ -16,6 +16,8 @@ def DynamicComponents():
     import reflex as rx
 
     class DynamicComponentsState(rx.State):
+        value: int = 10
+
         button: rx.Component = rx.button(
             "Click me",
             custom_attrs={
@@ -52,11 +54,20 @@ def DynamicComponents():
 
     app = rx.App()
 
+    def factorial(n: int) -> int:
+        if n == 0:
+            return 1
+        return n * factorial(n - 1)
+
     @app.add_page
     def index():
         return rx.vstack(
             DynamicComponentsState.client_token_component,
             DynamicComponentsState.button,
+            rx.text(
+                DynamicComponentsState._evaluate(lambda state: factorial(state.value)),
+                id="factorial",
+            ),
         )
 
 
@@ -150,3 +161,7 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
         dynamic_components.poll_for_content(button, exp_not_equal="Click me")
         == "Clicked"
     )
+
+    factorial = poll_for_result(lambda: driver.find_element(By.ID, "factorial"))
+    assert factorial
+    assert factorial.text == "3628800"
