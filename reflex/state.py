@@ -30,6 +30,7 @@ from typing import (
     Type,
     Union,
     cast,
+    get_type_hints,
 )
 
 import dill
@@ -573,6 +574,15 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for name, value in cls.__dict__.items()
             if types.is_backend_base_variable(name, cls)
         }
+        # Add annotated backend vars that do not have a default value.
+        new_backend_vars.update(
+            {
+                name: Var("", _var_type=annotation_value).get_default_value()
+                for name, annotation_value in get_type_hints(cls).items()
+                if name not in new_backend_vars
+                and types.is_backend_base_variable(name, cls)
+            }
+        )
 
         cls.backend_vars = {
             **cls.inherited_backend_vars,

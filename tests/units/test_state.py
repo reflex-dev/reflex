@@ -3216,6 +3216,7 @@ class MixinState(State, mixin=True):
 
     num: int = 0
     _backend: int = 0
+    _backend_no_default: dict
 
     @rx.var(cache=True)
     def computed(self) -> str:
@@ -3243,10 +3244,15 @@ def test_mixin_state() -> None:
     """Test that a mixin state works correctly."""
     assert "num" in UsesMixinState.base_vars
     assert "num" in UsesMixinState.vars
-    assert UsesMixinState.backend_vars == {"_backend": 0}
+    assert UsesMixinState.backend_vars == {"_backend": 0, "_backend_no_default": {}}
 
     assert "computed" in UsesMixinState.computed_vars
     assert "computed" in UsesMixinState.vars
+
+    assert (
+        UsesMixinState(_reflex_internal_init=True)._backend_no_default  # type: ignore
+        is not UsesMixinState.backend_vars["_backend_no_default"]
+    )
 
 
 def test_child_mixin_state() -> None:
