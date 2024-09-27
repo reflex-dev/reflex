@@ -6,10 +6,11 @@ import asyncio
 import contextlib
 import functools
 import inspect
-import sys
 from typing import Callable, Coroutine, Set, Union
 
 from fastapi import FastAPI
+
+from reflex.utils import console
 
 from .mixin import AppMixin
 
@@ -26,6 +27,7 @@ class LifespanMixin(AppMixin):
         try:
             async with contextlib.AsyncExitStack() as stack:
                 for task in self.lifespan_tasks:
+                    console.debug(f"Running lifespan task: {task}")
                     if isinstance(task, asyncio.Task):
                         running_tasks.append(task)
                     else:
@@ -39,11 +41,8 @@ class LifespanMixin(AppMixin):
                             running_tasks.append(asyncio.create_task(_t))
                 yield
         finally:
-            cancel_kwargs = (
-                {"msg": "lifespan_cleanup"} if sys.version_info >= (3, 9) else {}
-            )
             for task in running_tasks:
-                task.cancel(**cancel_kwargs)
+                task.cancel(msg="lifespan_cleanup")
 
     def register_lifespan_task(self, task: Callable | asyncio.Task, **task_kwargs):
         """Register a task to run during the lifespan of the app.
@@ -55,3 +54,4 @@ class LifespanMixin(AppMixin):
         if task_kwargs:
             task = functools.partial(task, **task_kwargs)  # type: ignore
         self.lifespan_tasks.add(task)  # type: ignore
+        console.debug(f"Registered lifespan task: {task}")
