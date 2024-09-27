@@ -124,7 +124,8 @@ class DataTable(Gridjs):
         if types.is_dataframe(type(self.data)):
             # If given a pandas df break up the data and columns
             data = serialize(self.data)
-            assert isinstance(data, dict), "Serialized dataframe should be a dict."
+            if not isinstance(data, dict):
+                raise ValueError("Serialized dataframe should be a dict.")
             self.columns = LiteralVar.create(data["columns"])
             self.data = LiteralVar.create(data["data"])
 

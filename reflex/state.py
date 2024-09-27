@@ -838,6 +838,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     def get_parent_state(cls) -> Type[BaseState] | None:
         """Get the parent state.
 
+        Raises:
+            ValueError: If more than one parent state is found.
+
         Returns:
             The parent state.
         """
@@ -846,9 +849,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for base in cls.__bases__
             if issubclass(base, BaseState) and base is not BaseState and not base._mixin
         ]
-        assert (
-            len(parent_states) < 2
-        ), f"Only one parent state is allowed {parent_states}."
+        if len(parent_states) >= 2:
+            raise ValueError(f"Only one parent state is allowed {parent_states}.")
         return parent_states[0] if len(parent_states) == 1 else None  # type: ignore
 
     @classmethod

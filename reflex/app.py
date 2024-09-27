@@ -482,9 +482,8 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         """
         # If the route is not set, get it from the callable.
         if route is None:
-            assert isinstance(
-                component, Callable
-            ), "Route must be set if component is not a callable."
+            if not isinstance(component, Callable):
+                raise ValueError("Route must be set if component is not a callable.")
             # Format the route.
             route = format.format_route(component.__name__)
         else:
@@ -1528,6 +1527,9 @@ class EventNamespace(AsyncNamespace):
     async def on_event(self, sid, data):
         """Event for receiving front-end websocket events.
 
+        Raises:
+            RuntimeError: If the Socket.IO is badly initialized.
+
         Args:
             sid: The Socket.IO session id.
             data: The event data.
@@ -1540,9 +1542,11 @@ class EventNamespace(AsyncNamespace):
         self.sid_to_token[sid] = event.token
 
         # Get the event environment.
-        assert self.app.sio is not None
+        if self.app.sio is None:
+            raise RuntimeError("Socket.IO is not initialized.")
         environ = self.app.sio.get_environ(sid, self.namespace)
-        assert environ is not None
+        if environ is None:
+            raise RuntimeError("Socket.IO environ is not initialized.")
 
         # Get the client headers.
         headers = {

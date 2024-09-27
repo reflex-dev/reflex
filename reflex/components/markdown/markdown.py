@@ -95,12 +95,16 @@ class Markdown(Component):
             *children: The children of the component.
             **props: The properties of the component.
 
+        Raises:
+            ValueError: If the children are not valid.
+
         Returns:
             The markdown component.
         """
-        assert (
-            len(children) == 1 and types._isinstance(children[0], Union[str, Var])
-        ), "Markdown component must have exactly one child containing the markdown source."
+        if len(children) != 1 or not types._isinstance(children[0], Union[str, Var]):
+            raise ValueError(
+                "Markdown component must have exactly one child containing the markdown source."
+            )
 
         # Update the base component map with the custom component map.
         component_map = {**get_base_component_map(), **props.pop("component_map", {})}
