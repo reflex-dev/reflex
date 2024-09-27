@@ -7,7 +7,7 @@ from typing import Any, Iterator
 from reflex.components.component import Component
 from reflex.components.tags import Tag
 from reflex.components.tags.tagless import Tagless
-from reflex.vars.base import Var
+from reflex.vars import ArrayVar, BooleanVar, ObjectVar, Var
 
 
 class Bare(Component):
@@ -33,6 +33,8 @@ class Bare(Component):
 
     def _render(self) -> Tag:
         if isinstance(self.contents, Var):
+            if isinstance(self.contents, (BooleanVar, ObjectVar, ArrayVar)):
+                return Tagless(contents=f"{{{str(self.contents.to_string())}}}")
             return Tagless(contents=f"{{{str(self.contents)}}}")
         return Tagless(contents=str(self.contents))
 

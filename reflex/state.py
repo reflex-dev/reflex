@@ -73,7 +73,7 @@ from reflex.utils.exceptions import (
     LockExpiredError,
 )
 from reflex.utils.exec import is_testing_env
-from reflex.utils.serializers import SerializedType, serialize, serializer
+from reflex.utils.serializers import serializer
 from reflex.utils.types import override
 from reflex.vars import VarData
 
@@ -1790,9 +1790,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for substate in self.dirty_substates.union(self._always_dirty_substates):
             delta.update(substates[substate].get_delta())
 
-        # Format the delta.
-        delta = format.format_state(delta)
-
         # Return the delta.
         return delta
 
@@ -2433,7 +2430,7 @@ class StateUpdate:
         Returns:
             The state update as a JSON string.
         """
-        return format.json_dumps(dataclasses.asdict(self))
+        return format.json_dumps(self)
 
 
 class StateManager(Base, ABC):
@@ -2592,16 +2589,24 @@ def _serialize_type(type_: Any) -> str:
     return f"{type_.__module__}.{type_.__qualname__}"
 
 
+def is_serializable(value: Any) -> bool:
+    """Check if a value is serializable.
+
+    Args:
+        value: The value to check.
+
+    Returns:
+        Whether the value is serializable.
+    """
+    try:
+        return bool(dill.dumps(value))
+    except Exception:
+        return False
+
+
 def state_to_schema(
     state: BaseState,
-) -> List[
-    Tuple[
-        str,
-        str,
-        Any,
-        Union[bool, None],
-    ]
-]:
+) -> List[Tuple[str, str, Any, Union[bool, None], Any]]:
     """Convert a state to a schema.
 
     Args:
@@ -2621,6 +2626,7 @@ def state_to_schema(
                     if isinstance(model_field.required, bool)
                     else None
                 ),
+                (model_field.default if is_serializable(model_field.default) else None),
             )
             for field_name, model_field in state.__fields__.items()
         )
@@ -3651,22 +3657,16 @@ class MutableProxy(wrapt.ObjectProxy):
 
 
 @serializer
-def serialize_mutable_proxy(mp: MutableProxy) -> SerializedType:
-    """Serialize the wrapped value of a MutableProxy.
+def serialize_mutable_proxy(mp: MutableProxy):
+    """Return the wrapped value of a MutableProxy.
 
     Args:
         mp: The MutableProxy to serialize.
 
     Returns:
-        The serialized wrapped object.
-
-    Raises:
-        ValueError: when the wrapped object is not serializable.
+        The wrapped object.
     """
-    value = serialize(mp.__wrapped__)
-    if value is None:
-        raise ValueError(f"Cannot serialize {type(mp.__wrapped__)}")
-    return value
+    return mp.__wrapped__
 
 
 class ImmutableMutableProxy(MutableProxy):

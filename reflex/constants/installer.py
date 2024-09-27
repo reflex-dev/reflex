@@ -54,6 +54,9 @@ class Bun(SimpleNamespace):
     # Path of the bunfig file
     CONFIG_PATH = "bunfig.toml"
 
+    # The environment variable to use the system installed bun.
+    USE_SYSTEM_VAR = "REFLEX_USE_SYSTEM_BUN"
+
 
 # FNM config.
 class Fnm(SimpleNamespace):
@@ -95,6 +98,9 @@ class Node(SimpleNamespace):
 
     # The default path where npm is installed.
     NPM_PATH = os.path.join(BIN_PATH, "npm")
+
+    # The environment variable to use the system installed node.
+    USE_SYSTEM_VAR = "REFLEX_USE_SYSTEM_NODE"
 
 
 class PackageJson(SimpleNamespace):

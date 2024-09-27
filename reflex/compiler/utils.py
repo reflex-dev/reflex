@@ -155,7 +155,7 @@ def compile_state(state: Type[BaseState]) -> dict:
         initial_state = state(_reflex_internal_init=True).dict(
             initial=True, include_computed=False
         )
-    return format.format_state(initial_state)
+    return initial_state
 
 
 def _compile_client_storage_field(

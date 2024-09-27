@@ -1,19 +1,21 @@
 import datetime
+import json
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Type
+from typing import Any, Type
 
 import pytest
 
 from reflex.base import Base
 from reflex.components.core.colors import Color
 from reflex.utils import serializers
+from reflex.utils.format import json_dumps
 from reflex.vars.base import LiteralVar
 
 
 @pytest.mark.parametrize(
     "type_,expected",
-    [(str, True), (dict, True), (Dict[int, int], True), (Enum, True)],
+    [(Enum, True)],
 )
 def test_has_serializer(type_: Type, expected: bool):
     """Test that has_serializer returns the correct value.
@@ -198,7 +200,7 @@ def test_serialize(value: Any, expected: str):
         value: The value to serialize.
         expected: The expected result.
     """
-    assert serializers.serialize(value) == expected
+    assert json.loads(json_dumps(value)) == json.loads(json_dumps(expected))
 
 
 @pytest.mark.parametrize(
