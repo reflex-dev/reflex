@@ -1062,6 +1062,9 @@ def fix_events(
         token: The user token.
         router_data: The optional router data to set in the event.
 
+    Raises:
+        ValueError: If the event type is not what was expected.
+
     Returns:
         The fixed events.
     """
@@ -1085,7 +1088,8 @@ def fix_events(
         # Otherwise, create an event from the event spec.
         if isinstance(e, EventHandler):
             e = e()
-        assert isinstance(e, EventSpec), f"Unexpected event type, {type(e)}."
+        if not isinstance(e, EventSpec):
+            raise ValueError(f"Unexpected event type, {type(e)}.")
         name = format.format_event_handler(e.handler)
         payload = {k._js_expr: v._decode() for k, v in e.args}  # type: ignore
 

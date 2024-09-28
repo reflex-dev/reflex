@@ -345,6 +345,7 @@ def format_prop(
     Raises:
         exceptions.InvalidStylePropError: If the style prop value is not a valid type.
         TypeError: If the prop is not valid.
+        ValueError: If the prop is not a string.
     """
     # import here to avoid circular import.
     from reflex.event import EventChain
@@ -391,7 +392,8 @@ def format_prop(
         raise TypeError(f"Could not format prop: {prop} of type {type(prop)}") from e
 
     # Wrap the variable in braces.
-    assert isinstance(prop, str), "The prop must be a string."
+    if not isinstance(prop, str):
+        raise ValueError(f"Invalid prop: {prop}. Expected a string.")
     return wrap(prop, "{", check_first=False)
 
 

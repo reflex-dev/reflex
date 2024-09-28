@@ -1744,10 +1744,14 @@ class CustomComponent(Component):
         Args:
             seen: The tags of the components that have already been seen.
 
+        Raises:
+            ValueError: If the tag is not set.
+
         Returns:
             The set of custom components.
         """
-        assert self.tag is not None, "The tag must be set."
+        if self.tag is None:
+            raise ValueError("The tag must be set.")
 
         # Store the seen components in a set to avoid infinite recursion.
         if seen is None:

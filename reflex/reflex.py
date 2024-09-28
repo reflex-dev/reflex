@@ -230,7 +230,8 @@ def _run(
             exec.run_frontend_prod,
             exec.run_backend_prod,
         )
-    assert setup_frontend and frontend_cmd and backend_cmd, "Invalid env"
+    if not setup_frontend or not frontend_cmd or not backend_cmd:
+        raise ValueError("Invalid env")
 
     # Post a telemetry event.
     telemetry.send(f"run-{env.value}")

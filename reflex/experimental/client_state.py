@@ -91,12 +91,16 @@ class ClientStateVar(Var):
             default: The default value of the variable.
             global_ref: Whether the state should be accessible in any Component and on the backend.
 
+        Raises:
+            ValueError: If the var_name is not a string.
+
         Returns:
             ClientStateVar
         """
         if var_name is None:
             var_name = get_unique_variable_name()
-        assert isinstance(var_name, str), "var_name must be a string."
+        if not isinstance(var_name, str):
+            raise ValueError("var_name must be a string.")
         if default is NoValue:
             default_var = Var(_js_expr="")
         elif not isinstance(default, Var):
