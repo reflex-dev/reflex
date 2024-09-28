@@ -7,7 +7,7 @@ import os
 import sys
 import urllib.parse
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Union
 
 try:
     import pydantic.v1 as pydantic
@@ -189,7 +189,7 @@ class Config(Base):
     telemetry_enabled: bool = True
 
     # The bun path
-    bun_path: str | Path = constants.Bun.DEFAULT_PATH
+    bun_path: Union[str, Path] = constants.Bun.DEFAULT_PATH
 
     # List of origins that are allowed to connect to the backend API.
     cors_allowed_origins: List[str] = ["*"]
