@@ -43,6 +43,7 @@ from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, imports, serializers, types
 from reflex.utils.exceptions import (
+    MissingTypeHintError,
     VarAttributeError,
     VarDependencyError,
     VarTypeError,
@@ -1980,7 +1981,10 @@ def computed_var(
     Raises:
         ValueError: If caching is disabled and an update interval is set.
         VarDependencyError: If user supplies dependencies without caching.
+        MissingTypeHintError: If the computed var requires a return type hint.
     """
+    import inspect
+
     if cache is False and interval is not None:
         raise ValueError("Cannot set update interval without caching.")
 
@@ -1988,6 +1992,9 @@ def computed_var(
         raise VarDependencyError("Cannot track dependencies without caching.")
 
     if fget is not None:
+        sig: inspect.Signature = inspect.signature(fget)
+        if sig.return_annotation == inspect._empty:
+            raise MissingTypeHintError("ComputedVar requires a return type hint.")
         return ComputedVar(fget, cache=cache)
 
     def wrapper(fget: Callable[[BASE_STATE], Any]) -> ComputedVar:
