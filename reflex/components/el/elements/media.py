@@ -317,6 +317,26 @@ class Svg(BaseHTML):
     xmlns: Var[str]
 
 
+class Text(BaseHTML):
+    """The SVG text component."""
+
+    tag = "text"
+    # The x coordinate of the starting point of the text baseline.
+    x: Var[Union[str, int]]
+    # The y coordinate of the starting point of the text baseline.
+    y: Var[Union[str, int]]
+    # Shifts the text position horizontally from a previous text element.
+    dx: Var[Union[str, int]]
+    # Shifts the text position vertically from a previous text element.
+    dy: Var[Union[str, int]]
+    # Rotates orientation of each individual glyph.
+    rotate: Var[Union[str, int]]
+    # How the text is stretched or compressed to fit the width defined by the text_length attribute.
+    length_adjust: Var[str]
+    # A width that the text should be scaled to fit.
+    text_length: Var[Union[str, int]]
+
+
 class Line(BaseHTML):
     """The SVG line component."""
 
@@ -486,6 +506,7 @@ class Path(BaseHTML):
 class SVG(ComponentNamespace):
     """SVG component namespace."""
 
+    text = staticmethod(Text.create)
     line = staticmethod(Line.create)
     circle = staticmethod(Circle.create)
     ellipse = staticmethod(Ellipse.create)
