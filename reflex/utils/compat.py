@@ -71,12 +71,14 @@ with pydantic_v1_patch():
     import sqlmodel as sqlmodel
 
 
-def sa_column_id_supporter(field) -> bool:
-    """Adds support for sa_column so we don't add id with a primary key
-    is defined
+def sqlmodel_field_has_primary_key(field) -> bool:
+    """Determines if a field is a priamary
 
-    AKA simons_litttle_helper
-    AKA masens_litttlerrr_helperr
+    Args:
+        field: a rx.model field
+
+    Returns:
+        If field is a primary key (Bool)
     """
     if getattr(field.field_info, "primary_key", None) is True:
         return True
