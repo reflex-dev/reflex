@@ -114,6 +114,9 @@ class IterTag(Tag):
     def render_component(self) -> Component:
         """Render the component.
 
+        Raises:
+            ValueError: If the render function takes more than 2 arguments.
+
         Returns:
             The rendered component.
         """
@@ -132,7 +135,8 @@ class IterTag(Tag):
             component = self.render_fn(arg)
         else:
             # If the render function takes the index as an argument.
-            assert len(args) == 2
+            if len(args) != 2:
+                raise ValueError("The render function must take 2 arguments.")
             component = self.render_fn(arg, index)
 
         # Nested foreach components or cond must be wrapped in fragments.

@@ -21,6 +21,7 @@ from typing import (
 from reflex.constants.base import Dirs
 from reflex.utils.exceptions import PrimitiveUnserializableToJSON, VarTypeError
 from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.types import is_optional
 
 from .base import (
     CustomVarOperationReturn,
@@ -524,6 +525,8 @@ class NumberVar(Var[NUMBER_T]):
         Returns:
             The boolean value of the number.
         """
+        if is_optional(self._var_type):
+            return boolify((self != None) & (self != 0))  # noqa: E711
         return self != 0
 
     def _is_strict_float(self) -> bool:

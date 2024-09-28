@@ -142,7 +142,7 @@ def check_node_version() -> bool:
         # Compare the version numbers
         return (
             current_version >= version.parse(constants.Node.MIN_VERSION)
-            if constants.IS_WINDOWS
+            if constants.IS_WINDOWS or path_ops.use_system_node()
             else current_version == version.parse(constants.Node.VERSION)
         )
     return False
@@ -1035,6 +1035,8 @@ def validate_bun():
     # if a custom bun path is provided, make sure its valid
     # This is specific to non-FHS OS
     bun_path = get_config().bun_path
+    if path_ops.use_system_bun():
+        bun_path = path_ops.which("bun")
     if bun_path != constants.Bun.DEFAULT_PATH:
         console.info(f"Using custom Bun path: {bun_path}")
         bun_version = get_bun_version()

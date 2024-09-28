@@ -159,7 +159,7 @@ class Config(Base):
     app_name: str
 
     # The log level to use.
-    loglevel: constants.LogLevel = constants.LogLevel.INFO
+    loglevel: constants.LogLevel = constants.LogLevel.DEFAULT
 
     # The port to run the frontend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
     frontend_port: int = constants.DefaultPorts.FRONTEND_PORT

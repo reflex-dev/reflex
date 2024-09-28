@@ -12,6 +12,7 @@ import os
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from hashlib import md5
 from pathlib import Path
 from types import FunctionType, MethodType
 from typing import (
@@ -29,10 +30,12 @@ from typing import (
     Type,
     Union,
     cast,
+    get_type_hints,
 )
 
 import dill
 from sqlalchemy.orm import DeclarativeBase
+from typing_extensions import Self
 
 from reflex.config import get_config
 from reflex.vars.base import (
@@ -41,6 +44,7 @@ from reflex.vars.base import (
     Var,
     computed_var,
     dispatch,
+    get_unique_variable_name,
     is_computed_var,
 )
 
@@ -72,7 +76,7 @@ from reflex.utils.exceptions import (
     LockExpiredError,
 )
 from reflex.utils.exec import is_testing_env
-from reflex.utils.serializers import SerializedType, serialize, serializer
+from reflex.utils.serializers import serializer
 from reflex.utils.types import override
 from reflex.vars import VarData
 
@@ -572,6 +576,15 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for name, value in cls.__dict__.items()
             if types.is_backend_base_variable(name, cls)
         }
+        # Add annotated backend vars that do not have a default value.
+        new_backend_vars.update(
+            {
+                name: Var("", _var_type=annotation_value).get_default_value()
+                for name, annotation_value in get_type_hints(cls).items()
+                if name not in new_backend_vars
+                and types.is_backend_base_variable(name, cls)
+            }
+        )
 
         cls.backend_vars = {
             **cls.inherited_backend_vars,
@@ -683,6 +696,36 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             and not isinstance(value, EventHandler)
             and hasattr(value, "__code__")
         )
+
+    @classmethod
+    def _evaluate(cls, f: Callable[[Self], Any]) -> Var:
+        """Evaluate a function to a ComputedVar. Experimental.
+
+        Args:
+            f: The function to evaluate.
+
+        Returns:
+            The ComputedVar.
+        """
+        console.warn(
+            "The _evaluate method is experimental and may be removed in future versions."
+        )
+        from reflex.components.base.fragment import fragment
+        from reflex.components.component import Component
+
+        unique_var_name = get_unique_variable_name()
+
+        @computed_var(_js_expr=unique_var_name, return_type=Component)
+        def computed_var_func(state: Self):
+            return fragment(f(state))
+
+        setattr(cls, unique_var_name, computed_var_func)
+        cls.computed_vars[unique_var_name] = computed_var_func
+        cls.vars[unique_var_name] = computed_var_func
+        cls._update_substate_inherited_vars({unique_var_name: computed_var_func})
+        cls._always_dirty_computed_vars.add(unique_var_name)
+
+        return getattr(cls, unique_var_name)
 
     @classmethod
     def _mixins(cls) -> List[Type]:
@@ -827,6 +870,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     def get_parent_state(cls) -> Type[BaseState] | None:
         """Get the parent state.
 
+        Raises:
+            ValueError: If more than one parent state is found.
+
         Returns:
             The parent state.
         """
@@ -835,9 +881,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for base in cls.__bases__
             if issubclass(base, BaseState) and base is not BaseState and not base._mixin
         ]
-        assert (
-            len(parent_states) < 2
-        ), f"Only one parent state is allowed {parent_states}."
+        if len(parent_states) >= 2:
+            raise ValueError(f"Only one parent state is allowed {parent_states}.")
         return parent_states[0] if len(parent_states) == 1 else None  # type: ignore
 
     @classmethod
@@ -1789,9 +1834,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for substate in self.dirty_substates.union(self._always_dirty_substates):
             delta.update(substates[substate].get_delta())
 
-        # Format the delta.
-        delta = format.format_state(delta)
-
         # Return the delta.
         return delta
 
@@ -2432,7 +2474,7 @@ class StateUpdate:
         Returns:
             The state update as a JSON string.
         """
-        return format.json_dumps(dataclasses.asdict(self))
+        return format.json_dumps(self)
 
 
 class StateManager(Base, ABC):
@@ -2591,16 +2633,24 @@ def _serialize_type(type_: Any) -> str:
     return f"{type_.__module__}.{type_.__qualname__}"
 
 
+def is_serializable(value: Any) -> bool:
+    """Check if a value is serializable.
+
+    Args:
+        value: The value to check.
+
+    Returns:
+        Whether the value is serializable.
+    """
+    try:
+        return bool(dill.dumps(value))
+    except Exception:
+        return False
+
+
 def state_to_schema(
     state: BaseState,
-) -> List[
-    Tuple[
-        str,
-        str,
-        Any,
-        Union[bool, None],
-    ]
-]:
+) -> List[Tuple[str, str, Any, Union[bool, None], Any]]:
     """Convert a state to a schema.
 
     Args:
@@ -2620,6 +2670,7 @@ def state_to_schema(
                     if isinstance(model_field.required, bool)
                     else None
                 ),
+                (model_field.default if is_serializable(model_field.default) else None),
             )
             for field_name, model_field in state.__fields__.items()
         )
@@ -2704,7 +2755,9 @@ class StateManagerDisk(StateManager):
         Returns:
             The path for the token.
         """
-        return (self.states_directory / f"{token}.pkl").absolute()
+        return (
+            self.states_directory / f"{md5(token.encode()).hexdigest()}.pkl"
+        ).absolute()
 
     async def load_state(self, token: str, root_state: BaseState) -> BaseState:
         """Load a state object based on the provided token.
@@ -3648,22 +3701,16 @@ class MutableProxy(wrapt.ObjectProxy):
 
 
 @serializer
-def serialize_mutable_proxy(mp: MutableProxy) -> SerializedType:
-    """Serialize the wrapped value of a MutableProxy.
+def serialize_mutable_proxy(mp: MutableProxy):
+    """Return the wrapped value of a MutableProxy.
 
     Args:
         mp: The MutableProxy to serialize.
 
     Returns:
-        The serialized wrapped object.
-
-    Raises:
-        ValueError: when the wrapped object is not serializable.
+        The wrapped object.
     """
-    value = serialize(mp.__wrapped__)
-    if value is None:
-        raise ValueError(f"Cannot serialize {type(mp.__wrapped__)}")
-    return value
+    return mp.__wrapped__
 
 
 class ImmutableMutableProxy(MutableProxy):

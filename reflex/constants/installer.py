@@ -52,6 +52,9 @@ class Bun(SimpleNamespace):
     # Path of the bunfig file
     CONFIG_PATH = "bunfig.toml"
 
+    # The environment variable to use the system installed bun.
+    USE_SYSTEM_VAR = "REFLEX_USE_SYSTEM_BUN"
+
 
 # FNM config.
 class Fnm(SimpleNamespace):
@@ -95,6 +98,9 @@ class Node(SimpleNamespace):
     # The default path where npm is installed.
     NPM_PATH = BIN_PATH / "npm"
 
+    # The environment variable to use the system installed node.
+    USE_SYSTEM_VAR = "REFLEX_USE_SYSTEM_NODE"
+
 
 class PackageJson(SimpleNamespace):
     """Constants used to build the package.json file."""
@@ -114,7 +120,7 @@ class PackageJson(SimpleNamespace):
         "@emotion/react": "11.11.1",
         "axios": "1.6.0",
         "json5": "2.2.3",
-        "next": "14.0.1",
+        "next": "14.2.13",
         "next-sitemap": "4.1.8",
         "next-themes": "0.2.1",
         "react": "18.2.0",
