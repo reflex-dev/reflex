@@ -390,8 +390,8 @@ class Var(Generic[VAR_TYPE]):
             EventChainVar,
             EventSpec,
             EventVar,
-            ToEventVarOperation,
             ToEventChainVarOperation,
+            ToEventVarOperation,
         )
 
         from .function import FunctionVar, ToFunctionOperation

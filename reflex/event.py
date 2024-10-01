@@ -1139,7 +1139,7 @@ def get_fn_signature(fn: Callable) -> inspect.Signature:
 
 
 class EventVar(ObjectVar):
-    pass
+    """Base class for event vars."""
 
 
 @dataclasses.dataclass(
@@ -1148,6 +1148,8 @@ class EventVar(ObjectVar):
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
 class LiteralEventVar(CachedVarOperation, LiteralVar, EventVar):
+    """A literal event var."""
+
     _var_value: EventSpec = dataclasses.field(default=None)  # type: ignore
 
     def __hash__(self) -> int:
@@ -1206,7 +1208,7 @@ class LiteralEventVar(CachedVarOperation, LiteralVar, EventVar):
 
 
 class EventChainVar(FunctionVar):
-    pass
+    """Base class for event chain vars."""
 
 
 @dataclasses.dataclass(
@@ -1215,6 +1217,8 @@ class EventChainVar(FunctionVar):
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
 class LiteralEventChainVar(CachedVarOperation, LiteralVar, EventChainVar):
+    """A literal event chain var."""
+
     _var_value: EventChain = dataclasses.field(default=None)  # type: ignore
 
     def __hash__(self) -> int:
