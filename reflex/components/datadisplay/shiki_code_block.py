@@ -1,10 +1,12 @@
+"""Shiki syntax hghlighter component."""
+
 from collections import defaultdict
 from typing import Any, Literal, Optional, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
-from reflex.components.lucide.icon import Icon
 from reflex.components.core.cond import color_mode_cond
+from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.button import Button
 from reflex.components.radix.themes.layout.box import Box
 from reflex.event import set_clipboard
@@ -296,12 +298,16 @@ LiteralCodeTheme = Literal[
 
 
 class ShikiBaseTransformers(Base):
+    """Base for creating transformers."""
+
     library: str
     fns: list[FunctionStringVar]
     style: Style | None
 
 
 class ShikiJsTransformer(ShikiBaseTransformers):
+    """A Wrapped shikijs transformer."""
+
     library: str = "@shikijs/transformers"
     fns: list[FunctionStringVar] = [
         FunctionStringVar.create(x) for x in SHIKIJS_TRANSFORMER_FNS
@@ -334,6 +340,12 @@ class ShikiJsTransformer(ShikiBaseTransformers):
     )
 
     def __init__(self, **kwargs):
+        """Initialize the transformer.
+
+        Args:
+            kwargs: Kwargs to initialize the props.
+
+        """
         fns = kwargs.pop("fns", None)
         style = kwargs.pop("style", None)
         if fns:
@@ -350,6 +362,8 @@ class ShikiJsTransformer(ShikiBaseTransformers):
 
 
 class ShikiCodeBlock(Component):
+    """A Code block."""
+
     library = "/components/shiki/code"
     tag = "Code"
     alias = "ShikiCode"
@@ -367,6 +381,17 @@ class ShikiCodeBlock(Component):
         copy_button: Optional[Union[bool, Component]] = None,
         **props,
     ) -> Component:
+        """Create a code block component using [shiki syntax highlighter](https://shiki.matsu.io/).
+
+        Args:
+            *children: The children of the component.
+            can_copy: Whether a copy button should appears.
+            copy_button: A custom copy button to override the default one.
+            **props: The props to pass to the component.
+
+        Returns:
+            The code block component.
+        """
         props["code"] = children[0]
 
         if "theme" not in props:
@@ -408,6 +433,13 @@ class ShikiCodeBlock(Component):
             return Box.create(code_block, style=Style(transformer_styles))
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add the necessary imports.
+        We add all referenced transformer functions as imports from their corresponding
+        libraries.
+
+        Returns:
+            Imports for the component.
+        """
         imports = defaultdict(list)
         for transformer in self.transformers._var_value:
             if isinstance(transformer, ShikiBaseTransformers):
@@ -421,8 +453,22 @@ class ShikiCodeBlock(Component):
 
     @classmethod
     def create_transformer(cls, library: str, fns: list[str]) -> ShikiBaseTransformers:
+        """Create a transformer from a third party library.
+
+        Args:
+            library: The name of the library.
+            fns: The str names of the functions/callables to invoke from the library.
+
+        Returns:
+            A transformer for the specified library.
+
+        Raises:
+            ValueError: If a supplied function name is not valid str.
+        """
         if any(not isinstance(fn_name, str) for fn_name in fns):
-            raise ValueError(f"the function names should be str names of functions in the specified transformer: {library!r}")
+            raise ValueError(
+                f"the function names should be str names of functions in the specified transformer: {library!r}"
+            )
         return ShikiBaseTransformers(
             library=library, fns=[FunctionStringVar.create(fn) for fn in fns]
         )
@@ -470,6 +516,8 @@ class ShikiCodeBlock(Component):
 
 
 class TransformerNamespace(ComponentNamespace):
+    """Namespace for the Transformers."""
+
     shikijs = ShikiJsTransformer
 
 
