@@ -72,7 +72,7 @@ with pydantic_v1_patch():
 
 
 def sqlmodel_field_has_primary_key(field) -> bool:
-    """Determines if a field is a priamary
+    """Determines if a field is a priamary.
 
     Args:
         field: a rx.model field
@@ -82,7 +82,8 @@ def sqlmodel_field_has_primary_key(field) -> bool:
     """
     if getattr(field.field_info, "primary_key", None) is True:
         return True
-    if getattr(field.field_info, "sa_column", None) is not None:
-        if getattr(field.field_info.sa_column, "primary_key", None) is True:
-            return True
+    if getattr(field.field_info, "sa_column", None) is None:
+        return False
+    if getattr(field.field_info.sa_column, "primary_key", None) is True:
+        return True
     return False
