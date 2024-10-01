@@ -1,17 +1,18 @@
 from collections import defaultdict
 from typing import Any, Literal, Optional, Union
 
-from reflex.components.component import Component
+from reflex.base import Base
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.button import Button
 from reflex.components.radix.themes.layout.box import Box
 from reflex.event import set_clipboard
 from reflex.style import Style
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars.base import Var
+from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import FunctionStringVar
 
-COMMON_TRANSFORMERS = {
+SHIKIJS_TRANSFORMER_FNS = {
     "transformerNotationDiff",
     "transformerNotationHighlight",
     "transformerNotationWordHighlight",
@@ -25,224 +26,162 @@ COMMON_TRANSFORMERS = {
     "transformerRemoveNotationEscape",
 }
 LiteralCodeLanguage = Literal[
-    "ts",
     "abap",
-    "abnf",
-    "actionscript",
+    "actionscript-3",
     "ada",
-    "agda",
-    "al",
-    "antlr4",
-    "apacheconf",
+    "angular-html",
+    "angular-ts",
+    "apache",
     "apex",
     "apl",
     "applescript",
-    "aql",
-    "arduino",
-    "arff",
+    "ara",
     "asciidoc",
-    "asm6502",
-    "asmatmel",
-    "aspnet",
-    "autohotkey",
-    "autoit",
-    "avisynth",
-    "avro-idl",
-    "bash",
-    "basic",
-    "batch",
-    "bbcode",
+    "asm",
+    "astro",
+    "awk",
+    "ballerina",
+    "bat",
+    "beancount",
+    "berry",
+    "bibtex",
     "bicep",
-    "birb",
-    "bison",
-    "bnf",
-    "brainfuck",
-    "brightscript",
-    "bro",
-    "bsl",
+    "blade",
     "c",
-    "cfscript",
-    "chaiscript",
-    "cil",
-    "clike",
+    "cadence",
+    "clarity",
     "clojure",
     "cmake",
     "cobol",
-    "coffeescript",
-    "concurnas",
+    "codeowners",
+    "codeql",
+    "coffee",
+    "common-lisp",
     "coq",
-    "core",
     "cpp",
     "crystal",
     "csharp",
-    "cshtml",
-    "csp",
     "css",
-    "css-extras",
     "csv",
+    "cue",
     "cypher",
     "d",
     "dart",
-    "dataweave",
     "dax",
-    "dhall",
+    "desktop",
     "diff",
-    "django",
-    "dns-zone-file",
     "docker",
-    "dot",
-    "ebnf",
-    "editorconfig",
-    "eiffel",
-    "ejs",
+    "dotenv",
+    "dream-maker",
+    "edge",
     "elixir",
     "elm",
+    "emacs-lisp",
     "erb",
     "erlang",
-    "etlua",
-    "excel-formula",
-    "factor",
-    "false",
-    "firestore-security-rules",
-    "flow",
-    "fortran",
+    "fennel",
+    "fish",
+    "fluent",
+    "fortran-fixed-form",
+    "fortran-free-form",
     "fsharp",
-    "ftl",
-    "gap",
-    "gcode",
+    "gdresource",
     "gdscript",
-    "gedcom",
+    "gdshader",
+    "genie",
     "gherkin",
-    "git",
+    "git-commit",
+    "git-rebase",
+    "gleam",
+    "glimmer-js",
+    "glimmer-ts",
     "glsl",
-    "gml",
-    "gn",
+    "gnuplot",
     "go",
-    "go-module",
     "graphql",
     "groovy",
+    "hack",
     "haml",
     "handlebars",
     "haskell",
     "haxe",
     "hcl",
+    "hjson",
     "hlsl",
-    "hoon",
-    "hpkp",
-    "hsts",
+    "html",
+    "html-derivative",
     "http",
-    "ichigojam",
-    "icon",
-    "icu-message-format",
-    "idris",
-    "iecst",
-    "ignore",
-    "index",
-    "inform7",
+    "hxml",
+    "hy",
+    "imba",
     "ini",
-    "io",
-    "j",
     "java",
-    "javadoc",
-    "javadoclike",
     "javascript",
-    "javastacktrace",
-    "jexl",
-    "jolie",
-    "jq",
-    "js-extras",
-    "js-templates",
-    "jsdoc",
+    "jinja",
+    "jison",
     "json",
     "json5",
-    "jsonp",
-    "jsstacktrace",
+    "jsonc",
+    "jsonl",
+    "jsonnet",
+    "jssm",
     "jsx",
     "julia",
-    "keepalived",
-    "keyman",
     "kotlin",
-    "kumir",
     "kusto",
     "latex",
-    "latte",
+    "lean",
     "less",
-    "lilypond",
     "liquid",
-    "lisp",
-    "livescript",
-    "llvm",
     "log",
-    "lolcode",
+    "logo",
     "lua",
-    "magma",
-    "makefile",
+    "luau",
+    "make",
     "markdown",
-    "markup",
-    "markup-templating",
+    "marko",
     "matlab",
-    "maxscript",
-    "mel",
+    "mdc",
+    "mdx",
     "mermaid",
-    "mizar",
-    "mongodb",
-    "monkey",
-    "moonscript",
-    "n1ql",
-    "n4js",
-    "nand2tetris-hdl",
-    "naniscript",
-    "nasm",
-    "neon",
-    "nevod",
+    "mojo",
+    "move",
+    "narrat",
+    "nextflow",
     "nginx",
     "nim",
     "nix",
-    "nsis",
-    "objectivec",
+    "nushell",
+    "objective-c",
+    "objective-cpp",
     "ocaml",
-    "opencl",
-    "openqasm",
-    "oz",
-    "parigp",
-    "parser",
     "pascal",
-    "pascaligo",
-    "pcaxis",
-    "peoplecode",
     "perl",
     "php",
-    "php-extras",
-    "phpdoc",
     "plsql",
+    "po",
+    "postcss",
     "powerquery",
     "powershell",
-    "processing",
+    "prisma",
     "prolog",
-    "promql",
-    "properties",
-    "protobuf",
-    "psl",
+    "proto",
     "pug",
     "puppet",
-    "pure",
-    "purebasic",
     "purescript",
     "python",
-    "q",
     "qml",
-    "qore",
-    "qsharp",
+    "qmldir",
+    "qss",
     "r",
     "racket",
-    "reason",
-    "regex",
-    "rego",
-    "renpy",
-    "rest",
-    "rip",
-    "roboconf",
-    "robotframework",
+    "raku",
+    "razor",
+    "reg",
+    "regexp",
+    "rel",
+    "riscv",
+    "rst",
     "ruby",
     "rust",
     "sas",
@@ -250,73 +189,174 @@ LiteralCodeLanguage = Literal[
     "scala",
     "scheme",
     "scss",
-    "shell-session",
-    "smali",
+    "shaderlab",
+    "shellscript",
+    "shellsession",
     "smalltalk",
-    "smarty",
-    "sml",
     "solidity",
-    "solution-file",
     "soy",
     "sparql",
-    "splunk-spl",
-    "sqf",
+    "splunk",
     "sql",
-    "squirrel",
-    "stan",
+    "ssh-config",
+    "stata",
     "stylus",
+    "svelte",
     "swift",
+    "system-verilog",
     "systemd",
-    "t4-cs",
-    "t4-templating",
-    "t4-vb",
-    "tap",
+    "tasl",
     "tcl",
-    "textile",
+    "templ",
+    "terraform",
+    "tex",
     "toml",
-    "tremor",
+    "ts-tags",
+    "tsv",
     "tsx",
-    "tt2",
     "turtle",
     "twig",
     "typescript",
-    "typoscript",
-    "unrealscript",
-    "uorazor",
-    "uri",
+    "typespec",
+    "typst",
     "v",
     "vala",
-    "vbnet",
-    "velocity",
+    "vb",
     "verilog",
     "vhdl",
-    "vim",
-    "visual-basic",
-    "warpscript",
+    "viml",
+    "vue",
+    "vue-html",
+    "vyper",
     "wasm",
-    "web-idl",
-    "wiki",
+    "wenyan",
+    "wgsl",
+    "wikitext",
     "wolfram",
-    "wren",
-    "xeora",
-    "xml-doc",
-    "xojo",
-    "xquery",
+    "xml",
+    "xsl",
     "yaml",
-    "yang",
+    "zenscript",
     "zig",
 ]
+LiteralCodeTheme = Literal[
+    "andromeeda",
+    "aurora-x",
+    "ayu-dark",
+    "catppuccin-frappe",
+    "catppuccin-latte",
+    "catppuccin-macchiato",
+    "catppuccin-mocha",
+    "dark-plus",
+    "dracula",
+    "dracula-soft",
+    "everforest-dark",
+    "everforest-light",
+    "github-dark",
+    "github-dark-default",
+    "github-dark-dimmed",
+    "github-dark-high-contrast",
+    "github-light",
+    "github-light-default",
+    "github-light-high-contrast",
+    "houston",
+    "laserwave",
+    "light-plus",
+    "material-theme",
+    "material-theme-darker",
+    "material-theme-lighter",
+    "material-theme-ocean",
+    "material-theme-palenight",
+    "min-dark",
+    "min-light",
+    "monokai",
+    "night-owl",
+    "nord",
+    "one-dark-pro",
+    "one-light",
+    "plastic",
+    "poimandres",
+    "red",
+    "rose-pine",
+    "rose-pine-dawn",
+    "rose-pine-moon",
+    "slack-dark",
+    "slack-ochin",
+    "snazzy-light",
+    "solarized-dark",
+    "solarized-light",
+    "synthwave-84",
+    "tokyo-night",
+    "vesper",
+    "vitesse-black",
+    "vitesse-dark",
+    "vitesse-light",
+]
+
+
+class ShikiBaseTransformers(Base):
+    library: str
+    fns: list[FunctionStringVar]
+    style: Style | None
+
+
+class ShikiJsTransformer(ShikiBaseTransformers):
+    library: str = "@shikijs/transformers"
+    fns: list[FunctionStringVar] = [
+        FunctionStringVar.create(x) for x in SHIKIJS_TRANSFORMER_FNS
+    ]
+    style: Style | None = Style(
+        {
+            ".line": {"display": "inline", "padding-bottom": "0"},
+            ".diff": {
+                "display": "inline-block",
+                "width": "100vw",
+                "margin": "0 -12px",
+                "padding": "0 12px",
+            },
+            ".diff.add": {"background-color": "#0505"},
+            ".diff.remove": {"background-color": "#8005"},
+            ".diff:before": {"position": "absolute", "left": "40px"},
+            ".has-focused .line": {"filter": "blur(0.095rem)"},
+            ".has-focused .focused": {"filter": "blur(0)"},
+            "code": {"counter-reset": "step", "counter-increment": "step 0"},
+            "code .line::before": {
+                "content": "counter(step)",
+                "counter-increment": "step",
+                "width": "1rem",
+                "margin-right": "1.5rem",
+                "display": "inline-block",
+                "text-align": "right",
+                "color": "rgba(115,138,148,.4)",
+            },
+        }
+    )
+
+    def __init__(self, **kwargs):
+        fns = kwargs.pop("fns", None)
+        style = kwargs.pop("style", None)
+        if fns:
+            kwargs["fns"] = [
+                FunctionStringVar.create(x)
+                if not isinstance(x, FunctionStringVar)
+                else x
+                for x in fns
+            ]
+
+        if style:
+            kwargs["style"] = Style(style)
+        super().__init__(**kwargs)
 
 
 class ShikiCodeBlock(Component):
     library = "/utils/code"
     tag = "Code"
     alias = "ShikiCode"
-    language: Var[LiteralCodeLanguage] = "python"
-    theme: Var[str] = "min-dark"
+    language: Var[LiteralCodeLanguage] = Var.create("python")
+    theme: Var[LiteralCodeTheme] = Var.create("github-dark")
     themes: Var[list[dict[str, Any]] | dict[str, str]]
     code: Var[str]
-    transformers: Var[list] = []
+    transformers: Var[list[ShikiBaseTransformers | dict[str, Any]]] = []
 
     @classmethod
     def create(
@@ -342,40 +382,87 @@ class ShikiCodeBlock(Component):
         else:
             copy_button = None
 
-        transformers = props.pop("transformers", [])
-        trans_final = []
-        for transformer in transformers:
-            if transformer in COMMON_TRANSFORMERS:
-                trans_final.append(FunctionStringVar(f"{transformer}()"))
-            else:
-                trans_final.append(transformer)
-
-        if trans_final:
-            props["transformers"] = trans_final
-
         code_block = super().create(**props)
+        transformer_styles = {}
+        for transformer in code_block.transformers._var_value:
+            if isinstance(transformer, ShikiBaseTransformers) and transformer.style:
+                transformer_styles.update(transformer.style)
 
         if copy_button:
-            return Box.create(code_block, copy_button, position="relative")
+            return Box.create(
+                code_block,
+                copy_button,
+                position="relative",
+                style=Style(transformer_styles),
+            )
         else:
-            return code_block
+            return Box.create(code_block, style=Style(transformer_styles))
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         imports = defaultdict(list)
         for transformer in self.transformers._var_value:
-            if (
-                isinstance(transformer, FunctionStringVar)
-                and (transformer_import_str := str(transformer).strip("()"))
-                in COMMON_TRANSFORMERS
-            ):
-                imports["@shikijs/transformers"].append(
-                    ImportVar(tag=transformer_import_str)
+            if isinstance(transformer, ShikiBaseTransformers):
+                imports[transformer.library].extend(
+                    [ImportVar(tag=str(fn)) for fn in transformer.fns]
                 )
                 self.lib_dependencies.append(
-                    "@shikijs/transformers"
-                ) if "@shikijs/transformers" not in self.lib_dependencies else None
-
+                    transformer.library
+                ) if transformer.library not in self.lib_dependencies else None
         return imports
 
+    @classmethod
+    def create_transformer(cls, library: str, fns: list[str]) -> ShikiBaseTransformers:
+        return ShikiBaseTransformers(
+            library=library, fns=[FunctionStringVar.create(fn) for fn in fns]
+        )
 
-code_block = ShikiCodeBlock.create
+    def _render(self, props: dict[str, Any] | None = None):
+        """Renders the component with the given properties, processing transformers if present.
+
+        Args:
+            props: Optional properties to pass to the render function.
+
+        Returns:
+            Rendered component output.
+        """
+        # Ensure props is initialized from class attributes if not provided
+        props = props or {
+            attr.rstrip("_"): getattr(self, attr) for attr in self.get_props()
+        }
+
+        # Extract transformers and apply transformations
+        transformers = props.get("transformers")
+        if transformers is not None:
+            transformed_values = self._process_transformers(transformers._var_value)
+            props["transformers"] = LiteralVar.create(transformed_values)
+
+        return super()._render(props)
+
+    def _process_transformers(self, transformer_list: list) -> list:
+        """Processes a list of transformers, applying transformations where necessary.
+
+        Args:
+            transformer_list: List of transformer objects or values.
+
+        Returns:
+            list: A list of transformed values.
+        """
+        processed = []
+
+        for transformer in transformer_list:
+            if isinstance(transformer, ShikiBaseTransformers):
+                processed.extend(fn.call() for fn in transformer.fns)
+            else:
+                processed.append(transformer)
+
+        return processed
+
+
+class CodeblockNamespace(ComponentNamespace):
+    """Namespace for the CodeBlock component."""
+
+    create_transformer = ShikiCodeBlock.create_transformer
+    __call__ = ShikiCodeBlock.create
+
+
+code_block = CodeblockNamespace()
