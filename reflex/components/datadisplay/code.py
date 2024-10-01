@@ -18,7 +18,6 @@ from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import LiteralVar, Var, VarData
 
 LiteralCodeLanguage = Literal[
-    "ts",
     "abap",
     "abnf",
     "actionscript",
