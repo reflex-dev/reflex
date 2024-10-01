@@ -16,7 +16,6 @@ export function Code ({code, theme, language, transformers, ...divProps}) {
       }, [code, language, theme, transformers]
 
     )
-    console.log(divProps)
     return (
         <div dangerouslySetInnerHTML={{__html: codeResult}} {...divProps}  ></div>
     )
