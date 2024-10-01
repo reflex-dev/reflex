@@ -683,9 +683,9 @@ export const useEventLoop = (
       args = [args];
     }
 
-    const event_actions = events.reduce(
+    event_actions = events.reduce(
       (acc, e) => ({ ...acc, ...e.event_actions }),
-      event_actions
+      event_actions ?? {}
     );
 
     const _e = args.filter((o) => o?.preventDefault !== undefined)[0];
