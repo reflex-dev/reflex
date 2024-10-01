@@ -4,6 +4,7 @@ from typing import Any, Literal, Optional, Union
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
+from reflex.components.core.cond import color_mode_cond
 from reflex.components.radix.themes.components.button import Button
 from reflex.components.radix.themes.layout.box import Box
 from reflex.event import set_clipboard
@@ -368,6 +369,14 @@ class ShikiCodeBlock(Component):
     ) -> Component:
         props["code"] = children[0]
 
+        if "theme" not in props:
+            # Default color scheme responds to global color mode.
+            # TODO: we can use themes arg for this
+            props["theme"] = color_mode_cond(
+                light="one-light",
+                dark="one-dark-pro",
+            )
+
         if can_copy:
             code = children[0]
             copy_button = (  # type: ignore
@@ -412,6 +421,8 @@ class ShikiCodeBlock(Component):
 
     @classmethod
     def create_transformer(cls, library: str, fns: list[str]) -> ShikiBaseTransformers:
+        if any(not isinstance(fn_name, str) for fn_name in fns):
+            raise ValueError(f"the function names should be str names of functions in the specified transformer: {library!r}")
         return ShikiBaseTransformers(
             library=library, fns=[FunctionStringVar.create(fn) for fn in fns]
         )
