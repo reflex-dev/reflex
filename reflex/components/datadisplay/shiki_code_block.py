@@ -350,11 +350,11 @@ class ShikiJsTransformer(ShikiBaseTransformers):
 
 
 class ShikiCodeBlock(Component):
-    library = "/utils/code"
+    library = "/components/shiki/code"
     tag = "Code"
     alias = "ShikiCode"
     language: Var[LiteralCodeLanguage] = Var.create("python")
-    theme: Var[LiteralCodeTheme] = Var.create("github-dark")
+    theme: Var[LiteralCodeTheme] = Var.create("one-light")
     themes: Var[list[dict[str, Any]] | dict[str, str]]
     code: Var[str]
     transformers: Var[list[ShikiBaseTransformers | dict[str, Any]]] = []
