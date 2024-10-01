@@ -22,7 +22,7 @@ from reflex import constants
 from reflex.base import Base
 from reflex.config import get_config
 from reflex.utils import console
-from reflex.utils.compat import sqlmodel
+from reflex.utils.compat import sqlmodel, sqlmodel_field_has_primary_key
 
 
 def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
@@ -166,8 +166,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         non_default_primary_key_fields = [
             field_name
             for field_name, field in cls.__fields__.items()
-            if field_name != "id"
-            and getattr(field.field_info, "primary_key", None) is True
+            if field_name != "id" and sqlmodel_field_has_primary_key(field)
         ]
         if non_default_primary_key_fields:
             cls.__fields__.pop("id", None)
