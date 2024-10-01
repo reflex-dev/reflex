@@ -458,10 +458,15 @@ class ShikiCodeBlock(Component):
         return processed
 
 
+class TransformerNamespace(ComponentNamespace):
+    shikijs = ShikiJsTransformer
+
+
 class CodeblockNamespace(ComponentNamespace):
     """Namespace for the CodeBlock component."""
 
     create_transformer = ShikiCodeBlock.create_transformer
+    transformers = TransformerNamespace()
     __call__ = ShikiCodeBlock.create
 
 
