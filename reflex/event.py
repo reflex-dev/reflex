@@ -488,7 +488,7 @@ class FileUpload:
             if isinstance(events, Var):
                 raise ValueError(f"{on_upload_progress} cannot return a var {events}.")
             on_upload_progress_chain = EventChain(
-                events=events,
+                events=[*events],
                 args_spec=self.on_upload_progress_args_spec,
             )
             formatted_chain = str(format.format_prop(on_upload_progress_chain))

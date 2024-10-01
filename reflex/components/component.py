@@ -577,7 +577,7 @@ class Component(BaseComponent, ABC):
             if isinstance(result, Var):
                 # Recursively call this function if the lambda returned an EventChain Var.
                 return self._create_event_chain(args_spec, result)
-            events = result
+            events = [*result]
 
         # Otherwise, raise an error.
         else:
