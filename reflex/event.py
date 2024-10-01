@@ -1150,6 +1150,14 @@ class EventVar(ObjectVar):
 class LiteralEventVar(CachedVarOperation, LiteralVar, EventVar):
     _var_value: EventSpec = dataclasses.field(default=None)  # type: ignore
 
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self._js_expr))
+
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
@@ -1208,6 +1216,14 @@ class EventChainVar(FunctionVar):
 )
 class LiteralEventChainVar(CachedVarOperation, LiteralVar, EventChainVar):
     _var_value: EventChain = dataclasses.field(default=None)  # type: ignore
+
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self._js_expr))
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:

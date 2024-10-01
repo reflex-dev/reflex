@@ -475,9 +475,6 @@ class Var(Generic[VAR_TYPE]):
         if issubclass(output, (ObjectVar, Base)):
             return ToObjectOperation.create(self, var_type or dict)
 
-        if dataclasses.is_dataclass(output):
-            return ToObjectOperation.create(self, var_type or dict)
-
         if issubclass(output, FunctionVar):
             # if fixed_type is not None and not issubclass(fixed_type, Callable):
             #     raise TypeError(
@@ -487,6 +484,9 @@ class Var(Generic[VAR_TYPE]):
 
         if issubclass(output, NoneVar):
             return ToNoneOperation.create(self)
+
+        if dataclasses.is_dataclass(output):
+            return ToObjectOperation.create(self, var_type or dict)
 
         # If we can't determine the first argument, we just replace the _var_type.
         if not issubclass(output, Var) or var_type is None:
