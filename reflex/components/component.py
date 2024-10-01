@@ -589,24 +589,18 @@ class Component(BaseComponent, ABC):
             for e in events
         ]
 
-        # Collect event_actions from each spec
-        event_actions = {}
-        for e in events:
-            if isinstance(e, EventSpec):
-                event_actions.update(e.event_actions)
-
         # Return the event chain.
         if isinstance(args_spec, Var):
             return EventChain(
                 events=events,
                 args_spec=None,
-                event_actions=event_actions,
+                event_actions={},
             )
         else:
             return EventChain(
                 events=events,
                 args_spec=args_spec,
-                event_actions=event_actions,
+                event_actions={},
             )
 
     def get_event_triggers(self) -> Dict[str, Any]:

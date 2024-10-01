@@ -1167,20 +1167,25 @@ class LiteralEventVar(CachedVarOperation, LiteralVar, EventVar):
         Returns:
             The name of the var.
         """
-        event_name = LiteralVar.create(
-            ".".join(
-                filter(None, format.get_event_handler_parts(self._var_value.handler))
-            )
-        )
-        event_args = LiteralVar.create(
-            {str(name): value for name, value in self._var_value.args}
-        )
-        event_client_name = LiteralVar.create(self._var_value.client_handler_name)
         return str(
             FunctionStringVar("Event").call(
-                event_name,
-                event_args,
-                *([event_client_name] if self._var_value.client_handler_name else []),
+                # event handler name
+                ".".join(
+                    filter(
+                        None,
+                        format.get_event_handler_parts(self._var_value.handler),
+                    )
+                ),
+                # event handler args
+                {str(name): value for name, value in self._var_value.args},
+                # event actions
+                self._var_value.event_actions,
+                # client handler name
+                *(
+                    [self._var_value.client_handler_name]
+                    if self._var_value.client_handler_name
+                    else []
+                ),
             )
         )
 
@@ -1254,7 +1259,6 @@ class LiteralEventChainVar(CachedVarOperation, LiteralVar, EventChainVar):
                         [LiteralVar.create(event) for event in self._var_value.events]
                     ),
                     arg_def_expr,
-                    LiteralVar.create(self._var_value.event_actions),
                 ),
             )
         )
