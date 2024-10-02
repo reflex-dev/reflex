@@ -1,5 +1,7 @@
 """Components that are dynamically generated on the backend."""
 
+from importlib.util import find_spec
+
 from reflex import constants
 from reflex.utils import imports
 from reflex.utils.format import format_library_name
@@ -58,10 +60,13 @@ def load_dynamic_serializer():
             )
         ] = None
 
+        chakra_available = find_spec("reflex_chakra") is not None
+
         libs_in_window = [
             "react",
             "@radix-ui/themes",
-        ]
+            "@chakra-ui/react",
+        ] + (["@chakra-ui/react"] if chakra_available else [])
 
         imports = {}
         for lib, names in component._get_all_imports().items():
@@ -69,10 +74,7 @@ def load_dynamic_serializer():
             if (
                 not lib.startswith((".", "/"))
                 and not lib.startswith("http")
-                and all(
-                    formatted_lib_name != lib_in_window
-                    for lib_in_window in libs_in_window
-                )
+                and formatted_lib_name not in libs_in_window
             ):
                 imports[get_cdn_url(lib)] = names
             else:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+from importlib.util import find_spec
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Type, Union
 
@@ -49,10 +50,25 @@ def _compile_app(app_root: Component) -> str:
     Returns:
         The compiled app.
     """
+    chakra_available = find_spec("reflex_chakra") is not None
+
     return templates.APP_ROOT.render(
         imports=utils.compile_imports(app_root._get_all_imports()),
         custom_codes=app_root._get_all_custom_code(),
         hooks={**app_root._get_all_hooks_internal(), **app_root._get_all_hooks()},
+        window_libraries=[
+            ("React", "react"),
+            ("utils_context", f"/{constants.Dirs.UTILS}/context.js"),
+            ("utils_state", f"/{constants.Dirs.UTILS}/state.js"),
+            ("radix", "@radix-ui/themes"),
+        ]
+        + (
+            [
+                ("chakra", "@chakra-ui/react"),
+            ]
+            if chakra_available
+            else []
+        ),
         render=app_root.render(),
     )
 
