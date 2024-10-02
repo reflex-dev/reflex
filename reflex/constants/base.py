@@ -191,6 +191,14 @@ class LogLevel(str, Enum):
         levels = list(LogLevel)
         return levels.index(self) <= levels.index(other)
 
+    def subprocess_level(self):
+        """Return the log level for the subprocess.
+
+        Returns:
+            The log level for the subprocess
+        """
+        return self if self != LogLevel.DEFAULT else LogLevel.INFO
+
 
 # Server socket configuration variables
 POLLING_MAX_HTTP_BUFFER_SIZE = 1000 * 1000

@@ -15,7 +15,6 @@ from reflex_cli.utils import dependency
 
 from reflex import constants
 from reflex.config import get_config
-from reflex.constants.base import LogLevel
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
@@ -247,11 +246,6 @@ def _run(
         setup_frontend(Path.cwd())
         commands.append((frontend_cmd, Path.cwd(), frontend_port, backend))
 
-    # If no loglevel is specified, set the subprocesses loglevel to WARNING.
-    subprocesses_loglevel = (
-        loglevel if loglevel != LogLevel.DEFAULT else LogLevel.WARNING
-    )
-
     # In prod mode, run the backend on a separate thread.
     if backend and env == constants.Env.PROD:
         commands.append(
@@ -259,7 +253,7 @@ def _run(
                 backend_cmd,
                 backend_host,
                 backend_port,
-                subprocesses_loglevel,
+                loglevel.subprocess_level(),
                 frontend,
             )
         )
@@ -269,7 +263,7 @@ def _run(
         # In dev mode, run the backend on the main thread.
         if backend and env == constants.Env.DEV:
             backend_cmd(
-                backend_host, int(backend_port), subprocesses_loglevel, frontend
+                backend_host, int(backend_port), loglevel.subprocess_level(), frontend
             )
             # The windows uvicorn bug workaround
             # https://github.com/reflex-dev/reflex/issues/2335
@@ -336,17 +330,13 @@ def export(
     if prerequisites.needs_reinit(frontend=True):
         _init(name=config.app_name, loglevel=loglevel)
 
-    subprocesses_loglevel = (
-        loglevel if loglevel != LogLevel.DEFAULT else LogLevel.WARNING
-    )
-
     export_utils.export(
         zipping=zipping,
         frontend=frontend,
         backend=backend,
         zip_dest_dir=zip_dest_dir,
         upload_db_file=upload_db_file,
-        loglevel=subprocesses_loglevel,
+        loglevel=loglevel.subprocess_level(),
     )
 
 
@@ -567,10 +557,6 @@ def deploy(
         _init(name=config.app_name, loglevel=loglevel)
     prerequisites.check_latest_package_version(constants.ReflexHostingCLI.MODULE_NAME)
 
-    subprocesses_loglevel = (
-        loglevel if loglevel != LogLevel.DEFAULT else LogLevel.WARNING
-    )
-
     hosting_cli.deploy(
         app_name=app_name,
         export_fn=lambda zip_dest_dir,
@@ -585,7 +571,7 @@ def deploy(
             frontend=frontend,
             backend=backend,
             zipping=zipping,
-            loglevel=subprocesses_loglevel,
+            loglevel=loglevel.subprocess_level(),
             upload_db_file=upload_db_file,
         ),
         key=key,
@@ -599,7 +585,7 @@ def deploy(
         interactive=interactive,
         with_metrics=with_metrics,
         with_tracing=with_tracing,
-        loglevel=subprocesses_loglevel,
+        loglevel=loglevel.subprocess_level(),
     )
 
 
