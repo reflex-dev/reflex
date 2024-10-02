@@ -74,6 +74,7 @@ from reflex.utils.exceptions import (
     EventHandlerShadowsBuiltInStateMethod,
     ImmutableStateError,
     LockExpiredError,
+    SetUndefinedStateVarError,
 )
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import serializer
@@ -1262,7 +1263,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             value: The value of the attribute.
 
         Raises:
-            AttributeError: If a value of a var is set without first defining it.
+            SetUndefinedStateVar: If a value of a var is set without first defining it.
         """
         if isinstance(value, MutableProxy):
             # unwrap proxy objects when assigning back to the state
@@ -1287,7 +1288,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             and name not in self.vars
             and name not in self.get_skip_vars()
         ):
-            raise AttributeError(
+            raise SetUndefinedStateVarError(
                 f"The state variable '{name}' has not been defined in '{type(self).__name__}'. "
                 f"All state variables must be declared before they can be set."
             )
