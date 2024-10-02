@@ -65,7 +65,6 @@ def load_dynamic_serializer():
         libs_in_window = [
             "react",
             "@radix-ui/themes",
-            "@chakra-ui/react",
         ] + (["@chakra-ui/react"] if chakra_available else [])
 
         imports = {}
