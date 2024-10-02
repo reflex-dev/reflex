@@ -1259,6 +1259,7 @@ class LiteralEventChainVar(CachedVarOperation, LiteralVar, EventChainVar):
                         [LiteralVar.create(event) for event in self._var_value.events]
                     ),
                     arg_def_expr,
+                    self._var_value.event_actions,
                 ),
             )
         )
