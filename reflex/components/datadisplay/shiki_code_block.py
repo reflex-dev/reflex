@@ -1,7 +1,9 @@
 """Shiki syntax hghlighter component."""
 
+from __future__ import annotations
+
 from collections import defaultdict
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
@@ -528,8 +530,8 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
     def create(
         cls,
         *children,
-        can_copy: Optional[bool] = False,
-        copy_button: Optional[Union[bool, Component]] = None,
+        can_copy: bool | None = False,
+        copy_button: bool | Component | None = None,
         **props,
     ) -> Component:
         """Create a code block component using [shiki syntax highlighter](https://shiki.matsu.io/).
