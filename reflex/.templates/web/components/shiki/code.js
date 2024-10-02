@@ -5,7 +5,14 @@ export function Code ({code, theme, language, transformers, ...divProps}) {
     const [codeResult, setCodeResult] = useState("")
     useEffect(() => {
         async function fetchCode() {
-          const result = await codeToHtml(code, {
+          let final_code;
+
+          if (Array.isArray(code)) {
+            final_code = code[0];
+          } else {
+            final_code = code;
+          }
+          const result = await codeToHtml(final_code, {
             lang: language,
             theme,
             transformers
