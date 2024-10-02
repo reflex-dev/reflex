@@ -36,7 +36,12 @@ LINE_NUMBER_STYLING = {
         "color": "rgba(115,138,148,.4)",
     },
 }
-THEME_MAPPING = {"light": "one-light", "dark": "one-dark-pro"}
+THEME_MAPPING = {
+    "light": "one-light",
+    "dark": "one-dark-pro",
+    "a11y-dark": "github-dark",
+}
+LANGUAGE_MAPPING = {"bash": "shellscript"}
 LiteralCodeLanguage = Literal[
     "abap",
     "actionscript-3",
@@ -960,7 +965,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
         *children,
         can_copy: Optional[bool] = False,
         copy_button: Optional[Union[Component, bool]] = None,
-        use_transformer: Optional[Union[Var[bool], bool]] = None,
+        use_transformers: Optional[Union[Var[bool], bool]] = None,
         show_line_numbers: Optional[Union[Var[bool], bool]] = None,
         language: Optional[
             Union[
@@ -1571,7 +1576,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
             *children: The children of the component.
             can_copy: Whether a copy button should appear.
             copy_button: A custom copy button to override the default one.
-            use_transformer: If this is enabled, the default transformer(shikijs transformer) will be used.
+            use_transformers: If this is enabled, the default transformers(shikijs transformer) will be used.
             show_line_numbers: If this is enabled line numbers will be shown next to the code block.
             language: The language to use.
             theme: The theme to use ("light" or "dark").
@@ -1604,7 +1609,7 @@ class CodeblockNamespace(ComponentNamespace):
         *children,
         can_copy: Optional[bool] = False,
         copy_button: Optional[Union[Component, bool]] = None,
-        use_transformer: Optional[Union[Var[bool], bool]] = None,
+        use_transformers: Optional[Union[Var[bool], bool]] = None,
         show_line_numbers: Optional[Union[Var[bool], bool]] = None,
         language: Optional[
             Union[
@@ -2215,7 +2220,7 @@ class CodeblockNamespace(ComponentNamespace):
             *children: The children of the component.
             can_copy: Whether a copy button should appear.
             copy_button: A custom copy button to override the default one.
-            use_transformer: If this is enabled, the default transformer(shikijs transformer) will be used.
+            use_transformers: If this is enabled, the default transformers(shikijs transformer) will be used.
             show_line_numbers: If this is enabled line numbers will be shown next to the code block.
             language: The language to use.
             theme: The theme to use ("light" or "dark").
