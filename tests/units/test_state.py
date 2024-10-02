@@ -3196,6 +3196,7 @@ import reflex as rx
 config = rx.Config(
     app_name="project1",
     redis_url="redis://localhost:6379",
+    state_manager_mode="redis",
     {config_items}
 )
 """
