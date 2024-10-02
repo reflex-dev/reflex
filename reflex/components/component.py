@@ -536,8 +536,10 @@ class Component(BaseComponent, ABC):
         if isinstance(value, Var):
             if isinstance(value, EventChainVar):
                 return value
-            if isinstance(value, EventVar):
+            elif isinstance(value, EventVar):
                 value = [value]
+            elif isinstance(value._var_type, (EventChain, EventSpec)):
+                return self._create_event_chain(args_spec, value.guess_type())
             else:
                 raise ValueError(
                     f"Invalid event chain: {str(value)} of type {value._var_type}"
