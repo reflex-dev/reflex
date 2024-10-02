@@ -44,7 +44,12 @@ LINE_NUMBER_STYLING = {
     },
 }
 
-THEME_MAPPING = {"light": "one-light", "dark": "one-dark-pro"}
+THEME_MAPPING = {
+    "light": "one-light",
+    "dark": "one-dark-pro",
+    "a11y-dark": "github-dark",
+}
+LANGUAGE_MAPPING = {"bash": "shellscript"}
 LiteralCodeLanguage = Literal[
     "abap",
     "actionscript-3",
@@ -372,8 +377,12 @@ class ShikiCodeBlock(Component):
     """A Code block."""
 
     library = "/components/shiki/code"
+
     tag = "Code"
+
     alias = "ShikiCode"
+
+    lib_dependencies: list[str] = ["shiki"]
 
     # The language to use.
     language: Var[LiteralCodeLanguage] = Var.create("python")
@@ -522,8 +531,8 @@ class ShikiCodeBlock(Component):
 class ShikiHighLevelCodeBlock(ShikiCodeBlock):
     """High level component for the shiki syntax highlighter."""
 
-    # If this is enabled, the default transformer(shikijs transformer) will be used.
-    use_transformer: Var[bool]
+    # If this is enabled, the default transformers(shikijs transformer) will be used.
+    use_transformers: Var[bool]
 
     # If this is enabled line numbers will be shown next to the code block.
     show_line_numbers: Var[bool]
@@ -547,12 +556,17 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
         Returns:
             The code block component.
         """
-        use_transformer = props.pop("use_transformer", False)
+        use_transformers = props.pop("use_transformers", False)
         show_line_numbers = props.pop("show_line_numbers", False)
+        language = props.pop("language", None)
 
-        if use_transformer:
+        if use_transformers:
             props["transformers"] = [ShikiJsTransformer()]
 
+        if language is not None:
+            props["language"] = cls._map_languages(language)
+
+        # line numbers are generated via css
         if show_line_numbers:
             props["style"] = {**LINE_NUMBER_STYLING, **props.get("style", {})}
 
@@ -592,6 +606,12 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
         if isinstance(theme, str) and theme in THEME_MAPPING:
             return THEME_MAPPING[theme]
         return theme
+
+    @staticmethod
+    def _map_languages(language: str) -> str:
+        if isinstance(language, str) and language in LANGUAGE_MAPPING:
+            return LANGUAGE_MAPPING[language]
+        return language
 
 
 class TransformerNamespace(ComponentNamespace):
