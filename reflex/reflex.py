@@ -336,13 +336,17 @@ def export(
     if prerequisites.needs_reinit(frontend=True):
         _init(name=config.app_name, loglevel=loglevel)
 
+    subprocesses_loglevel = (
+        loglevel if loglevel != LogLevel.DEFAULT else LogLevel.WARNING
+    )
+
     export_utils.export(
         zipping=zipping,
         frontend=frontend,
         backend=backend,
         zip_dest_dir=zip_dest_dir,
         upload_db_file=upload_db_file,
-        loglevel=loglevel,
+        loglevel=subprocesses_loglevel,
     )
 
 
@@ -563,6 +567,10 @@ def deploy(
         _init(name=config.app_name, loglevel=loglevel)
     prerequisites.check_latest_package_version(constants.ReflexHostingCLI.MODULE_NAME)
 
+    subprocesses_loglevel = (
+        loglevel if loglevel != LogLevel.DEFAULT else LogLevel.WARNING
+    )
+
     hosting_cli.deploy(
         app_name=app_name,
         export_fn=lambda zip_dest_dir,
@@ -577,7 +585,7 @@ def deploy(
             frontend=frontend,
             backend=backend,
             zipping=zipping,
-            loglevel=loglevel,
+            loglevel=subprocesses_loglevel,
             upload_db_file=upload_db_file,
         ),
         key=key,
@@ -591,7 +599,7 @@ def deploy(
         interactive=interactive,
         with_metrics=with_metrics,
         with_tracing=with_tracing,
-        loglevel=loglevel.value,
+        loglevel=subprocesses_loglevel,
     )
 
 
