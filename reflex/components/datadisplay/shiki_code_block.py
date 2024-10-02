@@ -25,9 +25,24 @@ SHIKIJS_TRANSFORMER_FNS = {
     "transformerMetaHighlight",
     "transformerMetaWordHighlight",
     "transformerCompactLineOptions",
-    "transformerRemoveLineBreak",
+    # TODO: this transformer when included adds a weird behavior which removes other code lines. Need to figure out why.
+    # "transformerRemoveLineBreak",
     "transformerRemoveNotationEscape",
 }
+LINE_NUMBER_STYLING = {
+    "code": {"counter-reset": "step", "counter-increment": "step 0"},
+    "code .line::before": {
+        "content": "counter(step)",
+        "counter-increment": "step",
+        "width": "1rem",
+        "margin-right": "1.5rem",
+        "display": "inline-block",
+        "text-align": "right",
+        "color": "rgba(115,138,148,.4)",
+    },
+}
+
+THEME_MAPPING = {"light": "one-light", "dark": "one-dark"}
 LiteralCodeLanguage = Literal[
     "abap",
     "actionscript-3",
@@ -310,7 +325,7 @@ class ShikiJsTransformer(ShikiBaseTransformers):
 
     library: str = "@shikijs/transformers"
     fns: list[FunctionStringVar] = [
-        FunctionStringVar.create(x) for x in SHIKIJS_TRANSFORMER_FNS
+        FunctionStringVar.create(fn) for fn in SHIKIJS_TRANSFORMER_FNS
     ]
     style: Style | None = Style(
         {
@@ -326,16 +341,6 @@ class ShikiJsTransformer(ShikiBaseTransformers):
             ".diff:before": {"position": "absolute", "left": "40px"},
             ".has-focused .line": {"filter": "blur(0.095rem)"},
             ".has-focused .focused": {"filter": "blur(0)"},
-            "code": {"counter-reset": "step", "counter-increment": "step 0"},
-            "code .line::before": {
-                "content": "counter(step)",
-                "counter-increment": "step",
-                "width": "1rem",
-                "margin-right": "1.5rem",
-                "display": "inline-block",
-                "text-align": "right",
-                "color": "rgba(115,138,148,.4)",
-            },
         }
     )
 
@@ -367,70 +372,65 @@ class ShikiCodeBlock(Component):
     library = "/components/shiki/code"
     tag = "Code"
     alias = "ShikiCode"
+
+    # The language to use.
     language: Var[LiteralCodeLanguage] = Var.create("python")
+
+    # The theme to use ("light" or "dark").
     theme: Var[LiteralCodeTheme] = Var.create("one-light")
+
+    # The set of themes to use for different modes.
     themes: Var[list[dict[str, Any]] | dict[str, str]]
+
+    # The code to display.
     code: Var[str]
+
+    # The transformers to use for the syntax highlighter.
     transformers: Var[list[ShikiBaseTransformers | dict[str, Any]]] = []
 
     @classmethod
     def create(
         cls,
         *children,
-        can_copy: Optional[bool] = False,
-        copy_button: Optional[Union[bool, Component]] = None,
         **props,
     ) -> Component:
         """Create a code block component using [shiki syntax highlighter](https://shiki.matsu.io/).
 
         Args:
             *children: The children of the component.
-            can_copy: Whether a copy button should appears.
-            copy_button: A custom copy button to override the default one.
             **props: The props to pass to the component.
 
         Returns:
             The code block component.
         """
-        props["code"] = children[0]
+        # Separate props for the code block and the wrapper
+        code_block_props = {}
+        code_wrapper_props = {}
 
-        if "theme" not in props:
-            # Default color scheme responds to global color mode.
-            # TODO: we can use themes arg for this
-            props["theme"] = color_mode_cond(
-                light="one-light",
-                dark="one-dark-pro",
+        class_props = cls.get_props()
+
+        # Distribute props between the code block and wrapper
+        for key, value in props.items():
+            (code_block_props if key in class_props else code_wrapper_props)[key] = (
+                value
             )
 
-        if can_copy:
-            code = children[0]
-            copy_button = (  # type: ignore
-                copy_button
-                if copy_button is not None
-                else Button.create(
-                    Icon.create(tag="copy"),
-                    on_click=set_clipboard(code),
-                    style=Style({"position": "absolute", "top": "0.5em", "right": "0"}),
-                )
-            )
-        else:
-            copy_button = None
+        code_block_props["code"] = children[0]
+        code_block = super().create(**code_block_props)
 
-        code_block = super().create(**props)
         transformer_styles = {}
+        # Collect styles from transformers and wrapper
         for transformer in code_block.transformers._var_value:
             if isinstance(transformer, ShikiBaseTransformers) and transformer.style:
                 transformer_styles.update(transformer.style)
+        transformer_styles.update(code_wrapper_props.pop("style", {}))
 
-        if copy_button:
-            return Box.create(
-                code_block,
-                copy_button,
-                position="relative",
-                style=Style(transformer_styles),
-            )
-        else:
-            return Box.create(code_block, style=Style(transformer_styles))
+        return Box.create(
+            code_block,
+            *children[1:],
+            style=Style(transformer_styles),
+            **code_wrapper_props,
+        )
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add the necessary imports.
@@ -515,6 +515,83 @@ class ShikiCodeBlock(Component):
         return processed
 
 
+class ShikiHighLevelCodeBlock(ShikiCodeBlock):
+    """High level component for the shiki syntax highlighter."""
+
+    # If this is enabled, the default transformer(shikijs transformer) will be used.
+    use_transformer: Var[bool] = False
+
+    # If this is enabled line numbers will be shown next to the code block.
+    show_line_numbers: Var[bool]
+
+    @classmethod
+    def create(
+        cls,
+        *children,
+        can_copy: Optional[bool] = False,
+        copy_button: Optional[Union[bool, Component]] = None,
+        **props,
+    ) -> Component:
+        """Create a code block component using [shiki syntax highlighter](https://shiki.matsu.io/).
+
+        Args:
+            *children: The children of the component.
+            can_copy: Whether a copy button should appear.
+            copy_button: A custom copy button to override the default one.
+            **props: The props to pass to the component.
+
+        Returns:
+            The code block component.
+        """
+        use_transformer = props.pop("use_transformer", False)
+        show_line_numbers = props.pop("show_line_numbers", False)
+
+        if use_transformer:
+            props["transformers"] = [ShikiJsTransformer()]
+
+        if show_line_numbers:
+            line_style = LINE_NUMBER_STYLING.copy()
+            line_style.update(props.get("style", {}))
+            props["style"] = line_style
+
+        theme = props.pop("theme", None)
+        props["theme"] = props["theme"] = (
+            cls._map_themes(theme)
+            if theme
+            else color_mode_cond(  # Default color scheme responds to global color mode.
+                light="one-light",
+                dark="one-dark-pro",
+            )
+        )
+
+        if can_copy:
+            code = children[0]
+            copy_button = (  # type: ignore
+                copy_button
+                if copy_button is not None
+                else Button.create(
+                    Icon.create(tag="copy"),
+                    on_click=set_clipboard(code),
+                    style=Style({"position": "absolute", "top": "0.5em", "right": "0"}),
+                )
+            )
+        else:
+            copy_button = None
+
+        if copy_button:
+            return ShikiCodeBlock.create(
+                children[0], copy_button, position="relative", **props
+            )
+        else:
+            return ShikiCodeBlock.create(children[0], **props)
+
+    @staticmethod
+    def _map_themes(theme: str) -> str:
+        if isinstance(theme, str) and theme in THEME_MAPPING:
+            return THEME_MAPPING[theme]
+        return theme
+
+
 class TransformerNamespace(ComponentNamespace):
     """Namespace for the Transformers."""
 
@@ -524,9 +601,10 @@ class TransformerNamespace(ComponentNamespace):
 class CodeblockNamespace(ComponentNamespace):
     """Namespace for the CodeBlock component."""
 
-    create_transformer = ShikiCodeBlock.create_transformer
+    root = staticmethod(ShikiCodeBlock.create)
+    create_transformer = staticmethod(ShikiCodeBlock.create_transformer)
     transformers = TransformerNamespace()
-    __call__ = ShikiCodeBlock.create
+    __call__ = staticmethod(ShikiHighLevelCodeBlock.create)
 
 
 code_block = CodeblockNamespace()
