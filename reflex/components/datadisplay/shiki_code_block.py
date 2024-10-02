@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
@@ -13,7 +13,7 @@ from reflex.components.radix.themes.components.button import Button
 from reflex.components.radix.themes.layout.box import Box
 from reflex.event import set_clipboard
 from reflex.style import Style
-from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import FunctionStringVar
 
@@ -319,7 +319,7 @@ class ShikiBaseTransformers(Base):
 
     library: str
     fns: list[FunctionStringVar]
-    style: Style | None
+    style: Optional[Style]
 
 
 class ShikiJsTransformer(ShikiBaseTransformers):
@@ -329,7 +329,7 @@ class ShikiJsTransformer(ShikiBaseTransformers):
     fns: list[FunctionStringVar] = [
         FunctionStringVar.create(fn) for fn in SHIKIJS_TRANSFORMER_FNS
     ]
-    style: Style | None = Style(
+    style: Optional[Style] = Style(
         {
             ".line": {"display": "inline", "padding-bottom": "0"},
             ".diff": {
@@ -388,7 +388,7 @@ class ShikiCodeBlock(Component):
     code: Var[str]
 
     # The transformers to use for the syntax highlighter.
-    transformers: Var[list[ShikiBaseTransformers | dict[str, Any]]] = []
+    transformers: Var[list[ShikiBaseTransformers | dict[str, Any]]] = Var.create([])
 
     @classmethod
     def create(
@@ -422,7 +422,7 @@ class ShikiCodeBlock(Component):
 
         transformer_styles = {}
         # Collect styles from transformers and wrapper
-        for transformer in code_block.transformers._var_value:
+        for transformer in code_block.transformers._var_value:  # type: ignore
             if isinstance(transformer, ShikiBaseTransformers) and transformer.style:
                 transformer_styles.update(transformer.style)
         transformer_styles.update(code_wrapper_props.pop("style", {}))
@@ -434,7 +434,7 @@ class ShikiCodeBlock(Component):
             **code_wrapper_props,
         )
 
-    def add_imports(self) -> ImportDict | list[ImportDict]:
+    def add_imports(self) -> dict[str, list[str]]:
         """Add the necessary imports.
         We add all referenced transformer functions as imports from their corresponding
         libraries.
@@ -471,7 +471,7 @@ class ShikiCodeBlock(Component):
             raise ValueError(
                 f"the function names should be str names of functions in the specified transformer: {library!r}"
             )
-        return ShikiBaseTransformers(
+        return ShikiBaseTransformers(  # type: ignore
             library=library, fns=[FunctionStringVar.create(fn) for fn in fns]
         )
 
@@ -521,7 +521,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
     """High level component for the shiki syntax highlighter."""
 
     # If this is enabled, the default transformer(shikijs transformer) will be used.
-    use_transformer: Var[bool] = False
+    use_transformer: Var[bool]
 
     # If this is enabled line numbers will be shown next to the code block.
     show_line_numbers: Var[bool]
