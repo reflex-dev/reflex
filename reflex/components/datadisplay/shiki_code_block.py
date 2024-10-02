@@ -42,7 +42,7 @@ LINE_NUMBER_STYLING = {
     },
 }
 
-THEME_MAPPING = {"light": "one-light", "dark": "one-dark"}
+THEME_MAPPING = {"light": "one-light", "dark": "one-dark-pro"}
 LiteralCodeLanguage = Literal[
     "abap",
     "actionscript-3",
