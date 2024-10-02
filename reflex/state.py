@@ -1263,7 +1263,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             value: The value of the attribute.
 
         Raises:
-            SetUndefinedStateVar: If a value of a var is set without first defining it.
+            SetUndefinedStateVarError: If a value of a var is set without first defining it.
         """
         if isinstance(value, MutableProxy):
             # unwrap proxy objects when assigning back to the state
