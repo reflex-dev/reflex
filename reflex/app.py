@@ -546,8 +546,8 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         self.unevaluated_pages[route] = UnevaluatedPage(
             component=component,
             route=route,
-            title=title or constants.DefaultPage.TITLE,
-            description=description or constants.DefaultPage.DESCRIPTION,
+            title=title if title is not None else constants.DefaultPage.TITLE,
+            description=description if description is not None else constants.DefaultPage.DESCRIPTION,
             image=image,
             on_load=on_load,
             meta=meta,
