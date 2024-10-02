@@ -538,7 +538,7 @@ class Component(BaseComponent, ABC):
                 return value
             elif isinstance(value, EventVar):
                 value = [value]
-            elif isinstance(value._var_type, (EventChain, EventSpec)):
+            elif issubclass(value._var_type, (EventChain, EventSpec)):
                 return self._create_event_chain(args_spec, value.guess_type())
             else:
                 raise ValueError(
