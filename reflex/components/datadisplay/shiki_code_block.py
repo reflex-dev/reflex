@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
@@ -382,13 +382,15 @@ class ShikiCodeBlock(Component):
     theme: Var[LiteralCodeTheme] = Var.create("one-light")
 
     # The set of themes to use for different modes.
-    themes: Var[list[dict[str, Any]] | dict[str, str]]
+    themes: Var[Union[list[dict[str, Any]], dict[str, str]]]
 
     # The code to display.
     code: Var[str]
 
     # The transformers to use for the syntax highlighter.
-    transformers: Var[list[ShikiBaseTransformers | dict[str, Any]]] = Var.create([])
+    transformers: Var[list[Union[ShikiBaseTransformers, dict[str, Any]]]] = Var.create(
+        []
+    )
 
     @classmethod
     def create(
@@ -552,9 +554,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
             props["transformers"] = [ShikiJsTransformer()]
 
         if show_line_numbers:
-            line_style = LINE_NUMBER_STYLING.copy()
-            line_style.update(props.get("style", {}))
-            props["style"] = line_style
+            props["style"] = {**LINE_NUMBER_STYLING, **props.get("style", {})}
 
         theme = props.pop("theme", None)
         props["theme"] = props["theme"] = (

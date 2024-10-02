@@ -9,7 +9,6 @@ from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
-from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var
 from reflex.vars.function import FunctionStringVar
 
@@ -309,12 +308,12 @@ LiteralCodeTheme = Literal[
 class ShikiBaseTransformers(Base):
     library: str
     fns: list[FunctionStringVar]
-    style: Style | None
+    style: Optional[Style]
 
 class ShikiJsTransformer(ShikiBaseTransformers):
     library: str
     fns: list[FunctionStringVar]
-    style: Style | None
+    style: Optional[Style]
 
 class ShikiCodeBlock(Component):
     @overload
@@ -947,7 +946,7 @@ class ShikiCodeBlock(Component):
         """
         ...
 
-    def add_imports(self) -> ImportDict | list[ImportDict]: ...
+    def add_imports(self) -> dict[str, list[str]]: ...
     @classmethod
     def create_transformer(
         cls, library: str, fns: list[str]
