@@ -19,6 +19,7 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Callable,
@@ -91,6 +92,9 @@ from reflex.state import (
 from reflex.utils import codespaces, console, exceptions, format, prerequisites, types
 from reflex.utils.exec import is_prod_mode, is_testing_env, should_skip_compile
 from reflex.utils.imports import ImportVar
+
+if TYPE_CHECKING:
+    from reflex.vars import Var
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -182,8 +186,8 @@ class UnevaluatedPage:
 
     component: Union[Component, ComponentCallable]
     route: str
-    title: str
-    description: str
+    title: Union[Var, str]
+    description: Union[Var, str]
     image: str
     on_load: Union[EventHandler, EventSpec, List[Union[EventHandler, EventSpec]], None]
     meta: List[Dict[str, str]]
@@ -478,8 +482,8 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         self,
         component: Component | ComponentCallable,
         route: str | None = None,
-        title: str | None = None,
-        description: str | None = None,
+        title: str | Var | None = None,
+        description: str | Var | None = None,
         image: str = constants.DefaultPage.IMAGE,
         on_load: (
             EventHandler | EventSpec | list[EventHandler | EventSpec] | None
@@ -547,7 +551,9 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             component=component,
             route=route,
             title=title if title is not None else constants.DefaultPage.TITLE,
-            description=description if description is not None else constants.DefaultPage.DESCRIPTION,
+            description=description
+            if description is not None
+            else constants.DefaultPage.DESCRIPTION,
             image=image,
             on_load=on_load,
             meta=meta,
