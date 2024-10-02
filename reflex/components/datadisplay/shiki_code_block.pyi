@@ -37,7 +37,7 @@ LINE_NUMBER_STYLING = {
         "color": "rgba(115,138,148,.4)",
     },
 }
-THEME_MAPPING = {"light": "one-light", "dark": "one-dark"}
+THEME_MAPPING = {"light": "one-light", "dark": "one-dark-pro"}
 LiteralCodeLanguage = Literal[
     "abap",
     "actionscript-3",
