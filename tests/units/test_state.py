@@ -43,7 +43,7 @@ from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.format import json_dumps
 from reflex.vars.base import ComputedVar, Var
-from tests.states.mutation import MutableSQLAModel, MutableTestState
+from tests.units.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState
 
@@ -440,26 +440,28 @@ def test_get_substates():
 
 def test_get_name():
     """Test getting the name of a state."""
-    assert TestState.get_name() == "tests___test_state____test_state"
-    assert ChildState.get_name() == "tests___test_state____child_state"
-    assert ChildState2.get_name() == "tests___test_state____child_state2"
-    assert GrandchildState.get_name() == "tests___test_state____grandchild_state"
+    assert TestState.get_name() == "tests___units___test_state____test_state"
+    assert ChildState.get_name() == "tests___units___test_state____child_state"
+    assert ChildState2.get_name() == "tests___units___test_state____child_state2"
+    assert (
+        GrandchildState.get_name() == "tests___units___test_state____grandchild_state"
+    )
 
 
 def test_get_full_name():
     """Test getting the full name."""
-    assert TestState.get_full_name() == "tests___test_state____test_state"
+    assert TestState.get_full_name() == "tests___units___test_state____test_state"
     assert (
         ChildState.get_full_name()
-        == "tests___test_state____test_state.tests___test_state____child_state"
+        == "tests___units___test_state____test_state.tests___units___test_state____child_state"
     )
     assert (
         ChildState2.get_full_name()
-        == "tests___test_state____test_state.tests___test_state____child_state2"
+        == "tests___units___test_state____test_state.tests___units___test_state____child_state2"
     )
     assert (
         GrandchildState.get_full_name()
-        == "tests___test_state____test_state.tests___test_state____child_state.tests___test_state____grandchild_state"
+        == "tests___units___test_state____test_state.tests___units___test_state____child_state.tests___units___test_state____grandchild_state"
     )
 
 
@@ -3214,6 +3216,7 @@ class MixinState(State, mixin=True):
 
     num: int = 0
     _backend: int = 0
+    _backend_no_default: dict
 
     @rx.var(cache=True)
     def computed(self) -> str:
@@ -3241,10 +3244,15 @@ def test_mixin_state() -> None:
     """Test that a mixin state works correctly."""
     assert "num" in UsesMixinState.base_vars
     assert "num" in UsesMixinState.vars
-    assert UsesMixinState.backend_vars == {"_backend": 0}
+    assert UsesMixinState.backend_vars == {"_backend": 0, "_backend_no_default": {}}
 
     assert "computed" in UsesMixinState.computed_vars
     assert "computed" in UsesMixinState.vars
+
+    assert (
+        UsesMixinState(_reflex_internal_init=True)._backend_no_default  # type: ignore
+        is not UsesMixinState.backend_vars["_backend_no_default"]
+    )
 
 
 def test_child_mixin_state() -> None:

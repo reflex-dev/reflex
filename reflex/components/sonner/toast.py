@@ -17,7 +17,7 @@ from reflex.event import (
 from reflex.style import Style, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
-from reflex.utils.serializers import serialize, serializer
+from reflex.utils.serializers import serializer
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 
@@ -281,8 +281,8 @@ class Toaster(Component):
         if message == "" and ("title" not in props or "description" not in props):
             raise ValueError("Toast message or title or description must be provided.")
         if props:
-            args = serialize(ToastProps(**props))  # type: ignore
-            toast = f"{toast_command}(`{message}`, {args})"
+            args = LiteralVar.create(ToastProps(**props))
+            toast = f"{toast_command}(`{message}`, {str(args)})"
         else:
             toast = f"{toast_command}(`{message}`)"
 

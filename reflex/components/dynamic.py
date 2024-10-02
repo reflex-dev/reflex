@@ -2,6 +2,7 @@
 
 from reflex import constants
 from reflex.utils import imports
+from reflex.utils.format import format_library_name
 from reflex.utils.serializers import serializer
 from reflex.vars import Var, get_unique_variable_name
 from reflex.vars.base import VarData, transform
@@ -57,12 +58,21 @@ def load_dynamic_serializer():
             )
         ] = None
 
+        libs_in_window = [
+            "react",
+            "@radix-ui/themes",
+        ]
+
         imports = {}
         for lib, names in component._get_all_imports().items():
+            formatted_lib_name = format_library_name(lib)
             if (
                 not lib.startswith((".", "/"))
                 and not lib.startswith("http")
-                and lib != "react"
+                and all(
+                    formatted_lib_name != lib_in_window
+                    for lib_in_window in libs_in_window
+                )
             ):
                 imports[get_cdn_url(lib)] = names
             else:
@@ -83,10 +93,16 @@ def load_dynamic_serializer():
                         )
                         + "]"
                     )
-                elif 'from "react"' in line:
-                    module_code_lines[ix] = line.replace(
-                        "import ", "const ", 1
-                    ).replace(' from "react"', " = window.__reflex.react", 1)
+                else:
+                    for lib in libs_in_window:
+                        if f'from "{lib}"' in line:
+                            module_code_lines[ix] = (
+                                line.replace("import ", "const ", 1)
+                                .replace(
+                                    f' from "{lib}"', f" = window.__reflex['{lib}']", 1
+                                )
+                                .replace(" as ", ": ")
+                            )
             if line.startswith("export function"):
                 module_code_lines[ix] = line.replace(
                     "export function", "export default function", 1

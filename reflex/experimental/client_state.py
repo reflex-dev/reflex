@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import re
 import sys
 from typing import Any, Callable, Union
 
@@ -90,12 +91,16 @@ class ClientStateVar(Var):
             default: The default value of the variable.
             global_ref: Whether the state should be accessible in any Component and on the backend.
 
+        Raises:
+            ValueError: If the var_name is not a string.
+
         Returns:
             ClientStateVar
         """
         if var_name is None:
             var_name = get_unique_variable_name()
-        assert isinstance(var_name, str), "var_name must be a string."
+        if not isinstance(var_name, str):
+            raise ValueError("var_name must be a string.")
         if default is NoValue:
             default_var = Var(_js_expr="")
         elif not isinstance(default, Var):
@@ -174,15 +179,15 @@ class ClientStateVar(Var):
             else self._setter_name
         )
         if value is not NoValue:
-            import re
-
             # This is a hack to make it work like an EventSpec taking an arg
             value_str = str(LiteralVar.create(value))
 
-            # remove patterns of ["*"] from the value_str using regex
-            arg = re.sub(r"\[\".*\"\]", "", value_str)
-
-            setter = f"({arg}) => {setter}({str(value)})"
+            if value_str.startswith("_"):
+                # remove patterns of ["*"] from the value_str using regex
+                arg = re.sub(r"\[\".*\"\]", "", value_str)
+                setter = f"(({arg}) => {setter}({value_str}))"
+            else:
+                setter = f"(() => {setter}({value_str}))"
         return Var(
             _js_expr=setter,
             _var_data=VarData(imports=_refs_import if self._global_ref else {}),

@@ -93,6 +93,9 @@ class Markdown(Component):
             custom_attrs: custom attribute
             **props: The properties of the component.
 
+        Raises:
+            ValueError: If the children are not valid.
+
         Returns:
             The markdown component.
         """

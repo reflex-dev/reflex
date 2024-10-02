@@ -1141,7 +1141,7 @@ def serialize_literal(value: LiteralVar):
     Returns:
         The serialized Literal.
     """
-    return serializers.serialize(value._var_value)
+    return value._var_value
 
 
 P = ParamSpec("P")
@@ -1559,8 +1559,9 @@ class ComputedVar(Var[RETURN_TYPE]):
         Raises:
             TypeError: If the computed var dependencies are not Var instances or var names.
         """
-        hints = get_type_hints(fget)
-        hint = hints.get("return", Any)
+        hint = kwargs.pop("return_type", None) or get_type_hints(fget).get(
+            "return", Any
+        )
 
         kwargs["_js_expr"] = kwargs.pop("_js_expr", fget.__name__)
         kwargs["_var_type"] = kwargs.pop("_var_type", hint)
@@ -2667,7 +2668,7 @@ def generic_type_to_actual_type_map(
     # call recursively for nested generic types and merge the results
     return {
         k: v
-        for generic_arg, actual_arg in zip(generic_args, actual_args, strict=False)
+        for generic_arg, actual_arg in zip(generic_args, actual_args)
         for k, v in generic_type_to_actual_type_map(generic_arg, actual_arg).items()
     }
 

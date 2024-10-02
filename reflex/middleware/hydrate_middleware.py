@@ -9,7 +9,6 @@ from reflex import constants
 from reflex.event import Event, get_hydrate_event
 from reflex.middleware.middleware import Middleware
 from reflex.state import BaseState, StateUpdate
-from reflex.utils import format
 
 if TYPE_CHECKING:
     from reflex.app import App
@@ -43,7 +42,7 @@ class HydrateMiddleware(Middleware):
         setattr(state, constants.CompileVars.IS_HYDRATED, False)
 
         # Get the initial state.
-        delta = format.format_state(state.dict())
+        delta = state.dict()
         # since a full dict was captured, clean any dirtiness
         state._clean()
 

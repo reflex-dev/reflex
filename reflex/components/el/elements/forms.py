@@ -10,7 +10,7 @@ from jinja2 import Environment
 from reflex.components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
-from reflex.event import EventChain, EventHandler
+from reflex.event import EventChain, EventHandler, prevent_default
 from reflex.utils.imports import ImportDict
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -148,6 +148,9 @@ class Form(BaseHTML):
         Returns:
             The form component.
         """
+        if "on_submit" not in props:
+            props["on_submit"] = prevent_default
+
         if "handle_submit_unique_name" in props:
             return super().create(*children, **props)
 

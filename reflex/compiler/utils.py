@@ -44,6 +44,9 @@ def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
     Args:
         fields: The set of fields to import from the library.
 
+    Raises:
+        ValueError: If there is more than one default import.
+
     Returns:
         The libraries for default and rest.
         default: default library. When install "import def from library".
@@ -54,7 +57,8 @@ def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
 
     # Check for default imports.
     defaults = {field for field in fields_set if field.is_default}
-    assert len(defaults) < 2
+    if len(defaults) >= 2:
+        raise ValueError("Only one default import is allowed.")
 
     # Get the default import, and the specific imports.
     default = next(iter({field.name for field in defaults}), "")
@@ -92,6 +96,9 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
     Args:
         import_dict: The import dict to compile.
 
+    Raises:
+        ValueError: If an import in the dict is invalid.
+
     Returns:
         The list of import dict.
     """
@@ -106,8 +113,10 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
             continue
 
         if not lib:
-            assert not default, "No default field allowed for empty library."
-            assert rest is not None and len(rest) > 0, "No fields to import."
+            if default:
+                raise ValueError("No default field allowed for empty library.")
+            if rest is None or len(rest) == 0:
+                raise ValueError("No fields to import.")
             for module in sorted(rest):
                 import_dicts.append(get_import_dict(module))
             continue
@@ -155,7 +164,7 @@ def compile_state(state: Type[BaseState]) -> dict:
         initial_state = state(_reflex_internal_init=True).dict(
             initial=True, include_computed=False
         )
-    return format.format_state(initial_state)
+    return initial_state
 
 
 def _compile_client_storage_field(
@@ -429,11 +438,11 @@ def add_meta(
     Returns:
         The component with the metadata added.
     """
-    meta_tags = [Meta.create(**item) for item in meta]
-
-    children: list[Any] = [
-        Title.create(title),
+    meta_tags = [
+        item if isinstance(item, Component) else Meta.create(**item) for item in meta
     ]
+
+    children: list[Any] = [Title.create(title)]
     if description:
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))

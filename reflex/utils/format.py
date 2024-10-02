@@ -9,7 +9,7 @@ import re
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
 from reflex import constants
-from reflex.utils import exceptions, types
+from reflex.utils import exceptions
 from reflex.utils.console import deprecate
 
 if TYPE_CHECKING:
@@ -345,6 +345,7 @@ def format_prop(
     Raises:
         exceptions.InvalidStylePropError: If the style prop value is not a valid type.
         TypeError: If the prop is not valid.
+        ValueError: If the prop is not a string.
     """
     # import here to avoid circular import.
     from reflex.event import EventChain
@@ -391,7 +392,8 @@ def format_prop(
         raise TypeError(f"Could not format prop: {prop} of type {type(prop)}") from e
 
     # Wrap the variable in braces.
-    assert isinstance(prop, str), "The prop must be a string."
+    if not isinstance(prop, str):
+        raise ValueError(f"Invalid prop: {prop}. Expected a string.")
     return wrap(prop, "{", check_first=False)
 
 
@@ -622,48 +624,6 @@ def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
     """
     params = router_data[constants.RouteVar.QUERY]
     return {k.replace("-", "_"): v for k, v in params.items()}
-
-
-def format_state(value: Any, key: Optional[str] = None) -> Any:
-    """Recursively format values in the given state.
-
-    Args:
-        value: The state to format.
-        key: The key associated with the value (optional).
-
-    Returns:
-        The formatted state.
-
-    Raises:
-        TypeError: If the given value is not a valid state.
-    """
-    from reflex.utils import serializers
-
-    # Handle dicts.
-    if isinstance(value, dict):
-        return {k: format_state(v, k) for k, v in value.items()}
-
-    # Handle lists, sets, typles.
-    if isinstance(value, types.StateIterBases):
-        return [format_state(v) for v in value]
-
-    # Return state vars as is.
-    if isinstance(value, types.StateBases):
-        return value
-
-    # Serialize the value.
-    serialized = serializers.serialize(value)
-    if serialized is not None:
-        return serialized
-
-    if key is None:
-        raise TypeError(
-            f"No JSON serializer found for var {value} of type {type(value)}."
-        )
-    else:
-        raise TypeError(
-            f"No JSON serializer found for State Var '{key}' of value {value} of type {type(value)}."
-        )
 
 
 def format_state_name(state_name: str) -> str:

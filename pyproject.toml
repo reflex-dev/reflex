@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "reflex"
-version = "0.6.0a1"
+version = "0.6.2dev1"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [
@@ -26,7 +26,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.9"
 dill = ">=0.3.8,<0.4"
 fastapi = ">=0.96.0,!=0.111.0,!=0.111.1"
 gunicorn = ">=20.1.0,<24.0"
@@ -59,7 +59,7 @@ httpx = ">=0.25.1,<1.0"
 twine = ">=4.0.0,<6.0"
 tomlkit = ">=0.12.4,<1.0"
 lazy_loader = ">=0.4"
-reflex-chakra = ">=0.6.0a6"
+reflex-chakra = ">=0.6.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.1.2,<8.0"
@@ -77,6 +77,8 @@ asynctest = ">=0.13.0,<1.0"
 pre-commit = ">=3.2.1"
 selenium = ">=4.11.0,<5.0"
 pytest-benchmark = ">=4.0.0,<5.0"
+playwright = ">=1.46.0"
+pytest-playwright = ">=0.5.1"
 
 [tool.poetry.scripts]
 reflex = "reflex.reflex:cli"
@@ -88,7 +90,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.pyright]
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py39"
 lint.select = ["B", "D", "E", "F", "I", "SIM", "W"]
 lint.ignore = ["B008", "D203", "D205", "D213", "D401", "D406", "D407", "E501", "F403", "F405", "F541"]
 lint.pydocstyle.convention = "google"

@@ -15,6 +15,7 @@ from reflex_cli.utils import dependency
 
 from reflex import constants
 from reflex.config import get_config
+from reflex.constants.base import LogLevel
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
@@ -229,7 +230,8 @@ def _run(
             exec.run_frontend_prod,
             exec.run_backend_prod,
         )
-    assert setup_frontend and frontend_cmd and backend_cmd, "Invalid env"
+    if not setup_frontend or not frontend_cmd or not backend_cmd:
+        raise ValueError("Invalid env")
 
     # Post a telemetry event.
     telemetry.send(f"run-{env.value}")
@@ -245,15 +247,30 @@ def _run(
         setup_frontend(Path.cwd())
         commands.append((frontend_cmd, Path.cwd(), frontend_port, backend))
 
+    # If no loglevel is specified, set the subprocesses loglevel to WARNING.
+    subprocesses_loglevel = (
+        loglevel if loglevel != LogLevel.DEFAULT else LogLevel.WARNING
+    )
+
     # In prod mode, run the backend on a separate thread.
     if backend and env == constants.Env.PROD:
-        commands.append((backend_cmd, backend_host, backend_port))
+        commands.append(
+            (
+                backend_cmd,
+                backend_host,
+                backend_port,
+                subprocesses_loglevel,
+                frontend,
+            )
+        )
 
     # Start the frontend and backend.
     with processes.run_concurrently_context(*commands):
         # In dev mode, run the backend on the main thread.
         if backend and env == constants.Env.DEV:
-            backend_cmd(backend_host, int(backend_port))
+            backend_cmd(
+                backend_host, int(backend_port), subprocesses_loglevel, frontend
+            )
             # The windows uvicorn bug workaround
             # https://github.com/reflex-dev/reflex/issues/2335
             if constants.IS_WINDOWS and exec.frontend_process:

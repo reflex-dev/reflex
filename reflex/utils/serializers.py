@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import (
     Any,
     Callable,
-    Dict,
     List,
     Literal,
     Optional,
@@ -126,7 +125,8 @@ def serialize(
     # If there is no serializer, return None.
     if serializer is None:
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
-            return serialize(dataclasses.asdict(value))
+            return {k.name: getattr(value, k.name) for k in dataclasses.fields(value)}
+
         if get_type:
             return None, None
         return None
@@ -215,32 +215,6 @@ def serialize_type(value: type) -> str:
 
 
 @serializer
-def serialize_str(value: str) -> str:
-    """Serialize a string.
-
-    Args:
-        value: The string to serialize.
-
-    Returns:
-        The serialized string.
-    """
-    return value
-
-
-@serializer
-def serialize_primitive(value: Union[bool, int, float, None]):
-    """Serialize a primitive type.
-
-    Args:
-        value: The number/bool/None to serialize.
-
-    Returns:
-        The serialized number/bool/None.
-    """
-    return value
-
-
-@serializer
 def serialize_base(value: Base) -> dict:
     """Serialize a Base instance.
 
@@ -250,33 +224,20 @@ def serialize_base(value: Base) -> dict:
     Returns:
         The serialized Base.
     """
-    return {k: serialize(v) for k, v in value.dict().items() if not callable(v)}
+    return {k: v for k, v in value.dict().items() if not callable(v)}
 
 
 @serializer
-def serialize_list(value: Union[List, Tuple, Set]) -> list:
-    """Serialize a list to a JSON string.
+def serialize_set(value: Set) -> list:
+    """Serialize a set to a JSON serializable list.
 
     Args:
-        value: The list to serialize.
+        value: The set to serialize.
 
     Returns:
         The serialized list.
     """
-    return [serialize(item) for item in value]
-
-
-@serializer
-def serialize_dict(prop: Dict[str, Any]) -> dict:
-    """Serialize a dictionary to a JSON string.
-
-    Args:
-        prop: The dictionary to serialize.
-
-    Returns:
-        The serialized dictionary.
-    """
-    return {k: serialize(v) for k, v in prop.items()}
+    return list(value)
 
 
 @serializer(to=str)

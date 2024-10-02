@@ -1550,6 +1550,242 @@ class Svg(BaseHTML):
         """
         ...
 
+class Text(BaseHTML):
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        x: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        y: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        dx: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        dy: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        rotate: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        length_adjust: Optional[Union[Var[str], str]] = None,
+        text_length: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        auto_capitalize: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        content_editable: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        context_menu: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        enter_key_hint: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_enter: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_leave: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_move: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_out: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        **props,
+    ) -> "Text":
+        """Create the component.
+
+        Args:
+            *children: The children of the component.
+            x: The x coordinate of the starting point of the text baseline.
+            y: The y coordinate of the starting point of the text baseline.
+            dx: Shifts the text position horizontally from a previous text element.
+            dy: Shifts the text position vertically from a previous text element.
+            rotate: Rotates orientation of each individual glyph.
+            length_adjust: How the text is stretched or compressed to fit the width defined by the text_length attribute.
+            text_length: A width that the text should be scaled to fit.
+            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
+            content_editable: Indicates whether the element's content is editable.
+            context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
+            dir: Defines the text direction. Allowed values are ltr (Left-To-Right) or rtl (Right-To-Left)
+            draggable: Defines whether the element can be dragged.
+            enter_key_hint: Hints what media types the media element is able to play.
+            hidden: Defines whether the element is hidden.
+            input_mode: Defines the type of the element.
+            item_prop: Defines the name of the element for metadata purposes.
+            lang: Defines the language used in the element.
+            role: Defines the role of the element.
+            slot: Assigns a slot in a shadow DOM shadow tree to an element.
+            spell_check: Defines whether the element may be checked for spelling errors.
+            tab_index: Defines the position of the current element in the tabbing order.
+            title: Defines a tooltip for the element.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The props of the component.
+
+        Returns:
+            The component.
+        """
+        ...
+
+class Line(BaseHTML):
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        x1: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        x2: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        y1: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        y2: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        path_length: Optional[Union[Var[int], int]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        auto_capitalize: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        content_editable: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        context_menu: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        enter_key_hint: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_enter: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_leave: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_move: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_out: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        **props,
+    ) -> "Line":
+        """Create the component.
+
+        Args:
+            *children: The children of the component.
+            x1: The x-axis coordinate of the line starting point.
+            x2: The x-axis coordinate of the the line ending point.
+            y1: The y-axis coordinate of the line starting point.
+            y2: The y-axis coordinate of the the line ending point.
+            path_length: The total path length, in user units.
+            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
+            content_editable: Indicates whether the element's content is editable.
+            context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
+            dir: Defines the text direction. Allowed values are ltr (Left-To-Right) or rtl (Right-To-Left)
+            draggable: Defines whether the element can be dragged.
+            enter_key_hint: Hints what media types the media element is able to play.
+            hidden: Defines whether the element is hidden.
+            input_mode: Defines the type of the element.
+            item_prop: Defines the name of the element for metadata purposes.
+            lang: Defines the language used in the element.
+            role: Defines the role of the element.
+            slot: Assigns a slot in a shadow DOM shadow tree to an element.
+            spell_check: Defines whether the element may be checked for spelling errors.
+            tab_index: Defines the position of the current element in the tabbing order.
+            title: Defines a tooltip for the element.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The props of the component.
+
+        Returns:
+            The component.
+        """
+        ...
+
 class Circle(BaseHTML):
     @overload
     @classmethod
@@ -1635,6 +1871,122 @@ class Circle(BaseHTML):
             cy: The y-axis coordinate of the center of the circle.
             r: The radius of the circle.
             path_length: The total length for the circle's circumference, in user units.
+            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
+            content_editable: Indicates whether the element's content is editable.
+            context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
+            dir: Defines the text direction. Allowed values are ltr (Left-To-Right) or rtl (Right-To-Left)
+            draggable: Defines whether the element can be dragged.
+            enter_key_hint: Hints what media types the media element is able to play.
+            hidden: Defines whether the element is hidden.
+            input_mode: Defines the type of the element.
+            item_prop: Defines the name of the element for metadata purposes.
+            lang: Defines the language used in the element.
+            role: Defines the role of the element.
+            slot: Assigns a slot in a shadow DOM shadow tree to an element.
+            spell_check: Defines whether the element may be checked for spelling errors.
+            tab_index: Defines the position of the current element in the tabbing order.
+            title: Defines a tooltip for the element.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The props of the component.
+
+        Returns:
+            The component.
+        """
+        ...
+
+class Ellipse(BaseHTML):
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        cx: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        cy: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        rx: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        ry: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        path_length: Optional[Union[Var[int], int]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        auto_capitalize: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        content_editable: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        context_menu: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        enter_key_hint: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_enter: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_leave: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_move: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_out: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        **props,
+    ) -> "Ellipse":
+        """Create the component.
+
+        Args:
+            *children: The children of the component.
+            cx: The x position of the center of the ellipse.
+            cy: The y position of the center of the ellipse.
+            rx: The radius of the ellipse on the x axis.
+            ry: The radius of the ellipse on the y axis.
+            path_length: The total length for the ellipse's circumference, in user units.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -2120,6 +2472,130 @@ class LinearGradient(BaseHTML):
         """
         ...
 
+class RadialGradient(BaseHTML):
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        cx: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        cy: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        fr: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        fx: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        fy: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        gradient_units: Optional[Union[Var[Union[bool, str]], bool, str]] = None,
+        gradient_transform: Optional[Union[Var[Union[bool, str]], bool, str]] = None,
+        r: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        spread_method: Optional[Union[Var[Union[bool, str]], bool, str]] = None,
+        access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        auto_capitalize: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        content_editable: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        context_menu: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        dir: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        draggable: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        enter_key_hint: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        hidden: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        input_mode: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        item_prop: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        lang: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        role: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        slot: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        spell_check: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        tab_index: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        title: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_enter: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_leave: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_move: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_out: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        **props,
+    ) -> "RadialGradient":
+        """Create the component.
+
+        Args:
+            *children: The children of the component.
+            cx: The x coordinate of the end circle of the radial gradient.
+            cy: The y coordinate of the end circle of the radial gradient.
+            fr: The radius of the start circle of the radial gradient.
+            fx: The x coordinate of the start circle of the radial gradient.
+            fy: The y coordinate of the start circle of the radial gradient.
+            gradient_units: Units for the gradient.
+            gradient_transform: Transform applied to the gradient.
+            r: The radius of the end circle of the radial gradient.
+            spread_method: Method used to spread the gradient.
+            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
+            content_editable: Indicates whether the element's content is editable.
+            context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
+            dir: Defines the text direction. Allowed values are ltr (Left-To-Right) or rtl (Right-To-Left)
+            draggable: Defines whether the element can be dragged.
+            enter_key_hint: Hints what media types the media element is able to play.
+            hidden: Defines whether the element is hidden.
+            input_mode: Defines the type of the element.
+            item_prop: Defines the name of the element for metadata purposes.
+            lang: Defines the language used in the element.
+            role: Defines the role of the element.
+            slot: Assigns a slot in a shadow DOM shadow tree to an element.
+            spell_check: Defines whether the element may be checked for spelling errors.
+            tab_index: Defines the position of the current element in the tabbing order.
+            title: Defines a tooltip for the element.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The props of the component.
+
+        Returns:
+            The component.
+        """
+        ...
+
 class Stop(BaseHTML):
     @overload
     @classmethod
@@ -2345,12 +2821,16 @@ class Path(BaseHTML):
         ...
 
 class SVG(ComponentNamespace):
+    text = staticmethod(Text.create)
+    line = staticmethod(Line.create)
     circle = staticmethod(Circle.create)
+    ellipse = staticmethod(Ellipse.create)
     rect = staticmethod(Rect.create)
     polygon = staticmethod(Polygon.create)
     path = staticmethod(Path.create)
     stop = staticmethod(Stop.create)
     linear_gradient = staticmethod(LinearGradient.create)
+    radial_gradient = staticmethod(RadialGradient.create)
     defs = staticmethod(Defs.create)
 
     @staticmethod

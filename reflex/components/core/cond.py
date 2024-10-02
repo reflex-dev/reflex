@@ -138,13 +138,13 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
     """
     # Convert the condition to a Var.
     cond_var = LiteralVar.create(condition)
-    assert cond_var is not None, "The condition must be set."
+    if cond_var is None:
+        raise ValueError("The condition must be set.")
 
     # If the first component is a component, create a Cond component.
     if isinstance(c1, BaseComponent):
-        assert c2 is None or isinstance(
-            c2, BaseComponent
-        ), "Both arguments must be components."
+        if c2 is not None and not isinstance(c2, BaseComponent):
+            raise ValueError("Both arguments must be components.")
         return Cond.create(cond_var, c1, c2)
 
     # Otherwise, create a conditional Var.

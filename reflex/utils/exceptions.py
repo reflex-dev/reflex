@@ -111,3 +111,7 @@ class GeneratedCodeHasNoFunctionDefs(ReflexError):
 
 class PrimitiveUnserializableToJSON(ReflexError, ValueError):
     """Raised when a primitive type is unserializable to JSON. Usually with NaN and Infinity."""
+
+
+class InvalidLifespanTaskType(ReflexError, TypeError):
+    """Raised when an invalid task type is registered as a lifespan task."""
