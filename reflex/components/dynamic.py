@@ -2,6 +2,7 @@
 
 from reflex import constants
 from reflex.utils import imports
+from reflex.utils.format import format_library_name
 from reflex.utils.serializers import serializer
 from reflex.vars import Var, get_unique_variable_name
 from reflex.vars.base import VarData, transform
@@ -64,11 +65,12 @@ def load_dynamic_serializer():
 
         imports = {}
         for lib, names in component._get_all_imports().items():
+            formatted_lib_name = format_library_name(lib)
             if (
                 not lib.startswith((".", "/"))
                 and not lib.startswith("http")
                 and all(
-                    not lib.startswith(lib_in_window)
+                    formatted_lib_name != lib_in_window
                     for lib_in_window in libs_in_window
                 )
             ):
