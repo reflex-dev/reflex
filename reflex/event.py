@@ -1293,7 +1293,7 @@ class LiteralEventChainVar(CachedVarOperation, LiteralVar, EventChainVar):
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
 class ToEventVarOperation(ToOperation, EventVar):
-    """Base class for immutable number vars that are the result of a number operation."""
+    """Result of a cast to an event var."""
 
     _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
 
@@ -1306,7 +1306,7 @@ class ToEventVarOperation(ToOperation, EventVar):
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
 class ToEventChainVarOperation(ToOperation, EventChainVar):
-    """Base class for immutable number vars that are the result of a number operation."""
+    """Result of a cast to an event chain var."""
 
     _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
 
