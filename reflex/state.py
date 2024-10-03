@@ -699,11 +699,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         )
 
     @classmethod
-    def _evaluate(cls, f: Callable[[Self], Any]) -> Var:
+    def _evaluate(
+        cls, f: Callable[[Self], Any], of_type: Union[Type, None] = None
+    ) -> Var:
         """Evaluate a function to a ComputedVar. Experimental.
 
         Args:
             f: The function to evaluate.
+            of_type: The type of the ComputedVar. Defaults to Component.
 
         Returns:
             The ComputedVar.
@@ -711,14 +714,23 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         console.warn(
             "The _evaluate method is experimental and may be removed in future versions."
         )
-        from reflex.components.base.fragment import fragment
         from reflex.components.component import Component
+
+        of_type = of_type or Component
 
         unique_var_name = get_unique_variable_name()
 
-        @computed_var(_js_expr=unique_var_name, return_type=Component)
+        @computed_var(_js_expr=unique_var_name, return_type=of_type)
         def computed_var_func(state: Self):
-            return fragment(f(state))
+            result = f(state)
+
+            if not isinstance(result, of_type):
+                console.warn(
+                    f"Inline ComputedVar {f} expected type {of_type}, got {type(result)}. "
+                    "You can specify expected type with `of_type` argument."
+                )
+
+            return result
 
         setattr(cls, unique_var_name, computed_var_func)
         cls.computed_vars[unique_var_name] = computed_var_func
