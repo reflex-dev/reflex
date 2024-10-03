@@ -123,3 +123,7 @@ class DynamicComponentMissingLibrary(ReflexError, ValueError):
 
 class SetUndefinedStateVarError(ReflexError, AttributeError):
     """Raised when setting the value of a var without first declaring it."""
+
+
+class StateSchemaMismatchError(ReflexError, TypeError):
+    """Raised when the serialized schema of a state class does not match the current schema."""
