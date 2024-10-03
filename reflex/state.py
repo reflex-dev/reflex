@@ -1282,9 +1282,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return
 
         if (
-            not name.startswith(
-                "_"
-            )  # TODO: skipping backend vars and vars with double leading underscores for now. They should be supported, however.
+            not name.startswith("__")
+            and not name.startswith(f"_{type(self).__name__}__")
             and name not in self.vars
             and name not in self.get_skip_vars()
         ):

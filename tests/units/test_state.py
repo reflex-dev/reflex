@@ -41,6 +41,7 @@ from reflex.state import (
 )
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
+from reflex.utils.exceptions import SetUndefinedStateVarError
 from reflex.utils.format import json_dumps
 from reflex.vars.base import ComputedVar, Var
 from tests.units.states.mutation import MutableSQLAModel, MutableTestState
@@ -3293,17 +3294,14 @@ def test_assignment_to_undeclared_vars():
     state = State()  # type: ignore
     sub_state = Substate()  # type: ignore
 
-    with pytest.raises(AttributeError):
+    with pytest.raises(SetUndefinedStateVarError):
         state.handle_regular_var()
 
-    with pytest.raises(AttributeError):
+    with pytest.raises(SetUndefinedStateVarError):
         sub_state.handle_var()
 
-    # TODO: uncomment this if the case of backend vars are supported.
-    # with pytest.raises(AttributeError):
-    #     state.handle_backend_var()
-    #
-    # with pytest.raises(AttributeError):
-    #     state.handle_non_var()
+    with pytest.raises(SetUndefinedStateVarError):
+        state.handle_backend_var()
 
     state.handle_supported_regular_vars()
+    state.handle_non_var()
