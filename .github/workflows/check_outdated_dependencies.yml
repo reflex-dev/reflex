@@ -55,4 +55,4 @@ jobs:
         poetry run reflex init --template blank
         cd .web
         which bun
-        poetry run bun outdated
+        bun outdated
