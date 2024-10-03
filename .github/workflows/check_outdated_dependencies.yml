@@ -27,9 +27,9 @@ jobs:
 
         filtered_outdated=$(echo "$outdated" | grep -vE 'pyright|ruff')
 
-        if [ ! -z "$outdated" ]; then
+        if [ ! -z "$filtered_outdated" ]; then
           echo "Outdated dependencies found:"
-          echo "$outdated"
+          echo "$filtered_outdated"
           exit 1
         else
           echo "All dependencies are up to date. (pyright and ruff are ignored)"
