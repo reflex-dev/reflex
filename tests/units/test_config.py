@@ -192,4 +192,4 @@ def test_reflex_dir_env_var(monkeypatch, tmp_path):
 
     mp_ctx = multiprocessing.get_context(method="spawn")
     with mp_ctx.Pool(processes=1) as pool:
-        assert pool.apply(reflex_dir_constant) == str(tmp_path)
+        assert pool.apply(reflex_dir_constant) == tmp_path

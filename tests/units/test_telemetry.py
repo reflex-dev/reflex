@@ -52,4 +52,4 @@ def test_send(mocker, event):
     telemetry._send(event, telemetry_enabled=True)
     httpx_post_mock.assert_called_once()
 
-    pathlib_path_read_text_mock.assert_called_once()
+    assert pathlib_path_read_text_mock.call_count == 2
