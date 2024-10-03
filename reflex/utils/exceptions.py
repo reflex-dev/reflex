@@ -115,3 +115,7 @@ class PrimitiveUnserializableToJSON(ReflexError, ValueError):
 
 class InvalidLifespanTaskType(ReflexError, TypeError):
     """Raised when an invalid task type is registered as a lifespan task."""
+
+
+class DynamicComponentMissingLibrary(ReflexError, ValueError):
+    """Raised when a dynamic component is missing a library."""

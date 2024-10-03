@@ -1,13 +1,17 @@
 """Components that are dynamically generated on the backend."""
 
-from importlib.util import find_spec
+from typing import TYPE_CHECKING
 
 from reflex import constants
 from reflex.utils import imports
+from reflex.utils.exceptions import DynamicComponentMissingLibrary
 from reflex.utils.format import format_library_name
 from reflex.utils.serializers import serializer
 from reflex.vars import Var, get_unique_variable_name
 from reflex.vars.base import VarData, transform
+
+if TYPE_CHECKING:
+    from reflex.components.component import Component
 
 
 def get_cdn_url(lib: str) -> str:
@@ -20,6 +24,23 @@ def get_cdn_url(lib: str) -> str:
         The CDN URL for the library.
     """
     return f"https://cdn.jsdelivr.net/npm/{lib}" + "/+esm"
+
+
+bundled_libraries = {"react", "@radix-ui/themes"}
+
+
+def bundle_library(component: "Component"):
+    """Bundle a library with the component.
+
+    Args:
+        component: The component to bundle the library with.
+
+    Raises:
+        DynamicComponentMissingLibrary: Raised when a dynamic component is missing a library.
+    """
+    if component.library is None:
+        raise DynamicComponentMissingLibrary("Component must have a library to bundle.")
+    bundled_libraries.add(format_library_name(component.library))
 
 
 def load_dynamic_serializer():
@@ -60,12 +81,7 @@ def load_dynamic_serializer():
             )
         ] = None
 
-        chakra_available = find_spec("reflex_chakra") is not None
-
-        libs_in_window = [
-            "react",
-            "@radix-ui/themes",
-        ] + (["@chakra-ui/react"] if chakra_available else [])
+        libs_in_window = bundled_libraries
 
         imports = {}
         for lib, names in component._get_all_imports().items():
