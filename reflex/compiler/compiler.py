@@ -40,6 +40,20 @@ def _compile_document_root(root: Component) -> str:
     )
 
 
+def _normalize_library_name(lib: str) -> str:
+    """Normalize the library name.
+
+    Args:
+        lib: The library name to normalize.
+
+    Returns:
+        The normalized library name.
+    """
+    if lib == "react":
+        return "React"
+    return lib.replace("@", "").replace("/", "_").replace("-", "_")
+
+
 def _compile_app(app_root: Component) -> str:
     """Compile the app template component.
 
@@ -49,10 +63,20 @@ def _compile_app(app_root: Component) -> str:
     Returns:
         The compiled app.
     """
+    from reflex.components.dynamic import bundled_libraries
+
+    window_libraries = [
+        (_normalize_library_name(name), name) for name in bundled_libraries
+    ] + [
+        ("utils_context", f"/{constants.Dirs.UTILS}/context"),
+        ("utils_state", f"/{constants.Dirs.UTILS}/state"),
+    ]
+
     return templates.APP_ROOT.render(
         imports=utils.compile_imports(app_root._get_all_imports()),
         custom_codes=app_root._get_all_custom_code(),
         hooks={**app_root._get_all_hooks_internal(), **app_root._get_all_hooks()},
+        window_libraries=window_libraries,
         render=app_root.render(),
     )
 
