@@ -7,11 +7,10 @@ on:
   workflow_dispatch:  # Allow manual triggering if needed.
 
 jobs:
-  check-dependencies:
+  backend:
     runs-on: ubuntu-latest
 
     steps:
-    # Checkout the repository code
     - name: Checkout code
       uses: actions/checkout@v3
 
@@ -35,8 +34,22 @@ jobs:
           echo "All dependencies are up to date. (pyright and ruff are ignored)"
         fi
 
+
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - uses: ./.github/actions/setup_build_env
+      with:
+        python-version: 3.9
+        run-poetry-install: true
+        create-venv-at-path: .venv
+
     - name: Check outdated frontend dependencies
       run: |
-        reflex init --template blank
+        poetry run reflex init --template blank
         cd .web
         bun outdated
