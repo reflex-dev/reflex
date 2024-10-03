@@ -22,7 +22,11 @@ from typing_extensions import get_args, get_origin
 
 from reflex import constants
 from reflex.utils import format
-from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
+from reflex.utils.exceptions import (
+    EventFnArgMismatch,
+    EventHandlerArgMismatch,
+    EventHandlerArgTypeMismatch,
+)
 from reflex.utils.types import ArgsSpec, GenericType
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -888,6 +892,7 @@ def call_event_handler(
 
     Raises:
         EventHandlerArgMismatch: if number of arguments expected by event_handler doesn't match the spec.
+        EventHandlerArgTypeMismatch: if the annotations of args accepted by event_handler differs from the spec of the event trigger.
 
     Returns:
         The event spec from calling the event handler.
@@ -898,11 +903,12 @@ def call_event_handler(
         # Handle partial application of EventSpec args
         return event_handler.add_args(*parsed_args)
 
-    args = inspect.getfullargspec(event_handler.fn).args
+    fullspec = inspect.getfullargspec(event_handler.fn)
+
+    args = fullspec.args
     n_args = len(args) - 1  # subtract 1 for bound self arg
-    if n_args == len(parsed_args):
-        return event_handler(*parsed_args)  # type: ignore
-    else:
+
+    if n_args != len(parsed_args):
         raise EventHandlerArgMismatch(
             "The number of arguments accepted by "
             f"{event_handler.fn.__qualname__} ({n_args}) "
@@ -910,6 +916,20 @@ def call_event_handler(
             f"{[str(v) for v in parsed_args]}\n"
             "See https://reflex.dev/docs/events/event-arguments/"
         )
+
+    # check that args of event handler are matching the spec if type hints are provided
+    for arg, arg_type in inspect.getfullargspec(arg_spec).annotations.items():
+        if arg not in fullspec.annotations:
+            continue
+        if arg_type == fullspec.annotations[arg]:
+            print(f"continue for {arg}: {arg_type} == {fullspec.annotations[arg]}")
+            continue
+        else:
+            raise EventHandlerArgTypeMismatch(
+                f"Type mismatch for argument {arg} in {event_handler.fn.__qualname__}. Expected {arg_type} but got {fullspec.annotations[arg]}"
+            )
+
+    return event_handler(*parsed_args)  # type: ignore
 
 
 def unwrap_var_annotation(annotation: GenericType):
