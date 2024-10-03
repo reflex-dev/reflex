@@ -138,7 +138,7 @@ def load_dynamic_serializer():
                 "const { jsx } = window.__reflex['@emotion/react']",
                 *module_code_lines,
             ]
-        ) + "\n".join(module_code_lines)
+        )
 
     @transform
     def evaluate_component(js_string: Var[str]) -> Var[Component]:
