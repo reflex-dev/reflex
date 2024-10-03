@@ -49,8 +49,9 @@ jobs:
         create-venv-at-path: .venv
 
     - name: Check outdated frontend dependencies
-      working-directory: blank
       run: |
+        mkdir -p blank
+        cd blank
         poetry run reflex init --template blank
         cd .web
         bun outdated
