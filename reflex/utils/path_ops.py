@@ -164,7 +164,7 @@ def use_system_bun() -> bool:
     return use_system_install(constants.Bun.USE_SYSTEM_VAR)
 
 
-def get_node_bin_path() -> str | None:
+def get_node_bin_path() -> Path | None:
     """Get the node binary dir path.
 
     Returns:
@@ -173,8 +173,8 @@ def get_node_bin_path() -> str | None:
     bin_path = Path(constants.Node.BIN_PATH)
     if not bin_path.exists():
         str_path = which("node")
-        return str(Path(str_path).parent.resolve()) if str_path else str_path
-    return str(bin_path.resolve())
+        return Path(str_path).parent.resolve() if str_path else None
+    return bin_path.resolve()
 
 
 def get_node_path() -> str | None:
