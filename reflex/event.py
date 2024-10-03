@@ -845,7 +845,7 @@ def call_script(
             LiteralVar.create(javascript_code),
             javascript_code,
         )
-        if javascript_code._get_all_var_data() is None:
+        if not javascript_code._get_all_var_data():
             # Without VarData, cast to string and eval the code in the event loop.
             javascript_code = str(Var(_js_expr=original_code))
 
