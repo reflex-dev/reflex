@@ -26,7 +26,11 @@ def get_cdn_url(lib: str) -> str:
     return f"https://cdn.jsdelivr.net/npm/{lib}" + "/+esm"
 
 
-bundled_libraries = {"react", "@radix-ui/themes"}
+bundled_libraries = {
+    "react",
+    "@radix-ui/themes",
+    "@emotion/react",
+}
 
 
 def bundle_library(component: "Component"):
@@ -127,7 +131,14 @@ def load_dynamic_serializer():
 
         module_code_lines.insert(0, "const React = window.__reflex.react;")
 
-        return "//__reflex_evaluate\n" + "\n".join(module_code_lines)
+        return "\n".join(
+            [
+                "//__reflex_evaluate",
+                "/** @jsx jsx */",
+                "const { jsx } = window.__reflex['@emotion/react']",
+                *module_code_lines,
+            ]
+        )
 
     @transform
     def evaluate_component(js_string: Var[str]) -> Var[Component]:
