@@ -435,21 +435,10 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             TypeError: When an invalid component function is passed.
             exceptions.MatchTypeError: If the return types of match cases in rx.match are different.
         """
-        from reflex.utils.exceptions import VarOperationTypeError
-
         try:
             return component if isinstance(component, Component) else component()
         except exceptions.MatchTypeError:
             raise
-        except TypeError as e:
-            message = str(e)
-            if "Var" in message:
-                raise VarOperationTypeError(
-                    "You may be trying to use an invalid Python function on a state var. "
-                    "When referencing a var inside your render code, only limited var operations are supported. "
-                    "See the var operation docs here: https://reflex.dev/docs/vars/var-operations/"
-                ) from e
-            raise e
 
     def add_page(
         self,
