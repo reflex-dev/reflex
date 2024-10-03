@@ -65,7 +65,9 @@ def DynamicComponents():
             DynamicComponentsState.client_token_component,
             DynamicComponentsState.button,
             rx.text(
-                DynamicComponentsState._evaluate(lambda state: factorial(state.value)),
+                DynamicComponentsState._evaluate(
+                    lambda state: factorial(state.value), of_type=int
+                ),
                 id="factorial",
             ),
         )
