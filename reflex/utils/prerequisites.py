@@ -132,6 +132,21 @@ def get_or_set_last_reflex_version_check_datetime():
     return last_version_check_datetime
 
 
+def set_last_reflex_run_time():
+    """Set the last Reflex run time.
+
+    Returns:
+        The last time the reflex app was started.
+    """
+    reflex_json_file = get_web_dir() / constants.Reflex.JSON
+    if not reflex_json_file.exists():
+        return
+
+    data = json.loads(reflex_json_file.read_text())
+    data.update({"last_reflex_run_datetime": str(datetime.now())})
+    path_ops.update_json_file(reflex_json_file, data)
+
+
 def check_node_version() -> bool:
     """Check the version of Node.js.
 
