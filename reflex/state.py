@@ -700,7 +700,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
     @classmethod
     def _evaluate(
-        cls, f: Callable[[Self], Any], of_type: Union[Type, None] = None
+        cls, f: Callable[[Self], Any], of_type: Union[type, None] = None
     ) -> Var:
         """Evaluate a function to a ComputedVar. Experimental.
 
