@@ -119,3 +119,7 @@ class InvalidLifespanTaskType(ReflexError, TypeError):
 
 class DynamicComponentMissingLibrary(ReflexError, ValueError):
     """Raised when a dynamic component is missing a library."""
+
+
+class SetUndefinedStateVarError(ReflexError, AttributeError):
+    """Raised when setting the value of a var without first declaring it."""

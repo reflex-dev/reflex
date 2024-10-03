@@ -195,7 +195,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
             stylesheet_full_path = (
                 Path.cwd() / constants.Dirs.APP_ASSETS / stylesheet.strip("/")
             )
-            if not os.path.exists(stylesheet_full_path):
+            if not stylesheet_full_path.exists():
                 raise FileNotFoundError(
                     f"The stylesheet file {stylesheet_full_path} does not exist."
                 )
