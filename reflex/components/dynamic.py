@@ -132,7 +132,7 @@ def load_dynamic_serializer():
         module_code_lines.insert(0, "const React = window.__reflex.react;")
 
         return (
-            "//__reflex_evaluate\n/** @jsx jsx */\nconst { jsx } = window.__reflex['@emotion/react']\n"
+            "\n".join(["//__reflex_evaluate", "/** @jsx jsx */", "const { jsx } = window.__reflex['@emotion/react']", *module_code_lines])
             + "\n".join(module_code_lines)
         )
 
