@@ -1,4 +1,4 @@
-name: Check Dependencies
+name: check-outdated-dependencies
 
 on:
   push:  # This will trigger the action when a pull request is opened or updated.
