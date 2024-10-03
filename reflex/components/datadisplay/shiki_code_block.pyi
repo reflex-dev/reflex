@@ -12,6 +12,8 @@ from reflex.style import Style
 from reflex.vars.base import Var
 from reflex.vars.function import FunctionStringVar
 
+def copy_script(id: str, code: str) -> Any: ...
+
 SHIKIJS_TRANSFORMER_FNS = {
     "transformerNotationDiff",
     "transformerNotationHighlight",
@@ -25,7 +27,13 @@ SHIKIJS_TRANSFORMER_FNS = {
     "transformerRemoveNotationEscape",
 }
 LINE_NUMBER_STYLING = {
-    "code": {"counter-reset": "step", "counter-increment": "step 0"},
+    "code": {
+        "counter-reset": "step",
+        "counter-increment": "step 0",
+        "display": "grid",
+        "line-height": "1.7",
+        "font-size": "0.875em",
+    },
     "code .line::before": {
         "content": "counter(step)",
         "counter-increment": "step",
@@ -35,6 +43,15 @@ LINE_NUMBER_STYLING = {
         "text-align": "right",
         "color": "rgba(115,138,148,.4)",
     },
+}
+BOX_PARENT_STYLING = {
+    "pre": {
+        "margin": "0",
+        "padding": "24px",
+        "background": "transparent",
+        "overflow-x": "auto",
+        "border-radius": "6px",
+    }
 }
 THEME_MAPPING = {
     "light": "one-light",

@@ -7,15 +7,61 @@ from typing import Any, Literal, Optional, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.core.colors import color
 from reflex.components.core.cond import color_mode_cond
+from reflex.components.el.elements.forms import Button
 from reflex.components.lucide.icon import Icon
-from reflex.components.radix.themes.components.button import Button
 from reflex.components.radix.themes.layout.box import Box
-from reflex.event import set_clipboard
+from reflex.event import call_script
 from reflex.style import Style
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import FunctionStringVar
+
+
+def copy_script(id: str, code: str) -> Any:
+    """Copy script for the code block.
+
+    Args:
+        id (str): The ID of the button element.
+        code (str): The code to be copied.
+
+    Returns:
+        Any: The result of calling the script.
+    """
+    return call_script(
+        f"""
+const button = document.getElementById('{id}');
+const icon = button.querySelector('svg');
+const originalPath = icon.innerHTML;
+const checkmarkPath = '<polyline points="20 6 9 17 4 12"></polyline>';
+
+function transition(element, scale, opacity) {{
+    element.style.transform = `scale(${{scale}})`;
+    element.style.opacity = opacity;
+}}
+
+navigator.clipboard.writeText(`{code}`).then(() => {{
+    transition(icon, 0, '0');
+
+    setTimeout(() => {{
+        icon.innerHTML = checkmarkPath;
+        icon.setAttribute('viewBox', '0 0 24 24');
+        transition(icon, 1, '1');
+        setTimeout(() => {{
+            transition(icon, 0, '0');
+            setTimeout(() => {{
+                icon.innerHTML = originalPath;
+                transition(icon, 1, '1');
+            }}, 125);
+        }}, 600);
+    }}, 125);
+}}).catch(err => {{
+    console.error('Failed to copy text: ', err);
+}});
+"""
+    )
+
 
 SHIKIJS_TRANSFORMER_FNS = {
     "transformerNotationDiff",
@@ -32,7 +78,13 @@ SHIKIJS_TRANSFORMER_FNS = {
     "transformerRemoveNotationEscape",
 }
 LINE_NUMBER_STYLING = {
-    "code": {"counter-reset": "step", "counter-increment": "step 0"},
+    "code": {
+        "counter-reset": "step",
+        "counter-increment": "step 0",
+        "display": "grid",
+        "line-height": "1.7",
+        "font-size": "0.875em",
+    },
     "code .line::before": {
         "content": "counter(step)",
         "counter-increment": "step",
@@ -41,6 +93,15 @@ LINE_NUMBER_STYLING = {
         "display": "inline-block",
         "text-align": "right",
         "color": "rgba(115,138,148,.4)",
+    },
+}
+BOX_PARENT_STYLING = {
+    "pre": {
+        "margin": "0",
+        "padding": "24px",
+        "background": "transparent",
+        "overflow-x": "auto",
+        "border-radius": "6px",
     },
 }
 
@@ -336,18 +397,81 @@ class ShikiJsTransformer(ShikiBaseTransformers):
     ]
     style: Optional[Style] = Style(
         {
-            ".line": {"display": "inline", "padding-bottom": "0"},
+            "code": {"line-height": "1.7", "font-size": "0.875em", "display": "grid"},
+            # Diffs
             ".diff": {
+                "margin": "0 -24px",
+                "padding": "0 24px",
+                "width": "calc(100% + 48px)",
                 "display": "inline-block",
-                "width": "100vw",
-                "margin": "0 -12px",
-                "padding": "0 12px",
             },
-            ".diff.add": {"background-color": "#0505"},
-            ".diff.remove": {"background-color": "#8005"},
-            ".diff:before": {"position": "absolute", "left": "40px"},
-            ".has-focused .line": {"filter": "blur(0.095rem)"},
-            ".has-focused .focused": {"filter": "blur(0)"},
+            ".diff.add": {
+                "background-color": "rgba(16, 185, 129, .14)",
+                "position": "relative",
+            },
+            ".diff.remove": {
+                "background-color": "rgba(244, 63, 94, .14)",
+                "opacity": "0.7",
+                "position": "relative",
+            },
+            ".diff.remove:after": {
+                "position": "absolute",
+                "left": "10px",
+                "content": "'-'",
+                "color": "#b34e52",
+            },
+            ".diff.add:after": {
+                "position": "absolute",
+                "left": "10px",
+                "content": "'+'",
+                "color": "#18794e",
+            },
+            # Highlight
+            ".highlighted": {
+                "background-color": "rgba(142, 150, 170, .14)",
+                "margin": "0 -24px",
+                "padding": "0 24px",
+                "width": "calc(100% + 48px)",
+                "display": "inline-block",
+            },
+            ".highlighted.error": {
+                "background-color": "rgba(244, 63, 94, .14)",
+            },
+            ".highlighted.warning": {
+                "background-color": "rgba(234, 179, 8, .14)",
+            },
+            # Highlighted Word
+            ".highlighted-word": {
+                "background-color": color("gray", 2),
+                "border": f"1px solid {color('gray', 5)}",
+                "padding": "1px 3px",
+                "margin": "-1px -3px",
+                "border-radius": "4px",
+            },
+            # Focused Lines
+            ".has-focused .line:not(.focused)": {
+                "opacity": "0.7",
+                "filter": "blur(0.095rem)",
+                "transition": "filter .35s, opacity .35s",
+            },
+            ".has-focused:hover .line:not(.focused)": {
+                "opacity": "1",
+                "filter": "none",
+            },
+            # White Space
+            # ".tab, .space": {
+            #     "position": "relative",
+            # },
+            # ".tab::before": {
+            #     "content": "'⇥'",
+            #     "position": "absolute",
+            #     "opacity": "0.3",
+            # },
+            # ".space::before": {
+            #     "content": "'·'",
+            #     "position": "absolute",
+            #     "opacity": "0.3",
+            # },
         }
     )
 
@@ -362,9 +486,11 @@ class ShikiJsTransformer(ShikiBaseTransformers):
         style = kwargs.pop("style", None)
         if fns:
             kwargs["fns"] = [
-                FunctionStringVar.create(x)
-                if not isinstance(x, FunctionStringVar)
-                else x
+                (
+                    FunctionStringVar.create(x)
+                    if not isinstance(x, FunctionStringVar)
+                    else x
+                )
                 for x in fns
             ]
 
@@ -441,7 +567,7 @@ class ShikiCodeBlock(Component):
         return Box.create(
             code_block,
             *children[1:],
-            style=Style(transformer_styles),
+            style=Style({**transformer_styles, **BOX_PARENT_STYLING}),
             **code_wrapper_props,
         )
 
@@ -459,9 +585,11 @@ class ShikiCodeBlock(Component):
                 imports[transformer.library].extend(
                     [ImportVar(tag=str(fn)) for fn in transformer.fns]
                 )
-                self.lib_dependencies.append(
-                    transformer.library
-                ) if transformer.library not in self.lib_dependencies else None
+                (
+                    self.lib_dependencies.append(transformer.library)
+                    if transformer.library not in self.lib_dependencies
+                    else None
+                )
         return imports
 
     @classmethod
@@ -582,13 +710,40 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
 
         if can_copy:
             code = children[0]
+            button_id = (
+                f"copy-button-{hash(code)}"  # Generate a unique ID for each button
+            )
             copy_button = (  # type: ignore
                 copy_button
                 if copy_button is not None
                 else Button.create(
-                    Icon.create(tag="copy"),
-                    on_click=set_clipboard(code),
-                    style=Style({"position": "absolute", "top": "0.5em", "right": "0"}),
+                    Icon.create(tag="copy", size=16, color=color("gray", 11)),
+                    id=button_id,
+                    on_click=copy_script(button_id, code),
+                    style=Style(
+                        {
+                            "position": "absolute",
+                            "top": "4px",
+                            "right": "4px",
+                            "background": color("gray", 3),
+                            "border": "1px solid",
+                            "border-color": color("gray", 5),
+                            "border-radius": "6px",
+                            "padding": "5px",
+                            "opacity": "1",
+                            "cursor": "pointer",
+                            "_hover": {
+                                "background": color("gray", 4),
+                            },
+                            "transition": "background 0.250s ease-out",
+                            "&>svg": {
+                                "transition": "transform 0.250s ease-out, opacity 0.250s ease-out",
+                            },
+                            "_active": {
+                                "background": color("gray", 5),
+                            },
+                        }
+                    ),
                 )
             )
         else:
