@@ -839,6 +839,16 @@ def call_script(
                 ),
             ),
         }
+    if isinstance(javascript_code, str):
+        # When there is VarData, include it and eval the JS code inline on the client.
+        javascript_code, original_code = (
+            LiteralVar.create(javascript_code),
+            javascript_code,
+        )
+        if not javascript_code._get_all_var_data():
+            # Without VarData, cast to string and eval the code in the event loop.
+            javascript_code = str(Var(_js_expr=original_code))
+
     return server_side(
         "_call_script",
         get_fn_signature(call_script),
