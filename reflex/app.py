@@ -431,8 +431,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             The generated component.
 
         Raises:
-            VarOperationTypeError: When an invalid component var related function is passed.
-            TypeError: When an invalid component function is passed.
             exceptions.MatchTypeError: If the return types of match cases in rx.match are different.
         """
         try:
