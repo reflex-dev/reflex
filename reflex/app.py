@@ -1536,7 +1536,9 @@ class EventNamespace(AsyncNamespace):
         """
         fields = json.loads(data)
         # Get the event.
-        event = Event(**{k: v for k, v in fields.items() if k != "handler"})
+        event = Event(
+            **{k: v for k, v in fields.items() if k not in ("handler", "event_actions")}
+        )
 
         self.token_to_sid[event.token] = sid
         self.sid_to_token[sid] = event.token
