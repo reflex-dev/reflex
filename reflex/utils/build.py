@@ -237,6 +237,9 @@ def setup_frontend(
     # Set the environment variables in client (env.json).
     set_env_json()
 
+    # update the last reflex run time.
+    prerequisites.set_last_reflex_run_time()
+
     # Disable the Next telemetry.
     if disable_telemetry:
         processes.new_process(
