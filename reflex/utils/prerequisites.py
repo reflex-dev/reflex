@@ -138,13 +138,10 @@ def set_last_reflex_run_time():
     Returns:
         The last time the reflex app was started.
     """
-    reflex_json_file = get_web_dir() / constants.Reflex.JSON
-    if not reflex_json_file.exists():
-        return
-
-    data = json.loads(reflex_json_file.read_text())
-    data.update({"last_reflex_run_datetime": str(datetime.now())})
-    path_ops.update_json_file(reflex_json_file, data)
+    path_ops.update_json_file(
+        get_web_dir() / constants.Reflex.JSON,
+        {"last_reflex_run_datetime": str(datetime.now())},
+    )
 
 
 def check_node_version() -> bool:
