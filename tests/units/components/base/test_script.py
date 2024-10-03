@@ -58,14 +58,14 @@ def test_script_event_handler():
     )
     render_dict = component.render()
     assert (
-        f'onReady={{((...args) => ((addEvents([(Event("{EvState.get_full_name()}.on_ready", ({{  }})))], args, ({{  }})))))}}'
+        f'onReady={{((...args) => ((addEvents([(Event("{EvState.get_full_name()}.on_ready", ({{  }}), ({{  }})))], args, ({{  }})))))}}'
         in render_dict["props"]
     )
     assert (
-        f'onLoad={{((...args) => ((addEvents([(Event("{EvState.get_full_name()}.on_load", ({{  }})))], args, ({{  }})))))}}'
+        f'onLoad={{((...args) => ((addEvents([(Event("{EvState.get_full_name()}.on_load", ({{  }}), ({{  }})))], args, ({{  }})))))}}'
         in render_dict["props"]
     )
     assert (
-        f'onError={{((...args) => ((addEvents([(Event("{EvState.get_full_name()}.on_error", ({{  }})))], args, ({{  }})))))}}'
+        f'onError={{((...args) => ((addEvents([(Event("{EvState.get_full_name()}.on_error", ({{  }}), ({{  }})))], args, ({{  }})))))}}'
         in render_dict["props"]
     )

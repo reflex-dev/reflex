@@ -832,7 +832,7 @@ def test_component_event_trigger_arbitrary_args():
 
     assert comp.render()["props"][0] == (
         "onFoo={((__e, _alpha, _bravo, _charlie) => ((addEvents("
-        f'[(Event("{C1State.get_full_name()}.mock_handler", ({{ ["_e"] : __e["target"]["value"], ["_bravo"] : _bravo["nested"], ["_charlie"] : (_charlie["custom"] + 42) }})))], '
+        f'[(Event("{C1State.get_full_name()}.mock_handler", ({{ ["_e"] : __e["target"]["value"], ["_bravo"] : _bravo["nested"], ["_charlie"] : (_charlie["custom"] + 42) }}), ({{  }})))], '
         "[__e, _alpha, _bravo, _charlie], ({  })))))}"
     )
 
@@ -1178,7 +1178,7 @@ TEST_VAR = LiteralVar.create("test")._replace(
 )
 FORMATTED_TEST_VAR = LiteralVar.create(f"foo{TEST_VAR}bar")
 STYLE_VAR = TEST_VAR._replace(_js_expr="style")
-EVENT_CHAIN_VAR = TEST_VAR._replace(_var_type=EventChain)
+EVENT_CHAIN_VAR = TEST_VAR.to(EventChain)
 ARG_VAR = Var(_js_expr="arg")
 
 TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "test"}})._replace(
@@ -2159,7 +2159,7 @@ class TriggerState(rx.State):
                 rx.text("random text", on_click=TriggerState.do_something),
                 rx.text(
                     "random text",
-                    on_click=Var(_js_expr="toggleColorMode", _var_type=EventChain),
+                    on_click=Var(_js_expr="toggleColorMode").to(EventChain),
                 ),
             ),
             True,
@@ -2169,7 +2169,7 @@ class TriggerState(rx.State):
                 rx.text("random text", on_click=rx.console_log("log")),
                 rx.text(
                     "random text",
-                    on_click=Var(_js_expr="toggleColorMode", _var_type=EventChain),
+                    on_click=Var(_js_expr="toggleColorMode").to(EventChain),
                 ),
             ),
             False,
