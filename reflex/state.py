@@ -1283,9 +1283,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         if (
             name not in self.vars
+            and name not in self.get_skip_vars()
             and not name.startswith("__")
             and not name.startswith(f"_{type(self).__name__}__")
-            and name not in self.get_skip_vars()
         ):
             raise SetUndefinedStateVarError(
                 f"The state variable '{name}' has not been defined in '{type(self).__name__}'. "
