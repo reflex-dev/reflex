@@ -2774,10 +2774,12 @@ class StateManagerDisk(StateManager):
         client_token, substate_address = _split_substate_key(token)
 
         root_state_token = _substate_key(client_token, substate_address.split(".")[0])
+        root_state = self.states.get(root_state_token)
+        if root_state is None:
+            # Create a new root state which will be persisted in the next set_state call.
+            root_state = self.state(_reflex_internal_init=True)
 
-        return await self.load_state(
-            root_state_token, self.state(_reflex_internal_init=True)
-        )
+        return await self.load_state(root_state_token, root_state)
 
     async def set_state_for_substate(self, client_token: str, substate: BaseState):
         """Set the state for a substate.
