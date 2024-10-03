@@ -1,0 +1,43 @@
+name: Check Dependencies
+
+on:
+  push:  # This will trigger the action when a pull request is opened or updated.
+    branches:
+      - 'release/**'  # This will trigger the action when any branch starting with "release/" is created.
+  workflow_dispatch:  # Allow manual triggering if needed.
+
+jobs:
+  check-dependencies:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checkout the repository code
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Check outdated backend dependencies
+      run: |
+        outdated=$(poetry show -oT)
+        if [ ! -z "$outdated" ]; then
+          echo "Outdated dependencies found:"
+          echo "$outdated"
+          exit 1
+        else
+          echo "All dependencies are up to date."
+        fi
+
+    - name: Check outdated frontend dependencies
+      run: |
+        reflex init --template blank
+        cd .web
+        bun outdated
