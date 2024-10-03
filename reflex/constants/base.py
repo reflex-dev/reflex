@@ -199,7 +199,7 @@ class LogLevel(str, Enum):
         Returns:
             The log level for the subprocess
         """
-        return self if self != LogLevel.DEFAULT else LogLevel.INFO
+        return self if self != LogLevel.DEFAULT else LogLevel.WARNING
 
 
 # Server socket configuration variables
