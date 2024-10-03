@@ -68,8 +68,8 @@ def _compile_app(app_root: Component) -> str:
     window_libraries = [
         (_normalize_library_name(name), name) for name in bundled_libraries
     ] + [
-        ("utils_context", f"/{constants.Dirs.UTILS}/context.js"),
-        ("utils_state", f"/{constants.Dirs.UTILS}/state.js"),
+        ("utils_context", f"/{constants.Dirs.UTILS}/context"),
+        ("utils_state", f"/{constants.Dirs.UTILS}/state"),
     ]
 
     return templates.APP_ROOT.render(
