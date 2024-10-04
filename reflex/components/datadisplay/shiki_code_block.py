@@ -15,13 +15,14 @@ from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.layout.box import Box
 from reflex.event import call_script
 from reflex.style import Style
+from reflex.utils.exceptions import VarTypeError
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import FunctionStringVar
 from reflex.vars.sequence import StringVar, string_replace_operation
 
 
-def copy_script(id: str, code: str) -> Any:
+def copy_script(id: str, code: StringVar | str) -> Any:
     """Copy script for the code block.
 
     Args:
@@ -773,10 +774,10 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
         return language
 
     @staticmethod
-    def _strip_transformer_triggers(code: str | Var) -> StringVar | str:
-        if not isinstance(code, (Var, str)):
-            raise ValueError(
-                f"code should be string literal or a Var type. Got {type(code)} instead."
+    def _strip_transformer_triggers(code: str | StringVar) -> StringVar | str:
+        if not isinstance(code, (StringVar, str)):
+            raise VarTypeError(
+                f"code should be string literal or a StringVar type. Got {type(code)} instead."
             )
 
         if isinstance(code, Var):
