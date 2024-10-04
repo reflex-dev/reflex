@@ -2764,14 +2764,13 @@ class StateManagerDisk(StateManager):
             The state for the token.
         """
         client_token = _split_substate_key(token)[0]
-        root_state_token = _substate_key(client_token, self.state)
-        root_state = self.states.get(root_state_token)
+        root_state = self.states.get(client_token)
         if root_state is not None:
             # Retrieved state from memory.
             return root_state
 
         # Deserialize root state from disk.
-        root_state = await self.load_state(root_state_token)
+        root_state = await self.load_state(_substate_key(client_token, self.state))
         # Create a new root state tree with all substates instantiated.
         fresh_root_state = self.state(_reflex_internal_init=True)
         if root_state is None:
@@ -2779,7 +2778,7 @@ class StateManagerDisk(StateManager):
         else:
             # Ensure all substates exist, even if they were not serialized previously.
             root_state.substates = fresh_root_state.substates
-        self.states[root_state_token] = root_state
+        self.states[client_token] = root_state
         await self.populate_substates(client_token, root_state, root_state)
         return root_state
 
