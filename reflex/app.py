@@ -548,7 +548,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         Args:
             route: The route of the page to compile.
         """
-        print(f"Compiling page: {route} {self.unevaluated_pages[route]}")
         component, enable_state = compiler.compile_unevaluated_page(
             route, self.unevaluated_pages[route], self.state
         )
@@ -1038,15 +1037,17 @@ class App(MiddlewareMixin, LifespanMixin, Base):
 
         progress.advance(task)
 
-        # Compile the contexts before fork.
+        # Compile the contexts.
         compile_results.append(
             compiler.compile_contexts(self.state, self.theme),
         )
+        progress.advance(task)
 
         # Compile the app root.
         compile_results.append(
             compiler.compile_app(app_root),
         )
+        progress.advance(task)
 
         # Compile custom components.
         *custom_components_result, custom_components_imports = (
