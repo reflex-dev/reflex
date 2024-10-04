@@ -786,7 +786,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                 code, StringVar(_js_expr=f"/{regex_pattern}/g", _var_type=str), ""
             )
         if isinstance(code, str):
-            return re.sub(r"[\/#]+ *\[!code.*?\]", "", code)
+            return re.sub(regex_pattern, "", code)
 
 
 class TransformerNamespace(ComponentNamespace):
