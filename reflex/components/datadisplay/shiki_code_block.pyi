@@ -11,8 +11,9 @@ from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
 from reflex.vars.base import Var
 from reflex.vars.function import FunctionStringVar
+from reflex.vars.sequence import StringVar
 
-def copy_script(id: str, code: str) -> Any: ...
+def copy_script(id: str, code: StringVar | str) -> Any: ...
 
 SHIKIJS_TRANSFORMER_FNS = {
     "transformerNotationDiff",
