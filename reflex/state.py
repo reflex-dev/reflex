@@ -35,7 +35,6 @@ from typing import (
     get_type_hints,
 )
 
-import dill
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
@@ -2833,25 +2832,6 @@ class StateManagerDisk(StateManager):
             state = await self.get_state(token)
             yield state
             await self.set_state(token, state)
-
-
-# Workaround https://github.com/cloudpipe/cloudpickle/issues/408 for dynamic pydantic classes
-if not isinstance(State.validate.__func__, FunctionType):
-    cython_function_or_method = type(State.validate.__func__)
-
-    @dill.register(cython_function_or_method)
-    def _dill_reduce_cython_function_or_method(pickler, obj):
-        # Ignore cython function when pickling.
-        pass
-
-
-@dill.register(type(State))
-def _dill_reduce_state(pickler, obj):
-    if obj is not State and issubclass(obj, State):
-        # Avoid serializing subclasses of State, instead get them by reference from the State class.
-        pickler.save_reduce(State.get_class_substate, (obj.get_full_name(),), obj=obj)
-    else:
-        dill.Pickler.dispatch[type](pickler, obj)
 
 
 def _default_lock_expiration() -> int:
