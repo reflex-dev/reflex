@@ -9,6 +9,7 @@ from reflex.components.datadisplay.shiki_code_block import (
 from reflex.components.el.elements.forms import Button
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.layout.box import Box
+from reflex.style import Style
 from reflex.vars import Var
 
 
@@ -60,7 +61,9 @@ def test_create_transformer(library, fns, expected_output, raises_exception):
             ["print('Hello')"],
             {
                 "transformers": [
-                    ShikiBaseTransformers(library="lib", fns=[], style={"color": "red"})
+                    ShikiBaseTransformers(
+                        library="lib", fns=[], style=Style({"color": "red"})
+                    )
                 ]
             },
             "print('Hello')",
@@ -71,7 +74,9 @@ def test_create_transformer(library, fns, expected_output, raises_exception):
             ["print('Hello')"],
             {
                 "transformers": [
-                    ShikiBaseTransformers(library="lib", fns=[], style={"color": "red"})
+                    ShikiBaseTransformers(
+                        library="lib", fns=[], style=Style({"color": "red"})
+                    )
                 ],
                 "style": {"background": "blue"},
             },
@@ -90,8 +95,7 @@ def test_create_shiki_code_block(
 
     # Test that the first child is the code
     code_block_component = component.children[0]
-    print(code_block_component.code._var_value)
-    assert code_block_component.code._var_value == expected_first_child
+    assert code_block_component.code._var_value == expected_first_child  # type: ignore
 
     applied_styles = component.style
     for key, value in expected_styles.items():
@@ -124,12 +128,12 @@ def test_create_shiki_high_level_code_block(
 
     # Test that the first child is the code block component
     code_block_component = component.children[0]
-    assert code_block_component.code._var_value == children[0]
+    assert code_block_component.code._var_value == children[0]  # type: ignore
 
     # Check if the transformer is set correctly if expected
     if expected_transformers:
         exp_trans_names = [t.__name__ for t in expected_transformers]
-        for transformer in code_block_component.transformers._var_value:
+        for transformer in code_block_component.transformers._var_value:  # type: ignore
             assert type(transformer).__name__ in exp_trans_names
 
     # Check if the second child is the copy button if can_copy is True
@@ -157,12 +161,12 @@ def test_shiki_high_level_code_block_theme_language_mapping(children, props):
     if "theme" in props:
         assert component.children[
             0
-        ].theme._var_value == ShikiHighLevelCodeBlock._map_themes(props["theme"])
+        ].theme._var_value == ShikiHighLevelCodeBlock._map_themes(props["theme"])  # type: ignore
 
     # Test that the language is mapped correctly
     if "language" in props:
         assert component.children[
             0
-        ].language._var_value == ShikiHighLevelCodeBlock._map_languages(
+        ].language._var_value == ShikiHighLevelCodeBlock._map_languages(  # type: ignore
             props["language"]
         )
