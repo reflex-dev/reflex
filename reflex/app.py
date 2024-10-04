@@ -186,8 +186,8 @@ class UnevaluatedPage:
 
     component: Union[Component, ComponentCallable]
     route: str
-    title: Union[Var, str]
-    description: Union[Var, str]
+    title: Union[Var, str, None]
+    description: Union[Var, str, None]
     image: str
     on_load: Union[EventHandler, EventSpec, List[Union[EventHandler, EventSpec]], None]
     meta: List[Dict[str, str]]
@@ -407,12 +407,11 @@ class App(MiddlewareMixin, LifespanMixin, Base):
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
-        # To upload files.
-
-        self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
-
-        # To access uploaded files.
         if Upload.is_used:
+            # To upload files.
+            self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
+
+            # To access uploaded files.
             self.api.mount(
                 str(constants.Endpoint.UPLOAD),
                 StaticFiles(directory=get_upload_dir()),
@@ -536,10 +535,8 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         self.unevaluated_pages[route] = UnevaluatedPage(
             component=component,
             route=route,
-            title=title if title is not None else constants.DefaultPage.TITLE,
-            description=description
-            if description is not None
-            else constants.DefaultPage.DESCRIPTION,
+            title=title,
+            description=description,
             image=image,
             on_load=on_load,
             meta=meta,
@@ -551,6 +548,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         Args:
             route: The route of the page to compile.
         """
+        print(f"Compiling page: {route} {self.unevaluated_pages[route]}")
         component, enable_state = compiler.compile_unevaluated_page(
             route, self.unevaluated_pages[route], self.state
         )
