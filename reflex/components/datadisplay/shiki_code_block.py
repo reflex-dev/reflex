@@ -779,10 +779,11 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
             raise VarTypeError(
                 f"code should be string literal or a StringVar type. Got {type(code)} instead."
             )
+        regex_pattern = r"[\/#]+ *\[!code.*?\]"
 
         if isinstance(code, Var):
             return string_replace_operation(
-                code, StringVar(_js_expr=r"/[\/#]+ *\[!code.*?\]/g", _var_type=str), ""
+                code, StringVar(_js_expr=f"/{regex_pattern}/g", _var_type=str), ""
             )
         if isinstance(code, str):
             return re.sub(r"[\/#]+ *\[!code.*?\]", "", code)
