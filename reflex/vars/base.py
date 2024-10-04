@@ -547,6 +547,10 @@ class Var(Generic[VAR_TYPE]):
 
             return self
 
+        if fixed_type is Literal:
+            args = get_args(var_type)
+            fixed_type = unionize(*(type(arg) for arg in args))
+
         if not inspect.isclass(fixed_type):
             raise TypeError(f"Unsupported type {var_type} for guess_type.")
 
