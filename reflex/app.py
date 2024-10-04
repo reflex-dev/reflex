@@ -431,25 +431,12 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             The generated component.
 
         Raises:
-            VarOperationTypeError: When an invalid component var related function is passed.
-            TypeError: When an invalid component function is passed.
             exceptions.MatchTypeError: If the return types of match cases in rx.match are different.
         """
-        from reflex.utils.exceptions import VarOperationTypeError
-
         try:
             return component if isinstance(component, Component) else component()
         except exceptions.MatchTypeError:
             raise
-        except TypeError as e:
-            message = str(e)
-            if "Var" in message:
-                raise VarOperationTypeError(
-                    "You may be trying to use an invalid Python function on a state var. "
-                    "When referencing a var inside your render code, only limited var operations are supported. "
-                    "See the var operation docs here: https://reflex.dev/docs/vars/var-operations/"
-                ) from e
-            raise e
 
     def add_page(
         self,
@@ -1536,7 +1523,9 @@ class EventNamespace(AsyncNamespace):
         """
         fields = json.loads(data)
         # Get the event.
-        event = Event(**{k: v for k, v in fields.items() if k != "handler"})
+        event = Event(
+            **{k: v for k, v in fields.items() if k not in ("handler", "event_actions")}
+        )
 
         self.token_to_sid[event.token] = sid
         self.sid_to_token[sid] = event.token
