@@ -784,8 +784,8 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                 code, StringVar(_js_expr=r"/\/\/ \[!code.*?\]/g", _var_type=str), ""
             )
         if isinstance(code, str):
-            cleaned_code = re.sub(r"// \[!code.*?\]", "", code)
-            return cleaned_code
+            return re.sub(r"// \[!code.*?\]", "", code)
+
 
 
 class TransformerNamespace(ComponentNamespace):
