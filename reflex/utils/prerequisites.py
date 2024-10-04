@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import functools
-import glob
 import importlib
 import importlib.metadata
 import json
@@ -19,7 +19,6 @@ import tempfile
 import time
 import zipfile
 from datetime import datetime
-from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
 from typing import Callable, List, Optional
@@ -132,6 +131,14 @@ def get_or_set_last_reflex_version_check_datetime():
     return last_version_check_datetime
 
 
+def set_last_reflex_run_time():
+    """Set the last Reflex run time."""
+    path_ops.update_json_file(
+        get_web_dir() / constants.Reflex.JSON,
+        {"last_reflex_run_datetime": str(datetime.now())},
+    )
+
+
 def check_node_version() -> bool:
     """Check the version of Node.js.
 
@@ -192,7 +199,7 @@ def get_bun_version() -> version.Version | None:
     """
     try:
         # Run the bun -v command and capture the output
-        result = processes.new_process([get_config().bun_path, "-v"], run=True)
+        result = processes.new_process([str(get_config().bun_path), "-v"], run=True)
         return version.parse(result.stdout)  # type: ignore
     except FileNotFoundError:
         return None
@@ -217,7 +224,7 @@ def get_install_package_manager() -> str | None:
         or windows_npm_escape_hatch()
     ):
         return get_package_manager()
-    return get_config().bun_path
+    return str(get_config().bun_path)
 
 
 def get_package_manager() -> str | None:
@@ -394,9 +401,7 @@ def validate_app_name(app_name: str | None = None) -> str:
     Raises:
         Exit: if the app directory name is reflex or if the name is not standard for a python package name.
     """
-    app_name = (
-        app_name if app_name else os.getcwd().split(os.path.sep)[-1].replace("-", "_")
-    )
+    app_name = app_name if app_name else Path.cwd().name.replace("-", "_")
     # Make sure the app is not named "reflex".
     if app_name.lower() == constants.Reflex.MODULE_NAME:
         console.error(
@@ -430,7 +435,7 @@ def create_config(app_name: str):
 
 
 def initialize_gitignore(
-    gitignore_file: str = constants.GitIgnore.FILE,
+    gitignore_file: Path = constants.GitIgnore.FILE,
     files_to_ignore: set[str] = constants.GitIgnore.DEFAULTS,
 ):
     """Initialize the template .gitignore file.
@@ -441,9 +446,10 @@ def initialize_gitignore(
     """
     # Combine with the current ignored files.
     current_ignore: set[str] = set()
-    if os.path.exists(gitignore_file):
-        with open(gitignore_file, "r") as f:
-            current_ignore |= set([line.strip() for line in f.readlines()])
+    if gitignore_file.exists():
+        current_ignore |= set(
+            line.strip() for line in gitignore_file.read_text().splitlines()
+        )
 
     if files_to_ignore == current_ignore:
         console.debug(f"{gitignore_file} already up to date.")
@@ -451,9 +457,11 @@ def initialize_gitignore(
     files_to_ignore |= current_ignore
 
     # Write files to the .gitignore file.
-    with open(gitignore_file, "w", newline="\n") as f:
-        console.debug(f"Creating {gitignore_file}")
-        f.write(f"{(path_ops.join(sorted(files_to_ignore))).lstrip()}\n")
+    gitignore_file.touch(exist_ok=True)
+    console.debug(f"Creating {gitignore_file}")
+    gitignore_file.write_text(
+        "\n".join(sorted(files_to_ignore)) + "\n",
+    )
 
 
 def initialize_requirements_txt():
@@ -546,8 +554,8 @@ def initialize_app_directory(
     # Rename the template app to the app name.
     path_ops.mv(template_code_dir_name, app_name)
     path_ops.mv(
-        os.path.join(app_name, template_name + constants.Ext.PY),
-        os.path.join(app_name, app_name + constants.Ext.PY),
+        Path(app_name) / (template_name + constants.Ext.PY),
+        Path(app_name) / (app_name + constants.Ext.PY),
     )
 
     # Fix up the imports.
@@ -691,7 +699,7 @@ def _update_next_config(
 def remove_existing_bun_installation():
     """Remove existing bun installation."""
     console.debug("Removing existing bun installation.")
-    if os.path.exists(get_config().bun_path):
+    if Path(get_config().bun_path).exists():
         path_ops.rm(constants.Bun.ROOT_PATH)
 
 
@@ -731,7 +739,7 @@ def download_and_extract_fnm_zip():
     # Download the zip file
     url = constants.Fnm.INSTALL_URL
     console.debug(f"Downloading {url}")
-    fnm_zip_file = os.path.join(constants.Fnm.DIR, f"{constants.Fnm.FILENAME}.zip")
+    fnm_zip_file = constants.Fnm.DIR / f"{constants.Fnm.FILENAME}.zip"
     # Function to download and extract the FNM zip release.
     try:
         # Download the FNM zip release.
@@ -770,7 +778,7 @@ def install_node():
         return
 
     path_ops.mkdir(constants.Fnm.DIR)
-    if not os.path.exists(constants.Fnm.EXE):
+    if not constants.Fnm.EXE.exists():
         download_and_extract_fnm_zip()
 
     if constants.IS_WINDOWS:
@@ -827,7 +835,7 @@ def install_bun():
             )
 
     # Skip if bun is already installed.
-    if os.path.exists(get_config().bun_path) and get_bun_version() == version.parse(
+    if Path(get_config().bun_path).exists() and get_bun_version() == version.parse(
         constants.Bun.VERSION
     ):
         console.debug("Skipping bun installation as it is already installed.")
@@ -842,7 +850,7 @@ def install_bun():
                 f"irm {constants.Bun.WINDOWS_INSTALL_URL}|iex",
             ],
             env={
-                "BUN_INSTALL": constants.Bun.ROOT_PATH,
+                "BUN_INSTALL": str(constants.Bun.ROOT_PATH),
                 "BUN_VERSION": constants.Bun.VERSION,
             },
             shell=True,
@@ -858,25 +866,26 @@ def install_bun():
         download_and_run(
             constants.Bun.INSTALL_URL,
             f"bun-v{constants.Bun.VERSION}",
-            BUN_INSTALL=constants.Bun.ROOT_PATH,
+            BUN_INSTALL=str(constants.Bun.ROOT_PATH),
         )
 
 
-def _write_cached_procedure_file(payload: str, cache_file: str):
-    with open(cache_file, "w") as f:
-        f.write(payload)
+def _write_cached_procedure_file(payload: str, cache_file: str | Path):
+    cache_file = Path(cache_file)
+    cache_file.write_text(payload)
 
 
-def _read_cached_procedure_file(cache_file: str) -> str | None:
-    if os.path.exists(cache_file):
-        with open(cache_file, "r") as f:
-            return f.read()
+def _read_cached_procedure_file(cache_file: str | Path) -> str | None:
+    cache_file = Path(cache_file)
+    if cache_file.exists():
+        return cache_file.read_text()
     return None
 
 
-def _clear_cached_procedure_file(cache_file: str):
-    if os.path.exists(cache_file):
-        os.remove(cache_file)
+def _clear_cached_procedure_file(cache_file: str | Path):
+    cache_file = Path(cache_file)
+    if cache_file.exists():
+        cache_file.unlink()
 
 
 def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
@@ -977,7 +986,7 @@ def needs_reinit(frontend: bool = True) -> bool:
     Raises:
         Exit: If the app is not initialized.
     """
-    if not os.path.exists(constants.Config.FILE):
+    if not constants.Config.FILE.exists():
         console.error(
             f"[cyan]{constants.Config.FILE}[/cyan] not found. Move to the root folder of your project, or run [bold]{constants.Reflex.MODULE_NAME} init[/bold] to start a new project."
         )
@@ -988,7 +997,7 @@ def needs_reinit(frontend: bool = True) -> bool:
         return False
 
     # Make sure the .reflex directory exists.
-    if not os.path.exists(constants.Reflex.DIR):
+    if not constants.Reflex.DIR.exists():
         return True
 
     # Make sure the .web directory exists in frontend mode.
@@ -1093,25 +1102,21 @@ def ensure_reflex_installation_id() -> Optional[int]:
     """
     try:
         initialize_reflex_user_directory()
-        installation_id_file = os.path.join(constants.Reflex.DIR, "installation_id")
+        installation_id_file = constants.Reflex.DIR / "installation_id"
 
         installation_id = None
-        if os.path.exists(installation_id_file):
-            try:
-                with open(installation_id_file, "r") as f:
-                    installation_id = int(f.read())
-            except Exception:
+        if installation_id_file.exists():
+            with contextlib.suppress(Exception):
+                installation_id = int(installation_id_file.read_text())
                 # If anything goes wrong at all... just regenerate.
                 # Like what? Examples:
                 #     - file not exists
                 #     - file not readable
                 #     - content not parseable as an int
-                pass
 
         if installation_id is None:
             installation_id = random.getrandbits(128)
-            with open(installation_id_file, "w") as f:
-                f.write(str(installation_id))
+            installation_id_file.write_text(str(installation_id))
         # If we get here, installation_id is definitely set
         return installation_id
     except Exception as e:
@@ -1203,50 +1208,6 @@ def prompt_for_template(templates: list[Template]) -> str:
 
     # Return the template.
     return templates[int(template)].name
-
-
-def migrate_to_reflex():
-    """Migration from Pynecone to Reflex."""
-    # Check if the old config file exists.
-    if not os.path.exists(constants.Config.PREVIOUS_FILE):
-        return
-
-    # Ask the user if they want to migrate.
-    action = console.ask(
-        "Pynecone project detected. Automatically upgrade to Reflex?",
-        choices=["y", "n"],
-    )
-    if action == "n":
-        return
-
-    # Rename pcconfig to rxconfig.
-    console.log(
-        f"[bold]Renaming {constants.Config.PREVIOUS_FILE} to {constants.Config.FILE}"
-    )
-    os.rename(constants.Config.PREVIOUS_FILE, constants.Config.FILE)
-
-    # Find all python files in the app directory.
-    file_pattern = os.path.join(get_config().app_name, "**/*.py")
-    file_list = glob.glob(file_pattern, recursive=True)
-
-    # Add the config file to the list of files to be migrated.
-    file_list.append(constants.Config.FILE)
-
-    # Migrate all files.
-    updates = {
-        "Pynecone": "Reflex",
-        "pynecone as pc": "reflex as rx",
-        "pynecone.io": "reflex.dev",
-        "pynecone": "reflex",
-        "pc.": "rx.",
-        "pcconfig": "rxconfig",
-    }
-    for file_path in file_list:
-        with FileInput(file_path, inplace=True) as file:
-            for line in file:
-                for old, new in updates.items():
-                    line = line.replace(old, new)
-                print(line, end="")
 
 
 def fetch_app_templates(version: str) -> dict[str, Template]:
@@ -1401,7 +1362,7 @@ def initialize_app(app_name: str, template: str | None = None):
     from reflex.utils import telemetry
 
     # Check if the app is already initialized.
-    if os.path.exists(constants.Config.FILE):
+    if constants.Config.FILE.exists():
         telemetry.send("reinit")
         return
 

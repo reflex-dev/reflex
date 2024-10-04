@@ -46,6 +46,7 @@ def CallScript():
         inline_counter: int = 0
         external_counter: int = 0
         value: str = "Initial"
+        last_result: str = ""
 
         def call_script_callback(self, result):
             self.results.append(result)
@@ -135,6 +136,32 @@ def CallScript():
             return rx.call_script(
                 "external_counter",
                 callback=CallScriptState.set_external_counter,  # type: ignore
+            )
+
+        def call_with_var_f_string(self):
+            return rx.call_script(
+                f"{rx.Var('inline_counter')} + {rx.Var('external_counter')}",
+                callback=CallScriptState.set_last_result,  # type: ignore
+            )
+
+        def call_with_var_str_cast(self):
+            return rx.call_script(
+                f"{str(rx.Var('inline_counter'))} + {str(rx.Var('external_counter'))}",
+                callback=CallScriptState.set_last_result,  # type: ignore
+            )
+
+        def call_with_var_f_string_wrapped(self):
+            return rx.call_script(
+                rx.Var(f"{rx.Var('inline_counter')} + {rx.Var('external_counter')}"),
+                callback=CallScriptState.set_last_result,  # type: ignore
+            )
+
+        def call_with_var_str_cast_wrapped(self):
+            return rx.call_script(
+                rx.Var(
+                    f"{str(rx.Var('inline_counter'))} + {str(rx.Var('external_counter'))}"
+                ),
+                callback=CallScriptState.set_last_result,  # type: ignore
             )
 
         def reset_(self):
@@ -234,6 +261,68 @@ def CallScript():
                 id="update_value",
             ),
             rx.button("Reset", id="reset", on_click=CallScriptState.reset_),
+            rx.input(
+                value=CallScriptState.last_result,
+                id="last_result",
+                read_only=True,
+                on_click=CallScriptState.set_last_result(""),  # type: ignore
+            ),
+            rx.button(
+                "call_with_var_f_string",
+                on_click=CallScriptState.call_with_var_f_string,
+                id="call_with_var_f_string",
+            ),
+            rx.button(
+                "call_with_var_str_cast",
+                on_click=CallScriptState.call_with_var_str_cast,
+                id="call_with_var_str_cast",
+            ),
+            rx.button(
+                "call_with_var_f_string_wrapped",
+                on_click=CallScriptState.call_with_var_f_string_wrapped,
+                id="call_with_var_f_string_wrapped",
+            ),
+            rx.button(
+                "call_with_var_str_cast_wrapped",
+                on_click=CallScriptState.call_with_var_str_cast_wrapped,
+                id="call_with_var_str_cast_wrapped",
+            ),
+            rx.button(
+                "call_with_var_f_string_inline",
+                on_click=rx.call_script(
+                    f"{rx.Var('inline_counter')} + {CallScriptState.last_result}",
+                    callback=CallScriptState.set_last_result,  # type: ignore
+                ),
+                id="call_with_var_f_string_inline",
+            ),
+            rx.button(
+                "call_with_var_str_cast_inline",
+                on_click=rx.call_script(
+                    f"{str(rx.Var('inline_counter'))} + {str(rx.Var('external_counter'))}",
+                    callback=CallScriptState.set_last_result,  # type: ignore
+                ),
+                id="call_with_var_str_cast_inline",
+            ),
+            rx.button(
+                "call_with_var_f_string_wrapped_inline",
+                on_click=rx.call_script(
+                    rx.Var(
+                        f"{rx.Var('inline_counter')} + {CallScriptState.last_result}"
+                    ),
+                    callback=CallScriptState.set_last_result,  # type: ignore
+                ),
+                id="call_with_var_f_string_wrapped_inline",
+            ),
+            rx.button(
+                "call_with_var_str_cast_wrapped_inline",
+                on_click=rx.call_script(
+                    rx.Var(
+                        f"{str(rx.Var('inline_counter'))} + {str(rx.Var('external_counter'))}"
+                    ),
+                    callback=CallScriptState.set_last_result,  # type: ignore
+                ),
+                id="call_with_var_str_cast_wrapped_inline",
+            ),
         )
 
 
@@ -363,3 +452,73 @@ def test_call_script(
         call_script.poll_for_content(update_value_button, exp_not_equal="Initial")
         == "updated"
     )
+
+
+def test_call_script_w_var(
+    call_script: AppHarness,
+    driver: WebDriver,
+):
+    """Test evaluating javascript expressions containing Vars.
+
+    Args:
+        call_script: harness for CallScript app.
+        driver: WebDriver instance.
+    """
+    assert_token(driver)
+    last_result = driver.find_element(By.ID, "last_result")
+    assert last_result.get_attribute("value") == ""
+
+    inline_return_button = driver.find_element(By.ID, "inline_return")
+
+    call_with_var_f_string_button = driver.find_element(By.ID, "call_with_var_f_string")
+    call_with_var_str_cast_button = driver.find_element(By.ID, "call_with_var_str_cast")
+    call_with_var_f_string_wrapped_button = driver.find_element(
+        By.ID, "call_with_var_f_string_wrapped"
+    )
+    call_with_var_str_cast_wrapped_button = driver.find_element(
+        By.ID, "call_with_var_str_cast_wrapped"
+    )
+    call_with_var_f_string_inline_button = driver.find_element(
+        By.ID, "call_with_var_f_string_inline"
+    )
+    call_with_var_str_cast_inline_button = driver.find_element(
+        By.ID, "call_with_var_str_cast_inline"
+    )
+    call_with_var_f_string_wrapped_inline_button = driver.find_element(
+        By.ID, "call_with_var_f_string_wrapped_inline"
+    )
+    call_with_var_str_cast_wrapped_inline_button = driver.find_element(
+        By.ID, "call_with_var_str_cast_wrapped_inline"
+    )
+
+    inline_return_button.click()
+    call_with_var_f_string_button.click()
+    assert call_script.poll_for_value(last_result, exp_not_equal="") == "1"
+
+    inline_return_button.click()
+    call_with_var_str_cast_button.click()
+    assert call_script.poll_for_value(last_result, exp_not_equal="1") == "2"
+
+    inline_return_button.click()
+    call_with_var_f_string_wrapped_button.click()
+    assert call_script.poll_for_value(last_result, exp_not_equal="2") == "3"
+
+    inline_return_button.click()
+    call_with_var_str_cast_wrapped_button.click()
+    assert call_script.poll_for_value(last_result, exp_not_equal="3") == "4"
+
+    inline_return_button.click()
+    call_with_var_f_string_inline_button.click()
+    assert call_script.poll_for_value(last_result, exp_not_equal="4") == "9"
+
+    inline_return_button.click()
+    call_with_var_str_cast_inline_button.click()
+    assert call_script.poll_for_value(last_result, exp_not_equal="9") == "6"
+
+    inline_return_button.click()
+    call_with_var_f_string_wrapped_inline_button.click()
+    assert call_script.poll_for_value(last_result, exp_not_equal="6") == "13"
+
+    inline_return_button.click()
+    call_with_var_str_cast_wrapped_inline_button.click()
+    assert call_script.poll_for_value(last_result, exp_not_equal="13") == "8"

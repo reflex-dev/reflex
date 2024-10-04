@@ -4,16 +4,19 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
+import sys
 import types
 import urllib.parse
 from base64 import b64encode
 from typing import (
     Any,
     Callable,
+    ClassVar,
     Dict,
     List,
     Optional,
     Tuple,
+    Type,
     Union,
     get_type_hints,
 )
@@ -25,8 +28,15 @@ from reflex.utils import format
 from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
 from reflex.utils.types import ArgsSpec, GenericType
 from reflex.vars import VarData
-from reflex.vars.base import LiteralVar, Var
-from reflex.vars.function import FunctionStringVar, FunctionVar
+from reflex.vars.base import (
+    CachedVarOperation,
+    LiteralNoneVar,
+    LiteralVar,
+    ToOperation,
+    Var,
+    cached_property_no_lock,
+)
+from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar, FunctionVar
 from reflex.vars.object import ObjectVar
 
 try:
@@ -375,7 +385,7 @@ class CallableEventSpec(EventSpec):
 class EventChain(EventActionsMixin):
     """Container for a chain of events that will be executed in order."""
 
-    events: List[EventSpec] = dataclasses.field(default_factory=list)
+    events: List[Union[EventSpec, EventVar]] = dataclasses.field(default_factory=list)
 
     args_spec: Optional[Callable] = dataclasses.field(default=None)
 
@@ -478,7 +488,7 @@ class FileUpload:
             if isinstance(events, Var):
                 raise ValueError(f"{on_upload_progress} cannot return a var {events}.")
             on_upload_progress_chain = EventChain(
-                events=events,
+                events=[*events],
                 args_spec=self.on_upload_progress_args_spec,
             )
             formatted_chain = str(format.format_prop(on_upload_progress_chain))
@@ -839,6 +849,16 @@ def call_script(
                 ),
             ),
         }
+    if isinstance(javascript_code, str):
+        # When there is VarData, include it and eval the JS code inline on the client.
+        javascript_code, original_code = (
+            LiteralVar.create(javascript_code),
+            javascript_code,
+        )
+        if not javascript_code._get_all_var_data():
+            # Without VarData, cast to string and eval the code in the event loop.
+            javascript_code = str(Var(_js_expr=original_code))
+
     return server_side(
         "_call_script",
         get_fn_signature(call_script),
@@ -1126,3 +1146,178 @@ def get_fn_signature(fn: Callable) -> inspect.Signature:
         "state", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Any
     )
     return signature.replace(parameters=(new_param, *signature.parameters.values()))
+
+
+class EventVar(ObjectVar):
+    """Base class for event vars."""
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class LiteralEventVar(CachedVarOperation, LiteralVar, EventVar):
+    """A literal event var."""
+
+    _var_value: EventSpec = dataclasses.field(default=None)  # type: ignore
+
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self._js_expr))
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return str(
+            FunctionStringVar("Event").call(
+                # event handler name
+                ".".join(
+                    filter(
+                        None,
+                        format.get_event_handler_parts(self._var_value.handler),
+                    )
+                ),
+                # event handler args
+                {str(name): value for name, value in self._var_value.args},
+                # event actions
+                self._var_value.event_actions,
+                # client handler name
+                *(
+                    [self._var_value.client_handler_name]
+                    if self._var_value.client_handler_name
+                    else []
+                ),
+            )
+        )
+
+    @classmethod
+    def create(
+        cls,
+        value: EventSpec,
+        _var_data: VarData | None = None,
+    ) -> LiteralEventVar:
+        """Create a new LiteralEventVar instance.
+
+        Args:
+            value: The value of the var.
+            _var_data: The data of the var.
+
+        Returns:
+            The created LiteralEventVar instance.
+        """
+        return cls(
+            _js_expr="",
+            _var_type=EventSpec,
+            _var_data=_var_data,
+            _var_value=value,
+        )
+
+
+class EventChainVar(FunctionVar):
+    """Base class for event chain vars."""
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class LiteralEventChainVar(CachedVarOperation, LiteralVar, EventChainVar):
+    """A literal event chain var."""
+
+    _var_value: EventChain = dataclasses.field(default=None)  # type: ignore
+
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self._js_expr))
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        sig = inspect.signature(self._var_value.args_spec)  # type: ignore
+        if sig.parameters:
+            arg_def = tuple((f"_{p}" for p in sig.parameters))
+            arg_def_expr = LiteralVar.create([Var(_js_expr=arg) for arg in arg_def])
+        else:
+            # add a default argument for addEvents if none were specified in value.args_spec
+            # used to trigger the preventDefault() on the event.
+            arg_def = ("...args",)
+            arg_def_expr = Var(_js_expr="args")
+
+        return str(
+            ArgsFunctionOperation.create(
+                arg_def,
+                FunctionStringVar.create("addEvents").call(
+                    LiteralVar.create(
+                        [LiteralVar.create(event) for event in self._var_value.events]
+                    ),
+                    arg_def_expr,
+                    self._var_value.event_actions,
+                ),
+            )
+        )
+
+    @classmethod
+    def create(
+        cls,
+        value: EventChain,
+        _var_data: VarData | None = None,
+    ) -> LiteralEventChainVar:
+        """Create a new LiteralEventChainVar instance.
+
+        Args:
+            value: The value of the var.
+            _var_data: The data of the var.
+
+        Returns:
+            The created LiteralEventChainVar instance.
+        """
+        return cls(
+            _js_expr="",
+            _var_type=EventChain,
+            _var_data=_var_data,
+            _var_value=value,
+        )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ToEventVarOperation(ToOperation, EventVar):
+    """Result of a cast to an event var."""
+
+    _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
+
+    _default_var_type: ClassVar[Type] = EventSpec
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class ToEventChainVarOperation(ToOperation, EventChainVar):
+    """Result of a cast to an event chain var."""
+
+    _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
+
+    _default_var_type: ClassVar[Type] = EventChain

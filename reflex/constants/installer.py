@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import platform
 from types import SimpleNamespace
 
@@ -40,11 +39,10 @@ class Bun(SimpleNamespace):
     # Min Bun Version
     MIN_VERSION = "0.7.0"
     # The directory to store the bun.
-    ROOT_PATH = os.path.join(Reflex.DIR, "bun")
+    ROOT_PATH = Reflex.DIR / "bun"
     # Default bun path.
-    DEFAULT_PATH = os.path.join(
-        ROOT_PATH, "bin", "bun" if not IS_WINDOWS else "bun.exe"
-    )
+    DEFAULT_PATH = ROOT_PATH / "bin" / ("bun" if not IS_WINDOWS else "bun.exe")
+
     # URL to bun install script.
     INSTALL_URL = "https://bun.sh/install"
     # URL to windows install script.
@@ -65,10 +63,10 @@ class Fnm(SimpleNamespace):
     # The FNM version.
     VERSION = "1.35.1"
     # The directory to store fnm.
-    DIR = os.path.join(Reflex.DIR, "fnm")
+    DIR = Reflex.DIR / "fnm"
     FILENAME = get_fnm_name()
     # The fnm executable binary.
-    EXE = os.path.join(DIR, "fnm.exe" if IS_WINDOWS else "fnm")
+    EXE = DIR / ("fnm.exe" if IS_WINDOWS else "fnm")
 
     # The URL to the fnm release binary
     INSTALL_URL = (
@@ -86,18 +84,19 @@ class Node(SimpleNamespace):
     MIN_VERSION = "18.17.0"
 
     # The node bin path.
-    BIN_PATH = os.path.join(
-        Fnm.DIR,
-        "node-versions",
-        f"v{VERSION}",
-        "installation",
-        "bin" if not IS_WINDOWS else "",
+    BIN_PATH = (
+        Fnm.DIR
+        / "node-versions"
+        / f"v{VERSION}"
+        / "installation"
+        / ("bin" if not IS_WINDOWS else "")
     )
+
     # The default path where node is installed.
-    PATH = os.path.join(BIN_PATH, "node.exe" if IS_WINDOWS else "node")
+    PATH = BIN_PATH / ("node.exe" if IS_WINDOWS else "node")
 
     # The default path where npm is installed.
-    NPM_PATH = os.path.join(BIN_PATH, "npm")
+    NPM_PATH = BIN_PATH / "npm"
 
     # The environment variable to use the system installed node.
     USE_SYSTEM_VAR = "REFLEX_USE_SYSTEM_NODE"

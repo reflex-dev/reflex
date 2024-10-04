@@ -385,6 +385,15 @@ class Var(Generic[VAR_TYPE]):
         Returns:
             The converted var.
         """
+        from reflex.event import (
+            EventChain,
+            EventChainVar,
+            EventSpec,
+            EventVar,
+            ToEventChainVarOperation,
+            ToEventVarOperation,
+        )
+
         from .function import FunctionVar, ToFunctionOperation
         from .number import (
             BooleanVar,
@@ -416,6 +425,10 @@ class Var(Generic[VAR_TYPE]):
             return self.to(BooleanVar, output)
         if fixed_output_type is None:
             return ToNoneOperation.create(self)
+        if fixed_output_type is EventSpec:
+            return self.to(EventVar, output)
+        if fixed_output_type is EventChain:
+            return self.to(EventChainVar, output)
         if issubclass(fixed_output_type, Base):
             return self.to(ObjectVar, output)
         if dataclasses.is_dataclass(fixed_output_type) and not issubclass(
@@ -453,10 +466,13 @@ class Var(Generic[VAR_TYPE]):
         if issubclass(output, StringVar):
             return ToStringOperation.create(self, var_type or str)
 
-        if issubclass(output, (ObjectVar, Base)):
-            return ToObjectOperation.create(self, var_type or dict)
+        if issubclass(output, EventVar):
+            return ToEventVarOperation.create(self, var_type or EventSpec)
 
-        if dataclasses.is_dataclass(output):
+        if issubclass(output, EventChainVar):
+            return ToEventChainVarOperation.create(self, var_type or EventChain)
+
+        if issubclass(output, (ObjectVar, Base)):
             return ToObjectOperation.create(self, var_type or dict)
 
         if issubclass(output, FunctionVar):
@@ -468,6 +484,9 @@ class Var(Generic[VAR_TYPE]):
 
         if issubclass(output, NoneVar):
             return ToNoneOperation.create(self)
+
+        if dataclasses.is_dataclass(output):
+            return ToObjectOperation.create(self, var_type or dict)
 
         # If we can't determine the first argument, we just replace the _var_type.
         if not issubclass(output, Var) or var_type is None:
@@ -494,6 +513,8 @@ class Var(Generic[VAR_TYPE]):
         Raises:
             TypeError: If the type is not supported for guessing.
         """
+        from reflex.event import EventChain, EventChainVar, EventSpec, EventVar
+
         from .number import BooleanVar, NumberVar
         from .object import ObjectVar
         from .sequence import ArrayVar, StringVar
@@ -526,6 +547,10 @@ class Var(Generic[VAR_TYPE]):
 
             return self
 
+        if fixed_type is Literal:
+            args = get_args(var_type)
+            fixed_type = unionize(*(type(arg) for arg in args))
+
         if not inspect.isclass(fixed_type):
             raise TypeError(f"Unsupported type {var_type} for guess_type.")
 
@@ -539,6 +564,10 @@ class Var(Generic[VAR_TYPE]):
             return self.to(ArrayVar, self._var_type)
         if issubclass(fixed_type, str):
             return self.to(StringVar, self._var_type)
+        if issubclass(fixed_type, EventSpec):
+            return self.to(EventVar, self._var_type)
+        if issubclass(fixed_type, EventChain):
+            return self.to(EventChainVar, self._var_type)
         if issubclass(fixed_type, Base):
             return self.to(ObjectVar, self._var_type)
         if dataclasses.is_dataclass(fixed_type):
@@ -1029,47 +1058,22 @@ class LiteralVar(Var):
         if value is None:
             return LiteralNoneVar.create(_var_data=_var_data)
 
-        from reflex.event import EventChain, EventHandler, EventSpec
+        from reflex.event import (
+            EventChain,
+            EventHandler,
+            EventSpec,
+            LiteralEventChainVar,
+            LiteralEventVar,
+        )
         from reflex.utils.format import get_event_handler_parts
 
-        from .function import ArgsFunctionOperation, FunctionStringVar
         from .object import LiteralObjectVar
 
         if isinstance(value, EventSpec):
-            event_name = LiteralVar.create(
-                ".".join(filter(None, get_event_handler_parts(value.handler)))
-            )
-            event_args = LiteralVar.create(
-                {str(name): value for name, value in value.args}
-            )
-            event_client_name = LiteralVar.create(value.client_handler_name)
-            return FunctionStringVar("Event").call(
-                event_name,
-                event_args,
-                *([event_client_name] if value.client_handler_name else []),
-            )
+            return LiteralEventVar.create(value, _var_data=_var_data)
 
         if isinstance(value, EventChain):
-            sig = inspect.signature(value.args_spec)  # type: ignore
-            if sig.parameters:
-                arg_def = tuple((f"_{p}" for p in sig.parameters))
-                arg_def_expr = LiteralVar.create([Var(_js_expr=arg) for arg in arg_def])
-            else:
-                # add a default argument for addEvents if none were specified in value.args_spec
-                # used to trigger the preventDefault() on the event.
-                arg_def = ("...args",)
-                arg_def_expr = Var(_js_expr="args")
-
-            return ArgsFunctionOperation.create(
-                arg_def,
-                FunctionStringVar.create("addEvents").call(
-                    LiteralVar.create(
-                        [LiteralVar.create(event) for event in value.events]
-                    ),
-                    arg_def_expr,
-                    LiteralVar.create(value.event_actions),
-                ),
-            )
+            return LiteralEventChainVar.create(value, _var_data=_var_data)
 
         if isinstance(value, EventHandler):
             return Var(_js_expr=".".join(filter(None, get_event_handler_parts(value))))
@@ -2126,8 +2130,15 @@ class NoneVar(Var[None]):
     """A var representing None."""
 
 
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
 class LiteralNoneVar(LiteralVar, NoneVar):
     """A var representing None."""
+
+    _var_value: None = None
 
     def json(self) -> str:
         """Serialize the var to a JSON string.

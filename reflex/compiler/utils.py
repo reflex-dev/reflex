@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
@@ -457,16 +456,16 @@ def add_meta(
     return page
 
 
-def write_page(path: str, code: str):
+def write_page(path: str | Path, code: str):
     """Write the given code to the given path.
 
     Args:
         path: The path to write the code to.
         code: The code to write.
     """
-    path_ops.mkdir(os.path.dirname(path))
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(code)
+    path = Path(path)
+    path_ops.mkdir(path.parent)
+    path.write_text(code, encoding="utf-8")
 
 
 def empty_dir(path: str | Path, keep_files: list[str] | None = None):
