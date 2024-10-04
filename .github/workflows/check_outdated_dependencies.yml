@@ -23,10 +23,10 @@ jobs:
     - name: Check outdated backend dependencies
       run: |
         outdated=$(poetry show -oT)
-        echo "Outdated:\n$outdated"
+        echo "Outdated:"
+        echo "$outdated"
 
         filtered_outdated=$(echo "$outdated" | grep -vE 'pyright|ruff' || true)
-        echo "Filtered:\n$filtered_outdated"
 
         if [ ! -z "$filtered_outdated" ]; then
           echo "Outdated dependencies found:"
