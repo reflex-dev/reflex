@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections import defaultdict
 from typing import Any, Literal, Optional, Union
 
@@ -17,6 +18,7 @@ from reflex.style import Style
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import FunctionStringVar
+from reflex.vars.sequence import StringVar, string_replace_operation
 
 
 def copy_script(id: str, code: str) -> Any:
@@ -719,7 +721,9 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                 else Button.create(
                     Icon.create(tag="copy", size=16, color=color("gray", 11)),
                     id=button_id,
-                    on_click=copy_script(button_id, code),
+                    on_click=copy_script(
+                        button_id, cls._strip_transformer_triggers(code)
+                    ),
                     style=Style(
                         {
                             "position": "absolute",
@@ -767,6 +771,21 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
         if isinstance(language, str) and language in LANGUAGE_MAPPING:
             return LANGUAGE_MAPPING[language]
         return language
+
+    @staticmethod
+    def _strip_transformer_triggers(code: str | Var) -> StringVar | str:
+        if not isinstance(code, (Var, str)):
+            raise ValueError(
+                f"code should be string literal or a Var type. Got {type(code)} instead."
+            )
+
+        if isinstance(code, Var):
+            return string_replace_operation(
+                code, StringVar(_js_expr=r"/\/\/ \[!code.*?\]/g", _var_type=str), ""
+            )
+        if isinstance(code, str):
+            cleaned_code = re.sub(r"// \[!code.*?\]", "", code)
+            return cleaned_code
 
 
 class TransformerNamespace(ComponentNamespace):

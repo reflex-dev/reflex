@@ -524,6 +524,26 @@ def array_join_operation(array: ArrayVar, sep: StringVar | str = ""):
     return var_operation_return(js_expression=f"{array}.join({sep})", var_type=str)
 
 
+@var_operation
+def string_replace_operation(
+    string: StringVar, search_value: StringVar | str, new_value: StringVar | str
+):
+    """Replace a string with a value.
+
+    Args:
+        string: The string.
+        search_value: The string to search.
+        new_value: The value to be replaced with.
+
+    Returns:
+        The string replace operation.
+    """
+    return var_operation_return(
+        js_expression=f"{string}.replace({search_value}, {new_value})",
+        var_type=str,
+    )
+
+
 # Compile regex for finding reflex var tags.
 _decode_var_pattern_re = (
     rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
