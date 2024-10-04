@@ -787,7 +787,6 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
             return re.sub(r"// \[!code.*?\]", "", code)
 
 
-
 class TransformerNamespace(ComponentNamespace):
     """Namespace for the Transformers."""
 
