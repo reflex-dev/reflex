@@ -66,6 +66,7 @@ jobs:
       run: |
         poetry run bash scripts/integration.sh ./reflex-web dev
     - name: Check outdated frontend dependencies
+      working-directory: ./reflex-web/.web
       run: |
         outdated=$(/home/runner/.local/share/reflex/bun/bin/bun outdated)
         echo "Outdated:"
