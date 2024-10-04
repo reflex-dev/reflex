@@ -766,6 +766,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
     state._tmp_path = tmp_path
     # The App state must be the "root" of the state tree
     app = App()
+    app._enable_state()
     app.event_namespace.emit = AsyncMock()  # type: ignore
     current_state = await app.state_manager.get_state(_substate_key(token, state))
     data = b"This is binary data"
