@@ -11,7 +11,7 @@ from reflex.state import State
 from reflex.vars.base import LiteralVar, Var
 
 
-class TestUploadState(State):
+class UploadStateTest(State):
     """Test upload state."""
 
     def drop_handler(self, files):
@@ -55,7 +55,7 @@ def test_upload_create():
 
     up_comp_2 = Upload.create(
         id="foo_id",
-        on_drop=TestUploadState.drop_handler([]),  # type: ignore
+        on_drop=UploadStateTest.drop_handler([]),  # type: ignore
     )
     assert isinstance(up_comp_2, Upload)
     assert up_comp_2.is_used
@@ -65,7 +65,7 @@ def test_upload_create():
 
     up_comp_3 = Upload.create(
         id="foo_id",
-        on_drop=TestUploadState.drop_handler,
+        on_drop=UploadStateTest.drop_handler,
     )
     assert isinstance(up_comp_3, Upload)
     assert up_comp_3.is_used
@@ -75,7 +75,7 @@ def test_upload_create():
 
     up_comp_4 = Upload.create(
         id="foo_id",
-        on_drop=TestUploadState.not_drop_handler([]),  # type: ignore
+        on_drop=UploadStateTest.not_drop_handler([]),  # type: ignore
     )
     assert isinstance(up_comp_4, Upload)
     assert up_comp_4.is_used
@@ -91,7 +91,7 @@ def test_styled_upload_create():
 
     styled_up_comp_2 = StyledUpload.create(
         id="foo_id",
-        on_drop=TestUploadState.drop_handler([]),  # type: ignore
+        on_drop=UploadStateTest.drop_handler([]),  # type: ignore
     )
     assert isinstance(styled_up_comp_2, StyledUpload)
     assert styled_up_comp_2.is_used
@@ -101,7 +101,7 @@ def test_styled_upload_create():
 
     styled_up_comp_3 = StyledUpload.create(
         id="foo_id",
-        on_drop=TestUploadState.drop_handler,
+        on_drop=UploadStateTest.drop_handler,
     )
     assert isinstance(styled_up_comp_3, StyledUpload)
     assert styled_up_comp_3.is_used
@@ -111,7 +111,7 @@ def test_styled_upload_create():
 
     styled_up_comp_4 = StyledUpload.create(
         id="foo_id",
-        on_drop=TestUploadState.not_drop_handler([]),  # type: ignore
+        on_drop=UploadStateTest.not_drop_handler([]),  # type: ignore
     )
     assert isinstance(styled_up_comp_4, StyledUpload)
     assert styled_up_comp_4.is_used
