@@ -68,18 +68,16 @@ jobs:
     - name: Check outdated frontend dependencies
       working-directory: ./reflex-web/.web
       run: |
-        outdated=$(/home/runner/.local/share/reflex/bun/bin/bun outdated)
-        echo "Raw output of bun outdated:"
-        echo "$outdated"
-        
-        outdated=$(echo "$outdated" | grep -vE '|----------------------------|-' || true)
-        echo "Outdated:"
-        echo "$outdated"
+        raw_outdated=$(/home/runner/.local/share/reflex/bun/bin/bun outdated)
+        outdated=$(echo "$raw_outdated" | grep -vE '\|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\|' || true)
+        echo "Outdated:\n$outdated"
 
         # Ignore 3rd party dependencies that are not updated.
-        filtered_outdated=$(echo "$outdated" | grep -vE '@chakra-ui|lucide-react|@splinetool/runtime|ag-grid-react|framer-motion' || true)
+        filtered_outdated=$(echo "$outdated" | grep -vE 'Package|@chakra-ui|lucide-react|@splinetool/runtime|ag-grid-react|framer-motion' || true)
+        no_extra=$(echo "$filtered_outdated" | grep -vE '\|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-' || true)
 
-        if [ ! -z "$filtered_outdated" ]; then
+
+        if [ ! -z "$no_extra" ]; then
           echo "Outdated dependencies found:"
           echo "$filtered_outdated"
           exit 1
