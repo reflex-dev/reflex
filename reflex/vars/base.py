@@ -2834,6 +2834,9 @@ def dispatch(
     ).guess_type()
 
 
+V = TypeVar("V")
+
+
 class Field(Generic[T]):
     """Shadow class for Var to allow for type hinting in the IDE."""
 
@@ -2859,15 +2862,15 @@ class Field(Generic[T]):
 
     @overload
     def __get__(
-        self: Field[List[T]] | Field[Set[T]] | Field[Tuple[T, ...]],
+        self: Field[List[V]] | Field[Set[V]] | Field[Tuple[V, ...]],
         instance: None,
         owner,
-    ) -> ArrayVar[List[T]]: ...
+    ) -> ArrayVar[List[V]]: ...
 
     @overload
     def __get__(
-        self: Field[Dict[str, T]], instance: None, owner
-    ) -> ObjectVar[Dict[str, T]]: ...
+        self: Field[Dict[str, V]], instance: None, owner
+    ) -> ObjectVar[Dict[str, V]]: ...
 
     @overload
     def __get__(self, instance: None, owner) -> Var[T]: ...
