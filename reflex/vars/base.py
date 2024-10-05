@@ -2832,3 +2832,65 @@ def dispatch(
         _var_data=var_data,
         _var_type=result_var_type,
     ).guess_type()
+
+
+class Field(Generic[T]):
+    """Shadow class for Var to allow for type hinting in the IDE."""
+
+    def __set__(self, instance, value: T):
+        """Set the Var.
+
+        Args:
+            instance: The instance of the class setting the Var.
+            value: The value to set the Var to.
+        """
+
+    @overload
+    def __get__(self: Field[bool], instance: None, owner) -> BooleanVar: ...
+
+    @overload
+    def __get__(self: Field[int], instance: None, owner) -> NumberVar: ...
+
+    @overload
+    def __get__(self: Field[str], instance: None, owner) -> StringVar: ...
+
+    @overload
+    def __get__(self: Field[None], instance: None, owner) -> NoneVar: ...
+
+    @overload
+    def __get__(
+        self: Field[List[T]] | Field[Set[T]] | Field[Tuple[T, ...]],
+        instance: None,
+        owner,
+    ) -> ArrayVar[List[T]]: ...
+
+    @overload
+    def __get__(
+        self: Field[Dict[str, T]], instance: None, owner
+    ) -> ObjectVar[Dict[str, T]]: ...
+
+    @overload
+    def __get__(self, instance: None, owner) -> Var[T]: ...
+
+    @overload
+    def __get__(self, instance, owner) -> T: ...
+
+    def __get__(self, instance, owner):  # type: ignore
+        """Get the Var.
+
+        Args:
+            instance: The instance of the class accessing the Var.
+            owner: The class that the Var is attached to.
+        """
+
+
+def field(value: T) -> Field[T]:
+    """Create a Field with a value.
+
+    Args:
+        value: The value of the Field.
+
+    Returns:
+        The Field.
+    """
+    return value  # type: ignore
