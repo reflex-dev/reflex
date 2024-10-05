@@ -70,7 +70,8 @@ jobs:
       run: |
         raw_outdated=$(/home/runner/.local/share/reflex/bun/bin/bun outdated)
         outdated=$(echo "$raw_outdated" | grep -vE '\|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\|' || true)
-        echo "Outdated:\n$outdated"
+        echo "Outdated:"
+        echo "$outdated"
 
         # Ignore 3rd party dependencies that are not updated.
         filtered_outdated=$(echo "$outdated" | grep -vE 'Package|@chakra-ui|lucide-react|@splinetool/runtime|ag-grid-react|framer-motion' || true)
@@ -82,6 +83,6 @@ jobs:
           echo "$filtered_outdated"
           exit 1
         else
-          echo "All dependencies are up to date. (lucide-react and @chakra-ui/ are ignored)"
+          echo "All dependencies are up to date. (3rd party packages are ignored)"
         fi
 
