@@ -461,10 +461,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for name, value in cls.__dict__.items()
             if types.is_backend_base_variable(name, cls)
         }
-        # Add annotated backend vars that do not have a default value.
+        # Add annotated backend vars that may not have a default value.
         new_backend_vars.update(
             {
-                name: Var("", _var_type=annotation_value).get_default_value()
+                name: cls._get_var_default(name, annotation_value)
                 for name, annotation_value in get_type_hints(cls).items()
                 if name not in new_backend_vars
                 and types.is_backend_base_variable(name, cls)
@@ -989,6 +989,26 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ):
             # Ensure frontend uses null coalescing when accessing.
             object.__setattr__(prop, "_var_type", Optional[prop._var_type])
+
+    @classmethod
+    def _get_var_default(cls, name: str, annotation_value: Any) -> Any:
+        """Get the default value of a (backend) var.
+
+        Args:
+            name: The name of the var.
+            annotation_value: The annotation value of the var.
+
+        Returns:
+            The default value of the var or None.
+        """
+        try:
+            return getattr(cls, name)
+        except AttributeError:
+            try:
+                return Var("", _var_type=annotation_value).get_default_value()
+            except TypeError:
+                pass
+        return None
 
     @staticmethod
     def _get_base_functions() -> dict[str, FunctionType]:
