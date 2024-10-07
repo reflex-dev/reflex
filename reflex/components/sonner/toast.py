@@ -192,7 +192,7 @@ class ToastProps(PropsBase):
 class Toaster(Component):
     """A Toaster Component for displaying toast notifications."""
 
-    library: str = "sonner@1.4.41"
+    library: str = "sonner@1.5.0"
 
     tag = "Toaster"
 
