@@ -1731,7 +1731,7 @@ async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
 
 
 @pytest.fixture()
-async def substate_token_redis(state_manager_redis, token):
+def substate_token_redis(state_manager_redis, token):
     """A token + substate name for looking up in state manager.
 
     Args:
@@ -1809,7 +1809,7 @@ async def test_state_manager_lock_expire_contend(
     assert (await state_manager_redis.get_state(substate_token_redis)).num1 == exp_num1
 
 
-@pytest_asyncio.fixture(loop_scope="function", scope="function")
+@pytest.fixture(scope="function")
 def mock_app(monkeypatch, state_manager: StateManager) -> rx.App:
     """Mock app fixture.
 
