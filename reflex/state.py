@@ -32,6 +32,7 @@ from typing import (
     Type,
     Union,
     cast,
+    get_args,
     get_type_hints,
 )
 
@@ -81,7 +82,7 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import serializer
-from reflex.utils.types import override
+from reflex.utils.types import get_origin, override
 from reflex.vars import VarData
 
 if TYPE_CHECKING:
@@ -240,12 +241,16 @@ def get_var_for_field(cls: Type[BaseState], f: ModelField):
     Returns:
         The Var instance.
     """
+    from reflex.vars import Field
+
     field_name = format.format_state_name(cls.get_full_name()) + "." + f.name
 
     return dispatch(
         field_name=field_name,
         var_data=VarData.from_state(cls, f.name),
-        result_var_type=f.outer_type_,
+        result_var_type=f.outer_type_
+        if get_origin(f.outer_type_) is not Field
+        else get_args(f.outer_type_)[0],
     )
 
 

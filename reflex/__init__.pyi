@@ -189,7 +189,9 @@ from .style import Style as Style
 from .style import toggle_color_mode as toggle_color_mode
 from .utils.imports import ImportVar as ImportVar
 from .utils.serializers import serializer as serializer
+from .vars import Field as Field
 from .vars import Var as Var
+from .vars import field as field
 
 del compat
 RADIX_THEMES_MAPPING: dict
