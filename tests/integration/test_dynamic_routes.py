@@ -41,13 +41,13 @@ def DynamicRoute():
         return rx.fragment(
             rx.input(
                 value=DynamicState.router.session.client_token,
-                is_read_only=True,
+                read_only=True,
                 id="token",
             ),
-            rx.input(value=rx.State.page_id, is_read_only=True, id="page_id"),  # type: ignore
+            rx.input(value=rx.State.page_id, read_only=True, id="page_id"),  # type: ignore
             rx.input(
                 value=DynamicState.router.page.raw_path,
-                is_read_only=True,
+                read_only=True,
                 id="raw_path",
             ),
             rx.link("index", href="/", id="link_index"),
