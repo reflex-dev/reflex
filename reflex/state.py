@@ -1243,6 +1243,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 default = copy.deepcopy(field.default)
             setattr(self, prop_name, default)
 
+        # Reset the backend vars.
+        for prop_name, value in self.backend_vars.items():
+            setattr(self, prop_name, copy.deepcopy(value))
+
         # Recursively reset the substates.
         for substate in self.substates.values():
             substate.reset()
