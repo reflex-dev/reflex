@@ -105,6 +105,7 @@ class TestState(BaseState):
     complex: Dict[int, Object] = {1: Object(), 2: Object()}
     fig: Figure = Figure()
     dt: datetime.datetime = datetime.datetime.fromisoformat("1989-11-09T18:53:00+01:00")
+    _backend: int = 0
 
     @ComputedVar
     def sum(self) -> float:
@@ -706,6 +707,7 @@ def test_reset(test_state, child_state):
     # Set some values.
     test_state.num1 = 1
     test_state.num2 = 2
+    test_state._backend = 3
     child_state.value = "test"
 
     # Reset the state.
@@ -714,6 +716,7 @@ def test_reset(test_state, child_state):
     # The values should be reset.
     assert test_state.num1 == 0
     assert test_state.num2 == 3.14
+    assert test_state._backend == 0
     assert child_state.value == ""
 
     expected_dirty_vars = {
@@ -729,6 +732,7 @@ def test_reset(test_state, child_state):
         "map_key",
         "mapping",
         "dt",
+        "_backend",
     }
 
     # The dirty vars should be reset.
