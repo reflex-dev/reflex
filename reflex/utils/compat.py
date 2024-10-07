@@ -19,10 +19,13 @@ async def windows_hot_reload_lifespan_hack():
     import asyncio
     import sys
 
-    while True:
-        sys.stderr.write("\0")
-        sys.stderr.flush()
-        await asyncio.sleep(0.5)
+    try:
+        while True:
+            sys.stderr.write("\0")
+            sys.stderr.flush()
+            await asyncio.sleep(0.5)
+    except asyncio.CancelledError:
+        pass
 
 
 @contextlib.contextmanager
