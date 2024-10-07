@@ -3131,7 +3131,7 @@ class StateManagerRedis(StateManager):
             self._warn_if_too_large(state, len(pickle_state))
             if pickle_state:
                 await self.redis.set(
-                    token,
+                    _substate_key(client_token, state),
                     pickle_state,
                     ex=self.token_expiration,
                 )
