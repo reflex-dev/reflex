@@ -79,7 +79,7 @@ class Node(SimpleNamespace):
     """Node/ NPM constants."""
 
     # The Node version.
-    VERSION = "18.17.0"
+    VERSION = "20.18.0"
     # The minimum required node version.
     MIN_VERSION = "18.17.0"
 
