@@ -2979,15 +2979,18 @@ class StateManagerRedis(StateManager):
                 "StateManagerRedis requires token to be specified in the form of {token}_{state_full_name}"
             )
 
+        # The deserialized or newly created (sub)state instance.
+        state = None
+
         # Fetch the serialized substate from redis.
         redis_state = await self.redis.get(token)
 
         if redis_state is not None:
             # Deserialize the substate.
-            state = BaseState._deserialize(data=redis_state)
-        else:
-            # Key didn't exist so we have to create a new instance for this token.
-            # Instantiate the new state class (but don't persist it yet).
+            with contextlib.suppress(StateSchemaMismatchError):
+                state = BaseState._deserialize(data=redis_state)
+        if state is None:
+            # Key didn't exist or schema mismatch so create a new instance for this token.
             state = state_cls(
                 init_substates=False,
                 _reflex_internal_init=True,
