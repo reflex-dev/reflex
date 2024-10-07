@@ -9,10 +9,11 @@ import json
 import os
 import sys
 from textwrap import dedent
-from typing import Any, Callable, Dict, Generator, List, Optional, Union
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Union
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+import pytest_asyncio
 from plotly.graph_objects import Figure
 
 import reflex as rx
@@ -1597,8 +1598,10 @@ async def test_state_with_invalid_yield(capsys, mock_app):
     assert "must only return/yield: None, Events or other EventHandlers" in captured.out
 
 
-@pytest.fixture(scope="function", params=["in_process", "disk", "redis"])
-def state_manager(request) -> Generator[StateManager, None, None]:
+@pytest_asyncio.fixture(
+    loop_scope="function", scope="function", params=["in_process", "disk", "redis"]
+)
+async def state_manager(request) -> AsyncGenerator[StateManager, None]:
     """Instance of state manager parametrized for redis and in-process.
 
     Args:
@@ -1622,7 +1625,7 @@ def state_manager(request) -> Generator[StateManager, None, None]:
     yield state_manager
 
     if isinstance(state_manager, StateManagerRedis):
-        asyncio.get_event_loop().run_until_complete(state_manager.close())
+        await state_manager.close()
 
 
 @pytest.fixture()
@@ -1710,8 +1713,8 @@ async def test_state_manager_contend(
         assert not state_manager._states_locks[token].locked()
 
 
-@pytest.fixture(scope="function")
-def state_manager_redis() -> Generator[StateManager, None, None]:
+@pytest_asyncio.fixture(loop_scope="function", scope="function")
+async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
     """Instance of state manager for redis only.
 
     Yields:
@@ -1724,11 +1727,11 @@ def state_manager_redis() -> Generator[StateManager, None, None]:
 
     yield state_manager
 
-    asyncio.get_event_loop().run_until_complete(state_manager.close())
+    await state_manager.close()
 
 
 @pytest.fixture()
-def substate_token_redis(state_manager_redis, token):
+async def substate_token_redis(state_manager_redis, token):
     """A token + substate name for looking up in state manager.
 
     Args:
@@ -1806,7 +1809,7 @@ async def test_state_manager_lock_expire_contend(
     assert (await state_manager_redis.get_state(substate_token_redis)).num1 == exp_num1
 
 
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(loop_scope="function", scope="function")
 def mock_app(monkeypatch, state_manager: StateManager) -> rx.App:
     """Mock app fixture.
 
