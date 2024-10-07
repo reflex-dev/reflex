@@ -179,7 +179,7 @@ class UploadFilesProvider(Component):
 class Upload(MemoizationLeaf):
     """A file upload component."""
 
-    library = "react-dropzone@14.2.3"
+    library = "react-dropzone@14.2.9"
 
     tag = "ReactDropzone"
 

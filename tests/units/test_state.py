@@ -9,10 +9,11 @@ import json
 import os
 import sys
 from textwrap import dedent
-from typing import Any, Callable, Dict, Generator, List, Optional, Union
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Union
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+import pytest_asyncio
 from plotly.graph_objects import Figure
 
 import reflex as rx
@@ -1597,8 +1598,10 @@ async def test_state_with_invalid_yield(capsys, mock_app):
     assert "must only return/yield: None, Events or other EventHandlers" in captured.out
 
 
-@pytest.fixture(scope="function", params=["in_process", "disk", "redis"])
-def state_manager(request) -> Generator[StateManager, None, None]:
+@pytest_asyncio.fixture(
+    loop_scope="function", scope="function", params=["in_process", "disk", "redis"]
+)
+async def state_manager(request) -> AsyncGenerator[StateManager, None]:
     """Instance of state manager parametrized for redis and in-process.
 
     Args:
@@ -1622,7 +1625,7 @@ def state_manager(request) -> Generator[StateManager, None, None]:
     yield state_manager
 
     if isinstance(state_manager, StateManagerRedis):
-        asyncio.get_event_loop().run_until_complete(state_manager.close())
+        await state_manager.close()
 
 
 @pytest.fixture()
@@ -1710,8 +1713,8 @@ async def test_state_manager_contend(
         assert not state_manager._states_locks[token].locked()
 
 
-@pytest.fixture(scope="function")
-def state_manager_redis() -> Generator[StateManager, None, None]:
+@pytest_asyncio.fixture(loop_scope="function", scope="function")
+async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
     """Instance of state manager for redis only.
 
     Yields:
@@ -1724,7 +1727,7 @@ def state_manager_redis() -> Generator[StateManager, None, None]:
 
     yield state_manager
 
-    asyncio.get_event_loop().run_until_complete(state_manager.close())
+    await state_manager.close()
 
 
 @pytest.fixture()
@@ -2790,6 +2793,9 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
     }
     assert (await state._process(events[1]).__anext__()).delta == exp_is_hydrated(state)
 
+    if isinstance(app.state_manager, StateManagerRedis):
+        await app.state_manager.close()
+
 
 @pytest.mark.asyncio
 async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
@@ -2836,6 +2842,9 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         OnLoadState.get_full_name(): {"num": 2}
     }
     assert (await state._process(events[2]).__anext__()).delta == exp_is_hydrated(state)
+
+    if isinstance(app.state_manager, StateManagerRedis):
+        await app.state_manager.close()
 
 
 @pytest.mark.asyncio

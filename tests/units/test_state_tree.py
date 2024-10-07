@@ -1,9 +1,9 @@
 """Specialized test for a larger state tree."""
 
-import asyncio
-from typing import Generator
+from typing import AsyncGenerator
 
 import pytest
+import pytest_asyncio
 
 import reflex as rx
 from reflex.state import BaseState, StateManager, StateManagerRedis, _substate_key
@@ -210,8 +210,10 @@ ALWAYS_COMPUTED_DICT_KEYS = [
 ]
 
 
-@pytest.fixture(scope="function")
-def state_manager_redis(app_module_mock) -> Generator[StateManager, None, None]:
+@pytest_asyncio.fixture(loop_scope="function", scope="function")
+async def state_manager_redis(
+    app_module_mock,
+) -> AsyncGenerator[StateManager, None]:
     """Instance of state manager for redis only.
 
     Args:
@@ -228,7 +230,7 @@ def state_manager_redis(app_module_mock) -> Generator[StateManager, None, None]:
 
     yield state_manager
 
-    asyncio.get_event_loop().run_until_complete(state_manager.close())
+    await state_manager.close()
 
 
 @pytest.mark.asyncio

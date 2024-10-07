@@ -94,7 +94,7 @@ class Plotly(NoSSRComponent):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: List[str] = ["plotly.js@2.22.0"]
+    lib_dependencies: List[str] = ["plotly.js@2.35.2"]
 
     tag = "Plot"
 

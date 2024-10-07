@@ -35,7 +35,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.1.10"
+    VERSION = "1.1.29"
     # Min Bun Version
     MIN_VERSION = "0.7.0"
     # The directory to store the bun.
@@ -116,21 +116,21 @@ class PackageJson(SimpleNamespace):
     PATH = "package.json"
 
     DEPENDENCIES = {
-        "@babel/standalone": "7.25.3",
-        "@emotion/react": "11.11.1",
-        "axios": "1.6.0",
+        "@babel/standalone": "7.25.7",
+        "@emotion/react": "11.13.3",
+        "axios": "1.7.7",
         "json5": "2.2.3",
-        "next": "14.2.13",
-        "next-sitemap": "4.1.8",
-        "next-themes": "0.2.1",
-        "react": "18.2.0",
-        "react-dom": "18.2.0",
-        "react-focus-lock": "2.11.3",
-        "socket.io-client": "4.6.1",
-        "universal-cookie": "4.0.4",
+        "next": "14.2.14",
+        "next-sitemap": "4.2.3",
+        "next-themes": "0.3.0",
+        "react": "18.3.1",
+        "react-dom": "18.3.1",
+        "react-focus-lock": "2.13.2",
+        "socket.io-client": "4.8.0",
+        "universal-cookie": "7.2.0",
     }
     DEV_DEPENDENCIES = {
-        "autoprefixer": "10.4.14",
-        "postcss": "8.4.31",
+        "autoprefixer": "10.4.20",
+        "postcss": "8.4.47",
         "postcss-import": "16.1.0",
     }

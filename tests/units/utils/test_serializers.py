@@ -96,7 +96,7 @@ class StrEnum(str, Enum):
     BAR = "bar"
 
 
-class TestEnum(Enum):
+class FooBarEnum(Enum):
     """A lone enum class."""
 
     FOO = "foo"
@@ -151,10 +151,10 @@ class BaseSubclass(Base):
                 "key2": "prefix_bar",
             },
         ),
-        (TestEnum.FOO, "foo"),
-        ([TestEnum.FOO, TestEnum.BAR], ["foo", "bar"]),
+        (FooBarEnum.FOO, "foo"),
+        ([FooBarEnum.FOO, FooBarEnum.BAR], ["foo", "bar"]),
         (
-            {"key1": TestEnum.FOO, "key2": TestEnum.BAR},
+            {"key1": FooBarEnum.FOO, "key2": FooBarEnum.BAR},
             {
                 "key1": "foo",
                 "key2": "bar",

@@ -7,7 +7,7 @@ class Tailwind(SimpleNamespace):
     """Tailwind constants."""
 
     # The Tailwindcss version
-    VERSION = "tailwindcss@3.3.2"
+    VERSION = "tailwindcss@3.4.13"
     # The Tailwind config.
     CONFIG = "tailwind.config.js"
     # Default Tailwind content paths
