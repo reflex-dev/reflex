@@ -274,9 +274,9 @@ def test_base_class_vars(test_state):
         assert isinstance(prop, Var)
         assert prop._js_expr.split(".")[-1] == field
 
-    assert cls.num1._var_type == int
-    assert cls.num2._var_type == float
-    assert cls.key._var_type == str
+    assert cls.num1._var_type is int
+    assert cls.num2._var_type is float
+    assert cls.key._var_type is str
 
 
 def test_computed_class_var(test_state):
@@ -526,7 +526,7 @@ def test_set_class_var():
     TestState._set_var(Var(_js_expr="num3", _var_type=int)._var_set_state(TestState))
     var = TestState.num3  # type: ignore
     assert var._js_expr == TestState.get_full_name() + ".num3"
-    assert var._var_type == int
+    assert var._var_type is int
     assert var._var_state == TestState.get_full_name()
 
 

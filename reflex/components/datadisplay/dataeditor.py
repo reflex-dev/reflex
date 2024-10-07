@@ -329,7 +329,7 @@ class DataEditor(NoSSRComponent):
 
         columns = props.get("columns", [])
         data = props.get("data", [])
-        rows = props.get("rows", None)
+        rows = props.get("rows")
 
         # If rows is not provided, determine from data.
         if rows is None:

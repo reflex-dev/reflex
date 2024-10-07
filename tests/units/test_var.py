@@ -490,7 +490,7 @@ def test_var_indexing_str():
 
     # Test that indexing gives a type of Var[str].
     assert isinstance(str_var[0], Var)
-    assert str_var[0]._var_type == str
+    assert str_var[0]._var_type is str
 
     # Test basic indexing.
     assert str(str_var[0]) == "str.at(0)"
@@ -623,7 +623,7 @@ def test_str_var_slicing():
 
     # Test that slicing gives a type of Var[str].
     assert isinstance(str_var[:1], Var)
-    assert str_var[:1]._var_type == str
+    assert str_var[:1]._var_type is str
 
     # Test basic slicing.
     assert str(str_var[:1]) == 'str.split("").slice(undefined, 1).join("")'

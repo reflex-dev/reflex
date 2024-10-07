@@ -542,7 +542,9 @@ def test_style_prop_with_event_handler_value(callable):
 
     style = {
         "color": (
-            EventHandler(fn=callable) if type(callable) != EventHandler else callable
+            EventHandler(fn=callable)
+            if type(callable) is not EventHandler
+            else callable
         )
     }
 

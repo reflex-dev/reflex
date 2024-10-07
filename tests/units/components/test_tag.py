@@ -119,7 +119,7 @@ def test_format_cond_tag():
         tag_dict["false_value"],
     )
     assert cond._js_expr == "logged_in"
-    assert cond._var_type == bool
+    assert cond._var_type is bool
 
     assert true_value["name"] == "h1"
     assert true_value["contents"] == "True content"
