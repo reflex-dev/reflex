@@ -2711,33 +2711,23 @@ class StateManagerDisk(StateManager):
             self.states_directory / f"{md5(token.encode()).hexdigest()}.pkl"
         ).absolute()
 
-    async def load_state(self, token: str, root_state: BaseState) -> BaseState:
+    async def load_state(self, token: str) -> BaseState | None:
         """Load a state object based on the provided token.
 
         Args:
             token: The token used to identify the state object.
-            root_state: The root state object.
 
         Returns:
-            The loaded state object.
+            The loaded state object or None.
         """
-        if token in self.states:
-            return self.states[token]
-
-        client_token, substate_address = _split_substate_key(token)
-
         token_path = self.token_path(token)
 
         if token_path.exists():
             try:
                 with token_path.open(mode="rb") as file:
-                    substate = BaseState._deserialize(fp=file)
-                    await self.populate_substates(client_token, substate, root_state)
-                    return substate
+                    return BaseState._deserialize(fp=file)
             except Exception:
                 pass
-
-        return root_state.get_substate(substate_address.split(".")[1:])
 
     async def populate_substates(
         self, client_token: str, state: BaseState, root_state: BaseState
@@ -2752,10 +2742,13 @@ class StateManagerDisk(StateManager):
         for substate in state.get_substates():
             substate_token = _substate_key(client_token, substate)
 
-            substate = await self.load_state(substate_token, root_state)
+            instance = await self.load_state(substate_token)
+            if instance is None:
+                instance = await root_state.get_state(substate)
+            state.substates[substate.get_name()] = instance
+            instance.parent_state = state
 
-            state.substates[substate.get_name()] = substate
-            substate.parent_state = state
+            await self.populate_substates(client_token, instance, root_state)
 
     @override
     async def get_state(
@@ -2770,15 +2763,24 @@ class StateManagerDisk(StateManager):
         Returns:
             The state for the token.
         """
-        client_token, substate_address = _split_substate_key(token)
+        client_token = _split_substate_key(token)[0]
+        root_state = self.states.get(client_token)
+        if root_state is not None:
+            # Retrieved state from memory.
+            return root_state
 
-        root_state_token = _substate_key(client_token, substate_address.split(".")[0])
-        root_state = self.states.get(root_state_token)
+        # Deserialize root state from disk.
+        root_state = await self.load_state(_substate_key(client_token, self.state))
+        # Create a new root state tree with all substates instantiated.
+        fresh_root_state = self.state(_reflex_internal_init=True)
         if root_state is None:
-            # Create a new root state which will be persisted in the next set_state call.
-            root_state = self.state(_reflex_internal_init=True)
-
-        return await self.load_state(root_state_token, root_state)
+            root_state = fresh_root_state
+        else:
+            # Ensure all substates exist, even if they were not serialized previously.
+            root_state.substates = fresh_root_state.substates
+        self.states[client_token] = root_state
+        await self.populate_substates(client_token, root_state, root_state)
+        return root_state
 
     async def set_state_for_substate(self, client_token: str, substate: BaseState):
         """Set the state for a substate.
@@ -2789,12 +2791,12 @@ class StateManagerDisk(StateManager):
         """
         substate_token = _substate_key(client_token, substate)
 
-        self.states[substate_token] = substate
-
-        state_dilled = substate._serialize()
-        if not self.states_directory.exists():
-            self.states_directory.mkdir(parents=True, exist_ok=True)
-        self.token_path(substate_token).write_bytes(state_dilled)
+        if substate._get_was_touched():
+            substate._was_touched = False  # Reset the touched flag after serializing.
+            pickle_state = substate._serialize()
+            if not self.states_directory.exists():
+                self.states_directory.mkdir(parents=True, exist_ok=True)
+            self.token_path(substate_token).write_bytes(pickle_state)
 
         for substate_substate in substate.substates.values():
             await self.set_state_for_substate(client_token, substate_substate)

@@ -1884,11 +1884,11 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     async with sp:
         assert sp._self_actx is not None
         assert sp._self_mutable  # proxy is mutable inside context
-        if isinstance(mock_app.state_manager, StateManagerMemory):
+        if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
             # For in-process store, only one instance of the state exists
             assert sp.__wrapped__ is grandchild_state
         else:
-            # When redis or disk is used, a new+updated instance is assigned to the proxy
+            # When redis is used, a new+updated instance is assigned to the proxy
             assert sp.__wrapped__ is not grandchild_state
         sp.value2 = "42"
     assert not sp._self_mutable  # proxy is not mutable after exiting context
@@ -1899,7 +1899,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     gotten_state = await mock_app.state_manager.get_state(
         _substate_key(grandchild_state.router.session.client_token, grandchild_state)
     )
-    if isinstance(mock_app.state_manager, StateManagerMemory):
+    if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
         # For in-process store, only one instance of the state exists
         assert gotten_state is parent_state
     else:
@@ -2922,19 +2922,10 @@ async def test_get_state(mock_app: rx.App, token: str):
         _substate_key(token, ChildState2)
     )
     assert isinstance(new_test_state, TestState)
-    if isinstance(mock_app.state_manager, StateManagerMemory):
+    if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
         # In memory, it's the same instance
         assert new_test_state is test_state
         test_state._clean()
-        # All substates are available
-        assert tuple(sorted(new_test_state.substates)) == (
-            ChildState.get_name(),
-            ChildState2.get_name(),
-            ChildState3.get_name(),
-        )
-    elif isinstance(mock_app.state_manager, StateManagerDisk):
-        # On disk, it's a new instance
-        assert new_test_state is not test_state
         # All substates are available
         assert tuple(sorted(new_test_state.substates)) == (
             ChildState.get_name(),
