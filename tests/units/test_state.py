@@ -2793,6 +2793,9 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
     }
     assert (await state._process(events[1]).__anext__()).delta == exp_is_hydrated(state)
 
+    if isinstance(app.state_manager, StateManagerRedis):
+        await app.state_manager.close()
+
 
 @pytest.mark.asyncio
 async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
@@ -2839,6 +2842,9 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         OnLoadState.get_full_name(): {"num": 2}
     }
     assert (await state._process(events[2]).__anext__()).delta == exp_is_hydrated(state)
+
+    if isinstance(app.state_manager, StateManagerRedis):
+        await app.state_manager.close()
 
 
 @pytest.mark.asyncio
