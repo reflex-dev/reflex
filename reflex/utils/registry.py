@@ -56,7 +56,7 @@ def _get_npm_registry() -> str:
     Returns:
         str:
     """
-    if npm_registry := os.environ.get("NPM_REGISTRY", ""):
+    if npm_registry := os.environ.get("NPM_CONFIG_REGISTRY", ""):
         return npm_registry
     else:
         return get_best_registry()
