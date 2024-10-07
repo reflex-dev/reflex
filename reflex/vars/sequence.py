@@ -886,6 +886,12 @@ class ArrayVar(Var[ARRAY_VAR_TYPE]):
 
     @overload
     def __getitem__(
+        self: ARRAY_VAR_OF_LIST_ELEMENT[Tuple[KEY_TYPE, VALUE_TYPE]],
+        i: int | NumberVar,
+    ) -> ArrayVar[Tuple[KEY_TYPE, VALUE_TYPE]]: ...
+
+    @overload
+    def __getitem__(
         self: ARRAY_VAR_OF_LIST_ELEMENT[Tuple[INNER_ARRAY_VAR, ...]],
         i: int | NumberVar,
     ) -> ArrayVar[Tuple[INNER_ARRAY_VAR, ...]]: ...
