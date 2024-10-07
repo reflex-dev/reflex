@@ -1958,7 +1958,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The serialized state.
         """
-        return pickle.dumps((state_to_schema(self), self))
+        try:
+            return pickle.dumps((state_to_schema(self), self))
+        except pickle.PicklingError:
+            console.warn(
+                f"Failed to serialize state {self.get_full_name()} due to unpicklable object. "
+                "This state will not be persisted."
+            )
+            return b""
 
     @classmethod
     def _deserialize(
@@ -2812,9 +2819,10 @@ class StateManagerDisk(StateManager):
         self.states[substate_token] = substate
 
         state_dilled = substate._serialize()
-        if not self.states_directory.exists():
-            self.states_directory.mkdir(parents=True, exist_ok=True)
-        self.token_path(substate_token).write_bytes(state_dilled)
+        if state_dilled:
+            if not self.states_directory.exists():
+                self.states_directory.mkdir(parents=True, exist_ok=True)
+            self.token_path(substate_token).write_bytes(state_dilled)
 
         for substate_substate in substate.substates.values():
             await self.set_state_for_substate(client_token, substate_substate)
@@ -3107,11 +3115,12 @@ class StateManagerRedis(StateManager):
         if state._get_was_touched():
             pickle_state = state._serialize()
             self._warn_if_too_large(state, len(pickle_state))
-            await self.redis.set(
-                _substate_key(client_token, state),
-                pickle_state,
-                ex=self.token_expiration,
-            )
+            if pickle_state:
+                await self.redis.set(
+                    _substate_key(client_token, state),
+                    pickle_state,
+                    ex=self.token_expiration,
+                )
 
         # Wait for substates to be persisted.
         for t in tasks:
