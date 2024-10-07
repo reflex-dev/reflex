@@ -45,7 +45,7 @@ def test_validate_cond(cond_state: BaseState):
         Text.create("cond is True"),
         Text.create("cond is False"),
     )
-    cond_dict = cond_component.render() if type(cond_component) == Fragment else {}
+    cond_dict = cond_component.render() if type(cond_component) is Fragment else {}
     assert cond_dict["name"] == "Fragment"
 
     [condition] = cond_dict["children"]

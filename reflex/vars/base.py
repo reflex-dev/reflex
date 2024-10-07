@@ -239,7 +239,7 @@ class Var(Generic[VAR_TYPE]):
             **kwargs,
         )
 
-        if (js_expr := kwargs.get("_js_expr", None)) is not None:
+        if (js_expr := kwargs.get("_js_expr")) is not None:
             object.__setattr__(value_with_replaced, "_js_expr", js_expr)
 
         return value_with_replaced
