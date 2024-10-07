@@ -37,7 +37,7 @@ from reflex.config import Config, get_config
 from reflex.utils import console, net, path_ops, processes
 from reflex.utils.exceptions import GeneratedCodeHasNoFunctionDefs
 from reflex.utils.format import format_library_name
-from reflex.utils.registry import _get_best_registry
+from reflex.utils.registry import _get_npm_registry
 
 CURRENTLY_INSTALLING_NODE = False
 
@@ -620,7 +620,7 @@ def initialize_package_json():
     code = _compile_package_json()
     output_path.write_text(code)
 
-    best_registry = _get_best_registry()
+    best_registry = _get_npm_registry()
     bun_config_path = get_web_dir() / constants.Bun.CONFIG_PATH
     bun_config_path.write_text(
         f"""
