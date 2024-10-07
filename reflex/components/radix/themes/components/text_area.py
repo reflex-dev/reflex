@@ -108,8 +108,13 @@ class TextArea(RadixThemesComponent, elements.Textarea):
         Returns:
             The component.
         """
-        if props.get("value") is not None and props.get("on_change") is not None:
+        if (
+            props.get("value") is not None
+            and props.get("on_change") is not None
+            and props.get("enter_key_submit", False) is False
+        ):
             # create a debounced input if the user requests full control to avoid typing jank
+            # disabled when using `enter_key_submit`
             return DebounceInput.create(super().create(*children, **props))
         return super().create(*children, **props)
 
