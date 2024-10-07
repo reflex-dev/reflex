@@ -119,6 +119,8 @@ class ObjectVar(Var[OBJECT_TYPE]):
         """
         return object_entries_operation(self)
 
+    items = entries
+
     def merge(self, other: ObjectVar):
         """Merge two objects.
 
