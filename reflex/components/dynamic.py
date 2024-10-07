@@ -1,6 +1,6 @@
 """Components that are dynamically generated on the backend."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from reflex import constants
 from reflex.utils import imports
@@ -26,14 +26,10 @@ def get_cdn_url(lib: str) -> str:
     return f"https://cdn.jsdelivr.net/npm/{lib}" + "/+esm"
 
 
-bundled_libraries = {
-    "react",
-    "@radix-ui/themes",
-    "@emotion/react",
-}
+bundled_libraries = {"react", "@radix-ui/themes", "@emotion/react", "next/link"}
 
 
-def bundle_library(component: "Component"):
+def bundle_library(component: Union["Component", str]):
     """Bundle a library with the component.
 
     Args:
@@ -42,6 +38,9 @@ def bundle_library(component: "Component"):
     Raises:
         DynamicComponentMissingLibrary: Raised when a dynamic component is missing a library.
     """
+    if isinstance(component, str):
+        bundled_libraries.add(component)
+        return
     if component.library is None:
         raise DynamicComponentMissingLibrary("Component must have a library to bundle.")
     bundled_libraries.add(format_library_name(component.library))

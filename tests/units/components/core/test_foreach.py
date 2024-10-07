@@ -47,7 +47,7 @@ class ForEachState(BaseState):
     color_index_tuple: Tuple[int, str] = (0, "red")
 
 
-class TestComponentState(ComponentState):
+class ComponentStateTest(ComponentState):
     """A test component state."""
 
     foo: bool
@@ -288,5 +288,5 @@ def test_foreach_component_state():
     with pytest.raises(TypeError):
         Foreach.create(
             ForEachState.colors_list,
-            TestComponentState.create,
+            ComponentStateTest.create,
         )

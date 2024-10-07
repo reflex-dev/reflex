@@ -461,10 +461,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for name, value in cls.__dict__.items()
             if types.is_backend_base_variable(name, cls)
         }
-        # Add annotated backend vars that do not have a default value.
+        # Add annotated backend vars that may not have a default value.
         new_backend_vars.update(
             {
-                name: Var("", _var_type=annotation_value).get_default_value()
+                name: cls._get_var_default(name, annotation_value)
                 for name, annotation_value in get_type_hints(cls).items()
                 if name not in new_backend_vars
                 and types.is_backend_base_variable(name, cls)
@@ -690,6 +690,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     parent_state.get_name(),
                     parent_state.get_parent_state(),
                 )
+
+        # Reset cached schema value
+        cls._to_schema.cache_clear()
 
     @classmethod
     def _check_overridden_methods(cls):
@@ -989,6 +992,26 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ):
             # Ensure frontend uses null coalescing when accessing.
             object.__setattr__(prop, "_var_type", Optional[prop._var_type])
+
+    @classmethod
+    def _get_var_default(cls, name: str, annotation_value: Any) -> Any:
+        """Get the default value of a (backend) var.
+
+        Args:
+            name: The name of the var.
+            annotation_value: The annotation value of the var.
+
+        Returns:
+            The default value of the var or None.
+        """
+        try:
+            return getattr(cls, name)
+        except AttributeError:
+            try:
+                return Var("", _var_type=annotation_value).get_default_value()
+            except TypeError:
+                pass
+        return None
 
     @staticmethod
     def _get_base_functions() -> dict[str, FunctionType]:
@@ -1925,12 +1948,50 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             The state dict for serialization.
         """
         state = super().__getstate__()
-        # Never serialize parent_state or substates
         state["__dict__"] = state["__dict__"].copy()
+        if state["__dict__"].get("parent_state") is not None:
+            # Do not serialize router data in substates (only the root state).
+            state["__dict__"].pop("router", None)
+            state["__dict__"].pop("router_data", None)
+        # Never serialize parent_state or substates.
         state["__dict__"]["parent_state"] = None
         state["__dict__"]["substates"] = {}
         state["__dict__"].pop("_was_touched", None)
+        # Remove all inherited vars.
+        for inherited_var_name in self.inherited_vars:
+            state["__dict__"].pop(inherited_var_name, None)
         return state
+
+    @classmethod
+    @functools.lru_cache()
+    def _to_schema(cls) -> str:
+        """Convert a state to a schema.
+
+        Returns:
+            The hash of the schema.
+        """
+
+        def _field_tuple(
+            field_name: str,
+        ) -> Tuple[str, str, Any, Union[bool, None], Any]:
+            model_field = cls.__fields__[field_name]
+            return (
+                field_name,
+                model_field.name,
+                _serialize_type(model_field.type_),
+                (
+                    model_field.required
+                    if isinstance(model_field.required, bool)
+                    else None
+                ),
+                (model_field.default if is_serializable(model_field.default) else None),
+            )
+
+        return md5(
+            pickle.dumps(
+                list(sorted(_field_tuple(field_name) for field_name in cls.base_vars))
+            )
+        ).hexdigest()
 
     def _serialize(self) -> bytes:
         """Serialize the state for redis.
@@ -1938,7 +1999,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The serialized state.
         """
-        return pickle.dumps((state_to_schema(self), self))
+        return pickle.dumps((self._to_schema(), self))
 
     @classmethod
     def _deserialize(
@@ -1965,7 +2026,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             (substate_schema, state) = pickle.load(fp)
         else:
             raise ValueError("Only one of `data` or `fp` must be provided")
-        if substate_schema != state_to_schema(state):
+        if substate_schema != state._to_schema():
             raise StateSchemaMismatchError()
         return state
 
@@ -2600,35 +2661,6 @@ def is_serializable(value: Any) -> bool:
         return False
 
 
-def state_to_schema(
-    state: BaseState,
-) -> List[Tuple[str, str, Any, Union[bool, None], Any]]:
-    """Convert a state to a schema.
-
-    Args:
-        state: The state to convert to a schema.
-
-    Returns:
-        The schema.
-    """
-    return list(
-        sorted(
-            (
-                field_name,
-                model_field.name,
-                _serialize_type(model_field.type_),
-                (
-                    model_field.required
-                    if isinstance(model_field.required, bool)
-                    else None
-                ),
-                (model_field.default if is_serializable(model_field.default) else None),
-            )
-            for field_name, model_field in state.__fields__.items()
-        )
-    )
-
-
 def reset_disk_state_manager():
     """Reset the disk state manager."""
     states_directory = prerequisites.get_web_dir() / constants.Dirs.STATES
@@ -2711,33 +2743,23 @@ class StateManagerDisk(StateManager):
             self.states_directory / f"{md5(token.encode()).hexdigest()}.pkl"
         ).absolute()
 
-    async def load_state(self, token: str, root_state: BaseState) -> BaseState:
+    async def load_state(self, token: str) -> BaseState | None:
         """Load a state object based on the provided token.
 
         Args:
             token: The token used to identify the state object.
-            root_state: The root state object.
 
         Returns:
-            The loaded state object.
+            The loaded state object or None.
         """
-        if token in self.states:
-            return self.states[token]
-
-        client_token, substate_address = _split_substate_key(token)
-
         token_path = self.token_path(token)
 
         if token_path.exists():
             try:
                 with token_path.open(mode="rb") as file:
-                    substate = BaseState._deserialize(fp=file)
-                    await self.populate_substates(client_token, substate, root_state)
-                    return substate
+                    return BaseState._deserialize(fp=file)
             except Exception:
                 pass
-
-        return root_state.get_substate(substate_address.split(".")[1:])
 
     async def populate_substates(
         self, client_token: str, state: BaseState, root_state: BaseState
@@ -2752,10 +2774,13 @@ class StateManagerDisk(StateManager):
         for substate in state.get_substates():
             substate_token = _substate_key(client_token, substate)
 
-            substate = await self.load_state(substate_token, root_state)
+            instance = await self.load_state(substate_token)
+            if instance is None:
+                instance = await root_state.get_state(substate)
+            state.substates[substate.get_name()] = instance
+            instance.parent_state = state
 
-            state.substates[substate.get_name()] = substate
-            substate.parent_state = state
+            await self.populate_substates(client_token, instance, root_state)
 
     @override
     async def get_state(
@@ -2770,15 +2795,24 @@ class StateManagerDisk(StateManager):
         Returns:
             The state for the token.
         """
-        client_token, substate_address = _split_substate_key(token)
+        client_token = _split_substate_key(token)[0]
+        root_state = self.states.get(client_token)
+        if root_state is not None:
+            # Retrieved state from memory.
+            return root_state
 
-        root_state_token = _substate_key(client_token, substate_address.split(".")[0])
-        root_state = self.states.get(root_state_token)
+        # Deserialize root state from disk.
+        root_state = await self.load_state(_substate_key(client_token, self.state))
+        # Create a new root state tree with all substates instantiated.
+        fresh_root_state = self.state(_reflex_internal_init=True)
         if root_state is None:
-            # Create a new root state which will be persisted in the next set_state call.
-            root_state = self.state(_reflex_internal_init=True)
-
-        return await self.load_state(root_state_token, root_state)
+            root_state = fresh_root_state
+        else:
+            # Ensure all substates exist, even if they were not serialized previously.
+            root_state.substates = fresh_root_state.substates
+        self.states[client_token] = root_state
+        await self.populate_substates(client_token, root_state, root_state)
+        return root_state
 
     async def set_state_for_substate(self, client_token: str, substate: BaseState):
         """Set the state for a substate.
@@ -2789,12 +2823,12 @@ class StateManagerDisk(StateManager):
         """
         substate_token = _substate_key(client_token, substate)
 
-        self.states[substate_token] = substate
-
-        state_dilled = substate._serialize()
-        if not self.states_directory.exists():
-            self.states_directory.mkdir(parents=True, exist_ok=True)
-        self.token_path(substate_token).write_bytes(state_dilled)
+        if substate._get_was_touched():
+            substate._was_touched = False  # Reset the touched flag after serializing.
+            pickle_state = substate._serialize()
+            if not self.states_directory.exists():
+                self.states_directory.mkdir(parents=True, exist_ok=True)
+            self.token_path(substate_token).write_bytes(pickle_state)
 
         for substate_substate in substate.substates.values():
             await self.set_state_for_substate(client_token, substate_substate)
