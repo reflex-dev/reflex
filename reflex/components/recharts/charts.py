@@ -9,7 +9,7 @@ from reflex.components.recharts.general import ResponsiveContainer
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
 from reflex.event import EventHandler
-from reflex.vars.base import LiteralVar, Var
+from reflex.vars.base import Var
 
 from .recharts import (
     LiteralAnimationEasing,
@@ -155,11 +155,11 @@ class BarChart(CategoricalChartBase):
 
     alias = "RechartsBarChart"
 
-    # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
-    bar_category_gap: Var[Union[str, int]] = LiteralVar.create("10%")
+    # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number. Default: "10%"
+    bar_category_gap: Var[Union[str, int]]
 
-    # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
-    bar_gap: Var[Union[str, int]] = LiteralVar.create(4)  # type: ignore
+    # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number. Default: 4
+    bar_gap: Var[Union[str, int]]
 
     # The width of all the bars in the chart. Number
     bar_size: Var[int]
@@ -167,10 +167,10 @@ class BarChart(CategoricalChartBase):
     # The maximum width of all the bars in a horizontal BarChart, or maximum height in a vertical BarChart.
     max_bar_size: Var[int]
 
-    # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape.
+    # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. Default: "none"
     stack_offset: Var[LiteralStackOffset]
 
-    # If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
+    # If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.) Default: False
     reverse_stack_order: Var[bool]
 
     # Valid children components
