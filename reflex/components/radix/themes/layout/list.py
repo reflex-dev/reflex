@@ -9,7 +9,7 @@ from reflex.components.core.foreach import Foreach
 from reflex.components.el.elements.typography import Li, Ol, Ul
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.typography.text import Text
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 LiteralListStyleTypeUnordered = Literal[
     "none",
@@ -70,7 +70,6 @@ class BaseList(Component):
                 children = [Foreach.create(items, ListItem.create)]
             else:
                 children = [ListItem.create(item) for item in items]  # type: ignore
-        props["list_style_position"] = "outside"
         props["direction"] = "column"
         style = props.setdefault("style", {})
         style["list_style_type"] = list_style_type
@@ -86,7 +85,6 @@ class BaseList(Component):
         """
         return {
             "direction": "column",
-            "list_style_position": "inside",
         }
 
 

@@ -58,7 +58,7 @@ def debug(msg: str, **kwargs):
         kwargs: Keyword arguments to pass to the print function.
     """
     if is_debug():
-        msg_ = f"[blue]Debug: {msg}[/blue]"
+        msg_ = f"[purple]Debug: {msg}[/purple]"
         if progress := kwargs.pop("progress", None):
             progress.console.print(msg_, **kwargs)
         else:

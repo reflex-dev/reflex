@@ -15,13 +15,14 @@ import alembic.runtime.environment
 import alembic.script
 import alembic.util
 import sqlalchemy
+import sqlalchemy.exc
 import sqlalchemy.orm
 
 from reflex import constants
 from reflex.base import Base
 from reflex.config import get_config
 from reflex.utils import console
-from reflex.utils.compat import sqlmodel
+from reflex.utils.compat import sqlmodel, sqlmodel_field_has_primary_key
 
 
 def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
@@ -49,6 +50,27 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     # Needed for the admin dash on sqlite.
     connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
     return sqlmodel.create_engine(url, echo=echo_db_query, connect_args=connect_args)
+
+
+async def get_db_status() -> bool:
+    """Checks the status of the database connection.
+
+    Attempts to connect to the database and execute a simple query to verify connectivity.
+
+    Returns:
+        bool: The status of the database connection:
+            - True: The database is accessible.
+            - False: The database is not accessible.
+    """
+    status = True
+    try:
+        engine = get_engine()
+        with engine.connect() as connection:
+            connection.execute(sqlalchemy.text("SELECT 1"))
+    except sqlalchemy.exc.OperationalError:
+        status = False
+
+    return status
 
 
 SQLModelOrSqlAlchemy = Union[
@@ -144,8 +166,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         non_default_primary_key_fields = [
             field_name
             for field_name, field in cls.__fields__.items()
-            if field_name != "id"
-            and getattr(field.field_info, "primary_key", None) is True
+            if field_name != "id" and sqlmodel_field_has_primary_key(field)
         ]
         if non_default_primary_key_fields:
             cls.__fields__.pop("id", None)

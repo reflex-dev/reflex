@@ -9,7 +9,7 @@ from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
-from reflex.vars import BaseVar, Var
+from reflex.vars.base import Var
 
 from ..base import RadixThemesComponent, RadixThemesTriggerComponent
 
@@ -29,60 +29,50 @@ class DropdownMenuRoot(RadixThemesComponent):
         default_open: Optional[Union[Var[bool], bool]] = None,
         open: Optional[Union[Var[bool], bool]] = None,
         modal: Optional[Union[Var[bool], bool]] = None,
-        dir: Optional[Union[Var[Literal["ltr", "rtl"]], Literal["ltr", "rtl"]]] = None,
+        dir: Optional[Union[Literal["ltr", "rtl"], Var[Literal["ltr", "rtl"]]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_open_change: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "DropdownMenuRoot":
@@ -123,50 +113,40 @@ class DropdownMenuTrigger(RadixThemesTriggerComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "DropdownMenuTrigger":
@@ -189,73 +169,73 @@ class DropdownMenuContent(RadixThemesComponent):
         *children,
         size: Optional[
             Union[
-                Var[Union[Breakpoints[str, Literal["1", "2"]], Literal["1", "2"]]],
-                Literal["1", "2"],
                 Breakpoints[str, Literal["1", "2"]],
+                Literal["1", "2"],
+                Var[Union[Breakpoints[str, Literal["1", "2"]], Literal["1", "2"]]],
             ]
         ] = None,
         variant: Optional[
-            Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
+            Union[Literal["soft", "solid"], Var[Literal["soft", "solid"]]]
         ] = None,
         color_scheme: Optional[
             Union[
-                Var[
-                    Literal[
-                        "tomato",
-                        "red",
-                        "ruby",
-                        "crimson",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "violet",
-                        "iris",
-                        "indigo",
-                        "blue",
-                        "cyan",
-                        "teal",
-                        "jade",
-                        "green",
-                        "grass",
-                        "brown",
-                        "orange",
-                        "sky",
-                        "mint",
-                        "lime",
-                        "yellow",
-                        "amber",
-                        "gold",
-                        "bronze",
-                        "gray",
-                    ]
-                ],
                 Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
+                    "amber",
+                    "blue",
+                    "bronze",
+                    "brown",
                     "crimson",
+                    "cyan",
+                    "gold",
+                    "grass",
+                    "gray",
+                    "green",
+                    "indigo",
+                    "iris",
+                    "jade",
+                    "lime",
+                    "mint",
+                    "orange",
                     "pink",
                     "plum",
                     "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
+                    "red",
+                    "ruby",
                     "sky",
-                    "mint",
-                    "lime",
+                    "teal",
+                    "tomato",
+                    "violet",
                     "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
+                ],
+                Var[
+                    Literal[
+                        "amber",
+                        "blue",
+                        "bronze",
+                        "brown",
+                        "crimson",
+                        "cyan",
+                        "gold",
+                        "grass",
+                        "gray",
+                        "green",
+                        "indigo",
+                        "iris",
+                        "jade",
+                        "lime",
+                        "mint",
+                        "orange",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "red",
+                        "ruby",
+                        "sky",
+                        "teal",
+                        "tomato",
+                        "violet",
+                        "yellow",
+                    ]
                 ],
             ]
         ] = None,
@@ -265,30 +245,30 @@ class DropdownMenuContent(RadixThemesComponent):
         force_mount: Optional[Union[Var[bool], bool]] = None,
         side: Optional[
             Union[
-                Var[Literal["top", "right", "bottom", "left"]],
-                Literal["top", "right", "bottom", "left"],
+                Literal["bottom", "left", "right", "top"],
+                Var[Literal["bottom", "left", "right", "top"]],
             ]
         ] = None,
         side_offset: Optional[Union[Var[Union[float, int]], float, int]] = None,
         align: Optional[
             Union[
-                Var[Literal["start", "center", "end"]],
-                Literal["start", "center", "end"],
+                Literal["center", "end", "start"],
+                Var[Literal["center", "end", "start"]],
             ]
         ] = None,
         align_offset: Optional[Union[Var[Union[float, int]], float, int]] = None,
         avoid_collisions: Optional[Union[Var[bool], bool]] = None,
         collision_padding: Optional[
             Union[
+                Dict[str, Union[float, int]],
                 Var[Union[Dict[str, Union[float, int]], float, int]],
                 float,
                 int,
-                Dict[str, Union[float, int]],
             ]
         ] = None,
         arrow_padding: Optional[Union[Var[Union[float, int]], float, int]] = None,
         sticky: Optional[
-            Union[Var[Literal["partial", "always"]], Literal["partial", "always"]]
+            Union[Literal["always", "partial"], Var[Literal["always", "partial"]]]
         ] = None,
         hide_when_detached: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
@@ -297,65 +277,55 @@ class DropdownMenuContent(RadixThemesComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_close_auto_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_escape_key_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_focus_outside: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_interact_outside: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_pointer_down_outside: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "DropdownMenuContent":
@@ -410,50 +380,40 @@ class DropdownMenuSubTrigger(RadixThemesTriggerComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "DropdownMenuSubTrigger":
@@ -482,53 +442,43 @@ class DropdownMenuSub(RadixThemesComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_open_change: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "DropdownMenuSub":
@@ -568,15 +518,15 @@ class DropdownMenuSubContent(RadixThemesComponent):
         avoid_collisions: Optional[Union[Var[bool], bool]] = None,
         collision_padding: Optional[
             Union[
+                Dict[str, Union[float, int]],
                 Var[Union[Dict[str, Union[float, int]], float, int]],
                 float,
                 int,
-                Dict[str, Union[float, int]],
             ]
         ] = None,
         arrow_padding: Optional[Union[Var[Union[float, int]], float, int]] = None,
         sticky: Optional[
-            Union[Var[Literal["partial", "always"]], Literal["partial", "always"]]
+            Union[Literal["always", "partial"], Var[Literal["always", "partial"]]]
         ] = None,
         hide_when_detached: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
@@ -585,62 +535,52 @@ class DropdownMenuSubContent(RadixThemesComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_escape_key_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_focus_outside: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_interact_outside: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_pointer_down_outside: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "DropdownMenuSubContent":
@@ -682,63 +622,63 @@ class DropdownMenuItem(RadixThemesComponent):
         *children,
         color_scheme: Optional[
             Union[
-                Var[
-                    Literal[
-                        "tomato",
-                        "red",
-                        "ruby",
-                        "crimson",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "violet",
-                        "iris",
-                        "indigo",
-                        "blue",
-                        "cyan",
-                        "teal",
-                        "jade",
-                        "green",
-                        "grass",
-                        "brown",
-                        "orange",
-                        "sky",
-                        "mint",
-                        "lime",
-                        "yellow",
-                        "amber",
-                        "gold",
-                        "bronze",
-                        "gray",
-                    ]
-                ],
                 Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
+                    "amber",
+                    "blue",
+                    "bronze",
+                    "brown",
                     "crimson",
+                    "cyan",
+                    "gold",
+                    "grass",
+                    "gray",
+                    "green",
+                    "indigo",
+                    "iris",
+                    "jade",
+                    "lime",
+                    "mint",
+                    "orange",
                     "pink",
                     "plum",
                     "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
+                    "red",
+                    "ruby",
                     "sky",
-                    "mint",
-                    "lime",
+                    "teal",
+                    "tomato",
+                    "violet",
                     "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
+                ],
+                Var[
+                    Literal[
+                        "amber",
+                        "blue",
+                        "bronze",
+                        "brown",
+                        "crimson",
+                        "cyan",
+                        "gold",
+                        "grass",
+                        "gray",
+                        "green",
+                        "indigo",
+                        "iris",
+                        "jade",
+                        "lime",
+                        "mint",
+                        "orange",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "red",
+                        "ruby",
+                        "sky",
+                        "teal",
+                        "tomato",
+                        "violet",
+                        "yellow",
+                    ]
                 ],
             ]
         ] = None,
@@ -752,53 +692,41 @@ class DropdownMenuItem(RadixThemesComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_select: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_select: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "DropdownMenuItem":
@@ -839,50 +767,40 @@ class DropdownMenuSeparator(RadixThemesComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "DropdownMenuSeparator":

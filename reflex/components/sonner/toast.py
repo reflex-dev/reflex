@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Optional, Union
+from typing import Any, ClassVar, Literal, Optional, Union
+
+from pydantic import ValidationError
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
@@ -15,8 +17,9 @@ from reflex.event import (
 from reflex.style import Style, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
-from reflex.utils.serializers import serialize, serializer
-from reflex.vars import Var, VarData
+from reflex.utils.serializers import serializer
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
 
 LiteralPosition = Literal[
     "top-left",
@@ -27,8 +30,7 @@ LiteralPosition = Literal[
     "bottom-right",
 ]
 
-
-toast_ref = Var.create_safe("refs['__toast']", _var_is_string=False)
+toast_ref = Var(_js_expr="refs['__toast']")
 
 
 class ToastAction(Base):
@@ -64,15 +66,17 @@ def _toast_callback_signature(toast: Var) -> list[Var]:
         A function call stripping non-serializable members of the toast object.
     """
     return [
-        Var.create_safe(
-            f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {toast}; return rest}})()",
-            _var_is_string=False,
+        Var(
+            _js_expr=f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {str(toast)}; return rest}})()"
         )
     ]
 
 
 class ToastProps(PropsBase):
     """Props for the toast component."""
+
+    # Toast's title, renders above the description.
+    title: Optional[Union[str, Var]]
 
     # Toast's description, renders underneath the title.
     description: Optional[Union[str, Var]]
@@ -128,6 +132,24 @@ class ToastProps(PropsBase):
     # Function that gets called when the toast disappears automatically after it's timeout (duration` prop).
     on_auto_close: Optional[Any]
 
+    def __init__(self, **kwargs):
+        """Initialize the props.
+
+        Args:
+            kwargs: Kwargs to initialize the props.
+
+        Raises:
+            ValueError: If invalid props are passed on instantiation.
+        """
+        try:
+            super().__init__(**kwargs)
+        except ValidationError as e:
+            invalid_fields = ", ".join([error["loc"][0] for error in e.errors()])  # type: ignore
+            supported_props_str = ", ".join(f'"{field}"' for field in self.get_fields())
+            raise ValueError(
+                f"Invalid prop(s) {invalid_fields} for rx.toast. Supported props are {supported_props_str}"
+            ) from None
+
     def dict(self, *args, **kwargs) -> dict[str, Any]:
         """Convert the object to a dictionary.
 
@@ -149,21 +171,28 @@ class ToastProps(PropsBase):
             d["cancel"] = self.cancel
             if isinstance(self.cancel, dict):
                 d["cancel"] = ToastAction(**self.cancel)
-        if "on_dismiss" in d:
-            d["on_dismiss"] = format.format_queue_events(
+        if "onDismiss" in d:
+            d["onDismiss"] = format.format_queue_events(
                 self.on_dismiss, _toast_callback_signature
             )
-        if "on_auto_close" in d:
-            d["on_auto_close"] = format.format_queue_events(
+        if "onAutoClose" in d:
+            d["onAutoClose"] = format.format_queue_events(
                 self.on_auto_close, _toast_callback_signature
             )
         return d
+
+    class Config:
+        """Pydantic config."""
+
+        arbitrary_types_allowed = True
+        use_enum_values = True
+        extra = "forbid"
 
 
 class Toaster(Component):
     """A Toaster Component for displaying toast notifications."""
 
-    library: str = "sonner@1.4.41"
+    library: str = "sonner@1.5.0"
 
     tag = "Toaster"
 
@@ -171,21 +200,19 @@ class Toaster(Component):
     theme: Var[str] = resolved_color_mode
 
     # whether to show rich colors
-    rich_colors: Var[bool] = Var.create_safe(True)
+    rich_colors: Var[bool] = LiteralVar.create(True)
 
     # whether to expand the toast
-    expand: Var[bool] = Var.create_safe(True)
+    expand: Var[bool] = LiteralVar.create(True)
 
     # the number of toasts that are currently visible
     visible_toasts: Var[int]
 
     # the position of the toast
-    position: Var[LiteralPosition] = Var.create_safe(
-        "bottom-right", _var_is_string=True
-    )
+    position: Var[LiteralPosition] = LiteralVar.create("bottom-right")
 
     # whether to show the close button
-    close_button: Var[bool] = Var.create_safe(False)
+    close_button: Var[bool] = LiteralVar.create(False)
 
     # offset of the toast
     offset: Var[str]
@@ -211,16 +238,17 @@ class Toaster(Component):
     # Pauses toast timers when the page is hidden, e.g., when the tab is backgrounded, the browser is minimized, or the OS is locked.
     pause_when_page_is_hidden: Var[bool]
 
+    # Marked True when any Toast component is created.
+    is_used: ClassVar[bool] = False
+
     def add_hooks(self) -> list[Var | str]:
         """Add hooks for the toaster component.
 
         Returns:
             The hooks for the toaster component.
         """
-        hook = Var.create_safe(
-            f"{toast_ref} = toast",
-            _var_is_local=True,
-            _var_is_string=False,
+        hook = Var(
+            _js_expr=f"{toast_ref} = toast",
             _var_data=VarData(
                 imports={
                     "/utils/state": [ImportVar(tag="refs")],
@@ -231,7 +259,7 @@ class Toaster(Component):
         return [hook]
 
     @staticmethod
-    def send_toast(message: str, level: str | None = None, **props) -> EventSpec:
+    def send_toast(message: str = "", level: str | None = None, **props) -> EventSpec:
         """Send a toast message.
 
         Args:
@@ -239,21 +267,30 @@ class Toaster(Component):
             level: The level of the toast.
             **props: The options for the toast.
 
+        Raises:
+            ValueError: If the Toaster component is not created.
+
         Returns:
             The toast event.
         """
+        if not Toaster.is_used:
+            raise ValueError(
+                "Toaster component must be created before sending a toast. (use `rx.toast.provider()`)"
+            )
         toast_command = f"{toast_ref}.{level}" if level is not None else toast_ref
+        if message == "" and ("title" not in props or "description" not in props):
+            raise ValueError("Toast message or title or description must be provided.")
         if props:
-            args = serialize(ToastProps(**props))  # type: ignore
-            toast = f"{toast_command}(`{message}`, {args})"
+            args = LiteralVar.create(ToastProps(**props))
+            toast = f"{toast_command}(`{message}`, {str(args)})"
         else:
             toast = f"{toast_command}(`{message}`)"
 
-        toast_action = Var.create_safe(toast, _var_is_string=False, _var_is_local=True)
+        toast_action = Var(_js_expr=toast)
         return call_script(toast_action)
 
     @staticmethod
-    def toast_info(message: str, **kwargs):
+    def toast_info(message: str = "", **kwargs):
         """Display an info toast message.
 
         Args:
@@ -266,7 +303,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="info", **kwargs)
 
     @staticmethod
-    def toast_warning(message: str, **kwargs):
+    def toast_warning(message: str = "", **kwargs):
         """Display a warning toast message.
 
         Args:
@@ -279,7 +316,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="warning", **kwargs)
 
     @staticmethod
-    def toast_error(message: str, **kwargs):
+    def toast_error(message: str = "", **kwargs):
         """Display an error toast message.
 
         Args:
@@ -292,7 +329,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="error", **kwargs)
 
     @staticmethod
-    def toast_success(message: str, **kwargs):
+    def toast_success(message: str = "", **kwargs):
         """Display a success toast message.
 
         Args:
@@ -317,19 +354,30 @@ class Toaster(Component):
         dismiss_var_data = None
 
         if isinstance(id, Var):
-            dismiss = f"{toast_ref}.dismiss({id._var_name_unwrapped})"
-            dismiss_var_data = id._var_data
+            dismiss = f"{toast_ref}.dismiss({str(id)})"
+            dismiss_var_data = id._get_all_var_data()
         elif isinstance(id, str):
             dismiss = f"{toast_ref}.dismiss('{id}')"
         else:
             dismiss = f"{toast_ref}.dismiss()"
-        dismiss_action = Var.create_safe(
-            dismiss,
-            _var_is_string=False,
-            _var_is_local=True,
-            _var_data=dismiss_var_data,
+        dismiss_action = Var(
+            _js_expr=dismiss, _var_data=VarData.merge(dismiss_var_data)
         )
         return call_script(dismiss_action)
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a toaster component.
+
+        Args:
+            *children: The children of the toaster.
+            **props: The properties of the toaster.
+
+        Returns:
+            The toaster component.
+        """
+        cls.is_used = True
+        return super().create(*children, **props)
 
 
 # TODO: figure out why loading toast stay open forever

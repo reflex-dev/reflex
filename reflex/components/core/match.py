@@ -5,13 +5,13 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
-from reflex.components.core.colors import Color
 from reflex.components.tags import MatchTag, Tag
 from reflex.style import Style
 from reflex.utils import format, types
 from reflex.utils.exceptions import MatchTypeError
 from reflex.utils.imports import ImportDict
-from reflex.vars import BaseVar, Var, VarData
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
 
 
 class Match(MemoizationLeaf):
@@ -27,7 +27,7 @@ class Match(MemoizationLeaf):
     default: Any
 
     @classmethod
-    def create(cls, cond: Any, *cases) -> Union[Component, BaseVar]:
+    def create(cls, cond: Any, *cases) -> Union[Component, Var]:
         """Create a Match Component.
 
         Args:
@@ -46,7 +46,7 @@ class Match(MemoizationLeaf):
 
         cls._validate_return_types(match_cases)
 
-        if default is None and types._issubclass(type(match_cases[0][-1]), BaseVar):
+        if default is None and types._issubclass(type(match_cases[0][-1]), Var):
             raise ValueError(
                 "For cases with return types as Vars, a default case must be provided"
             )
@@ -56,7 +56,7 @@ class Match(MemoizationLeaf):
         )
 
     @classmethod
-    def _create_condition_var(cls, cond: Any) -> BaseVar:
+    def _create_condition_var(cls, cond: Any) -> Var:
         """Convert the condition to a Var.
 
         Args:
@@ -68,16 +68,16 @@ class Match(MemoizationLeaf):
         Raises:
             ValueError: If the condition is not provided.
         """
-        match_cond_var = Var.create(cond, _var_is_string=isinstance(cond, str))
+        match_cond_var = LiteralVar.create(cond)
 
         if match_cond_var is None:
             raise ValueError("The condition must be set")
-        return match_cond_var  # type: ignore
+        return match_cond_var
 
     @classmethod
     def _process_cases(
         cls, cases: List
-    ) -> Tuple[List, Optional[Union[BaseVar, BaseComponent]]]:
+    ) -> Tuple[List, Optional[Union[Var, BaseComponent]]]:
         """Process the list of match cases and the catchall default case.
 
         Args:
@@ -94,6 +94,9 @@ class Match(MemoizationLeaf):
         if len([case for case in cases if not isinstance(case, tuple)]) > 1:
             raise ValueError("rx.match can only have one default case.")
 
+        if not cases:
+            raise ValueError("rx.match should have at least one case.")
+
         # Get the default case which should be the last non-tuple arg
         if not isinstance(cases[-1], tuple):
             default = cases.pop()
@@ -103,7 +106,7 @@ class Match(MemoizationLeaf):
                 else default
             )
 
-        return cases, default  # type: ignore
+        return cases, default
 
     @classmethod
     def _create_case_var_with_var_data(cls, case_element):
@@ -117,17 +120,12 @@ class Match(MemoizationLeaf):
         Returns:
             The case element Var.
         """
-        _var_data = case_element._var_data if isinstance(case_element, Style) else None  # type: ignore
-        case_element = Var.create(
-            case_element,
-            _var_is_string=isinstance(case_element, (str, Color)),
-        )
-        if _var_data is not None:
-            case_element._var_data = VarData.merge(case_element._var_data, _var_data)  # type: ignore
+        _var_data = case_element._var_data if isinstance(case_element, Style) else None
+        case_element = LiteralVar.create(case_element, _var_data=_var_data)
         return case_element
 
     @classmethod
-    def _process_match_cases(cls, cases: List) -> List[List[BaseVar]]:
+    def _process_match_cases(cls, cases: List) -> List[List[Var]]:
         """Process the individual match cases.
 
         Args:
@@ -159,7 +157,7 @@ class Match(MemoizationLeaf):
                     if not isinstance(element, BaseComponent)
                     else element
                 )
-                if not isinstance(el, (BaseVar, BaseComponent)):
+                if not isinstance(el, (Var, BaseComponent)):
                     raise ValueError("Case element must be a var or component")
                 case_list.append(el)
 
@@ -168,7 +166,7 @@ class Match(MemoizationLeaf):
         return match_cases
 
     @classmethod
-    def _validate_return_types(cls, match_cases: List[List[BaseVar]]) -> None:
+    def _validate_return_types(cls, match_cases: List[List[Var]]) -> None:
         """Validate that match cases have the same return types.
 
         Args:
@@ -182,14 +180,14 @@ class Match(MemoizationLeaf):
 
         if types._isinstance(first_case_return, BaseComponent):
             return_type = BaseComponent
-        elif types._isinstance(first_case_return, BaseVar):
-            return_type = BaseVar
+        elif types._isinstance(first_case_return, Var):
+            return_type = Var
 
         for index, case in enumerate(match_cases):
             if not types._issubclass(type(case[-1]), return_type):
                 raise MatchTypeError(
                     f"Match cases should have the same return types. Case {index} with return "
-                    f"value `{case[-1]._var_name if isinstance(case[-1], BaseVar) else textwrap.shorten(str(case[-1]), width=250)}`"
+                    f"value `{case[-1]._js_expr if isinstance(case[-1], Var) else textwrap.shorten(str(case[-1]), width=250)}`"
                     f" of type {type(case[-1])!r} is not {return_type}"
                 )
 
@@ -197,9 +195,9 @@ class Match(MemoizationLeaf):
     def _create_match_cond_var_or_component(
         cls,
         match_cond_var: Var,
-        match_cases: List[List[BaseVar]],
-        default: Optional[Union[BaseVar, BaseComponent]],
-    ) -> Union[Component, BaseVar]:
+        match_cases: List[List[Var]],
+        default: Optional[Union[Var, BaseComponent]],
+    ) -> Union[Component, Var]:
         """Create and return the match condition var or component.
 
         Args:
@@ -230,28 +228,22 @@ class Match(MemoizationLeaf):
 
         # Validate the match cases (as well as the default case) to have Var return types.
         if any(
-            case for case in match_cases if not types._isinstance(case[-1], BaseVar)
-        ) or not types._isinstance(default, BaseVar):
+            case for case in match_cases if not types._isinstance(case[-1], Var)
+        ) or not types._isinstance(default, Var):
             raise ValueError("Return types of match cases should be Vars.")
 
-        # match cases and default should all be Vars at this point.
-        # Retrieve var data of every var in the match cases and default.
-        var_data = [
-            *[el._var_data for case in match_cases for el in case],
-            default._var_data,  # type: ignore
-        ]
-
-        return match_cond_var._replace(
-            _var_name=format.format_match(
-                cond=match_cond_var._var_name_unwrapped,
-                match_cases=match_cases,  # type: ignore
+        return Var(
+            _js_expr=format.format_match(
+                cond=str(match_cond_var),
+                match_cases=match_cases,
                 default=default,  # type: ignore
             ),
             _var_type=default._var_type,  # type: ignore
-            _var_is_local=False,
-            _var_full_name_needs_state_prefix=False,
-            _var_is_string=False,
-            merge_var_data=VarData.merge(*var_data),
+            _var_data=VarData.merge(
+                match_cond_var._get_all_var_data(),
+                *[el._get_all_var_data() for case in match_cases for el in case],
+                default._get_all_var_data(),  # type: ignore
+            ),
         )
 
     def _render(self) -> Tag:
@@ -275,7 +267,8 @@ class Match(MemoizationLeaf):
         Returns:
             The import dict.
         """
-        return getattr(self.cond._var_data, "imports", {})
+        var_data = VarData.merge(self.cond._get_all_var_data())
+        return var_data.old_school_imports() if var_data else {}
 
 
 match = Match.create

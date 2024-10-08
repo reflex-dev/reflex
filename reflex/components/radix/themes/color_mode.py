@@ -17,8 +17,7 @@ rx.text(
 
 from __future__ import annotations
 
-import dataclasses
-from typing import Literal, get_args
+from typing import Dict, List, Literal, get_args
 
 from reflex.components.component import BaseComponent
 from reflex.components.core.cond import Cond, color_mode_cond, cond
@@ -32,8 +31,8 @@ from reflex.style import (
     set_color_mode,
     toggle_color_mode,
 )
-from reflex.utils import console
-from reflex.vars import BaseVar, Var
+from reflex.vars.base import Var
+from reflex.vars.sequence import LiteralArrayVar
 
 from .components.icon_button import IconButton
 
@@ -67,9 +66,9 @@ class ColorModeIcon(Cond):
 
 LiteralPosition = Literal["top-left", "top-right", "bottom-left", "bottom-right"]
 
-position_values = get_args(LiteralPosition)
+position_values: List[str] = list(get_args(LiteralPosition))
 
-position_map = {
+position_map: Dict[str, List[str]] = {
     "position": position_values,
     "left": ["top-left", "bottom-left"],
     "right": ["top-right", "bottom-right"],
@@ -79,8 +78,8 @@ position_map = {
 
 
 # needed to inverse contains for find
-def _find(const, var):
-    return Var.create_safe(const, _var_is_string=False).contains(var)
+def _find(const: List[str], var):
+    return LiteralArrayVar.create(const).contains(var)
 
 
 def _set_var_default(props, position, prop, default1, default2=""):
@@ -100,7 +99,6 @@ class ColorModeIconButton(IconButton):
     @classmethod
     def create(
         cls,
-        *children,
         position: LiteralPosition | None = None,
         allow_system: bool = False,
         **props,
@@ -108,7 +106,6 @@ class ColorModeIconButton(IconButton):
         """Create a icon button component that calls toggle_color_mode on click.
 
         Args:
-            *children: The children of the component.
             position: The position of the icon button. Follow document flow if None.
             allow_system: Allow picking the "system" value for the color mode.
             **props: The props to pass to the component.
@@ -116,14 +113,6 @@ class ColorModeIconButton(IconButton):
         Returns:
             The button component.
         """
-        if children:
-            console.deprecate(
-                feature_name="passing children to color_mode.button",
-                reason=", use color_mode_cond and toggle_color_mode instead to build a custom color_mode component",
-                deprecation_version="0.5.0",
-                removal_version="0.6.0",
-            )
-
         # position is used to set nice defaults for positioning the icon button
         if isinstance(position, Var):
             _set_var_default(props, position, "position", "fixed", position)
@@ -195,7 +184,7 @@ class ColorModeSwitch(Switch):
         )
 
 
-class ColorModeNamespace(BaseVar):
+class ColorModeNamespace(Var):
     """Namespace for color mode components."""
 
     icon = staticmethod(ColorModeIcon.create)
@@ -204,5 +193,7 @@ class ColorModeNamespace(BaseVar):
 
 
 color_mode = color_mode_var_and_namespace = ColorModeNamespace(
-    **dataclasses.asdict(color_mode)
+    _js_expr=color_mode._js_expr,
+    _var_type=color_mode._var_type,
+    _var_data=color_mode.get_default_value(),
 )

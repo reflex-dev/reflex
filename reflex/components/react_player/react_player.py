@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 
 class ReactPlayer(NoSSRComponent):
@@ -12,7 +12,7 @@ class ReactPlayer(NoSSRComponent):
     reference: https://github.com/cookpete/react-player.
     """
 
-    library = "react-player@2.12.0"
+    library = "react-player@2.16.0"
 
     tag = "ReactPlayer"
 

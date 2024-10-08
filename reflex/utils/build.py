@@ -61,8 +61,8 @@ def generate_sitemap_config(deploy_url: str, export=False):
 
 def _zip(
     component_name: constants.ComponentName,
-    target: str,
-    root_dir: str,
+    target: str | Path,
+    root_dir: str | Path,
     exclude_venv_dirs: bool,
     upload_db_file: bool = False,
     dirs_to_exclude: set[str] | None = None,
@@ -82,22 +82,22 @@ def _zip(
         top_level_dirs_to_exclude: The top level directory names immediately under root_dir to exclude. Do not exclude folders by these names further in the sub-directories.
 
     """
+    target = Path(target)
+    root_dir = Path(root_dir)
     dirs_to_exclude = dirs_to_exclude or set()
     files_to_exclude = files_to_exclude or set()
     files_to_zip: list[str] = []
     # Traverse the root directory in a top-down manner. In this traversal order,
     # we can modify the dirs list in-place to remove directories we don't want to include.
     for root, dirs, files in os.walk(root_dir, topdown=True):
+        root = Path(root)
         # Modify the dirs in-place so excluded and hidden directories are skipped in next traversal.
         dirs[:] = [
             d
             for d in dirs
-            if (basename := os.path.basename(os.path.normpath(d)))
-            not in dirs_to_exclude
+            if (basename := Path(d).resolve().name) not in dirs_to_exclude
             and not basename.startswith(".")
-            and (
-                not exclude_venv_dirs or not _looks_like_venv_dir(os.path.join(root, d))
-            )
+            and (not exclude_venv_dirs or not _looks_like_venv_dir(root / d))
         ]
         # If we are at the top level with root_dir, exclude the top level dirs.
         if top_level_dirs_to_exclude and root == root_dir:
@@ -109,7 +109,7 @@ def _zip(
             if not f.startswith(".") and (upload_db_file or not f.endswith(".db"))
         ]
         files_to_zip += [
-            os.path.join(root, file) for file in files if file not in files_to_exclude
+            str(root / file) for file in files if file not in files_to_exclude
         ]
 
     # Create a progress bar for zipping the component.
@@ -126,13 +126,13 @@ def _zip(
         for file in files_to_zip:
             console.debug(f"{target}: {file}", progress=progress)
             progress.advance(task)
-            zipf.write(file, os.path.relpath(file, root_dir))
+            zipf.write(file, Path(file).relative_to(root_dir))
 
 
 def zip_app(
     frontend: bool = True,
     backend: bool = True,
-    zip_dest_dir: str = os.getcwd(),
+    zip_dest_dir: str | Path = Path.cwd(),
     upload_db_file: bool = False,
 ):
     """Zip up the app.
@@ -143,6 +143,7 @@ def zip_app(
         zip_dest_dir: The directory to export the zip file to.
         upload_db_file: Whether to upload the database file.
     """
+    zip_dest_dir = Path(zip_dest_dir)
     files_to_exclude = {
         constants.ComponentName.FRONTEND.zip(),
         constants.ComponentName.BACKEND.zip(),
@@ -151,8 +152,8 @@ def zip_app(
     if frontend:
         _zip(
             component_name=constants.ComponentName.FRONTEND,
-            target=os.path.join(zip_dest_dir, constants.ComponentName.FRONTEND.zip()),
-            root_dir=str(prerequisites.get_web_dir() / constants.Dirs.STATIC),
+            target=zip_dest_dir / constants.ComponentName.FRONTEND.zip(),
+            root_dir=prerequisites.get_web_dir() / constants.Dirs.STATIC,
             files_to_exclude=files_to_exclude,
             exclude_venv_dirs=False,
         )
@@ -160,8 +161,8 @@ def zip_app(
     if backend:
         _zip(
             component_name=constants.ComponentName.BACKEND,
-            target=os.path.join(zip_dest_dir, constants.ComponentName.BACKEND.zip()),
-            root_dir=".",
+            target=zip_dest_dir / constants.ComponentName.BACKEND.zip(),
+            root_dir=Path("."),
             dirs_to_exclude={"__pycache__"},
             files_to_exclude=files_to_exclude,
             top_level_dirs_to_exclude={"assets"},
@@ -236,6 +237,9 @@ def setup_frontend(
     # Set the environment variables in client (env.json).
     set_env_json()
 
+    # update the last reflex run time.
+    prerequisites.set_last_reflex_run_time()
+
     # Disable the Next telemetry.
     if disable_telemetry:
         processes.new_process(
@@ -266,5 +270,6 @@ def setup_frontend_prod(
     build(deploy_url=get_config().deploy_url)
 
 
-def _looks_like_venv_dir(dir_to_check: str) -> bool:
-    return os.path.exists(os.path.join(dir_to_check, "pyvenv.cfg"))
+def _looks_like_venv_dir(dir_to_check: str | Path) -> bool:
+    dir_to_check = Path(dir_to_check)
+    return (dir_to_check / "pyvenv.cfg").exists()

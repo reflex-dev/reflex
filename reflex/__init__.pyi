@@ -21,7 +21,6 @@ from .admin import AdminDash as AdminDash
 from .app import App as App
 from .app import UploadFile as UploadFile
 from .base import Base as Base
-from .components import chakra as chakra
 from .components import el as el
 from .components import lucide as lucide
 from .components import next as next
@@ -71,7 +70,6 @@ from .components.plotly import plotly as plotly
 from .components.radix.primitives.accordion import accordion as accordion
 from .components.radix.primitives.drawer import drawer as drawer
 from .components.radix.primitives.form import form as form
-from .components.radix.primitives.progress import progress as progress
 from .components.radix.themes.base import theme as theme
 from .components.radix.themes.base import theme_panel as theme_panel
 from .components.radix.themes.color_mode import color_mode as color_mode
@@ -106,6 +104,7 @@ from .components.radix.themes.components.hover_card import hover_card as hover_c
 from .components.radix.themes.components.icon_button import icon_button as icon_button
 from .components.radix.themes.components.inset import inset as inset
 from .components.radix.themes.components.popover import popover as popover
+from .components.radix.themes.components.progress import progress as progress
 from .components.radix.themes.components.radio_cards import radio_cards as radio_cards
 from .components.radix.themes.components.radio_group import radio as radio
 from .components.radix.themes.components.radio_group import radio_group as radio_group
@@ -132,6 +131,7 @@ from .components.radix.themes.layout.container import container as container
 from .components.radix.themes.layout.flex import flex as flex
 from .components.radix.themes.layout.grid import grid as grid
 from .components.radix.themes.layout.list import list_item as list_item
+from .components.radix.themes.layout.list import list_ns as list  # noqa
 from .components.radix.themes.layout.list import ordered_list as ordered_list
 from .components.radix.themes.layout.list import unordered_list as unordered_list
 from .components.radix.themes.layout.section import section as section
@@ -189,8 +189,9 @@ from .style import Style as Style
 from .style import toggle_color_mode as toggle_color_mode
 from .utils.imports import ImportVar as ImportVar
 from .utils.serializers import serializer as serializer
+from .vars import Field as Field
 from .vars import Var as Var
-from .vars import cached_var as cached_var
+from .vars import field as field
 
 del compat
 RADIX_THEMES_MAPPING: dict
@@ -198,6 +199,7 @@ RADIX_THEMES_COMPONENTS_MAPPING: dict
 RADIX_THEMES_LAYOUT_MAPPING: dict
 RADIX_THEMES_TYPOGRAPHY_MAPPING: dict
 RADIX_PRIMITIVES_MAPPING: dict
+RADIX_PRIMITIVES_SHORTCUT_MAPPING: dict
 COMPONENTS_CORE_MAPPING: dict
 COMPONENTS_BASE_MAPPING: dict
 RADIX_MAPPING: dict

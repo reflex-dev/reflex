@@ -144,7 +144,7 @@ def AppWithOnePage():
 
     def index() -> rx.Component:
         return rx.center(
-            rx.chakra.input(
+            rx.input(
                 id="token", value=State.router.session.client_token, is_read_only=True
             ),
             rx.vstack(

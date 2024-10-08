@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 import json
-import types as builtin_types
 import warnings
 from datetime import date, datetime, time, timedelta
 from enum import Enum
@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import (
     Any,
     Callable,
-    Dict,
     List,
     Literal,
     Optional,
@@ -26,11 +25,11 @@ from typing import (
 
 from reflex.base import Base
 from reflex.constants.colors import Color, format_color
-from reflex.utils import exceptions, types
+from reflex.utils import types
 
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON object.
-SerializedType = Union[str, bool, int, float, list, dict]
+SerializedType = Union[str, bool, int, float, list, dict, None]
 
 
 Serializer = Callable[[Type], SerializedType]
@@ -125,6 +124,9 @@ def serialize(
 
     # If there is no serializer, return None.
     if serializer is None:
+        if dataclasses.is_dataclass(value) and not isinstance(value, type):
+            return {k.name: getattr(value, k.name) for k in dataclasses.fields(value)}
+
         if get_type:
             return None, None
         return None
@@ -213,35 +215,7 @@ def serialize_type(value: type) -> str:
 
 
 @serializer
-def serialize_str(value: str) -> str:
-    """Serialize a string.
-
-    Args:
-        value: The string to serialize.
-
-    Returns:
-        The serialized string.
-    """
-    return value
-
-
-@serializer
-def serialize_primitive(value: Union[bool, int, float, None]) -> str:
-    """Serialize a primitive type.
-
-    Args:
-        value: The number/bool/None to serialize.
-
-    Returns:
-        The serialized number/bool/None.
-    """
-    from reflex.utils import format
-
-    return format.json_dumps(value)
-
-
-@serializer
-def serialize_base(value: Base) -> str:
+def serialize_base(value: Base) -> dict:
     """Serialize a Base instance.
 
     Args:
@@ -250,61 +224,20 @@ def serialize_base(value: Base) -> str:
     Returns:
         The serialized Base.
     """
-    return value.json()
+    return {k: v for k, v in value.dict().items() if not callable(v)}
 
 
 @serializer
-def serialize_list(value: Union[List, Tuple, Set]) -> str:
-    """Serialize a list to a JSON string.
+def serialize_set(value: Set) -> list:
+    """Serialize a set to a JSON serializable list.
 
     Args:
-        value: The list to serialize.
+        value: The set to serialize.
 
     Returns:
         The serialized list.
     """
-    from reflex.utils import format
-
-    # Dump the list to a string.
-    fprop = format.json_dumps(list(value))
-
-    # Unwrap var values.
-    return format.unwrap_vars(fprop)
-
-
-@serializer
-def serialize_dict(prop: Dict[str, Any]) -> str:
-    """Serialize a dictionary to a JSON string.
-
-    Args:
-        prop: The dictionary to serialize.
-
-    Returns:
-        The serialized dictionary.
-
-    Raises:
-        InvalidStylePropError: If the style prop is invalid.
-    """
-    # Import here to avoid circular imports.
-    from reflex.event import EventHandler
-    from reflex.utils import format
-
-    prop_dict = {}
-
-    for key, value in prop.items():
-        if types._issubclass(type(value), Callable):
-            raise exceptions.InvalidStylePropError(
-                f"The style prop `{format.to_snake_case(key)}` cannot have "  # type: ignore
-                f"`{value.fn.__qualname__ if isinstance(value, EventHandler) else value.__qualname__ if isinstance(value, builtin_types.FunctionType) else value}`, "
-                f"an event handler or callable as its value"
-            )
-        prop_dict[key] = value
-
-    # Dump the dict to a string.
-    fprop = format.json_dumps(prop_dict)
-
-    # Unwrap var values.
-    return format.unwrap_vars(fprop)
+    return list(value)
 
 
 @serializer(to=str)

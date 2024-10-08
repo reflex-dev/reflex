@@ -2,30 +2,43 @@
 
 from __future__ import annotations
 
+import dataclasses
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, List, Tuple, Type, Union, get_args
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Iterable,
+    Tuple,
+    Type,
+    Union,
+    get_args,
+)
 
 from reflex.components.tags.tag import Tag
-from reflex.vars import BaseVar, Var
+from reflex.vars import LiteralArrayVar, Var, get_unique_variable_name
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
 
 
+@dataclasses.dataclass()
 class IterTag(Tag):
     """An iterator tag."""
 
     # The var to iterate over.
-    iterable: Var[List]
+    iterable: Var[Iterable] = dataclasses.field(
+        default_factory=lambda: LiteralArrayVar.create([])
+    )
 
     # The component render function for each item in the iterable.
-    render_fn: Callable
+    render_fn: Callable = dataclasses.field(default_factory=lambda: lambda x: x)
 
     # The name of the arg var.
-    arg_var_name: str
+    arg_var_name: str = dataclasses.field(default_factory=get_unique_variable_name)
 
     # The name of the index var.
-    index_var_name: str
+    index_var_name: str = dataclasses.field(default_factory=get_unique_variable_name)
 
     def get_iterable_var_type(self) -> Type:
         """Get the type of the iterable var.
@@ -33,15 +46,16 @@ class IterTag(Tag):
         Returns:
             The type of the iterable var.
         """
+        iterable = self.iterable
         try:
-            if self.iterable._var_type.mro()[0] == dict:
+            if iterable._var_type.mro()[0] is dict:
                 # Arg is a tuple of (key, value).
-                return Tuple[get_args(self.iterable._var_type)]  # type: ignore
-            elif self.iterable._var_type.mro()[0] == tuple:
+                return Tuple[get_args(iterable._var_type)]  # type: ignore
+            elif iterable._var_type.mro()[0] is tuple:
                 # Arg is a union of any possible values in the tuple.
-                return Union[get_args(self.iterable._var_type)]  # type: ignore
+                return Union[get_args(iterable._var_type)]  # type: ignore
             else:
-                return get_args(self.iterable._var_type)[0]
+                return get_args(iterable._var_type)[0]
         except Exception:
             return Any
 
@@ -53,10 +67,10 @@ class IterTag(Tag):
         Returns:
             The index var.
         """
-        return BaseVar(
-            _var_name=self.index_var_name,
+        return Var(
+            _js_expr=self.index_var_name,
             _var_type=int,
-        )
+        ).guess_type()
 
     def get_arg_var(self) -> Var:
         """Get the arg var for the tag (with curly braces).
@@ -66,10 +80,10 @@ class IterTag(Tag):
         Returns:
             The arg var.
         """
-        return BaseVar(
-            _var_name=self.arg_var_name,
+        return Var(
+            _js_expr=self.arg_var_name,
             _var_type=self.get_iterable_var_type(),
-        )
+        ).guess_type()
 
     def get_index_var_arg(self) -> Var:
         """Get the index var for the tag (without curly braces).
@@ -79,11 +93,10 @@ class IterTag(Tag):
         Returns:
             The index var.
         """
-        return BaseVar(
-            _var_name=self.index_var_name,
+        return Var(
+            _js_expr=self.index_var_name,
             _var_type=int,
-            _var_is_local=True,
-        )
+        ).guess_type()
 
     def get_arg_var_arg(self) -> Var:
         """Get the arg var for the tag (without curly braces).
@@ -93,14 +106,16 @@ class IterTag(Tag):
         Returns:
             The arg var.
         """
-        return BaseVar(
-            _var_name=self.arg_var_name,
+        return Var(
+            _js_expr=self.arg_var_name,
             _var_type=self.get_iterable_var_type(),
-            _var_is_local=True,
-        )
+        ).guess_type()
 
     def render_component(self) -> Component:
         """Render the component.
+
+        Raises:
+            ValueError: If the render function takes more than 2 arguments.
 
         Returns:
             The rendered component.
@@ -120,7 +135,8 @@ class IterTag(Tag):
             component = self.render_fn(arg)
         else:
             # If the render function takes the index as an argument.
-            assert len(args) == 2
+            if len(args) != 2:
+                raise ValueError("The render function must take 2 arguments.")
             component = self.render_fn(arg, index)
 
         # Nested foreach components or cond must be wrapped in fragments.

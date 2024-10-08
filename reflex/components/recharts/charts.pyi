@@ -5,9 +5,10 @@
 # ------------------------------------------------------
 from typing import Any, Callable, Dict, List, Literal, Optional, Union, overload
 
+from reflex.constants.colors import Color
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
-from reflex.vars import BaseVar, Var
+from reflex.vars.base import Var
 
 from .recharts import (
     RechartsCharts,
@@ -19,58 +20,48 @@ class ChartBase(RechartsCharts):
     def create(  # type: ignore
         cls,
         *children,
-        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        width: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "ChartBase":
@@ -99,76 +90,66 @@ class CategoricalChartBase(ChartBase):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         sync_id: Optional[Union[Var[str], str]] = None,
         sync_method: Optional[
-            Union[Var[Literal["index", "value"]], Literal["index", "value"]]
+            Union[Literal["index", "value"], Var[Literal["index", "value"]]]
         ] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
         stack_offset: Optional[
             Union[
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
-                Literal["expand", "none", "wiggle", "silhouette"],
+                Literal["expand", "none", "silhouette", "wiggle"],
+                Var[Literal["expand", "none", "silhouette", "wiggle"]],
             ]
         ] = None,
-        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        width: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "CategoricalChartBase":
@@ -177,7 +158,7 @@ class CategoricalChartBase(ChartBase):
         Args:
             *children: The children of the chart component.
             data: The source data, in which each element is an object.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
             sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
             layout: The layout of area in the chart. 'horizontal' | 'vertical'
@@ -205,81 +186,71 @@ class AreaChart(CategoricalChartBase):
         *children,
         base_value: Optional[
             Union[
-                Var[Union[Literal["dataMin", "dataMax", "auto"], int]],
+                Literal["auto", "dataMax", "dataMin"],
+                Var[Union[Literal["auto", "dataMax", "dataMin"], int]],
                 int,
-                Literal["dataMin", "dataMax", "auto"],
             ]
         ] = None,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         sync_id: Optional[Union[Var[str], str]] = None,
         sync_method: Optional[
-            Union[Var[Literal["index", "value"]], Literal["index", "value"]]
+            Union[Literal["index", "value"], Var[Literal["index", "value"]]]
         ] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
         stack_offset: Optional[
             Union[
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
-                Literal["expand", "none", "wiggle", "silhouette"],
+                Literal["expand", "none", "silhouette", "wiggle"],
+                Var[Literal["expand", "none", "silhouette", "wiggle"]],
             ]
         ] = None,
-        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        width: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "AreaChart":
@@ -289,7 +260,7 @@ class AreaChart(CategoricalChartBase):
             *children: The children of the chart component.
             base_value: The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
             data: The source data, in which each element is an object.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
             sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
             layout: The layout of area in the chart. 'horizontal' | 'vertical'
@@ -315,81 +286,71 @@ class BarChart(CategoricalChartBase):
     def create(  # type: ignore
         cls,
         *children,
-        bar_category_gap: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        bar_gap: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        bar_category_gap: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        bar_gap: Optional[Union[Var[Union[int, str]], int, str]] = None,
         bar_size: Optional[Union[Var[int], int]] = None,
         max_bar_size: Optional[Union[Var[int], int]] = None,
         stack_offset: Optional[
             Union[
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
-                Literal["expand", "none", "wiggle", "silhouette"],
+                Literal["expand", "none", "silhouette", "wiggle"],
+                Var[Literal["expand", "none", "silhouette", "wiggle"]],
             ]
         ] = None,
         reverse_stack_order: Optional[Union[Var[bool], bool]] = None,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         sync_id: Optional[Union[Var[str], str]] = None,
         sync_method: Optional[
-            Union[Var[Literal["index", "value"]], Literal["index", "value"]]
+            Union[Literal["index", "value"], Var[Literal["index", "value"]]]
         ] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
-        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        width: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "BarChart":
@@ -404,7 +365,7 @@ class BarChart(CategoricalChartBase):
             stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             reverse_stack_order: If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
             data: The source data, in which each element is an object.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
             sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
             layout: The layout of area in the chart. 'horizontal' | 'vertical'
@@ -429,76 +390,66 @@ class LineChart(CategoricalChartBase):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         sync_id: Optional[Union[Var[str], str]] = None,
         sync_method: Optional[
-            Union[Var[Literal["index", "value"]], Literal["index", "value"]]
+            Union[Literal["index", "value"], Var[Literal["index", "value"]]]
         ] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
         stack_offset: Optional[
             Union[
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
-                Literal["expand", "none", "wiggle", "silhouette"],
+                Literal["expand", "none", "silhouette", "wiggle"],
+                Var[Literal["expand", "none", "silhouette", "wiggle"]],
             ]
         ] = None,
-        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        width: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "LineChart":
@@ -507,7 +458,7 @@ class LineChart(CategoricalChartBase):
         Args:
             *children: The children of the chart component.
             data: The source data, in which each element is an object.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
             sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
             layout: The layout of area in the chart. 'horizontal' | 'vertical'
@@ -535,85 +486,75 @@ class ComposedChart(CategoricalChartBase):
         *children,
         base_value: Optional[
             Union[
-                Var[Union[Literal["dataMin", "dataMax", "auto"], int]],
+                Literal["auto", "dataMax", "dataMin"],
+                Var[Union[Literal["auto", "dataMax", "dataMin"], int]],
                 int,
-                Literal["dataMin", "dataMax", "auto"],
             ]
         ] = None,
-        bar_category_gap: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        bar_gap: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        bar_category_gap: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        bar_gap: Optional[Union[Var[Union[int, str]], int, str]] = None,
         bar_size: Optional[Union[Var[int], int]] = None,
         reverse_stack_order: Optional[Union[Var[bool], bool]] = None,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         sync_id: Optional[Union[Var[str], str]] = None,
         sync_method: Optional[
-            Union[Var[Literal["index", "value"]], Literal["index", "value"]]
+            Union[Literal["index", "value"], Var[Literal["index", "value"]]]
         ] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
         stack_offset: Optional[
             Union[
-                Var[Literal["expand", "none", "wiggle", "silhouette"]],
-                Literal["expand", "none", "wiggle", "silhouette"],
+                Literal["expand", "none", "silhouette", "wiggle"],
+                Var[Literal["expand", "none", "silhouette", "wiggle"]],
             ]
         ] = None,
-        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        width: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "ComposedChart":
@@ -627,7 +568,7 @@ class ComposedChart(CategoricalChartBase):
             bar_size: The width of all the bars in the chart. Number
             reverse_stack_order: If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
             data: The source data, in which each element is an object.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
             sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
             layout: The layout of area in the chart. 'horizontal' | 'vertical'
@@ -653,59 +594,49 @@ class PieChart(ChartBase):
     def create(  # type: ignore
         cls,
         *children,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
+        width: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "PieChart":
@@ -713,7 +644,7 @@ class PieChart(ChartBase):
 
         Args:
             *children: The children of the chart component.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             width: The width of chart container. String or Integer
             height: The height of chart container.
             style: The style of the component.
@@ -736,30 +667,28 @@ class RadarChart(ChartBase):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         cx: Optional[Union[Var[Union[int, str]], int, str]] = None,
         cy: Optional[Union[Var[Union[int, str]], int, str]] = None,
         start_angle: Optional[Union[Var[int], int]] = None,
         end_angle: Optional[Union[Var[int], int]] = None,
         inner_radius: Optional[Union[Var[Union[int, str]], int, str]] = None,
         outer_radius: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        width: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "RadarChart":
@@ -768,7 +697,7 @@ class RadarChart(ChartBase):
         Args:
             *children: The children of the chart component.
             data: The source data, in which each element is an object.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             cx: The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
             cy: The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage
             start_angle: The angle of first radial direction line.
@@ -796,8 +725,8 @@ class RadialBarChart(ChartBase):
     def create(  # type: ignore
         cls,
         *children,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         cx: Optional[Union[Var[Union[int, str]], int, str]] = None,
         cy: Optional[Union[Var[Union[int, str]], int, str]] = None,
         start_angle: Optional[Union[Var[int], int]] = None,
@@ -807,58 +736,48 @@ class RadialBarChart(ChartBase):
         bar_category_gap: Optional[Union[Var[Union[int, str]], int, str]] = None,
         bar_gap: Optional[Union[Var[str], str]] = None,
         bar_size: Optional[Union[Var[int], int]] = None,
-        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        width: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "RadialBarChart":
@@ -867,7 +786,7 @@ class RadialBarChart(ChartBase):
         Args:
             *children: The children of the chart component.
             data: The source data which each element is an object.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             cx: The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
             cy: The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage
             start_angle: The angle of first radial direction line.
@@ -899,38 +818,36 @@ class ScatterChart(ChartBase):
     def create(  # type: ignore
         cls,
         *children,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
+        width: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "ScatterChart":
@@ -938,7 +855,7 @@ class ScatterChart(ChartBase):
 
         Args:
             *children: The children of the chart component.
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             width: The width of chart container. String or Integer
             height: The height of chart container.
             style: The style of the component.
@@ -961,59 +878,50 @@ class FunnelChart(ChartBase):
         cls,
         *children,
         layout: Optional[Union[Var[str], str]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
+        width: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "FunnelChart":
@@ -1022,7 +930,8 @@ class FunnelChart(ChartBase):
         Args:
             *children: The children of the chart component.
             layout: The layout of bars in the chart. centeric
-            margin: The sizes of whitespace around the chart.
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
+            stroke: The stroke color of each bar. String | Object
             width: The width of chart container. String or Integer
             height: The height of chart container.
             style: The style of the component.
@@ -1044,18 +953,18 @@ class Treemap(RechartsCharts):
     def create(  # type: ignore
         cls,
         *children,
-        width: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        height: Optional[Union[Var[Union[int, str]], str, int]] = None,
-        data: Optional[Union[Var[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        width: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        height: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         aspect_ratio: Optional[Union[Var[int], int]] = None,
         is_animation_active: Optional[Union[Var[bool], bool]] = None,
         animation_begin: Optional[Union[Var[int], int]] = None,
         animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
-                Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
+                Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"]],
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -1065,55 +974,45 @@ class Treemap(RechartsCharts):
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_animation_end: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_animation_start: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Treemap":

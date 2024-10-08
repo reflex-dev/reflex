@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 import dataclasses
+import re
 import sys
-from typing import Any, Callable, Optional, Type, Union
+from typing import Any, Callable, Union
 
 from reflex import constants
 from reflex.event import EventChain, EventHandler, EventSpec, call_script
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData, get_unique_variable_name
+from reflex.vars import (
+    VarData,
+    get_unique_variable_name,
+)
+from reflex.vars.base import LiteralVar, Var
+from reflex.vars.function import FunctionVar
 
 NoValue = object()
 
@@ -33,35 +39,18 @@ def _client_state_ref(var_name: str) -> str:
 
 @dataclasses.dataclass(
     eq=False,
+    frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
 class ClientStateVar(Var):
     """A Var that exists on the client via useState."""
 
-    # The name of the var.
-    _var_name: str = dataclasses.field()
-
     # Track the names of the getters and setters
-    _setter_name: str = dataclasses.field()
-    _getter_name: str = dataclasses.field()
+    _setter_name: str = dataclasses.field(default="")
+    _getter_name: str = dataclasses.field(default="")
 
     # Whether to add the var and setter to the global `refs` object for use in any Component.
     _global_ref: bool = dataclasses.field(default=True)
-
-    # The type of the var.
-    _var_type: Type = dataclasses.field(default=Any)
-
-    # Whether this is a local javascript variable.
-    _var_is_local: bool = dataclasses.field(default=False)
-
-    # Whether the var is a string literal.
-    _var_is_string: bool = dataclasses.field(default=False)
-
-    # _var_full_name should be prefixed with _var_state
-    _var_full_name_needs_state_prefix: bool = dataclasses.field(default=False)
-
-    # Extra metadata associated with the Var
-    _var_data: Optional[VarData] = dataclasses.field(default=None)
 
     def __hash__(self) -> int:
         """Define a hash function for a var.
@@ -70,7 +59,7 @@ class ClientStateVar(Var):
             The hash of the var.
         """
         return hash(
-            (self._var_name, str(self._var_type), self._getter_name, self._setter_name)
+            (self._js_expr, str(self._var_type), self._getter_name, self._setter_name)
         )
 
     @classmethod
@@ -102,24 +91,25 @@ class ClientStateVar(Var):
             default: The default value of the variable.
             global_ref: Whether the state should be accessible in any Component and on the backend.
 
+        Raises:
+            ValueError: If the var_name is not a string.
+
         Returns:
             ClientStateVar
         """
         if var_name is None:
             var_name = get_unique_variable_name()
-        assert isinstance(var_name, str), "var_name must be a string."
+        if not isinstance(var_name, str):
+            raise ValueError("var_name must be a string.")
         if default is NoValue:
-            default_var = Var.create_safe("", _var_is_local=False, _var_is_string=False)
+            default_var = Var(_js_expr="")
         elif not isinstance(default, Var):
-            default_var = Var.create_safe(
-                default,
-                _var_is_string=isinstance(default, str),
-            )
+            default_var = LiteralVar.create(default)
         else:
             default_var = default
         setter_name = f"set{var_name.capitalize()}"
         hooks = {
-            f"const [{var_name}, {setter_name}] = useState({default_var._var_name_unwrapped})": None,
+            f"const [{var_name}, {setter_name}] = useState({str(default_var)})": None,
         }
         imports = {
             "react": [ImportVar(tag="useState")],
@@ -129,16 +119,14 @@ class ClientStateVar(Var):
             hooks[f"{_client_state_ref(setter_name)} = {setter_name}"] = None
             imports.update(_refs_import)
         return cls(
-            _var_name="",
+            _js_expr="",
             _setter_name=setter_name,
             _getter_name=var_name,
             _global_ref=global_ref,
-            _var_is_local=False,
-            _var_is_string=False,
             _var_type=default_var._var_type,
             _var_data=VarData.merge(
                 default_var._var_data,
-                VarData(  # type: ignore
+                VarData(
                     hooks=hooks,
                     imports=imports,
                 ),
@@ -157,12 +145,12 @@ class ClientStateVar(Var):
             an accessor for the client state variable.
         """
         return (
-            Var.create_safe(
-                _client_state_ref(self._getter_name)
-                if self._global_ref
-                else self._getter_name,
-                _var_is_local=False,
-                _var_is_string=False,
+            Var(
+                _js_expr=(
+                    _client_state_ref(self._getter_name)
+                    if self._global_ref
+                    else self._getter_name
+                )
             )
             .to(self._var_type)
             ._replace(
@@ -192,25 +180,18 @@ class ClientStateVar(Var):
         )
         if value is not NoValue:
             # This is a hack to make it work like an EventSpec taking an arg
-            value = Var.create_safe(value, _var_is_string=isinstance(value, str))
-            if not value._var_is_string and value._var_full_name.startswith("_"):
-                arg = value._var_name_unwrapped.partition(".")[0]
+            value_str = str(LiteralVar.create(value))
+
+            if value_str.startswith("_"):
+                # remove patterns of ["*"] from the value_str using regex
+                arg = re.sub(r"\[\".*\"\]", "", value_str)
+                setter = f"(({arg}) => {setter}({value_str}))"
             else:
-                arg = ""
-            setter = f"({arg}) => {setter}({value._var_name_unwrapped})"
-        return (
-            Var.create_safe(
-                setter,
-                _var_is_local=False,
-                _var_is_string=False,
-            )
-            .to(EventChain)
-            ._replace(
-                merge_var_data=VarData(  # type: ignore
-                    imports=_refs_import if self._global_ref else {}
-                )
-            )
-        )
+                setter = f"(() => {setter}({value_str}))"
+        return Var(
+            _js_expr=setter,
+            _var_data=VarData(imports=_refs_import if self._global_ref else {}),
+        ).to(FunctionVar, EventChain)
 
     @property
     def set(self) -> Var:

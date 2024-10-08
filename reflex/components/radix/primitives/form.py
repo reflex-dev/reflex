@@ -5,10 +5,11 @@ from __future__ import annotations
 from typing import Any, Literal
 
 from reflex.components.component import ComponentNamespace
+from reflex.components.core.debounce import DebounceInput
 from reflex.components.el.elements.forms import Form as HTMLForm
 from reflex.components.radix.themes.components.text_field import TextFieldRoot
 from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from .base import RadixPrimitiveComponentWithClassName
 
@@ -16,7 +17,7 @@ from .base import RadixPrimitiveComponentWithClassName
 class FormComponent(RadixPrimitiveComponentWithClassName):
     """Base class for all @radix-ui/react-form components."""
 
-    library = "@radix-ui/react-form@^0.0.3"
+    library = "@radix-ui/react-form@^0.1.0"
 
 
 class FormRoot(FormComponent, HTMLForm):
@@ -103,9 +104,9 @@ class FormControl(FormComponent):
                 f"FormControl can only have at most one child, got {len(children)} children"
             )
         for child in children:
-            if not isinstance(child, TextFieldRoot):
+            if not isinstance(child, (TextFieldRoot, DebounceInput)):
                 raise TypeError(
-                    "Only Radix TextFieldRoot is allowed as child of FormControl"
+                    "Only Radix TextFieldRoot and DebounceInput are allowed as children of FormControl"
                 )
         return super().create(*children, **props)
 

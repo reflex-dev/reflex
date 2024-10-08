@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import platform
 from types import SimpleNamespace
 
@@ -36,21 +35,25 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.1.10"
+    VERSION = "1.1.29"
     # Min Bun Version
     MIN_VERSION = "0.7.0"
     # The directory to store the bun.
-    ROOT_PATH = os.path.join(Reflex.DIR, "bun")
+    ROOT_PATH = Reflex.DIR / "bun"
     # Default bun path.
-    DEFAULT_PATH = os.path.join(
-        ROOT_PATH, "bin", "bun" if not IS_WINDOWS else "bun.exe"
-    )
+    DEFAULT_PATH = ROOT_PATH / "bin" / ("bun" if not IS_WINDOWS else "bun.exe")
+
     # URL to bun install script.
     INSTALL_URL = "https://bun.sh/install"
     # URL to windows install script.
     WINDOWS_INSTALL_URL = (
         "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/install.ps1"
     )
+    # Path of the bunfig file
+    CONFIG_PATH = "bunfig.toml"
+
+    # The environment variable to use the system installed bun.
+    USE_SYSTEM_VAR = "REFLEX_USE_SYSTEM_BUN"
 
 
 # FNM config.
@@ -60,10 +63,10 @@ class Fnm(SimpleNamespace):
     # The FNM version.
     VERSION = "1.35.1"
     # The directory to store fnm.
-    DIR = os.path.join(Reflex.DIR, "fnm")
+    DIR = Reflex.DIR / "fnm"
     FILENAME = get_fnm_name()
     # The fnm executable binary.
-    EXE = os.path.join(DIR, "fnm.exe" if IS_WINDOWS else "fnm")
+    EXE = DIR / ("fnm.exe" if IS_WINDOWS else "fnm")
 
     # The URL to the fnm release binary
     INSTALL_URL = (
@@ -76,23 +79,27 @@ class Node(SimpleNamespace):
     """Node/ NPM constants."""
 
     # The Node version.
-    VERSION = "18.17.0"
+    VERSION = "20.18.0"
     # The minimum required node version.
     MIN_VERSION = "18.17.0"
 
     # The node bin path.
-    BIN_PATH = os.path.join(
-        Fnm.DIR,
-        "node-versions",
-        f"v{VERSION}",
-        "installation",
-        "bin" if not IS_WINDOWS else "",
+    BIN_PATH = (
+        Fnm.DIR
+        / "node-versions"
+        / f"v{VERSION}"
+        / "installation"
+        / ("bin" if not IS_WINDOWS else "")
     )
+
     # The default path where node is installed.
-    PATH = os.path.join(BIN_PATH, "node.exe" if IS_WINDOWS else "node")
+    PATH = BIN_PATH / ("node.exe" if IS_WINDOWS else "node")
 
     # The default path where npm is installed.
-    NPM_PATH = os.path.join(BIN_PATH, "npm")
+    NPM_PATH = BIN_PATH / "npm"
+
+    # The environment variable to use the system installed node.
+    USE_SYSTEM_VAR = "REFLEX_USE_SYSTEM_NODE"
 
 
 class PackageJson(SimpleNamespace):
@@ -109,20 +116,21 @@ class PackageJson(SimpleNamespace):
     PATH = "package.json"
 
     DEPENDENCIES = {
-        "@emotion/react": "11.11.1",
-        "axios": "1.6.0",
+        "@babel/standalone": "7.25.7",
+        "@emotion/react": "11.13.3",
+        "axios": "1.7.7",
         "json5": "2.2.3",
-        "next": "14.0.1",
-        "next-sitemap": "4.1.8",
-        "next-themes": "0.2.1",
-        "react": "18.2.0",
-        "react-dom": "18.2.0",
-        "react-focus-lock": "2.11.3",
-        "socket.io-client": "4.6.1",
-        "universal-cookie": "4.0.4",
+        "next": "14.2.14",
+        "next-sitemap": "4.2.3",
+        "next-themes": "0.3.0",
+        "react": "18.3.1",
+        "react-dom": "18.3.1",
+        "react-focus-lock": "2.13.2",
+        "socket.io-client": "4.8.0",
+        "universal-cookie": "7.2.0",
     }
     DEV_DEPENDENCIES = {
-        "autoprefixer": "10.4.14",
-        "postcss": "8.4.31",
+        "autoprefixer": "10.4.20",
+        "postcss": "8.4.47",
         "postcss-import": "16.1.0",
     }

@@ -10,6 +10,8 @@ from .document import DocumentHead as DocumentHead
 from .document import Html as Html
 from .document import Main as Main
 from .document import NextScript as NextScript
+from .error_boundary import ErrorBoundary as ErrorBoundary
+from .error_boundary import error_boundary as error_boundary
 from .fragment import Fragment as Fragment
 from .fragment import fragment as fragment
 from .head import Head as Head

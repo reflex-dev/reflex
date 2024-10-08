@@ -22,7 +22,7 @@ from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.imports import ImportVar
 from reflex.utils.prerequisites import get_web_dir
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
 
 
 def _compile_document_root(root: Component) -> str:
@@ -40,6 +40,20 @@ def _compile_document_root(root: Component) -> str:
     )
 
 
+def _normalize_library_name(lib: str) -> str:
+    """Normalize the library name.
+
+    Args:
+        lib: The library name to normalize.
+
+    Returns:
+        The normalized library name.
+    """
+    if lib == "react":
+        return "React"
+    return lib.replace("@", "").replace("/", "_").replace("-", "_")
+
+
 def _compile_app(app_root: Component) -> str:
     """Compile the app template component.
 
@@ -49,15 +63,25 @@ def _compile_app(app_root: Component) -> str:
     Returns:
         The compiled app.
     """
+    from reflex.components.dynamic import bundled_libraries
+
+    window_libraries = [
+        (_normalize_library_name(name), name) for name in bundled_libraries
+    ] + [
+        ("utils_context", f"/{constants.Dirs.UTILS}/context"),
+        ("utils_state", f"/{constants.Dirs.UTILS}/state"),
+    ]
+
     return templates.APP_ROOT.render(
         imports=utils.compile_imports(app_root._get_all_imports()),
         custom_codes=app_root._get_all_custom_code(),
         hooks={**app_root._get_all_hooks_internal(), **app_root._get_all_hooks()},
+        window_libraries=window_libraries,
         render=app_root.render(),
     )
 
 
-def _compile_theme(theme: dict) -> str:
+def _compile_theme(theme: str) -> str:
     """Compile the theme.
 
     Args:
@@ -80,8 +104,8 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None)
         The compiled context file.
     """
     appearance = getattr(theme, "appearance", None)
-    if appearance is None or Var.create_safe(appearance)._var_name == "inherit":
-        appearance = SYSTEM_COLOR_MODE
+    if appearance is None or str(LiteralVar.create(appearance)) == '"inherit"':
+        appearance = LiteralVar.create(SYSTEM_COLOR_MODE)
 
     last_compiled_time = str(datetime.now())
     return (
@@ -171,7 +195,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
             stylesheet_full_path = (
                 Path.cwd() / constants.Dirs.APP_ASSETS / stylesheet.strip("/")
             )
-            if not os.path.exists(stylesheet_full_path):
+            if not stylesheet_full_path.exists():
                 raise FileNotFoundError(
                     f"The stylesheet file {stylesheet_full_path} does not exist."
                 )
@@ -377,7 +401,7 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
     theme = utils.create_theme(style)
 
     # Compile the theme.
-    code = _compile_theme(theme)
+    code = _compile_theme(str(LiteralVar.create(theme)))
     return output_path, code
 
 

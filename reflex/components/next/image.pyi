@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Literal, Optional, Union, overload
 
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
-from reflex.vars import BaseVar, Var
+from reflex.vars.base import Var
 
 from .base import NextComponent
 
@@ -19,16 +19,16 @@ class Image(NextComponent):
         *children,
         width: Optional[Union[int, str]] = None,
         height: Optional[Union[int, str]] = None,
-        src: Optional[Union[Var[Any], Any]] = None,
+        src: Optional[Union[Any, Var[Any]]] = None,
         alt: Optional[Union[Var[str], str]] = None,
-        loader: Optional[Union[Var[Any], Any]] = None,
+        loader: Optional[Union[Any, Var[Any]]] = None,
         fill: Optional[Union[Var[bool], bool]] = None,
         sizes: Optional[Union[Var[str], str]] = None,
         quality: Optional[Union[Var[int], int]] = None,
         priority: Optional[Union[Var[bool], bool]] = None,
         placeholder: Optional[Union[Var[str], str]] = None,
         loading: Optional[
-            Union[Var[Literal["lazy", "eager"]], Literal["lazy", "eager"]]
+            Union[Literal["eager", "lazy"], Var[Literal["eager", "lazy"]]]
         ] = None,
         blurDataURL: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
@@ -37,56 +37,42 @@ class Image(NextComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_error: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_load: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_error: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_load: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Image":

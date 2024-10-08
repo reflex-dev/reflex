@@ -65,13 +65,20 @@ def page(
     return decorator
 
 
-def get_decorated_pages() -> list[dict]:
+def get_decorated_pages(omit_implicit_routes=True) -> list[dict[str, Any]]:
     """Get the decorated pages.
+
+    Args:
+        omit_implicit_routes: Whether to omit pages where the route will be implicitely guessed later.
 
     Returns:
         The decorated pages.
     """
     return sorted(
-        [page_data for _, page_data in DECORATED_PAGES[get_config().app_name]],
-        key=lambda x: x["route"],
+        [
+            page_data
+            for _, page_data in DECORATED_PAGES[get_config().app_name]
+            if not omit_implicit_routes or "route" in page_data
+        ],
+        key=lambda x: x.get("route", ""),
     )
