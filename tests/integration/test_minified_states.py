@@ -14,7 +14,7 @@ from reflex.constants.compiler import ENV_MINIFY_STATES
 from reflex.testing import AppHarness, AppHarnessProd
 
 
-def TestApp(minify: bool | None) -> None:
+def MinifiedStatesApp(minify: bool | None) -> None:
     """A test app for minified state names.
 
     Args:
@@ -22,8 +22,8 @@ def TestApp(minify: bool | None) -> None:
     """
     import reflex as rx
 
-    class TestAppState(rx.State):
-        """State for the TestApp app."""
+    class MinifiedState(rx.State):
+        """State for the MinifiedStatesApp app."""
 
         pass
 
@@ -32,13 +32,13 @@ def TestApp(minify: bool | None) -> None:
     def index():
         return rx.vstack(
             rx.input(
-                value=TestAppState.router.session.client_token,
+                value=MinifiedState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
             rx.text(f"minify: {minify}", id="minify"),
-            rx.text(TestAppState.get_name(), id="state_name"),
-            rx.text(TestAppState.get_full_name(), id="state_full_name"),
+            rx.text(MinifiedState.get_name(), id="state_name"),
+            rx.text(MinifiedState.get_full_name(), id="state_full_name"),
         )
 
     app.add_page(index)
@@ -78,7 +78,7 @@ def test_app(
     tmp_path_factory: pytest.TempPathFactory,
     minify_state_env: Optional[bool],
 ) -> Generator[AppHarness, None, None]:
-    """Start TestApp app at tmp_path via AppHarness.
+    """Start MinifiedStatesApp app at tmp_path via AppHarness.
 
     Args:
         app_harness_env: either AppHarness (dev) or AppHarnessProd (prod)
@@ -89,11 +89,11 @@ def test_app(
         running AppHarness instance
 
     """
-    name = f"testapp_{app_harness_env.__name__.lower()}"
+    name = f"testminifiedstates_{app_harness_env.__name__.lower()}"
     with app_harness_env.create(
         root=tmp_path_factory.mktemp(name),
         app_name=name,
-        app_source=partial(TestApp, minify=minify_state_env),  # type: ignore
+        app_source=partial(MinifiedStatesApp, minify=minify_state_env),  # type: ignore
     ) as harness:
         yield harness
 
@@ -103,7 +103,7 @@ def driver(test_app: AppHarness) -> Generator[WebDriver, None, None]:
     """Get an instance of the browser open to the test_app app.
 
     Args:
-        test_app: harness for TestApp app
+        test_app: harness for MinifiedStatesApp app
 
     Yields:
         WebDriver instance.
@@ -125,7 +125,7 @@ def test_minified_states(
     """Test minified state names.
 
     Args:
-        test_app: harness for TestApp
+        test_app: harness for MinifiedStatesApp
         driver: WebDriver instance.
         minify_state_env: whether state minification is enabled by env var.
 
@@ -140,12 +140,6 @@ def test_minified_states(
     # env overrides default
     if minify_state_env is not None:
         should_minify = minify_state_env
-
-    # TODO: reload internal states, or refactor VarData to reference state object instead of name
-    if should_minify:
-        pytest.skip(
-            "minify tests are currently not working, because _var_set_states writes the state names during import time"
-        )
 
     # get a reference to the connected client
     token_input = driver.find_element(By.ID, "token")
@@ -165,9 +159,8 @@ def test_minified_states(
 
     assert test_app.app_module
     module_state_prefix = test_app.app_module.__name__.replace(".", "___")
-    # prod_module_suffix = "prod" if is_prod else ""
 
     if should_minify:
         assert len(state_name) == 1
     else:
-        assert state_name == f"{module_state_prefix}____test_app_state"
+        assert state_name == f"{module_state_prefix}____minified_state"
