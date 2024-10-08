@@ -15,6 +15,7 @@ from .recharts import (
     LiteralDirection,
     LiteralIfOverflow,
     LiteralInterval,
+    LiteralIntervalAxis,
     LiteralLayout,
     LiteralLegendType,
     LiteralLineType,
@@ -24,6 +25,7 @@ from .recharts import (
     LiteralPolarRadiusType,
     LiteralScale,
     LiteralShape,
+    LiteralTextAnchor,
     Recharts,
 )
 
@@ -34,7 +36,7 @@ class Axis(Recharts):
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
 
-    # If set true, the axis do not display in the chart.
+    # If set true, the axis do not display in the chart. Default: False
     hide: Var[bool]
 
     # The width of axis which is usually calculated internally.
@@ -46,28 +48,34 @@ class Axis(Recharts):
     # The type of axis 'number' | 'category'
     type_: Var[LiteralPolarRadiusType]
 
-    # Allow the ticks of XAxis to be decimals or not.
+    # If set 0, all the ticks will be shown. If set preserveStart", "preserveEnd" or "preserveStartEnd", the ticks which is to be shown or hidden will be calculated automatically. Default: "preserveEnd"
+    interval: Var[Union[LiteralIntervalAxis, int]]
+
+    # Allow the ticks of Axis to be decimals or not. Default: True
     allow_decimals: Var[bool]
 
-    # When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
+    # When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain. Default: False
     allow_data_overflow: Var[bool]
 
-    # Allow the axis has duplicated categorys or not when the type of axis is "category".
+    # Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
     allow_duplicated_category: Var[bool]
 
-    # If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
+    # The range of the axis. Work best in conjuction with allow_data_overflow. Default: [0, "auto"]
+    domain: Var[List]
+
+    # If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line. Default: True
     axis_line: Var[bool]
 
-    # If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
+    # If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside. Default: False
     mirror: Var[bool]
 
-    # Reverse the ticks or not.
+    # Reverse the ticks or not. Default: False
     reversed: Var[bool]
 
     # The label of axis, which appears next to the axis.
     label: Var[Union[str, int, Dict[str, Any]]]
 
-    # If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
+    # If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'. Default: "auto"
     scale: Var[LiteralScale]
 
     # The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
@@ -82,23 +90,23 @@ class Axis(Recharts):
     # If set false, no ticks will be drawn.
     tick: Var[bool]
 
-    # The count of axis ticks.
+    # The count of axis ticks. Not used if 'type' is 'category'. Default: 5
     tick_count: Var[int]
 
-    # If set false, no axis tick lines will be drawn.
-    tick_line: Var[bool] = LiteralVar.create(False)
+    # If set false, no axis tick lines will be drawn. Default: True
+    tick_line: Var[bool]
 
-    # The length of tick line.
+    # The length of tick line. Default: 6
     tick_size: Var[int]
 
-    # The minimum gap between two adjacent labels
+    # The minimum gap between two adjacent labels. Default: 5
     min_tick_gap: Var[int]
 
-    # The stroke color of axis
+    # The stroke color of axis. Default: rx.color("gray", 9)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 9))
 
-    # The text anchor of axis
-    text_anchor: Var[str]  # 'start', 'middle', 'end'
+    # The text anchor of axis. Default: "middle"
+    text_anchor: Var[LiteralTextAnchor]
 
     # The customized event handler of click on the ticks of this axis
     on_click: EventHandler[lambda: []]
