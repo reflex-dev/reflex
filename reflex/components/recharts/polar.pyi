@@ -489,14 +489,21 @@ class PolarRadiusAxis(Recharts):
             Union[Literal["category", "number"], Var[Literal["category", "number"]]]
         ] = None,
         allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
-        cx: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        cy: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        cx: Optional[Union[Var[int], int]] = None,
+        cy: Optional[Union[Var[int], int]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
-        orientation: Optional[Union[Var[str], str]] = None,
+        orientation: Optional[
+            Union[
+                Literal["left", "middle", "right"],
+                Var[Literal["left", "middle", "right"]],
+            ]
+        ] = None,
         axis_line: Optional[
             Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
         ] = None,
-        tick: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        tick: Optional[
+            Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
+        ] = None,
         tick_count: Optional[Union[Var[int], int]] = None,
         scale: Optional[
             Union[
@@ -568,19 +575,19 @@ class PolarRadiusAxis(Recharts):
 
         Args:
             *children: The children of the component.
-            angle: The angle of radial direction line to display axis text.
-            type_: The type of axis line. 'number' | 'category'
-            allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category".
+            angle: The angle of radial direction line to display axis text. Default: 0
+            type_: The type of axis line. 'number' | 'category'. Default: "category"
+            allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
             cx: The x-coordinate of center.
             cy: The y-coordinate of center.
-            reversed: If set to true, the ticks of this axis are reversed.
-            orientation: The orientation of axis text.
-            axis_line: If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option.
-            tick: The width or height of tick.
-            tick_count: The count of ticks.
-            scale: If 'auto' set, the scale funtion is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'
-            domain: The domain of the polar radius axis, specifying the minimum and maximum values.
-            stroke: The stroke color of axis
+            reversed: If set to true, the ticks of this axis are reversed. Default: False
+            orientation: The orientation of axis text. Default: "right"
+            axis_line: If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option. Default: True
+            tick: If false set, ticks will not be drawn. If true set, ticks will be drawn which have the props calculated internally. If object set, ticks will be drawn which have the props mergered by the internal calculated props and the option. Default: True
+            tick_count: The count of axis ticks. Not used if 'type' is 'category'. Default: 5
+            scale: If 'auto' set, the scale funtion is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'. Default: "auto"
+            domain: The domain of the polar radius axis, specifying the minimum and maximum values. Default: [0, "auto"]
+            stroke: The stroke color of axis. Default: rx.color("gray", 10)
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

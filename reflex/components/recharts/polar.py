@@ -13,6 +13,7 @@ from .recharts import (
     LiteralAnimationEasing,
     LiteralGridType,
     LiteralLegendType,
+    LiteralOrientationLeftRightMiddle,
     LiteralPolarRadiusType,
     LiteralScale,
     Recharts,
@@ -305,46 +306,46 @@ class PolarRadiusAxis(Recharts):
 
     alias = "RechartsPolarRadiusAxis"
 
-    # The angle of radial direction line to display axis text.
+    # The angle of radial direction line to display axis text. Default: 0
     angle: Var[int]
 
-    # The type of axis line. 'number' | 'category'
+    # The type of axis line. 'number' | 'category'. Default: "category"
     type_: Var[LiteralPolarRadiusType]
 
-    # Allow the axis has duplicated categorys or not when the type of axis is "category".
+    # Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
     allow_duplicated_category: Var[bool]
 
     # The x-coordinate of center.
-    cx: Var[Union[int, str]]
+    cx: Var[int]
 
     # The y-coordinate of center.
-    cy: Var[Union[int, str]]
+    cy: Var[int]
 
-    # If set to true, the ticks of this axis are reversed.
+    # If set to true, the ticks of this axis are reversed. Default: False
     reversed: Var[bool]
 
-    # The orientation of axis text.
-    orientation: Var[str]
+    # The orientation of axis text. Default: "right"
+    orientation: Var[LiteralOrientationLeftRightMiddle]
 
-    # If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option.
+    # If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option. Default: True
     axis_line: Var[Union[bool, Dict[str, Any]]]
 
-    # The width or height of tick.
-    tick: Var[Union[int, str]]
+    # If false set, ticks will not be drawn. If true set, ticks will be drawn which have the props calculated internally. If object set, ticks will be drawn which have the props mergered by the internal calculated props and the option. Default: True
+    tick: Var[Union[bool, Dict[str, Any]]]
 
-    # The count of ticks.
+    # The count of axis ticks. Not used if 'type' is 'category'. Default: 5
     tick_count: Var[int]
 
-    # If 'auto' set, the scale funtion is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'
+    # If 'auto' set, the scale funtion is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'. Default: "auto"
     scale: Var[LiteralScale]
 
     # Valid children components
     _valid_children: List[str] = ["Label"]
 
-    # The domain of the polar radius axis, specifying the minimum and maximum values.
-    domain: Var[List[int]] = LiteralVar.create([0, 250])
+    # The domain of the polar radius axis, specifying the minimum and maximum values. Default: [0, "auto"]
+    domain: Var[List[int]]
 
-    # The stroke color of axis
+    # The stroke color of axis. Default: rx.color("gray", 10)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 10))
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
