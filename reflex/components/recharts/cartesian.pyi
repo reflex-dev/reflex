@@ -2179,7 +2179,9 @@ class CartesianAxis(Grid):
                 Var[Literal["bottom", "left", "right", "top"]],
             ]
         ] = None,
+        view_box: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         axis_line: Optional[Union[Var[bool], bool]] = None,
+        tick: Optional[Union[Var[bool], bool]] = None,
         tick_line: Optional[Union[Var[bool], bool]] = None,
         tick_size: Optional[Union[Var[int], int]] = None,
         interval: Optional[
@@ -2188,8 +2190,7 @@ class CartesianAxis(Grid):
                 Var[Literal["preserveEnd", "preserveStart", "preserveStartEnd"]],
             ]
         ] = None,
-        ticks: Optional[Union[Var[bool], bool]] = None,
-        label: Optional[Union[Var[str], str]] = None,
+        label: Optional[Union[Var[Union[int, str]], int, str]] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         tick_margin: Optional[Union[Var[int], int]] = None,
         x: Optional[Union[Var[int], int]] = None,
@@ -2243,14 +2244,15 @@ class CartesianAxis(Grid):
 
         Args:
             *children: The children of the component.
-            orientation: The orientation of axis 'top' | 'bottom' | 'left' | 'right'
-            axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
-            tick_line: If set false, no axis tick lines will be drawn. If set a object, the option is the configuration of tick lines.
-            tick_size: The length of tick line.
-            interval: If set 0, all the ticks will be shown. If set preserveStart", "preserveEnd" or "preserveStartEnd", the ticks which is to be shown or hidden will be calculated automatically.
-            ticks: If set false, no ticks will be drawn.
+            orientation: The orientation of axis 'top' | 'bottom' | 'left' | 'right'. Default: "bottom"
+            view_box: The box of viewing area. Default: {"x": 0, "y": 0, "width": 0, "height": 0}
+            axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line. Default: True
+            tick: If set false, no ticks will be drawn.
+            tick_line: If set false, no axis tick lines will be drawn. If set a object, the option is the configuration of tick lines. Default: True
+            tick_size: The length of tick line. Default: 6
+            interval: If set 0, all the ticks will be shown. If set preserveStart", "preserveEnd" or "preserveStartEnd", the ticks which is to be shown or hidden will be calculated automatically. Default: "preserveEnd"
             label: If set a string or a number, default label will be drawn, and the option is content.
-            mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
+            mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside. Default: False
             tick_margin: The margin between tick line and tick.
             x: The x-coordinate of grid.
             y: The y-coordinate of grid.
