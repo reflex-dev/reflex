@@ -855,7 +855,7 @@ class ScatterChart(ChartBase):
 
         Args:
             *children: The children of the chart component.
-            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
+            margin: The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "bottom": 5, "left": 5}
             width: The width of chart container. String or Integer
             height: The height of chart container.
             style: The style of the component.
