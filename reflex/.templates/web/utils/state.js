@@ -120,7 +120,7 @@ export const isStateful = () => {
   if (event_queue.length === 0) {
     return false;
   }
-  return event_queue.some(event => event.name.includes("___"));
+  return event_queue.some(event => event.name.startsWith(main_state_name));
 };
 
 /**
