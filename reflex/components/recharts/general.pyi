@@ -553,10 +553,10 @@ class LabelList(Recharts):
         Args:
             *children: The children of the component.
             data_key: The key of a group of label values in data.
-            position: The position of each label relative to it view box。"Top" | "left" | "right" | "bottom" | "inside" | "outside" | "insideLeft" | "insideRight" | "insideTop" | "insideBottom" | "insideTopLeft" | "insideBottomLeft" | "insideTopRight" | "insideBottomRight" | "insideStart" | "insideEnd" | "end" | "center"
-            offset: The offset to the specified "position"
-            fill: The fill color of each label
-            stroke: The stroke color of each label
+            position: The position of each label relative to it view box. "Top" | "left" | "right" | "bottom" | "inside" | "outside" | "insideLeft" | "insideRight" | "insideTop" | "insideBottom" | "insideTopLeft" | "insideBottomLeft" | "insideTopRight" | "insideBottomRight" | "insideStart" | "insideEnd" | "end" | "center"
+            offset: The offset to the specified "position". Default: 5
+            fill: The fill color of each label. Default: rx.color("gray", 10)
+            stroke: The stroke color of each label. Default: "none"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

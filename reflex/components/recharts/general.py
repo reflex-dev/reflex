@@ -224,16 +224,16 @@ class LabelList(Recharts):
     # The key of a group of label values in data.
     data_key: Var[Union[str, int]]
 
-    # The position of each label relative to it view box。"Top" | "left" | "right" | "bottom" | "inside" | "outside" | "insideLeft" | "insideRight" | "insideTop" | "insideBottom" | "insideTopLeft" | "insideBottomLeft" | "insideTopRight" | "insideBottomRight" | "insideStart" | "insideEnd" | "end" | "center"
+    # The position of each label relative to it view box. "Top" | "left" | "right" | "bottom" | "inside" | "outside" | "insideLeft" | "insideRight" | "insideTop" | "insideBottom" | "insideTopLeft" | "insideBottomLeft" | "insideTopRight" | "insideBottomRight" | "insideStart" | "insideEnd" | "end" | "center"
     position: Var[LiteralPosition]
 
-    # The offset to the specified "position"
+    # The offset to the specified "position". Default: 5
     offset: Var[int]
 
-    # The fill color of each label
+    # The fill color of each label. Default: rx.color("gray", 10)
     fill: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 10))
 
-    # The stroke color of each label
+    # The stroke color of each label. Default: "none"
     stroke: Var[Union[str, Color]] = LiteralVar.create("none")
 
 
