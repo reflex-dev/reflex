@@ -129,7 +129,7 @@ class AreaChart(CategoricalChartBase):
 
     alias = "RechartsAreaChart"
 
-    # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
+    # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'. Default: "auto"
     base_value: Var[Union[int, LiteralComposedChartBaseValue]]
 
     # Valid children components
