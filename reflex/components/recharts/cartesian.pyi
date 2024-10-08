@@ -1697,11 +1697,11 @@ class Reference(Recharts):
 
         Args:
             *children: The children of the component.
-            x_axis_id: The id of x-axis which is corresponding to the data.
-            y_axis_id: The id of y-axis which is corresponding to the data.
-            if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
+            x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
+            y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
+            if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas. Default: "discard"
             label: If set a string or a number, default label will be drawn, and the option is content.
-            is_front: If set true, the line will be rendered in front of bars in BarChart, etc.
+            is_front: If set true, the line will be rendered in front of bars in BarChart, etc. Default: False
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1788,11 +1788,11 @@ class ReferenceLine(Reference):
             stroke: The color of the reference line.
             stroke_width: The width of the stroke. Default: 1
             segment: Array of endpoints in { x, y } format. These endpoints would be used to draw the ReferenceLine.
-            x_axis_id: The id of x-axis which is corresponding to the data.
-            y_axis_id: The id of y-axis which is corresponding to the data.
-            if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
+            x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
+            y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
+            if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas. Default: "discard"
             label: If set a string or a number, default label will be drawn, and the option is content.
-            is_front: If set true, the line will be rendered in front of bars in BarChart, etc.
+            is_front: If set true, the line will be rendered in front of bars in BarChart, etc. Default: False
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1879,11 +1879,11 @@ class ReferenceDot(Reference):
             r: The radius of dot.
             fill: The color of the area fill.
             stroke: The color of the line stroke.
-            x_axis_id: The id of x-axis which is corresponding to the data.
-            y_axis_id: The id of y-axis which is corresponding to the data.
-            if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
+            x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
+            y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
+            if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas. Default: "discard"
             label: If set a string or a number, default label will be drawn, and the option is content.
-            is_front: If set true, the line will be rendered in front of bars in BarChart, etc.
+            is_front: If set true, the line will be rendered in front of bars in BarChart, etc. Default: False
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
