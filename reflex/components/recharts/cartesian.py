@@ -652,7 +652,7 @@ class ReferenceLine(Reference):
     # The color of the reference line.
     stroke: Var[Union[str, Color]]
 
-    # The width of the stroke.
+    # The width of the stroke. Default: 1
     stroke_width: Var[Union[str, int]]
 
     # Valid children components
