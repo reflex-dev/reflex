@@ -1795,7 +1795,7 @@ class ReferenceLine(Reference):
             x: If set a string or a number, a vertical line perpendicular to the x-axis specified by xAxisId will be drawn. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys, otherwise no line will be drawn.
             y: If set a string or a number, a horizontal line perpendicular to the y-axis specified by yAxisId will be drawn. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys, otherwise no line will be drawn.
             stroke: The color of the reference line.
-            stroke_width: The width of the stroke.
+            stroke_width: The width of the stroke. Default: 1
             segment: Array of endpoints in { x, y } format. These endpoints would be used to draw the ReferenceLine.
             x_axis_id: The id of x-axis which is corresponding to the data.
             y_axis_id: The id of y-axis which is corresponding to the data.
