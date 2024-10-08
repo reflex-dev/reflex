@@ -64,6 +64,7 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
         on_mouse_up: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
+        on_resize: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
@@ -75,11 +76,11 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
         Args:
             *children: The children of the component.
             aspect: The aspect ratio of the container. The final aspect ratio of the SVG element will be (width / height) * aspect. Number
-            width: The width of chart container. Can be a number or string
-            height: The height of chart container. Number
-            min_width: The minimum width of chart container.
+            width: The width of chart container. Can be a number or string. Default: "100%"
+            height: The height of chart container. Can be a number or string. Default: "100%"
+            min_width: The minimum width of chart container. Number
             min_height: The minimum height of chart container. Number
-            debounce: If specified a positive number, debounced function will be used to handle the resize event.
+            debounce: If specified a positive number, debounced function will be used to handle the resize event. Default: 0
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

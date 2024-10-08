@@ -30,20 +30,23 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
     # The aspect ratio of the container. The final aspect ratio of the SVG element will be (width / height) * aspect. Number
     aspect: Var[int]
 
-    # The width of chart container. Can be a number or string
+    # The width of chart container. Can be a number or string. Default: "100%"
     width: Var[Union[int, str]]
 
-    # The height of chart container. Number
+    # The height of chart container. Can be a number or string. Default: "100%"
     height: Var[Union[int, str]]
 
-    # The minimum width of chart container.
+    # The minimum width of chart container. Number
     min_width: Var[int]
 
     # The minimum height of chart container. Number
     min_height: Var[int]
 
-    # If specified a positive number, debounced function will be used to handle the resize event.
+    # If specified a positive number, debounced function will be used to handle the resize event. Default: 0
     debounce: Var[int]
+
+    # If specified provides a callback providing the updated chart width and height values.
+    on_resize: EventHandler[lambda: []]
 
     # Valid children components
     _valid_children: List[str] = [
