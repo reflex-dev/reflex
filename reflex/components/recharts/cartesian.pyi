@@ -2142,14 +2142,14 @@ class CartesianGrid(Grid):
 
         Args:
             *children: The children of the component.
-            horizontal: The horizontal line configuration.
-            vertical: The vertical line configuration.
-            vertical_points: The x-coordinates in pixel values of all vertical lines.
-            horizontal_points: The x-coordinates in pixel values of all vertical lines.
+            horizontal: The horizontal line configuration. Default: True
+            vertical: The vertical line configuration. Default: True
+            vertical_points: The x-coordinates in pixel values of all vertical lines. Default: []
+            horizontal_points: The x-coordinates in pixel values of all vertical lines. Default: []
             fill: The background of grid.
-            fill_opacity: The opacity of the background used to fill the space between grid lines
-            stroke_dasharray: The pattern of dashes and gaps used to paint the lines of the grid
-            stroke: the stroke color of grid
+            fill_opacity: The opacity of the background used to fill the space between grid lines.
+            stroke_dasharray: The pattern of dashes and gaps used to paint the lines of the grid.
+            stroke: the stroke color of grid. Default: rx.color("gray", 7)
             x: The x-coordinate of grid.
             y: The y-coordinate of grid.
             width: The width of grid.
