@@ -155,7 +155,7 @@ class YAxis(Axis):
     # The orientation of axis 'left' | 'right'. Default: "left"
     orientation: Var[LiteralOrientationLeftRight]
 
-    # The id of y-axis which is corresponding to the data.
+    # The id of y-axis which is corresponding to the data. Default: 0
     y_axis_id: Var[Union[str, int]]
 
     # Specify the padding of y-axis. Default: {"top": 0, "bottom": 0}

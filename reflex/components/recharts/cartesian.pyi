@@ -465,7 +465,7 @@ class YAxis(Axis):
         Args:
             *children: The children of the component.
             orientation: The orientation of axis 'left' | 'right'. Default: "left"
-            y_axis_id: The id of y-axis which is corresponding to the data.
+            y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
             padding: Specify the padding of y-axis. Default: {"top": 0, "bottom": 0}
             data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart.
