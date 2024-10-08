@@ -601,20 +601,20 @@ class ErrorBar(Recharts):
 
     alias = "RechartsErrorBar"
 
-    # The direction of error bar. 'x' | 'y' | 'both'
+    # Only used for ScatterChart with error bars in two directions. Only accepts a value of "x" or "y" and makes the error bars lie in that direction.
     direction: Var[LiteralDirection]
 
     # The key of a group of data which should be unique in an area chart.
     data_key: Var[Union[str, int]]
 
-    # The width of the error bar ends.
+    # The width of the error bar ends. Default: 5
     width: Var[int]
 
-    # The stroke color of error bar.
+    # The stroke color of error bar. Default: rx.color("gray", 8)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 8))
 
-    # The stroke width of error bar.
-    stroke_width: Var[int]
+    # The stroke width of error bar. Default: 1.5
+    stroke_width: Var[float]
 
 
 class Reference(Recharts):
