@@ -746,10 +746,10 @@ class ReferenceArea(Recharts):
     # A boundary value of the area. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys. If one of y1 or y2 is invalidate, the area will cover along y-axis.
     y2: Var[Union[str, int]]
 
-    # Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
+    # Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas. Default: "discard"
     if_overflow: Var[LiteralIfOverflow]
 
-    # If set true, the line will be rendered in front of bars in BarChart, etc.
+    # If set true, the line will be rendered in front of bars in BarChart, etc. Default: False
     is_front: Var[bool]
 
     # Valid children components
