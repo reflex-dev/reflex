@@ -811,28 +811,31 @@ class CartesianAxis(Grid):
 
     alias = "RechartsCartesianAxis"
 
-    # The orientation of axis 'top' | 'bottom' | 'left' | 'right'
+    # The orientation of axis 'top' | 'bottom' | 'left' | 'right'. Default: "bottom"
     orientation: Var[LiteralOrientationTopBottomLeftRight]
 
-    # If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
+    # The box of viewing area. Default: {"x": 0, "y": 0, "width": 0, "height": 0}
+    view_box: Var[Dict[str, Any]]
+
+    # If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line. Default: True
     axis_line: Var[bool]
 
-    # If set false, no axis tick lines will be drawn. If set a object, the option is the configuration of tick lines.
+    # If set false, no ticks will be drawn.
+    tick: Var[bool]
+
+    # If set false, no axis tick lines will be drawn. If set a object, the option is the configuration of tick lines. Default: True
     tick_line: Var[bool]
 
-    # The length of tick line.
+    # The length of tick line. Default: 6
     tick_size: Var[int]
 
-    # If set 0, all the ticks will be shown. If set preserveStart", "preserveEnd" or "preserveStartEnd", the ticks which is to be shown or hidden will be calculated automatically.
+    # If set 0, all the ticks will be shown. If set preserveStart", "preserveEnd" or "preserveStartEnd", the ticks which is to be shown or hidden will be calculated automatically. Default: "preserveEnd"
     interval: Var[LiteralInterval]
 
-    # If set false, no ticks will be drawn.
-    ticks: Var[bool]
-
     # If set a string or a number, default label will be drawn, and the option is content.
-    label: Var[str]
+    label: Var[Union[str, int]]
 
-    # If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
+    # If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside. Default: False
     mirror: Var[bool]
 
     # The margin between tick line and tick.
