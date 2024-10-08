@@ -457,31 +457,34 @@ class Treemap(RechartsCharts):
 
     alias = "RechartsTreemap"
 
-    # The width of chart container. String or Integer
+    # The width of chart container. String or Integer. Default: "100%"
     width: Var[Union[str, int]] = "100%"  # type: ignore
 
-    # The height of chart container.
+    # The height of chart container. String or Integer. Default: "100%"
     height: Var[Union[str, int]] = "100%"  # type: ignore
 
     # data of treemap. Array
     data: Var[List[Dict[str, Any]]]
 
-    # The key of a group of data which should be unique in a treemap. String | Number | Function
+    # The key of a group of data which should be unique in a treemap. String | Number. Default: "value"
     data_key: Var[Union[str, int]]
+
+    # The key of each sector's name. String. Default: "name"
+    name_key: Var[str]
 
     # The treemap will try to keep every single rectangle's aspect ratio near the aspectRatio given. Number
     aspect_ratio: Var[int]
 
-    # If set false, animation of area will be disabled.
+    # If set false, animation of area will be disabled. Default: True
     is_animation_active: Var[bool]
 
-    # Specifies when the animation should begin, the unit of this option is ms.
+    # Specifies when the animation should begin, the unit of this option is ms. Default: 0
     animation_begin: Var[int]
 
-    # Specifies the duration of animation, the unit of this option is ms.
+    # Specifies the duration of animation, the unit of this option is ms. Default: 1500
     animation_duration: Var[int]
 
-    # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
+    # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default: "ease"
     animation_easing: Var[LiteralAnimationEasing]
 
     # The customized event handler of animation start
