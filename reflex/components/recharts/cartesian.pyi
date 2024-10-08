@@ -983,15 +983,7 @@ class Bar(Cartesian):
         name: Optional[Union[Var[Union[int, str]], int, str]] = None,
         bar_size: Optional[Union[Var[int], int]] = None,
         max_bar_size: Optional[Union[Var[int], int]] = None,
-        is_animation_active: Optional[Union[Var[bool], bool]] = None,
-        animation_begin: Optional[Union[Var[int], int]] = None,
-        animation_duration: Optional[Union[Var[int], int]] = None,
-        animation_easing: Optional[
-            Union[
-                Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"],
-                Var[Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"]],
-            ]
-        ] = None,
+        radius: Optional[Union[List[int], Var[Union[List[int], int]], int]] = None,
         layout: Optional[
             Union[
                 Literal["horizontal", "vertical"],
@@ -1039,12 +1031,6 @@ class Bar(Cartesian):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_animation_end: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
-        ] = None,
-        on_animation_start: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
-        ] = None,
         on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
@@ -1088,19 +1074,16 @@ class Bar(Cartesian):
             *children: The children of the component.
             stroke: The color of the line stroke.
             stroke_width: The width of the line stroke.
-            fill: The width of the line stroke.
-            background: If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally.
-            label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
+            fill: The width of the line stroke. Default: Color("accent", 9)
+            background: If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally. Default: False
+            label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
             stack_id: The stack id of bar, when two bars have the same value axis and same stack_id, then the two bars are stacked in order.
             unit: The unit of data. This option will be used in tooltip.
             min_point_size: The minimal height of a bar in a horizontal BarChart, or the minimal width of a bar in a vertical BarChart. By default, 0 values are not shown. To visualize a 0 (or close to zero) point, set the minimal point size to a pixel value like 3. In stacked bar charts, minPointSize might not be respected for tightly packed values. So we strongly recommend not using this prop in stacked BarCharts.
             name: The name of data. This option will be used in tooltip and legend to represent a bar. If no value was set to this option, the value of dataKey will be used alternatively.
             bar_size: Size of the bar (if one bar_size is set then a bar_size must be set for all bars)
             max_bar_size: Max size of the bar
-            is_animation_active: If set false, animation of bar will be disabled.
-            animation_begin: Specifies when the animation should begin, the unit of this option is ms, default 0.
-            animation_duration: Specifies the duration of animation, the unit of this option is ms, default 1500.
-            animation_easing: The type of easing function, default 'ease'
+            radius: If set a value, the option is the radius of all the rounded corners. If set a array, the option are in turn the radiuses of top-left corner, top-right corner, bottom-right corner, bottom-left corner. Default: 0
             layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
             data_key: The key of a group of data which should be unique in an area chart.
             x_axis_id: The id of x-axis which is corresponding to the data.
