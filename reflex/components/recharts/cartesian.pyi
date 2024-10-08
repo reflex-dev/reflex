@@ -739,6 +739,12 @@ class Cartesian(Recharts):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_animation_start: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
         on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
@@ -919,6 +925,12 @@ class Area(Cartesian):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_animation_start: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
         on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
@@ -1260,6 +1272,12 @@ class Line(Cartesian):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_animation_start: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
         on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[

@@ -281,6 +281,12 @@ class Cartesian(Recharts):
     # The name of data. This option will be used in tooltip and legend to represent the component. If no value was set to this option, the value of dataKey will be used alternatively.
     name: Var[Union[str, int]]
 
+    # The customized event handler of animation start
+    on_animation_start: EventHandler[lambda: []]
+
+    # The customized event handler of animation end
+    on_animation_end: EventHandler[lambda: []]
+
     # The customized event handler of click on the component in this group
     on_click: EventHandler[lambda: []]
 
