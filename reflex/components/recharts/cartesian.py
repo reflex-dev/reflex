@@ -759,16 +759,16 @@ class ReferenceArea(Recharts):
 class Grid(Recharts):
     """A base class for grid components in Recharts."""
 
-    # The x-coordinate of grid.
+    # The x-coordinate of grid. Default: 0
     x: Var[int]
 
-    # The y-coordinate of grid.
+    # The y-coordinate of grid. Default: 0
     y: Var[int]
 
-    # The width of grid.
+    # The width of grid. Default: 0
     width: Var[int]
 
-    # The height of grid.
+    # The height of grid. Default: 0
     height: Var[int]
 
 

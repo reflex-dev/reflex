@@ -2056,10 +2056,10 @@ class Grid(Recharts):
 
         Args:
             *children: The children of the component.
-            x: The x-coordinate of grid.
-            y: The y-coordinate of grid.
-            width: The width of grid.
-            height: The height of grid.
+            x: The x-coordinate of grid. Default: 0
+            y: The y-coordinate of grid. Default: 0
+            width: The width of grid. Default: 0
+            height: The height of grid. Default: 0
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -2150,10 +2150,10 @@ class CartesianGrid(Grid):
             fill_opacity: The opacity of the background used to fill the space between grid lines
             stroke_dasharray: The pattern of dashes and gaps used to paint the lines of the grid
             stroke: the stroke color of grid
-            x: The x-coordinate of grid.
-            y: The y-coordinate of grid.
-            width: The width of grid.
-            height: The height of grid.
+            x: The x-coordinate of grid. Default: 0
+            y: The y-coordinate of grid. Default: 0
+            width: The width of grid. Default: 0
+            height: The height of grid. Default: 0
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -2252,10 +2252,10 @@ class CartesianAxis(Grid):
             label: If set a string or a number, default label will be drawn, and the option is content.
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
             tick_margin: The margin between tick line and tick.
-            x: The x-coordinate of grid.
-            y: The y-coordinate of grid.
-            width: The width of grid.
-            height: The height of grid.
+            x: The x-coordinate of grid. Default: 0
+            y: The y-coordinate of grid. Default: 0
+            width: The width of grid. Default: 0
+            height: The height of grid. Default: 0
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
