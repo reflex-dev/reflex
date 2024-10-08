@@ -129,20 +129,20 @@ class XAxis(Axis):
 
     alias = "RechartsXAxis"
 
-    # The orientation of axis 'top' | 'bottom'
+    # The orientation of axis 'top' | 'bottom'. Default: "bottom"
     orientation: Var[LiteralOrientationTopBottom]
 
     # The id of x-axis which is corresponding to the data.
     x_axis_id: Var[Union[str, int]]
 
-    # Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
-    include_hidden: Var[bool] = LiteralVar.create(False)
+    # Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden. Default: False
+    include_hidden: Var[bool]
 
-    # The range of the axis. Work best in conjuction with allow_data_overflow.
-    domain: Var[List]
+    # The angle of axis ticks. Default: 0
+    angle: Var[int]
 
-    # The range of the axis. Work best in conjuction with allow_data_overflow.
-    domain: Var[List]
+    # Specify the padding of x-axis. Default: {"left": 0, "right": 0}
+    padding: Var[Dict[str, int]]
 
 
 class YAxis(Axis):
