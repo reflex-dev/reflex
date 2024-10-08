@@ -73,20 +73,23 @@ class Legend(Recharts):
     # The height of legend container. Number
     height: Var[int]
 
-    # The layout of legend items. 'horizontal' | 'vertical'
+    # The layout of legend items. 'horizontal' | 'vertical'. Default: "horizontal"
     layout: Var[LiteralLayout]
 
-    # The alignment of legend items in 'horizontal' direction, which can be 'left', 'center', 'right'.
+    # The alignment of legend items in 'horizontal' direction, which can be 'left', 'center', 'right'. Default: "center"
     align: Var[LiteralLegendAlign]
 
-    # The alignment of legend items in 'vertical' direction, which can be 'top', 'middle', 'bottom'.
+    # The alignment of legend items in 'vertical' direction, which can be 'top', 'middle', 'bottom'. Default: "bottom"
     vertical_align: Var[LiteralVerticalAlign]
 
-    # The size of icon in each legend item.
+    # The size of icon in each legend item. Default: 14
     icon_size: Var[int]
 
     # The type of icon in each legend item. 'line' | 'plainline' | 'square' | 'rect' | 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye'
     icon_type: Var[LiteralIconType]
+
+    # The source data of the content to be displayed in the legend, usually calculated internally. Default: []
+    payload: Var[List[Dict[str, Any]]]
 
     # The width of chart container, usually calculated internally.
     chart_width: Var[int]
