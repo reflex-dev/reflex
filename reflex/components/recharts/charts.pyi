@@ -855,7 +855,7 @@ class ScatterChart(ChartBase):
 
         Args:
             *children: The children of the chart component.
-            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
+            margin: The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "bottom": 5, "left": 5}
             width: The width of chart container. String or Integer
             height: The height of chart container.
             style: The style of the component.
@@ -957,6 +957,7 @@ class Treemap(RechartsCharts):
         height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
         data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        name_key: Optional[Union[Var[str], str]] = None,
         aspect_ratio: Optional[Union[Var[int], int]] = None,
         is_animation_active: Optional[Union[Var[bool], bool]] = None,
         animation_begin: Optional[Union[Var[int], int]] = None,
@@ -1020,15 +1021,16 @@ class Treemap(RechartsCharts):
 
         Args:
             *children: The children of the chart component.
-            width: The width of chart container. String or Integer
-            height: The height of chart container.
+            width: The width of chart container. String or Integer. Default: "100%"
+            height: The height of chart container. String or Integer. Default: "100%"
             data: data of treemap. Array
-            data_key: The key of a group of data which should be unique in a treemap. String | Number | Function
+            data_key: The key of a group of data which should be unique in a treemap. String | Number. Default: "value"
+            name_key: The key of each sector's name. String. Default: "name"
             aspect_ratio: The treemap will try to keep every single rectangle's aspect ratio near the aspectRatio given. Number
-            is_animation_active: If set false, animation of area will be disabled.
-            animation_begin: Specifies when the animation should begin, the unit of this option is ms.
-            animation_duration: Specifies the duration of animation, the unit of this option is ms.
-            animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
+            is_animation_active: If set false, animation of area will be disabled. Default: True
+            animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
+            animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
+            animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default: "ease"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
