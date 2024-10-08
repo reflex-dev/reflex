@@ -182,7 +182,8 @@ class XAxis(Axis):
         ] = None,
         x_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         include_hidden: Optional[Union[Var[bool], bool]] = None,
-        domain: Optional[Union[List, Var[List]]] = None,
+        angle: Optional[Union[Var[int], int]] = None,
+        padding: Optional[Union[Dict[str, int], Var[Dict[str, int]]]] = None,
         data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -298,10 +299,11 @@ class XAxis(Axis):
 
         Args:
             *children: The children of the component.
-            orientation: The orientation of axis 'top' | 'bottom'
-            x_axis_id: The id of x-axis which is corresponding to the data.
-            include_hidden: Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
-            domain: The range of the axis. Work best in conjuction with allow_data_overflow.
+            orientation: The orientation of axis 'top' | 'bottom'. Default: "bottom"
+            x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
+            include_hidden: Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden. Default: False
+            angle: The angle of axis ticks. Default: 0
+            padding: Specify the padding of x-axis. Default: {"left": 0, "right": 0}
             data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart.
             width: The width of axis which is usually calculated internally.
