@@ -211,28 +211,28 @@ class PolarAngleAxis(Recharts):
     # The outer radius of circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy.
     radius: Var[Union[int, str]]
 
-    # If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option.
+    # If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option. Default: True
     axis_line: Var[Union[bool, Dict[str, Any]]]
 
-    # The type of axis line.
-    axis_line_type: Var[str]
+    # The type of axis line. Default: "polygon"
+    axis_line_type: Var[LiteralGridType]
 
-    # If false set, tick lines will not be drawn. If true set, tick lines will be drawn which have the props calculated internally. If object set, tick lines will be drawn which have the props mergered by the internal calculated props and the option.
+    # If false set, tick lines will not be drawn. If true set, tick lines will be drawn which have the props calculated internally. If object set, tick lines will be drawn which have the props mergered by the internal calculated props and the option. Default: False
     tick_line: Var[Union[bool, Dict[str, Any]]] = LiteralVar.create(False)
 
-    # The width or height of tick.
-    tick: Var[Union[int, str]]
+    # If false set, ticks will not be drawn. If true set, ticks will be drawn which have the props calculated internally. If object set, ticks will be drawn which have the props mergered by the internal calculated props and the option. Default: True
+    tick: Var[Union[bool, Dict[str, Any]]]
 
     # The array of every tick's value and angle.
     ticks: Var[List[Dict[str, Any]]]
 
-    # The orientation of axis text.
-    orient: Var[str]
+    # The orientation of axis text. Default: "outer"
+    orientation: Var[str]
 
-    # The stroke color of axis
+    # The stroke color of axis. Default: rx.color("gray", 10)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 10))
 
-    # Allow the axis has duplicated categorys or not when the type of axis is "category".
+    # Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
     allow_duplicated_category: Var[bool]
 
     # Valid children components.

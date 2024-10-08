@@ -312,13 +312,17 @@ class PolarAngleAxis(Recharts):
         axis_line: Optional[
             Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
         ] = None,
-        axis_line_type: Optional[Union[Var[str], str]] = None,
+        axis_line_type: Optional[
+            Union[Literal["circle", "polygon"], Var[Literal["circle", "polygon"]]]
+        ] = None,
         tick_line: Optional[
             Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
         ] = None,
-        tick: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        tick: Optional[
+            Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
+        ] = None,
         ticks: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
-        orient: Optional[Union[Var[str], str]] = None,
+        orientation: Optional[Union[Var[str], str]] = None,
         stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
@@ -372,14 +376,14 @@ class PolarAngleAxis(Recharts):
             cx: The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
             cy: The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container height.
             radius: The outer radius of circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy.
-            axis_line: If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option.
-            axis_line_type: The type of axis line.
-            tick_line: If false set, tick lines will not be drawn. If true set, tick lines will be drawn which have the props calculated internally. If object set, tick lines will be drawn which have the props mergered by the internal calculated props and the option.
-            tick: The width or height of tick.
+            axis_line: If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option. Default: True
+            axis_line_type: The type of axis line. Default: "polygon"
+            tick_line: If false set, tick lines will not be drawn. If true set, tick lines will be drawn which have the props calculated internally. If object set, tick lines will be drawn which have the props mergered by the internal calculated props and the option. Default: False
+            tick: If false set, ticks will not be drawn. If true set, ticks will be drawn which have the props calculated internally. If object set, ticks will be drawn which have the props mergered by the internal calculated props and the option. Default: True
             ticks: The array of every tick's value and angle.
-            orient: The orientation of axis text.
-            stroke: The stroke color of axis
-            allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category".
+            orientation: The orientation of axis text. Default: "outer"
+            stroke: The stroke color of axis. Default: rx.color("gray", 10)
+            allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
