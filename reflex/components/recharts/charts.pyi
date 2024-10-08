@@ -258,7 +258,7 @@ class AreaChart(CategoricalChartBase):
 
         Args:
             *children: The children of the chart component.
-            base_value: The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
+            base_value: The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'. Default: "auto"
             data: The source data, in which each element is an object.
             margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
