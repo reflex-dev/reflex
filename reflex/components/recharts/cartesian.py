@@ -620,19 +620,19 @@ class ErrorBar(Recharts):
 class Reference(Recharts):
     """A base class for reference components in Reference."""
 
-    # The id of x-axis which is corresponding to the data.
+    # The id of x-axis which is corresponding to the data. Default: 0
     x_axis_id: Var[Union[str, int]]
 
-    # The id of y-axis which is corresponding to the data.
+    # The id of y-axis which is corresponding to the data. Default: 0
     y_axis_id: Var[Union[str, int]]
 
-    # Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
+    # Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas. Default: "discard"
     if_overflow: Var[LiteralIfOverflow]
 
     # If set a string or a number, default label will be drawn, and the option is content.
     label: Var[Union[str, int]]
 
-    # If set true, the line will be rendered in front of bars in BarChart, etc.
+    # If set true, the line will be rendered in front of bars in BarChart, etc. Default: False
     is_front: Var[bool]
 
 
