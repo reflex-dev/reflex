@@ -295,22 +295,22 @@ class Area(Cartesian):
 
     alias = "RechartsArea"
 
-    # The color of the line stroke.
+    # The color of the line stroke. Default: rx.color("accent", 9)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
 
-    # The width of the line stroke.
-    stroke_width: Var[int] = LiteralVar.create(1)
+    # The width of the line stroke. Default: 1
+    stroke_width: Var[int]
 
-    # The color of the area fill.
+    # The color of the area fill. Default: rx.color("accent", 5)
     fill: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 5))
 
-    # The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
+    # The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter'. Default: "monotone"
     type_: Var[LiteralAreaType] = LiteralVar.create("monotone")
 
-    # If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally.
+    # If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally. Default: False
     dot: Var[Union[bool, Dict[str, Any]]]
 
-    # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
+    # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {stroke: rx.color("accent", 2), fill: rx.color("accent", 10)}
     active_dot: Var[Union[bool, Dict[str, Any]]] = LiteralVar.create(
         {
             "stroke": Color("accent", 2),
@@ -318,17 +318,20 @@ class Area(Cartesian):
         }
     )
 
-    # If set false, labels will not be drawn. If set true, labels will be drawn which have the props calculated internally.
+    # If set false, labels will not be drawn. If set true, labels will be drawn which have the props calculated internally. Default: False
     label: Var[bool]
+
+    # The value which can describle the line, usually calculated internally.
+    base_line: Var[Union[str, List[Dict[str, Any]]]]
+
+    # The coordinates of all the points in the area, usually calculated internally.
+    points: Var[List[Dict[str, Any]]]
 
     # The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
     stack_id: Var[Union[str, int]]
 
-    # The unit of data. This option will be used in tooltip.
-    unit: Var[Union[str, int]]
-
-    # The name of data. This option will be used in tooltip and legend to represent a bar. If no value was set to this option, the value of dataKey will be used alternatively.
-    name: Var[Union[str, int]]
+    # Whether to connect a graph area across null points. Default: False
+    connect_nulls: Var[bool]
 
     # Valid children components
     _valid_children: List[str] = ["LabelList"]
