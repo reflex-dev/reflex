@@ -403,10 +403,10 @@ class PolarGrid(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        cx: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        cy: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        inner_radius: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        outer_radius: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        cx: Optional[Union[Var[int], int]] = None,
+        cy: Optional[Union[Var[int], int]] = None,
+        inner_radius: Optional[Union[Var[int], int]] = None,
+        outer_radius: Optional[Union[Var[int], int]] = None,
         polar_angles: Optional[Union[List[int], Var[List[int]]]] = None,
         polar_radius: Optional[Union[List[int], Var[List[int]]]] = None,
         grid_type: Optional[
@@ -460,14 +460,14 @@ class PolarGrid(Recharts):
 
         Args:
             *children: The children of the component.
-            cx: The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
-            cy: The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container height.
+            cx: The x-coordinate of center.
+            cy: The y-coordinate of center.
             inner_radius: The radius of the inner polar grid.
             outer_radius: The radius of the outer polar grid.
             polar_angles: The array of every line grid's angle.
             polar_radius: The array of every line grid's radius.
-            grid_type: The type of polar grids. 'polygon' | 'circle'
-            stroke: The stroke color of grid
+            grid_type: The type of polar grids. 'polygon' | 'circle'. Default: "polygon"
+            stroke: The stroke color of grid. Default: rx.color("gray", 10)
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
