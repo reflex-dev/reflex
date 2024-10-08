@@ -437,10 +437,10 @@ class FunnelChart(ChartBase):
 
     alias = "RechartsFunnelChart"
 
-    # The layout of bars in the chart. centeric
+    # The layout of bars in the chart. Default: "centric"
     layout: Var[str]
 
-    # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
+    # The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "bottom": 5, "left": 5}
     margin: Var[Dict[str, Any]]
 
     # The stroke color of each bar. String | Object
