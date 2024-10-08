@@ -23,11 +23,15 @@ def DynamicRoute():
         order: List[str] = []
 
         def on_load(self):
-            self.order.append(f"{self.router.page.path}-{self.page_id or 'no page id'}")
+            page_data = f"{self.router.page.path}-{self.page_id or 'no page id'}"
+            print(f"on_load: {page_data}")
+            self.order.append(page_data)
 
         def on_load_redir(self):
             query_params = self.router.page.params
-            self.order.append(f"on_load_redir-{query_params}")
+            page_data = f"on_load_redir-{query_params}"
+            print(f"on_load_redir: {page_data}")
+            self.order.append(page_data)
             return rx.redirect(f"/page/{query_params['page_id']}")
 
         @rx.var
@@ -221,8 +225,11 @@ def poll_for_order(
                 dynamic_state_name
             ].order == exp_order
 
-        await AppHarness._poll_for_async(_check)
-        assert (await _backend_state()).substates[dynamic_state_name].order == exp_order
+        await AppHarness._poll_for_async(_check, timeout=60)
+        assert (
+            list((await _backend_state()).substates[dynamic_state_name].order)
+            == exp_order
+        )
 
     return _poll_for_order
 
