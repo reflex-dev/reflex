@@ -346,31 +346,31 @@ class RadialBarChart(ChartBase):
     # The source data which each element is an object.
     data: Var[List[Dict[str, Any]]]
 
-    # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
+    # The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "left": 5 "bottom": 5}
     margin: Var[Dict[str, Any]]
 
-    # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
+    # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"
     cx: Var[Union[int, str]]
 
-    # The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage
+    # The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage. Default: "50%"
     cy: Var[Union[int, str]]
 
-    # The angle of first radial direction line.
+    # The angle of first radial direction line. Default: 0
     start_angle: Var[int]
 
-    # The angle of last point in the circle which should be startAngle - 360 or startAngle + 360. We'll calculate the direction of chart by 'startAngle' and 'endAngle'.
+    # The angle of last point in the circle which should be startAngle - 360 or startAngle + 360. We'll calculate the direction of chart by 'startAngle' and 'endAngle'. Default: 360
     end_angle: Var[int]
 
-    # The inner radius of first circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage
+    # The inner radius of first circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: "30%"
     inner_radius: Var[Union[int, str]]
 
-    # The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage
+    # The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: "100%"
     outer_radius: Var[Union[int, str]]
 
-    # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
+    # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number. Default: "10%"
     bar_category_gap: Var[Union[int, str]]
 
-    # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
+    # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number. Default: 4
     bar_gap: Var[str]
 
     # The size of each bar. If the barSize is not specified, the size of bar will be calculated by the barCategoryGap, barGap and the quantity of bar groups.
