@@ -144,31 +144,34 @@ class RadialBar(Recharts):
 
     alias = "RechartsRadialBar"
 
+    # The source data which each element is an object.
+    data: Var[List[Dict[str, Any]]]
+
     # The key of a group of data which should be unique to show the meaning of angle axis.
     data_key: Var[Union[str, int]]
 
-    # Min angle of each bar. A positive value between 0 and 360.
+    # Min angle of each bar. A positive value between 0 and 360. Default: 0
     min_angle: Var[int]
 
-    # Type of legend
-    legend_type: Var[str]
+    # The type of icon in legend. If set to 'none', no legend item will be rendered. Default: "rect"
+    legend_type: Var[LiteralLegendType]
 
-    # If false set, labels will not be drawn.
+    # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
     label: Var[Union[bool, Dict[str, Any]]]
 
-    # If false set, background sector will not be drawn.
+    # If false set, background sector will not be drawn. Default: False
     background: Var[Union[bool, Dict[str, Any]]]
 
-    # If set false, animation of radial bars will be disabled. By default true in CSR, and false in SSR
+    # If set false, animation of radial bars will be disabled. By default true in CSR, and false in SSR. Default: True in CSR, and False in SSR
     is_animation_active: Var[bool]
 
-    # Specifies when the animation should begin, the unit of this option is ms. By default 0
+    # Specifies when the animation should begin, the unit of this option is ms. Default: 0
     animation_begin: Var[int]
 
-    # Specifies the duration of animation, the unit of this option is ms. By default 1500
+    # Specifies the duration of animation, the unit of this option is ms. Default 1500
     animation_duration: Var[int]
 
-    # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. By default 'ease'
+    # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default: "ease"
     animation_easing: Var[LiteralAnimationEasing]
 
     # Valid children components
