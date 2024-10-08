@@ -6,7 +6,7 @@ from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
-from reflex.event import EventHandler
+from reflex.event import EventHandler, input_event
 from reflex.vars.base import Var
 
 from ..base import (
@@ -83,13 +83,13 @@ class TextArea(RadixThemesComponent, elements.Textarea):
     wrap: Var[str]
 
     # Fired when the value of the textarea changes.
-    on_change: EventHandler[lambda e0: [e0.target.value]]
+    on_change: EventHandler[input_event]
 
     # Fired when the textarea is focused.
-    on_focus: EventHandler[lambda e0: [e0.target.value]]
+    on_focus: EventHandler[input_event]
 
     # Fired when the textarea is blurred.
-    on_blur: EventHandler[lambda e0: [e0.target.value]]
+    on_blur: EventHandler[input_event]
 
     # Fired when a key is pressed down.
     on_key_down: EventHandler[lambda e0: [e0.key]]
