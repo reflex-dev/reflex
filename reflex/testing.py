@@ -43,6 +43,7 @@ import reflex.utils.exec
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
+from reflex.components.component import StatefulComponent
 from reflex.state import (
     BaseState,
     State,
@@ -50,6 +51,7 @@ from reflex.state import (
     StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
+    minified_state_names,
     reload_state_module,
 )
 from reflex.utils.types import override
@@ -192,17 +194,13 @@ class AppHarness:
 
         Returns:
             The state name
-
-        Raises:
-            NotImplementedError: when minified state names are enabled
         """
-        if reflex.constants.CompileVars.MINIFY_STATES():
-            raise NotImplementedError(
-                "This API is not available with minified state names."
-            )
-        return reflex.utils.format.to_snake_case(
+        state_name = reflex.utils.format.to_snake_case(
             f"{self.app_name}___{self.app_name}___" + state_cls_name
         )
+        if reflex.constants.CompileVars.MINIFY_STATES():
+            return minified_state_names.get(state_name, state_name)
+        return state_name
 
     def get_full_state_name(self, path: List[str]) -> str:
         """Get the full state name for the given state class name.
@@ -281,6 +279,8 @@ class AppHarness:
                 )
                 self.app_module_path.write_text(source_code)
         with chdir(self.app_path):
+            # Reset stateful component cache for new app
+            StatefulComponent.tag_to_stateful_component.clear()
             # ensure config and app are reloaded when testing different app
             reflex.config.get_config(reload=True)
             # Save decorated pages before importing the test app module
