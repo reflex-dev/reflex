@@ -492,7 +492,7 @@ class ComposedChart(CategoricalChartBase):
             ]
         ] = None,
         bar_category_gap: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        bar_gap: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        bar_gap: Optional[Union[Var[int], int]] = None,
         bar_size: Optional[Union[Var[int], int]] = None,
         reverse_stack_order: Optional[Union[Var[bool], bool]] = None,
         data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
@@ -562,11 +562,11 @@ class ComposedChart(CategoricalChartBase):
 
         Args:
             *children: The children of the chart component.
-            base_value: The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
-            bar_category_gap: The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
-            bar_gap: The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
-            bar_size: The width of all the bars in the chart. Number
-            reverse_stack_order: If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
+            base_value: The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'. Default: "auto"
+            bar_category_gap: The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number. Default: "10%"
+            bar_gap: The gap between two bars in the same category. Default: 4
+            bar_size: The width or height of each bar. If the barSize is not specified, the size of the bar will be calculated by the barCategoryGap, barGap and the quantity of bar groups.
+            reverse_stack_order: If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position). Default: False
             data: The source data, in which each element is an object.
             margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.

@@ -217,19 +217,19 @@ class ComposedChart(CategoricalChartBase):
 
     alias = "RechartsComposedChart"
 
-    # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
+    # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'. Default: "auto"
     base_value: Var[Union[int, LiteralComposedChartBaseValue]]
 
-    # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
-    bar_category_gap: Var[Union[str, int]]  # type: ignore
+    # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number. Default: "10%"
+    bar_category_gap: Var[Union[str, int]]
 
-    # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
-    bar_gap: Var[Union[str, int]]  # type: ignore
+    # The gap between two bars in the same category. Default: 4
+    bar_gap: Var[int]
 
-    # The width of all the bars in the chart. Number
+    # The width or height of each bar. If the barSize is not specified, the size of the bar will be calculated by the barCategoryGap, barGap and the quantity of bar groups.
     bar_size: Var[int]
 
-    # If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
+    # If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position). Default: False
     reverse_stack_order: Var[bool]
 
     # Valid children components
