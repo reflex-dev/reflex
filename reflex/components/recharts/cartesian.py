@@ -350,12 +350,13 @@ class Bar(Cartesian):
     # The width of the line stroke.
     stroke_width: Var[int]
 
-    # The width of the line stroke.
+    # The width of the line stroke. Default: Color("accent", 9)
     fill: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
-    # If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally.
+
+    # If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally. Default: False
     background: Var[bool]
 
-    # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
+    # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
     label: Var[bool]
 
     # The stack id of bar, when two bars have the same value axis and same stack_id, then the two bars are stacked in order.
@@ -376,29 +377,14 @@ class Bar(Cartesian):
     # Max size of the bar
     max_bar_size: Var[int]
 
+    # If set a value, the option is the radius of all the rounded corners. If set a array, the option are in turn the radiuses of top-left corner, top-right corner, bottom-right corner, bottom-left corner. Default: 0
+    radius: Var[Union[int, List[int]]]
+
     # The active bar is shown when a user enters a bar chart and this chart has tooltip. If set to false, no active bar will be drawn. If set to true, active bar will be drawn with the props calculated internally. If passed an object, active bar will be drawn, and the internally calculated props will be merged with the key value pairs of the passed object.
     # active_bar: Var[Union[bool, Dict[str, Any]]]
 
     # Valid children components
     _valid_children: List[str] = ["Cell", "LabelList", "ErrorBar"]
-
-    # If set false, animation of bar will be disabled.
-    is_animation_active: Var[bool]
-
-    # Specifies when the animation should begin, the unit of this option is ms, default 0.
-    animation_begin: Var[int]
-
-    # Specifies the duration of animation, the unit of this option is ms, default 1500.
-    animation_duration: Var[int]
-
-    # The type of easing function, default 'ease'
-    animation_easing: Var[LiteralAnimationEasing]
-
-    # The customized event handler of animation start
-    on_animation_start: EventHandler[lambda: []]
-
-    # The customized event handler of animation end
-    on_animation_end: EventHandler[lambda: []]
 
 
 class Line(Cartesian):
