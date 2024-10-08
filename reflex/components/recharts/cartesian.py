@@ -172,7 +172,10 @@ class ZAxis(Recharts):
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
 
-    # The range of axis.
+    # The unique id of z-axis. Default: 0
+    z_axis_id: Var[Union[str, int]]
+
+    # The range of axis. Default: [10, 10]
     range: Var[List[int]]
 
     # The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
@@ -181,7 +184,7 @@ class ZAxis(Recharts):
     # The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
     name: Var[Union[str, int]]
 
-    # If 'auto' set, the scale function is decided by the type of chart, and the props type.
+    # If 'auto' set, the scale function is decided by the type of chart, and the props type. Default: "auto"
     scale: Var[LiteralScale]
 
 

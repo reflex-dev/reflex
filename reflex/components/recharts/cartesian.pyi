@@ -510,6 +510,7 @@ class ZAxis(Recharts):
         cls,
         *children,
         data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        z_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         range: Optional[Union[List[int], Var[List[int]]]] = None,
         unit: Optional[Union[Var[Union[int, str]], int, str]] = None,
         name: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -601,10 +602,11 @@ class ZAxis(Recharts):
         Args:
             *children: The children of the component.
             data_key: The key of data displayed in the axis.
-            range: The range of axis.
+            z_axis_id: The unique id of z-axis. Default: 0
+            range: The range of axis. Default: [10, 10]
             unit: The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
             name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
-            scale: If 'auto' set, the scale function is decided by the type of chart, and the props type.
+            scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. Default: "auto"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
