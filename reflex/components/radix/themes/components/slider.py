@@ -13,6 +13,10 @@ from ..base import (
 )
 
 
+def _on_change_spec(value: List[Union[float, int]]):
+    return [value]
+
+
 class Slider(RadixThemesComponent):
     """Provides user selection from a range of values."""
 
@@ -64,7 +68,7 @@ class Slider(RadixThemesComponent):
     _rename_props = {"onChange": "onValueChange"}
 
     # Fired when the value of the slider changes.
-    on_change: EventHandler[lambda e0: [e0]]
+    on_change: EventHandler[_on_change_spec]
 
     # Fired when a thumb is released after being dragged.
     on_value_commit: EventHandler[lambda e0: [e0]]
