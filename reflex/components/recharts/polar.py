@@ -270,17 +270,17 @@ class PolarGrid(Recharts):
 
     alias = "RechartsPolarGrid"
 
-    # The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
-    cx: Var[Union[int, str]]
+    # The x-coordinate of center.
+    cx: Var[int]
 
-    # The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container height.
-    cy: Var[Union[int, str]]
+    # The y-coordinate of center.
+    cy: Var[int]
 
     # The radius of the inner polar grid.
-    inner_radius: Var[Union[int, str]]
+    inner_radius: Var[int]
 
     # The radius of the outer polar grid.
-    outer_radius: Var[Union[int, str]]
+    outer_radius: Var[int]
 
     # The array of every line grid's angle.
     polar_angles: Var[List[int]]
@@ -288,10 +288,10 @@ class PolarGrid(Recharts):
     # The array of every line grid's radius.
     polar_radius: Var[List[int]]
 
-    # The type of polar grids. 'polygon' | 'circle'
+    # The type of polar grids. 'polygon' | 'circle'. Default: "polygon"
     grid_type: Var[LiteralGridType]
 
-    # The stroke color of grid
+    # The stroke color of grid. Default: rx.color("gray", 10)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 10))
 
     # Valid children components
