@@ -1173,7 +1173,8 @@ class Line(Cartesian):
         hide: Optional[Union[Var[bool], bool]] = None,
         connect_nulls: Optional[Union[Var[bool], bool]] = None,
         unit: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        name: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        points: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        stroke_dasharray: Optional[Union[Var[str], str]] = None,
         layout: Optional[
             Union[
                 Literal["horizontal", "vertical"],
@@ -1263,15 +1264,16 @@ class Line(Cartesian):
         Args:
             *children: The children of the component.
             type_: The interpolation type of line. And customized interpolation function can be set to type. It's the same as type in Area.
-            stroke: The color of the line stroke.
-            stroke_width: The width of the line stroke.
-            dot: The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-            active_dot: The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-            label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
-            hide: Hides the line when true, useful when toggling visibility state via legend.
+            stroke: The color of the line stroke. Default: rx.color("accent", 9)
+            stroke_width: The width of the line stroke. Default: 1
+            dot: The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {"stroke": rx.color("accent", 10), "fill": rx.color("accent", 4)}
+            active_dot: The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {"stroke": rx.color("accent", 2), "fill": rx.color("accent", 10)}
+            label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
+            hide: Hides the line when true, useful when toggling visibility state via legend. Default: False
             connect_nulls: Whether to connect a graph line across null points.
             unit: The unit of data. This option will be used in tooltip.
-            name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
+            points: The coordinates of all the points in the line, usually calculated internally.
+            stroke_dasharray: The pattern of dashes and gaps used to paint the line.
             layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
             data_key: The key of a group of data which should be unique in an area chart.
             x_axis_id: The id of x-axis which is corresponding to the data.

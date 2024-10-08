@@ -408,13 +408,13 @@ class Line(Cartesian):
     # The interpolation type of line. And customized interpolation function can be set to type. It's the same as type in Area.
     type_: Var[LiteralAreaType]
 
-    # The color of the line stroke.
+    # The color of the line stroke. Default: rx.color("accent", 9)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
 
-    # The width of the line stroke.
+    # The width of the line stroke. Default: 1
     stroke_width: Var[int]
 
-    # The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
+    # The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {"stroke": rx.color("accent", 10), "fill": rx.color("accent", 4)}
     dot: Var[Union[bool, Dict[str, Any]]] = LiteralVar.create(
         {
             "stroke": Color("accent", 10),
@@ -422,7 +422,7 @@ class Line(Cartesian):
         }
     )
 
-    # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
+    # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {"stroke": rx.color("accent", 2), "fill": rx.color("accent", 10)}
     active_dot: Var[Union[bool, Dict[str, Any]]] = LiteralVar.create(
         {
             "stroke": Color("accent", 2),
@@ -430,10 +430,10 @@ class Line(Cartesian):
         }
     )
 
-    # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
+    # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
     label: Var[bool]
 
-    # Hides the line when true, useful when toggling visibility state via legend.
+    # Hides the line when true, useful when toggling visibility state via legend. Default: False
     hide: Var[bool]
 
     # Whether to connect a graph line across null points.
@@ -442,8 +442,11 @@ class Line(Cartesian):
     # The unit of data. This option will be used in tooltip.
     unit: Var[Union[str, int]]
 
-    # The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
-    name: Var[Union[str, int]]
+    # The coordinates of all the points in the line, usually calculated internally.
+    points: Var[List[Dict[str, Any]]]
+
+    # The pattern of dashes and gaps used to paint the line.
+    stroke_dasharray: Var[str]
 
     # Valid children components
     _valid_children: List[str] = ["LabelList", "ErrorBar"]
