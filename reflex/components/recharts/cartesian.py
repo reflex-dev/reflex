@@ -779,28 +779,28 @@ class CartesianGrid(Grid):
 
     alias = "RechartsCartesianGrid"
 
-    # The horizontal line configuration.
+    # The horizontal line configuration. Default: True
     horizontal: Var[bool]
 
-    # The vertical line configuration.
+    # The vertical line configuration. Default: True
     vertical: Var[bool]
 
-    # The x-coordinates in pixel values of all vertical lines.
+    # The x-coordinates in pixel values of all vertical lines. Default: []
     vertical_points: Var[List[Union[str, int]]]
 
-    # The x-coordinates in pixel values of all vertical lines.
+    # The x-coordinates in pixel values of all vertical lines. Default: []
     horizontal_points: Var[List[Union[str, int]]]
 
     # The background of grid.
     fill: Var[Union[str, Color]]
 
-    # The opacity of the background used to fill the space between grid lines
+    # The opacity of the background used to fill the space between grid lines.
     fill_opacity: Var[float]
 
-    # The pattern of dashes and gaps used to paint the lines of the grid
+    # The pattern of dashes and gaps used to paint the lines of the grid.
     stroke_dasharray: Var[str]
 
-    # the stroke color of grid
+    # the stroke color of grid. Default: rx.color("gray", 7)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 7))
 
 
