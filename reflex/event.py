@@ -415,6 +415,16 @@ class JavascriptInputEvent:
     target: JavascriptHTMLInputElement = JavascriptHTMLInputElement()
 
 
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
+class JavasciptKeyboardEvent:
+    """Interface for a Javascript KeyboardEvent https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent."""
+
+    key: str = ""
+
+
 def input_event(e: Var[JavascriptInputEvent]) -> Tuple[str]:
     """Get the value from an input event.
 
@@ -425,6 +435,18 @@ def input_event(e: Var[JavascriptInputEvent]) -> Tuple[str]:
         The value from the input event.
     """
     return (e.target.value,)
+
+
+def key_event(e: Var[JavasciptKeyboardEvent]) -> Tuple[str]:
+    """Get the key from a keyboard event.
+
+    Args:
+        e: The keyboard event.
+
+    Returns:
+        The key from the keyboard event.
+    """
+    return (e.key,)
 
 
 @dataclasses.dataclass(
