@@ -394,7 +394,7 @@ class ScatterChart(ChartBase):
 
     alias = "RechartsScatterChart"
 
-    # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
+    # The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "bottom": 5, "left": 5}
     margin: Var[Dict[str, Any]]
 
     # Valid children components
