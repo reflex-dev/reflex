@@ -653,15 +653,15 @@ class Brush(Recharts):
             stroke: The stroke color of brush
             fill: The fill color of brush
             data_key: The key of data displayed in the axis.
-            x: The x-coordinate of brush.
-            y: The y-coordinate of brush.
-            width: The width of brush.
-            height: The height of brush.
-            data: The data domain of brush, [min, max].
-            traveller_width: The width of each traveller.
-            gap: The data with gap of refreshing chart. If the option is not set, the chart will be refreshed every time
-            start_index: The default start index of brush. If the option is not set, the start index will be 0.
-            end_index: The default end index of brush. If the option is not set, the end index will be 1.
+            x: The x-coordinate of brush. Default: 0
+            y: The y-coordinate of brush. Default: 0
+            width: The width of brush. Default: 0
+            height: The height of brush. Default: 40
+            data: The original data of a LineChart, a BarChart or an AreaChart.
+            traveller_width: The width of each traveller. Default: 5
+            gap: The data with gap of refreshing chart. If the option is not set, the chart will be refreshed every time. Default: 1
+            start_index: The default start index of brush. If the option is not set, the start index will be 0. Default: 0
+            end_index: The default end index of brush. If the option is not set, the end index will be calculated by the length of data.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

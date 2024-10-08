@@ -192,40 +192,40 @@ class Brush(Recharts):
 
     alias = "RechartsBrush"
 
-    # Stroke color
+    # Stroke color. Default: rx.color("gray", 9)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 9))
 
-    # The fill color of brush.
+    # The fill color of brush. Default: rx.color("gray", 2)
     fill: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 2))
 
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
 
-    # The x-coordinate of brush.
+    # The x-coordinate of brush. Default: 0
     x: Var[int]
 
-    # The y-coordinate of brush.
+    # The y-coordinate of brush. Default: 0
     y: Var[int]
 
-    # The width of brush.
+    # The width of brush. Default: 0
     width: Var[int]
 
-    # The height of brush.
+    # The height of brush. Default: 40
     height: Var[int]
 
-    # The data domain of brush, [min, max].
+    # The original data of a LineChart, a BarChart or an AreaChart.
     data: Var[List[Any]]
 
-    # The width of each traveller.
+    # The width of each traveller. Default: 5
     traveller_width: Var[int]
 
-    # The data with gap of refreshing chart. If the option is not set, the chart will be refreshed every time
+    # The data with gap of refreshing chart. If the option is not set, the chart will be refreshed every time. Default: 1
     gap: Var[int]
 
-    # The default start index of brush. If the option is not set, the start index will be 0.
+    # The default start index of brush. If the option is not set, the start index will be 0. Default: 0
     start_index: Var[int]
 
-    # The default end index of brush. If the option is not set, the end index will be 1.
+    # The default end index of brush. If the option is not set, the end index will be calculated by the length of data.
     end_index: Var[int]
 
     # The fill color of brush
