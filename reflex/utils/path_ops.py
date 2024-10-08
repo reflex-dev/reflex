@@ -196,7 +196,7 @@ def get_npm_path() -> str | None:
         The path to the npm binary file.
     """
     npm_path = Path(constants.Node.NPM_PATH)
-    if not npm_path.exists():
+    if use_system_node() or not npm_path.exists():
         return str(which("npm"))
     return str(npm_path)
 
