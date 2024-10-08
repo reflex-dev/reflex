@@ -843,9 +843,12 @@ class Area(Cartesian):
             Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
         ] = None,
         label: Optional[Union[Var[bool], bool]] = None,
+        base_line: Optional[
+            Union[List[Dict[str, Any]], Var[Union[List[Dict[str, Any]], str]], str]
+        ] = None,
+        points: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
         stack_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        unit: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        name: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        connect_nulls: Optional[Union[Var[bool], bool]] = None,
         layout: Optional[
             Union[
                 Literal["horizontal", "vertical"],
@@ -934,16 +937,17 @@ class Area(Cartesian):
 
         Args:
             *children: The children of the component.
-            stroke: The color of the line stroke.
-            stroke_width: The width of the line stroke.
-            fill: The color of the area fill.
-            type_: The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
-            dot: If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally.
-            active_dot: The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-            label: If set false, labels will not be drawn. If set true, labels will be drawn which have the props calculated internally.
+            stroke: The color of the line stroke. Default: rx.color("accent", 9)
+            stroke_width: The width of the line stroke. Default: 1
+            fill: The color of the area fill. Default: rx.color("accent", 5)
+            type_: The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter'. Default: "monotone"
+            dot: If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally. Default: False
+            active_dot: The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {stroke: rx.color("accent", 2), fill: rx.color("accent", 10)}
+            label: If set false, labels will not be drawn. If set true, labels will be drawn which have the props calculated internally. Default: False
+            base_line: The value which can describle the line, usually calculated internally.
+            points: The coordinates of all the points in the area, usually calculated internally.
             stack_id: The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
-            unit: The unit of data. This option will be used in tooltip.
-            name: The name of data. This option will be used in tooltip and legend to represent a bar. If no value was set to this option, the value of dataKey will be used alternatively.
+            connect_nulls: Whether to connect a graph area across null points. Default: False
             layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
             data_key: The key of a group of data which should be unique in an area chart.
             x_axis_id: The id of x-axis which is corresponding to the data.
