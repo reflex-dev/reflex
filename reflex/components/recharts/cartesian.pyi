@@ -348,7 +348,7 @@ class YAxis(Axis):
             Union[Literal["left", "right"], Var[Literal["left", "right"]]]
         ] = None,
         y_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        domain: Optional[Union[List, Var[List]]] = None,
+        padding: Optional[Union[Dict[str, int], Var[Dict[str, int]]]] = None,
         data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -464,9 +464,9 @@ class YAxis(Axis):
 
         Args:
             *children: The children of the component.
-            orientation: The orientation of axis 'left' | 'right'
-            y_axis_id: The id of y-axis which is corresponding to the data.
-            domain: The range of the axis. Work best in conjuction with allow_data_overflow.
+            orientation: The orientation of axis 'left' | 'right'. Default: "left"
+            y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
+            padding: Specify the padding of y-axis. Default: {"top": 0, "bottom": 0}
             data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart.
             width: The width of axis which is usually calculated internally.
