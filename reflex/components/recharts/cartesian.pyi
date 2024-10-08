@@ -1490,6 +1490,9 @@ class Funnel(Recharts):
             ]
         ] = None,
         stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
+        trapezoids: Optional[
+            Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1544,14 +1547,15 @@ class Funnel(Recharts):
         Args:
             *children: The children of the component.
             data: The source data, in which each element is an object.
-            data_key: The key of a group of data which should be unique in an area chart.
-            name_key: The key or getter of a group of data which should be unique in a LineChart.
-            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered.
-            is_animation_active: If set false, animation of line will be disabled.
-            animation_begin: Specifies when the animation should begin, the unit of this option is ms.
-            animation_duration: Specifies the duration of animation, the unit of this option is ms.
-            animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
-            stroke: stroke color
+            data_key: The key or getter of a group of data which should be unique in a LineChart.
+            name_key: The key of each sector's name. Default: "name"
+            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. Default: "line"
+            is_animation_active: If set false, animation of line will be disabled. Default: True in CSR, False in SSR
+            animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
+            animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
+            animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default "ease"
+            stroke: Stroke color. Default: rx.color("gray", 3)
+            trapezoids: The coordinates of all the trapezoids in the funnel, usually calculated internally.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

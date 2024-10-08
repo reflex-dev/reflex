@@ -536,29 +536,32 @@ class Funnel(Recharts):
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
 
-    # The key of a group of data which should be unique in an area chart.
+    # The key or getter of a group of data which should be unique in a LineChart.
     data_key: Var[Union[str, int]]
 
-    # The key or getter of a group of data which should be unique in a LineChart.
+    # The key of each sector's name. Default: "name"
     name_key: Var[str]
 
-    # The type of icon in legend. If set to 'none', no legend item will be rendered.
+    # The type of icon in legend. If set to 'none', no legend item will be rendered. Default: "line"
     legend_type: Var[LiteralLegendType]
 
-    # If set false, animation of line will be disabled.
+    # If set false, animation of line will be disabled. Default: True in CSR, False in SSR
     is_animation_active: Var[bool]
 
-    # Specifies when the animation should begin, the unit of this option is ms.
+    # Specifies when the animation should begin, the unit of this option is ms. Default: 0
     animation_begin: Var[int]
 
-    # Specifies the duration of animation, the unit of this option is ms.
+    # Specifies the duration of animation, the unit of this option is ms. Default: 1500
     animation_duration: Var[int]
 
-    # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
+    # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default "ease"
     animation_easing: Var[LiteralAnimationEasing]
 
-    # stroke color
+    # Stroke color. Default: rx.color("gray", 3)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 3))
+
+    # The coordinates of all the trapezoids in the funnel, usually calculated internally.
+    trapezoids: Var[List[Dict[str, Any]]]
 
     # Valid children components
     _valid_children: List[str] = ["LabelList", "Cell"]
