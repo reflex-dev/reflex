@@ -132,7 +132,7 @@ class XAxis(Axis):
     # The orientation of axis 'top' | 'bottom'. Default: "bottom"
     orientation: Var[LiteralOrientationTopBottom]
 
-    # The id of x-axis which is corresponding to the data.
+    # The id of x-axis which is corresponding to the data. Default: 0
     x_axis_id: Var[Union[str, int]]
 
     # Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden. Default: False
