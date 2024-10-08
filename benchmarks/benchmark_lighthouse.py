@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
-import os
 import sys
+from pathlib import Path
 
 from utils import send_data_to_posthog
 
@@ -28,7 +28,7 @@ def insert_benchmarking_data(
     send_data_to_posthog("lighthouse_benchmark", properties)
 
 
-def get_lighthouse_scores(directory_path: str) -> dict:
+def get_lighthouse_scores(directory_path: str | Path) -> dict:
     """Extracts the Lighthouse scores from the JSON files in the specified directory.
 
     Args:
@@ -38,24 +38,21 @@ def get_lighthouse_scores(directory_path: str) -> dict:
         dict: The Lighthouse scores.
     """
     scores = {}
-
+    directory_path = Path(directory_path)
     try:
-        for filename in os.listdir(directory_path):
-            if filename.endswith(".json") and filename != "manifest.json":
-                file_path = os.path.join(directory_path, filename)
-                with open(file_path, "r") as file:
-                    data = json.load(file)
-                    # Extract scores and add them to the dictionary with the filename as key
-                    scores[data["finalUrl"].replace("http://localhost:3000/", "/")] = {
-                        "performance_score": data["categories"]["performance"]["score"],
-                        "accessibility_score": data["categories"]["accessibility"][
-                            "score"
-                        ],
-                        "best_practices_score": data["categories"]["best-practices"][
-                            "score"
-                        ],
-                        "seo_score": data["categories"]["seo"]["score"],
-                    }
+        for filename in directory_path.iterdir():
+            if filename.suffix == ".json" and filename.stem != "manifest":
+                file_path = directory_path / filename
+                data = json.loads(file_path.read_text())
+                # Extract scores and add them to the dictionary with the filename as key
+                scores[data["finalUrl"].replace("http://localhost:3000/", "/")] = {
+                    "performance_score": data["categories"]["performance"]["score"],
+                    "accessibility_score": data["categories"]["accessibility"]["score"],
+                    "best_practices_score": data["categories"]["best-practices"][
+                        "score"
+                    ],
+                    "seo_score": data["categories"]["seo"]["score"],
+                }
     except Exception as e:
         return {"error": e}
 

@@ -87,36 +87,28 @@ from .inline import u as u
 from .inline import wbr as wbr
 from .media import Area as Area
 from .media import Audio as Audio
-from .media import Defs as Defs
 from .media import Embed as Embed
 from .media import Iframe as Iframe
 from .media import Img as Img
-from .media import LinearGradient as LinearGradient
 from .media import Map as Map
 from .media import Object as Object
-from .media import Path as Path
 from .media import Picture as Picture
 from .media import Portal as Portal
 from .media import Source as Source
-from .media import Stop as Stop
 from .media import Svg as Svg
 from .media import Track as Track
 from .media import Video as Video
 from .media import area as area
 from .media import audio as audio
-from .media import defs as defs  # type: ignore
 from .media import embed as embed
 from .media import iframe as iframe
 from .media import image as image
 from .media import img as img
-from .media import lineargradient as lineargradient  # type: ignore
 from .media import map as map
 from .media import object as object
-from .media import path as path  # type: ignore
 from .media import picture as picture
 from .media import portal as portal
 from .media import source as source
-from .media import stop as stop  # type: ignore
 from .media import svg as svg
 from .media import track as track
 from .media import video as video
@@ -292,11 +284,6 @@ _MAPPING = {
         "portal",
         "source",
         "svg",
-        "defs",
-        "lineargradient",
-        "LinearGradient",
-        "stop",
-        "path",
     ],
     "metadata": ["base", "head", "link", "meta", "title", "style"],
     "other": ["details", "dialog", "summary", "slot", "template", "math", "html"],
@@ -348,7 +335,6 @@ _MAPPING = {
         "Del",
     ],
 }
-EXCLUDE = ["del_", "Del", "image", "lineargradient", "LinearGradient"]
+EXCLUDE = ["del_", "Del", "image"]
 for _, v in _MAPPING.items():
     v.extend([mod.capitalize() for mod in v if mod not in EXCLUDE])
-_PYRIGHT_IGNORE_IMPORTS = ["stop", "lineargradient", "path", "defs"]

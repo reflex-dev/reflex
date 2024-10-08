@@ -64,11 +64,11 @@
 {# Args: #}
 {#     component: component dictionary #}
 {% macro render_iterable_tag(component) %}
-{ {%- if component.iterable_type == 'dict' -%}Object.entries({{- component.iterable_state }}){%- else -%}{{- component.iterable_state }}{%- endif -%}.map(({{ component.arg_name }}, {{ component.arg_index }}) => (
+<>{ {%- if component.iterable_type == 'dict' -%}Object.entries({{- component.iterable_state }}){%- else -%}{{- component.iterable_state }}{%- endif -%}.map(({{ component.arg_name }}, {{ component.arg_index }}) => (
   {% for child in component.children %}
   {{ render(child) }}
   {% endfor %}
-))}
+))}</>
 {%- endmacro %}
 
 
@@ -85,10 +85,10 @@
 {% macro render_match_tag(component) %}
 {
     (() => {
-        switch (JSON.stringify({{ component.cond._var_name_unwrapped }})) {
+        switch (JSON.stringify({{ component.cond._js_expr }})) {
         {% for case in component.match_cases %}
             {% for condition in case[:-1] %}
-                case JSON.stringify({{ condition._var_name_unwrapped }}):
+                case JSON.stringify({{ condition._js_expr }}):
             {% endfor %}
                 return {{ case[-1] }};
                 break;

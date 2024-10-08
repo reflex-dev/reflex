@@ -1,6 +1,7 @@
 """Config constants."""
 
 import os
+from pathlib import Path
 from types import SimpleNamespace
 
 from reflex.constants.base import Dirs, Reflex
@@ -17,9 +18,7 @@ class Config(SimpleNamespace):
     # The name of the reflex config module.
     MODULE = "rxconfig"
     # The python config file.
-    FILE = f"{MODULE}{Ext.PY}"
-    # The previous config file.
-    PREVIOUS_FILE = f"pcconfig{Ext.PY}"
+    FILE = Path(f"{MODULE}{Ext.PY}")
 
 
 class Expiration(SimpleNamespace):
@@ -37,7 +36,7 @@ class GitIgnore(SimpleNamespace):
     """Gitignore constants."""
 
     # The gitignore file.
-    FILE = ".gitignore"
+    FILE = Path(".gitignore")
     # Files to gitignore.
     DEFAULTS = {Dirs.WEB, "*.db", "__pycache__/", "*.py[cod]", "assets/external/"}
 

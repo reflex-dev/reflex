@@ -24,6 +24,7 @@ def asset(relative_filename: str, subfolder: Optional[str] = None) -> str:
 
     Raises:
         FileNotFoundError: If the file does not exist.
+        ValueError: If the module is None.
 
     Returns:
         The relative URL to the copied asset.
@@ -31,7 +32,8 @@ def asset(relative_filename: str, subfolder: Optional[str] = None) -> str:
     # Determine the file by which the asset is exposed.
     calling_file = inspect.stack()[1].filename
     module = inspect.getmodule(inspect.stack()[1][0])
-    assert module is not None
+    if module is None:
+        raise ValueError("Module is None")
     caller_module_path = module.__name__.replace(".", "/")
 
     subfolder = f"{caller_module_path}/{subfolder}" if subfolder else caller_module_path

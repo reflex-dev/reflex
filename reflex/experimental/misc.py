@@ -12,10 +12,12 @@ async def run_in_thread(func) -> Any:
     Args:
         func (callable): The non-async function to run.
 
+    Raises:
+        ValueError: If the function is an async function.
+
     Returns:
         Any: The return value of the function.
     """
-    assert not asyncio.coroutines.iscoroutinefunction(
-        func
-    ), "func must be a non-async function"
+    if asyncio.coroutines.iscoroutinefunction(func):
+        raise ValueError("func must be a non-async function")
     return await asyncio.get_event_loop().run_in_executor(None, func)

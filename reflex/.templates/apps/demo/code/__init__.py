@@ -1,1 +1,0 @@
-"""Base template for Reflex."""

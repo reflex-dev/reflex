@@ -6,7 +6,8 @@ import importlib
 import os
 import sys
 import urllib.parse
-from typing import Any, Dict, List, Optional, Set
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Union
 
 try:
     import pydantic.v1 as pydantic
@@ -158,7 +159,7 @@ class Config(Base):
     app_name: str
 
     # The log level to use.
-    loglevel: constants.LogLevel = constants.LogLevel.INFO
+    loglevel: constants.LogLevel = constants.LogLevel.DEFAULT
 
     # The port to run the frontend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
     frontend_port: int = constants.DefaultPorts.FRONTEND_PORT
@@ -188,13 +189,13 @@ class Config(Base):
     telemetry_enabled: bool = True
 
     # The bun path
-    bun_path: str = constants.Bun.DEFAULT_PATH
+    bun_path: Union[str, Path] = constants.Bun.DEFAULT_PATH
 
     # List of origins that are allowed to connect to the backend API.
     cors_allowed_origins: List[str] = ["*"]
 
     # Tailwind config.
-    tailwind: Optional[Dict[str, Any]] = {}
+    tailwind: Optional[Dict[str, Any]] = {"plugins": ["@tailwindcss/typography"]}
 
     # Timeout when launching the gunicorn server. TODO(rename this to backend_timeout?)
     timeout: int = 120

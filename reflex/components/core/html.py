@@ -3,7 +3,7 @@
 from typing import Dict
 
 from reflex.components.el.elements.typography import Div
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 
 class Html(Div):

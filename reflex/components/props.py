@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from reflex.base import Base
 from reflex.utils import format
-from reflex.utils.serializers import serialize
+from reflex.vars.object import LiteralObjectVar
 
 
 class PropsBase(Base):
@@ -20,12 +20,23 @@ class PropsBase(Base):
         Returns:
             The object as a Javascript Object literal.
         """
-        return format.unwrap_vars(
-            self.__config__.json_dumps(
-                {
-                    format.to_camel_case(key): value
-                    for key, value in self.dict().items()
-                },
-                default=serialize,
-            )
-        )
+        return LiteralObjectVar.create(
+            {format.to_camel_case(key): value for key, value in self.dict().items()}
+        ).json()
+
+    def dict(self, *args, **kwargs):
+        """Convert the object to a dictionary.
+
+        Keys will be converted to camelCase.
+
+        Args:
+            *args: Arguments to pass to the parent class.
+            **kwargs: Keyword arguments to pass to the parent class.
+
+        Returns:
+            The object as a dictionary.
+        """
+        return {
+            format.to_camel_case(key): value
+            for key, value in super().dict(*args, **kwargs).items()
+        }

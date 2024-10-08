@@ -5,7 +5,7 @@ from typing import List
 from reflex.components.component import Component
 from reflex.components.tags.tag import Tag
 from reflex.utils import format
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 
 class RadixPrimitiveComponent(Component):

@@ -8,7 +8,6 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
     "code": [
         "CodeBlock",
         "code_block",
-        "LiteralCodeBlockTheme",
         "LiteralCodeLanguage",
     ],
     "dataeditor": ["data_editor", "data_editor_theme", "DataEditorTheme"],

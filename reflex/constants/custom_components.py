@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from types import SimpleNamespace
 
 
@@ -11,9 +12,9 @@ class CustomComponents(SimpleNamespace):
     # The name of the custom components source directory.
     SRC_DIR = "custom_components"
     # The name of the custom components pyproject.toml file.
-    PYPROJECT_TOML = "pyproject.toml"
+    PYPROJECT_TOML = Path("pyproject.toml")
     # The name of the custom components package README file.
-    PACKAGE_README = "README.md"
+    PACKAGE_README = Path("README.md")
     # The name of the custom components package .gitignore file.
     PACKAGE_GITIGNORE = ".gitignore"
     # The name of the distribution directory as result of a build.
@@ -29,6 +30,6 @@ class CustomComponents(SimpleNamespace):
         "testpypi": "https://test.pypi.org/legacy/",
     }
     # The .gitignore file for the custom component project.
-    FILE = ".gitignore"
+    FILE = Path(".gitignore")
     # Files to gitignore.
     DEFAULTS = {"__pycache__/", "*.py[cod]", "*.egg-info/", "dist/"}

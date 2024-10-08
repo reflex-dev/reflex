@@ -7,6 +7,9 @@ import '/styles/styles.css'
 {% block declaration %}
 import { EventLoopProvider, StateProvider, defaultColorMode } from "/utils/context.js";
 import { ThemeProvider } from 'next-themes'
+{% for library_alias, library_path in  window_libraries %}
+import * as {{library_alias}} from "{{library_path}}";
+{% endfor %}
 
 {% for custom_code in custom_codes %}
 {{custom_code}}
@@ -26,8 +29,17 @@ function AppWrap({children}) {
 }
 
 export default function MyApp({ Component, pageProps }) {
+  React.useEffect(() => {
+    // Make contexts and state objects available globally for dynamic eval'd components
+    let windowImports = {
+{% for library_alias, library_path in  window_libraries %}
+      "{{library_path}}": {{library_alias}},
+{% endfor %}
+    };
+    window["__reflex"] = windowImports;
+  }, []);
   return (
-    <ThemeProvider defaultTheme={ defaultColorMode } storageKey="chakra-ui-color-mode" attribute="class">
+    <ThemeProvider defaultTheme={ defaultColorMode } attribute="class">
       <AppWrap>
         <StateProvider>
           <EventLoopProvider>

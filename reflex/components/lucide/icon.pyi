@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Optional, Union, overload
 from reflex.components.component import Component
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
-from reflex.vars import BaseVar, Var
+from reflex.vars.base import Var
 
 class LucideIconComponent(Component):
     @overload
@@ -22,50 +22,40 @@ class LucideIconComponent(Component):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "LucideIconComponent":
@@ -99,50 +89,40 @@ class Icon(LucideIconComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Icon":
@@ -170,115 +150,6 @@ class Icon(LucideIconComponent):
         """
         ...
 
-RENAMED_ICONS_05 = {
-    "activity_square": "square_activity",
-    "alert_circle": "circle_alert",
-    "alert_octagon": "octagon_alert",
-    "alert_triangle": "triangle_alert",
-    "arrow_down_circle": "circle_arrow_down",
-    "arrow_down_left_from_circle": "circle_arrow_out_down_left",
-    "arrow_down_left_from_square": "square_arrow_out_down_left",
-    "arrow_down_left_square": "square_arrow_down_left",
-    "arrow_down_right_from_circle": "circle_arrow_out_down_right",
-    "arrow_down_right_from_square": "square_arrow_out_down_right",
-    "arrow_down_right_square": "square_arrow_down_right",
-    "arrow_down_square": "square_arrow_down",
-    "arrow_left_circle": "circle_arrow_left",
-    "arrow_left_square": "square_arrow_left",
-    "arrow_right_circle": "circle_arrow_right",
-    "arrow_right_square": "square_arrow_right",
-    "arrow_up_circle": "circle_arrow_up",
-    "arrow_up_left_from_circle": "circle_arrow_out_up_left",
-    "arrow_up_left_from_square": "square_arrow_out_up_left",
-    "arrow_up_left_square": "square_arrow_up_left",
-    "arrow_up_right_from_circle": "circle_arrow_out_up_right",
-    "arrow_up_right_from_square": "square_arrow_out_up_right",
-    "arrow_up_right_square": "square_arrow_up_right",
-    "arrow_up_square": "square_arrow_up",
-    "asterisk_square": "square_asterisk",
-    "check_circle": "circle_check_big",
-    "check_circle_2": "circle_check",
-    "check_square": "square_check_big",
-    "check_square_2": "square_check",
-    "chevron_down_circle": "circle_chevron_down",
-    "chevron_down_square": "square_chevron_down",
-    "chevron_left_circle": "circle_chevron_left",
-    "chevron_left_square": "square_chevron_left",
-    "chevron_right_circle": "circle_chevron_right",
-    "chevron_right_square": "square_chevron_right",
-    "chevron_up_circle": "circle_chevron_up",
-    "chevron_up_square": "square_chevron_up",
-    "code_2": "code_xml",
-    "code_square": "square_code",
-    "contact_2": "contact_round",
-    "divide_circle": "circle_divide",
-    "divide_square": "square_divide",
-    "dot_square": "square_dot",
-    "download_cloud": "cloud_download",
-    "equal_square": "square_equal",
-    "form_input": "rectangle_ellipsis",
-    "function_square": "square_function",
-    "gantt_chart_square": "square_gantt_chart",
-    "gauge_circle": "circle_gauge",
-    "globe_2": "earth",
-    "help_circle": "circle_help",
-    "helping_hand": "hand_helping",
-    "ice_cream": "ice_cream_cone",
-    "ice_cream_2": "ice_cream_bowl",
-    "indent": "indent_increase",
-    "kanban_square": "square_kanban",
-    "kanban_square_dashed": "square_dashed_kanban",
-    "laptop_2": "laptop_minimal",
-    "library_square": "square_library",
-    "loader_2": "loader_circle",
-    "m_square": "square_m",
-    "menu_square": "square_menu",
-    "mic_2": "mic_vocal",
-    "minus_circle": "circle_minus",
-    "minus_square": "square_minus",
-    "more_horizontal": "ellipsis",
-    "more_vertical": "ellipsis_vertical",
-    "mouse_pointer_square": "square_mouse_pointer",
-    "mouse_pointer_square_dashed": "square_dashed_mouse_pointer",
-    "outdent": "indent_decrease",
-    "palm_tree": "tree_palm",
-    "parking_circle": "circle_parking",
-    "parking_circle_off": "circle_parking_off",
-    "parking_square": "square_parking",
-    "parking_square_off": "square_parking_off",
-    "pause_circle": "circle_pause",
-    "pause_octagon": "octagon_pause",
-    "percent_circle": "circle_percent",
-    "percent_diamond": "diamond_percent",
-    "percent_square": "square_percent",
-    "pi_square": "square_pi",
-    "pilcrow_square": "square_pilcrow",
-    "play_circle": "circle_play",
-    "play_square": "square_play",
-    "plus_circle": "circle_plus",
-    "plus_square": "square_plus",
-    "power_circle": "circle_power",
-    "power_square": "square_power",
-    "school_2": "university",
-    "scissors_square": "square_scissors",
-    "scissors_square_dashed_bottom": "square_bottom_dashed_scissors",
-    "sigma_square": "square_sigma",
-    "slash_circle": "circle_slash",
-    "sliders": "sliders_vertical",
-    "split_square_horizontal": "square_split_horizontal",
-    "split_square_vertical": "square_split_vertical",
-    "stop_circle": "circle_stop",
-    "subtitles": "captions",
-    "test_tube_2": "test_tube_diagonal",
-    "unlock": "lock_open",
-    "unlock_keyhole": "lock_keyhole_open",
-    "upload_cloud": "cloud_upload",
-    "wallet_2": "wallet_minimal",
-    "wand_2": "wand_sparkles",
-    "x_circle": "circle_x",
-    "x_octagon": "octagon_x",
-    "x_square": "square_x",
-}
 LUCIDE_ICON_LIST = [
     "a_arrow_down",
     "a_arrow_up",

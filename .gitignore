@@ -3,6 +3,7 @@
 assets/external/*
 dist/*
 examples/
+.web
 .idea
 .vscode
 .coverage

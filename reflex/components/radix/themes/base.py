@@ -8,7 +8,7 @@ from reflex.components import Component
 from reflex.components.tags import Tag
 from reflex.config import get_config
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]
@@ -113,6 +113,11 @@ class RadixThemesComponent(Component):
         component.alias = "RadixThemes" + (
             component.tag or component.__class__.__name__
         )
+        # value = props.get("value")
+        # if value is not None and component.alias == "RadixThemesSelect.Root":
+        #     lv = LiteralVar.create(value)
+        #     print(repr(lv))
+        #     print(f"Warning: Value {value} is not used in {component.alias}.")
         return component
 
     @staticmethod
@@ -230,10 +235,8 @@ class Theme(RadixThemesComponent):
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         tag = super()._render(props)
         tag.add_props(
-            css=Var.create(
-                "{{...theme.styles.global[':root'], ...theme.styles.global.body}}",
-                _var_is_local=False,
-                _var_is_string=False,
+            css=Var(
+                _js_expr=f"{{...theme.styles.global[':root'], ...theme.styles.global.body}}"
             ),
         )
         return tag
@@ -257,26 +260,6 @@ class ThemePanel(RadixThemesComponent):
             The import dict.
         """
         return {"react": "useEffect"}
-
-    def add_hooks(self) -> list[str]:
-        """Add a hook on the ThemePanel to clear chakra-ui-color-mode.
-
-        Returns:
-            The hooks to render.
-        """
-        # The panel freezes the tab if the user color preference differs from the
-        # theme "appearance", so clear it out when theme panel is used.
-        return [
-            """
-            useEffect(() => {
-                if (typeof window !== 'undefined') {
-                    window.onbeforeunload = () => {
-                        localStorage.removeItem('chakra-ui-color-mode');
-                    }
-                    window.onbeforeunload();
-                }
-            }, [])"""
-        ]
 
 
 class RadixThemesColorModeProvider(Component):

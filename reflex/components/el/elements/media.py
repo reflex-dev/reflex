@@ -4,8 +4,7 @@ from typing import Any, Union
 
 from reflex import Component, ComponentNamespace
 from reflex.constants.colors import Color
-from reflex.utils import console
-from reflex.vars import Var as Var
+from reflex.vars.base import Var
 
 from .base import BaseHTML
 
@@ -318,6 +317,42 @@ class Svg(BaseHTML):
     xmlns: Var[str]
 
 
+class Text(BaseHTML):
+    """The SVG text component."""
+
+    tag = "text"
+    # The x coordinate of the starting point of the text baseline.
+    x: Var[Union[str, int]]
+    # The y coordinate of the starting point of the text baseline.
+    y: Var[Union[str, int]]
+    # Shifts the text position horizontally from a previous text element.
+    dx: Var[Union[str, int]]
+    # Shifts the text position vertically from a previous text element.
+    dy: Var[Union[str, int]]
+    # Rotates orientation of each individual glyph.
+    rotate: Var[Union[str, int]]
+    # How the text is stretched or compressed to fit the width defined by the text_length attribute.
+    length_adjust: Var[str]
+    # A width that the text should be scaled to fit.
+    text_length: Var[Union[str, int]]
+
+
+class Line(BaseHTML):
+    """The SVG line component."""
+
+    tag = "line"
+    # The x-axis coordinate of the line starting point.
+    x1: Var[Union[str, int]]
+    # The x-axis coordinate of the the line ending point.
+    x2: Var[Union[str, int]]
+    # The y-axis coordinate of the line starting point.
+    y1: Var[Union[str, int]]
+    # The y-axis coordinate of the the line ending point.
+    y2: Var[Union[str, int]]
+    # The total path length, in user units.
+    path_length: Var[int]
+
+
 class Circle(BaseHTML):
     """The SVG circle component."""
 
@@ -329,6 +364,22 @@ class Circle(BaseHTML):
     # The radius of the circle.
     r: Var[Union[str, int]]
     # The total length for the circle's circumference, in user units.
+    path_length: Var[int]
+
+
+class Ellipse(BaseHTML):
+    """The SVG ellipse component."""
+
+    tag = "ellipse"
+    # The x position of the center of the ellipse.
+    cx: Var[Union[str, int]]
+    # The y position of the center of the ellipse.
+    cy: Var[Union[str, int]]
+    # The radius of the ellipse on the x axis.
+    rx: Var[Union[str, int]]
+    # The radius of the ellipse on the y axis.
+    ry: Var[Union[str, int]]
+    # The total length for the ellipse's circumference, in user units.
     path_length: Var[int]
 
 
@@ -395,6 +446,39 @@ class LinearGradient(BaseHTML):
     y2: Var[Union[str, int, bool]]
 
 
+class RadialGradient(BaseHTML):
+    """Display the radialGradient element."""
+
+    tag = "radialGradient"
+
+    # The x coordinate of the end circle of the radial gradient.
+    cx: Var[Union[str, int, bool]]
+
+    # The y coordinate of the end circle of the radial gradient.
+    cy: Var[Union[str, int, bool]]
+
+    # The radius of the start circle of the radial gradient.
+    fr: Var[Union[str, int, bool]]
+
+    # The x coordinate of the start circle of the radial gradient.
+    fx: Var[Union[str, int, bool]]
+
+    # The y coordinate of the start circle of the radial gradient.
+    fy: Var[Union[str, int, bool]]
+
+    # Units for the gradient.
+    gradient_units: Var[Union[str, bool]]
+
+    # Transform applied to the gradient.
+    gradient_transform: Var[Union[str, bool]]
+
+    # The radius of the end circle of the radial gradient.
+    r: Var[Union[str, int, bool]]
+
+    # Method used to spread the gradient.
+    spread_method: Var[Union[str, bool]]
+
+
 class Stop(BaseHTML):
     """Display the stop element."""
 
@@ -422,12 +506,16 @@ class Path(BaseHTML):
 class SVG(ComponentNamespace):
     """SVG component namespace."""
 
+    text = staticmethod(Text.create)
+    line = staticmethod(Line.create)
     circle = staticmethod(Circle.create)
+    ellipse = staticmethod(Ellipse.create)
     rect = staticmethod(Rect.create)
     polygon = staticmethod(Polygon.create)
     path = staticmethod(Path.create)
     stop = staticmethod(Stop.create)
     linear_gradient = staticmethod(LinearGradient.create)
+    radial_gradient = staticmethod(RadialGradient.create)
     defs = staticmethod(Defs.create)
     __call__ = staticmethod(Svg.create)
 
@@ -445,23 +533,3 @@ picture = Picture.create
 portal = Portal.create
 source = Source.create
 svg = SVG()
-
-
-def __getattr__(name: str):
-    if name in ("defs", "lineargradient", "stop", "path"):
-        console.deprecate(
-            f"`rx.el.{name}`",
-            reason=f"use `rx.el.svg.{'linear_gradient' if name =='lineargradient' else name}`",
-            deprecation_version="0.5.8",
-            removal_version="0.6.0",
-        )
-        return (
-            LinearGradient.create
-            if name == "lineargradient"
-            else globals()[name.capitalize()].create
-        )
-
-    try:
-        return globals()[name]
-    except KeyError:
-        raise AttributeError(f"module '{__name__} has no attribute '{name}'") from None

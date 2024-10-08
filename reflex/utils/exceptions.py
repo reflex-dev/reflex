@@ -79,3 +79,51 @@ class LockExpiredError(ReflexError):
 
 class MatchTypeError(ReflexError, TypeError):
     """Raised when the return types of match cases are different."""
+
+
+class EventHandlerArgMismatch(ReflexError, TypeError):
+    """Raised when the number of args accepted by an EventHandler is differs from that provided by the event trigger."""
+
+
+class EventFnArgMismatch(ReflexError, TypeError):
+    """Raised when the number of args accepted by a lambda differs from that provided by the event trigger."""
+
+
+class DynamicRouteArgShadowsStateVar(ReflexError, NameError):
+    """Raised when a dynamic route arg shadows a state var."""
+
+
+class ComputedVarShadowsStateVar(ReflexError, NameError):
+    """Raised when a computed var shadows a state var."""
+
+
+class ComputedVarShadowsBaseVars(ReflexError, NameError):
+    """Raised when a computed var shadows a base var."""
+
+
+class EventHandlerShadowsBuiltInStateMethod(ReflexError, NameError):
+    """Raised when an event handler shadows a built-in state method."""
+
+
+class GeneratedCodeHasNoFunctionDefs(ReflexError):
+    """Raised when refactored code generated with flexgen has no functions defined."""
+
+
+class PrimitiveUnserializableToJSON(ReflexError, ValueError):
+    """Raised when a primitive type is unserializable to JSON. Usually with NaN and Infinity."""
+
+
+class InvalidLifespanTaskType(ReflexError, TypeError):
+    """Raised when an invalid task type is registered as a lifespan task."""
+
+
+class DynamicComponentMissingLibrary(ReflexError, ValueError):
+    """Raised when a dynamic component is missing a library."""
+
+
+class SetUndefinedStateVarError(ReflexError, AttributeError):
+    """Raised when setting the value of a var without first declaring it."""
+
+
+class StateSchemaMismatchError(ReflexError, TypeError):
+    """Raised when the serialized schema of a state class does not match the current schema."""

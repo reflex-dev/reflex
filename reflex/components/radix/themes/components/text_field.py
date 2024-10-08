@@ -4,15 +4,12 @@ from __future__ import annotations
 
 from typing import Literal, Union
 
-from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
 from reflex.event import EventHandler
-from reflex.style import Style, format_as_emotion
-from reflex.utils import console
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -106,80 +103,6 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
             return DebounceInput.create(component)
         return component
 
-    @classmethod
-    def create_root_deprecated(cls, *children, **props) -> Component:
-        """Create a Fragment component (wrapper for deprecated name).
-
-        Copy the attributes that were previously defined on TextFieldRoot in 0.4.9 to
-        any child input elements (via custom_attrs).
-
-        Args:
-            *children: The children of the component.
-            **props: The properties of the component.
-
-        Returns:
-            The component.
-        """
-        console.deprecate(
-            feature_name="rx.input.root",
-            reason="use rx.input without the .root suffix",
-            deprecation_version="0.5.0",
-            removal_version="0.6.0",
-        )
-        inputs = [
-            child
-            for child in children
-            if isinstance(child, (TextFieldRoot, DebounceInput))
-        ]
-        if not inputs:
-            # Old-style where no explicit child input was provided
-            return cls.create(*children, **props)
-        slots = [child for child in children if isinstance(child, TextFieldSlot)]
-        carry_props = {
-            prop: props.pop(prop)
-            for prop in ["size", "variant", "color_scheme", "radius"]
-            if prop in props
-        }
-        template = cls.create(**props)
-        for child in inputs:
-            child.children.extend(slots)
-            custom_attrs = child.custom_attrs
-            custom_attrs.update(
-                {
-                    prop: value
-                    for prop, value in carry_props.items()
-                    if prop not in custom_attrs and getattr(child, prop) is None
-                }
-            )
-            style = Style(template.style)
-            style.update(child.style)
-            child._get_style = lambda style=style: {
-                "css": Var.create(format_as_emotion(style))
-            }
-            for trigger in template.event_triggers:
-                if trigger not in child.event_triggers:
-                    child.event_triggers[trigger] = template.event_triggers[trigger]
-        return Fragment.create(*inputs)
-
-    @classmethod
-    def create_input_deprecated(cls, *children, **props) -> Component:
-        """Create a TextFieldRoot component (wrapper for deprecated name).
-
-        Args:
-            *children: The children of the component.
-            **props: The properties of the component.
-
-        Returns:
-            The component.
-        """
-        console.deprecate(
-            feature_name="rx.input.input",
-            reason="use rx.input without the .input suffix",
-            deprecation_version="0.5.0",
-            removal_version="0.6.0",
-        )
-        return cls.create(*children, **props)
-
 
 class TextFieldSlot(RadixThemesComponent):
     """Contains icons or buttons associated with an Input."""
@@ -193,8 +116,6 @@ class TextFieldSlot(RadixThemesComponent):
 class TextField(ComponentNamespace):
     """TextField components namespace."""
 
-    root = staticmethod(TextFieldRoot.create_root_deprecated)
-    input = staticmethod(TextFieldRoot.create_input_deprecated)
     slot = staticmethod(TextFieldSlot.create)
     __call__ = staticmethod(TextFieldRoot.create)
 

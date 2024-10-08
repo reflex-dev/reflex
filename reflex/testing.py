@@ -46,6 +46,8 @@ import reflex.utils.processes
 from reflex.state import (
     BaseState,
     State,
+    StateManager,
+    StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
     reload_state_module,
@@ -128,7 +130,7 @@ class AppHarness:
     frontend_output_thread: Optional[threading.Thread] = None
     backend_thread: Optional[threading.Thread] = None
     backend: Optional[uvicorn.Server] = None
-    state_manager: Optional[StateManagerMemory | StateManagerRedis] = None
+    state_manager: Optional[StateManager] = None
     _frontends: list["WebDriver"] = dataclasses.field(default_factory=list)
     _decorated_pages: list = dataclasses.field(default_factory=list)
 
@@ -336,7 +338,8 @@ class AppHarness:
             )
         )
         self.backend.shutdown = self._get_backend_shutdown_handler()
-        self.backend_thread = threading.Thread(target=self.backend.run)
+        with chdir(self.app_path):
+            self.backend_thread = threading.Thread(target=self.backend.run)
         self.backend_thread.start()
 
     async def _reset_backend_state_manager(self):
@@ -344,6 +347,9 @@ class AppHarness:
 
         This is necessary when the backend is restarted and the state manager is a
         StateManagerRedis instance.
+
+        Raises:
+            RuntimeError: when the state manager cannot be reset
         """
         if (
             self.app_instance is not None
@@ -358,7 +364,8 @@ class AppHarness:
             self.app_instance._state_manager = StateManagerRedis.create(
                 state=self.app_instance.state,
             )
-            assert isinstance(self.app_instance.state_manager, StateManagerRedis)
+            if not isinstance(self.app_instance.state_manager, StateManagerRedis):
+                raise RuntimeError("Failed to reset state manager.")
 
     def _start_frontend(self):
         # Set up the frontend.
@@ -791,13 +798,13 @@ class AppHarness:
         Raises:
             RuntimeError: when the app hasn't started running
             TimeoutError: when the timeout expires before any states are seen
+            ValueError: when the state_manager is not a memory state manager
         """
         if self.app_instance is None:
             raise RuntimeError("App is not running.")
         state_manager = self.app_instance.state_manager
-        assert isinstance(
-            state_manager, StateManagerMemory
-        ), "Only works with memory state manager"
+        if not isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
+            raise ValueError("Only works with memory or disk state manager")
         if not self._poll_for(
             target=lambda: state_manager.states,
             timeout=timeout,

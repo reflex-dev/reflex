@@ -19,10 +19,13 @@ async def windows_hot_reload_lifespan_hack():
     import asyncio
     import sys
 
-    while True:
-        sys.stderr.write("\0")
-        sys.stderr.flush()
-        await asyncio.sleep(0.5)
+    try:
+        while True:
+            sys.stderr.write("\0")
+            sys.stderr.flush()
+            await asyncio.sleep(0.5)
+    except asyncio.CancelledError:
+        pass
 
 
 @contextlib.contextmanager
@@ -69,3 +72,19 @@ def pydantic_v1_patch():
 
 with pydantic_v1_patch():
     import sqlmodel as sqlmodel
+
+
+def sqlmodel_field_has_primary_key(field) -> bool:
+    """Determines if a field is a priamary.
+
+    Args:
+        field: a rx.model field
+
+    Returns:
+        If field is a primary key (Bool)
+    """
+    if getattr(field.field_info, "primary_key", None) is True:
+        return True
+    if getattr(field.field_info, "sa_column", None) is None:
+        return False
+    return bool(getattr(field.field_info.sa_column, "primary_key", None))

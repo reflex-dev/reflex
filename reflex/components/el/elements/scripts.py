@@ -2,7 +2,7 @@
 
 from typing import Union
 
-from reflex.vars import Var as Var
+from reflex.vars.base import Var
 
 from .base import BaseHTML
 

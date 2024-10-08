@@ -22,6 +22,7 @@ from .hover_card import hover_card as hover_card
 from .icon_button import icon_button as icon_button
 from .inset import inset as inset
 from .popover import popover as popover
+from .progress import progress as progress
 from .radio_cards import radio_cards as radio_cards
 from .radio_group import radio as radio
 from .radio_group import radio_group as radio_group

@@ -7,7 +7,7 @@ export const initialState = {{ initial_state|json_dumps }}
 export const initialState = {}
 {% endif %}
 
-export const defaultColorMode = "{{ default_color_mode }}"
+export const defaultColorMode = {{ default_color_mode }}
 export const ColorModeContext = createContext(null);
 export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);

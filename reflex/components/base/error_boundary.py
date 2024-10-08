@@ -10,7 +10,8 @@ from reflex.components.el import div, p
 from reflex.constants import Hooks, Imports
 from reflex.event import EventChain, EventHandler
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var
+from reflex.vars.base import Var
+from reflex.vars.function import FunctionVar
 
 
 class ErrorBoundary(Component):
@@ -20,14 +21,14 @@ class ErrorBoundary(Component):
     tag = "ErrorBoundary"
 
     # Fired when the boundary catches an error.
-    on_error: EventHandler[lambda error, info: [error, info]] = Var.create_safe(  # type: ignore
-        "logFrontendError", _var_is_string=False, _var_is_local=False
-    ).to(EventChain)
+    on_error: EventHandler[lambda error, info: [error, info]] = Var(  # type: ignore
+        "logFrontendError"
+    ).to(FunctionVar, EventChain)
 
     # Rendered instead of the children when an error is caught.
-    Fallback_component: Var[Component] = Var.create_safe(
-        "Fallback", _var_is_string=False, _var_is_local=False
-    ).to(Component)
+    Fallback_component: Var[Component] = Var(_js_expr="Fallback")._replace(
+        _var_type=Component
+    )
 
     def add_imports(self) -> dict[str, list[ImportVar]]:
         """Add imports for the component.
@@ -69,7 +70,7 @@ class ErrorBoundary(Component):
         fallback_container = div(
             p("Ooops...Unknown Reflex error has occured:"),
             p(
-                Var.create("error.message", _var_is_local=False, _var_is_string=False),
+                Var(_js_expr="error.message"),
                 color="red",
             ),
             p("Please contact the support."),

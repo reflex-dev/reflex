@@ -1,0 +1,40 @@
+name: integration-node-latest
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+
+env:
+    TELEMETRY_ENABLED: false
+    REFLEX_USE_SYSTEM_NODE: true
+
+jobs:
+    check_latest_node:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                python-version: ['3.12']
+                node-version: ['node']
+        steps:
+            - uses: actions/checkout@v4
+            - uses: ./.github/actions/setup_build_env
+              with:
+                python-version: ${{ matrix.python-version }}
+                run-poetry-install: true
+                create-venv-at-path: .venv
+            - uses: actions/setup-node@v4
+              with:
+                node-version: ${{ matrix.node-version }}
+            - run: |
+                poetry run uv pip install pyvirtualdisplay pillow
+                poetry run playwright install --with-deps
+            - run: |
+                poetry run pytest tests/test_node_version.py
+                poetry run pytest tests/integration
+  
+
+

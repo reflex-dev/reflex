@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import multiprocessing
 import platform
 import warnings
@@ -93,9 +94,7 @@ def _raise_on_missing_project_hash() -> bool:
         False when compilation should be skipped (i.e. no .web directory is required).
         Otherwise return True.
     """
-    if should_skip_compile():
-        return False
-    return True
+    return not should_skip_compile()
 
 
 def _prepare_event(event: str, **kwargs) -> dict:
@@ -120,7 +119,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
         return {}
 
     if UTC is None:
-        # for python 3.8, 3.9 & 3.10
+        # for python 3.9 & 3.10
         stamp = datetime.utcnow().isoformat()
     else:
         # for python 3.11 & 3.12
@@ -144,7 +143,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
             "python_version": get_python_version(),
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
-            "cpu_info": dict(cpuinfo) if cpuinfo else {},
+            "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
             **additional_fields,
         },
         "timestamp": stamp,

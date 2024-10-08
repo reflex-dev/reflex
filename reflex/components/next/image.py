@@ -4,7 +4,7 @@ from typing import Any, Literal, Optional, Union
 
 from reflex.event import EventHandler
 from reflex.utils import types
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from .base import NextComponent
 
@@ -101,9 +101,5 @@ class Image(NextComponent):
 
         # mysteriously, following `sizes` prop is needed to avoid blury images.
         props["sizes"] = "100vw"
-
-        src = props.get("src", None)
-        if src is not None and not isinstance(src, (Var)):
-            props["src"] = Var.create(value=src, _var_is_string=True)
 
         return super().create(*children, **props)

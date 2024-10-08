@@ -1,0 +1,5 @@
+.web
+.git
+__pycache__/*
+Dockerfile
+uploaded_files

@@ -28,5 +28,5 @@ jobs:
           # Run reflex init in a docker container
 
           # cwd is repo root
-          docker build -f integration/init-test/Dockerfile -t reflex-init-test integration/init-test
-          docker run --rm -v $(pwd):/reflex-repo/ reflex-init-test /reflex-repo/integration/init-test/in_docker_test_script.sh
+          docker build -f tests/integration/init-test/Dockerfile -t reflex-init-test tests/integration/init-test
+          docker run --rm -v $(pwd):/reflex-repo/ reflex-init-test /reflex-repo/tests/integration/init-test/in_docker_test_script.sh

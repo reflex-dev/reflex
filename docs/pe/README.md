@@ -10,7 +10,6 @@
 
 ### **✨ برنامه های تحت وب قابل تنظیم، کارآمد تماما پایتونی که در چند ثانیه مستقر(دپلوی) می‎شود. ✨**
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
-![tests](https://github.com/pynecone-io/pynecone/actions/workflows/integration.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentation](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
@@ -35,7 +34,7 @@
 
 ## ⚙️ Installation - نصب و راه اندازی
 
-یک ترمینال را باز کنید و اجرا کنید (نیازمند Python 3.8+):
+یک ترمینال را باز کنید و اجرا کنید (نیازمند Python 3.9+):
 
 ```bash
 pip install reflex

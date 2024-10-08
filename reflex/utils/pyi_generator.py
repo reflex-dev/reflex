@@ -20,7 +20,7 @@ from typing import Any, Callable, Iterable, Type, get_args
 
 from reflex.components.component import Component
 from reflex.utils import types as rx_types
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 logger = logging.getLogger("pyi_generator")
 
@@ -69,10 +69,10 @@ DEFAULT_TYPING_IMPORTS = {
 # TODO: fix import ordering and unused imports with ruff later
 DEFAULT_IMPORTS = {
     "typing": sorted(DEFAULT_TYPING_IMPORTS),
-    "reflex.vars": ["Var", "BaseVar", "ComputedVar"],
     "reflex.components.core.breakpoints": ["Breakpoints"],
     "reflex.event": ["EventChain", "EventHandler", "EventSpec"],
     "reflex.style": ["Style"],
+    "reflex.vars.base": ["Var"],
 }
 
 
@@ -150,7 +150,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
 
     if args:
         inner_container_type_args = (
-            [repr(arg) for arg in args]
+            sorted((repr(arg) for arg in args))
             if rx_types.is_literal(value)
             else [
                 _get_type_hint(arg, type_hint_globals, is_optional=False)
@@ -184,7 +184,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 if arg is not type(None)
             ]
             if len(types) > 1:
-                res = ", ".join(types)
+                res = ", ".join(sorted(types))
                 res = f"Union[{res}]"
     elif isinstance(value, str):
         ev = eval(value, type_hint_globals)
@@ -433,7 +433,7 @@ def _generate_component_create_functiondef(
             ast.arg(
                 arg=trigger,
                 annotation=ast.Name(
-                    id="Optional[Union[EventHandler, EventSpec, list, Callable, BaseVar]]"
+                    id="Optional[Union[EventHandler, EventSpec, list, Callable, Var]]"
                 ),
             ),
             ast.Constant(value=None),
@@ -902,7 +902,13 @@ class PyiGenerator:
             # construct the import statement and handle special cases for aliases
             sub_mod_attrs_imports = [
                 f"from .{path} import {mod if not isinstance(mod, tuple) else mod[0]} as {mod if not isinstance(mod, tuple) else mod[1]}"
-                + ("  # type: ignore" if mod in pyright_ignore_imports else "")
+                + (
+                    "  # type: ignore"
+                    if mod in pyright_ignore_imports
+                    else "  # noqa"  # ignore ruff formatting here for cases like rx.list.
+                    if isinstance(mod, tuple)
+                    else ""
+                )
                 for mod, path in sub_mod_attrs.items()
             ]
             sub_mod_attrs_imports.append("")

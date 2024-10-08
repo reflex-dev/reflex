@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Optional
 
-from reflex.components.base.bare import Bare
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.typography import Div
@@ -19,71 +18,60 @@ from reflex.components.radix.themes.typography.text import Text
 from reflex.components.sonner.toast import Toaster, ToastProps
 from reflex.constants import Dirs, Hooks, Imports
 from reflex.constants.compiler import CompileVars
-from reflex.utils.imports import ImportDict, ImportVar
-from reflex.utils.serializers import serialize
-from reflex.vars import Var, VarData
+from reflex.utils.imports import ImportVar
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
+from reflex.vars.function import FunctionStringVar
+from reflex.vars.number import BooleanVar
+from reflex.vars.sequence import LiteralArrayVar
 
 connect_error_var_data: VarData = VarData(  # type: ignore
     imports=Imports.EVENTS,
     hooks={Hooks.EVENTS: None},
 )
 
-connect_errors: Var = Var.create_safe(
-    value=CompileVars.CONNECT_ERROR,
-    _var_is_local=True,
-    _var_is_string=False,
+connect_errors = Var(
+    _js_expr=CompileVars.CONNECT_ERROR, _var_data=connect_error_var_data
+)
+
+connection_error = Var(
+    _js_expr="((connectErrors.length > 0) ? connectErrors[connectErrors.length - 1].message : '')",
     _var_data=connect_error_var_data,
 )
 
-connection_error: Var = Var.create_safe(
-    value="(connectErrors.length > 0) ? connectErrors[connectErrors.length - 1].message : ''",
-    _var_is_local=False,
-    _var_is_string=False,
-    _var_data=connect_error_var_data,
+connection_errors_count = Var(
+    _js_expr="connectErrors.length", _var_data=connect_error_var_data
 )
 
-connection_errors_count: Var = Var.create_safe(
-    value="connectErrors.length",
-    _var_is_string=False,
-    _var_is_local=False,
-    _var_data=connect_error_var_data,
-)
+has_connection_errors = Var(
+    _js_expr="(connectErrors.length > 0)", _var_data=connect_error_var_data
+).to(BooleanVar)
 
-has_connection_errors: Var = Var.create_safe(
-    value="connectErrors.length > 0",
-    _var_is_string=False,
-    _var_data=connect_error_var_data,
-).to(bool)
-
-has_too_many_connection_errors: Var = Var.create_safe(
-    value="connectErrors.length >= 2",
-    _var_is_string=False,
-    _var_data=connect_error_var_data,
-).to(bool)
+has_too_many_connection_errors = Var(
+    _js_expr="(connectErrors.length >= 2)", _var_data=connect_error_var_data
+).to(BooleanVar)
 
 
-class WebsocketTargetURL(Bare):
+class WebsocketTargetURL(Var):
     """A component that renders the websocket target URL."""
 
-    def add_imports(self) -> ImportDict:
-        """Add imports for the websocket target URL component.
-
-        Returns:
-            The import dict.
-        """
-        return {
-            f"/{Dirs.STATE_PATH}": [ImportVar(tag="getBackendURL")],
-            "/env.json": [ImportVar(tag="env", is_default=True)],
-        }
-
     @classmethod
-    def create(cls) -> Component:
+    def create(cls) -> Var:
         """Create a websocket target URL component.
 
         Returns:
             The websocket target URL component.
         """
-        return super().create(contents="{getBackendURL(env.EVENT).href}")
+        return Var(
+            _js_expr="getBackendURL(env.EVENT).href",
+            _var_data=VarData(
+                imports={
+                    "/env.json": [ImportVar(tag="env", is_default=True)],
+                    f"/{Dirs.STATE_PATH}": [ImportVar(tag="getBackendURL")],
+                },
+            ),
+            _var_type=WebsocketTargetURL,
+        )
 
 
 def default_connection_error() -> list[str | Var | Component]:
@@ -112,24 +100,34 @@ class ConnectionToaster(Toaster):
         toast_id = "websocket-error"
         target_url = WebsocketTargetURL.create()
         props = ToastProps(  # type: ignore
-            description=Var.create(
-                f"`Check if server is reachable at ${target_url}`",
-                _var_is_string=False,
-                _var_is_local=False,
+            description=LiteralVar.create(
+                f"Check if server is reachable at {target_url}",
             ),
             close_button=True,
             duration=120000,
             id=toast_id,
         )
-        hook = Var.create_safe(
-            f"""
-const toast_props = {serialize(props)};
-const [userDismissed, setUserDismissed] = useState(false);
-useEffect(() => {{
-    if ({has_too_many_connection_errors}) {{
+
+        individual_hooks = [
+            f"const toast_props = {str(LiteralVar.create(props))};",
+            f"const [userDismissed, setUserDismissed] = useState(false);",
+            FunctionStringVar(
+                "useEffect",
+                _var_data=VarData(
+                    imports={
+                        "react": ["useEffect", "useState"],
+                        **dict(target_url._get_all_var_data().imports),  # type: ignore
+                    }
+                ),
+            ).call(
+                # TODO: This breaks the assumption that Vars are JS expressions
+                Var(
+                    _js_expr=f"""
+() => {{
+    if ({str(has_too_many_connection_errors)}) {{
         if (!userDismissed) {{
             toast.error(
-                `Cannot connect to server: {connection_error}.`,
+                `Cannot connect to server: ${{{connection_error}}}.`,
                 {{...toast_props, onDismiss: () => setUserDismissed(true)}},
             )
         }}
@@ -137,20 +135,16 @@ useEffect(() => {{
         toast.dismiss("{toast_id}");
         setUserDismissed(false);  // after reconnection reset dismissed state
     }}
-}}, [{connect_errors}]);""",
-            _var_is_string=False,
-        )
-        imports: ImportDict = {
-            "react": ["useEffect", "useState"],
-            **target_url._get_imports(),  # type: ignore
-        }
-        hook._var_data = VarData.merge(
-            connect_errors._var_data,
-            VarData(imports=imports),
-        )
+}}
+"""
+                ),
+                LiteralArrayVar.create([connect_errors]),
+            ),
+        ]
+
         return [
             Hooks.EVENTS,
-            hook,
+            *individual_hooks,
         ]
 
     @classmethod
@@ -240,6 +234,7 @@ class WifiOffPulse(Icon):
         Returns:
             The icon component with default props applied.
         """
+        pulse_var = Var(_js_expr="pulse")
         return super().create(
             "wifi_off",
             color=props.pop("color", "crimson"),
@@ -248,7 +243,7 @@ class WifiOffPulse(Icon):
             position=props.pop("position", "fixed"),
             bottom=props.pop("botton", "33px"),
             right=props.pop("right", "33px"),
-            animation=Var.create(f"${{pulse}} 1s infinite", _var_is_string=True),
+            animation=LiteralVar.create(f"{pulse_var} 1s infinite"),
             **props,
         )
 

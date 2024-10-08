@@ -9,7 +9,7 @@ from reflex.components.component import MemoizationLeaf
 from reflex.constants.colors import Color
 from reflex.event import EventHandler, EventSpec
 from reflex.style import Style
-from reflex.vars import BaseVar, Var
+from reflex.vars.base import Var
 
 from .recharts import (
     Recharts,
@@ -33,50 +33,40 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "ResponsiveContainer":
@@ -113,106 +103,96 @@ class Legend(Recharts):
         height: Optional[Union[Var[int], int]] = None,
         layout: Optional[
             Union[
-                Var[Literal["horizontal", "vertical"]],
                 Literal["horizontal", "vertical"],
+                Var[Literal["horizontal", "vertical"]],
             ]
         ] = None,
         align: Optional[
             Union[
-                Var[Literal["left", "center", "right"]],
-                Literal["left", "center", "right"],
+                Literal["center", "left", "right"],
+                Var[Literal["center", "left", "right"]],
             ]
         ] = None,
         vertical_align: Optional[
             Union[
-                Var[Literal["top", "middle", "bottom"]],
-                Literal["top", "middle", "bottom"],
+                Literal["bottom", "middle", "top"],
+                Var[Literal["bottom", "middle", "top"]],
             ]
         ] = None,
         icon_size: Optional[Union[Var[int], int]] = None,
         icon_type: Optional[
             Union[
+                Literal[
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "line",
+                    "plainline",
+                    "rect",
+                    "square",
+                    "star",
+                    "triangle",
+                    "wye",
+                ],
                 Var[
                     Literal[
-                        "line",
-                        "plainline",
-                        "square",
-                        "rect",
                         "circle",
                         "cross",
                         "diamond",
+                        "line",
+                        "plainline",
+                        "rect",
+                        "square",
                         "star",
                         "triangle",
                         "wye",
                     ]
                 ],
-                Literal[
-                    "line",
-                    "plainline",
-                    "square",
-                    "rect",
-                    "circle",
-                    "cross",
-                    "diamond",
-                    "star",
-                    "triangle",
-                    "wye",
-                ],
             ]
         ] = None,
         chart_width: Optional[Union[Var[int], int]] = None,
         chart_height: Optional[Union[Var[int], int]] = None,
-        margin: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        margin: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Legend":
@@ -253,25 +233,25 @@ class GraphingTooltip(Recharts):
         offset: Optional[Union[Var[int], int]] = None,
         filter_null: Optional[Union[Var[bool], bool]] = None,
         cursor: Optional[
-            Union[Var[Union[Dict[str, Any], bool]], Dict[str, Any], bool]
+            Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
         ] = None,
-        view_box: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        item_style: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        wrapper_style: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        content_style: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        label_style: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        view_box: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
+        item_style: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
+        wrapper_style: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
+        content_style: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
+        label_style: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         allow_escape_view_box: Optional[
-            Union[Var[Dict[str, bool]], Dict[str, bool]]
+            Union[Dict[str, bool], Var[Dict[str, bool]]]
         ] = None,
         active: Optional[Union[Var[bool], bool]] = None,
-        position: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
-        coordinate: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        position: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
+        coordinate: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         is_animation_active: Optional[Union[Var[bool], bool]] = None,
         animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
             Union[
-                Var[Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]],
-                Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"],
+                Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"]],
             ]
         ] = None,
         style: Optional[Style] = None,
@@ -280,50 +260,40 @@ class GraphingTooltip(Recharts):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "GraphingTooltip":
@@ -366,52 +336,52 @@ class Label(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        view_box: Optional[Union[Var[Dict[str, Any]], Dict[str, Any]]] = None,
+        view_box: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         value: Optional[Union[Var[str], str]] = None,
         offset: Optional[Union[Var[int], int]] = None,
         position: Optional[
             Union[
-                Var[
-                    Literal[
-                        "top",
-                        "left",
-                        "right",
-                        "bottom",
-                        "inside",
-                        "outside",
-                        "insideLeft",
-                        "insideRight",
-                        "insideTop",
-                        "insideBottom",
-                        "insideTopLeft",
-                        "insideBottomLeft",
-                        "insideTopRight",
-                        "insideBottomRight",
-                        "insideStart",
-                        "insideEnd",
-                        "end",
-                        "center",
-                    ]
-                ],
                 Literal[
-                    "top",
-                    "left",
-                    "right",
                     "bottom",
+                    "center",
+                    "end",
                     "inside",
-                    "outside",
+                    "insideBottom",
+                    "insideBottomLeft",
+                    "insideBottomRight",
+                    "insideEnd",
                     "insideLeft",
                     "insideRight",
-                    "insideTop",
-                    "insideBottom",
-                    "insideTopLeft",
-                    "insideBottomLeft",
-                    "insideTopRight",
-                    "insideBottomRight",
                     "insideStart",
-                    "insideEnd",
-                    "end",
-                    "center",
+                    "insideTop",
+                    "insideTopLeft",
+                    "insideTopRight",
+                    "left",
+                    "outside",
+                    "right",
+                    "top",
+                ],
+                Var[
+                    Literal[
+                        "bottom",
+                        "center",
+                        "end",
+                        "inside",
+                        "insideBottom",
+                        "insideBottomLeft",
+                        "insideBottomRight",
+                        "insideEnd",
+                        "insideLeft",
+                        "insideRight",
+                        "insideStart",
+                        "insideTop",
+                        "insideTopLeft",
+                        "insideTopRight",
+                        "left",
+                        "outside",
+                        "right",
+                        "top",
+                    ]
                 ],
             ]
         ] = None,
@@ -421,50 +391,40 @@ class Label(Recharts):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "Label":
@@ -495,106 +455,96 @@ class LabelList(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        data_key: Optional[Union[Var[Union[int, str]], str, int]] = None,
+        data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         position: Optional[
             Union[
-                Var[
-                    Literal[
-                        "top",
-                        "left",
-                        "right",
-                        "bottom",
-                        "inside",
-                        "outside",
-                        "insideLeft",
-                        "insideRight",
-                        "insideTop",
-                        "insideBottom",
-                        "insideTopLeft",
-                        "insideBottomLeft",
-                        "insideTopRight",
-                        "insideBottomRight",
-                        "insideStart",
-                        "insideEnd",
-                        "end",
-                        "center",
-                    ]
-                ],
                 Literal[
-                    "top",
-                    "left",
-                    "right",
                     "bottom",
+                    "center",
+                    "end",
                     "inside",
-                    "outside",
+                    "insideBottom",
+                    "insideBottomLeft",
+                    "insideBottomRight",
+                    "insideEnd",
                     "insideLeft",
                     "insideRight",
-                    "insideTop",
-                    "insideBottom",
-                    "insideTopLeft",
-                    "insideBottomLeft",
-                    "insideTopRight",
-                    "insideBottomRight",
                     "insideStart",
-                    "insideEnd",
-                    "end",
-                    "center",
+                    "insideTop",
+                    "insideTopLeft",
+                    "insideTopRight",
+                    "left",
+                    "outside",
+                    "right",
+                    "top",
+                ],
+                Var[
+                    Literal[
+                        "bottom",
+                        "center",
+                        "end",
+                        "inside",
+                        "insideBottom",
+                        "insideBottomLeft",
+                        "insideBottomRight",
+                        "insideEnd",
+                        "insideLeft",
+                        "insideRight",
+                        "insideStart",
+                        "insideTop",
+                        "insideTopLeft",
+                        "insideTopRight",
+                        "left",
+                        "outside",
+                        "right",
+                        "top",
+                    ]
                 ],
             ]
         ] = None,
         offset: Optional[Union[Var[int], int]] = None,
-        fill: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
-        stroke: Optional[Union[Var[Union[Color, str]], str, Color]] = None,
+        fill: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
+        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
-        ] = None,
+        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, Callable, BaseVar]
+            Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
     ) -> "LabelList":
