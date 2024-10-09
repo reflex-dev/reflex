@@ -106,35 +106,49 @@ class Radar(Recharts):
     # The coordinates of all the vertexes of the radar shape, like [{ x, y }].
     points: Var[List[Dict[str, Any]]]
 
-    # If false set, dots will not be drawn
+    # If false set, dots will not be drawn. Default: True
     dot: Var[bool]
 
-    # Stoke color
+    # Stoke color. Default: rx.color("accent", 9)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
 
-    # Fill color
+    # Fill color. Default: rx.color("accent", 3)
     fill: Var[str] = LiteralVar.create(Color("accent", 3))
 
-    # opacity
+    # opacity. Default: 0.6
     fill_opacity: Var[float] = LiteralVar.create(0.6)
 
-    # The type of icon in legend. If set to 'none', no legend item will be rendered.
-    legend_type: Var[str]
+    # The type of icon in legend. If set to 'none', no legend item will be rendered. Default: "rect"
+    legend_type: Var[LiteralLegendType]
 
-    # If false set, labels will not be drawn
+    # If false set, labels will not be drawn. Default: True
     label: Var[bool]
 
-    # Specifies when the animation should begin, the unit of this option is ms.
+    # If set false, animation of polygon will be disabled. Default: True in CSR, and False in SSR
+    is_animation_active: Var[bool]
+
+    # Specifies when the animation should begin, the unit of this option is ms. Default: 0
     animation_begin: Var[int]
 
-    # Specifies the duration of animation, the unit of this option is ms.
+    # Specifies the duration of animation, the unit of this option is ms. Default: 1500
     animation_duration: Var[int]
 
-    # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
+    # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default: "ease"
     animation_easing: Var[LiteralAnimationEasing]
 
     # Valid children components
     _valid_children: List[str] = ["LabelList"]
+
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_ANIMATION_START: lambda: [],
+            EventTriggers.ON_ANIMATION_END: lambda: [],
+        }
 
 
 class RadialBar(Recharts):
