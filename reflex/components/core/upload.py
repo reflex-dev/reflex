@@ -180,6 +180,7 @@ class Upload(MemoizationLeaf):
     """A file upload component."""
 
     library = "react-dropzone@14.2.3"
+    lib_dependencies: List[str] = ["attr-accept@2.2.2"]
 
     tag = "ReactDropzone"
 
