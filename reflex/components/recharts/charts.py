@@ -8,7 +8,7 @@ from reflex.components.component import Component
 from reflex.components.recharts.general import ResponsiveContainer
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
-from reflex.event import EventHandler
+from reflex.event import EventHandler, empty_event
 from reflex.vars.base import LiteralVar, Var
 
 from .recharts import (
@@ -31,16 +31,16 @@ class ChartBase(RechartsCharts):
     height: Var[Union[str, int]] = "100%"  # type: ignore
 
     # The customized event handler of click on the component in this chart
-    on_click: EventHandler[lambda: []]
+    on_click: EventHandler[empty_event]
 
     # The customized event handler of mouseenter on the component in this chart
-    on_mouse_enter: EventHandler[lambda: []]
+    on_mouse_enter: EventHandler[empty_event]
 
     # The customized event handler of mousemove on the component in this chart
-    on_mouse_move: EventHandler[lambda: []]
+    on_mouse_move: EventHandler[empty_event]
 
     # The customized event handler of mouseleave on the component in this chart
-    on_mouse_leave: EventHandler[lambda: []]
+    on_mouse_leave: EventHandler[empty_event]
 
     @staticmethod
     def _ensure_valid_dimension(name: str, value: Any) -> None:
@@ -270,16 +270,16 @@ class PieChart(ChartBase):
     ]
 
     # The customized event handler of mousedown on the sectors in this group
-    on_mouse_down: EventHandler[lambda: []]
+    on_mouse_down: EventHandler[empty_event]
 
     # The customized event handler of mouseup on the sectors in this group
-    on_mouse_up: EventHandler[lambda: []]
+    on_mouse_up: EventHandler[empty_event]
 
     # The customized event handler of mouseover on the sectors in this group
-    on_mouse_over: EventHandler[lambda: []]
+    on_mouse_over: EventHandler[empty_event]
 
     # The customized event handler of mouseout on the sectors in this group
-    on_mouse_out: EventHandler[lambda: []]
+    on_mouse_out: EventHandler[empty_event]
 
 
 class RadarChart(ChartBase):
@@ -488,10 +488,10 @@ class Treemap(RechartsCharts):
     animation_easing: Var[LiteralAnimationEasing]
 
     # The customized event handler of animation start
-    on_animation_start: EventHandler[lambda: []]
+    on_animation_start: EventHandler[empty_event]
 
     # The customized event handler of animation end
-    on_animation_end: EventHandler[lambda: []]
+    on_animation_end: EventHandler[empty_event]
 
     @classmethod
     def create(cls, *children, **props) -> Component:

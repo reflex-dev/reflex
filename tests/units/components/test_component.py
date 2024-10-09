@@ -16,7 +16,13 @@ from reflex.components.component import (
 )
 from reflex.components.radix.themes.layout.box import Box
 from reflex.constants import EventTriggers
-from reflex.event import EventChain, EventHandler, input_event, parse_args_spec
+from reflex.event import (
+    EventChain,
+    EventHandler,
+    empty_event,
+    input_event,
+    parse_args_spec,
+)
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
@@ -1789,7 +1795,7 @@ def test_custom_component_declare_event_handlers_in_fields():
         on_a: EventHandler[lambda e0: [e0]]
         on_b: EventHandler[input_event]
         on_c: EventHandler[lambda e0: []]
-        on_d: EventHandler[lambda: []]
+        on_d: EventHandler[empty_event]
         on_e: EventHandler
         on_f: EventHandler[lambda a, b, c: [c, b, a]]
 
