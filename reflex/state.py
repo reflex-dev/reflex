@@ -10,6 +10,7 @@ import functools
 import inspect
 import os
 import pickle
+import sys
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -475,7 +476,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         new_backend_vars.update(
             {
                 name: cls._get_var_default(name, annotation_value)
-                for name, annotation_value in get_type_hints(cls).items()
+                for name, annotation_value in cls._get_type_hints().items()
                 if name not in new_backend_vars
                 and types.is_backend_base_variable(name, cls)
             }
@@ -661,8 +662,28 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 break
             proposed_name = f"{cls.__name__}_{ix}"
         setattr(reflex.istate.dynamic, proposed_name, cls)
+        cls.__original_name__ = cls.__name__
+        cls.__original_module__ = cls.__module__
         cls.__name__ = cls.__qualname__ = proposed_name
         cls.__module__ = reflex.istate.dynamic.__name__
+
+    @classmethod
+    def _get_type_hints(cls) -> dict[str, Any]:
+        """Get the type hints for this class.
+
+        If the class is dynamic, evaluate the type hints with the original
+        module in the local namespace.
+
+        Returns:
+            The type hints dict.
+        """
+        original_module = getattr(cls, "__original_module__", None)
+        if original_module is not None:
+            localns = sys.modules[original_module].__dict__
+        else:
+            localns = None
+
+        return get_type_hints(cls, localns=localns)
 
     @classmethod
     def _init_var_dependency_dicts(cls):
@@ -1227,7 +1248,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             name not in self.vars
             and name not in self.get_skip_vars()
             and not name.startswith("__")
-            and not name.startswith(f"_{type(self).__name__}__")
+            and not name.startswith(
+                f"_{getattr(type(self), '__original_name__', type(self).__name__)}__"
+            )
         ):
             raise SetUndefinedStateVarError(
                 f"The state variable '{name}' has not been defined in '{type(self).__name__}'. "
