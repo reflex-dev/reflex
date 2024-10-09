@@ -23,6 +23,8 @@ from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import CallableVar, LiteralVar, Var
 from reflex.vars.sequence import LiteralStringVar
+from reflex.components.radix.themes.components.button import button
+from reflex.components.lucide import icon
 
 DEFAULT_UPLOAD_ID: str = "default"
 
@@ -324,9 +326,8 @@ class StyledUpload(Upload):
             The styled upload component.
         """
         # Set default props.
-        props.setdefault("border", "1px dashed var(--accent-12)")
-        props.setdefault("padding", "5em")
-        props.setdefault("textAlign", "center")
+        if not children:
+            children = [button("Upload Files", icon("upload", size=12), align_items="center")]
 
         # Mark the Upload component as used in the app.
         Upload.is_used = True
