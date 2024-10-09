@@ -36,6 +36,7 @@ jobs:
           - os: windows-latest
             python-version: '3.9.18'
           - os: macos-12
+            python-version: '3.12.0'
             if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         include:
           - os: windows-latest
