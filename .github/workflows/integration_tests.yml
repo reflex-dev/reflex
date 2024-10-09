@@ -42,7 +42,7 @@ jobs:
       fail-fast: false
       matrix:
         # Show OS combos first in GUI
-        os: [ubuntu-latest, windows-latest, macos-12]
+        os: [ubuntu-latest, windows-latest]
         python-version: ['3.9.18', '3.10.13', '3.11.5', '3.12.0']
         exclude:
           - os: windows-latest
@@ -122,7 +122,7 @@ jobs:
       fail-fast: false
       matrix:
         # Show OS combos first in GUI
-        os: [ubuntu-latest, windows-latest, macos-12]
+        os: [ubuntu-latest, windows-latest]
         python-version: ['3.10.11', '3.11.4']
 
     env:
@@ -162,3 +162,44 @@ jobs:
           --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
           --pr-id "${{ github.event.pull_request.id }}" --branch-name "${{ github.head_ref || github.ref_name }}"
           --app-name "reflex-web" --path ./reflex-web/.web
+  
+  reflex-web-macos:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11.5', '3.12.0']
+    runs-on: macos-12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-poetry-install: true
+          create-venv-at-path: .venv
+      - name: Clone Reflex Website Repo
+        uses: actions/checkout@v4
+        with:
+          repository: reflex-dev/reflex-web
+          ref: main
+          path: reflex-web
+      - name: Install Requirements for reflex-web
+        working-directory: ./reflex-web
+        run: poetry run uv pip install -r requirements.txt
+      - name: Install additional dependencies for DB access
+        run: poetry run uv pip install psycopg2-binary
+      - name: Init Website for reflex-web
+        working-directory: ./reflex-web
+        run: poetry run reflex init
+      - name: Run Website and Check for errors
+        run: |
+          # Check that npm is home
+          npm -v
+          poetry run bash scripts/integration.sh ./reflex-web prod
+      - name: Measure and upload .web size
+        run:
+          poetry run python benchmarks/benchmark_web_size.py --os "${{ matrix.os }}"
+          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+          --pr-id "${{ github.event.pull_request.id }}" --branch-name "${{ github.head_ref || github.ref_name }}"
+          --app-name "reflex-web" --path ./reflex-web/.web
+  
