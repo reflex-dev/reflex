@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
-from reflex.event import EventHandler
+from reflex.event import EventHandler, empty_event
 from reflex.vars.base import LiteralVar, Var
 
 from .recharts import (
@@ -253,28 +253,28 @@ class PolarAngleAxis(Recharts):
     _valid_children: List[str] = ["Label"]
 
     # The customized event handler of click on the ticks of this axis.
-    on_click: EventHandler[lambda: []]
+    on_click: EventHandler[empty_event]
 
     # The customized event handler of mousedown on the the ticks of this axis.
-    on_mouse_down: EventHandler[lambda: []]
+    on_mouse_down: EventHandler[empty_event]
 
     # The customized event handler of mouseup on the ticks of this axis.
-    on_mouse_up: EventHandler[lambda: []]
+    on_mouse_up: EventHandler[empty_event]
 
     # The customized event handler of mousemove on the ticks of this axis.
-    on_mouse_move: EventHandler[lambda: []]
+    on_mouse_move: EventHandler[empty_event]
 
     # The customized event handler of mouseover on the ticks of this axis.
-    on_mouse_over: EventHandler[lambda: []]
+    on_mouse_over: EventHandler[empty_event]
 
     # The customized event handler of mouseout on the ticks of this axis.
-    on_mouse_out: EventHandler[lambda: []]
+    on_mouse_out: EventHandler[empty_event]
 
     # The customized event handler of moustenter on the ticks of this axis.
-    on_mouse_enter: EventHandler[lambda: []]
+    on_mouse_enter: EventHandler[empty_event]
 
     # The customized event handler of mouseleave on the ticks of this axis.
-    on_mouse_leave: EventHandler[lambda: []]
+    on_mouse_leave: EventHandler[empty_event]
 
 
 class PolarGrid(Recharts):

@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
-from reflex.event import EventHandler
+from reflex.event import EventHandler, empty_event
 from reflex.utils import console, format, types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
@@ -262,10 +262,10 @@ class DataEditor(NoSSRComponent):
     on_finished_editing: EventHandler[lambda new_value, movement: [new_value, movement]]
 
     # Fired when a row is appended.
-    on_row_appended: EventHandler[lambda: []]
+    on_row_appended: EventHandler[empty_event]
 
     # Fired when the selection is cleared.
-    on_selection_cleared: EventHandler[lambda: []]
+    on_selection_cleared: EventHandler[empty_event]
 
     # Fired when a column is resized.
     on_column_resize: EventHandler[lambda col, width: [col, width]]

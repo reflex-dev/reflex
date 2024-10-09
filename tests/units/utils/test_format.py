@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 import pytest
 
 from reflex.components.tags.tag import Tag
-from reflex.event import EventChain, EventHandler, EventSpec, FrontendEvent
+from reflex.event import EventChain, EventHandler, EventSpec, JavascriptInputEvent
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.serializers import serialize_figure
@@ -387,7 +387,7 @@ def test_format_match(
                                 Var(
                                     _js_expr="_e",
                                 )
-                                .to(ObjectVar, FrontendEvent)
+                                .to(ObjectVar, JavascriptInputEvent)
                                 .target.value,
                             ),
                         ),

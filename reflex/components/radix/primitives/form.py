@@ -8,7 +8,7 @@ from reflex.components.component import ComponentNamespace
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el.elements.forms import Form as HTMLForm
 from reflex.components.radix.themes.components.text_field import TextFieldRoot
-from reflex.event import EventHandler
+from reflex.event import EventHandler, empty_event
 from reflex.vars.base import Var
 
 from .base import RadixPrimitiveComponentWithClassName
@@ -28,7 +28,7 @@ class FormRoot(FormComponent, HTMLForm):
     alias = "RadixFormRoot"
 
     # Fired when the errors are cleared.
-    on_clear_server_errors: EventHandler[lambda: []]
+    on_clear_server_errors: EventHandler[empty_event]
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.

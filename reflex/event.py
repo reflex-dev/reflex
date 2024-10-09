@@ -24,7 +24,7 @@ from typing import (
 from typing_extensions import get_args, get_origin
 
 from reflex import constants
-from reflex.utils import format
+from reflex.utils import console, format
 from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
 from reflex.utils.types import ArgsSpec, GenericType
 from reflex.vars import VarData
@@ -399,23 +399,63 @@ prevent_default = EventChain(events=[], args_spec=lambda: []).prevent_default
     init=True,
     frozen=True,
 )
-class Target:
-    """A Javascript event target."""
+class JavascriptHTMLInputElement:
+    """Interface for a Javascript HTMLInputElement https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement."""
 
-    checked: bool = False
-    value: Any = None
+    value: str = ""
 
 
 @dataclasses.dataclass(
     init=True,
     frozen=True,
 )
-class FrontendEvent:
-    """A Javascript event."""
+class JavascriptInputEvent:
+    """Interface for a Javascript InputEvent https://developer.mozilla.org/en-US/docs/Web/API/InputEvent."""
 
-    target: Target = Target()
+    target: JavascriptHTMLInputElement = JavascriptHTMLInputElement()
+
+
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
+class JavasciptKeyboardEvent:
+    """Interface for a Javascript KeyboardEvent https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent."""
+
     key: str = ""
-    value: Any = None
+
+
+def input_event(e: Var[JavascriptInputEvent]) -> Tuple[str]:
+    """Get the value from an input event.
+
+    Args:
+        e: The input event.
+
+    Returns:
+        The value from the input event.
+    """
+    return (e.target.value,)
+
+
+def key_event(e: Var[JavasciptKeyboardEvent]) -> Tuple[str]:
+    """Get the key from a keyboard event.
+
+    Args:
+        e: The keyboard event.
+
+    Returns:
+        The key from the keyboard event.
+    """
+    return (e.key,)
+
+
+def empty_event() -> Tuple[()]:
+    """Empty event handler.
+
+    Returns:
+        An empty tuple.
+    """
+    return tuple()  # type: ignore
 
 
 @dataclasses.dataclass(
@@ -946,6 +986,28 @@ def unwrap_var_annotation(annotation: GenericType):
     return annotation
 
 
+def resolve_annotation(annotations: dict[str, Any], arg_name: str):
+    """Resolve the annotation for the given argument name.
+
+    Args:
+        annotations: The annotations.
+        arg_name: The argument name.
+
+    Returns:
+        The resolved annotation.
+    """
+    annotation = annotations.get(arg_name)
+    if annotation is None:
+        console.deprecate(
+            feature_name="Unannotated event handler arguments",
+            reason="Provide type annotations for event handler arguments.",
+            deprecation_version="0.6.3",
+            removal_version="0.7.0",
+        )
+        return JavascriptInputEvent
+    return annotation
+
+
 def parse_args_spec(arg_spec: ArgsSpec):
     """Parse the args provided in the ArgsSpec of an event trigger.
 
@@ -961,7 +1023,7 @@ def parse_args_spec(arg_spec: ArgsSpec):
     return arg_spec(
         *[
             Var(f"_{l_arg}").to(
-                unwrap_var_annotation(annotations.get(l_arg, FrontendEvent))
+                unwrap_var_annotation(resolve_annotation(annotations, l_arg))
             )
             for l_arg in spec.args
         ]
