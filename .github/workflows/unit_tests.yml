@@ -59,6 +59,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_build_env
+        if:  matrix.os != 'macos-12' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         with:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
@@ -82,4 +83,7 @@ jobs:
           export PYTHONUNBUFFERED=1
           poetry run uv pip install "pydantic~=1.10"
           poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
-      - run: poetry run coverage html
+      - name: Generate coverage report
+        if:  matrix.os != 'macos-12' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        run: poetry run coverage html
+
