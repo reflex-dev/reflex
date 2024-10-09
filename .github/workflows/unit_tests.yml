@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-12]
+        os: [ubuntu-latest, windows-latest]
         python-version: ['3.9.18', '3.10.13', '3.11.5', '3.12.0']
         # Windows is a bit behind on Python version availability in Github
         exclude:
@@ -37,7 +37,6 @@ jobs:
             python-version: '3.9.18'
           - os: macos-12
             python-version: '3.12.0'
-            if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         include:
           - os: windows-latest
             python-version: '3.10.11'
@@ -62,14 +61,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_build_env
-        if:  matrix.os != 'macos-12' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         with:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
       - name: Run unit tests
-          # Run the macOS job only on merge to the main branch
-        if:  matrix.os != 'macos-12' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         run: |
           export PYTHONUNBUFFERED=1
           poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
@@ -81,12 +77,10 @@ jobs:
           poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
       # Change to explicitly install v1 when reflex-hosting-cli is compatible with v2
       - name: Run unit tests w/ pydantic v1
-        if:  matrix.os != 'macos-12' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         run: |
           export PYTHONUNBUFFERED=1
           poetry run uv pip install "pydantic~=1.10"
           poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
       - name: Generate coverage report
-        if:  matrix.os != 'macos-12' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         run: poetry run coverage html
 
