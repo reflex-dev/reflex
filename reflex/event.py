@@ -458,7 +458,7 @@ def empty_event() -> Tuple[()]:
     Returns:
         An empty tuple.
     """
-    return tuple()
+    return tuple()  # type: ignore
 
 
 @dataclasses.dataclass(
