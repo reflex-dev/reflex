@@ -8,6 +8,8 @@ from typing import Callable, ClassVar, Dict, List, Optional
 
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
 from reflex.components.el.elements.forms import Input
+from reflex.components.lucide import icon
+from reflex.components.radix.themes.components.button import button
 from reflex.components.radix.themes.layout.box import Box
 from reflex.constants import Dirs
 from reflex.event import (
@@ -23,8 +25,6 @@ from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import CallableVar, LiteralVar, Var
 from reflex.vars.sequence import LiteralStringVar
-from reflex.components.radix.themes.components.button import button
-from reflex.components.lucide import icon
 
 DEFAULT_UPLOAD_ID: str = "default"
 
