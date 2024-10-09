@@ -452,9 +452,6 @@ def key_event(e: Var[JavasciptKeyboardEvent]) -> Tuple[str]:
 def empty_event() -> Tuple[()]:
     """Empty event handler.
 
-    Args:
-        *args: The arguments to the event handler.
-
     Returns:
         An empty tuple.
     """
