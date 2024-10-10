@@ -314,7 +314,7 @@ class GraphingTooltip(Recharts):
             active: If set true, the tooltip is displayed. If set false, the tooltip is hidden, usually calculated internally. Default: False
             position: If this field is set, the tooltip position will be fixed and will not move anymore.
             coordinate: The coordinate of tooltip which is usually calculated internally. Default: {"x": 0, "y": 0}
-            is_animation_active: If set false, animation of tooltip will be disabled. Default: True in CSR, and False in SSR
+            is_animation_active: If set false, animation of tooltip will be disabled. Default: True
             animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
             animation_easing: The type of easing function. Default: "ease"
             style: The style of the component.

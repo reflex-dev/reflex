@@ -183,7 +183,7 @@ class GraphingTooltip(Recharts):
     # The coordinate of tooltip which is usually calculated internally. Default: {"x": 0, "y": 0}
     coordinate: Var[Dict[str, Any]]
 
-    # If set false, animation of tooltip will be disabled. Default: True in CSR, and False in SSR
+    # If set false, animation of tooltip will be disabled. Default: True
     is_animation_active: Var[bool]
 
     # Specifies the duration of animation, the unit of this option is ms. Default: 1500
