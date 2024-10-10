@@ -15,6 +15,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    ParamSpec,
     Tuple,
     Type,
     TypeVar,
@@ -426,7 +427,7 @@ class JavasciptKeyboardEvent:
     key: str = ""
 
 
-def input_event(e: Var[JavascriptInputEvent]) -> Tuple[str]:
+def input_event(e: Var[JavascriptInputEvent]) -> Tuple[Var[str]]:
     """Get the value from an input event.
 
     Args:
@@ -438,7 +439,7 @@ def input_event(e: Var[JavascriptInputEvent]) -> Tuple[str]:
     return (e.target.value,)
 
 
-def key_event(e: Var[JavasciptKeyboardEvent]) -> Tuple[str]:
+def key_event(e: Var[JavasciptKeyboardEvent]) -> Tuple[Var[str]]:
     """Get the key from a keyboard event.
 
     Args:
@@ -1418,3 +1419,10 @@ class ToEventChainVarOperation(ToOperation, EventChainVar):
     _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
 
     _default_var_type: ClassVar[Type] = EventChain
+
+
+T = ParamSpec("T")
+
+IndividualEventType = Union[EventSpec, EventHandler, Callable[T, Any], Var]
+
+EventType = IndividualEventType[T] | List[IndividualEventType[T]]
