@@ -89,6 +89,8 @@ from reflex.utils import (
     lazy_loader,
 )
 
+from .event import event as event
+
 # import this here explicitly to avoid returning the page module since page attr has the
 # same name as page module(page.py)
 from .page import page as page
@@ -297,7 +299,6 @@ _MAPPING: dict = {
     "config": ["Config", "DBConfig"],
     "constants": ["Env"],
     "event": [
-        "event",
         "EventChain",
         "EventHandler",
         "background",
@@ -373,6 +374,3 @@ def __getattr__(name):
 
         return rc
     return getattr(name)
-
-
-event = getattr("event")
