@@ -315,7 +315,7 @@ class RadialBar(Recharts):
             legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. Default: "rect"
             label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
             background: If false set, background sector will not be drawn. Default: False
-            is_animation_active: If set false, animation of radial bars will be disabled. By default true in CSR, and false in SSR. Default: True in CSR, and False in SSR
+            is_animation_active: If set false, animation of radial bars will be disabled. Default: True
             animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
             animation_duration: Specifies the duration of animation, the unit of this option is ms. Default 1500
             animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default: "ease"
