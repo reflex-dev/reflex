@@ -1046,13 +1046,15 @@ def parse_args_spec(arg_spec: ArgsSpec):
     spec = inspect.getfullargspec(arg_spec)
     annotations = get_type_hints(arg_spec)
 
-    return arg_spec(
-        *[
-            Var(f"_{l_arg}").to(
-                unwrap_var_annotation(resolve_annotation(annotations, l_arg))
-            )
-            for l_arg in spec.args
-        ]
+    return list(
+        arg_spec(
+            *[
+                Var(f"_{l_arg}").to(
+                    unwrap_var_annotation(resolve_annotation(annotations, l_arg))
+                )
+                for l_arg in spec.args
+            ]
+        )
     )
 
 
