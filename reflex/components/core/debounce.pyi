@@ -32,7 +32,6 @@ class DebounceInput(Component):
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_change: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]

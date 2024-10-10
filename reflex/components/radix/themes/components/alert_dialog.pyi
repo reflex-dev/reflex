@@ -8,7 +8,10 @@ from typing import Any, Callable, Dict, Literal, Optional, Union, overload
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.el import elements
-from reflex.event import EventHandler, EventSpec
+from reflex.event import (
+    EventHandler,
+    EventSpec,
+)
 from reflex.style import Style
 from reflex.vars.base import Var
 
