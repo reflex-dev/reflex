@@ -173,7 +173,7 @@ class Axis(Recharts):
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain. Default: False
             allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
             domain: The range of the axis. Work best in conjuction with allow_data_overflow. Default: [0, "auto"]
-            axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line. Default: True
+            axis_line: If set false, no axis line will be drawn. Default: True
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside. Default: False
             reversed: Reverse the ticks or not. Default: False
             label: The label of axis, which appears next to the axis.
@@ -246,6 +246,7 @@ class XAxis(Axis):
         allow_decimals: Optional[Union[Var[bool], bool]] = None,
         allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
         allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
+        domain: Optional[Union[List, Var[List]]] = None,
         axis_line: Optional[Union[Var[bool], bool]] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
@@ -359,7 +360,6 @@ class XAxis(Axis):
             orientation: The orientation of axis 'top' | 'bottom'. Default: "bottom"
             x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
             include_hidden: Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden. Default: False
-            domain: The range of the axis. Work best in conjuction with allow_data_overflow. Default: [0, "auto"]
             angle: The angle of axis ticks. Default: 0
             padding: Specify the padding of x-axis. Default: {"left": 0, "right": 0}
             data_key: The key of data displayed in the axis.
@@ -371,7 +371,8 @@ class XAxis(Axis):
             allow_decimals: Allow the ticks of Axis to be decimals or not. Default: True
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain. Default: False
             allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
-            axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line. Default: True
+            domain: The range of the axis. Work best in conjuction with allow_data_overflow. Default: [0, "auto"]
+            axis_line: If set false, no axis line will be drawn. Default: True
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside. Default: False
             reversed: Reverse the ticks or not. Default: False
             label: The label of axis, which appears next to the axis.
@@ -442,6 +443,7 @@ class YAxis(Axis):
         allow_decimals: Optional[Union[Var[bool], bool]] = None,
         allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
         allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
+        domain: Optional[Union[List, Var[List]]] = None,
         axis_line: Optional[Union[Var[bool], bool]] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
@@ -554,7 +556,6 @@ class YAxis(Axis):
             *children: The children of the component.
             orientation: The orientation of axis 'left' | 'right'. Default: "left"
             y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
-            domain: The range of the axis. Work best in conjuction with allow_data_overflow. Default: [0, "auto"]
             padding: Specify the padding of y-axis. Default: {"top": 0, "bottom": 0}
             data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart. Default: False
@@ -565,7 +566,8 @@ class YAxis(Axis):
             allow_decimals: Allow the ticks of Axis to be decimals or not. Default: True
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain. Default: False
             allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
-            axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line. Default: True
+            domain: The range of the axis. Work best in conjuction with allow_data_overflow. Default: [0, "auto"]
+            axis_line: If set false, no axis line will be drawn. Default: True
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside. Default: False
             reversed: Reverse the ticks or not. Default: False
             label: The label of axis, which appears next to the axis.

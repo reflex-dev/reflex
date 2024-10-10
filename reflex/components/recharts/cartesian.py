@@ -63,7 +63,7 @@ class Axis(Recharts):
     # The range of the axis. Work best in conjuction with allow_data_overflow. Default: [0, "auto"]
     domain: Var[List]
 
-    # If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line. Default: True
+    # If set false, no axis line will be drawn. Default: True
     axis_line: Var[bool]
 
     # If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside. Default: False
