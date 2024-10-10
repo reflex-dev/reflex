@@ -1290,19 +1290,19 @@ def test_computed_var_depends_on_parent_non_cached():
     assert ps.dirty_vars == set()
     assert cs.dirty_vars == set()
 
-    dict1 = ps.dict()
+    dict1 = json.loads(json_dumps(ps.dict()))
     assert dict1[ps.get_full_name()] == {
         "no_cache_v": 1,
         "router": formatted_router,
     }
     assert dict1[cs.get_full_name()] == {"dep_v": 2}
-    dict2 = ps.dict()
+    dict2 = json.loads(json_dumps(ps.dict()))
     assert dict2[ps.get_full_name()] == {
         "no_cache_v": 3,
         "router": formatted_router,
     }
     assert dict2[cs.get_full_name()] == {"dep_v": 4}
-    dict3 = ps.dict()
+    dict3 = json.loads(json_dumps(ps.dict()))
     assert dict3[ps.get_full_name()] == {
         "no_cache_v": 5,
         "router": formatted_router,
