@@ -441,7 +441,7 @@ class Var(Generic[VAR_TYPE]):
 
         if issubclass(output, NumberVar):
             if fixed_type is not None:
-                if fixed_type is Union:
+                if fixed_type in types.UnionTypes:
                     inner_types = get_args(base_type)
                     if not all(issubclass(t, (int, float)) for t in inner_types):
                         raise TypeError(
@@ -530,7 +530,7 @@ class Var(Generic[VAR_TYPE]):
 
         fixed_type = get_origin(var_type) or var_type
 
-        if fixed_type is Union:
+        if fixed_type in types.UnionTypes:
             inner_types = get_args(var_type)
 
             if all(
