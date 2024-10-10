@@ -212,7 +212,8 @@ class XAxis(Axis):
         ] = None,
         x_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         include_hidden: Optional[Union[Var[bool], bool]] = None,
-        domain: Optional[Union[List, Var[List]]] = None,
+        angle: Optional[Union[Var[int], int]] = None,
+        padding: Optional[Union[Dict[str, int], Var[Dict[str, int]]]] = None,
         data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -355,10 +356,12 @@ class XAxis(Axis):
 
         Args:
             *children: The children of the component.
-            orientation: The orientation of axis 'top' | 'bottom'
-            x_axis_id: The id of x-axis which is corresponding to the data.
-            include_hidden: Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden
+            orientation: The orientation of axis 'top' | 'bottom'. Default: "bottom"
+            x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
+            include_hidden: Ensures that all datapoints within a chart contribute to its domain calculation, even when they are hidden. Default: False
             domain: The range of the axis. Work best in conjuction with allow_data_overflow. Default: [0, "auto"]
+            angle: The angle of axis ticks. Default: 0
+            padding: Specify the padding of x-axis. Default: {"left": 0, "right": 0}
             data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart. Default: False
             width: The width of axis which is usually calculated internally.
@@ -406,7 +409,7 @@ class YAxis(Axis):
             Union[Literal["left", "right"], Var[Literal["left", "right"]]]
         ] = None,
         y_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        domain: Optional[Union[List, Var[List]]] = None,
+        padding: Optional[Union[Dict[str, int], Var[Dict[str, int]]]] = None,
         data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         hide: Optional[Union[Var[bool], bool]] = None,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -549,9 +552,10 @@ class YAxis(Axis):
 
         Args:
             *children: The children of the component.
-            orientation: The orientation of axis 'left' | 'right'
-            y_axis_id: The id of y-axis which is corresponding to the data.
+            orientation: The orientation of axis 'left' | 'right'. Default: "left"
+            y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
             domain: The range of the axis. Work best in conjuction with allow_data_overflow. Default: [0, "auto"]
+            padding: Specify the padding of y-axis. Default: {"top": 0, "bottom": 0}
             data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart. Default: False
             width: The width of axis which is usually calculated internally.
@@ -596,6 +600,7 @@ class ZAxis(Recharts):
         cls,
         *children,
         data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        z_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         range: Optional[Union[List[int], Var[List[int]]]] = None,
         unit: Optional[Union[Var[Union[int, str]], int, str]] = None,
         name: Optional[Union[Var[Union[int, str]], int, str]] = None,
@@ -687,10 +692,11 @@ class ZAxis(Recharts):
         Args:
             *children: The children of the component.
             data_key: The key of data displayed in the axis.
-            range: The range of axis.
+            z_axis_id: The unique id of z-axis. Default: 0
+            range: The range of axis. Default: [10, 10]
             unit: The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
             name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
-            scale: If 'auto' set, the scale function is decided by the type of chart, and the props type.
+            scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. Default: "auto"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -739,15 +745,15 @@ class Brush(Recharts):
             stroke: The stroke color of brush
             fill: The fill color of brush
             data_key: The key of data displayed in the axis.
-            x: The x-coordinate of brush.
-            y: The y-coordinate of brush.
-            width: The width of brush.
-            height: The height of brush.
-            data: The data domain of brush, [min, max].
-            traveller_width: The width of each traveller.
-            gap: The data with gap of refreshing chart. If the option is not set, the chart will be refreshed every time
-            start_index: The default start index of brush. If the option is not set, the start index will be 0.
-            end_index: The default end index of brush. If the option is not set, the end index will be 1.
+            x: The x-coordinate of brush. Default: 0
+            y: The y-coordinate of brush. Default: 0
+            width: The width of brush. Default: 0
+            height: The height of brush. Default: 40
+            data: The original data of a LineChart, a BarChart or an AreaChart.
+            traveller_width: The width of each traveller. Default: 5
+            gap: The data with gap of refreshing chart. If the option is not set, the chart will be refreshed every time. Default: 1
+            start_index: The default start index of brush. If the option is not set, the start index will be 0. Default: 0
+            end_index: The default end index of brush. If the option is not set, the end index will be calculated by the length of data.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -929,9 +935,12 @@ class Area(Cartesian):
             Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
         ] = None,
         label: Optional[Union[Var[bool], bool]] = None,
+        base_line: Optional[
+            Union[List[Dict[str, Any]], Var[Union[List[Dict[str, Any]], str]], str]
+        ] = None,
+        points: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
         stack_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        unit: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        name: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        connect_nulls: Optional[Union[Var[bool], bool]] = None,
         layout: Optional[
             Union[
                 Literal["horizontal", "vertical"],
@@ -1020,16 +1029,17 @@ class Area(Cartesian):
 
         Args:
             *children: The children of the component.
-            stroke: The color of the line stroke.
-            stroke_width: The width of the line stroke.
-            fill: The color of the area fill.
-            type_: The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
-            dot: If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally.
-            active_dot: The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-            label: If set false, labels will not be drawn. If set true, labels will be drawn which have the props calculated internally.
+            stroke: The color of the line stroke. Default: rx.color("accent", 9)
+            stroke_width: The width of the line stroke. Default: 1
+            fill: The color of the area fill. Default: rx.color("accent", 5)
+            type_: The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter'. Default: "monotone"
+            dot: If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally. Default: False
+            active_dot: The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {stroke: rx.color("accent", 2), fill: rx.color("accent", 10)}
+            label: If set false, labels will not be drawn. If set true, labels will be drawn which have the props calculated internally. Default: False
+            base_line: The value which can describle the line, usually calculated internally.
+            points: The coordinates of all the points in the area, usually calculated internally.
             stack_id: The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
-            unit: The unit of data. This option will be used in tooltip.
-            name: The name of data. This option will be used in tooltip and legend to represent a bar. If no value was set to this option, the value of dataKey will be used alternatively.
+            connect_nulls: Whether to connect a graph area across null points. Default: False
             layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
             data_key: The key of a group of data which should be unique in an area chart.
             x_axis_id: The id of x-axis which is corresponding to the data.
@@ -1065,15 +1075,7 @@ class Bar(Cartesian):
         name: Optional[Union[Var[Union[int, str]], int, str]] = None,
         bar_size: Optional[Union[Var[int], int]] = None,
         max_bar_size: Optional[Union[Var[int], int]] = None,
-        is_animation_active: Optional[Union[Var[bool], bool]] = None,
-        animation_begin: Optional[Union[Var[int], int]] = None,
-        animation_duration: Optional[Union[Var[int], int]] = None,
-        animation_easing: Optional[
-            Union[
-                Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"],
-                Var[Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"]],
-            ]
-        ] = None,
+        radius: Optional[Union[List[int], Var[Union[List[int], int]], int]] = None,
         layout: Optional[
             Union[
                 Literal["horizontal", "vertical"],
@@ -1121,12 +1123,6 @@ class Bar(Cartesian):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_animation_end: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
-        ] = None,
-        on_animation_start: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
-        ] = None,
         on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
@@ -1170,19 +1166,16 @@ class Bar(Cartesian):
             *children: The children of the component.
             stroke: The color of the line stroke.
             stroke_width: The width of the line stroke.
-            fill: The width of the line stroke.
-            background: If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally.
-            label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
+            fill: The width of the line stroke. Default: Color("accent", 9)
+            background: If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally. Default: False
+            label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
             stack_id: The stack id of bar, when two bars have the same value axis and same stack_id, then the two bars are stacked in order.
             unit: The unit of data. This option will be used in tooltip.
             min_point_size: The minimal height of a bar in a horizontal BarChart, or the minimal width of a bar in a vertical BarChart. By default, 0 values are not shown. To visualize a 0 (or close to zero) point, set the minimal point size to a pixel value like 3. In stacked bar charts, minPointSize might not be respected for tightly packed values. So we strongly recommend not using this prop in stacked BarCharts.
             name: The name of data. This option will be used in tooltip and legend to represent a bar. If no value was set to this option, the value of dataKey will be used alternatively.
             bar_size: Size of the bar (if one bar_size is set then a bar_size must be set for all bars)
             max_bar_size: Max size of the bar
-            is_animation_active: If set false, animation of bar will be disabled.
-            animation_begin: Specifies when the animation should begin, the unit of this option is ms, default 0.
-            animation_duration: Specifies the duration of animation, the unit of this option is ms, default 1500.
-            animation_easing: The type of easing function, default 'ease'
+            radius: If set a value, the option is the radius of all the rounded corners. If set a array, the option are in turn the radiuses of top-left corner, top-right corner, bottom-right corner, bottom-left corner. Default: 0
             layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
             data_key: The key of a group of data which should be unique in an area chart.
             x_axis_id: The id of x-axis which is corresponding to the data.
@@ -1259,7 +1252,8 @@ class Line(Cartesian):
         hide: Optional[Union[Var[bool], bool]] = None,
         connect_nulls: Optional[Union[Var[bool], bool]] = None,
         unit: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        name: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        points: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        stroke_dasharray: Optional[Union[Var[str], str]] = None,
         layout: Optional[
             Union[
                 Literal["horizontal", "vertical"],
@@ -1349,15 +1343,16 @@ class Line(Cartesian):
         Args:
             *children: The children of the component.
             type_: The interpolation type of line. And customized interpolation function can be set to type. It's the same as type in Area.
-            stroke: The color of the line stroke.
-            stroke_width: The width of the line stroke.
-            dot: The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-            active_dot: The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally.
-            label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
-            hide: Hides the line when true, useful when toggling visibility state via legend.
+            stroke: The color of the line stroke. Default: rx.color("accent", 9)
+            stroke_width: The width of the line stroke. Default: 1
+            dot: The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {"stroke": rx.color("accent", 10), "fill": rx.color("accent", 4)}
+            active_dot: The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {"stroke": rx.color("accent", 2), "fill": rx.color("accent", 10)}
+            label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
+            hide: Hides the line when true, useful when toggling visibility state via legend. Default: False
             connect_nulls: Whether to connect a graph line across null points.
             unit: The unit of data. This option will be used in tooltip.
-            name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
+            points: The coordinates of all the points in the line, usually calculated internally.
+            stroke_dasharray: The pattern of dashes and gaps used to paint the line.
             layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
             data_key: The key of a group of data which should be unique in an area chart.
             x_axis_id: The id of x-axis which is corresponding to the data.
@@ -1417,7 +1412,7 @@ class Scatter(Recharts):
         ] = None,
         x_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         y_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        z_axis_id: Optional[Union[Var[str], str]] = None,
+        z_axis_id: Optional[Union[Var[Union[int, str]], int, str]] = None,
         line: Optional[Union[Var[bool], bool]] = None,
         shape: Optional[
             Union[
@@ -1441,7 +1436,6 @@ class Scatter(Recharts):
             Union[Literal["fitting", "joint"], Var[Literal["fitting", "joint"]]]
         ] = None,
         fill: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
-        name: Optional[Union[Var[Union[int, str]], int, str]] = None,
         is_animation_active: Optional[Union[Var[bool], bool]] = None,
         animation_begin: Optional[Union[Var[int], int]] = None,
         animation_duration: Optional[Union[Var[int], int]] = None,
@@ -1499,19 +1493,18 @@ class Scatter(Recharts):
         Args:
             *children: The children of the component.
             data: The source data, in which each element is an object.
-            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye' | 'none'
-            x_axis_id: The id of x-axis which is corresponding to the data.
-            y_axis_id: The id of y-axis which is corresponding to the data.
-            z_axis_id: The id of z-axis which is corresponding to the data.
-            line: If false set, line will not be drawn. If true set, line will be drawn which have the props calculated internally.
-            shape: If a string set, specified symbol will be used to show scatter item. 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye'
-            line_type: If 'joint' set, line will generated by just jointing all the points. If 'fitting' set, line will be generated by fitting algorithm. 'joint' | 'fitting'
-            fill: The fill
-            name: the name
-            is_animation_active: If set false, animation of bar will be disabled.
-            animation_begin: Specifies when the animation should begin, the unit of this option is ms, default 0.
-            animation_duration: Specifies the duration of animation, the unit of this option is ms, default 1500.
-            animation_easing: The type of easing function, default 'ease'
+            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye' | 'none'. Default: "circle"
+            x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
+            y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
+            z_axis_id: The id of z-axis which is corresponding to the data. Default: 0
+            line: If false set, line will not be drawn. If true set, line will be drawn which have the props calculated internally. Default: False
+            shape: If a string set, specified symbol will be used to show scatter item. 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye'. Default: "circle"
+            line_type: If 'joint' set, line will generated by just jointing all the points. If 'fitting' set, line will be generated by fitting algorithm. 'joint' | 'fitting'. Default: "joint"
+            fill: The fill color of the scatter. Default: rx.color("accent", 9)
+            is_animation_active: If set false, animation of bar will be disabled. Default: True in CSR, False in SSR
+            animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
+            animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
+            animation_easing: The type of easing function. Default: "ease"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1792,11 +1785,11 @@ class Reference(Recharts):
 
         Args:
             *children: The children of the component.
-            x_axis_id: The id of x-axis which is corresponding to the data.
-            y_axis_id: The id of y-axis which is corresponding to the data.
-            if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
+            x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
+            y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
+            if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas. Default: "discard"
             label: If set a string or a number, default label will be drawn, and the option is content.
-            is_front: If set true, the line will be rendered in front of bars in BarChart, etc.
+            is_front: If set true, the line will be rendered in front of bars in BarChart, etc. Default: False
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1881,13 +1874,13 @@ class ReferenceLine(Reference):
             x: If set a string or a number, a vertical line perpendicular to the x-axis specified by xAxisId will be drawn. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys, otherwise no line will be drawn.
             y: If set a string or a number, a horizontal line perpendicular to the y-axis specified by yAxisId will be drawn. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys, otherwise no line will be drawn.
             stroke: The color of the reference line.
-            stroke_width: The width of the stroke.
+            stroke_width: The width of the stroke. Default: 1
             segment: Array of endpoints in { x, y } format. These endpoints would be used to draw the ReferenceLine.
-            x_axis_id: The id of x-axis which is corresponding to the data.
-            y_axis_id: The id of y-axis which is corresponding to the data.
-            if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
+            x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
+            y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
+            if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas. Default: "discard"
             label: If set a string or a number, default label will be drawn, and the option is content.
-            is_front: If set true, the line will be rendered in front of bars in BarChart, etc.
+            is_front: If set true, the line will be rendered in front of bars in BarChart, etc. Default: False
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1974,11 +1967,11 @@ class ReferenceDot(Reference):
             r: The radius of dot.
             fill: The color of the area fill.
             stroke: The color of the line stroke.
-            x_axis_id: The id of x-axis which is corresponding to the data.
-            y_axis_id: The id of y-axis which is corresponding to the data.
-            if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
+            x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
+            y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
+            if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas. Default: "discard"
             label: If set a string or a number, default label will be drawn, and the option is content.
-            is_front: If set true, the line will be rendered in front of bars in BarChart, etc.
+            is_front: If set true, the line will be rendered in front of bars in BarChart, etc. Default: False
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -2070,8 +2063,8 @@ class ReferenceArea(Recharts):
             x2: A boundary value of the area. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys. If one of x1 or x2 is invalidate, the area will cover along x-axis.
             y1: A boundary value of the area. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys. If one of y1 or y2 is invalidate, the area will cover along y-axis.
             y2: A boundary value of the area. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys. If one of y1 or y2 is invalidate, the area will cover along y-axis.
-            if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
-            is_front: If set true, the line will be rendered in front of bars in BarChart, etc.
+            if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas. Default: "discard"
+            is_front: If set true, the line will be rendered in front of bars in BarChart, etc. Default: False
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -2228,14 +2221,14 @@ class CartesianGrid(Grid):
 
         Args:
             *children: The children of the component.
-            horizontal: The horizontal line configuration.
-            vertical: The vertical line configuration.
-            vertical_points: The x-coordinates in pixel values of all vertical lines.
-            horizontal_points: The x-coordinates in pixel values of all vertical lines.
+            horizontal: The horizontal line configuration. Default: True
+            vertical: The vertical line configuration. Default: True
+            vertical_points: The x-coordinates in pixel values of all vertical lines. Default: []
+            horizontal_points: The x-coordinates in pixel values of all vertical lines. Default: []
             fill: The background of grid.
-            fill_opacity: The opacity of the background used to fill the space between grid lines
-            stroke_dasharray: The pattern of dashes and gaps used to paint the lines of the grid
-            stroke: the stroke color of grid
+            fill_opacity: The opacity of the background used to fill the space between grid lines.
+            stroke_dasharray: The pattern of dashes and gaps used to paint the lines of the grid.
+            stroke: the stroke color of grid. Default: rx.color("gray", 7)
             x: The x-coordinate of grid.
             y: The y-coordinate of grid.
             width: The width of grid.
@@ -2265,7 +2258,9 @@ class CartesianAxis(Grid):
                 Var[Literal["bottom", "left", "right", "top"]],
             ]
         ] = None,
+        view_box: Optional[Union[Dict[str, Any], Var[Dict[str, Any]]]] = None,
         axis_line: Optional[Union[Var[bool], bool]] = None,
+        tick: Optional[Union[Var[bool], bool]] = None,
         tick_line: Optional[Union[Var[bool], bool]] = None,
         tick_size: Optional[Union[Var[int], int]] = None,
         interval: Optional[
@@ -2274,8 +2269,7 @@ class CartesianAxis(Grid):
                 Var[Literal["preserveEnd", "preserveStart", "preserveStartEnd"]],
             ]
         ] = None,
-        ticks: Optional[Union[Var[bool], bool]] = None,
-        label: Optional[Union[Var[str], str]] = None,
+        label: Optional[Union[Var[Union[int, str]], int, str]] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         tick_margin: Optional[Union[Var[int], int]] = None,
         x: Optional[Union[Var[int], int]] = None,
@@ -2329,14 +2323,15 @@ class CartesianAxis(Grid):
 
         Args:
             *children: The children of the component.
-            orientation: The orientation of axis 'top' | 'bottom' | 'left' | 'right'
-            axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
-            tick_line: If set false, no axis tick lines will be drawn. If set a object, the option is the configuration of tick lines.
-            tick_size: The length of tick line.
-            interval: If set 0, all the ticks will be shown. If set preserveStart", "preserveEnd" or "preserveStartEnd", the ticks which is to be shown or hidden will be calculated automatically.
-            ticks: If set false, no ticks will be drawn.
+            orientation: The orientation of axis 'top' | 'bottom' | 'left' | 'right'. Default: "bottom"
+            view_box: The box of viewing area. Default: {"x": 0, "y": 0, "width": 0, "height": 0}
+            axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line. Default: True
+            tick: If set false, no ticks will be drawn.
+            tick_line: If set false, no axis tick lines will be drawn. If set a object, the option is the configuration of tick lines. Default: True
+            tick_size: The length of tick line. Default: 6
+            interval: If set 0, all the ticks will be shown. If set preserveStart", "preserveEnd" or "preserveStartEnd", the ticks which is to be shown or hidden will be calculated automatically. Default: "preserveEnd"
             label: If set a string or a number, default label will be drawn, and the option is content.
-            mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
+            mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside. Default: False
             tick_margin: The margin between tick line and tick.
             x: The x-coordinate of grid.
             y: The y-coordinate of grid.

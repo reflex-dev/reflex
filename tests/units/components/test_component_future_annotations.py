@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from reflex.components.component import Component
-from reflex.event import EventHandler
+from reflex.event import EventHandler, empty_event, input_event
 
 
 # This is a repeat of its namesake in test_component.py.
@@ -25,9 +25,9 @@ def test_custom_component_declare_event_handlers_in_fields():
 
     class TestComponent(Component):
         on_a: EventHandler[lambda e0: [e0]]
-        on_b: EventHandler[lambda e0: [e0.target.value]]
+        on_b: EventHandler[input_event]
         on_c: EventHandler[lambda e0: []]
-        on_d: EventHandler[lambda: []]
+        on_d: EventHandler[empty_event]
 
     custom_component = ReferenceComponent.create()
     test_component = TestComponent.create()

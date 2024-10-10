@@ -10,7 +10,13 @@ from jinja2 import Environment
 from reflex.components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
-from reflex.event import EventChain, EventHandler, prevent_default
+from reflex.event import (
+    EventChain,
+    EventHandler,
+    input_event,
+    key_event,
+    prevent_default,
+)
 from reflex.utils.imports import ImportDict
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -345,19 +351,19 @@ class Input(BaseHTML):
     value: Var[Union[str, int, float]]
 
     # Fired when the input value changes
-    on_change: EventHandler[lambda e0: [e0.target.value]]
+    on_change: EventHandler[input_event]
 
     # Fired when the input gains focus
-    on_focus: EventHandler[lambda e0: [e0.target.value]]
+    on_focus: EventHandler[input_event]
 
     # Fired when the input loses focus
-    on_blur: EventHandler[lambda e0: [e0.target.value]]
+    on_blur: EventHandler[input_event]
 
     # Fired when a key is pressed down
-    on_key_down: EventHandler[lambda e0: [e0.key]]
+    on_key_down: EventHandler[key_event]
 
     # Fired when a key is released
-    on_key_up: EventHandler[lambda e0: [e0.key]]
+    on_key_up: EventHandler[key_event]
 
 
 class Label(BaseHTML):
@@ -496,7 +502,7 @@ class Select(BaseHTML):
     size: Var[Union[str, int, bool]]
 
     # Fired when the select value changes
-    on_change: EventHandler[lambda e0: [e0.target.value]]
+    on_change: EventHandler[input_event]
 
 
 AUTO_HEIGHT_JS = """
@@ -586,19 +592,19 @@ class Textarea(BaseHTML):
     wrap: Var[Union[str, int, bool]]
 
     # Fired when the input value changes
-    on_change: EventHandler[lambda e0: [e0.target.value]]
+    on_change: EventHandler[input_event]
 
     # Fired when the input gains focus
-    on_focus: EventHandler[lambda e0: [e0.target.value]]
+    on_focus: EventHandler[input_event]
 
     # Fired when the input loses focus
-    on_blur: EventHandler[lambda e0: [e0.target.value]]
+    on_blur: EventHandler[input_event]
 
     # Fired when a key is pressed down
-    on_key_down: EventHandler[lambda e0: [e0.key]]
+    on_key_down: EventHandler[key_event]
 
     # Fired when a key is released
-    on_key_up: EventHandler[lambda e0: [e0.key]]
+    on_key_up: EventHandler[key_event]
 
     def _exclude_props(self) -> list[str]:
         return super()._exclude_props() + [
