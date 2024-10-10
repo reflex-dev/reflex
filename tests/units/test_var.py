@@ -1809,3 +1809,6 @@ def test_to_string_operation():
 
     assert cast(Var, TestState.email)._var_type == Email
     assert cast(Var, TestState.optional_email)._var_type == Optional[Email]
+
+    single_var = Var.create(Email())
+    assert single_var._var_type == Email
