@@ -6,6 +6,7 @@ import os
 import platform
 from enum import Enum
 from importlib import metadata
+from pathlib import Path
 from types import SimpleNamespace
 
 from platformdirs import PlatformDirs
@@ -66,18 +67,19 @@ class Reflex(SimpleNamespace):
     # Get directory value from enviroment variables if it exists.
     _dir = os.environ.get("REFLEX_DIR", "")
 
-    DIR = _dir or (
-        # on windows, we use C:/Users/<username>/AppData/Local/reflex.
-        # on macOS, we use ~/Library/Application Support/reflex.
-        # on linux, we use ~/.local/share/reflex.
-        # If user sets REFLEX_DIR envroment variable use that instead.
-        PlatformDirs(MODULE_NAME, False).user_data_dir
+    DIR = Path(
+        _dir
+        or (
+            # on windows, we use C:/Users/<username>/AppData/Local/reflex.
+            # on macOS, we use ~/Library/Application Support/reflex.
+            # on linux, we use ~/.local/share/reflex.
+            # If user sets REFLEX_DIR envroment variable use that instead.
+            PlatformDirs(MODULE_NAME, False).user_data_dir
+        )
     )
     # The root directory of the reflex library.
 
-    ROOT_DIR = os.path.dirname(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    )
+    ROOT_DIR = Path(__file__).parents[2]
 
     RELEASES_URL = f"https://api.github.com/repos/reflex-dev/templates/releases"
 
@@ -125,11 +127,11 @@ class Templates(SimpleNamespace):
         """Folders used by the template system of Reflex."""
 
         # The template directory used during reflex init.
-        BASE = os.path.join(Reflex.ROOT_DIR, Reflex.MODULE_NAME, ".templates")
+        BASE = Reflex.ROOT_DIR / Reflex.MODULE_NAME / ".templates"
         # The web subdirectory of the template directory.
-        WEB_TEMPLATE = os.path.join(BASE, "web")
+        WEB_TEMPLATE = BASE / "web"
         # The jinja template directory.
-        JINJA_TEMPLATE = os.path.join(BASE, "jinja")
+        JINJA_TEMPLATE = BASE / "jinja"
         # Where the code for the templates is stored.
         CODE = "code"
 
@@ -190,6 +192,14 @@ class LogLevel(str, Enum):
         """
         levels = list(LogLevel)
         return levels.index(self) <= levels.index(other)
+
+    def subprocess_level(self):
+        """Return the log level for the subprocess.
+
+        Returns:
+            The log level for the subprocess
+        """
+        return self if self != LogLevel.DEFAULT else LogLevel.WARNING
 
 
 # Server socket configuration variables

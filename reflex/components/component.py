@@ -38,8 +38,10 @@ from reflex.constants import (
 )
 from reflex.event import (
     EventChain,
+    EventChainVar,
     EventHandler,
     EventSpec,
+    EventVar,
     call_event_fn,
     call_event_handler,
     get_handler_args,
@@ -514,7 +516,7 @@ class Component(BaseComponent, ABC):
             Var,
             EventHandler,
             EventSpec,
-            List[Union[EventHandler, EventSpec]],
+            List[Union[EventHandler, EventSpec, EventVar]],
             Callable,
         ],
     ) -> Union[EventChain, Var]:
@@ -532,11 +534,16 @@ class Component(BaseComponent, ABC):
         """
         # If it's an event chain var, return it.
         if isinstance(value, Var):
-            if value._var_type is not EventChain:
+            if isinstance(value, EventChainVar):
+                return value
+            elif isinstance(value, EventVar):
+                value = [value]
+            elif issubclass(value._var_type, (EventChain, EventSpec)):
+                return self._create_event_chain(args_spec, value.guess_type())
+            else:
                 raise ValueError(
-                    f"Invalid event chain: {repr(value)} of type {type(value)}"
+                    f"Invalid event chain: {str(value)} of type {value._var_type}"
                 )
-            return value
         elif isinstance(value, EventChain):
             # Trust that the caller knows what they're doing passing an EventChain directly
             return value
@@ -547,7 +554,7 @@ class Component(BaseComponent, ABC):
 
         # If the input is a list of event handlers, create an event chain.
         if isinstance(value, List):
-            events: list[EventSpec] = []
+            events: List[Union[EventSpec, EventVar]] = []
             for v in value:
                 if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
@@ -561,6 +568,8 @@ class Component(BaseComponent, ABC):
                             "lambda inside an EventChain list."
                         )
                     events.extend(result)
+                elif isinstance(v, EventVar):
+                    events.append(v)
                 else:
                     raise ValueError(f"Invalid event: {v}")
 
@@ -570,32 +579,30 @@ class Component(BaseComponent, ABC):
             if isinstance(result, Var):
                 # Recursively call this function if the lambda returned an EventChain Var.
                 return self._create_event_chain(args_spec, result)
-            events = result
+            events = [*result]
 
         # Otherwise, raise an error.
         else:
             raise ValueError(f"Invalid event chain: {value}")
 
         # Add args to the event specs if necessary.
-        events = [e.with_args(get_handler_args(e)) for e in events]
-
-        # Collect event_actions from each spec
-        event_actions = {}
-        for e in events:
-            event_actions.update(e.event_actions)
+        events = [
+            (e.with_args(get_handler_args(e)) if isinstance(e, EventSpec) else e)
+            for e in events
+        ]
 
         # Return the event chain.
         if isinstance(args_spec, Var):
             return EventChain(
                 events=events,
                 args_spec=None,
-                event_actions=event_actions,
+                event_actions={},
             )
         else:
             return EventChain(
                 events=events,
                 args_spec=args_spec,
-                event_actions=event_actions,
+                event_actions={},
             )
 
     def get_event_triggers(self) -> Dict[str, Any]:
@@ -1030,8 +1037,11 @@ class Component(BaseComponent, ABC):
             elif isinstance(event, EventChain):
                 event_args = []
                 for spec in event.events:
-                    for args in spec.args:
-                        event_args.extend(args)
+                    if isinstance(spec, EventSpec):
+                        for args in spec.args:
+                            event_args.extend(args)
+                    else:
+                        event_args.append(spec)
                 yield event_trigger, event_args
 
     def _get_vars(self, include_children: bool = False) -> list[Var]:
@@ -1105,8 +1115,12 @@ class Component(BaseComponent, ABC):
         for trigger in self.event_triggers.values():
             if isinstance(trigger, EventChain):
                 for event in trigger.events:
-                    if event.handler.state_full_name:
-                        return True
+                    if isinstance(event, EventSpec):
+                        if event.handler.state_full_name:
+                            return True
+                    else:
+                        if event._var_state:
+                            return True
             elif isinstance(trigger, Var) and trigger._var_state:
                 return True
         return False

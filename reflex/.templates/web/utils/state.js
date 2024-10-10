@@ -544,13 +544,19 @@ export const uploadFiles = async (
 
 /**
  * Create an event object.
- * @param name The name of the event.
- * @param payload The payload of the event.
- * @param handler The client handler to process event.
+ * @param {string} name The name of the event.
+ * @param {Object.<string, Any>} payload The payload of the event.
+ * @param {Object.<string, (number|boolean)>} event_actions The actions to take on the event.
+ * @param {string} handler The client handler to process event.
  * @returns The event object.
  */
-export const Event = (name, payload = {}, handler = null) => {
-  return { name, payload, handler };
+export const Event = (
+  name,
+  payload = {},
+  event_actions = {},
+  handler = null
+) => {
+  return { name, payload, handler, event_actions };
 };
 
 /**
@@ -676,6 +682,12 @@ export const useEventLoop = (
     if (!(args instanceof Array)) {
       args = [args];
     }
+
+    event_actions = events.reduce(
+      (acc, e) => ({ ...acc, ...e.event_actions }),
+      event_actions ?? {}
+    );
+
     const _e = args.filter((o) => o?.preventDefault !== undefined)[0];
 
     if (event_actions?.preventDefault && _e?.preventDefault) {

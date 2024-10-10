@@ -30,20 +30,23 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
     # The aspect ratio of the container. The final aspect ratio of the SVG element will be (width / height) * aspect. Number
     aspect: Var[int]
 
-    # The width of chart container. Can be a number or string
+    # The width of chart container. Can be a number or string. Default: "100%"
     width: Var[Union[int, str]]
 
-    # The height of chart container. Number
+    # The height of chart container. Can be a number or string. Default: "100%"
     height: Var[Union[int, str]]
 
-    # The minimum width of chart container.
+    # The minimum width of chart container. Number
     min_width: Var[int]
 
     # The minimum height of chart container. Number
     min_height: Var[int]
 
-    # If specified a positive number, debounced function will be used to handle the resize event.
+    # If specified a positive number, debounced function will be used to handle the resize event. Default: 0
     debounce: Var[int]
+
+    # If specified provides a callback providing the updated chart width and height values.
+    on_resize: EventHandler[lambda: []]
 
     # Valid children components
     _valid_children: List[str] = [
@@ -73,20 +76,23 @@ class Legend(Recharts):
     # The height of legend container. Number
     height: Var[int]
 
-    # The layout of legend items. 'horizontal' | 'vertical'
+    # The layout of legend items. 'horizontal' | 'vertical'. Default: "horizontal"
     layout: Var[LiteralLayout]
 
-    # The alignment of legend items in 'horizontal' direction, which can be 'left', 'center', 'right'.
+    # The alignment of legend items in 'horizontal' direction, which can be 'left', 'center', 'right'. Default: "center"
     align: Var[LiteralLegendAlign]
 
-    # The alignment of legend items in 'vertical' direction, which can be 'top', 'middle', 'bottom'.
+    # The alignment of legend items in 'vertical' direction, which can be 'top', 'middle', 'bottom'. Default: "bottom"
     vertical_align: Var[LiteralVerticalAlign]
 
-    # The size of icon in each legend item.
+    # The size of icon in each legend item. Default: 14
     icon_size: Var[int]
 
     # The type of icon in each legend item. 'line' | 'plainline' | 'square' | 'rect' | 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye'
     icon_type: Var[LiteralIconType]
+
+    # The source data of the content to be displayed in the legend, usually calculated internally. Default: []
+    payload: Var[List[Dict[str, Any]]]
 
     # The width of chart container, usually calculated internally.
     chart_width: Var[int]
@@ -224,16 +230,16 @@ class LabelList(Recharts):
     # The key of a group of label values in data.
     data_key: Var[Union[str, int]]
 
-    # The position of each label relative to it view box。"Top" | "left" | "right" | "bottom" | "inside" | "outside" | "insideLeft" | "insideRight" | "insideTop" | "insideBottom" | "insideTopLeft" | "insideBottomLeft" | "insideTopRight" | "insideBottomRight" | "insideStart" | "insideEnd" | "end" | "center"
+    # The position of each label relative to it view box. "Top" | "left" | "right" | "bottom" | "inside" | "outside" | "insideLeft" | "insideRight" | "insideTop" | "insideBottom" | "insideTopLeft" | "insideBottomLeft" | "insideTopRight" | "insideBottomRight" | "insideStart" | "insideEnd" | "end" | "center"
     position: Var[LiteralPosition]
 
-    # The offset to the specified "position"
+    # The offset to the specified "position". Default: 5
     offset: Var[int]
 
-    # The fill color of each label
+    # The fill color of each label. Default: rx.color("gray", 10)
     fill: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 10))
 
-    # The stroke color of each label
+    # The stroke color of each label. Default: "none"
     stroke: Var[Union[str, Color]] = LiteralVar.create("none")
 
 

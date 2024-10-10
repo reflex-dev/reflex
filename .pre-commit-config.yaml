@@ -3,7 +3,7 @@ fail_fast: true
 repos:
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.4.10
+    rev: v0.6.9
     hooks:
       - id: ruff-format
         args: [reflex, tests]
@@ -25,7 +25,7 @@ repos:
     rev: v1.1.313
     hooks:
       - id: pyright
-        args: [integration, reflex, tests]
+        args: [reflex, tests]
         language: system
 
   - repo: https://github.com/terrencepreilly/darglint

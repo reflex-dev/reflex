@@ -117,7 +117,7 @@ def test_remove_existing_bun_installation(mocker):
     Args:
         mocker: Pytest mocker.
     """
-    mocker.patch("reflex.utils.prerequisites.os.path.exists", return_value=True)
+    mocker.patch("reflex.utils.prerequisites.Path.exists", return_value=True)
     rm = mocker.patch("reflex.utils.prerequisites.path_ops.rm", mocker.Mock())
 
     prerequisites.remove_existing_bun_installation()
@@ -458,7 +458,7 @@ def test_bun_install_without_unzip(mocker):
         mocker: Pytest mocker object.
     """
     mocker.patch("reflex.utils.path_ops.which", return_value=None)
-    mocker.patch("os.path.exists", return_value=False)
+    mocker.patch("pathlib.Path.exists", return_value=False)
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
 
     with pytest.raises(FileNotFoundError):
@@ -476,7 +476,7 @@ def test_bun_install_version(mocker, bun_version):
 
     """
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
-    mocker.patch("os.path.exists", return_value=True)
+    mocker.patch("pathlib.Path.exists", return_value=True)
     mocker.patch(
         "reflex.utils.prerequisites.get_bun_version",
         return_value=version.parse(bun_version),
@@ -542,7 +542,9 @@ def test_style_prop_with_event_handler_value(callable):
 
     style = {
         "color": (
-            EventHandler(fn=callable) if type(callable) != EventHandler else callable
+            EventHandler(fn=callable)
+            if type(callable) is not EventHandler
+            else callable
         )
     }
 

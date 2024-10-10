@@ -284,7 +284,7 @@ def run_granian_backend(host, port, loglevel: LogLevel):
         ).serve()
     except ImportError:
         console.error(
-            'InstallError: REFLEX_USE_GRANIAN is set but `granian` is not installed. (run `pip install "granian>=1.6.0"`)'
+            'InstallError: REFLEX_USE_GRANIAN is set but `granian` is not installed. (run `pip install "granian[reload]>=1.6.0"`)'
         )
         os._exit(1)
 
@@ -410,7 +410,7 @@ def run_granian_backend_prod(host, port, loglevel):
         )
     except ImportError:
         console.error(
-            'InstallError: REFLEX_USE_GRANIAN is set but `granian` is not installed. (run `pip install "granian>=1.6.0"`)'
+            'InstallError: REFLEX_USE_GRANIAN is set but `granian` is not installed. (run `pip install "granian[reload]>=1.6.0"`)'
         )
 
 

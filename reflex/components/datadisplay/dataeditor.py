@@ -125,10 +125,10 @@ class DataEditor(NoSSRComponent):
 
     tag = "DataEditor"
     is_default = True
-    library: str = "@glideapps/glide-data-grid@^5.3.0"
+    library: str = "@glideapps/glide-data-grid@^6.0.3"
     lib_dependencies: List[str] = [
         "lodash@^4.17.21",
-        "marked@^4.0.10",
+        "marked@^14.1.2",
         "react-responsive-carousel@^3.2.7",
     ]
 
@@ -329,7 +329,7 @@ class DataEditor(NoSSRComponent):
 
         columns = props.get("columns", [])
         data = props.get("data", [])
-        rows = props.get("rows", None)
+        rows = props.get("rows")
 
         # If rows is not provided, determine from data.
         if rows is None:
