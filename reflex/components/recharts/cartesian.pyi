@@ -27,9 +27,32 @@ class Axis(Recharts):
         type_: Optional[
             Union[Literal["category", "number"], Var[Literal["category", "number"]]]
         ] = None,
+        interval: Optional[
+            Union[
+                Literal[
+                    "equidistantPreserveStart",
+                    "preserveEnd",
+                    "preserveStart",
+                    "preserveStartEnd",
+                ],
+                Var[
+                    Union[
+                        Literal[
+                            "equidistantPreserveStart",
+                            "preserveEnd",
+                            "preserveStart",
+                            "preserveStartEnd",
+                        ],
+                        int,
+                    ]
+                ],
+                int,
+            ]
+        ] = None,
         allow_decimals: Optional[Union[Var[bool], bool]] = None,
         allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
         allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
+        domain: Optional[Union[List, Var[List]]] = None,
         axis_line: Optional[Union[Var[bool], bool]] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
@@ -87,7 +110,12 @@ class Axis(Recharts):
         tick_size: Optional[Union[Var[int], int]] = None,
         min_tick_gap: Optional[Union[Var[int], int]] = None,
         stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
-        text_anchor: Optional[Union[Var[str], str]] = None,
+        text_anchor: Optional[
+            Union[
+                Literal["end", "middle", "start"],
+                Var[Literal["end", "middle", "start"]],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -116,28 +144,30 @@ class Axis(Recharts):
         Args:
             *children: The children of the component.
             data_key: The key of data displayed in the axis.
-            hide: If set true, the axis do not display in the chart.
+            hide: If set true, the axis do not display in the chart. Default: False
             width: The width of axis which is usually calculated internally.
             height: The height of axis, which can be setted by user.
             type_: The type of axis 'number' | 'category'
-            allow_decimals: Allow the ticks of XAxis to be decimals or not.
-            allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
-            allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category".
-            axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
-            mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
-            reversed: Reverse the ticks or not.
+            interval: If set 0, all the ticks will be shown. If set preserveStart", "preserveEnd" or "preserveStartEnd", the ticks which is to be shown or hidden will be calculated automatically. Default: "preserveEnd"
+            allow_decimals: Allow the ticks of Axis to be decimals or not. Default: True
+            allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain. Default: False
+            allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
+            domain: The range of the axis. Work best in conjuction with allow_data_overflow. Default: [0, "auto"]
+            axis_line: If set false, no axis line will be drawn. Default: True
+            mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside. Default: False
+            reversed: Reverse the ticks or not. Default: False
             label: The label of axis, which appears next to the axis.
-            scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
+            scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'. Default: "auto"
             unit: The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
             name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
             ticks: Set the values of axis ticks manually.
             tick: If set false, no ticks will be drawn.
-            tick_count: The count of axis ticks.
-            tick_line: If set false, no axis tick lines will be drawn.
-            tick_size: The length of tick line.
-            min_tick_gap: The minimum gap between two adjacent labels
-            stroke: The stroke color of axis
-            text_anchor: The text anchor of axis
+            tick_count: The count of axis ticks. Not used if 'type' is 'category'. Default: 5
+            tick_line: If set false, no axis tick lines will be drawn. Default: True
+            tick_size: The length of tick line. Default: 6
+            min_tick_gap: The minimum gap between two adjacent labels. Default: 5
+            stroke: The stroke color of axis. Default: rx.color("gray", 9)
+            text_anchor: The text anchor of axis. Default: "middle"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -171,9 +201,32 @@ class XAxis(Axis):
         type_: Optional[
             Union[Literal["category", "number"], Var[Literal["category", "number"]]]
         ] = None,
+        interval: Optional[
+            Union[
+                Literal[
+                    "equidistantPreserveStart",
+                    "preserveEnd",
+                    "preserveStart",
+                    "preserveStartEnd",
+                ],
+                Var[
+                    Union[
+                        Literal[
+                            "equidistantPreserveStart",
+                            "preserveEnd",
+                            "preserveStart",
+                            "preserveStartEnd",
+                        ],
+                        int,
+                    ]
+                ],
+                int,
+            ]
+        ] = None,
         allow_decimals: Optional[Union[Var[bool], bool]] = None,
         allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
         allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
+        domain: Optional[Union[List, Var[List]]] = None,
         axis_line: Optional[Union[Var[bool], bool]] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
@@ -231,7 +284,12 @@ class XAxis(Axis):
         tick_size: Optional[Union[Var[int], int]] = None,
         min_tick_gap: Optional[Union[Var[int], int]] = None,
         stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
-        text_anchor: Optional[Union[Var[str], str]] = None,
+        text_anchor: Optional[
+            Union[
+                Literal["end", "middle", "start"],
+                Var[Literal["end", "middle", "start"]],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -265,28 +323,30 @@ class XAxis(Axis):
             angle: The angle of axis ticks. Default: 0
             padding: Specify the padding of x-axis. Default: {"left": 0, "right": 0}
             data_key: The key of data displayed in the axis.
-            hide: If set true, the axis do not display in the chart.
+            hide: If set true, the axis do not display in the chart. Default: False
             width: The width of axis which is usually calculated internally.
             height: The height of axis, which can be setted by user.
             type_: The type of axis 'number' | 'category'
-            allow_decimals: Allow the ticks of XAxis to be decimals or not.
-            allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
-            allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category".
-            axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
-            mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
-            reversed: Reverse the ticks or not.
+            interval: If set 0, all the ticks will be shown. If set preserveStart", "preserveEnd" or "preserveStartEnd", the ticks which is to be shown or hidden will be calculated automatically. Default: "preserveEnd"
+            allow_decimals: Allow the ticks of Axis to be decimals or not. Default: True
+            allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain. Default: False
+            allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
+            domain: The range of the axis. Work best in conjuction with allow_data_overflow. Default: [0, "auto"]
+            axis_line: If set false, no axis line will be drawn. Default: True
+            mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside. Default: False
+            reversed: Reverse the ticks or not. Default: False
             label: The label of axis, which appears next to the axis.
-            scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
+            scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'. Default: "auto"
             unit: The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
             name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
             ticks: Set the values of axis ticks manually.
             tick: If set false, no ticks will be drawn.
-            tick_count: The count of axis ticks.
-            tick_line: If set false, no axis tick lines will be drawn.
-            tick_size: The length of tick line.
-            min_tick_gap: The minimum gap between two adjacent labels
-            stroke: The stroke color of axis
-            text_anchor: The text anchor of axis
+            tick_count: The count of axis ticks. Not used if 'type' is 'category'. Default: 5
+            tick_line: If set false, no axis tick lines will be drawn. Default: True
+            tick_size: The length of tick line. Default: 6
+            min_tick_gap: The minimum gap between two adjacent labels. Default: 5
+            stroke: The stroke color of axis. Default: rx.color("gray", 9)
+            text_anchor: The text anchor of axis. Default: "middle"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -318,9 +378,32 @@ class YAxis(Axis):
         type_: Optional[
             Union[Literal["category", "number"], Var[Literal["category", "number"]]]
         ] = None,
+        interval: Optional[
+            Union[
+                Literal[
+                    "equidistantPreserveStart",
+                    "preserveEnd",
+                    "preserveStart",
+                    "preserveStartEnd",
+                ],
+                Var[
+                    Union[
+                        Literal[
+                            "equidistantPreserveStart",
+                            "preserveEnd",
+                            "preserveStart",
+                            "preserveStartEnd",
+                        ],
+                        int,
+                    ]
+                ],
+                int,
+            ]
+        ] = None,
         allow_decimals: Optional[Union[Var[bool], bool]] = None,
         allow_data_overflow: Optional[Union[Var[bool], bool]] = None,
         allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
+        domain: Optional[Union[List, Var[List]]] = None,
         axis_line: Optional[Union[Var[bool], bool]] = None,
         mirror: Optional[Union[Var[bool], bool]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
@@ -378,7 +461,12 @@ class YAxis(Axis):
         tick_size: Optional[Union[Var[int], int]] = None,
         min_tick_gap: Optional[Union[Var[int], int]] = None,
         stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
-        text_anchor: Optional[Union[Var[str], str]] = None,
+        text_anchor: Optional[
+            Union[
+                Literal["end", "middle", "start"],
+                Var[Literal["end", "middle", "start"]],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -410,28 +498,30 @@ class YAxis(Axis):
             y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
             padding: Specify the padding of y-axis. Default: {"top": 0, "bottom": 0}
             data_key: The key of data displayed in the axis.
-            hide: If set true, the axis do not display in the chart.
+            hide: If set true, the axis do not display in the chart. Default: False
             width: The width of axis which is usually calculated internally.
             height: The height of axis, which can be setted by user.
             type_: The type of axis 'number' | 'category'
-            allow_decimals: Allow the ticks of XAxis to be decimals or not.
-            allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain.
-            allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category".
-            axis_line: If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
-            mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside.
-            reversed: Reverse the ticks or not.
+            interval: If set 0, all the ticks will be shown. If set preserveStart", "preserveEnd" or "preserveStartEnd", the ticks which is to be shown or hidden will be calculated automatically. Default: "preserveEnd"
+            allow_decimals: Allow the ticks of Axis to be decimals or not. Default: True
+            allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain. Default: False
+            allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
+            domain: The range of the axis. Work best in conjuction with allow_data_overflow. Default: [0, "auto"]
+            axis_line: If set false, no axis line will be drawn. Default: True
+            mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside. Default: False
+            reversed: Reverse the ticks or not. Default: False
             label: The label of axis, which appears next to the axis.
-            scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
+            scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'. Default: "auto"
             unit: The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
             name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
             ticks: Set the values of axis ticks manually.
             tick: If set false, no ticks will be drawn.
-            tick_count: The count of axis ticks.
-            tick_line: If set false, no axis tick lines will be drawn.
-            tick_size: The length of tick line.
-            min_tick_gap: The minimum gap between two adjacent labels
-            stroke: The stroke color of axis
-            text_anchor: The text anchor of axis
+            tick_count: The count of axis ticks. Not used if 'type' is 'category'. Default: 5
+            tick_line: If set false, no axis tick lines will be drawn. Default: True
+            tick_size: The length of tick line. Default: 6
+            min_tick_gap: The minimum gap between two adjacent labels. Default: 5
+            stroke: The stroke color of axis. Default: rx.color("gray", 9)
+            text_anchor: The text anchor of axis. Default: "middle"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

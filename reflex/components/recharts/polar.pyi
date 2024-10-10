@@ -68,12 +68,24 @@ class Pie(Recharts):
         label_line: Optional[Union[Var[bool], bool]] = None,
         stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         fill: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
+        is_animation_active: Optional[Union[Var[bool], bool]] = None,
+        animation_begin: Optional[Union[Var[int], int]] = None,
+        animation_duration: Optional[Union[Var[int], int]] = None,
+        animation_easing: Optional[
+            Union[
+                Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"]],
+            ]
+        ] = None,
+        root_tab_index: Optional[Union[Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[EventType[[]]] = None,
+        on_animation_start: Optional[EventType[[]]] = None,
         on_click: Optional[EventType[[]]] = None,
         on_mouse_enter: Optional[EventType[[]]] = None,
         on_mouse_leave: Optional[EventType[[]]] = None,
@@ -86,22 +98,27 @@ class Pie(Recharts):
 
         Args:
             *children: The children of the component.
-            data: data
+            data: The index of active sector in Pie, this option can be changed in mouse event handlers.
             data_key: The key of each sector's value.
-            cx: The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
-            cy: The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container height.
-            inner_radius: The inner radius of pie, which can be set to a percent value.
-            outer_radius: The outer radius of pie, which can be set to a percent value.
-            start_angle: The angle of first sector.
-            end_angle: The direction of sectors. 1 means clockwise and -1 means anticlockwise.
-            min_angle: The minimum angle of each unzero data.
-            padding_angle: The angle between two sectors.
-            name_key: The key of each sector's name.
-            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered.
-            label: If false set, labels will not be drawn.
-            label_line: If false set, label lines will not be drawn.
-            stroke: Stoke color
-            fill: Fill color
+            cx: The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width. Default: "50%"
+            cy: The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container height. Default: "50%"
+            inner_radius: The inner radius of pie, which can be set to a percent value. Default: 0
+            outer_radius: The outer radius of pie, which can be set to a percent value. Default: "80%"
+            start_angle: The angle of first sector. Default: 0
+            end_angle: The end angle of last sector, which should be unequal to start_angle. Default: 360
+            min_angle: The minimum angle of each unzero data. Default: 0
+            padding_angle: The angle between two sectors. Default: 0
+            name_key: The key of each sector's name. Default: "name"
+            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. Default: "rect"
+            label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
+            label_line: If false set, label lines will not be drawn. If true set, label lines will be drawn which have the props calculated internally. Default: False
+            stroke: Stoke color. Default: rx.color("accent", 9)
+            fill: Fill color. Default: rx.color("accent", 3)
+            is_animation_active: If set false, animation of tooltip will be disabled. Default: true in CSR, and false in SSR
+            animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 400
+            animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
+            animation_easing: The type of easing function. Default: "ease"
+            root_tab_index: The tabindex of wrapper surrounding the cells. Default: 0
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -463,14 +480,21 @@ class PolarRadiusAxis(Recharts):
             Union[Literal["category", "number"], Var[Literal["category", "number"]]]
         ] = None,
         allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
-        cx: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        cy: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        cx: Optional[Union[Var[int], int]] = None,
+        cy: Optional[Union[Var[int], int]] = None,
         reversed: Optional[Union[Var[bool], bool]] = None,
-        orientation: Optional[Union[Var[str], str]] = None,
+        orientation: Optional[
+            Union[
+                Literal["left", "middle", "right"],
+                Var[Literal["left", "middle", "right"]],
+            ]
+        ] = None,
         axis_line: Optional[
             Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
         ] = None,
-        tick: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        tick: Optional[
+            Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
+        ] = None,
         tick_count: Optional[Union[Var[int], int]] = None,
         scale: Optional[
             Union[
@@ -512,7 +536,9 @@ class PolarRadiusAxis(Recharts):
                 ],
             ]
         ] = None,
-        domain: Optional[Union[List[int], Var[List[int]]]] = None,
+        domain: Optional[
+            Union[List[Union[int, str]], Var[List[Union[int, str]]]]
+        ] = None,
         stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -532,19 +558,19 @@ class PolarRadiusAxis(Recharts):
 
         Args:
             *children: The children of the component.
-            angle: The angle of radial direction line to display axis text.
-            type_: The type of axis line. 'number' | 'category'
-            allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category".
+            angle: The angle of radial direction line to display axis text. Default: 0
+            type_: The type of axis line. 'number' | 'category'. Default: "category"
+            allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
             cx: The x-coordinate of center.
             cy: The y-coordinate of center.
-            reversed: If set to true, the ticks of this axis are reversed.
-            orientation: The orientation of axis text.
-            axis_line: If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option.
-            tick: The width or height of tick.
-            tick_count: The count of ticks.
-            scale: If 'auto' set, the scale funtion is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'
-            domain: The domain of the polar radius axis, specifying the minimum and maximum values.
-            stroke: The stroke color of axis
+            reversed: If set to true, the ticks of this axis are reversed. Default: False
+            orientation: The orientation of axis text. Default: "right"
+            axis_line: If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option. Default: True
+            tick: If false set, ticks will not be drawn. If true set, ticks will be drawn which have the props calculated internally. If object set, ticks will be drawn which have the props mergered by the internal calculated props and the option. Default: True
+            tick_count: The count of axis ticks. Not used if 'type' is 'category'. Default: 5
+            scale: If 'auto' set, the scale funtion is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'. Default: "auto"
+            domain: The domain of the polar radius axis, specifying the minimum and maximum values. Default: [0, "auto"]
+            stroke: The stroke color of axis. Default: rx.color("gray", 10)
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
