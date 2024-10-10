@@ -1566,13 +1566,11 @@ class ErrorBar(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        direction: Optional[
-            Union[Literal["both", "x", "y"], Var[Literal["both", "x", "y"]]]
-        ] = None,
+        direction: Optional[Union[Literal["x", "y"], Var[Literal["x", "y"]]]] = None,
         data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         width: Optional[Union[Var[int], int]] = None,
         stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
-        stroke_width: Optional[Union[Var[int], int]] = None,
+        stroke_width: Optional[Union[Var[Union[float, int]], float, int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1620,11 +1618,11 @@ class ErrorBar(Recharts):
 
         Args:
             *children: The children of the component.
-            direction: The direction of error bar. 'x' | 'y' | 'both'
+            direction: Only used for ScatterChart with error bars in two directions. Only accepts a value of "x" or "y" and makes the error bars lie in that direction.
             data_key: The key of a group of data which should be unique in an area chart.
-            width: The width of the error bar ends.
-            stroke: The stroke color of error bar.
-            stroke_width: The stroke width of error bar.
+            width: The width of the error bar ends. Default: 5
+            stroke: The stroke color of error bar. Default: rx.color("gray", 8)
+            stroke_width: The stroke width of error bar. Default: 1.5
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
