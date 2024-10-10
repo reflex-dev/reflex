@@ -525,7 +525,11 @@ def is_backend_base_variable(name: str, cls: Type) -> bool:
     if name.startswith(f"_{cls.__name__}__"):
         return False
 
-    hints = get_type_hints(cls)
+    # Extract the namespace of the original module if defined (dynamic substates).
+    if callable(getattr(cls, "_get_type_hints", None)):
+        hints = cls._get_type_hints()
+    else:
+        hints = get_type_hints(cls)
     if name in hints:
         hint = get_origin(hints[name])
         if hint == ClassVar:

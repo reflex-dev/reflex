@@ -2502,7 +2502,10 @@ def test_mutable_copy_vars(mutable_state: MutableTestState, copy_func: Callable)
 
 
 def test_duplicate_substate_class(mocker):
+    # Neuter pytest escape hatch, because we want to test duplicate detection.
     mocker.patch("reflex.state.is_testing_env", lambda: False)
+    # Neuter <locals> state handling since these _are_ defined inside a function.
+    mocker.patch("reflex.state.BaseState._handle_local_def", lambda: None)
     with pytest.raises(ValueError):
 
         class TestState(BaseState):
