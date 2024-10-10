@@ -399,7 +399,8 @@ class AppHarness:
                         self.frontend_process.stdout.readline()  # pyright: ignore [reportOptionalMemberAccess]
                     )
                 # catch I/O operation on closed file.
-                except ValueError:
+                except ValueError as e:
+                    print(e)
                     break
                 if not line:
                     break
