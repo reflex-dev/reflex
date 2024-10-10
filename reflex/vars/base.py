@@ -56,7 +56,7 @@ from reflex.utils.imports import (
     ParsedImportDict,
     parse_imports,
 )
-from reflex.utils.types import GenericType, Self, get_origin
+from reflex.utils.types import GenericType, Self, get_origin, unionize
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -1235,26 +1235,6 @@ def var_operation(
         ).guess_type()
 
     return wrapper
-
-
-def unionize(*args: Type) -> Type:
-    """Unionize the types.
-
-    Args:
-        args: The types to unionize.
-
-    Returns:
-        The unionized types.
-    """
-    if not args:
-        return Any
-    if len(args) == 1:
-        return args[0]
-    # We are bisecting the args list here to avoid hitting the recursion limit
-    # In Python versions >= 3.11, we can simply do `return Union[*args]`
-    midpoint = len(args) // 2
-    first_half, second_half = args[:midpoint], args[midpoint:]
-    return Union[unionize(*first_half), unionize(*second_half)]
 
 
 def figure_out_type(value: Any) -> types.GenericType:
