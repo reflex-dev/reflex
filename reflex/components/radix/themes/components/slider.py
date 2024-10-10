@@ -1,5 +1,7 @@
 """Interactive components provided by @radix-ui/themes."""
 
+from __future__ import annotations
+
 from typing import List, Literal, Optional, Tuple, Union
 
 from reflex.components.component import Component
