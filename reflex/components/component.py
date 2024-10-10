@@ -1,4 +1,4 @@
-"," "Base component definitions." ""
+"""Base component definitions."""
 
 from __future__ import annotations
 
