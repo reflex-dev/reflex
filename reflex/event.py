@@ -1499,7 +1499,6 @@ class EventNamespace(types.SimpleNamespace):
     ToEventVarOperation = ToEventVarOperation
     ToEventChainVarOperation = ToEventChainVarOperation
     EventType = EventType
-    EventCallback = EventCallback
 
     __call__ = staticmethod(event_handler)
     get_event = staticmethod(get_event)
