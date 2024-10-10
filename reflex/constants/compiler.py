@@ -169,8 +169,10 @@ class SpecialAttributes(enum.Enum):
     to a style prop.
     """
 
-    DATA = "data"
-    ARIA = "aria"
+    DATA_UNDERSCORE = "data_"
+    DATA_DASH = "data-"
+    ARIA_UNDERSCORE = "aria_"
+    ARIA_DASH = "aria-"
 
     @classmethod
     def is_special(cls, attr: str) -> bool:
@@ -182,7 +184,4 @@ class SpecialAttributes(enum.Enum):
         Returns:
             True if the attribute is special.
         """
-        for value in cls:
-            if attr.startswith(f"{value.value}-") or attr.startswith(f"{value.value}_"):
-                return True
-        return False
+        return any(attr.startswith(value.value) for value in cls)
