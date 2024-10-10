@@ -17,6 +17,7 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    TypeVar,
     Union,
     get_type_hints,
 )
@@ -456,6 +457,31 @@ def empty_event() -> Tuple[()]:
         An empty tuple.
     """
     return tuple()  # type: ignore
+
+
+T = TypeVar("T")
+
+
+def identity_event(event_type: Type[T]) -> Callable[[Var[T]], Tuple[Var[T]]]:
+    """A helper function that returns the input event as output."""
+
+    def inner(ev: Var[T]) -> Tuple[Var[T]]:
+        return (ev,)
+
+    inner.__signature__ = inspect.signature(inner).replace(  # type: ignore
+        parameters=[
+            inspect.Parameter(
+                "ev",
+                kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                annotation=Var[event_type],
+            )
+        ],
+        return_annotation=Tuple[Var[event_type]],
+    )
+    inner.__annotations__["ev"] = Var[event_type]
+    inner.__annotations__["return"] = Tuple[Var[event_type]]
+
+    return inner
 
 
 @dataclasses.dataclass(

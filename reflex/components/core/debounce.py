@@ -6,7 +6,6 @@ from typing import Any, Type, Union
 
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
-from reflex.event import EventHandler
 from reflex.vars import VarData
 from reflex.vars.base import Var
 
@@ -44,9 +43,6 @@ class DebounceInput(Component):
 
     # The element to wrap
     element: Var[Type[Component]]
-
-    # Fired when the input value changes
-    on_change: EventHandler[lambda e0: [e0.value]]
 
     @classmethod
     def create(cls, *children: Component, **props: Any) -> Component:
@@ -122,6 +118,8 @@ class DebounceInput(Component):
                 ),
             ),
         )
+
+        print(f"{props=}")
 
         component = super().create(**props)
         component._get_style = child._get_style

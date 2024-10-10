@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
-from reflex.event import EventHandler, empty_event
+from reflex.event import EventHandler, empty_event, identity_event
 from reflex.utils import console, format, types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
@@ -223,13 +223,13 @@ class DataEditor(NoSSRComponent):
     theme: Var[Union[DataEditorTheme, Dict]]
 
     # Fired when a cell is activated.
-    on_cell_activated: EventHandler[lambda pos: [pos]]
+    on_cell_activated: EventHandler[identity_event(Tuple[int, int])]
 
     # Fired when a cell is clicked.
-    on_cell_clicked: EventHandler[lambda pos: [pos]]
+    on_cell_clicked: EventHandler[identity_event(Tuple[int, int])]
 
     # Fired when a cell is right-clicked.
-    on_cell_context_menu: EventHandler[lambda pos: [pos]]
+    on_cell_context_menu: EventHandler[identity_event(Tuple[int, int])]
 
     # Fired when a cell is edited.
     on_cell_edited: EventHandler[on_edit_spec]
@@ -244,16 +244,16 @@ class DataEditor(NoSSRComponent):
     on_group_header_renamed: EventHandler[lambda idx, val: [idx, val]]
 
     # Fired when a header is clicked.
-    on_header_clicked: EventHandler[lambda pos: [pos]]
+    on_header_clicked: EventHandler[identity_event(Tuple[int, int])]
 
     # Fired when a header is right-clicked.
-    on_header_context_menu: EventHandler[lambda pos: [pos]]
+    on_header_context_menu: EventHandler[identity_event(Tuple[int, int])]
 
     # Fired when a header menu item is clicked.
     on_header_menu_click: EventHandler[lambda col, pos: [col, pos]]
 
     # Fired when an item is hovered.
-    on_item_hovered: EventHandler[lambda pos: [pos]]
+    on_item_hovered: EventHandler[identity_event(Tuple[int, int])]
 
     # Fired when a selection is deleted.
     on_delete: EventHandler[lambda selection: [selection]]
