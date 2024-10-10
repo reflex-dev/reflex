@@ -171,6 +171,7 @@ LiteralScale = Literal[
     "sequential",
     "threshold",
 ]
+LiteralTextAnchor = Literal["start", "middle", "end"]
 LiteralLayout = Literal["horizontal", "vertical"]
 LiteralPolarRadiusType = Literal["number", "category"]
 LiteralGridType = Literal["polygon", "circle"]
@@ -244,4 +245,7 @@ LiteralAreaType = Literal[
 ]
 LiteralDirection = Literal["x", "y"]
 LiteralInterval = Literal["preserveStart", "preserveEnd", "preserveStartEnd"]
+LiteralIntervalAxis = Literal[
+    "preserveStart", "preserveEnd", "preserveStartEnd", "equidistantPreserveStart"
+]
 LiteralSyncMethod = Literal["index", "value"]
