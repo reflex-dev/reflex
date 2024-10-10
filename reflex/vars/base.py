@@ -466,37 +466,38 @@ class Var(Generic[VAR_TYPE]):
                 )
             return ToArrayOperation.create(self, var_type or list)
 
-        if issubclass(output, StringVar):
-            return ToStringOperation.create(self, var_type or str)
+        if inspect.isclass(output):
+            if issubclass(output, StringVar):
+                return ToStringOperation.create(self, var_type or str)
 
-        if issubclass(output, EventVar):
-            return ToEventVarOperation.create(self, var_type or EventSpec)
+            if issubclass(output, EventVar):
+                return ToEventVarOperation.create(self, var_type or EventSpec)
 
-        if issubclass(output, EventChainVar):
-            return ToEventChainVarOperation.create(self, var_type or EventChain)
+            if issubclass(output, EventChainVar):
+                return ToEventChainVarOperation.create(self, var_type or EventChain)
 
-        if issubclass(output, (ObjectVar, Base)):
-            return ToObjectOperation.create(self, var_type or dict)
+            if issubclass(output, (ObjectVar, Base)):
+                return ToObjectOperation.create(self, var_type or dict)
 
-        if issubclass(output, FunctionVar):
-            # if fixed_type is not None and not issubclass(fixed_type, Callable):
-            #     raise TypeError(
-            #         f"Unsupported type {var_type} for FunctionVar. Must be Callable."
-            #     )
-            return ToFunctionOperation.create(self, var_type or Callable)
+            if issubclass(output, FunctionVar):
+                # if fixed_type is not None and not issubclass(fixed_type, Callable):
+                #     raise TypeError(
+                #         f"Unsupported type {var_type} for FunctionVar. Must be Callable."
+                #     )
+                return ToFunctionOperation.create(self, var_type or Callable)
 
-        if issubclass(output, NoneVar):
-            return ToNoneOperation.create(self)
+            if issubclass(output, NoneVar):
+                return ToNoneOperation.create(self)
 
-        if dataclasses.is_dataclass(output):
-            return ToObjectOperation.create(self, var_type or dict)
+            if dataclasses.is_dataclass(output):
+                return ToObjectOperation.create(self, var_type or dict)
 
-        # If we can't determine the first argument, we just replace the _var_type.
-        if not issubclass(output, Var) or var_type is None:
-            return dataclasses.replace(
-                self,
-                _var_type=output,
-            )
+            # If we can't determine the first argument, we just replace the _var_type.
+            if not issubclass(output, Var) or var_type is None:
+                return dataclasses.replace(
+                    self,
+                    _var_type=output,
+                )
 
         # We couldn't determine the output type to be any other Var type, so we replace the _var_type.
         if var_type is not None:
