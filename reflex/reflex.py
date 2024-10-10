@@ -477,12 +477,6 @@ def makemigrations(
 
 @cli.command()
 def deploy(
-    key: Optional[str] = typer.Option(
-        None,
-        "-k",
-        "--deployment-key",
-        help="The name of the deployment. Domain name safe characters only.",
-    ),
     app_name: str = typer.Option(
         config.app_name,
         "--app-name",
@@ -493,32 +487,19 @@ def deploy(
         list(),
         "-r",
         "--region",
-        help="The regions to deploy to.",
+        help="The regions to deploy to. For multiple envs, repeat this option, e.g. --region sjc --region iad",
     ),
     envs: List[str] = typer.Option(
         list(),
         "--env",
         help="The environment variables to set: <key>=<value>. For multiple envs, repeat this option, e.g. --env k1=v2 --env k2=v2.",
     ),
-    cpus: Optional[int] = typer.Option(
-        None, help="The number of CPUs to allocate.", hidden=True
+    vmtype: Optional[str] = typer.Option(
+        None, "--vmtype", help="Vm type. Run reflex apps vmtype list to get options."
     ),
-    memory_mb: Optional[int] = typer.Option(
-        None, help="The amount of memory to allocate.", hidden=True
-    ),
-    auto_start: Optional[bool] = typer.Option(
+    hostname: Optional[str] = typer.Option(
         None,
-        help="Whether to auto start the instance.",
-        hidden=True,
-    ),
-    auto_stop: Optional[bool] = typer.Option(
-        None,
-        help="Whether to auto stop the instance.",
-        hidden=True,
-    ),
-    frontend_hostname: Optional[str] = typer.Option(
-        None,
-        "--frontend-hostname",
+        "--hostname",
         help="The hostname of the frontend.",
         hidden=True,
     ),
@@ -526,19 +507,10 @@ def deploy(
         True,
         help="Whether to list configuration options and ask for confirmation.",
     ),
-    with_metrics: Optional[str] = typer.Option(
+    envfile: Optional[str] = typer.Option(
         None,
-        help="Setting for metrics scraping for the deployment. Setup required in user code.",
-        hidden=True,
-    ),
-    with_tracing: Optional[str] = typer.Option(
-        None,
-        help="Setting to export tracing for the deployment. Setup required in user code.",
-        hidden=True,
-    ),
-    upload_db_file: bool = typer.Option(
-        False,
-        help="Whether to include local sqlite db files when uploading to hosting service.",
+        "--envfile",
+        help="The path to an env file to use. Will override any envs set manually.",
         hidden=True,
     ),
     loglevel: constants.LogLevel = typer.Option(
@@ -565,12 +537,7 @@ def deploy(
 
     hosting_cli.deploy(
         app_name=app_name,
-        export_fn=lambda zip_dest_dir,
-        api_url,
-        deploy_url,
-        frontend,
-        backend,
-        zipping: export_utils.export(
+        export_fn=lambda zip_dest_dir, api_url, deploy_url, frontend, backend, zipping: export_utils.export(
             zip_dest_dir=zip_dest_dir,
             api_url=api_url,
             deploy_url=deploy_url,
@@ -578,19 +545,13 @@ def deploy(
             backend=backend,
             zipping=zipping,
             loglevel=loglevel,
-            upload_db_file=upload_db_file,
         ),
-        key=key,
         regions=regions,
         envs=envs,
-        cpus=cpus,
-        memory_mb=memory_mb,
-        auto_start=auto_start,
-        auto_stop=auto_stop,
-        frontend_hostname=frontend_hostname,
+        vmtype=vmtype,
+        envfile=envfile,
+        hostname=hostname,
         interactive=interactive,
-        with_metrics=with_metrics,
-        with_tracing=with_tracing,
         loglevel=loglevel.value,
     )
 
@@ -611,8 +572,8 @@ cli.add_typer(db_cli, name="db", help="Subcommands for managing the database sch
 cli.add_typer(script_cli, name="script", help="Subcommands running helper scripts.")
 cli.add_typer(
     deployments_cli,
-    name="deployments",
-    help="Subcommands for managing the Deployments.",
+    name="apps",
+    help="Subcommands for managing the deployed apps.",
 )
 cli.add_typer(
     custom_components_cli,
