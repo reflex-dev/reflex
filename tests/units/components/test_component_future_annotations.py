@@ -26,7 +26,7 @@ def test_custom_component_declare_event_handlers_in_fields():
     class TestComponent(Component):
         on_a: EventHandler[lambda e0: [e0]]
         on_b: EventHandler[input_event]
-        on_c: EventHandler[lambda e0: []]
+        on_c: EventHandler[empty_event]
         on_d: EventHandler[empty_event]
 
     custom_component = ReferenceComponent.create()

@@ -1,3 +1,6 @@
+from typing import Any
+
+from reflex import event
 from reflex.components.core.upload import (
     StyledUpload,
     Upload,
@@ -14,7 +17,8 @@ from reflex.vars.base import LiteralVar, Var
 class UploadStateTest(State):
     """Test upload state."""
 
-    def drop_handler(self, files):
+    @event
+    def drop_handler(self, files: Any):
         """Handle the drop event.
 
         Args:
@@ -22,7 +26,8 @@ class UploadStateTest(State):
         """
         pass
 
-    def not_drop_handler(self, not_files):
+    @event
+    def not_drop_handler(self, not_files: Any):
         """Handle the drop event without defining the files argument.
 
         Args:
@@ -42,7 +47,7 @@ def test_get_upload_url():
 
 
 def test__on_drop_spec():
-    assert isinstance(_on_drop_spec(LiteralVar.create([])), list)
+    assert isinstance(_on_drop_spec(LiteralVar.create([])), tuple)
 
 
 def test_upload_create():

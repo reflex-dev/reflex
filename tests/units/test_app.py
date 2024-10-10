@@ -900,6 +900,7 @@ class DynamicState(BaseState):
         """Event handler for page on_load, should trigger for all navigation events."""
         self.loaded = self.loaded + 1
 
+    @rx.event
     def on_counter(self):
         """Increment the counter var."""
         self.counter = self.counter + 1

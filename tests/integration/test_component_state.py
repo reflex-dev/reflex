@@ -25,6 +25,7 @@ def ComponentStateApp():
         _be_int: int
         _be_str: str = "42"
 
+        @rx.event
         def increment(self):
             self.count += 1
             self._be = self.count  # type: ignore

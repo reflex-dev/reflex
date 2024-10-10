@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from reflex.components.component import NoSSRComponent
-from reflex.event import EventHandler, empty_event
+from reflex.event import EventHandler, empty_event, identity_event
 from reflex.vars.base import Var
 
 
@@ -58,7 +58,7 @@ class ReactPlayer(NoSSRComponent):
     on_progress: EventHandler[lambda progress: [progress]]
 
     # Callback containing duration of the media, in seconds.
-    on_duration: EventHandler[lambda seconds: [seconds]]
+    on_duration: EventHandler[identity_event(float)]
 
     # Called when media is paused.
     on_pause: EventHandler[empty_event]
@@ -70,13 +70,13 @@ class ReactPlayer(NoSSRComponent):
     on_buffer_end: EventHandler[empty_event]
 
     # Called when media seeks with seconds parameter.
-    on_seek: EventHandler[lambda seconds: [seconds]]
+    on_seek: EventHandler[identity_event(float)]
 
     # Called when playback rate of the player changed. Only supported by YouTube, Vimeo (if enabled), Wistia, and file paths.
-    on_playback_rate_change: EventHandler[lambda e0: []]
+    on_playback_rate_change: EventHandler[empty_event]
 
     # Called when playback quality of the player changed. Only supported by YouTube (if enabled).
-    on_playback_quality_change: EventHandler[lambda e0: []]
+    on_playback_quality_change: EventHandler[empty_event]
 
     # Called when media finishes playing. Does not fire when loop is set to true.
     on_ended: EventHandler[empty_event]

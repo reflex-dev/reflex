@@ -54,15 +54,18 @@ def CallScript():
         def call_script_callback_other_arg(self, result, other_arg):
             self.results.append([other_arg, result])
 
+        @rx.event
         def call_scripts_inline_yield(self):
             yield rx.call_script("inline1()")
             yield rx.call_script("inline2()")
             yield rx.call_script("inline3()")
             yield rx.call_script("inline4()")
 
+        @rx.event
         def call_script_inline_return(self):
             return rx.call_script("inline2()")
 
+        @rx.event
         def call_scripts_inline_yield_callback(self):
             yield rx.call_script(
                 "inline1()", callback=CallScriptState.call_script_callback
@@ -77,11 +80,13 @@ def CallScript():
                 "inline4()", callback=CallScriptState.call_script_callback
             )
 
+        @rx.event
         def call_script_inline_return_callback(self):
             return rx.call_script(
                 "inline3()", callback=CallScriptState.call_script_callback
             )
 
+        @rx.event
         def call_script_inline_return_lambda(self):
             return rx.call_script(
                 "inline2()",
@@ -90,21 +95,25 @@ def CallScript():
                 ),
             )
 
+        @rx.event
         def get_inline_counter(self):
             return rx.call_script(
                 "inline_counter",
                 callback=CallScriptState.set_inline_counter,  # type: ignore
             )
 
+        @rx.event
         def call_scripts_external_yield(self):
             yield rx.call_script("external1()")
             yield rx.call_script("external2()")
             yield rx.call_script("external3()")
             yield rx.call_script("external4()")
 
+        @rx.event
         def call_script_external_return(self):
             return rx.call_script("external2()")
 
+        @rx.event
         def call_scripts_external_yield_callback(self):
             yield rx.call_script(
                 "external1()", callback=CallScriptState.call_script_callback
@@ -119,11 +128,13 @@ def CallScript():
                 "external4()", callback=CallScriptState.call_script_callback
             )
 
+        @rx.event
         def call_script_external_return_callback(self):
             return rx.call_script(
                 "external3()", callback=CallScriptState.call_script_callback
             )
 
+        @rx.event
         def call_script_external_return_lambda(self):
             return rx.call_script(
                 "external2()",
@@ -132,30 +143,35 @@ def CallScript():
                 ),
             )
 
+        @rx.event
         def get_external_counter(self):
             return rx.call_script(
                 "external_counter",
                 callback=CallScriptState.set_external_counter,  # type: ignore
             )
 
+        @rx.event
         def call_with_var_f_string(self):
             return rx.call_script(
                 f"{rx.Var('inline_counter')} + {rx.Var('external_counter')}",
                 callback=CallScriptState.set_last_result,  # type: ignore
             )
 
+        @rx.event
         def call_with_var_str_cast(self):
             return rx.call_script(
                 f"{str(rx.Var('inline_counter'))} + {str(rx.Var('external_counter'))}",
                 callback=CallScriptState.set_last_result,  # type: ignore
             )
 
+        @rx.event
         def call_with_var_f_string_wrapped(self):
             return rx.call_script(
                 rx.Var(f"{rx.Var('inline_counter')} + {rx.Var('external_counter')}"),
                 callback=CallScriptState.set_last_result,  # type: ignore
             )
 
+        @rx.event
         def call_with_var_str_cast_wrapped(self):
             return rx.call_script(
                 rx.Var(
@@ -164,6 +180,7 @@ def CallScript():
                 callback=CallScriptState.set_last_result,  # type: ignore
             )
 
+        @rx.event
         def reset_(self):
             yield rx.call_script("inline_counter = 0; external_counter = 0")
             self.reset()
