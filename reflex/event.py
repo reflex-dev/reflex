@@ -1424,4 +1424,4 @@ P = ParamSpec("P")
 
 IndividualEventType = Union[EventSpec, EventHandler, Callable[P, Any], Var]
 
-EventType = IndividualEventType[P] | List[IndividualEventType[P]]
+EventType = Union[IndividualEventType[P], List[IndividualEventType[P]]]
