@@ -463,7 +463,14 @@ T = TypeVar("T")
 
 
 def identity_event(event_type: Type[T]) -> Callable[[Var[T]], Tuple[Var[T]]]:
-    """A helper function that returns the input event as output."""
+    """A helper function that returns the input event as output.
+
+    Args:
+        event_type: The type of the event.
+
+    Returns:
+        A function that returns the input event as output.
+    """
 
     def inner(ev: Var[T]) -> Tuple[Var[T]]:
         return (ev,)
