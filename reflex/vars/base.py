@@ -439,34 +439,34 @@ class Var(Generic[VAR_TYPE]):
         ):
             return self.to(ObjectVar, output)
 
-        if issubclass(output, BooleanVar):
-            return ToBooleanVarOperation.create(self)
+        if inspect.isclass(output):
+            if issubclass(output, BooleanVar):
+                return ToBooleanVarOperation.create(self)
 
-        if issubclass(output, NumberVar):
-            if fixed_type is not None:
-                if fixed_type is Union:
-                    inner_types = get_args(base_type)
-                    if not all(issubclass(t, (int, float)) for t in inner_types):
+            if issubclass(output, NumberVar):
+                if fixed_type is not None:
+                    if fixed_type is Union:
+                        inner_types = get_args(base_type)
+                        if not all(issubclass(t, (int, float)) for t in inner_types):
+                            raise TypeError(
+                                f"Unsupported type {var_type} for NumberVar. Must be int or float."
+                            )
+
+                    elif not issubclass(fixed_type, (int, float)):
                         raise TypeError(
                             f"Unsupported type {var_type} for NumberVar. Must be int or float."
                         )
+                return ToNumberVarOperation.create(self, var_type or float)
 
-                elif not issubclass(fixed_type, (int, float)):
+            if issubclass(output, ArrayVar):
+                if fixed_type is not None and not issubclass(
+                    fixed_type, (list, tuple, set)
+                ):
                     raise TypeError(
-                        f"Unsupported type {var_type} for NumberVar. Must be int or float."
+                        f"Unsupported type {var_type} for ArrayVar. Must be list, tuple, or set."
                     )
-            return ToNumberVarOperation.create(self, var_type or float)
+                return ToArrayOperation.create(self, var_type or list)
 
-        if issubclass(output, ArrayVar):
-            if fixed_type is not None and not issubclass(
-                fixed_type, (list, tuple, set)
-            ):
-                raise TypeError(
-                    f"Unsupported type {var_type} for ArrayVar. Must be list, tuple, or set."
-                )
-            return ToArrayOperation.create(self, var_type or list)
-
-        if inspect.isclass(output):
             if issubclass(output, StringVar):
                 return ToStringOperation.create(self, var_type or str)
 
