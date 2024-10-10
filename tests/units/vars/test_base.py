@@ -5,6 +5,12 @@ import pytest
 from reflex.vars.base import figure_out_type
 
 
+class CustomDict(dict[str, str]):
+    """A custom dict."""
+
+    pass
+
+
 @pytest.mark.parametrize(
     ("value", "expected"),
     [
@@ -15,6 +21,7 @@ from reflex.vars.base import figure_out_type
         ([1, 2.0, "a"], List[Union[int, float, str]]),
         ({"a": 1, "b": 2}, Dict[str, int]),
         ({"a": 1, 2: "b"}, Dict[Union[int, str], Union[str, int]]),
+        (CustomDict(), CustomDict),
     ],
 )
 def test_figure_out_type(value, expected):
