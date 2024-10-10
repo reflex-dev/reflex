@@ -131,6 +131,6 @@ LiteralAreaType = Literal[
     "stepBefore",
     "stepAfter",
 ]
-LiteralDirection = Literal["x", "y", "both"]
+LiteralDirection = Literal["x", "y"]
 LiteralInterval = Literal["preserveStart", "preserveEnd", "preserveStartEnd"]
 LiteralSyncMethod = Literal["index", "value"]
