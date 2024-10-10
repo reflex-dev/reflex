@@ -164,7 +164,7 @@ class DropdownMenuSub(RadixThemesComponent):
     default_open: Var[bool]
 
     # Fired when the open state changes.
-    on_open_change: EventHandler[lambda e0: [e0.target.value]]
+    on_open_change: EventHandler[lambda e0: [e0]]
 
 
 class DropdownMenuSubContent(RadixThemesComponent):
@@ -240,7 +240,7 @@ class DropdownMenuItem(RadixThemesComponent):
     _valid_parents: List[str] = ["DropdownMenuContent", "DropdownMenuSubContent"]
 
     # Fired when the item is selected.
-    on_select: EventHandler[lambda e0: [e0.target.value]]
+    on_select: EventHandler[lambda e0: []]
 
 
 class DropdownMenuSeparator(RadixThemesComponent):
