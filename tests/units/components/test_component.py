@@ -1230,6 +1230,7 @@ class EventState(rx.State):
 
     v: int = 42
 
+    @rx.event
     def handler(self):
         """A handler that does nothing."""
 
@@ -2147,6 +2148,7 @@ def test_add_style_foreach():
 class TriggerState(rx.State):
     """Test state with event handlers."""
 
+    @rx.event
     def do_something(self):
         """Sample event handler."""
         pass

@@ -20,6 +20,7 @@ def ConnectionBanner():
     class State(rx.State):
         foo: int = 0
 
+        @rx.event
         async def delay(self):
             await asyncio.sleep(5)
 

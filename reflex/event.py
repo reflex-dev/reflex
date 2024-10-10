@@ -8,11 +8,13 @@ import sys
 import types
 import urllib.parse
 from base64 import b64encode
+from functools import partial
 from typing import (
     Any,
     Callable,
     ClassVar,
     Dict,
+    Generic,
     List,
     Optional,
     Tuple,
@@ -1420,8 +1422,115 @@ class ToEventChainVarOperation(ToOperation, EventChainVar):
     _default_var_type: ClassVar[Type] = EventChain
 
 
+G = ParamSpec("G")
+
+IndividualEventType = Union[EventSpec, EventHandler, Callable[G, Any], Var]
+
+EventType = Union[IndividualEventType[G], List[IndividualEventType[G]]]
+
 P = ParamSpec("P")
+T = TypeVar("T")
 
-IndividualEventType = Union[EventSpec, EventHandler, Callable[P, Any], Var]
+if sys.version_info >= (3, 10):
+    from typing import Concatenate
 
-EventType = Union[IndividualEventType[P], List[IndividualEventType[P]]]
+    class EventCallback(Generic[P, T]):
+        """A descriptor that wraps a function to be used as an event."""
+
+        def __init__(self, func: Callable[Concatenate[Any, P], T]):
+            """Initialize the descriptor with the function to be wrapped.
+
+            Args:
+                func: The function to be wrapped.
+            """
+            self.func = func
+
+        def __get__(self, instance, owner) -> Callable[P, T]:
+            """Get the function with the instance bound to it.
+
+            Args:
+                instance: The instance to bind to the function.
+                owner: The owner of the function.
+
+            Returns:
+                The function with the instance bound to it
+            """
+            if instance is None:
+                return self.func  # type: ignore
+
+            return partial(self.func, instance)  # type: ignore
+
+    def event_handler(func: Callable[Concatenate[Any, P], T]) -> EventCallback[P, T]:
+        """Wrap a function to be used as an event.
+
+        Args:
+            func: The function to wrap.
+
+        Returns:
+            The wrapped function.
+        """
+        return func  # type: ignore
+else:
+
+    def event_handler(func: Callable[P, T]) -> Callable[P, T]:
+        """Wrap a function to be used as an event.
+
+        Args:
+            func: The function to wrap.
+
+        Returns:
+            The wrapped function.
+        """
+        return func
+
+
+class EventNamespace(types.SimpleNamespace):
+    """A namespace for event related classes."""
+
+    Event = Event
+    EventHandler = EventHandler
+    EventSpec = EventSpec
+    CallableEventSpec = CallableEventSpec
+    EventChain = EventChain
+    EventVar = EventVar
+    LiteralEventVar = LiteralEventVar
+    EventChainVar = EventChainVar
+    LiteralEventChainVar = LiteralEventChainVar
+    ToEventVarOperation = ToEventVarOperation
+    ToEventChainVarOperation = ToEventChainVarOperation
+    EventType = EventType
+    EventCallback = EventCallback
+
+    __call__ = staticmethod(event_handler)
+    get_event = staticmethod(get_event)
+    get_hydrate_event = staticmethod(get_hydrate_event)
+    fix_events = staticmethod(fix_events)
+    call_event_handler = staticmethod(call_event_handler)
+    call_event_fn = staticmethod(call_event_fn)
+    get_handler_args = staticmethod(get_handler_args)
+    check_fn_match_arg_spec = staticmethod(check_fn_match_arg_spec)
+    resolve_annotation = staticmethod(resolve_annotation)
+    parse_args_spec = staticmethod(parse_args_spec)
+    identity_event = staticmethod(identity_event)
+    input_event = staticmethod(input_event)
+    key_event = staticmethod(key_event)
+    empty_event = staticmethod(empty_event)
+    server_side = staticmethod(server_side)
+    redirect = staticmethod(redirect)
+    console_log = staticmethod(console_log)
+    back = staticmethod(back)
+    window_alert = staticmethod(window_alert)
+    set_focus = staticmethod(set_focus)
+    scroll_to = staticmethod(scroll_to)
+    set_value = staticmethod(set_value)
+    remove_cookie = staticmethod(remove_cookie)
+    clear_local_storage = staticmethod(clear_local_storage)
+    remove_local_storage = staticmethod(remove_local_storage)
+    clear_session_storage = staticmethod(clear_session_storage)
+    remove_session_storage = staticmethod(remove_session_storage)
+    set_clipboard = staticmethod(set_clipboard)
+    download = staticmethod(download)
+    call_script = staticmethod(call_script)
+
+
+event = EventNamespace()

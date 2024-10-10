@@ -297,6 +297,7 @@ _MAPPING: dict = {
     "config": ["Config", "DBConfig"],
     "constants": ["Env"],
     "event": [
+        "event",
         "EventChain",
         "EventHandler",
         "background",
@@ -336,7 +337,6 @@ _MAPPING: dict = {
 
 _SUBMODULES: set[str] = {
     "components",
-    "event",
     "app",
     "style",
     "admin",
@@ -373,3 +373,6 @@ def __getattr__(name):
 
         return rc
     return getattr(name)
+
+
+event = getattr("event")

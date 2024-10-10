@@ -55,6 +55,7 @@ def ClientSide():
         def set_l6(self, my_param: str):
             self.l6 = my_param
 
+        @rx.event
         def set_var(self):
             setattr(self, self.state_var, self.input_value)
             self.state_var = self.input_value = ""
@@ -64,6 +65,7 @@ def ClientSide():
         l1s: str = rx.LocalStorage()
         s1s: str = rx.SessionStorage()
 
+        @rx.event
         def set_var(self):
             setattr(self, self.state_var, self.input_value)
             self.state_var = self.input_value = ""
