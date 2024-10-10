@@ -2215,3 +2215,36 @@ class TriggerState(rx.State):
 )
 def test_has_state_event_triggers(component, output):
     assert component._has_stateful_event_triggers() == output
+
+
+@pytest.mark.parametrize(
+    ("component_kwargs", "exp_custom_attrs", "exp_style"),
+    [
+        (
+            {"data_test": "test", "aria_test": "test"},
+            {"data-test": "test", "aria-test": "test"},
+            {},
+        ),
+        (
+            {"data-test": "test", "aria-test": "test"},
+            {"data-test": "test", "aria-test": "test"},
+            {},
+        ),
+        (
+            {"custom_attrs": {"data-existing": "test"}, "data_new": "test"},
+            {"data-existing": "test", "data-new": "test"},
+            {},
+        ),
+    ],
+)
+def test_special_props(component_kwargs, exp_custom_attrs, exp_style):
+    """Test that data_ and aria_ special props are correctly added to the component.
+
+    Args:
+        component_kwargs: The component kwargs.
+        exp_custom_attrs: The expected custom attributes.
+        exp_style: The expected style.
+    """
+    component = rx.box(**component_kwargs)
+    assert component.custom_attrs == exp_custom_attrs
+    assert component.style == exp_style
