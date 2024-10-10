@@ -56,7 +56,7 @@ from reflex.utils.imports import (
     ParsedImportDict,
     parse_imports,
 )
-from reflex.utils.types import GenericType, Self, get_origin
+from reflex.utils.types import GenericType, Self, get_origin, has_args
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -1255,27 +1255,6 @@ def unionize(*args: Type) -> Type:
     midpoint = len(args) // 2
     first_half, second_half = args[:midpoint], args[midpoint:]
     return Union[unionize(*first_half), unionize(*second_half)]
-
-
-def has_args(cls) -> bool:
-    """Check if the class has generic parameters.
-
-    Args:
-        cls: The class to check.
-
-    Returns:
-        Whether the class has generic
-    """
-    if get_args(cls):
-        return True
-
-    # Check if the class inherits from a generic class (using __orig_bases__)
-    if hasattr(cls, "__orig_bases__"):
-        for base in cls.__orig_bases__:
-            if get_args(base):
-                return True
-
-    return False
 
 
 def figure_out_type(value: Any) -> types.GenericType:
