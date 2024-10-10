@@ -15,7 +15,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    ParamSpec,
     Tuple,
     Type,
     TypeVar,
@@ -23,7 +22,7 @@ from typing import (
     get_type_hints,
 )
 
-from typing_extensions import get_args, get_origin
+from typing_extensions import ParamSpec, get_args, get_origin
 
 from reflex import constants
 from reflex.utils import console, format
@@ -1421,8 +1420,8 @@ class ToEventChainVarOperation(ToOperation, EventChainVar):
     _default_var_type: ClassVar[Type] = EventChain
 
 
-T = ParamSpec("T")
+P = ParamSpec("P")
 
-IndividualEventType = Union[EventSpec, EventHandler, Callable[T, Any], Var]
+IndividualEventType = Union[EventSpec, EventHandler, Callable[P, Any], Var]
 
-EventType = IndividualEventType[T] | List[IndividualEventType[T]]
+EventType = IndividualEventType[P] | List[IndividualEventType[P]]
