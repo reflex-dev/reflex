@@ -2,6 +2,7 @@
 
 from types import SimpleNamespace
 
+from reflex.components.datadisplay.shiki_code_block import code_block as code_block
 from reflex.components.props import PropsBase
 from reflex.components.radix.themes.components.progress import progress as progress
 from reflex.components.sonner.toast import toast as toast
@@ -67,4 +68,5 @@ _x = ExperimentalNamespace(
     layout=layout,
     PropsBase=PropsBase,
     run_in_thread=run_in_thread,
+    code_block=code_block,
 )
