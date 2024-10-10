@@ -68,12 +68,28 @@ class Pie(Recharts):
         label_line: Optional[Union[Var[bool], bool]] = None,
         stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         fill: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
+        is_animation_active: Optional[Union[Var[bool], bool]] = None,
+        animation_begin: Optional[Union[Var[int], int]] = None,
+        animation_duration: Optional[Union[Var[int], int]] = None,
+        animation_easing: Optional[
+            Union[
+                Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"]],
+            ]
+        ] = None,
+        root_tab_index: Optional[Union[Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_animation_start: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
         on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_mouse_enter: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
@@ -96,22 +112,27 @@ class Pie(Recharts):
 
         Args:
             *children: The children of the component.
-            data: data
+            data: The index of active sector in Pie, this option can be changed in mouse event handlers.
             data_key: The key of each sector's value.
-            cx: The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
-            cy: The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container height.
-            inner_radius: The inner radius of pie, which can be set to a percent value.
-            outer_radius: The outer radius of pie, which can be set to a percent value.
-            start_angle: The angle of first sector.
-            end_angle: The direction of sectors. 1 means clockwise and -1 means anticlockwise.
-            min_angle: The minimum angle of each unzero data.
-            padding_angle: The angle between two sectors.
-            name_key: The key of each sector's name.
-            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered.
-            label: If false set, labels will not be drawn.
-            label_line: If false set, label lines will not be drawn.
-            stroke: Stoke color
-            fill: Fill color
+            cx: The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width. Default: "50%"
+            cy: The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container height. Default: "50%"
+            inner_radius: The inner radius of pie, which can be set to a percent value. Default: 0
+            outer_radius: The outer radius of pie, which can be set to a percent value. Default: "80%"
+            start_angle: The angle of first sector. Default: 0
+            end_angle: The end angle of last sector, which should be unequal to start_angle. Default: 360
+            min_angle: The minimum angle of each unzero data. Default: 0
+            padding_angle: The angle between two sectors. Default: 0
+            name_key: The key of each sector's name. Default: "name"
+            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. Default: "rect"
+            label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
+            label_line: If false set, label lines will not be drawn. If true set, label lines will be drawn which have the props calculated internally. Default: False
+            stroke: Stoke color. Default: rx.color("accent", 9)
+            fill: Fill color. Default: rx.color("accent", 3)
+            is_animation_active: If set false, animation of tooltip will be disabled. Default: true in CSR, and false in SSR
+            animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 400
+            animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
+            animation_easing: The type of easing function. Default: "ease"
+            root_tab_index: The tabindex of wrapper surrounding the cells. Default: 0
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
