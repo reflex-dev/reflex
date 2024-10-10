@@ -1879,13 +1879,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self.dirty_vars.update(self._always_dirty_computed_vars)
             self._mark_dirty()
 
-        def dictify(value: Any):
-            if dataclasses.is_dataclass(value) and not isinstance(value, type):
-                return dataclasses.asdict(value)
-            return value
-
         base_vars = {
-            prop_name: dictify(self.get_value(getattr(self, prop_name)))
+            prop_name: self.get_value(getattr(self, prop_name))
             for prop_name in self.base_vars
         }
         if initial and include_computed:
