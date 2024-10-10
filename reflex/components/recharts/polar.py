@@ -343,7 +343,7 @@ class PolarRadiusAxis(Recharts):
     _valid_children: List[str] = ["Label"]
 
     # The domain of the polar radius axis, specifying the minimum and maximum values. Default: [0, "auto"]
-    domain: Var[List[int]]
+    domain: Var[List[Union[int, str]]]
 
     # The stroke color of axis. Default: rx.color("gray", 10)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 10))

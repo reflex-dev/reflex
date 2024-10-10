@@ -545,7 +545,9 @@ class PolarRadiusAxis(Recharts):
                 ],
             ]
         ] = None,
-        domain: Optional[Union[List[int], Var[List[int]]]] = None,
+        domain: Optional[
+            Union[List[Union[int, str]], Var[List[Union[int, str]]]]
+        ] = None,
         stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
