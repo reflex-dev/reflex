@@ -429,8 +429,11 @@ class Var(Generic[VAR_TYPE]):
             return self.to(EventVar, output)
         if fixed_output_type is EventChain:
             return self.to(EventChainVar, output)
-        if issubclass(fixed_output_type, Base):
-            return self.to(ObjectVar, output)
+        try:
+            if issubclass(fixed_output_type, Base):
+                return self.to(ObjectVar, output)
+        except TypeError:
+            pass
         if dataclasses.is_dataclass(fixed_output_type) and not issubclass(
             fixed_output_type, Var
         ):
@@ -568,8 +571,11 @@ class Var(Generic[VAR_TYPE]):
             return self.to(EventVar, self._var_type)
         if issubclass(fixed_type, EventChain):
             return self.to(EventChainVar, self._var_type)
-        if issubclass(fixed_type, Base):
-            return self.to(ObjectVar, self._var_type)
+        try:
+            if issubclass(fixed_type, Base):
+                return self.to(ObjectVar, self._var_type)
+        except TypeError:
+            pass
         if dataclasses.is_dataclass(fixed_type):
             return self.to(ObjectVar, self._var_type)
         return self
