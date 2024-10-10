@@ -266,7 +266,7 @@ class Cartesian(Recharts):
     # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none' optional
     legend_type: Var[LiteralLegendType]
 
-    # If set false, animation of bar will be disabled. Default: True in CSR, and False in SSR
+    # If set false, animation of bar will be disabled. Default: True
     is_animation_active: Var[bool]
 
     # Specifies when the animation should begin, the unit of this option is ms. Default: 0

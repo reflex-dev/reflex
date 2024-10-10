@@ -743,6 +743,12 @@ class Cartesian(Recharts):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_animation_start: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
         on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
@@ -789,7 +795,7 @@ class Cartesian(Recharts):
             x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
             y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
             legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none' optional
-            is_animation_active: If set false, animation of bar will be disabled. Default: True in CSR, and False in SSR
+            is_animation_active: If set false, animation of bar will be disabled. Default: True
             animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
             animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
             animation_easing: The type of easing function. Default: "ease"
@@ -928,6 +934,12 @@ class Area(Cartesian):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_animation_start: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
         on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
@@ -985,7 +997,7 @@ class Area(Cartesian):
             x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
             y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
             legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none' optional
-            is_animation_active: If set false, animation of bar will be disabled. Default: True in CSR, and False in SSR
+            is_animation_active: If set false, animation of bar will be disabled. Default: True
             animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
             animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
             animation_easing: The type of easing function. Default: "ease"
@@ -1078,6 +1090,12 @@ class Bar(Cartesian):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_animation_start: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
         on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
@@ -1136,7 +1154,7 @@ class Bar(Cartesian):
             x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
             y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
             legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none' optional
-            is_animation_active: If set false, animation of bar will be disabled. Default: True in CSR, and False in SSR
+            is_animation_active: If set false, animation of bar will be disabled. Default: True
             animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
             animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
             animation_easing: The type of easing function. Default: "ease"
@@ -1270,6 +1288,12 @@ class Line(Cartesian):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
+        on_animation_start: Optional[
+            Union[EventHandler, EventSpec, list, Callable, Var]
+        ] = None,
         on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
         on_context_menu: Optional[
@@ -1327,7 +1351,7 @@ class Line(Cartesian):
             x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
             y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
             legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none' optional
-            is_animation_active: If set false, animation of bar will be disabled. Default: True in CSR, and False in SSR
+            is_animation_active: If set false, animation of bar will be disabled. Default: True
             animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
             animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
             animation_easing: The type of easing function. Default: "ease"
