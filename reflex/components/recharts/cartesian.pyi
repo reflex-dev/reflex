@@ -1575,7 +1575,7 @@ class ErrorBar(Recharts):
         data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         width: Optional[Union[Var[int], int]] = None,
         stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
-        stroke_width: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        stroke_width: Optional[Union[Var[Union[float, int]], float, int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

@@ -614,7 +614,7 @@ class ErrorBar(Recharts):
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 8))
 
     # The stroke width of error bar. Default: 1.5
-    stroke_width: Var[Union[str, int]]
+    stroke_width: Var[Union[int, float]]
 
 
 class Reference(Recharts):
