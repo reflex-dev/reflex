@@ -76,6 +76,7 @@ from reflex.utils.exceptions import (
     DynamicRouteArgShadowsStateVar,
     EventHandlerShadowsBuiltInStateMethod,
     ImmutableStateError,
+    InvalidStateManagerMode,
     LockExpiredError,
     SetUndefinedStateVarError,
     StateSchemaMismatchError,
@@ -2514,20 +2515,30 @@ class StateManager(Base, ABC):
         Args:
             state: The state class to use.
 
+        Raises:
+            InvalidStateManagerMode: If the state manager mode is invalid.
+
         Returns:
-            The state manager (either disk or redis).
+            The state manager (either disk, memory or redis).
         """
-        redis = prerequisites.get_redis()
-        if redis is not None:
-            # make sure expiration values are obtained only from the config object on creation
-            config = get_config()
-            return StateManagerRedis(
-                state=state,
-                redis=redis,
-                token_expiration=config.redis_token_expiration,
-                lock_expiration=config.redis_lock_expiration,
-            )
-        return StateManagerDisk(state=state)
+        config = get_config()
+        if config.state_manager_mode == constants.StateManagerMode.DISK:
+            return StateManagerMemory(state=state)
+        if config.state_manager_mode == constants.StateManagerMode.MEMORY:
+            return StateManagerDisk(state=state)
+        if config.state_manager_mode == constants.StateManagerMode.REDIS:
+            redis = prerequisites.get_redis()
+            if redis is not None:
+                # make sure expiration values are obtained only from the config object on creation
+                return StateManagerRedis(
+                    state=state,
+                    redis=redis,
+                    token_expiration=config.redis_token_expiration,
+                    lock_expiration=config.redis_lock_expiration,
+                )
+        raise InvalidStateManagerMode(
+            f"Expected one of: DISK, MEMORY, REDIS, got {config.state_manager_mode}"
+        )
 
     @abstractmethod
     async def get_state(self, token: str) -> BaseState:
