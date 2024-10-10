@@ -43,14 +43,18 @@ import reflex.utils.exec
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
+from reflex.components.component import StatefulComponent
 from reflex.state import (
     BaseState,
+    State,
     StateManager,
     StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
+    minified_state_names,
     reload_state_module,
 )
+from reflex.utils.types import override
 
 try:
     from selenium import webdriver  # pyright: ignore [reportMissingImports]
@@ -140,7 +144,7 @@ class AppHarness:
             types.FunctionType | types.ModuleType | str | functools.partial[Any]
         ] = None,
         app_name: Optional[str] = None,
-    ) -> "AppHarness":
+    ) -> AppHarness:
         """Create an AppHarness instance at root.
 
         Args:
@@ -191,9 +195,12 @@ class AppHarness:
         Returns:
             The state name
         """
-        return reflex.utils.format.to_snake_case(
+        state_name = reflex.utils.format.to_snake_case(
             f"{self.app_name}___{self.app_name}___" + state_cls_name
         )
+        if reflex.constants.CompileVars.MINIFY_STATES():
+            return minified_state_names.get(state_name, state_name)
+        return state_name
 
     def get_full_state_name(self, path: List[str]) -> str:
         """Get the full state name for the given state class name.
@@ -206,7 +213,7 @@ class AppHarness:
         """
         # NOTE: using State.get_name() somehow causes trouble here
         # path = [State.get_name()] + [self.get_state_name(p) for p in path]
-        path = ["reflex___state____state"] + [self.get_state_name(p) for p in path]
+        path = [State.get_name()] + [self.get_state_name(p) for p in path]
         return ".".join(path)
 
     def _get_globals_from_signature(self, func: Any) -> dict[str, Any]:
@@ -272,6 +279,8 @@ class AppHarness:
                 )
                 self.app_module_path.write_text(source_code)
         with chdir(self.app_path):
+            # Reset stateful component cache for new app
+            StatefulComponent.tag_to_stateful_component.clear()
             # ensure config and app are reloaded when testing different app
             reflex.config.get_config(reload=True)
             # Save decorated pages before importing the test app module
@@ -409,7 +418,7 @@ class AppHarness:
         self.frontend_output_thread = threading.Thread(target=consume_frontend_output)
         self.frontend_output_thread.start()
 
-    def start(self) -> "AppHarness":
+    def start(self) -> AppHarness:
         """Start the backend in a new thread and dev frontend as a separate process.
 
         Returns:
@@ -439,7 +448,7 @@ class AppHarness:
             return f"{key} = {value!r}"
         return inspect.getsource(value)
 
-    def __enter__(self) -> "AppHarness":
+    def __enter__(self) -> AppHarness:
         """Contextmanager protocol for `start()`.
 
         Returns:
@@ -918,6 +927,7 @@ class AppHarnessProd(AppHarness):
             )
             self.frontend_server.serve_forever()
 
+    @override
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):
@@ -929,21 +939,23 @@ class AppHarnessProd(AppHarness):
                 zipping=False,
                 frontend=True,
                 backend=False,
-                loglevel=reflex.constants.LogLevel.INFO,
+                loglevel=reflex.constants.base.LogLevel.INFO,
             )
 
         self.frontend_thread = threading.Thread(target=self._run_frontend)
         self.frontend_thread.start()
 
+    @override
     def _wait_frontend(self):
-        self._poll_for(lambda: self.frontend_server is not None)
+        _ = self._poll_for(lambda: self.frontend_server is not None)
         if self.frontend_server is None or not self.frontend_server.socket.fileno():
             raise RuntimeError("Frontend did not start")
 
+    @override
     def _start_backend(self):
         if self.app_instance is None:
             raise RuntimeError("App was not initialized.")
-        os.environ[reflex.constants.SKIP_COMPILE_ENV_VAR] = "yes"
+        os.environ[reflex.constants.base.SKIP_COMPILE_ENV_VAR] = "yes"
         self.backend = uvicorn.Server(
             uvicorn.Config(
                 app=self.app_instance,
@@ -956,12 +968,27 @@ class AppHarnessProd(AppHarness):
         self.backend_thread = threading.Thread(target=self.backend.run)
         self.backend_thread.start()
 
+    @override
     def _poll_for_servers(self, timeout: TimeoutType = None) -> socket.socket:
         try:
             return super()._poll_for_servers(timeout)
         finally:
-            os.environ.pop(reflex.constants.SKIP_COMPILE_ENV_VAR, None)
+            _ = os.environ.pop(reflex.constants.base.SKIP_COMPILE_ENV_VAR, None)
 
+    @override
+    def start(self) -> AppHarnessProd:
+        """Start AppHarnessProd instance.
+
+        Returns:
+            self
+        """
+        os.environ[reflex.constants.base.ENV_MODE_ENV_VAR] = (
+            reflex.constants.base.Env.PROD.value
+        )
+        _ = super().start()
+        return self
+
+    @override
     def stop(self):
         """Stop the frontend python webserver."""
         super().stop()
@@ -969,3 +996,4 @@ class AppHarnessProd(AppHarness):
             self.frontend_server.shutdown()
         if self.frontend_thread is not None:
             self.frontend_thread.join()
+        _ = os.environ.pop(reflex.constants.base.ENV_MODE_ENV_VAR)
