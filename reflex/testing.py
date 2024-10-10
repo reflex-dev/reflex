@@ -394,9 +394,14 @@ class AppHarness:
 
         def consume_frontend_output():
             while True:
-                line = (
-                    self.frontend_process.stdout.readline()  # pyright: ignore [reportOptionalMemberAccess]
-                )
+                try:
+                    line = (
+                        self.frontend_process.stdout.readline()  # pyright: ignore [reportOptionalMemberAccess]
+                    )
+                # catch I/O operation on closed file.
+                except ValueError as e:
+                    print(e)
+                    break
                 if not line:
                     break
                 print(line)
