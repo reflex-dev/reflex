@@ -477,7 +477,9 @@ class Component(BaseComponent, ABC):
 
         # Place data_ and aria_ attributes into custom_attrs
         special_attributes = tuple(
-            key for key in kwargs if SpecialAttributes.is_special(key)
+            key
+            for key in kwargs
+            if key not in fields and SpecialAttributes.is_special(key)
         )
         if special_attributes:
             custom_attrs = kwargs.setdefault("custom_attrs", {})

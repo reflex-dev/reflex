@@ -2217,6 +2217,13 @@ def test_has_state_event_triggers(component, output):
     assert component._has_stateful_event_triggers() == output
 
 
+class SpecialComponent(Box):
+    """A special component with custom attributes."""
+
+    data_prop: Var[str]
+    aria_prop: Var[str]
+
+
 @pytest.mark.parametrize(
     ("component_kwargs", "exp_custom_attrs", "exp_style"),
     [
@@ -2235,6 +2242,16 @@ def test_has_state_event_triggers(component, output):
             {"data-existing": "test", "data-new": "test"},
             {},
         ),
+        (
+            {"data_test": "test", "data_prop": "prop"},
+            {"data-test": "test"},
+            {},
+        ),
+        (
+            {"aria_test": "test", "aria_prop": "prop"},
+            {"aria-test": "test"},
+            {},
+        ),
     ],
 )
 def test_special_props(component_kwargs, exp_custom_attrs, exp_style):
@@ -2245,6 +2262,9 @@ def test_special_props(component_kwargs, exp_custom_attrs, exp_style):
         exp_custom_attrs: The expected custom attributes.
         exp_style: The expected style.
     """
-    component = rx.box(**component_kwargs)
+    component = SpecialComponent.create(**component_kwargs)
     assert component.custom_attrs == exp_custom_attrs
     assert component.style == exp_style
+    for prop in SpecialComponent.get_props():
+        if prop in component_kwargs:
+            assert getattr(component, prop)._var_value == component_kwargs[prop]
