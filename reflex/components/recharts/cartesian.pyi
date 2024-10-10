@@ -1547,10 +1547,10 @@ class Funnel(Recharts):
         Args:
             *children: The children of the component.
             data: The source data, in which each element is an object.
-            data_key: The key or getter of a group of data which should be unique in a LineChart.
+            data_key: The key or getter of a group of data which should be unique in a FunnelChart.
             name_key: The key of each sector's name. Default: "name"
             legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. Default: "line"
-            is_animation_active: If set false, animation of line will be disabled. Default: True in CSR, False in SSR
+            is_animation_active: If set false, animation of line will be disabled. Default: True
             animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
             animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
             animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default "ease"

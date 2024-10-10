@@ -536,7 +536,7 @@ class Funnel(Recharts):
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
 
-    # The key or getter of a group of data which should be unique in a LineChart.
+    # The key or getter of a group of data which should be unique in a FunnelChart.
     data_key: Var[Union[str, int]]
 
     # The key of each sector's name. Default: "name"
@@ -545,7 +545,7 @@ class Funnel(Recharts):
     # The type of icon in legend. If set to 'none', no legend item will be rendered. Default: "line"
     legend_type: Var[LiteralLegendType]
 
-    # If set false, animation of line will be disabled. Default: True in CSR, False in SSR
+    # If set false, animation of line will be disabled. Default: True
     is_animation_active: Var[bool]
 
     # Specifies when the animation should begin, the unit of this option is ms. Default: 0
