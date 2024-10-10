@@ -126,6 +126,7 @@ class Pie(Recharts):
         ...
 
 class Radar(Recharts):
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -137,8 +138,40 @@ class Radar(Recharts):
         stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         fill: Optional[Union[Var[str], str]] = None,
         fill_opacity: Optional[Union[Var[float], float]] = None,
-        legend_type: Optional[Union[Var[str], str]] = None,
+        legend_type: Optional[
+            Union[
+                Literal[
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "line",
+                    "none",
+                    "plainline",
+                    "rect",
+                    "square",
+                    "star",
+                    "triangle",
+                    "wye",
+                ],
+                Var[
+                    Literal[
+                        "circle",
+                        "cross",
+                        "diamond",
+                        "line",
+                        "none",
+                        "plainline",
+                        "rect",
+                        "square",
+                        "star",
+                        "triangle",
+                        "wye",
+                    ]
+                ],
+            ]
+        ] = None,
         label: Optional[Union[Var[bool], bool]] = None,
+        is_animation_active: Optional[Union[Var[bool], bool]] = None,
         animation_begin: Optional[Union[Var[int], int]] = None,
         animation_duration: Optional[Union[Var[int], int]] = None,
         animation_easing: Optional[
@@ -153,39 +186,10 @@ class Radar(Recharts):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_click: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_context_menu: Optional[
+        on_animation_end: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
-        on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
-        ] = None,
-        on_focus: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_mount: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
-        ] = None,
-        on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
-        ] = None,
-        on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
-        ] = None,
-        on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
-        ] = None,
-        on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
-        ] = None,
-        on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
-        ] = None,
-        on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, Callable, Var]
-        ] = None,
-        on_scroll: Optional[Union[EventHandler, EventSpec, list, Callable, Var]] = None,
-        on_unmount: Optional[
+        on_animation_start: Optional[
             Union[EventHandler, EventSpec, list, Callable, Var]
         ] = None,
         **props,
@@ -196,15 +200,16 @@ class Radar(Recharts):
             *children: The children of the component.
             data_key: The key of a group of data which should be unique in a radar chart.
             points: The coordinates of all the vertexes of the radar shape, like [{ x, y }].
-            dot: If false set, dots will not be drawn
-            stroke: Stoke color
-            fill: Fill color
-            fill_opacity: opacity
-            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered.
-            label: If false set, labels will not be drawn
-            animation_begin: Specifies when the animation should begin, the unit of this option is ms.
-            animation_duration: Specifies the duration of animation, the unit of this option is ms.
-            animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
+            dot: If false set, dots will not be drawn. Default: True
+            stroke: Stoke color. Default: rx.color("accent", 9)
+            fill: Fill color. Default: rx.color("accent", 3)
+            fill_opacity: opacity. Default: 0.6
+            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. Default: "rect"
+            label: If false set, labels will not be drawn. Default: True
+            is_animation_active: If set false, animation of polygon will be disabled. Default: True in CSR, and False in SSR
+            animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
+            animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
+            animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default: "ease"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -312,13 +317,17 @@ class PolarAngleAxis(Recharts):
         axis_line: Optional[
             Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
         ] = None,
-        axis_line_type: Optional[Union[Var[str], str]] = None,
+        axis_line_type: Optional[
+            Union[Literal["circle", "polygon"], Var[Literal["circle", "polygon"]]]
+        ] = None,
         tick_line: Optional[
             Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
         ] = None,
-        tick: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        tick: Optional[
+            Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
+        ] = None,
         ticks: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
-        orient: Optional[Union[Var[str], str]] = None,
+        orientation: Optional[Union[Var[str], str]] = None,
         stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         allow_duplicated_category: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
@@ -372,14 +381,14 @@ class PolarAngleAxis(Recharts):
             cx: The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
             cy: The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container height.
             radius: The outer radius of circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy.
-            axis_line: If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option.
-            axis_line_type: The type of axis line.
-            tick_line: If false set, tick lines will not be drawn. If true set, tick lines will be drawn which have the props calculated internally. If object set, tick lines will be drawn which have the props mergered by the internal calculated props and the option.
-            tick: The width or height of tick.
+            axis_line: If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option. Default: True
+            axis_line_type: The type of axis line. Default: "polygon"
+            tick_line: If false set, tick lines will not be drawn. If true set, tick lines will be drawn which have the props calculated internally. If object set, tick lines will be drawn which have the props mergered by the internal calculated props and the option. Default: False
+            tick: If false set, ticks will not be drawn. If true set, ticks will be drawn which have the props calculated internally. If object set, ticks will be drawn which have the props mergered by the internal calculated props and the option. Default: True
             ticks: The array of every tick's value and angle.
-            orient: The orientation of axis text.
-            stroke: The stroke color of axis
-            allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category".
+            orientation: The orientation of axis text. Default: "outer"
+            stroke: The stroke color of axis. Default: rx.color("gray", 10)
+            allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -399,10 +408,10 @@ class PolarGrid(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        cx: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        cy: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        inner_radius: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        outer_radius: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        cx: Optional[Union[Var[int], int]] = None,
+        cy: Optional[Union[Var[int], int]] = None,
+        inner_radius: Optional[Union[Var[int], int]] = None,
+        outer_radius: Optional[Union[Var[int], int]] = None,
         polar_angles: Optional[Union[List[int], Var[List[int]]]] = None,
         polar_radius: Optional[Union[List[int], Var[List[int]]]] = None,
         grid_type: Optional[
@@ -456,14 +465,14 @@ class PolarGrid(Recharts):
 
         Args:
             *children: The children of the component.
-            cx: The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
-            cy: The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container height.
+            cx: The x-coordinate of center.
+            cy: The y-coordinate of center.
             inner_radius: The radius of the inner polar grid.
             outer_radius: The radius of the outer polar grid.
             polar_angles: The array of every line grid's angle.
             polar_radius: The array of every line grid's radius.
-            grid_type: The type of polar grids. 'polygon' | 'circle'
-            stroke: The stroke color of grid
+            grid_type: The type of polar grids. 'polygon' | 'circle'. Default: "polygon"
+            stroke: The stroke color of grid. Default: rx.color("gray", 10)
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

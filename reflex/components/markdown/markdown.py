@@ -75,7 +75,7 @@ def get_base_component_map() -> dict[str, Callable]:
 class Markdown(Component):
     """A markdown component."""
 
-    library = "react-markdown@9.0.1"
+    library = "react-markdown@8.0.7"
 
     tag = "ReactMarkdown"
 
@@ -157,19 +157,19 @@ class Markdown(Component):
         return [
             {
                 "": "katex/dist/katex.min.css",
-                "remark-math@6.0.0": ImportVar(
+                "remark-math@5.1.1": ImportVar(
                     tag=_REMARK_MATH._js_expr, is_default=True
                 ),
-                "remark-gfm@4.0.0": ImportVar(
+                "remark-gfm@3.0.1": ImportVar(
                     tag=_REMARK_GFM._js_expr, is_default=True
                 ),
                 "remark-unwrap-images@4.0.0": ImportVar(
                     tag=_REMARK_UNWRAP_IMAGES._js_expr, is_default=True
                 ),
-                "rehype-katex@7.0.1": ImportVar(
+                "rehype-katex@6.0.3": ImportVar(
                     tag=_REHYPE_KATEX._js_expr, is_default=True
                 ),
-                "rehype-raw@7.0.0": ImportVar(
+                "rehype-raw@6.1.1": ImportVar(
                     tag=_REHYPE_RAW._js_expr, is_default=True
                 ),
             },

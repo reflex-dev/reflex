@@ -160,8 +160,8 @@ class CategoricalChartBase(ChartBase):
             data: The source data, in which each element is an object.
             margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
-            sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
-            layout: The layout of area in the chart. 'horizontal' | 'vertical'
+            sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function. Default: "index"
+            layout: The layout of area in the chart. 'horizontal' | 'vertical'. Default: "horizontal"
             stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             width: The width of chart container. String or Integer
             height: The height of chart container.
@@ -258,12 +258,12 @@ class AreaChart(CategoricalChartBase):
 
         Args:
             *children: The children of the chart component.
-            base_value: The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
+            base_value: The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'. Default: "auto"
             data: The source data, in which each element is an object.
             margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
-            sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
-            layout: The layout of area in the chart. 'horizontal' | 'vertical'
+            sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function. Default: "index"
+            layout: The layout of area in the chart. 'horizontal' | 'vertical'. Default: "horizontal"
             stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             width: The width of chart container. String or Integer
             height: The height of chart container.
@@ -358,17 +358,17 @@ class BarChart(CategoricalChartBase):
 
         Args:
             *children: The children of the chart component.
-            bar_category_gap: The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
-            bar_gap: The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
+            bar_category_gap: The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number. Default: "10%"
+            bar_gap: The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number. Default: 4
             bar_size: The width of all the bars in the chart. Number
             max_bar_size: The maximum width of all the bars in a horizontal BarChart, or maximum height in a vertical BarChart.
             stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
-            reverse_stack_order: If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
+            reverse_stack_order: If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.) Default: False
             data: The source data, in which each element is an object.
             margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
-            sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
-            layout: The layout of area in the chart. 'horizontal' | 'vertical'
+            sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function. Default: "index"
+            layout: The layout of area in the chart. 'horizontal' | 'vertical'. Default: "horizontal"
             width: The width of chart container. String or Integer
             height: The height of chart container.
             style: The style of the component.
@@ -460,8 +460,8 @@ class LineChart(CategoricalChartBase):
             data: The source data, in which each element is an object.
             margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
-            sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
-            layout: The layout of area in the chart. 'horizontal' | 'vertical'
+            sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function. Default: "index"
+            layout: The layout of area in the chart. 'horizontal' | 'vertical'. Default: "horizontal"
             stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             width: The width of chart container. String or Integer
             height: The height of chart container.
@@ -492,7 +492,7 @@ class ComposedChart(CategoricalChartBase):
             ]
         ] = None,
         bar_category_gap: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        bar_gap: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        bar_gap: Optional[Union[Var[int], int]] = None,
         bar_size: Optional[Union[Var[int], int]] = None,
         reverse_stack_order: Optional[Union[Var[bool], bool]] = None,
         data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
@@ -562,16 +562,16 @@ class ComposedChart(CategoricalChartBase):
 
         Args:
             *children: The children of the chart component.
-            base_value: The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
-            bar_category_gap: The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
-            bar_gap: The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
-            bar_size: The width of all the bars in the chart. Number
-            reverse_stack_order: If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
+            base_value: The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'. Default: "auto"
+            bar_category_gap: The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number. Default: "10%"
+            bar_gap: The gap between two bars in the same category. Default: 4
+            bar_size: The width or height of each bar. If the barSize is not specified, the size of the bar will be calculated by the barCategoryGap, barGap and the quantity of bar groups.
+            reverse_stack_order: If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position). Default: False
             data: The source data, in which each element is an object.
             margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
-            sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
-            layout: The layout of area in the chart. 'horizontal' | 'vertical'
+            sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function. Default: "index"
+            layout: The layout of area in the chart. 'horizontal' | 'vertical'. Default: "horizontal"
             stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             width: The width of chart container. String or Integer
             height: The height of chart container.
@@ -697,13 +697,13 @@ class RadarChart(ChartBase):
         Args:
             *children: The children of the chart component.
             data: The source data, in which each element is an object.
-            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
-            cx: The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
-            cy: The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage
-            start_angle: The angle of first radial direction line.
-            end_angle: The angle of last point in the circle which should be startAngle - 360 or startAngle + 360. We'll calculate the direction of chart by 'startAngle' and 'endAngle'.
-            inner_radius: The inner radius of first circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage
-            outer_radius: The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage
+            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}. Default: {"top": 0, "right": 0, "left": 0, "bottom": 0}
+            cx: The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"
+            cy: The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage. Default: "50%"
+            start_angle: The angle of first radial direction line. Default: 90
+            end_angle: The angle of last point in the circle which should be startAngle - 360 or startAngle + 360. We'll calculate the direction of chart by 'startAngle' and 'endAngle'. Default: -270
+            inner_radius: The inner radius of first circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: 0
+            outer_radius: The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: "80%"
             width: The width of chart container. String or Integer
             height: The height of chart container.
             style: The style of the component.
@@ -786,15 +786,15 @@ class RadialBarChart(ChartBase):
         Args:
             *children: The children of the chart component.
             data: The source data which each element is an object.
-            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
-            cx: The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
-            cy: The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage
-            start_angle: The angle of first radial direction line.
-            end_angle: The angle of last point in the circle which should be startAngle - 360 or startAngle + 360. We'll calculate the direction of chart by 'startAngle' and 'endAngle'.
-            inner_radius: The inner radius of first circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage
-            outer_radius: The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage
-            bar_category_gap: The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
-            bar_gap: The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
+            margin: The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "left": 5 "bottom": 5}
+            cx: The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"
+            cy: The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage. Default: "50%"
+            start_angle: The angle of first radial direction line. Default: 0
+            end_angle: The angle of last point in the circle which should be startAngle - 360 or startAngle + 360. We'll calculate the direction of chart by 'startAngle' and 'endAngle'. Default: 360
+            inner_radius: The inner radius of first circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: "30%"
+            outer_radius: The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: "100%"
+            bar_category_gap: The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number. Default: "10%"
+            bar_gap: The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number. Default: 4
             bar_size: The size of each bar. If the barSize is not specified, the size of bar will be calculated by the barCategoryGap, barGap and the quantity of bar groups.
             width: The width of chart container. String or Integer
             height: The height of chart container.
@@ -855,7 +855,7 @@ class ScatterChart(ChartBase):
 
         Args:
             *children: The children of the chart component.
-            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
+            margin: The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "bottom": 5, "left": 5}
             width: The width of chart container. String or Integer
             height: The height of chart container.
             style: The style of the component.
@@ -929,8 +929,8 @@ class FunnelChart(ChartBase):
 
         Args:
             *children: The children of the chart component.
-            layout: The layout of bars in the chart. centeric
-            margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
+            layout: The layout of bars in the chart. Default: "centric"
+            margin: The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "bottom": 5, "left": 5}
             stroke: The stroke color of each bar. String | Object
             width: The width of chart container. String or Integer
             height: The height of chart container.
@@ -957,6 +957,7 @@ class Treemap(RechartsCharts):
         height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
         data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        name_key: Optional[Union[Var[str], str]] = None,
         aspect_ratio: Optional[Union[Var[int], int]] = None,
         is_animation_active: Optional[Union[Var[bool], bool]] = None,
         animation_begin: Optional[Union[Var[int], int]] = None,
@@ -1020,15 +1021,16 @@ class Treemap(RechartsCharts):
 
         Args:
             *children: The children of the chart component.
-            width: The width of chart container. String or Integer
-            height: The height of chart container.
+            width: The width of chart container. String or Integer. Default: "100%"
+            height: The height of chart container. String or Integer. Default: "100%"
             data: data of treemap. Array
-            data_key: The key of a group of data which should be unique in a treemap. String | Number | Function
+            data_key: The key of a group of data which should be unique in a treemap. String | Number. Default: "value"
+            name_key: The key of each sector's name. String. Default: "name"
             aspect_ratio: The treemap will try to keep every single rectangle's aspect ratio near the aspectRatio given. Number
-            is_animation_active: If set false, animation of area will be disabled.
-            animation_begin: Specifies when the animation should begin, the unit of this option is ms.
-            animation_duration: Specifies the duration of animation, the unit of this option is ms.
-            animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
+            is_animation_active: If set false, animation of area will be disabled. Default: True
+            animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
+            animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
+            animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default: "ease"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

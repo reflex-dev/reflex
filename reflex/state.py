@@ -2520,7 +2520,7 @@ class StateManager(Base, ABC):
             state: The state class to use.
 
         Returns:
-            The state manager (either memory or redis).
+            The state manager (either disk or redis).
         """
         redis = prerequisites.get_redis()
         if redis is not None:
