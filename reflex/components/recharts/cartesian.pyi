@@ -95,18 +95,18 @@ class Axis(Recharts):
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
+        on_click: Optional[EventType[()]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
         on_double_click: Optional[EventType[[]]] = None,
         on_focus: Optional[EventType[[]]] = None,
         on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
         on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,
@@ -239,18 +239,18 @@ class XAxis(Axis):
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
+        on_click: Optional[EventType[()]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
         on_double_click: Optional[EventType[[]]] = None,
         on_focus: Optional[EventType[[]]] = None,
         on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
         on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,
@@ -386,18 +386,18 @@ class YAxis(Axis):
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
+        on_click: Optional[EventType[()]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
         on_double_click: Optional[EventType[[]]] = None,
         on_focus: Optional[EventType[[]]] = None,
         on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
         on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,
@@ -646,25 +646,38 @@ class Cartesian(Recharts):
                 ],
             ]
         ] = None,
+        is_animation_active: Optional[Union[Var[bool], bool]] = None,
+        animation_begin: Optional[Union[Var[int], int]] = None,
+        animation_duration: Optional[Union[Var[int], int]] = None,
+        animation_easing: Optional[
+            Union[
+                Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"]],
+            ]
+        ] = None,
+        unit: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        name: Optional[Union[Var[Union[int, str]], int, str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[EventType[[]]] = None,
+        on_animation_start: Optional[EventType[[]]] = None,
         on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
+        on_click: Optional[EventType[()]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
         on_double_click: Optional[EventType[[]]] = None,
         on_focus: Optional[EventType[[]]] = None,
         on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,
@@ -675,9 +688,15 @@ class Cartesian(Recharts):
             *children: The children of the component.
             layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
             data_key: The key of a group of data which should be unique in an area chart.
-            x_axis_id: The id of x-axis which is corresponding to the data.
-            y_axis_id: The id of y-axis which is corresponding to the data.
-            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional
+            x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
+            y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
+            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none' optional
+            is_animation_active: If set false, animation of bar will be disabled. Default: True
+            animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
+            animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
+            animation_easing: The type of easing function. Default: "ease"
+            unit: The unit of data. This option will be used in tooltip.
+            name: The name of data. This option will be used in tooltip and legend to represent the component. If no value was set to this option, the value of dataKey will be used alternatively.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -794,25 +813,38 @@ class Area(Cartesian):
                 ],
             ]
         ] = None,
+        is_animation_active: Optional[Union[Var[bool], bool]] = None,
+        animation_begin: Optional[Union[Var[int], int]] = None,
+        animation_duration: Optional[Union[Var[int], int]] = None,
+        animation_easing: Optional[
+            Union[
+                Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"]],
+            ]
+        ] = None,
+        unit: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        name: Optional[Union[Var[Union[int, str]], int, str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[EventType[[]]] = None,
+        on_animation_start: Optional[EventType[[]]] = None,
         on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
+        on_click: Optional[EventType[()]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
         on_double_click: Optional[EventType[[]]] = None,
         on_focus: Optional[EventType[[]]] = None,
         on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,
@@ -834,9 +866,15 @@ class Area(Cartesian):
             connect_nulls: Whether to connect a graph area across null points. Default: False
             layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
             data_key: The key of a group of data which should be unique in an area chart.
-            x_axis_id: The id of x-axis which is corresponding to the data.
-            y_axis_id: The id of y-axis which is corresponding to the data.
-            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional
+            x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
+            y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
+            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none' optional
+            is_animation_active: If set false, animation of bar will be disabled. Default: True
+            animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
+            animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
+            animation_easing: The type of easing function. Default: "ease"
+            unit: The unit of data. This option will be used in tooltip.
+            name: The name of data. This option will be used in tooltip and legend to represent the component. If no value was set to this option, the value of dataKey will be used alternatively.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -909,25 +947,36 @@ class Bar(Cartesian):
                 ],
             ]
         ] = None,
+        is_animation_active: Optional[Union[Var[bool], bool]] = None,
+        animation_begin: Optional[Union[Var[int], int]] = None,
+        animation_duration: Optional[Union[Var[int], int]] = None,
+        animation_easing: Optional[
+            Union[
+                Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"]],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[EventType[[]]] = None,
+        on_animation_start: Optional[EventType[[]]] = None,
         on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
+        on_click: Optional[EventType[()]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
         on_double_click: Optional[EventType[[]]] = None,
         on_focus: Optional[EventType[[]]] = None,
         on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,
@@ -944,15 +993,19 @@ class Bar(Cartesian):
             stack_id: The stack id of bar, when two bars have the same value axis and same stack_id, then the two bars are stacked in order.
             unit: The unit of data. This option will be used in tooltip.
             min_point_size: The minimal height of a bar in a horizontal BarChart, or the minimal width of a bar in a vertical BarChart. By default, 0 values are not shown. To visualize a 0 (or close to zero) point, set the minimal point size to a pixel value like 3. In stacked bar charts, minPointSize might not be respected for tightly packed values. So we strongly recommend not using this prop in stacked BarCharts.
-            name: The name of data. This option will be used in tooltip and legend to represent a bar. If no value was set to this option, the value of dataKey will be used alternatively.
+            name: The name of data. This option will be used in tooltip and legend to represent the component. If no value was set to this option, the value of dataKey will be used alternatively.
             bar_size: Size of the bar (if one bar_size is set then a bar_size must be set for all bars)
             max_bar_size: Max size of the bar
             radius: If set a value, the option is the radius of all the rounded corners. If set a array, the option are in turn the radiuses of top-left corner, top-right corner, bottom-right corner, bottom-left corner. Default: 0
             layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
             data_key: The key of a group of data which should be unique in an area chart.
-            x_axis_id: The id of x-axis which is corresponding to the data.
-            y_axis_id: The id of y-axis which is corresponding to the data.
-            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional
+            x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
+            y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
+            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none' optional
+            is_animation_active: If set false, animation of bar will be disabled. Default: True
+            animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
+            animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
+            animation_easing: The type of easing function. Default: "ease"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1067,25 +1120,37 @@ class Line(Cartesian):
                 ],
             ]
         ] = None,
+        is_animation_active: Optional[Union[Var[bool], bool]] = None,
+        animation_begin: Optional[Union[Var[int], int]] = None,
+        animation_duration: Optional[Union[Var[int], int]] = None,
+        animation_easing: Optional[
+            Union[
+                Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"],
+                Var[Literal["ease", "ease-in", "ease-in-out", "ease-out", "linear"]],
+            ]
+        ] = None,
+        name: Optional[Union[Var[Union[int, str]], int, str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[EventType[[]]] = None,
+        on_animation_start: Optional[EventType[[]]] = None,
         on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
+        on_click: Optional[EventType[()]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
         on_double_click: Optional[EventType[[]]] = None,
         on_focus: Optional[EventType[[]]] = None,
         on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,
@@ -1107,9 +1172,14 @@ class Line(Cartesian):
             stroke_dasharray: The pattern of dashes and gaps used to paint the line.
             layout: The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
             data_key: The key of a group of data which should be unique in an area chart.
-            x_axis_id: The id of x-axis which is corresponding to the data.
-            y_axis_id: The id of y-axis which is corresponding to the data.
-            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional
+            x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
+            y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
+            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none' optional
+            is_animation_active: If set false, animation of bar will be disabled. Default: True
+            animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
+            animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
+            animation_easing: The type of easing function. Default: "ease"
+            name: The name of data. This option will be used in tooltip and legend to represent the component. If no value was set to this option, the value of dataKey will be used alternatively.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1204,18 +1274,18 @@ class Scatter(Recharts):
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
+        on_click: Optional[EventType[()]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
         on_double_click: Optional[EventType[[]]] = None,
         on_focus: Optional[EventType[[]]] = None,
         on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,
@@ -1301,27 +1371,30 @@ class Funnel(Recharts):
             ]
         ] = None,
         stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
+        trapezoids: Optional[
+            Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_animation_end: Optional[EventType[[]]] = None,
-        on_animation_start: Optional[EventType[[]]] = None,
+        on_animation_end: Optional[EventType[()]] = None,
+        on_animation_start: Optional[EventType[()]] = None,
         on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
+        on_click: Optional[EventType[()]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
         on_double_click: Optional[EventType[[]]] = None,
         on_focus: Optional[EventType[[]]] = None,
         on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,
@@ -1331,14 +1404,15 @@ class Funnel(Recharts):
         Args:
             *children: The children of the component.
             data: The source data, in which each element is an object.
-            data_key: The key of a group of data which should be unique in an area chart.
-            name_key: The key or getter of a group of data which should be unique in a LineChart.
-            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered.
-            is_animation_active: If set false, animation of line will be disabled.
-            animation_begin: Specifies when the animation should begin, the unit of this option is ms.
-            animation_duration: Specifies the duration of animation, the unit of this option is ms.
-            animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
-            stroke: stroke color
+            data_key: The key or getter of a group of data which should be unique in a FunnelChart.
+            name_key: The key of each sector's name. Default: "name"
+            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. Default: "line"
+            is_animation_active: If set false, animation of line will be disabled. Default: True
+            animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
+            animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
+            animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default "ease"
+            stroke: Stroke color. Default: rx.color("gray", 3)
+            trapezoids: The coordinates of all the trapezoids in the funnel, usually calculated internally.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1358,13 +1432,11 @@ class ErrorBar(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        direction: Optional[
-            Union[Literal["both", "x", "y"], Var[Literal["both", "x", "y"]]]
-        ] = None,
+        direction: Optional[Union[Literal["x", "y"], Var[Literal["x", "y"]]]] = None,
         data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         width: Optional[Union[Var[int], int]] = None,
         stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
-        stroke_width: Optional[Union[Var[int], int]] = None,
+        stroke_width: Optional[Union[Var[Union[float, int]], float, int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1392,11 +1464,11 @@ class ErrorBar(Recharts):
 
         Args:
             *children: The children of the component.
-            direction: The direction of error bar. 'x' | 'y' | 'both'
+            direction: Only used for ScatterChart with error bars in two directions. Only accepts a value of "x" or "y" and makes the error bars lie in that direction.
             data_key: The key of a group of data which should be unique in an area chart.
-            width: The width of the error bar ends.
-            stroke: The stroke color of error bar.
-            stroke_width: The stroke width of error bar.
+            width: The width of the error bar ends. Default: 5
+            stroke: The stroke color of error bar. Default: rx.color("gray", 8)
+            stroke_width: The stroke width of error bar. Default: 1.5
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1570,18 +1642,18 @@ class ReferenceDot(Reference):
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
+        on_click: Optional[EventType[()]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
         on_double_click: Optional[EventType[[]]] = None,
         on_focus: Optional[EventType[[]]] = None,
         on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,
@@ -1723,10 +1795,10 @@ class Grid(Recharts):
 
         Args:
             *children: The children of the component.
-            x: The x-coordinate of grid.
-            y: The y-coordinate of grid.
-            width: The width of grid.
-            height: The height of grid.
+            x: The x-coordinate of grid. Default: 0
+            y: The y-coordinate of grid. Default: 0
+            width: The width of grid. Default: 0
+            height: The height of grid. Default: 0
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1797,10 +1869,10 @@ class CartesianGrid(Grid):
             fill_opacity: The opacity of the background used to fill the space between grid lines.
             stroke_dasharray: The pattern of dashes and gaps used to paint the lines of the grid.
             stroke: the stroke color of grid. Default: rx.color("gray", 7)
-            x: The x-coordinate of grid.
-            y: The y-coordinate of grid.
-            width: The width of grid.
-            height: The height of grid.
+            x: The x-coordinate of grid. Default: 0
+            y: The y-coordinate of grid. Default: 0
+            width: The width of grid. Default: 0
+            height: The height of grid. Default: 0
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1881,10 +1953,10 @@ class CartesianAxis(Grid):
             label: If set a string or a number, default label will be drawn, and the option is content.
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside. Default: False
             tick_margin: The margin between tick line and tick.
-            x: The x-coordinate of grid.
-            y: The y-coordinate of grid.
-            width: The width of grid.
-            height: The height of grid.
+            x: The x-coordinate of grid. Default: 0
+            y: The y-coordinate of grid. Default: 0
+            width: The width of grid. Default: 0
+            height: The height of grid. Default: 0
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

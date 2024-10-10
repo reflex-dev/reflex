@@ -257,14 +257,38 @@ class Cartesian(Recharts):
     # The key of a group of data which should be unique in an area chart.
     data_key: Var[Union[str, int]]
 
-    # The id of x-axis which is corresponding to the data.
+    # The id of x-axis which is corresponding to the data. Default: 0
     x_axis_id: Var[Union[str, int]]
 
-    # The id of y-axis which is corresponding to the data.
+    # The id of y-axis which is corresponding to the data. Default: 0
     y_axis_id: Var[Union[str, int]]
 
-    # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional
+    # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none' optional
     legend_type: Var[LiteralLegendType]
+
+    # If set false, animation of bar will be disabled. Default: True
+    is_animation_active: Var[bool]
+
+    # Specifies when the animation should begin, the unit of this option is ms. Default: 0
+    animation_begin: Var[int]
+
+    # Specifies the duration of animation, the unit of this option is ms. Default: 1500
+    animation_duration: Var[int]
+
+    # The type of easing function. Default: "ease"
+    animation_easing: Var[LiteralAnimationEasing]
+
+    # The unit of data. This option will be used in tooltip.
+    unit: Var[Union[str, int]]
+
+    # The name of data. This option will be used in tooltip and legend to represent the component. If no value was set to this option, the value of dataKey will be used alternatively.
+    name: Var[Union[str, int]]
+
+    # The customized event handler of animation start
+    on_animation_start: EventHandler[lambda: []]
+
+    # The customized event handler of animation end
+    on_animation_end: EventHandler[lambda: []]
 
     # The customized event handler of click on the component in this group
     on_click: EventHandler[empty_event]
@@ -528,29 +552,32 @@ class Funnel(Recharts):
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
 
-    # The key of a group of data which should be unique in an area chart.
+    # The key or getter of a group of data which should be unique in a FunnelChart.
     data_key: Var[Union[str, int]]
 
-    # The key or getter of a group of data which should be unique in a LineChart.
+    # The key of each sector's name. Default: "name"
     name_key: Var[str]
 
-    # The type of icon in legend. If set to 'none', no legend item will be rendered.
+    # The type of icon in legend. If set to 'none', no legend item will be rendered. Default: "line"
     legend_type: Var[LiteralLegendType]
 
-    # If set false, animation of line will be disabled.
+    # If set false, animation of line will be disabled. Default: True
     is_animation_active: Var[bool]
 
-    # Specifies when the animation should begin, the unit of this option is ms.
+    # Specifies when the animation should begin, the unit of this option is ms. Default: 0
     animation_begin: Var[int]
 
-    # Specifies the duration of animation, the unit of this option is ms.
+    # Specifies the duration of animation, the unit of this option is ms. Default: 1500
     animation_duration: Var[int]
 
-    # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
+    # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default "ease"
     animation_easing: Var[LiteralAnimationEasing]
 
-    # stroke color
+    # Stroke color. Default: rx.color("gray", 3)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 3))
+
+    # The coordinates of all the trapezoids in the funnel, usually calculated internally.
+    trapezoids: Var[List[Dict[str, Any]]]
 
     # Valid children components
     _valid_children: List[str] = ["LabelList", "Cell"]
@@ -593,20 +620,20 @@ class ErrorBar(Recharts):
 
     alias = "RechartsErrorBar"
 
-    # The direction of error bar. 'x' | 'y' | 'both'
+    # Only used for ScatterChart with error bars in two directions. Only accepts a value of "x" or "y" and makes the error bars lie in that direction.
     direction: Var[LiteralDirection]
 
     # The key of a group of data which should be unique in an area chart.
     data_key: Var[Union[str, int]]
 
-    # The width of the error bar ends.
+    # The width of the error bar ends. Default: 5
     width: Var[int]
 
-    # The stroke color of error bar.
+    # The stroke color of error bar. Default: rx.color("gray", 8)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 8))
 
-    # The stroke width of error bar.
-    stroke_width: Var[int]
+    # The stroke width of error bar. Default: 1.5
+    stroke_width: Var[Union[int, float]]
 
 
 class Reference(Recharts):
@@ -751,16 +778,16 @@ class ReferenceArea(Recharts):
 class Grid(Recharts):
     """A base class for grid components in Recharts."""
 
-    # The x-coordinate of grid.
+    # The x-coordinate of grid. Default: 0
     x: Var[int]
 
-    # The y-coordinate of grid.
+    # The y-coordinate of grid. Default: 0
     y: Var[int]
 
-    # The width of grid.
+    # The width of grid. Default: 0
     width: Var[int]
 
-    # The height of grid.
+    # The height of grid. Default: 0
     height: Var[int]
 
 

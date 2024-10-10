@@ -216,9 +216,41 @@ class RadialBar(Recharts):
     def create(  # type: ignore
         cls,
         *children,
+        data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
         data_key: Optional[Union[Var[Union[int, str]], int, str]] = None,
         min_angle: Optional[Union[Var[int], int]] = None,
-        legend_type: Optional[Union[Var[str], str]] = None,
+        legend_type: Optional[
+            Union[
+                Literal[
+                    "circle",
+                    "cross",
+                    "diamond",
+                    "line",
+                    "none",
+                    "plainline",
+                    "rect",
+                    "square",
+                    "star",
+                    "triangle",
+                    "wye",
+                ],
+                Var[
+                    Literal[
+                        "circle",
+                        "cross",
+                        "diamond",
+                        "line",
+                        "none",
+                        "plainline",
+                        "rect",
+                        "square",
+                        "star",
+                        "triangle",
+                        "wye",
+                    ]
+                ],
+            ]
+        ] = None,
         label: Optional[
             Union[Dict[str, Any], Var[Union[Dict[str, Any], bool]], bool]
         ] = None,
@@ -254,15 +286,16 @@ class RadialBar(Recharts):
 
         Args:
             *children: The children of the component.
+            data: The source data which each element is an object.
             data_key: The key of a group of data which should be unique to show the meaning of angle axis.
-            min_angle: Min angle of each bar. A positive value between 0 and 360.
-            legend_type: Type of legend
-            label: If false set, labels will not be drawn.
-            background: If false set, background sector will not be drawn.
-            is_animation_active: If set false, animation of radial bars will be disabled. By default true in CSR, and false in SSR
-            animation_begin: Specifies when the animation should begin, the unit of this option is ms. By default 0
-            animation_duration: Specifies the duration of animation, the unit of this option is ms. By default 1500
-            animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. By default 'ease'
+            min_angle: Min angle of each bar. A positive value between 0 and 360. Default: 0
+            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. Default: "rect"
+            label: If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
+            background: If false set, background sector will not be drawn. Default: False
+            is_animation_active: If set false, animation of radial bars will be disabled. Default: True
+            animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
+            animation_duration: Specifies the duration of animation, the unit of this option is ms. Default 1500
+            animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default: "ease"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
