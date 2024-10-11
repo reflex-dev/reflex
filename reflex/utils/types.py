@@ -195,8 +195,6 @@ def unionize(*args: GenericType) -> Type:
         return Any
     if len(args) == 1:
         return args[0]
-    if sys.version_info >= (3, 11):
-        return Union[*args]  # type: ignore
     # We are bisecting the args list here to avoid hitting the recursion limit
     # In Python versions >= 3.11, we can simply do `return Union[*args]`
     midpoint = len(args) // 2

@@ -399,11 +399,15 @@ def test_list_tuple_contains(var, expected):
 
 
 class Foo(rx.Base):
+    """Foo class."""
+
     bar: int
     baz: str
 
 
 class Bar(rx.Base):
+    """Bar class."""
+
     bar: str
     baz: str
     foo: int
@@ -416,7 +420,10 @@ class Bar(rx.Base):
         (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type(), Union[Foo, Bar]),
         (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().bar, Union[int, str]),
         (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().baz, str),
-        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().foo, Union[int, None]),
+        (
+            Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().foo,
+            Union[int, None],
+        ),
     ],
 )
 def test_var_types(var, var_type):
