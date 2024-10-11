@@ -389,6 +389,8 @@ class EventChain(EventActionsMixin):
 
     args_spec: Optional[Callable] = dataclasses.field(default=None)
 
+    invocation: Optional[Var] = dataclasses.field(default=None)
+
 
 # These chains can be used for their side effects when no other events are desired.
 stop_propagation = EventChain(events=[], args_spec=lambda: []).stop_propagation
@@ -1323,10 +1325,15 @@ class LiteralEventChainVar(CachedVarOperation, LiteralVar, EventChainVar):
             arg_def = ("...args",)
             arg_def_expr = Var(_js_expr="args")
 
+        if self._var_value.invocation is None:
+            invocation = FunctionStringVar.create("addEvents")
+        else:
+            invocation = self._var_value.invocation
+
         return str(
             ArgsFunctionOperation.create(
                 arg_def,
-                FunctionStringVar.create("addEvents").call(
+                invocation.call(
                     LiteralVar.create(
                         [LiteralVar.create(event) for event in self._var_value.events]
                     ),
