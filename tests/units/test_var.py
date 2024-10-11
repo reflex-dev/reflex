@@ -1,5 +1,6 @@
 import json
 import math
+import sys
 import typing
 from typing import Dict, List, Optional, Set, Tuple, Union, cast
 
@@ -415,10 +416,16 @@ class Bar(rx.Base):
 
 @pytest.mark.parametrize(
     ("var", "var_type"),
-    [
-        (Var(_js_expr="", _var_type=Foo | Bar).guess_type(), Foo | Bar),
+    (
+        [
+            (Var(_js_expr="", _var_type=Foo | Bar).guess_type(), Foo | Bar),
+            (Var(_js_expr="", _var_type=Foo | Bar).guess_type().bar, Union[int, str]),
+        ]
+        if sys.version_info >= (3, 10)
+        else []
+    )
+    + [
         (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type(), Union[Foo, Bar]),
-        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().bar, Union[int, str]),
         (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().baz, str),
         (
             Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().foo,
