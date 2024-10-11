@@ -44,7 +44,7 @@ class Bun(SimpleNamespace):
     DEFAULT_PATH = ROOT_PATH / "bin" / ("bun" if not IS_WINDOWS else "bun.exe")
 
     # URL to bun install script.
-    INSTALL_URL = "https://raw.githubusercontent.com/reflex-dev/reflex/change-bun-link/scripts/bun_install.sh"
+    INSTALL_URL = "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/bun_install.sh"
 
     # URL to windows install script.
     WINDOWS_INSTALL_URL = (
