@@ -398,6 +398,31 @@ def test_list_tuple_contains(var, expected):
     assert str(var.contains(other_var)) == f"{expected}.includes(other)"
 
 
+class Foo(rx.Base):
+    bar: int
+    baz: str
+
+
+class Bar(rx.Base):
+    bar: str
+    baz: str
+    foo: int
+
+
+@pytest.mark.parametrize(
+    ("var", "var_type"),
+    [
+        (Var(_js_expr="", _var_type=Foo | Bar).guess_type(), Foo | Bar),
+        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type(), Union[Foo, Bar]),
+        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().bar, Union[int, str]),
+        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().baz, str),
+        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().foo, Union[int, None]),
+    ],
+)
+def test_var_types(var, var_type):
+    assert var._var_type == var_type
+
+
 @pytest.mark.parametrize(
     "var, expected",
     [
