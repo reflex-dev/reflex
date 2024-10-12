@@ -218,7 +218,7 @@ def update_json_file(file_path: str | Path, update_dict: dict[str, int | str]):
 
     # Read the existing json object from the file.
     json_object = {}
-    if fp.stat().st_size == 0:
+    if fp.stat().st_size:
         with open(fp) as f:
             json_object = json.load(f)
 

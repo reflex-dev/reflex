@@ -56,7 +56,7 @@ from reflex.utils.imports import (
     ParsedImportDict,
     parse_imports,
 )
-from reflex.utils.types import GenericType, Self, get_origin, unionize
+from reflex.utils.types import GenericType, Self, get_origin, has_args, unionize
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -1246,6 +1246,11 @@ def figure_out_type(value: Any) -> types.GenericType:
     Returns:
         The type of the value.
     """
+    if isinstance(value, Var):
+        return value._var_type
+    type_ = type(value)
+    if has_args(type_):
+        return type_
     if isinstance(value, list):
         return List[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, set):
@@ -1257,8 +1262,6 @@ def figure_out_type(value: Any) -> types.GenericType:
             unionize(*(figure_out_type(k) for k in value)),
             unionize(*(figure_out_type(v) for v in value.values())),
         ]
-    if isinstance(value, Var):
-        return value._var_type
     return type(value)
 
 
