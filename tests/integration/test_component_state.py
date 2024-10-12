@@ -58,6 +58,7 @@ def ComponentStateApp():
         class _Counter(rx.State):
             count: int = 0
 
+            @rx.event
             def increment(self):
                 self.count += 1
 
