@@ -220,6 +220,27 @@ def is_literal(cls: GenericType) -> bool:
     return get_origin(cls) is Literal
 
 
+def has_args(cls) -> bool:
+    """Check if the class has generic parameters.
+
+    Args:
+        cls: The class to check.
+
+    Returns:
+        Whether the class has generic
+    """
+    if get_args(cls):
+        return True
+
+    # Check if the class inherits from a generic class (using __orig_bases__)
+    if hasattr(cls, "__orig_bases__"):
+        for base in cls.__orig_bases__:
+            if get_args(base):
+                return True
+
+    return False
+
+
 def is_optional(cls: GenericType) -> bool:
     """Check if a class is an Optional.
 
