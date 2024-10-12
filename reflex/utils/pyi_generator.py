@@ -428,7 +428,6 @@ def _generate_component_create_functiondef(
     kwargs.extend(prop_kwargs)
 
     def figure_out_return_type(annotation: Any):
-        print(annotation)
         if inspect.isclass(annotation) and issubclass(annotation, inspect._empty):
             return ast.Name(id="Optional[EventType[[]]]")
         if isinstance(annotation, str) and annotation.startswith("Tuple["):
