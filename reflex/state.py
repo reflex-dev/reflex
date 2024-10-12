@@ -8,6 +8,7 @@ import copy
 import dataclasses
 import functools
 import inspect
+import json
 import os
 import pickle
 import sys
@@ -3751,6 +3752,40 @@ def serialize_mutable_proxy(mp: MutableProxy):
         The wrapped object.
     """
     return mp.__wrapped__
+
+
+_orig_json_dumps = json.dumps
+
+
+def _json_dumps_wrapper(*args, **kwargs):
+    """Wrap json.dumps to handle MutableProxy objects.
+
+    Args:
+        *args: args for json.dumps.
+        **kwargs: kwargs for json.dumps.
+
+    Returns:
+        The JSON string.
+    """
+    _orig_default = kwargs.pop("default", None)
+
+    def _default(obj):
+        if _orig_default is not None:
+            try:
+                return _orig_default(obj)
+            except TypeError:
+                pass
+        try:
+            return obj.__wrapped__
+        except AttributeError:
+            pass
+        raise TypeError()
+
+    kwargs["default"] = _default
+    return _orig_json_dumps(*args, **kwargs)
+
+
+json.dumps = _json_dumps_wrapper
 
 
 class ImmutableMutableProxy(MutableProxy):
