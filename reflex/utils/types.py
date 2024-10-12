@@ -221,6 +221,27 @@ def is_literal(cls: GenericType) -> bool:
     return get_origin(cls) is Literal
 
 
+def has_args(cls) -> bool:
+    """Check if the class has generic parameters.
+
+    Args:
+        cls: The class to check.
+
+    Returns:
+        Whether the class has generic
+    """
+    if get_args(cls):
+        return True
+
+    # Check if the class inherits from a generic class (using __orig_bases__)
+    if hasattr(cls, "__orig_bases__"):
+        for base in cls.__orig_bases__:
+            if get_args(base):
+                return True
+
+    return False
+
+
 def is_optional(cls: GenericType) -> bool:
     """Check if a class is an Optional.
 
@@ -526,7 +547,11 @@ def is_backend_base_variable(name: str, cls: Type) -> bool:
     if name.startswith(f"_{cls.__name__}__"):
         return False
 
-    hints = get_type_hints(cls)
+    # Extract the namespace of the original module if defined (dynamic substates).
+    if callable(getattr(cls, "_get_type_hints", None)):
+        hints = cls._get_type_hints()
+    else:
+        hints = get_type_hints(cls)
     if name in hints:
         hint = get_origin(hints[name])
         if hint == ClassVar:
