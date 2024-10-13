@@ -275,9 +275,17 @@ def run(
         constants.Env.DEV, help="The environment to run the app in."
     ),
     frontend: bool = typer.Option(
-        False, "--frontend-only", help="Execute only frontend."
+        False,
+        "--frontend-only",
+        help="Execute only frontend.",
+        envvar=constants.ENV_FRONTEND_ONLY_ENV_VAR,
     ),
-    backend: bool = typer.Option(False, "--backend-only", help="Execute only backend."),
+    backend: bool = typer.Option(
+        False,
+        "--backend-only",
+        help="Execute only backend.",
+        envvar=constants.ENV_BACKEND_ONLY_ENV_VAR,
+    ),
     frontend_port: str = typer.Option(
         config.frontend_port, help="Specify a different frontend port."
     ),
@@ -292,6 +300,12 @@ def run(
     ),
 ):
     """Run the app in the current directory."""
+    if frontend and backend:
+        console.error("Cannot use both --frontend-only and --backend-only options.")
+        raise typer.Exit(1)
+    os.environ[constants.ENV_BACKEND_ONLY_ENV_VAR] = str(backend).lower()
+    os.environ[constants.ENV_FRONTEND_ONLY_ENV_VAR] = str(frontend).lower()
+
     _run(env, frontend, backend, frontend_port, backend_port, backend_host, loglevel)
 
 
