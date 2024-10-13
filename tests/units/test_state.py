@@ -106,6 +106,7 @@ class TestState(BaseState):
     fig: Figure = Figure()
     dt: datetime.datetime = datetime.datetime.fromisoformat("1989-11-09T18:53:00+01:00")
     _backend: int = 0
+    asynctest: int = 0
 
     @ComputedVar
     def sum(self) -> float:
@@ -128,6 +129,14 @@ class TestState(BaseState):
     def do_something(self):
         """Do something."""
         pass
+
+    async def set_asynctest(self, value: int):
+        """Set the asynctest value. Intentionally overwrite the default setter with an async one.
+
+        Args:
+            value: The new value.
+        """
+        self.asynctest = value
 
 
 class ChildState(TestState):
@@ -313,6 +322,7 @@ def test_class_vars(test_state):
         "upper",
         "fig",
         "dt",
+        "asynctest",
     }
 
 
@@ -733,6 +743,7 @@ def test_reset(test_state, child_state):
         "mapping",
         "dt",
         "_backend",
+        "asynctest",
     }
 
     # The dirty vars should be reset.
@@ -3177,6 +3188,13 @@ async def test_setvar(mock_app: rx.App, token: str):
     # Cannot setvar with non-string
     with pytest.raises(ValueError):
         TestState.setvar(42, 42)
+
+
+@pytest.mark.asyncio
+async def test_setvar_async_setter():
+    """Test that overridden async setters raise Exception when used with setvar."""
+    with pytest.raises(NotImplementedError):
+        TestState.setvar("asynctest", 42)
 
 
 @pytest.mark.skipif("REDIS_URL" not in os.environ, reason="Test requires redis")
