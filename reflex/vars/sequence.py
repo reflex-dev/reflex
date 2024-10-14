@@ -11,7 +11,6 @@ import typing
 from typing import (
     TYPE_CHECKING,
     Any,
-    ClassVar,
     Dict,
     List,
     Literal,
@@ -32,9 +31,7 @@ from reflex.utils.types import GenericType, get_origin
 from .base import (
     CachedVarOperation,
     CustomVarOperationReturn,
-    LiteralNoneVar,
     LiteralVar,
-    ToOperation,
     Var,
     VarData,
     _global_vars,
@@ -56,7 +53,7 @@ if TYPE_CHECKING:
     from .object import ObjectVar
 
 
-class StringVar(Var[str]):
+class StringVar(Var[str], python_types=str):
     """Base class for immutable string vars."""
 
     @overload
@@ -742,7 +739,7 @@ KEY_TYPE = TypeVar("KEY_TYPE")
 VALUE_TYPE = TypeVar("VALUE_TYPE")
 
 
-class ArrayVar(Var[ARRAY_VAR_TYPE]):
+class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
     """Base class for immutable array vars."""
 
     @overload
@@ -1567,32 +1564,6 @@ def array_contains_operation(haystack: ArrayVar, needle: Any | Var):
         js_expression=f"{haystack}.includes({needle})",
         var_type=bool,
     )
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ToStringOperation(ToOperation, StringVar):
-    """Base class for immutable string vars that are the result of a to string operation."""
-
-    _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
-
-    _default_var_type: ClassVar[Type] = str
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ToArrayOperation(ToOperation, ArrayVar):
-    """Base class for immutable array vars that are the result of a to array operation."""
-
-    _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
-
-    _default_var_type: ClassVar[Type] = List[Any]
 
 
 @var_operation

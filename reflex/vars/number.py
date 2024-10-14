@@ -10,9 +10,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    ClassVar,
     NoReturn,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -25,9 +23,7 @@ from reflex.utils.types import is_optional
 
 from .base import (
     CustomVarOperationReturn,
-    LiteralNoneVar,
     LiteralVar,
-    ToOperation,
     Var,
     VarData,
     unionize,
@@ -58,7 +54,7 @@ def raise_unsupported_operand_types(
     )
 
 
-class NumberVar(Var[NUMBER_T]):
+class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     """Base class for immutable number vars."""
 
     @overload
@@ -760,7 +756,7 @@ def number_trunc_operation(value: NumberVar):
     return var_operation_return(js_expression=f"Math.trunc({value})", var_type=int)
 
 
-class BooleanVar(NumberVar[bool]):
+class BooleanVar(NumberVar[bool], python_types=bool):
     """Base class for immutable boolean vars."""
 
     def __invert__(self):
@@ -989,51 +985,6 @@ def boolean_not_operation(value: BooleanVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class LiteralBooleanVar(LiteralVar, BooleanVar):
-    """Base class for immutable literal boolean vars."""
-
-    _var_value: bool = dataclasses.field(default=False)
-
-    def json(self) -> str:
-        """Get the JSON representation of the var.
-
-        Returns:
-            The JSON representation of the var.
-        """
-        return "true" if self._var_value else "false"
-
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((self.__class__.__name__, self._var_value))
-
-    @classmethod
-    def create(cls, value: bool, _var_data: VarData | None = None):
-        """Create the boolean var.
-
-        Args:
-            value: The value of the var.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The boolean var.
-        """
-        return cls(
-            _js_expr="true" if value else "false",
-            _var_type=bool,
-            _var_data=_var_data,
-            _var_value=value,
-        )
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
 class LiteralNumberVar(LiteralVar, NumberVar):
     """Base class for immutable literal number vars."""
 
@@ -1088,34 +1039,53 @@ class LiteralNumberVar(LiteralVar, NumberVar):
         )
 
 
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class LiteralBooleanVar(LiteralVar, BooleanVar):
+    """Base class for immutable literal boolean vars."""
+
+    _var_value: bool = dataclasses.field(default=False)
+
+    def json(self) -> str:
+        """Get the JSON representation of the var.
+
+        Returns:
+            The JSON representation of the var.
+        """
+        return "true" if self._var_value else "false"
+
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self._var_value))
+
+    @classmethod
+    def create(cls, value: bool, _var_data: VarData | None = None):
+        """Create the boolean var.
+
+        Args:
+            value: The value of the var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The boolean var.
+        """
+        return cls(
+            _js_expr="true" if value else "false",
+            _var_type=bool,
+            _var_data=_var_data,
+            _var_value=value,
+        )
+
+
 number_types = Union[NumberVar, int, float]
 boolean_types = Union[BooleanVar, bool]
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ToNumberVarOperation(ToOperation, NumberVar):
-    """Base class for immutable number vars that are the result of a number operation."""
-
-    _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
-
-    _default_var_type: ClassVar[Type] = float
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ToBooleanVarOperation(ToOperation, BooleanVar):
-    """Base class for immutable boolean vars that are the result of a boolean operation."""
-
-    _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
-
-    _default_var_type: ClassVar[Type] = bool
 
 
 _IS_TRUE_IMPORT: ImportDict = {
