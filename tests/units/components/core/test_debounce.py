@@ -37,6 +37,7 @@ class S(BaseState):
 
     value: str = ""
 
+    @rx.event
     def on_change(self, v: str):
         """Dummy on_change handler.
 

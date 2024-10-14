@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Literal, Optional, Union
+from typing import Any, List, Literal, Optional, Tuple, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
@@ -71,6 +71,18 @@ class AccordionComponent(RadixPrimitiveComponent):
         return ["color_scheme", "variant"]
 
 
+def on_value_change(value: Var[str | List[str]]) -> Tuple[Var[str | List[str]]]:
+    """Handle the on_value_change event.
+
+    Args:
+        value: The value of the event.
+
+    Returns:
+        The value of the event.
+    """
+    return (value,)
+
+
 class AccordionRoot(AccordionComponent):
     """An accordion component."""
 
@@ -114,7 +126,7 @@ class AccordionRoot(AccordionComponent):
     _valid_children: List[str] = ["AccordionItem"]
 
     # Fired when the opened the accordions changes.
-    on_value_change: EventHandler[lambda e0: [e0]]
+    on_value_change: EventHandler[on_value_change]
 
     def _exclude_props(self) -> list[str]:
         return super()._exclude_props() + [

@@ -18,6 +18,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -102,14 +103,14 @@ if TYPE_CHECKING:
 
     # ArgsSpec = Callable[[Var], list[Var]]
     ArgsSpec = (
-        Callable[[], List[Var]]
-        | Callable[[Var], List[Var]]
-        | Callable[[Var, Var], List[Var]]
-        | Callable[[Var, Var, Var], List[Var]]
-        | Callable[[Var, Var, Var, Var], List[Var]]
-        | Callable[[Var, Var, Var, Var, Var], List[Var]]
-        | Callable[[Var, Var, Var, Var, Var, Var], List[Var]]
-        | Callable[[Var, Var, Var, Var, Var, Var, Var], List[Var]]
+        Callable[[], Sequence[Var]]
+        | Callable[[Var], Sequence[Var]]
+        | Callable[[Var, Var], Sequence[Var]]
+        | Callable[[Var, Var, Var], Sequence[Var]]
+        | Callable[[Var, Var, Var, Var], Sequence[Var]]
+        | Callable[[Var, Var, Var, Var, Var], Sequence[Var]]
+        | Callable[[Var, Var, Var, Var, Var, Var], Sequence[Var]]
+        | Callable[[Var, Var, Var, Var, Var, Var, Var], Sequence[Var]]
     )
 else:
     ArgsSpec = Callable[..., List[Any]]
