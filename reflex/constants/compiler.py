@@ -160,3 +160,28 @@ class MemoizationMode(Base):
 
     # Whether children of this component should be memoized first.
     recursive: bool = True
+
+
+class SpecialAttributes(enum.Enum):
+    """Special attributes for components.
+
+    These are placed in custom_attrs and rendered as-is rather than converting
+    to a style prop.
+    """
+
+    DATA_UNDERSCORE = "data_"
+    DATA_DASH = "data-"
+    ARIA_UNDERSCORE = "aria_"
+    ARIA_DASH = "aria-"
+
+    @classmethod
+    def is_special(cls, attr: str) -> bool:
+        """Check if the attribute is special.
+
+        Args:
+            attr: the attribute to check
+
+        Returns:
+            True if the attribute is special.
+        """
+        return any(attr.startswith(value.value) for value in cls)

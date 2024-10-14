@@ -23,6 +23,7 @@ def BackgroundTask():
         iterations: int = 10
 
         @rx.background
+        @rx.event
         async def handle_event(self):
             async with self:
                 self._task_id += 1
@@ -32,6 +33,7 @@ def BackgroundTask():
                 await asyncio.sleep(0.005)
 
         @rx.background
+        @rx.event
         async def handle_event_yield_only(self):
             async with self:
                 self._task_id += 1
@@ -42,6 +44,7 @@ def BackgroundTask():
                     yield State.increment()  # type: ignore
                 await asyncio.sleep(0.005)
 
+        @rx.event
         def increment(self):
             self.counter += 1
 
@@ -50,13 +53,16 @@ def BackgroundTask():
             async with self:
                 self.counter += int(amount)
 
+        @rx.event
         def reset_counter(self):
             self.counter = 0
 
+        @rx.event
         async def blocking_pause(self):
             await asyncio.sleep(0.02)
 
         @rx.background
+        @rx.event
         async def non_blocking_pause(self):
             await asyncio.sleep(0.02)
 
@@ -69,12 +75,14 @@ def BackgroundTask():
                 await asyncio.sleep(0.005)
 
         @rx.background
+        @rx.event
         async def handle_racy_event(self):
             await asyncio.gather(
                 self.racy_task(), self.racy_task(), self.racy_task(), self.racy_task()
             )
 
         @rx.background
+        @rx.event
         async def nested_async_with_self(self):
             async with self:
                 self.counter += 1
@@ -87,6 +95,7 @@ def BackgroundTask():
             await third_state._triple_count()
 
         @rx.background
+        @rx.event
         async def yield_in_async_with_self(self):
             async with self:
                 self.counter += 1
@@ -95,6 +104,7 @@ def BackgroundTask():
 
     class OtherState(rx.State):
         @rx.background
+        @rx.event
         async def get_other_state(self):
             async with self:
                 state = await self.get_state(State)

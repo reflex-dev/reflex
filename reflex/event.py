@@ -8,20 +8,23 @@ import sys
 import types
 import urllib.parse
 from base64 import b64encode
+from functools import partial
 from typing import (
     Any,
     Callable,
     ClassVar,
     Dict,
+    Generic,
     List,
     Optional,
     Tuple,
     Type,
+    TypeVar,
     Union,
     get_type_hints,
 )
 
-from typing_extensions import get_args, get_origin
+from typing_extensions import ParamSpec, get_args, get_origin
 
 from reflex import constants
 from reflex.utils import console, format
@@ -427,7 +430,7 @@ class JavasciptKeyboardEvent:
     key: str = ""
 
 
-def input_event(e: Var[JavascriptInputEvent]) -> Tuple[str]:
+def input_event(e: Var[JavascriptInputEvent]) -> Tuple[Var[str]]:
     """Get the value from an input event.
 
     Args:
@@ -439,7 +442,7 @@ def input_event(e: Var[JavascriptInputEvent]) -> Tuple[str]:
     return (e.target.value,)
 
 
-def key_event(e: Var[JavasciptKeyboardEvent]) -> Tuple[str]:
+def key_event(e: Var[JavasciptKeyboardEvent]) -> Tuple[Var[str]]:
     """Get the key from a keyboard event.
 
     Args:
@@ -458,6 +461,38 @@ def empty_event() -> Tuple[()]:
         An empty tuple.
     """
     return tuple()  # type: ignore
+
+
+T = TypeVar("T")
+
+
+def identity_event(event_type: Type[T]) -> Callable[[Var[T]], Tuple[Var[T]]]:
+    """A helper function that returns the input event as output.
+
+    Args:
+        event_type: The type of the event.
+
+    Returns:
+        A function that returns the input event as output.
+    """
+
+    def inner(ev: Var[T]) -> Tuple[Var[T]]:
+        return (ev,)
+
+    inner.__signature__ = inspect.signature(inner).replace(  # type: ignore
+        parameters=[
+            inspect.Parameter(
+                "ev",
+                kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                annotation=Var[event_type],
+            )
+        ],
+        return_annotation=Tuple[Var[event_type]],
+    )
+    inner.__annotations__["ev"] = Var[event_type]
+    inner.__annotations__["return"] = Tuple[Var[event_type]]
+
+    return inner
 
 
 @dataclasses.dataclass(
@@ -1022,13 +1057,15 @@ def parse_args_spec(arg_spec: ArgsSpec):
     spec = inspect.getfullargspec(arg_spec)
     annotations = get_type_hints(arg_spec)
 
-    return arg_spec(
-        *[
-            Var(f"_{l_arg}").to(
-                unwrap_var_annotation(resolve_annotation(annotations, l_arg))
-            )
-            for l_arg in spec.args
-        ]
+    return list(
+        arg_spec(
+            *[
+                Var(f"_{l_arg}").to(
+                    unwrap_var_annotation(resolve_annotation(annotations, l_arg))
+                )
+                for l_arg in spec.args
+            ]
+        )
     )
 
 
@@ -1390,3 +1427,116 @@ class ToEventChainVarOperation(ToOperation, EventChainVar):
     _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
 
     _default_var_type: ClassVar[Type] = EventChain
+
+
+G = ParamSpec("G")
+
+IndividualEventType = Union[EventSpec, EventHandler, Callable[G, Any], Var]
+
+EventType = Union[IndividualEventType[G], List[IndividualEventType[G]]]
+
+P = ParamSpec("P")
+T = TypeVar("T")
+
+if sys.version_info >= (3, 10):
+    from typing import Concatenate
+
+    class EventCallback(Generic[P, T]):
+        """A descriptor that wraps a function to be used as an event."""
+
+        def __init__(self, func: Callable[Concatenate[Any, P], T]):
+            """Initialize the descriptor with the function to be wrapped.
+
+            Args:
+                func: The function to be wrapped.
+            """
+            self.func = func
+
+        def __get__(self, instance, owner) -> Callable[P, T]:
+            """Get the function with the instance bound to it.
+
+            Args:
+                instance: The instance to bind to the function.
+                owner: The owner of the function.
+
+            Returns:
+                The function with the instance bound to it
+            """
+            if instance is None:
+                return self.func  # type: ignore
+
+            return partial(self.func, instance)  # type: ignore
+
+    def event_handler(func: Callable[Concatenate[Any, P], T]) -> EventCallback[P, T]:
+        """Wrap a function to be used as an event.
+
+        Args:
+            func: The function to wrap.
+
+        Returns:
+            The wrapped function.
+        """
+        return func  # type: ignore
+else:
+
+    def event_handler(func: Callable[P, T]) -> Callable[P, T]:
+        """Wrap a function to be used as an event.
+
+        Args:
+            func: The function to wrap.
+
+        Returns:
+            The wrapped function.
+        """
+        return func
+
+
+class EventNamespace(types.SimpleNamespace):
+    """A namespace for event related classes."""
+
+    Event = Event
+    EventHandler = EventHandler
+    EventSpec = EventSpec
+    CallableEventSpec = CallableEventSpec
+    EventChain = EventChain
+    EventVar = EventVar
+    LiteralEventVar = LiteralEventVar
+    EventChainVar = EventChainVar
+    LiteralEventChainVar = LiteralEventChainVar
+    ToEventVarOperation = ToEventVarOperation
+    ToEventChainVarOperation = ToEventChainVarOperation
+    EventType = EventType
+
+    __call__ = staticmethod(event_handler)
+    get_event = staticmethod(get_event)
+    get_hydrate_event = staticmethod(get_hydrate_event)
+    fix_events = staticmethod(fix_events)
+    call_event_handler = staticmethod(call_event_handler)
+    call_event_fn = staticmethod(call_event_fn)
+    get_handler_args = staticmethod(get_handler_args)
+    check_fn_match_arg_spec = staticmethod(check_fn_match_arg_spec)
+    resolve_annotation = staticmethod(resolve_annotation)
+    parse_args_spec = staticmethod(parse_args_spec)
+    identity_event = staticmethod(identity_event)
+    input_event = staticmethod(input_event)
+    key_event = staticmethod(key_event)
+    empty_event = staticmethod(empty_event)
+    server_side = staticmethod(server_side)
+    redirect = staticmethod(redirect)
+    console_log = staticmethod(console_log)
+    back = staticmethod(back)
+    window_alert = staticmethod(window_alert)
+    set_focus = staticmethod(set_focus)
+    scroll_to = staticmethod(scroll_to)
+    set_value = staticmethod(set_value)
+    remove_cookie = staticmethod(remove_cookie)
+    clear_local_storage = staticmethod(clear_local_storage)
+    remove_local_storage = staticmethod(remove_local_storage)
+    clear_session_storage = staticmethod(clear_session_storage)
+    remove_session_storage = staticmethod(remove_session_storage)
+    set_clipboard = staticmethod(set_clipboard)
+    download = staticmethod(download)
+    call_script = staticmethod(call_script)
+
+
+event = EventNamespace()
