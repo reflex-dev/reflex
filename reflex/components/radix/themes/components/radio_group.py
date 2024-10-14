@@ -84,7 +84,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
     items: Var[List[str]]
 
     # The direction of the radio group.
-    direction: Var[LiteralFlexDirection] = LiteralVar.create("column")
+    direction: Var[LiteralFlexDirection] = LiteralVar.create("row")
 
     # The gap between the items of the radio group.
     spacing: Var[LiteralSpacing] = LiteralVar.create("2")
@@ -137,7 +137,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
         Raises:
             TypeError: If the type of items is invalid.
         """
-        direction = props.pop("direction", "column")
+        direction = props.pop("direction", "row")
         spacing = props.pop("spacing", "2")
         size = props.pop("size", "2")
         variant = props.pop("variant", "classic")
