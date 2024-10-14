@@ -1230,6 +1230,7 @@ class EventState(rx.State):
 
     v: int = 42
 
+    @rx.event
     def handler(self):
         """A handler that does nothing."""
 
@@ -1794,7 +1795,7 @@ def test_custom_component_declare_event_handlers_in_fields():
     class TestComponent(Component):
         on_a: EventHandler[lambda e0: [e0]]
         on_b: EventHandler[input_event]
-        on_c: EventHandler[lambda e0: []]
+        on_c: EventHandler[empty_event]
         on_d: EventHandler[empty_event]
         on_e: EventHandler
         on_f: EventHandler[lambda a, b, c: [c, b, a]]
@@ -2147,6 +2148,7 @@ def test_add_style_foreach():
 class TriggerState(rx.State):
     """Test state with event handlers."""
 
+    @rx.event
     def do_something(self):
         """Sample event handler."""
         pass
@@ -2215,3 +2217,56 @@ class TriggerState(rx.State):
 )
 def test_has_state_event_triggers(component, output):
     assert component._has_stateful_event_triggers() == output
+
+
+class SpecialComponent(Box):
+    """A special component with custom attributes."""
+
+    data_prop: Var[str]
+    aria_prop: Var[str]
+
+
+@pytest.mark.parametrize(
+    ("component_kwargs", "exp_custom_attrs", "exp_style"),
+    [
+        (
+            {"data_test": "test", "aria_test": "test"},
+            {"data-test": "test", "aria-test": "test"},
+            {},
+        ),
+        (
+            {"data-test": "test", "aria-test": "test"},
+            {"data-test": "test", "aria-test": "test"},
+            {},
+        ),
+        (
+            {"custom_attrs": {"data-existing": "test"}, "data_new": "test"},
+            {"data-existing": "test", "data-new": "test"},
+            {},
+        ),
+        (
+            {"data_test": "test", "data_prop": "prop"},
+            {"data-test": "test"},
+            {},
+        ),
+        (
+            {"aria_test": "test", "aria_prop": "prop"},
+            {"aria-test": "test"},
+            {},
+        ),
+    ],
+)
+def test_special_props(component_kwargs, exp_custom_attrs, exp_style):
+    """Test that data_ and aria_ special props are correctly added to the component.
+
+    Args:
+        component_kwargs: The component kwargs.
+        exp_custom_attrs: The expected custom attributes.
+        exp_style: The expected style.
+    """
+    component = SpecialComponent.create(**component_kwargs)
+    assert component.custom_attrs == exp_custom_attrs
+    assert component.style == exp_style
+    for prop in SpecialComponent.get_props():
+        if prop in component_kwargs:
+            assert getattr(component, prop)._var_value == component_kwargs[prop]

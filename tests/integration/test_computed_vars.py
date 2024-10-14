@@ -58,9 +58,11 @@ def ComputedVars():
         def depends_on_count3(self) -> int:
             return self.count
 
+        @rx.event
         def increment(self):
             self.count += 1
 
+        @rx.event
         def mark_dirty(self):
             self._mark_dirty()
 
