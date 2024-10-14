@@ -1159,7 +1159,7 @@ class ToOperation:
 
         if isinstance(self, ObjectVar) and name != "_js_expr":
             return ObjectVar.__getattr__(self, name)
-        return getattr(object.__getattribute__(self, "_original"), name)
+        return getattr(self._original, name)
 
     def __post_init__(self):
         """Post initialization."""
@@ -1171,7 +1171,7 @@ class ToOperation:
         Returns:
             int: The hash value of the object.
         """
-        return hash(object.__getattribute__(self, "_original"))
+        return hash(self._original)
 
     def _get_all_var_data(self) -> VarData | None:
         """Get all the var data.
@@ -1180,7 +1180,7 @@ class ToOperation:
             The var data.
         """
         return VarData.merge(
-            object.__getattribute__(self, "_original")._get_all_var_data(),
+            self._original._get_all_var_data(),
             self._var_data,  # type: ignore
         )
 
