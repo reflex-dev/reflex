@@ -2392,9 +2392,9 @@ def get_to_operation(var_subclass: Type[Var]) -> Type[ToOperation]:
         ValueError: If the ToOperation class cannot be found.
     """
     possible_classes = [
-        var_subclass.to_var_subclass
-        for var_subclass in _var_subclasses
-        if var_subclass.var_subclass is var_subclass
+        saved_var_subclass.to_var_subclass
+        for saved_var_subclass in _var_subclasses
+        if saved_var_subclass.var_subclass is var_subclass
     ]
     if not possible_classes:
         raise ValueError(f"Could not find ToOperation for {var_subclass}.")
