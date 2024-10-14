@@ -1219,7 +1219,7 @@ class LiteralVar(Var):
             **kwargs: Additional keyword arguments.
 
         Raises:
-            TypeError: If the subclass is not a subclass of LiteralVar.
+            TypeError: If the LiteralVar subclass does not have a corresponding Var subclass.
         """
         super().__init_subclass__(**kwargs)
 
@@ -1234,11 +1234,6 @@ class LiteralVar(Var):
             for base in bases_normalized
             if issubclass(base, Var) and base != LiteralVar
         ]
-
-        if not issubclass(cls, LiteralVar):
-            raise TypeError(
-                f"LiteralVar subclass {cls} must be a subclass of LiteralVar."
-            )
 
         if len(possible_bases) != 1:
             raise TypeError(
