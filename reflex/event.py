@@ -1332,7 +1332,10 @@ class EventChainVar(FunctionVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class LiteralEventChainVar(LiteralVar, ArgsFunctionOperation, EventChainVar):
+# Note: LiteralVar is second in the inheritance list allowing it act like a
+# CachedVarOperation (ArgsFunctionOperation) and get the _js_expr from the
+# _cached_var_name property.
+class LiteralEventChainVar(ArgsFunctionOperation, LiteralVar, EventChainVar):
     """A literal event chain var."""
 
     _var_value: EventChain = dataclasses.field(default=None)  # type: ignore
