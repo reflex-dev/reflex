@@ -1332,7 +1332,7 @@ class EventChainVar(FunctionVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class LiteralEventChainVar(CachedVarOperation, LiteralVar, EventChainVar):
+class LiteralEventChainVar(ArgsFunctionOperation, EventChainVar, LiteralVar):
     """A literal event chain var."""
 
     _var_value: EventChain = dataclasses.field(default=None)  # type: ignore
@@ -1344,41 +1344,6 @@ class LiteralEventChainVar(CachedVarOperation, LiteralVar, EventChainVar):
             The hash of the var.
         """
         return hash((self.__class__.__name__, self._js_expr))
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        sig = inspect.signature(self._var_value.args_spec)  # type: ignore
-        if sig.parameters:
-            arg_def = tuple((f"_{p}" for p in sig.parameters))
-            arg_def_expr = LiteralVar.create([Var(_js_expr=arg) for arg in arg_def])
-        else:
-            # add a default argument for addEvents if none were specified in value.args_spec
-            # used to trigger the preventDefault() on the event.
-            arg_def = ("...args",)
-            arg_def_expr = Var(_js_expr="args")
-
-        if self._var_value.invocation is None:
-            invocation = FunctionStringVar.create("addEvents")
-        else:
-            invocation = self._var_value.invocation
-
-        return str(
-            ArgsFunctionOperation.create(
-                arg_def,
-                invocation.call(
-                    LiteralVar.create(
-                        [LiteralVar.create(event) for event in self._var_value.events]
-                    ),
-                    arg_def_expr,
-                    self._var_value.event_actions,
-                ),
-            )
-        )
 
     @classmethod
     def create(
@@ -1395,10 +1360,31 @@ class LiteralEventChainVar(CachedVarOperation, LiteralVar, EventChainVar):
         Returns:
             The created LiteralEventChainVar instance.
         """
+        sig = inspect.signature(value.args_spec)  # type: ignore
+        if sig.parameters:
+            arg_def = tuple((f"_{p}" for p in sig.parameters))
+            arg_def_expr = LiteralVar.create([Var(_js_expr=arg) for arg in arg_def])
+        else:
+            # add a default argument for addEvents if none were specified in value.args_spec
+            # used to trigger the preventDefault() on the event.
+            arg_def = ("...args",)
+            arg_def_expr = Var(_js_expr="args")
+
+        if value.invocation is None:
+            invocation = FunctionStringVar.create("addEvents")
+        else:
+            invocation = value.invocation
+
         return cls(
             _js_expr="",
-            _var_type=EventChain,
+            _var_type=Callable,
             _var_data=_var_data,
+            _args_names=arg_def,
+            _return_expr=invocation.call(
+                LiteralVar.create([LiteralVar.create(event) for event in value.events]),
+                arg_def_expr,
+                value.event_actions,
+            ),
             _var_value=value,
         )
 
