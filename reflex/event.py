@@ -1332,7 +1332,7 @@ class EventChainVar(FunctionVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class LiteralEventChainVar(ArgsFunctionOperation, EventChainVar, LiteralVar):
+class LiteralEventChainVar(LiteralVar, ArgsFunctionOperation, EventChainVar):
     """A literal event chain var."""
 
     _var_value: EventChain = dataclasses.field(default=None)  # type: ignore
@@ -1377,7 +1377,7 @@ class LiteralEventChainVar(ArgsFunctionOperation, EventChainVar, LiteralVar):
 
         return cls(
             _js_expr="",
-            _var_type=Callable,
+            _var_type=EventChain,
             _var_data=_var_data,
             _args_names=arg_def,
             _return_expr=invocation.call(
