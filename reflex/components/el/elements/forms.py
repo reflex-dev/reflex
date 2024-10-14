@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from hashlib import md5
-from typing import Any, Dict, Iterator, Set, Union
+from typing import Any, Dict, Iterator, Set, Tuple, Union
 
 from jinja2 import Environment
 
@@ -102,6 +102,15 @@ class Fieldset(Element):
     name: Var[Union[str, int, bool]]
 
 
+def on_submit_event_spec() -> Tuple[Var[Dict[str, Any]]]:
+    """Event handler spec for the on_submit event.
+
+    Returns:
+        The event handler spec.
+    """
+    return (FORM_DATA,)
+
+
 class Form(BaseHTML):
     """Display the form element."""
 
@@ -141,7 +150,7 @@ class Form(BaseHTML):
     handle_submit_unique_name: Var[str]
 
     # Fired when the form is submitted
-    on_submit: EventHandler[lambda e0: [FORM_DATA]]
+    on_submit: EventHandler[on_submit_event_spec]
 
     @classmethod
     def create(cls, *children, **props):

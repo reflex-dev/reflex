@@ -17,6 +17,7 @@ def DeployUrlSample() -> None:
     import reflex as rx
 
     class State(rx.State):
+        @rx.event
         def goto_self(self):
             return rx.redirect(rx.config.get_config().deploy_url)  # type: ignore
 
