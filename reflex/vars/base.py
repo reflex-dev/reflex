@@ -14,7 +14,7 @@ import re
 import string
 import sys
 import warnings
-from types import CodeType, FunctionType, get_original_bases
+from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -1223,7 +1223,7 @@ class LiteralVar(Var):
         """
         super().__init_subclass__(**kwargs)
 
-        bases = get_original_bases(cls)
+        bases = cls.__bases__
 
         bases_normalized = [
             base if inspect.isclass(base) else get_origin(base) for base in bases
