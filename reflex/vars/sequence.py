@@ -353,7 +353,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
 
 
 @var_operation
-def string_lt_operation(lhs: StringVar | str, rhs: StringVar | str):
+def string_lt_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
     """Check if a string is less than another string.
 
     Args:
@@ -367,7 +367,7 @@ def string_lt_operation(lhs: StringVar | str, rhs: StringVar | str):
 
 
 @var_operation
-def string_gt_operation(lhs: StringVar | str, rhs: StringVar | str):
+def string_gt_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
     """Check if a string is greater than another string.
 
     Args:
@@ -381,7 +381,7 @@ def string_gt_operation(lhs: StringVar | str, rhs: StringVar | str):
 
 
 @var_operation
-def string_le_operation(lhs: StringVar | str, rhs: StringVar | str):
+def string_le_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
     """Check if a string is less than or equal to another string.
 
     Args:
@@ -395,7 +395,7 @@ def string_le_operation(lhs: StringVar | str, rhs: StringVar | str):
 
 
 @var_operation
-def string_ge_operation(lhs: StringVar | str, rhs: StringVar | str):
+def string_ge_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
     """Check if a string is greater than or equal to another string.
 
     Args:
@@ -409,7 +409,7 @@ def string_ge_operation(lhs: StringVar | str, rhs: StringVar | str):
 
 
 @var_operation
-def string_lower_operation(string: StringVar):
+def string_lower_operation(string: StringVar[Any]):
     """Convert a string to lowercase.
 
     Args:
@@ -422,7 +422,7 @@ def string_lower_operation(string: StringVar):
 
 
 @var_operation
-def string_upper_operation(string: StringVar):
+def string_upper_operation(string: StringVar[Any]):
     """Convert a string to uppercase.
 
     Args:
@@ -435,7 +435,7 @@ def string_upper_operation(string: StringVar):
 
 
 @var_operation
-def string_strip_operation(string: StringVar):
+def string_strip_operation(string: StringVar[Any]):
     """Strip a string.
 
     Args:
@@ -449,7 +449,7 @@ def string_strip_operation(string: StringVar):
 
 @var_operation
 def string_contains_field_operation(
-    haystack: StringVar, needle: StringVar | str, field: StringVar | str
+    haystack: StringVar[Any], needle: StringVar[Any] | str, field: StringVar[Any] | str
 ):
     """Check if a string contains another string.
 
@@ -468,7 +468,7 @@ def string_contains_field_operation(
 
 
 @var_operation
-def string_contains_operation(haystack: StringVar, needle: StringVar | str):
+def string_contains_operation(haystack: StringVar[Any], needle: StringVar[Any] | str):
     """Check if a string contains another string.
 
     Args:
@@ -484,7 +484,9 @@ def string_contains_operation(haystack: StringVar, needle: StringVar | str):
 
 
 @var_operation
-def string_starts_with_operation(full_string: StringVar, prefix: StringVar | str):
+def string_starts_with_operation(
+    full_string: StringVar[Any], prefix: StringVar[Any] | str
+):
     """Check if a string starts with a prefix.
 
     Args:
@@ -500,7 +502,7 @@ def string_starts_with_operation(full_string: StringVar, prefix: StringVar | str
 
 
 @var_operation
-def string_item_operation(string: StringVar, index: NumberVar | int):
+def string_item_operation(string: StringVar[Any], index: NumberVar | int):
     """Get an item from a string.
 
     Args:
@@ -514,7 +516,7 @@ def string_item_operation(string: StringVar, index: NumberVar | int):
 
 
 @var_operation
-def array_join_operation(array: ArrayVar, sep: StringVar | str = ""):
+def array_join_operation(array: ArrayVar, sep: StringVar[Any] | str = ""):
     """Join the elements of an array.
 
     Args:
@@ -539,7 +541,7 @@ _decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class LiteralStringVar(LiteralVar, StringVar):
+class LiteralStringVar(LiteralVar, StringVar[str]):
     """Base class for immutable literal string vars."""
 
     _var_value: str = dataclasses.field(default="")
@@ -661,7 +663,7 @@ class LiteralStringVar(LiteralVar, StringVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ConcatVarOperation(CachedVarOperation, StringVar):
+class ConcatVarOperation(CachedVarOperation, StringVar[str]):
     """Representing a concatenation of literal string vars."""
 
     _var_value: Tuple[Var, ...] = dataclasses.field(default_factory=tuple)
@@ -1275,7 +1277,7 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
 
 
 @var_operation
-def string_split_operation(string: StringVar, sep: StringVar | str = ""):
+def string_split_operation(string: StringVar[Any], sep: StringVar | str = ""):
     """Split a string.
 
     Args:
