@@ -10,6 +10,7 @@ from reflex.event import EventChain, EventHandler
 from reflex.utils import format
 from reflex.utils.exceptions import ReflexError
 from reflex.utils.imports import ImportVar
+from reflex.utils.types import get_origin
 from reflex.vars import VarData
 from reflex.vars.base import CallableVar, LiteralVar, Var
 from reflex.vars.function import FunctionVar
@@ -195,6 +196,10 @@ def convert(
             or (
                 isinstance(value, Breakpoints)
                 and all(not isinstance(v, dict) for v in value.values())
+            )
+            or (
+                isinstance(value, ObjectVar)
+                and not issubclass(get_origin(value._var_type) or value._var_type, dict)
             )
             else (key,)
         )
