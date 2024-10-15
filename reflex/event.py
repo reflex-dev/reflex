@@ -1041,7 +1041,8 @@ def resolve_annotation(annotations: dict[str, Any], arg_name: str):
             deprecation_version="0.6.3",
             removal_version="0.7.0",
         )
-        return JavascriptInputEvent
+        # Allow arbitrary attribute access two levels deep until removed.
+        return dict[str, dict]
     return annotation
 
 
