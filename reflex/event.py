@@ -1042,7 +1042,7 @@ def resolve_annotation(annotations: dict[str, Any], arg_name: str):
             removal_version="0.7.0",
         )
         # Allow arbitrary attribute access two levels deep until removed.
-        return dict[str, dict]
+        return Dict[str, dict]
     return annotation
 
 
