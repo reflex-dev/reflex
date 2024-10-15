@@ -1071,7 +1071,7 @@ def call_event_handler(
                 continue
             else:
                 raise EventHandlerArgTypeMismatch(
-                    f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {type_hints_of_provided_callback[arg]} from {event_handler.fn.__qualname__} instead."
+                    f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {type_hints_of_provided_callback[arg]} as annotated in {event_handler.fn.__qualname__} instead."
                 )
 
     return event_handler(*parsed_args)  # type: ignore
