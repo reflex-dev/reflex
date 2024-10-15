@@ -1440,19 +1440,19 @@ if sys.version_info >= (3, 10):
         @overload
         def __get__(
             self: EventCallback[[V], T], instance: None, owner
-        ) -> Callable[[Union[Var[V], V]], T]: ...
+        ) -> Callable[[Union[Var[V], V]], EventSpec]: ...
 
         @overload
         def __get__(
             self: EventCallback[[V, V2], T], instance: None, owner
-        ) -> Callable[[Union[Var[V], V], Union[Var[V2], V2]], T]: ...
+        ) -> Callable[[Union[Var[V], V], Union[Var[V2], V2]], EventSpec]: ...
 
         @overload
         def __get__(
             self: EventCallback[[V, V2, V3], T], instance: None, owner
         ) -> Callable[
             [Union[Var[V], V], Union[Var[V2], V2], Union[Var[V3], V3]],
-            T,
+            EventSpec,
         ]: ...
 
         @overload
@@ -1465,7 +1465,7 @@ if sys.version_info >= (3, 10):
                 Union[Var[V3], V3],
                 Union[Var[V4], V4],
             ],
-            T,
+            EventSpec,
         ]: ...
 
         @overload
@@ -1479,13 +1479,13 @@ if sys.version_info >= (3, 10):
                 Union[Var[V4], V4],
                 Union[Var[V5], V5],
             ],
-            T,
+            EventSpec,
         ]: ...
 
         @overload
         def __get__(self, instance, owner) -> Callable[P, T]: ...
 
-        def __get__(self, instance, owner) -> Callable[P, T]:
+        def __get__(self, instance, owner) -> Callable:
             """Get the function with the instance bound to it.
 
             Args:
