@@ -929,13 +929,13 @@ class Var(Generic[VAR_TYPE]):
         Returns:
             The string var.
         """
-        from .function import JSON_STRINGIFY, OBJECT_PROTOTYPE_TO_STRING
+        from .function import JSON_STRINGIFY, PROTOTYPE_TO_STRING
         from .sequence import StringVar
 
         return (
             JSON_STRINGIFY.call(self).to(StringVar)
             if use_json
-            else OBJECT_PROTOTYPE_TO_STRING.call(self).to(StringVar)
+            else PROTOTYPE_TO_STRING.call(self).to(StringVar)
         )
 
     def as_ref(self) -> Var:
