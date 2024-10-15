@@ -586,18 +586,6 @@ def deploy(
     )
 
 
-@cli.command()
-def demo(
-    frontend_port: str = typer.Option(
-        "3001", help="Specify a different frontend port."
-    ),
-    backend_port: str = typer.Option("8001", help="Specify a different backend port."),
-):
-    """Run the demo app."""
-    # Open the demo app in a terminal.
-    webbrowser.open("https://demo.reflex.run")
-
-
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
 cli.add_typer(script_cli, name="script", help="Subcommands running helper scripts.")
 cli.add_typer(
