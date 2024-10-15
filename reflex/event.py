@@ -976,6 +976,7 @@ def get_hydrate_event(state) -> str:
 def call_event_handler(
     event_handler: EventHandler | EventSpec,
     arg_spec: ArgsSpec,
+    key: Optional[str] = None,
 ) -> EventSpec:
     """Call an event handler to get the event spec.
 
@@ -986,6 +987,7 @@ def call_event_handler(
     Args:
         event_handler: The event handler.
         arg_spec: The lambda that define the argument(s) to pass to the event handler.
+        key: The key to pass to the event handler.
 
     Raises:
         EventHandlerArgMismatch: if number of arguments expected by event_handler doesn't match the spec.
@@ -1061,14 +1063,14 @@ def call_event_handler(
                 )
             except TypeError as e:
                 raise TypeError(
-                    f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_handler.fn.__qualname__}."
+                    f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_handler.fn.__qualname__} provided for {key}."
                 ) from e
 
             if compare_result:
                 continue
             else:
                 raise EventHandlerArgTypeMismatch(
-                    f"Event handler {event_handler.fn.__qualname__} expects {args_types_without_vars[i]} for argument {arg} but got {type_hints_of_provided_callback[arg]} instead."
+                    f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {type_hints_of_provided_callback[arg]} from {event_handler.fn.__qualname__} instead."
                 )
 
     return event_handler(*parsed_args)  # type: ignore
@@ -1134,13 +1136,18 @@ def parse_args_spec(arg_spec: ArgsSpec):
     )
 
 
-def check_fn_match_arg_spec(fn: Callable, arg_spec: ArgsSpec) -> List[Var]:
+def check_fn_match_arg_spec(
+    fn: Callable,
+    arg_spec: ArgsSpec,
+    key: Optional[str] = None,
+) -> List[Var]:
     """Ensures that the function signature matches the passed argument specification
     or raises an EventFnArgMismatch if they do not.
 
     Args:
         fn: The function to be validated.
         arg_spec: The argument specification for the event trigger.
+        key: The key to pass to the event handler.
 
     Returns:
         The parsed arguments from the argument specification.
@@ -1166,7 +1173,11 @@ def check_fn_match_arg_spec(fn: Callable, arg_spec: ArgsSpec) -> List[Var]:
     return parsed_args
 
 
-def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | Var:
+def call_event_fn(
+    fn: Callable,
+    arg_spec: ArgsSpec,
+    key: Optional[str] = None,
+) -> list[EventSpec] | Var:
     """Call a function to a list of event specs.
 
     The function should return a single EventSpec, a list of EventSpecs, or a
@@ -1175,6 +1186,7 @@ def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | Var:
     Args:
         fn: The function to call.
         arg_spec: The argument spec for the event trigger.
+        key: The key to pass to the event handler.
 
     Returns:
         The event specs from calling the function or a Var.
@@ -1187,7 +1199,7 @@ def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | Var:
     from reflex.utils.exceptions import EventHandlerValueError
 
     # Check that fn signature matches arg_spec
-    parsed_args = check_fn_match_arg_spec(fn, arg_spec)
+    parsed_args = check_fn_match_arg_spec(fn, arg_spec, key=key)
 
     # Call the function with the parsed args.
     out = fn(*parsed_args)
@@ -1205,7 +1217,7 @@ def call_event_fn(fn: Callable, arg_spec: ArgsSpec) -> list[EventSpec] | Var:
     for e in out:
         if isinstance(e, EventHandler):
             # An un-called EventHandler gets all of the args of the event trigger.
-            e = call_event_handler(e, arg_spec)
+            e = call_event_handler(e, arg_spec, key=key)
 
         # Make sure the event spec is valid.
         if not isinstance(e, EventSpec):
