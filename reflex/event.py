@@ -1000,15 +1000,16 @@ def call_event_handler(
         # Handle partial application of EventSpec args
         return event_handler.add_args(*parsed_args)
 
-    fullspec = inspect.getfullargspec(event_handler.fn)
+    provided_callback_fullspec = inspect.getfullargspec(event_handler.fn)
 
-    args = fullspec.args
-    n_args = len(args) - 1  # subtract 1 for bound self arg
+    provided_callback_n_args = (
+        len(provided_callback_fullspec.args) - 1
+    )  # subtract 1 for bound self arg
 
-    if n_args != len(parsed_args):
+    if provided_callback_n_args != len(parsed_args):
         raise EventHandlerArgMismatch(
             "The number of arguments accepted by "
-            f"{event_handler.fn.__qualname__} ({n_args}) "
+            f"{event_handler.fn.__qualname__} ({provided_callback_n_args}) "
             "does not match the arguments passed by the event trigger: "
             f"{[str(v) for v in parsed_args]}\n"
             "See https://reflex.dev/docs/events/event-arguments/"
@@ -1026,17 +1027,33 @@ def call_event_handler(
         # Ensure all specific types are compatible with accepted types
         return all(issubclass(s, a) for s, a in zip(specific_args, accepted_args))
 
-    # check that args of event handler are matching the spec if type hints are provided
-    for arg, arg_type in inspect.getfullargspec(arg_spec).annotations.items():
-        if arg not in fullspec.annotations:
-            continue
+    event_spec_return_type = get_type_hints(arg_spec).get("return", None)
 
-        if compare_types(fullspec.annotations[arg], arg_type):
-            continue
-        else:
-            raise EventHandlerArgTypeMismatch(
-                f"Type mismatch for argument {arg} in {event_handler.fn.__qualname__}. Expected {arg_type} but got {fullspec.annotations[arg]}"
-            )
+    if (
+        event_spec_return_type is not None
+        and get_origin(event_spec_return_type) is tuple
+    ):
+        args = get_args(event_spec_return_type)
+
+        args_types_without_vars = [
+            arg if get_origin(arg) is not Var else get_args(arg)[0] for arg in args
+        ]
+
+        type_hints_of_provided_callback = get_type_hints(event_handler.fn)
+
+        # check that args of event handler are matching the spec if type hints are provided
+        for i, arg in enumerate(provided_callback_fullspec.args[1:]):
+            if arg not in type_hints_of_provided_callback:
+                continue
+
+            if compare_types(
+                args_types_without_vars[i], type_hints_of_provided_callback[arg]
+            ):
+                continue
+            else:
+                raise EventHandlerArgTypeMismatch(
+                    f"Event handler {event_handler.fn.__qualname__} expects {args_types_without_vars[i]} for argument {arg} but got {type_hints_of_provided_callback[arg]} instead."
+                )
 
     return event_handler(*parsed_args)  # type: ignore
 
