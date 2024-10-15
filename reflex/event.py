@@ -992,6 +992,7 @@ def call_event_handler(
     Raises:
         EventHandlerArgMismatch: if number of arguments expected by event_handler doesn't match the spec.
         EventHandlerArgTypeMismatch: if the annotations of args accepted by event_handler differs from the spec of the event trigger.
+        TypeError: if a failure occurs while comparing types.
 
     Returns:
         The event spec from calling the event handler.
