@@ -923,6 +923,9 @@ class Var(Generic[VAR_TYPE]):
     def to_string(self, use_json: bool = True) -> StringVar:
         """Convert the var to a string.
 
+        Args:
+            use_json: Whether to use JSON stringify. If False, uses Object.prototype.toString.
+
         Returns:
             The string var.
         """
