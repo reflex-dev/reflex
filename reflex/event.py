@@ -1039,7 +1039,10 @@ def call_event_handler(
             arg if get_origin(arg) is not Var else get_args(arg)[0] for arg in args
         ]
 
-        type_hints_of_provided_callback = get_type_hints(event_handler.fn)
+        try:
+            type_hints_of_provided_callback = get_type_hints(event_handler.fn)
+        except NameError:
+            type_hints_of_provided_callback = {}
 
         # check that args of event handler are matching the spec if type hints are provided
         for i, arg in enumerate(provided_callback_fullspec.args[1:]):
