@@ -38,7 +38,13 @@ from typing import (
     overload,
 )
 
-from typing_extensions import ParamSpec, TypeGuard, deprecated, get_type_hints, override
+from typing_extensions import (
+    ParamSpec,
+    TypeGuard,
+    deprecated,
+    get_type_hints,
+    override,
+)
 
 from reflex import constants
 from reflex.base import Base
@@ -1386,6 +1392,22 @@ def serialize_literal(value: LiteralVar):
         The serialized Literal.
     """
     return value._var_value
+
+
+def get_python_literal(value: Union[LiteralVar, Any]) -> Any | None:
+    """Get the Python literal value.
+
+    Args:
+        value: The value to get the Python literal value of.
+
+    Returns:
+        The Python literal value.
+    """
+    if isinstance(value, LiteralVar):
+        return value._var_value
+    if isinstance(value, Var):
+        return None
+    return value
 
 
 P = ParamSpec("P")

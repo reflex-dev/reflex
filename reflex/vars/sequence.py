@@ -39,6 +39,7 @@ from .base import (
     _global_vars,
     cached_property_no_lock,
     figure_out_type,
+    get_python_literal,
     get_unique_variable_name,
     unionize,
     var_operation,
@@ -1746,5 +1747,20 @@ class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
 
         Returns:
             The JSON representation of the var.
+
+        Raises:
+            TypeError: If the color is not a valid color.
         """
-        return json.dumps(f"{self._var_value}")
+        color, alpha, shade = map(
+            get_python_literal,
+            (self._var_value.color, self._var_value.alpha, self._var_value.shade),
+        )
+        if color is None or alpha is None or shade is None:
+            raise TypeError("Cannot serialize color that contains non-literal vars.")
+        if (
+            not isinstance(color, str)
+            or not isinstance(alpha, bool)
+            or not isinstance(shade, int)
+        ):
+            raise TypeError("Color is not a valid color.")
+        return f"var(--{color}-{'a' if alpha else ''}{shade})"
