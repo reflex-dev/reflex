@@ -644,6 +644,18 @@ class Var(Generic[VAR_TYPE]):
 
         return self
 
+    @overload
+    def guess_type(self: Var[str]) -> StringVar: ...
+
+    @overload
+    def guess_type(self: Var[bool]) -> BooleanVar: ...
+
+    @overload
+    def guess_type(self: Var[int] | Var[float] | Var[int | float]) -> NumberVar: ...
+
+    @overload
+    def guess_type(self) -> Self: ...
+
     def guess_type(self) -> Var:
         """Guesses the type of the variable based on its `_var_type` attribute.
 
@@ -908,16 +920,20 @@ class Var(Generic[VAR_TYPE]):
         """
         return ~self.bool()
 
-    def to_string(self):
+    def to_string(self, use_json: bool = True) -> StringVar:
         """Convert the var to a string.
 
         Returns:
             The string var.
         """
-        from .function import JSON_STRINGIFY
+        from .function import JSON_STRINGIFY, OBJECT_PROTOTYPE_TO_STRING
         from .sequence import StringVar
 
-        return JSON_STRINGIFY.call(self).to(StringVar)
+        return (
+            JSON_STRINGIFY.call(self).to(StringVar)
+            if use_json
+            else OBJECT_PROTOTYPE_TO_STRING.call(self).to(StringVar)
+        )
 
     def as_ref(self) -> Var:
         """Get a reference to the var.
@@ -1417,6 +1433,12 @@ OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Dict)
 def var_operation(
     func: Callable[P, CustomVarOperationReturn[OBJECT_TYPE]],
 ) -> Callable[P, ObjectVar[OBJECT_TYPE]]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[T]],
+) -> Callable[P, Var[T]]: ...
 
 
 def var_operation(

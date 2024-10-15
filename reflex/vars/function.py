@@ -180,3 +180,4 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
 
 
 JSON_STRINGIFY = FunctionStringVar.create("JSON.stringify")
+OBJECT_PROTOTYPE_TO_STRING = FunctionStringVar.create("Object.prototype.toString")

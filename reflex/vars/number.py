@@ -11,6 +11,7 @@ from typing import (
     Any,
     Callable,
     NoReturn,
+    Type,
     TypeVar,
     Union,
     overload,
@@ -1110,8 +1111,12 @@ def boolify(value: Var):
     )
 
 
+T = TypeVar("T")
+U = TypeVar("U")
+
+
 @var_operation
-def ternary_operation(condition: BooleanVar, if_true: Var, if_false: Var):
+def ternary_operation(condition: BooleanVar, if_true: Var[T], if_false: Var[U]):
     """Create a ternary operation.
 
     Args:
@@ -1122,10 +1127,14 @@ def ternary_operation(condition: BooleanVar, if_true: Var, if_false: Var):
     Returns:
         The ternary operation.
     """
-    return var_operation_return(
-        js_expression=f"({condition} ? {if_true} : {if_false})",
-        var_type=unionize(if_true._var_type, if_false._var_type),
+    type_value: Union[Type[T], Type[U]] = unionize(
+        if_true._var_type, if_false._var_type
     )
+    value: CustomVarOperationReturn[Union[T, U]] = var_operation_return(
+        js_expression=f"({condition} ? {if_true} : {if_false})",
+        var_type=type_value,
+    )
+    return value
 
 
 NUMBER_TYPES = (int, float, NumberVar)

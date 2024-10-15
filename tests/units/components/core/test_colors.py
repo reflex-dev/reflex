@@ -31,7 +31,7 @@ def create_color_var(color):
         (create_color_var(rx.color("mint", 3, True)), '"var(--mint-a3)"', Color),
         (
             create_color_var(rx.color(ColorState.color, ColorState.shade)),  # type: ignore
-            f'("var(--"+{str(color_state_name)}.color+"-"+{str(color_state_name)}.shade+")")',
+            f'("var(--"+{str(color_state_name)}.color+"-"+(Object.prototype.toString({str(color_state_name)}.shade))+")")',
             Color,
         ),
         (
@@ -43,7 +43,7 @@ def create_color_var(color):
             create_color_var(
                 rx.color(f"{ColorState.color_part}ato", f"{ColorState.shade}")  # type: ignore
             ),
-            f'("var(--"+{str(color_state_name)}.color_part+"ato-"+{str(color_state_name)}.shade+")")',
+            f'("var(--"+({str(color_state_name)}.color_part+"ato")+"-"+{str(color_state_name)}.shade+")")',
             Color,
         ),
         (
