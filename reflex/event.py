@@ -1049,9 +1049,16 @@ def call_event_handler(
             if arg not in type_hints_of_provided_callback:
                 continue
 
-            if compare_types(
-                args_types_without_vars[i], type_hints_of_provided_callback[arg]
-            ):
+            try:
+                compare_result = compare_types(
+                    args_types_without_vars[i], type_hints_of_provided_callback[arg]
+                )
+            except TypeError as e:
+                raise TypeError(
+                    f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_handler.fn.__qualname__}."
+                ) from e
+
+            if compare_result:
                 continue
             else:
                 raise EventHandlerArgTypeMismatch(
