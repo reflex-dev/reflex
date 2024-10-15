@@ -22,6 +22,7 @@ from typing import (
     TypeVar,
     Union,
     get_type_hints,
+    overload,
 )
 
 from typing_extensions import ParamSpec, get_args, get_origin
@@ -1416,6 +1417,11 @@ EventType = Union[IndividualEventType[G], List[IndividualEventType[G]]]
 
 P = ParamSpec("P")
 T = TypeVar("T")
+V = TypeVar("V")
+V2 = TypeVar("V2")
+V3 = TypeVar("V3")
+V4 = TypeVar("V4")
+V5 = TypeVar("V5")
 
 if sys.version_info >= (3, 10):
     from typing import Concatenate
@@ -1430,6 +1436,54 @@ if sys.version_info >= (3, 10):
                 func: The function to be wrapped.
             """
             self.func = func
+
+        @overload
+        def __get__(
+            self: EventCallback[[V], T], instance: None, owner
+        ) -> Callable[[Union[Var[V], V]], T]: ...
+
+        @overload
+        def __get__(
+            self: EventCallback[[V, V2], T], instance: None, owner
+        ) -> Callable[[Union[Var[V], V], Union[Var[V2], V2]], T]: ...
+
+        @overload
+        def __get__(
+            self: EventCallback[[V, V2, V3], T], instance: None, owner
+        ) -> Callable[
+            [Union[Var[V], V], Union[Var[V2], V2], Union[Var[V3], V3]],
+            T,
+        ]: ...
+
+        @overload
+        def __get__(
+            self: EventCallback[[V, V2, V3, V4], T], instance: None, owner
+        ) -> Callable[
+            [
+                Union[Var[V], V],
+                Union[Var[V2], V2],
+                Union[Var[V3], V3],
+                Union[Var[V4], V4],
+            ],
+            T,
+        ]: ...
+
+        @overload
+        def __get__(
+            self: EventCallback[[V, V2, V3, V4, V5], T], instance: None, owner
+        ) -> Callable[
+            [
+                Union[Var[V], V],
+                Union[Var[V2], V2],
+                Union[Var[V3], V3],
+                Union[Var[V4], V4],
+                Union[Var[V5], V5],
+            ],
+            T,
+        ]: ...
+
+        @overload
+        def __get__(self, instance, owner) -> Callable[P, T]: ...
 
         def __get__(self, instance, owner) -> Callable[P, T]:
             """Get the function with the instance bound to it.
