@@ -9,10 +9,11 @@ import json
 import os
 import sys
 from textwrap import dedent
-from typing import Any, Callable, Dict, Generator, List, Optional, Union
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Union
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+import pytest_asyncio
 from plotly.graph_objects import Figure
 
 import reflex as rx
@@ -41,6 +42,7 @@ from reflex.state import (
 )
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
+from reflex.utils.exceptions import SetUndefinedStateVarError
 from reflex.utils.format import json_dumps
 from reflex.vars.base import ComputedVar, Var
 from tests.units.states.mutation import MutableSQLAModel, MutableTestState
@@ -103,6 +105,7 @@ class TestState(BaseState):
     complex: Dict[int, Object] = {1: Object(), 2: Object()}
     fig: Figure = Figure()
     dt: datetime.datetime = datetime.datetime.fromisoformat("1989-11-09T18:53:00+01:00")
+    _backend: int = 0
 
     @ComputedVar
     def sum(self) -> float:
@@ -272,9 +275,9 @@ def test_base_class_vars(test_state):
         assert isinstance(prop, Var)
         assert prop._js_expr.split(".")[-1] == field
 
-    assert cls.num1._var_type == int
-    assert cls.num2._var_type == float
-    assert cls.key._var_type == str
+    assert cls.num1._var_type is int
+    assert cls.num2._var_type is float
+    assert cls.key._var_type is str
 
 
 def test_computed_class_var(test_state):
@@ -524,7 +527,7 @@ def test_set_class_var():
     TestState._set_var(Var(_js_expr="num3", _var_type=int)._var_set_state(TestState))
     var = TestState.num3  # type: ignore
     assert var._js_expr == TestState.get_full_name() + ".num3"
-    assert var._var_type == int
+    assert var._var_type is int
     assert var._var_state == TestState.get_full_name()
 
 
@@ -704,6 +707,7 @@ def test_reset(test_state, child_state):
     # Set some values.
     test_state.num1 = 1
     test_state.num2 = 2
+    test_state._backend = 3
     child_state.value = "test"
 
     # Reset the state.
@@ -712,6 +716,7 @@ def test_reset(test_state, child_state):
     # The values should be reset.
     assert test_state.num1 == 0
     assert test_state.num2 == 3.14
+    assert test_state._backend == 0
     assert child_state.value == ""
 
     expected_dirty_vars = {
@@ -727,6 +732,7 @@ def test_reset(test_state, child_state):
         "map_key",
         "mapping",
         "dt",
+        "_backend",
     }
 
     # The dirty vars should be reset.
@@ -1284,19 +1290,19 @@ def test_computed_var_depends_on_parent_non_cached():
     assert ps.dirty_vars == set()
     assert cs.dirty_vars == set()
 
-    dict1 = ps.dict()
+    dict1 = json.loads(json_dumps(ps.dict()))
     assert dict1[ps.get_full_name()] == {
         "no_cache_v": 1,
         "router": formatted_router,
     }
     assert dict1[cs.get_full_name()] == {"dep_v": 2}
-    dict2 = ps.dict()
+    dict2 = json.loads(json_dumps(ps.dict()))
     assert dict2[ps.get_full_name()] == {
         "no_cache_v": 3,
         "router": formatted_router,
     }
     assert dict2[cs.get_full_name()] == {"dep_v": 4}
-    dict3 = ps.dict()
+    dict3 = json.loads(json_dumps(ps.dict()))
     assert dict3[ps.get_full_name()] == {
         "no_cache_v": 5,
         "router": formatted_router,
@@ -1596,8 +1602,10 @@ async def test_state_with_invalid_yield(capsys, mock_app):
     assert "must only return/yield: None, Events or other EventHandlers" in captured.out
 
 
-@pytest.fixture(scope="function", params=["in_process", "disk", "redis"])
-def state_manager(request) -> Generator[StateManager, None, None]:
+@pytest_asyncio.fixture(
+    loop_scope="function", scope="function", params=["in_process", "disk", "redis"]
+)
+async def state_manager(request) -> AsyncGenerator[StateManager, None]:
     """Instance of state manager parametrized for redis and in-process.
 
     Args:
@@ -1621,7 +1629,7 @@ def state_manager(request) -> Generator[StateManager, None, None]:
     yield state_manager
 
     if isinstance(state_manager, StateManagerRedis):
-        asyncio.get_event_loop().run_until_complete(state_manager.close())
+        await state_manager.close()
 
 
 @pytest.fixture()
@@ -1709,8 +1717,8 @@ async def test_state_manager_contend(
         assert not state_manager._states_locks[token].locked()
 
 
-@pytest.fixture(scope="function")
-def state_manager_redis() -> Generator[StateManager, None, None]:
+@pytest_asyncio.fixture(loop_scope="function", scope="function")
+async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
     """Instance of state manager for redis only.
 
     Yields:
@@ -1723,7 +1731,7 @@ def state_manager_redis() -> Generator[StateManager, None, None]:
 
     yield state_manager
 
-    asyncio.get_event_loop().run_until_complete(state_manager.close())
+    await state_manager.close()
 
 
 @pytest.fixture()
@@ -1883,11 +1891,11 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     async with sp:
         assert sp._self_actx is not None
         assert sp._self_mutable  # proxy is mutable inside context
-        if isinstance(mock_app.state_manager, StateManagerMemory):
+        if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
             # For in-process store, only one instance of the state exists
             assert sp.__wrapped__ is grandchild_state
         else:
-            # When redis or disk is used, a new+updated instance is assigned to the proxy
+            # When redis is used, a new+updated instance is assigned to the proxy
             assert sp.__wrapped__ is not grandchild_state
         sp.value2 = "42"
     assert not sp._self_mutable  # proxy is not mutable after exiting context
@@ -1898,7 +1906,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     gotten_state = await mock_app.state_manager.get_state(
         _substate_key(grandchild_state.router.session.client_token, grandchild_state)
     )
-    if isinstance(mock_app.state_manager, StateManagerMemory):
+    if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
         # For in-process store, only one instance of the state exists
         assert gotten_state is parent_state
     else:
@@ -2494,7 +2502,10 @@ def test_mutable_copy_vars(mutable_state: MutableTestState, copy_func: Callable)
 
 
 def test_duplicate_substate_class(mocker):
+    # Neuter pytest escape hatch, because we want to test duplicate detection.
     mocker.patch("reflex.state.is_testing_env", lambda: False)
+    # Neuter <locals> state handling since these _are_ defined inside a function.
+    mocker.patch("reflex.state.BaseState._handle_local_def", lambda: None)
     with pytest.raises(ValueError):
 
         class TestState(BaseState):
@@ -2789,6 +2800,9 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
     }
     assert (await state._process(events[1]).__anext__()).delta == exp_is_hydrated(state)
 
+    if isinstance(app.state_manager, StateManagerRedis):
+        await app.state_manager.close()
+
 
 @pytest.mark.asyncio
 async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
@@ -2835,6 +2849,9 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         OnLoadState.get_full_name(): {"num": 2}
     }
     assert (await state._process(events[2]).__anext__()).delta == exp_is_hydrated(state)
+
+    if isinstance(app.state_manager, StateManagerRedis):
+        await app.state_manager.close()
 
 
 @pytest.mark.asyncio
@@ -2921,19 +2938,10 @@ async def test_get_state(mock_app: rx.App, token: str):
         _substate_key(token, ChildState2)
     )
     assert isinstance(new_test_state, TestState)
-    if isinstance(mock_app.state_manager, StateManagerMemory):
+    if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
         # In memory, it's the same instance
         assert new_test_state is test_state
         test_state._clean()
-        # All substates are available
-        assert tuple(sorted(new_test_state.substates)) == (
-            ChildState.get_name(),
-            ChildState2.get_name(),
-            ChildState3.get_name(),
-        )
-    elif isinstance(mock_app.state_manager, StateManagerDisk):
-        # On disk, it's a new instance
-        assert new_test_state is not test_state
         # All substates are available
         assert tuple(sorted(new_test_state.substates)) == (
             ChildState.get_name(),
@@ -3196,6 +3204,7 @@ import reflex as rx
 config = rx.Config(
     app_name="project1",
     redis_url="redis://localhost:6379",
+    state_manager_mode="redis",
     {config_items}
 )
 """
@@ -3262,3 +3271,45 @@ def test_child_mixin_state() -> None:
 
     assert "computed" in ChildUsesMixinState.inherited_vars
     assert "computed" not in ChildUsesMixinState.computed_vars
+
+
+def test_assignment_to_undeclared_vars():
+    """Test that an attribute error is thrown when undeclared vars are set."""
+
+    class State(BaseState):
+        val: str
+        _val: str
+        __val: str  # type: ignore
+
+        def handle_supported_regular_vars(self):
+            self.val = "no underscore"
+            self._val = "single leading underscore"
+            self.__val = "double leading undercore"
+
+        def handle_regular_var(self):
+            self.num = 5
+
+        def handle_backend_var(self):
+            self._num = 5
+
+        def handle_non_var(self):
+            self.__num = 5
+
+    class Substate(State):
+        def handle_var(self):
+            self.value = 20
+
+    state = State()  # type: ignore
+    sub_state = Substate()  # type: ignore
+
+    with pytest.raises(SetUndefinedStateVarError):
+        state.handle_regular_var()
+
+    with pytest.raises(SetUndefinedStateVarError):
+        sub_state.handle_var()
+
+    with pytest.raises(SetUndefinedStateVarError):
+        state.handle_backend_var()
+
+    state.handle_supported_regular_vars()
+    state.handle_non_var()

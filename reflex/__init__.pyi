@@ -11,7 +11,6 @@ from . import base as base
 from . import compiler as compiler
 from . import components as components
 from . import config as config
-from . import event as event
 from . import model as model
 from . import style as style
 from . import testing as testing
@@ -161,6 +160,7 @@ from .event import clear_local_storage as clear_local_storage
 from .event import clear_session_storage as clear_session_storage
 from .event import console_log as console_log
 from .event import download as download
+from .event import event as event
 from .event import prevent_default as prevent_default
 from .event import redirect as redirect
 from .event import remove_cookie as remove_cookie
@@ -189,7 +189,9 @@ from .style import Style as Style
 from .style import toggle_color_mode as toggle_color_mode
 from .utils.imports import ImportVar as ImportVar
 from .utils.serializers import serializer as serializer
+from .vars import Field as Field
 from .vars import Var as Var
+from .vars import field as field
 
 del compat
 RADIX_THEMES_MAPPING: dict

@@ -19,10 +19,13 @@ async def windows_hot_reload_lifespan_hack():
     import asyncio
     import sys
 
-    while True:
-        sys.stderr.write("\0")
-        sys.stderr.flush()
-        await asyncio.sleep(0.5)
+    try:
+        while True:
+            sys.stderr.write("\0")
+            sys.stderr.flush()
+            await asyncio.sleep(0.5)
+    except asyncio.CancelledError:
+        pass
 
 
 @contextlib.contextmanager
@@ -84,6 +87,4 @@ def sqlmodel_field_has_primary_key(field) -> bool:
         return True
     if getattr(field.field_info, "sa_column", None) is None:
         return False
-    if getattr(field.field_info.sa_column, "primary_key", None) is True:
-        return True
-    return False
+    return bool(getattr(field.field_info.sa_column, "primary_key", None))

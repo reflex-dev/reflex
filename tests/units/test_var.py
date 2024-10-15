@@ -1,5 +1,6 @@
 import json
 import math
+import sys
 import typing
 from typing import Dict, List, Optional, Set, Tuple, Union, cast
 
@@ -398,6 +399,44 @@ def test_list_tuple_contains(var, expected):
     assert str(var.contains(other_var)) == f"{expected}.includes(other)"
 
 
+class Foo(rx.Base):
+    """Foo class."""
+
+    bar: int
+    baz: str
+
+
+class Bar(rx.Base):
+    """Bar class."""
+
+    bar: str
+    baz: str
+    foo: int
+
+
+@pytest.mark.parametrize(
+    ("var", "var_type"),
+    (
+        [
+            (Var(_js_expr="", _var_type=Foo | Bar).guess_type(), Foo | Bar),
+            (Var(_js_expr="", _var_type=Foo | Bar).guess_type().bar, Union[int, str]),
+        ]
+        if sys.version_info >= (3, 10)
+        else []
+    )
+    + [
+        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type(), Union[Foo, Bar]),
+        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().baz, str),
+        (
+            Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().foo,
+            Union[int, None],
+        ),
+    ],
+)
+def test_var_types(var, var_type):
+    assert var._var_type == var_type
+
+
 @pytest.mark.parametrize(
     "var, expected",
     [
@@ -490,7 +529,7 @@ def test_var_indexing_str():
 
     # Test that indexing gives a type of Var[str].
     assert isinstance(str_var[0], Var)
-    assert str_var[0]._var_type == str
+    assert str_var[0]._var_type is str
 
     # Test basic indexing.
     assert str(str_var[0]) == "str.at(0)"
@@ -623,7 +662,7 @@ def test_str_var_slicing():
 
     # Test that slicing gives a type of Var[str].
     assert isinstance(str_var[:1], Var)
-    assert str_var[:1]._var_type == str
+    assert str_var[:1]._var_type is str
 
     # Test basic slicing.
     assert str(str_var[:1]) == 'str.split("").slice(undefined, 1).join("")'
@@ -1809,3 +1848,6 @@ def test_to_string_operation():
 
     assert cast(Var, TestState.email)._var_type == Email
     assert cast(Var, TestState.optional_email)._var_type == Optional[Email]
+
+    single_var = Var.create(Email())
+    assert single_var._var_type == Email

@@ -6,7 +6,10 @@ import importlib
 import os
 import sys
 import urllib.parse
-from typing import Any, Dict, List, Optional, Set
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Union
+
+from reflex.utils.exceptions import ConfigError
 
 try:
     import pydantic.v1 as pydantic
@@ -188,7 +191,7 @@ class Config(Base):
     telemetry_enabled: bool = True
 
     # The bun path
-    bun_path: str = constants.Bun.DEFAULT_PATH
+    bun_path: Union[str, Path] = constants.Bun.DEFAULT_PATH
 
     # List of origins that are allowed to connect to the backend API.
     cors_allowed_origins: List[str] = ["*"]
@@ -219,6 +222,9 @@ class Config(Base):
     # Number of gunicorn workers from user
     gunicorn_workers: Optional[int] = None
 
+    # Indicate which type of state manager to use
+    state_manager_mode: constants.StateManagerMode = constants.StateManagerMode.DISK
+
     # Maximum expiration lock time for redis state manager
     redis_lock_expiration: int = constants.Expiration.LOCK
 
@@ -234,6 +240,9 @@ class Config(Base):
         Args:
             *args: The args to pass to the Pydantic init method.
             **kwargs: The kwargs to pass to the Pydantic init method.
+
+        Raises:
+            ConfigError: If some values in the config are invalid.
         """
         super().__init__(*args, **kwargs)
 
@@ -246,6 +255,14 @@ class Config(Base):
         kwargs.update(env_kwargs)
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
+
+        if (
+            self.state_manager_mode == constants.StateManagerMode.REDIS
+            and not self.redis_url
+        ):
+            raise ConfigError(
+                "REDIS_URL is required when using the redis state manager."
+            )
 
     @property
     def module(self) -> str:

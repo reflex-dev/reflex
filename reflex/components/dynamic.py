@@ -1,11 +1,17 @@
 """Components that are dynamically generated on the backend."""
 
+from typing import TYPE_CHECKING, Union
+
 from reflex import constants
 from reflex.utils import imports
+from reflex.utils.exceptions import DynamicComponentMissingLibrary
 from reflex.utils.format import format_library_name
 from reflex.utils.serializers import serializer
 from reflex.vars import Var, get_unique_variable_name
 from reflex.vars.base import VarData, transform
+
+if TYPE_CHECKING:
+    from reflex.components.component import Component
 
 
 def get_cdn_url(lib: str) -> str:
@@ -18,6 +24,26 @@ def get_cdn_url(lib: str) -> str:
         The CDN URL for the library.
     """
     return f"https://cdn.jsdelivr.net/npm/{lib}" + "/+esm"
+
+
+bundled_libraries = {"react", "@radix-ui/themes", "@emotion/react", "next/link"}
+
+
+def bundle_library(component: Union["Component", str]):
+    """Bundle a library with the component.
+
+    Args:
+        component: The component to bundle the library with.
+
+    Raises:
+        DynamicComponentMissingLibrary: Raised when a dynamic component is missing a library.
+    """
+    if isinstance(component, str):
+        bundled_libraries.add(component)
+        return
+    if component.library is None:
+        raise DynamicComponentMissingLibrary("Component must have a library to bundle.")
+    bundled_libraries.add(format_library_name(component.library))
 
 
 def load_dynamic_serializer():
@@ -58,10 +84,7 @@ def load_dynamic_serializer():
             )
         ] = None
 
-        libs_in_window = [
-            "react",
-            "@radix-ui/themes",
-        ]
+        libs_in_window = bundled_libraries
 
         imports = {}
         for lib, names in component._get_all_imports().items():
@@ -69,10 +92,7 @@ def load_dynamic_serializer():
             if (
                 not lib.startswith((".", "/"))
                 and not lib.startswith("http")
-                and all(
-                    formatted_lib_name != lib_in_window
-                    for lib_in_window in libs_in_window
-                )
+                and formatted_lib_name not in libs_in_window
             ):
                 imports[get_cdn_url(lib)] = names
             else:
@@ -110,7 +130,14 @@ def load_dynamic_serializer():
 
         module_code_lines.insert(0, "const React = window.__reflex.react;")
 
-        return "//__reflex_evaluate\n" + "\n".join(module_code_lines)
+        return "\n".join(
+            [
+                "//__reflex_evaluate",
+                "/** @jsx jsx */",
+                "const { jsx } = window.__reflex['@emotion/react']",
+                *module_code_lines,
+            ]
+        )
 
     @transform
     def evaluate_component(js_string: Var[str]) -> Var[Component]:

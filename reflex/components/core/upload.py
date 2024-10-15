@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Callable, ClassVar, Dict, List, Optional
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple
 
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
 from reflex.components.el.elements.forms import Input
@@ -157,7 +157,7 @@ def get_upload_url(file_path: str) -> Var[str]:
     return uploaded_files_url_prefix + "/" + file_path
 
 
-def _on_drop_spec(files: Var):
+def _on_drop_spec(files: Var) -> Tuple[Var[Any]]:
     """Args spec for the on_drop event trigger.
 
     Args:
@@ -166,7 +166,7 @@ def _on_drop_spec(files: Var):
     Returns:
         Signature for on_drop handler including the files to upload.
     """
-    return [files]
+    return (files,)
 
 
 class UploadFilesProvider(Component):
@@ -179,7 +179,7 @@ class UploadFilesProvider(Component):
 class Upload(MemoizationLeaf):
     """A file upload component."""
 
-    library = "react-dropzone@14.2.3"
+    library = "react-dropzone@14.2.9"
 
     tag = "ReactDropzone"
 

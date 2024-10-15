@@ -46,6 +46,7 @@ def CallScript():
         inline_counter: int = 0
         external_counter: int = 0
         value: str = "Initial"
+        last_result: str = ""
 
         def call_script_callback(self, result):
             self.results.append(result)
@@ -53,15 +54,18 @@ def CallScript():
         def call_script_callback_other_arg(self, result, other_arg):
             self.results.append([other_arg, result])
 
+        @rx.event
         def call_scripts_inline_yield(self):
             yield rx.call_script("inline1()")
             yield rx.call_script("inline2()")
             yield rx.call_script("inline3()")
             yield rx.call_script("inline4()")
 
+        @rx.event
         def call_script_inline_return(self):
             return rx.call_script("inline2()")
 
+        @rx.event
         def call_scripts_inline_yield_callback(self):
             yield rx.call_script(
                 "inline1()", callback=CallScriptState.call_script_callback
@@ -76,11 +80,13 @@ def CallScript():
                 "inline4()", callback=CallScriptState.call_script_callback
             )
 
+        @rx.event
         def call_script_inline_return_callback(self):
             return rx.call_script(
                 "inline3()", callback=CallScriptState.call_script_callback
             )
 
+        @rx.event
         def call_script_inline_return_lambda(self):
             return rx.call_script(
                 "inline2()",
@@ -89,21 +95,25 @@ def CallScript():
                 ),
             )
 
+        @rx.event
         def get_inline_counter(self):
             return rx.call_script(
                 "inline_counter",
                 callback=CallScriptState.set_inline_counter,  # type: ignore
             )
 
+        @rx.event
         def call_scripts_external_yield(self):
             yield rx.call_script("external1()")
             yield rx.call_script("external2()")
             yield rx.call_script("external3()")
             yield rx.call_script("external4()")
 
+        @rx.event
         def call_script_external_return(self):
             return rx.call_script("external2()")
 
+        @rx.event
         def call_scripts_external_yield_callback(self):
             yield rx.call_script(
                 "external1()", callback=CallScriptState.call_script_callback
@@ -118,11 +128,13 @@ def CallScript():
                 "external4()", callback=CallScriptState.call_script_callback
             )
 
+        @rx.event
         def call_script_external_return_callback(self):
             return rx.call_script(
                 "external3()", callback=CallScriptState.call_script_callback
             )
 
+        @rx.event
         def call_script_external_return_lambda(self):
             return rx.call_script(
                 "external2()",
@@ -131,12 +143,44 @@ def CallScript():
                 ),
             )
 
+        @rx.event
         def get_external_counter(self):
             return rx.call_script(
                 "external_counter",
                 callback=CallScriptState.set_external_counter,  # type: ignore
             )
 
+        @rx.event
+        def call_with_var_f_string(self):
+            return rx.call_script(
+                f"{rx.Var('inline_counter')} + {rx.Var('external_counter')}",
+                callback=CallScriptState.set_last_result,  # type: ignore
+            )
+
+        @rx.event
+        def call_with_var_str_cast(self):
+            return rx.call_script(
+                f"{str(rx.Var('inline_counter'))} + {str(rx.Var('external_counter'))}",
+                callback=CallScriptState.set_last_result,  # type: ignore
+            )
+
+        @rx.event
+        def call_with_var_f_string_wrapped(self):
+            return rx.call_script(
+                rx.Var(f"{rx.Var('inline_counter')} + {rx.Var('external_counter')}"),
+                callback=CallScriptState.set_last_result,  # type: ignore
+            )
+
+        @rx.event
+        def call_with_var_str_cast_wrapped(self):
+            return rx.call_script(
+                rx.Var(
+                    f"{str(rx.Var('inline_counter'))} + {str(rx.Var('external_counter'))}"
+                ),
+                callback=CallScriptState.set_last_result,  # type: ignore
+            )
+
+        @rx.event
         def reset_(self):
             yield rx.call_script("inline_counter = 0; external_counter = 0")
             self.reset()
@@ -234,6 +278,68 @@ def CallScript():
                 id="update_value",
             ),
             rx.button("Reset", id="reset", on_click=CallScriptState.reset_),
+            rx.input(
+                value=CallScriptState.last_result,
+                id="last_result",
+                read_only=True,
+                on_click=CallScriptState.set_last_result(""),  # type: ignore
+            ),
+            rx.button(
+                "call_with_var_f_string",
+                on_click=CallScriptState.call_with_var_f_string,
+                id="call_with_var_f_string",
+            ),
+            rx.button(
+                "call_with_var_str_cast",
+                on_click=CallScriptState.call_with_var_str_cast,
+                id="call_with_var_str_cast",
+            ),
+            rx.button(
+                "call_with_var_f_string_wrapped",
+                on_click=CallScriptState.call_with_var_f_string_wrapped,
+                id="call_with_var_f_string_wrapped",
+            ),
+            rx.button(
+                "call_with_var_str_cast_wrapped",
+                on_click=CallScriptState.call_with_var_str_cast_wrapped,
+                id="call_with_var_str_cast_wrapped",
+            ),
+            rx.button(
+                "call_with_var_f_string_inline",
+                on_click=rx.call_script(
+                    f"{rx.Var('inline_counter')} + {CallScriptState.last_result}",
+                    callback=CallScriptState.set_last_result,  # type: ignore
+                ),
+                id="call_with_var_f_string_inline",
+            ),
+            rx.button(
+                "call_with_var_str_cast_inline",
+                on_click=rx.call_script(
+                    f"{str(rx.Var('inline_counter'))} + {str(rx.Var('external_counter'))}",
+                    callback=CallScriptState.set_last_result,  # type: ignore
+                ),
+                id="call_with_var_str_cast_inline",
+            ),
+            rx.button(
+                "call_with_var_f_string_wrapped_inline",
+                on_click=rx.call_script(
+                    rx.Var(
+                        f"{rx.Var('inline_counter')} + {CallScriptState.last_result}"
+                    ),
+                    callback=CallScriptState.set_last_result,  # type: ignore
+                ),
+                id="call_with_var_f_string_wrapped_inline",
+            ),
+            rx.button(
+                "call_with_var_str_cast_wrapped_inline",
+                on_click=rx.call_script(
+                    rx.Var(
+                        f"{str(rx.Var('inline_counter'))} + {str(rx.Var('external_counter'))}"
+                    ),
+                    callback=CallScriptState.set_last_result,  # type: ignore
+                ),
+                id="call_with_var_str_cast_wrapped_inline",
+            ),
         )
 
 
@@ -363,3 +469,73 @@ def test_call_script(
         call_script.poll_for_content(update_value_button, exp_not_equal="Initial")
         == "updated"
     )
+
+
+def test_call_script_w_var(
+    call_script: AppHarness,
+    driver: WebDriver,
+):
+    """Test evaluating javascript expressions containing Vars.
+
+    Args:
+        call_script: harness for CallScript app.
+        driver: WebDriver instance.
+    """
+    assert_token(driver)
+    last_result = driver.find_element(By.ID, "last_result")
+    assert last_result.get_attribute("value") == ""
+
+    inline_return_button = driver.find_element(By.ID, "inline_return")
+
+    call_with_var_f_string_button = driver.find_element(By.ID, "call_with_var_f_string")
+    call_with_var_str_cast_button = driver.find_element(By.ID, "call_with_var_str_cast")
+    call_with_var_f_string_wrapped_button = driver.find_element(
+        By.ID, "call_with_var_f_string_wrapped"
+    )
+    call_with_var_str_cast_wrapped_button = driver.find_element(
+        By.ID, "call_with_var_str_cast_wrapped"
+    )
+    call_with_var_f_string_inline_button = driver.find_element(
+        By.ID, "call_with_var_f_string_inline"
+    )
+    call_with_var_str_cast_inline_button = driver.find_element(
+        By.ID, "call_with_var_str_cast_inline"
+    )
+    call_with_var_f_string_wrapped_inline_button = driver.find_element(
+        By.ID, "call_with_var_f_string_wrapped_inline"
+    )
+    call_with_var_str_cast_wrapped_inline_button = driver.find_element(
+        By.ID, "call_with_var_str_cast_wrapped_inline"
+    )
+
+    inline_return_button.click()
+    call_with_var_f_string_button.click()
+    assert call_script.poll_for_value(last_result, exp_not_equal="") == "1"
+
+    inline_return_button.click()
+    call_with_var_str_cast_button.click()
+    assert call_script.poll_for_value(last_result, exp_not_equal="1") == "2"
+
+    inline_return_button.click()
+    call_with_var_f_string_wrapped_button.click()
+    assert call_script.poll_for_value(last_result, exp_not_equal="2") == "3"
+
+    inline_return_button.click()
+    call_with_var_str_cast_wrapped_button.click()
+    assert call_script.poll_for_value(last_result, exp_not_equal="3") == "4"
+
+    inline_return_button.click()
+    call_with_var_f_string_inline_button.click()
+    assert call_script.poll_for_value(last_result, exp_not_equal="4") == "9"
+
+    inline_return_button.click()
+    call_with_var_str_cast_inline_button.click()
+    assert call_script.poll_for_value(last_result, exp_not_equal="9") == "6"
+
+    inline_return_button.click()
+    call_with_var_f_string_wrapped_inline_button.click()
+    assert call_script.poll_for_value(last_result, exp_not_equal="6") == "13"
+
+    inline_return_button.click()
+    call_with_var_str_cast_wrapped_inline_button.click()
+    assert call_script.poll_for_value(last_result, exp_not_equal="13") == "8"

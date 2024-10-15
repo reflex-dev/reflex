@@ -9,6 +9,8 @@ import dataclasses
 import functools
 import inspect
 import os
+import pickle
+import sys
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -19,6 +21,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncIterator,
+    BinaryIO,
     Callable,
     ClassVar,
     Dict,
@@ -30,14 +33,15 @@ from typing import (
     Type,
     Union,
     cast,
+    get_args,
     get_type_hints,
 )
 
-import dill
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
 from reflex.config import get_config
+from reflex.istate.data import RouterData
 from reflex.vars.base import (
     ComputedVar,
     DynamicRouteVar,
@@ -57,6 +61,7 @@ import wrapt
 from redis.asyncio import Redis
 from redis.exceptions import ResponseError
 
+import reflex.istate.dynamic
 from reflex import constants
 from reflex.base import Base
 from reflex.event import (
@@ -73,11 +78,14 @@ from reflex.utils.exceptions import (
     DynamicRouteArgShadowsStateVar,
     EventHandlerShadowsBuiltInStateMethod,
     ImmutableStateError,
+    InvalidStateManagerMode,
     LockExpiredError,
+    SetUndefinedStateVarError,
+    StateSchemaMismatchError,
 )
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import serializer
-from reflex.utils.types import override
+from reflex.utils.types import get_origin, override
 from reflex.vars import VarData
 
 if TYPE_CHECKING:
@@ -90,125 +98,6 @@ var = computed_var
 
 # If the state is this large, it's considered a performance issue.
 TOO_LARGE_SERIALIZED_STATE = 100 * 1024  # 100kb
-
-
-@dataclasses.dataclass(frozen=True)
-class HeaderData:
-    """An object containing headers data."""
-
-    host: str = ""
-    origin: str = ""
-    upgrade: str = ""
-    connection: str = ""
-    cookie: str = ""
-    pragma: str = ""
-    cache_control: str = ""
-    user_agent: str = ""
-    sec_websocket_version: str = ""
-    sec_websocket_key: str = ""
-    sec_websocket_extensions: str = ""
-    accept_encoding: str = ""
-    accept_language: str = ""
-
-    def __init__(self, router_data: Optional[dict] = None):
-        """Initalize the HeaderData object based on router_data.
-
-        Args:
-            router_data: the router_data dict.
-        """
-        if router_data:
-            for k, v in router_data.get(constants.RouteVar.HEADERS, {}).items():
-                object.__setattr__(self, format.to_snake_case(k), v)
-        else:
-            for k in dataclasses.fields(self):
-                object.__setattr__(self, k.name, "")
-
-
-@dataclasses.dataclass(frozen=True)
-class PageData:
-    """An object containing page data."""
-
-    host: str = ""  # repeated with self.headers.origin (remove or keep the duplicate?)
-    path: str = ""
-    raw_path: str = ""
-    full_path: str = ""
-    full_raw_path: str = ""
-    params: dict = dataclasses.field(default_factory=dict)
-
-    def __init__(self, router_data: Optional[dict] = None):
-        """Initalize the PageData object based on router_data.
-
-        Args:
-            router_data: the router_data dict.
-        """
-        if router_data:
-            object.__setattr__(
-                self,
-                "host",
-                router_data.get(constants.RouteVar.HEADERS, {}).get("origin", ""),
-            )
-            object.__setattr__(
-                self, "path", router_data.get(constants.RouteVar.PATH, "")
-            )
-            object.__setattr__(
-                self, "raw_path", router_data.get(constants.RouteVar.ORIGIN, "")
-            )
-            object.__setattr__(self, "full_path", f"{self.host}{self.path}")
-            object.__setattr__(self, "full_raw_path", f"{self.host}{self.raw_path}")
-            object.__setattr__(
-                self, "params", router_data.get(constants.RouteVar.QUERY, {})
-            )
-        else:
-            object.__setattr__(self, "host", "")
-            object.__setattr__(self, "path", "")
-            object.__setattr__(self, "raw_path", "")
-            object.__setattr__(self, "full_path", "")
-            object.__setattr__(self, "full_raw_path", "")
-            object.__setattr__(self, "params", {})
-
-
-@dataclasses.dataclass(frozen=True, init=False)
-class SessionData:
-    """An object containing session data."""
-
-    client_token: str = ""
-    client_ip: str = ""
-    session_id: str = ""
-
-    def __init__(self, router_data: Optional[dict] = None):
-        """Initalize the SessionData object based on router_data.
-
-        Args:
-            router_data: the router_data dict.
-        """
-        if router_data:
-            client_token = router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
-            client_ip = router_data.get(constants.RouteVar.CLIENT_IP, "")
-            session_id = router_data.get(constants.RouteVar.SESSION_ID, "")
-        else:
-            client_token = client_ip = session_id = ""
-        object.__setattr__(self, "client_token", client_token)
-        object.__setattr__(self, "client_ip", client_ip)
-        object.__setattr__(self, "session_id", session_id)
-
-
-@dataclasses.dataclass(frozen=True, init=False)
-class RouterData:
-    """An object containing RouterData."""
-
-    session: SessionData = dataclasses.field(default_factory=SessionData)
-    headers: HeaderData = dataclasses.field(default_factory=HeaderData)
-    page: PageData = dataclasses.field(default_factory=PageData)
-
-    def __init__(self, router_data: Optional[dict] = None):
-        """Initialize the RouterData object.
-
-        Args:
-            router_data: the router_data dict.
-        """
-        object.__setattr__(self, "session", SessionData(router_data))
-        object.__setattr__(self, "headers", HeaderData(router_data))
-        object.__setattr__(self, "page", PageData(router_data))
 
 
 def _no_chain_background_task(
@@ -355,12 +244,16 @@ def get_var_for_field(cls: Type[BaseState], f: ModelField):
     Returns:
         The Var instance.
     """
+    from reflex.vars import Field
+
     field_name = format.format_state_name(cls.get_full_name()) + "." + f.name
 
     return dispatch(
         field_name=field_name,
         var_data=VarData.from_state(cls, f.name),
-        result_var_type=f.outer_type_,
+        result_var_type=f.outer_type_
+        if get_origin(f.outer_type_) is not Field
+        else get_args(f.outer_type_)[0],
     )
 
 
@@ -534,6 +427,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if mixin:
             return
 
+        # Handle locally-defined states for pickling.
+        if "<locals>" in cls.__qualname__:
+            cls._handle_local_def()
+
         # Validate the module name.
         cls._validate_module_name()
 
@@ -576,11 +473,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for name, value in cls.__dict__.items()
             if types.is_backend_base_variable(name, cls)
         }
-        # Add annotated backend vars that do not have a default value.
+        # Add annotated backend vars that may not have a default value.
         new_backend_vars.update(
             {
-                name: Var("", _var_type=annotation_value).get_default_value()
-                for name, annotation_value in get_type_hints(cls).items()
+                name: cls._get_var_default(name, annotation_value)
+                for name, annotation_value in cls._get_type_hints().items()
                 if name not in new_backend_vars
                 and types.is_backend_base_variable(name, cls)
             }
@@ -698,11 +595,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         )
 
     @classmethod
-    def _evaluate(cls, f: Callable[[Self], Any]) -> Var:
+    def _evaluate(
+        cls, f: Callable[[Self], Any], of_type: Union[type, None] = None
+    ) -> Var:
         """Evaluate a function to a ComputedVar. Experimental.
 
         Args:
             f: The function to evaluate.
+            of_type: The type of the ComputedVar. Defaults to Component.
 
         Returns:
             The ComputedVar.
@@ -710,14 +610,23 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         console.warn(
             "The _evaluate method is experimental and may be removed in future versions."
         )
-        from reflex.components.base.fragment import fragment
         from reflex.components.component import Component
+
+        of_type = of_type or Component
 
         unique_var_name = get_unique_variable_name()
 
-        @computed_var(_js_expr=unique_var_name, return_type=Component)
+        @computed_var(_js_expr=unique_var_name, return_type=of_type)
         def computed_var_func(state: Self):
-            return fragment(f(state))
+            result = f(state)
+
+            if not isinstance(result, of_type):
+                console.warn(
+                    f"Inline ComputedVar {f} expected type {of_type}, got {type(result)}. "
+                    "You can specify expected type with `of_type` argument."
+                )
+
+            return result
 
         setattr(cls, unique_var_name, computed_var_func)
         cls.computed_vars[unique_var_name] = computed_var_func
@@ -743,6 +652,39 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 and mixin._mixin is True
             )
         ]
+
+    @classmethod
+    def _handle_local_def(cls):
+        """Handle locally-defined states for pickling."""
+        known_names = dir(reflex.istate.dynamic)
+        proposed_name = cls.__name__
+        for ix in range(len(known_names)):
+            if proposed_name not in known_names:
+                break
+            proposed_name = f"{cls.__name__}_{ix}"
+        setattr(reflex.istate.dynamic, proposed_name, cls)
+        cls.__original_name__ = cls.__name__
+        cls.__original_module__ = cls.__module__
+        cls.__name__ = cls.__qualname__ = proposed_name
+        cls.__module__ = reflex.istate.dynamic.__name__
+
+    @classmethod
+    def _get_type_hints(cls) -> dict[str, Any]:
+        """Get the type hints for this class.
+
+        If the class is dynamic, evaluate the type hints with the original
+        module in the local namespace.
+
+        Returns:
+            The type hints dict.
+        """
+        original_module = getattr(cls, "__original_module__", None)
+        if original_module is not None:
+            localns = sys.modules[original_module].__dict__
+        else:
+            localns = None
+
+        return get_type_hints(cls, localns=localns)
 
     @classmethod
     def _init_var_dependency_dicts(cls):
@@ -793,6 +735,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     parent_state.get_name(),
                     parent_state.get_parent_state(),
                 )
+
+        # Reset cached schema value
+        cls._to_schema.cache_clear()
 
     @classmethod
     def _check_overridden_methods(cls):
@@ -1093,6 +1038,26 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             # Ensure frontend uses null coalescing when accessing.
             object.__setattr__(prop, "_var_type", Optional[prop._var_type])
 
+    @classmethod
+    def _get_var_default(cls, name: str, annotation_value: Any) -> Any:
+        """Get the default value of a (backend) var.
+
+        Args:
+            name: The name of the var.
+            annotation_value: The annotation value of the var.
+
+        Returns:
+            The default value of the var or None.
+        """
+        try:
+            return getattr(cls, name)
+        except AttributeError:
+            try:
+                return Var("", _var_type=annotation_value).get_default_value()
+            except TypeError:
+                pass
+        return None
+
     @staticmethod
     def _get_base_functions() -> dict[str, FunctionType]:
         """Get all functions of the state class excluding dunder methods.
@@ -1260,6 +1225,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             name: The name of the attribute.
             value: The value of the attribute.
+
+        Raises:
+            SetUndefinedStateVarError: If a value of a var is set without first defining it.
         """
         if isinstance(value, MutableProxy):
             # unwrap proxy objects when assigning back to the state
@@ -1276,6 +1244,19 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self.dirty_vars.add(name)
             self._mark_dirty()
             return
+
+        if (
+            name not in self.vars
+            and name not in self.get_skip_vars()
+            and not name.startswith("__")
+            and not name.startswith(
+                f"_{getattr(type(self), '__original_name__', type(self).__name__)}__"
+            )
+        ):
+            raise SetUndefinedStateVarError(
+                f"The state variable '{name}' has not been defined in '{type(self).__name__}'. "
+                f"All state variables must be declared before they can be set."
+            )
 
         # Set the attribute.
         super().__setattr__(name, value)
@@ -1303,6 +1284,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             else:
                 default = copy.deepcopy(field.default)
             setattr(self, prop_name, default)
+
+        # Reset the backend vars.
+        for prop_name, value in self.backend_vars.items():
+            setattr(self, prop_name, copy.deepcopy(value))
 
         # Recursively reset the substates.
         for substate in self.substates.values():
@@ -1936,13 +1921,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self.dirty_vars.update(self._always_dirty_computed_vars)
             self._mark_dirty()
 
-        def dictify(value: Any):
-            if dataclasses.is_dataclass(value) and not isinstance(value, type):
-                return dataclasses.asdict(value)
-            return value
-
         base_vars = {
-            prop_name: dictify(self.get_value(getattr(self, prop_name)))
+            prop_name: self.get_value(getattr(self, prop_name))
             for prop_name in self.base_vars
         }
         if initial and include_computed:
@@ -2005,7 +1985,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     def __getstate__(self):
         """Get the state for redis serialization.
 
-        This method is called by cloudpickle to serialize the object.
+        This method is called by pickle to serialize the object.
 
         It explicitly removes parent_state and substates because those are serialized separately
         by the StateManagerRedis to allow for better horizontal scaling as state size increases.
@@ -2014,11 +1994,93 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             The state dict for serialization.
         """
         state = super().__getstate__()
-        # Never serialize parent_state or substates
         state["__dict__"] = state["__dict__"].copy()
+        if state["__dict__"].get("parent_state") is not None:
+            # Do not serialize router data in substates (only the root state).
+            state["__dict__"].pop("router", None)
+            state["__dict__"].pop("router_data", None)
+        # Never serialize parent_state or substates.
         state["__dict__"]["parent_state"] = None
         state["__dict__"]["substates"] = {}
         state["__dict__"].pop("_was_touched", None)
+        # Remove all inherited vars.
+        for inherited_var_name in self.inherited_vars:
+            state["__dict__"].pop(inherited_var_name, None)
+        return state
+
+    @classmethod
+    @functools.lru_cache()
+    def _to_schema(cls) -> str:
+        """Convert a state to a schema.
+
+        Returns:
+            The hash of the schema.
+        """
+
+        def _field_tuple(
+            field_name: str,
+        ) -> Tuple[str, str, Any, Union[bool, None], Any]:
+            model_field = cls.__fields__[field_name]
+            return (
+                field_name,
+                model_field.name,
+                _serialize_type(model_field.type_),
+                (
+                    model_field.required
+                    if isinstance(model_field.required, bool)
+                    else None
+                ),
+                (model_field.default if is_serializable(model_field.default) else None),
+            )
+
+        return md5(
+            pickle.dumps(
+                list(sorted(_field_tuple(field_name) for field_name in cls.base_vars))
+            )
+        ).hexdigest()
+
+    def _serialize(self) -> bytes:
+        """Serialize the state for redis.
+
+        Returns:
+            The serialized state.
+        """
+        try:
+            return pickle.dumps((self._to_schema(), self))
+        except pickle.PicklingError:
+            console.warn(
+                f"Failed to serialize state {self.get_full_name()} due to unpicklable object. "
+                "This state will not be persisted."
+            )
+            return b""
+
+    @classmethod
+    def _deserialize(
+        cls, data: bytes | None = None, fp: BinaryIO | None = None
+    ) -> BaseState:
+        """Deserialize the state from redis/disk.
+
+        data and fp are mutually exclusive, but one must be provided.
+
+        Args:
+            data: The serialized state data.
+            fp: The file pointer to the serialized state data.
+
+        Returns:
+            The deserialized state.
+
+        Raises:
+            ValueError: If both data and fp are provided, or neither are provided.
+            StateSchemaMismatchError: If the state schema does not match the expected schema.
+        """
+        if data is not None and fp is None:
+            (substate_schema, state) = pickle.loads(data)
+        elif fp is not None and data is None:
+            (substate_schema, state) = pickle.load(fp)
+        else:
+            raise ValueError("Only one of `data` or `fp` must be provided")
+        if substate_schema != state._to_schema():
+            raise StateSchemaMismatchError()
         return state
 
 
@@ -2177,7 +2239,14 @@ class ComponentState(State, mixin=True):
         """
         cls._per_component_state_instance_count += 1
         state_cls_name = f"{cls.__name__}_n{cls._per_component_state_instance_count}"
-        component_state = type(state_cls_name, (cls, State), {}, mixin=False)
+        component_state = type(
+            state_cls_name,
+            (cls, State),
+            {"__module__": reflex.istate.dynamic.__name__},
+            mixin=False,
+        )
+        # Save a reference to the dynamic state for pickle/unpickle.
+        setattr(reflex.istate.dynamic, state_cls_name, component_state)
         component = component_state.get_component(*children, **props)
         component.State = component_state
         return component
@@ -2490,20 +2559,30 @@ class StateManager(Base, ABC):
         Args:
             state: The state class to use.
 
+        Raises:
+            InvalidStateManagerMode: If the state manager mode is invalid.
+
         Returns:
-            The state manager (either memory or redis).
+            The state manager (either disk, memory or redis).
         """
-        redis = prerequisites.get_redis()
-        if redis is not None:
-            # make sure expiration values are obtained only from the config object on creation
-            config = get_config()
-            return StateManagerRedis(
-                state=state,
-                redis=redis,
-                token_expiration=config.redis_token_expiration,
-                lock_expiration=config.redis_lock_expiration,
-            )
-        return StateManagerDisk(state=state)
+        config = get_config()
+        if config.state_manager_mode == constants.StateManagerMode.DISK:
+            return StateManagerMemory(state=state)
+        if config.state_manager_mode == constants.StateManagerMode.MEMORY:
+            return StateManagerDisk(state=state)
+        if config.state_manager_mode == constants.StateManagerMode.REDIS:
+            redis = prerequisites.get_redis()
+            if redis is not None:
+                # make sure expiration values are obtained only from the config object on creation
+                return StateManagerRedis(
+                    state=state,
+                    redis=redis,
+                    token_expiration=config.redis_token_expiration,
+                    lock_expiration=config.redis_lock_expiration,
+                )
+        raise InvalidStateManagerMode(
+            f"Expected one of: DISK, MEMORY, REDIS, got {config.state_manager_mode}"
+        )
 
     @abstractmethod
     async def get_state(self, token: str) -> BaseState:
@@ -2643,38 +2722,9 @@ def is_serializable(value: Any) -> bool:
         Whether the value is serializable.
     """
     try:
-        return bool(dill.dumps(value))
+        return bool(pickle.dumps(value))
     except Exception:
         return False
-
-
-def state_to_schema(
-    state: BaseState,
-) -> List[Tuple[str, str, Any, Union[bool, None], Any]]:
-    """Convert a state to a schema.
-
-    Args:
-        state: The state to convert to a schema.
-
-    Returns:
-        The schema.
-    """
-    return list(
-        sorted(
-            (
-                field_name,
-                model_field.name,
-                _serialize_type(model_field.type_),
-                (
-                    model_field.required
-                    if isinstance(model_field.required, bool)
-                    else None
-                ),
-                (model_field.default if is_serializable(model_field.default) else None),
-            )
-            for field_name, model_field in state.__fields__.items()
-        )
-    )
 
 
 def reset_disk_state_manager():
@@ -2759,34 +2809,23 @@ class StateManagerDisk(StateManager):
             self.states_directory / f"{md5(token.encode()).hexdigest()}.pkl"
         ).absolute()
 
-    async def load_state(self, token: str, root_state: BaseState) -> BaseState:
+    async def load_state(self, token: str) -> BaseState | None:
         """Load a state object based on the provided token.
 
         Args:
             token: The token used to identify the state object.
-            root_state: The root state object.
 
         Returns:
-            The loaded state object.
+            The loaded state object or None.
         """
-        if token in self.states:
-            return self.states[token]
-
-        client_token, substate_address = _split_substate_key(token)
-
         token_path = self.token_path(token)
 
         if token_path.exists():
             try:
                 with token_path.open(mode="rb") as file:
-                    (substate_schema, substate) = dill.load(file)
-                if substate_schema == state_to_schema(substate):
-                    await self.populate_substates(client_token, substate, root_state)
-                    return substate
+                    return BaseState._deserialize(fp=file)
             except Exception:
                 pass
-
-        return root_state.get_substate(substate_address.split(".")[1:])
 
     async def populate_substates(
         self, client_token: str, state: BaseState, root_state: BaseState
@@ -2801,10 +2840,13 @@ class StateManagerDisk(StateManager):
         for substate in state.get_substates():
             substate_token = _substate_key(client_token, substate)
 
-            substate = await self.load_state(substate_token, root_state)
+            instance = await self.load_state(substate_token)
+            if instance is None:
+                instance = await root_state.get_state(substate)
+            state.substates[substate.get_name()] = instance
+            instance.parent_state = state
 
-            state.substates[substate.get_name()] = substate
-            substate.parent_state = state
+            await self.populate_substates(client_token, instance, root_state)
 
     @override
     async def get_state(
@@ -2819,13 +2861,24 @@ class StateManagerDisk(StateManager):
         Returns:
             The state for the token.
         """
-        client_token, substate_address = _split_substate_key(token)
+        client_token = _split_substate_key(token)[0]
+        root_state = self.states.get(client_token)
+        if root_state is not None:
+            # Retrieved state from memory.
+            return root_state
 
-        root_state_token = _substate_key(client_token, substate_address.split(".")[0])
-
-        return await self.load_state(
-            root_state_token, self.state(_reflex_internal_init=True)
-        )
+        # Deserialize root state from disk.
+        root_state = await self.load_state(_substate_key(client_token, self.state))
+        # Create a new root state tree with all substates instantiated.
+        fresh_root_state = self.state(_reflex_internal_init=True)
+        if root_state is None:
+            root_state = fresh_root_state
+        else:
+            # Ensure all substates exist, even if they were not serialized previously.
+            root_state.substates = fresh_root_state.substates
+        self.states[client_token] = root_state
+        await self.populate_substates(client_token, root_state, root_state)
+        return root_state
 
     async def set_state_for_substate(self, client_token: str, substate: BaseState):
         """Set the state for a substate.
@@ -2836,12 +2889,13 @@ class StateManagerDisk(StateManager):
         """
         substate_token = _substate_key(client_token, substate)
 
-        self.states[substate_token] = substate
-
-        state_dilled = dill.dumps((state_to_schema(substate), substate))
-        if not self.states_directory.exists():
-            self.states_directory.mkdir(parents=True, exist_ok=True)
-        self.token_path(substate_token).write_bytes(state_dilled)
+        if substate._get_was_touched():
+            substate._was_touched = False  # Reset the touched flag after serializing.
+            pickle_state = substate._serialize()
+            if pickle_state:
+                if not self.states_directory.exists():
+                    self.states_directory.mkdir(parents=True, exist_ok=True)
+                self.token_path(substate_token).write_bytes(pickle_state)
 
         for substate_substate in substate.substates.values():
             await self.set_state_for_substate(client_token, substate_substate)
@@ -2879,25 +2933,6 @@ class StateManagerDisk(StateManager):
             state = await self.get_state(token)
             yield state
             await self.set_state(token, state)
-
-
-# Workaround https://github.com/cloudpipe/cloudpickle/issues/408 for dynamic pydantic classes
-if not isinstance(State.validate.__func__, FunctionType):
-    cython_function_or_method = type(State.validate.__func__)
-
-    @dill.register(cython_function_or_method)
-    def _dill_reduce_cython_function_or_method(pickler, obj):
-        # Ignore cython function when pickling.
-        pass
-
-
-@dill.register(type(State))
-def _dill_reduce_state(pickler, obj):
-    if obj is not State and issubclass(obj, State):
-        # Avoid serializing subclasses of State, instead get them by reference from the State class.
-        pickler.save_reduce(State.get_class_substate, (obj.get_full_name(),), obj=obj)
-    else:
-        dill.Pickler.dispatch[type](pickler, obj)
 
 
 def _default_lock_expiration() -> int:
@@ -2940,11 +2975,14 @@ class StateManagerRedis(StateManager):
     # Only warn about each state class size once.
     _warned_about_state_size: ClassVar[Set[str]] = set()
 
-    async def _get_parent_state(self, token: str) -> BaseState | None:
+    async def _get_parent_state(
+        self, token: str, state: BaseState | None = None
+    ) -> BaseState | None:
         """Get the parent state for the state requested in the token.
 
         Args:
             token: The token to get the state for (_substate_key).
+            state: The state instance to get parent state for.
 
         Returns:
             The parent state for the state requested by the token or None if there is no such parent.
@@ -2953,11 +2991,15 @@ class StateManagerRedis(StateManager):
         client_token, state_path = _split_substate_key(token)
         parent_state_name = state_path.rpartition(".")[0]
         if parent_state_name:
+            cached_substates = None
+            if state is not None:
+                cached_substates = [state]
             # Retrieve the parent state to populate event handlers onto this substate.
             parent_state = await self.get_state(
                 token=_substate_key(client_token, parent_state_name),
                 top_level=False,
                 get_substates=False,
+                cached_substates=cached_substates,
             )
         return parent_state
 
@@ -2989,6 +3031,8 @@ class StateManagerRedis(StateManager):
         tasks = {}
         # Retrieve the necessary substates from redis.
         for substate_cls in fetch_substates:
+            if substate_cls.get_name() in state.substates:
+                continue
             substate_name = substate_cls.get_name()
             tasks[substate_name] = asyncio.create_task(
                 self.get_state(
@@ -3009,6 +3053,7 @@ class StateManagerRedis(StateManager):
         top_level: bool = True,
         get_substates: bool = True,
         parent_state: BaseState | None = None,
+        cached_substates: list[BaseState] | None = None,
     ) -> BaseState:
         """Get the state for a token.
 
@@ -3017,6 +3062,7 @@ class StateManagerRedis(StateManager):
             top_level: If true, return an instance of the top-level state (self.state).
             get_substates: If true, also retrieve substates.
             parent_state: If provided, use this parent_state instead of getting it from redis.
+            cached_substates: If provided, attach these substates to the state.
 
         Returns:
             The state for the token.
@@ -3034,45 +3080,38 @@ class StateManagerRedis(StateManager):
                 "StateManagerRedis requires token to be specified in the form of {token}_{state_full_name}"
             )
 
+        # The deserialized or newly created (sub)state instance.
+        state = None
+
         # Fetch the serialized substate from redis.
         redis_state = await self.redis.get(token)
 
         if redis_state is not None:
             # Deserialize the substate.
-            state = dill.loads(redis_state)
-
-            # Populate parent state if missing and requested.
-            if parent_state is None:
-                parent_state = await self._get_parent_state(token)
-            # Set up Bidirectional linkage between this state and its parent.
-            if parent_state is not None:
-                parent_state.substates[state.get_name()] = state
-                state.parent_state = parent_state
-            # Populate substates if requested.
-            await self._populate_substates(token, state, all_substates=get_substates)
-
-            # To retain compatibility with previous implementation, by default, we return
-            # the top-level state by chasing `parent_state` pointers up the tree.
-            if top_level:
-                return state._get_root_state()
-            return state
-
-        # TODO: dedupe the following logic with the above block
-        # Key didn't exist so we have to create a new instance for this token.
+            with contextlib.suppress(StateSchemaMismatchError):
+                state = BaseState._deserialize(data=redis_state)
+        if state is None:
+            # Key didn't exist or schema mismatch so create a new instance for this token.
+            state = state_cls(
+                init_substates=False,
+                _reflex_internal_init=True,
+            )
+        # Populate parent state if missing and requested.
         if parent_state is None:
-            parent_state = await self._get_parent_state(token)
-        # Instantiate the new state class (but don't persist it yet).
-        state = state_cls(
-            parent_state=parent_state,
-            init_substates=False,
-            _reflex_internal_init=True,
-        )
+            parent_state = await self._get_parent_state(token, state)
         # Set up Bidirectional linkage between this state and its parent.
         if parent_state is not None:
             parent_state.substates[state.get_name()] = state
             state.parent_state = parent_state
-        # Populate substates for the newly created state.
+        # Avoid fetching substates multiple times.
+        if cached_substates:
+            for substate in cached_substates:
+                state.substates[substate.get_name()] = substate
+                if substate.parent_state is None:
+                    substate.parent_state = state
+        # Populate substates if requested.
         await self._populate_substates(token, state, all_substates=get_substates)
+
         # To retain compatibility with previous implementation, by default, we return
         # the top-level state by chasing `parent_state` pointers up the tree.
         if top_level:
@@ -3151,13 +3190,14 @@ class StateManagerRedis(StateManager):
             )
         # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
         if state._get_was_touched():
-            pickle_state = dill.dumps(state, byref=True)
+            pickle_state = state._serialize()
             self._warn_if_too_large(state, len(pickle_state))
-            await self.redis.set(
-                _substate_key(client_token, state),
-                pickle_state,
-                ex=self.token_expiration,
-            )
+            if pickle_state:
+                await self.redis.set(
+                    _substate_key(client_token, state),
+                    pickle_state,
+                    ex=self.token_expiration,
+                )
 
         # Wait for substates to be persisted.
         for t in tasks:
