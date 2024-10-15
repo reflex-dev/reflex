@@ -1498,6 +1498,7 @@ def var_operation(
         }
 
         return CustomVarOperation.create(
+            name=func.__name__,
             args=tuple(list(args_vars.items()) + list(kwargs_vars.items())),
             return_var=func(*args_vars.values(), **kwargs_vars),  # type: ignore
         ).guess_type()
@@ -2320,6 +2321,8 @@ def var_operation_return(
 class CustomVarOperation(CachedVarOperation, Var[T]):
     """Base class for custom var operations."""
 
+    _name: str = dataclasses.field(default="")
+
     _args: Tuple[Tuple[str, Var], ...] = dataclasses.field(default_factory=tuple)
 
     _return: CustomVarOperationReturn[T] = dataclasses.field(
@@ -2354,6 +2357,7 @@ class CustomVarOperation(CachedVarOperation, Var[T]):
     @classmethod
     def create(
         cls,
+        name: str,
         args: Tuple[Tuple[str, Var], ...],
         return_var: CustomVarOperationReturn[T],
         _var_data: VarData | None = None,
@@ -2361,6 +2365,7 @@ class CustomVarOperation(CachedVarOperation, Var[T]):
         """Create a CustomVarOperation.
 
         Args:
+            name: The name of the operation.
             args: The arguments to the operation.
             return_var: The return var.
             _var_data: Additional hooks and imports associated with the Var.
@@ -2372,6 +2377,7 @@ class CustomVarOperation(CachedVarOperation, Var[T]):
             _js_expr="",
             _var_type=return_var._var_type,
             _var_data=_var_data,
+            _name=name,
             _args=args,
             _return=return_var,
         )
