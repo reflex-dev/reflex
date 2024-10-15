@@ -196,7 +196,7 @@ def get_npm_path() -> str | None:
         The path to the npm binary file.
     """
     npm_path = Path(constants.Node.NPM_PATH)
-    if not npm_path.exists():
+    if use_system_node() or not npm_path.exists():
         return str(which("npm"))
     return str(npm_path)
 
@@ -218,7 +218,7 @@ def update_json_file(file_path: str | Path, update_dict: dict[str, int | str]):
 
     # Read the existing json object from the file.
     json_object = {}
-    if fp.stat().st_size == 0:
+    if fp.stat().st_size:
         with open(fp) as f:
             json_object = json.load(f)
 

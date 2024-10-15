@@ -8,7 +8,7 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
-from reflex.event import EventHandler
+from reflex.event import EventHandler, input_event, key_event
 from reflex.vars.base import Var
 
 from ..base import (
@@ -72,19 +72,19 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
     value: Var[Union[str, int, float]]
 
     # Fired when the value of the textarea changes.
-    on_change: EventHandler[lambda e0: [e0.target.value]]
+    on_change: EventHandler[input_event]
 
     # Fired when the textarea is focused.
-    on_focus: EventHandler[lambda e0: [e0.target.value]]
+    on_focus: EventHandler[input_event]
 
     # Fired when the textarea is blurred.
-    on_blur: EventHandler[lambda e0: [e0.target.value]]
+    on_blur: EventHandler[input_event]
 
     # Fired when a key is pressed down.
-    on_key_down: EventHandler[lambda e0: [e0.key]]
+    on_key_down: EventHandler[key_event]
 
     # Fired when a key is released.
-    on_key_up: EventHandler[lambda e0: [e0.key]]
+    on_key_up: EventHandler[key_event]
 
     @classmethod
     def create(cls, *children, **props) -> Component:

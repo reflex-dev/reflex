@@ -24,6 +24,7 @@ def TestEventAction():
         def on_click(self, ev):
             self.order.append(f"on_click:{ev}")
 
+        @rx.event
         def on_click2(self):
             self.order.append("on_click2")
 

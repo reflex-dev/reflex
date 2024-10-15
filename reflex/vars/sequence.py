@@ -545,7 +545,7 @@ class LiteralStringVar(LiteralVar, StringVar):
     def create(
         cls,
         value: str,
-        _var_type: GenericType | None = str,
+        _var_type: GenericType | None = None,
         _var_data: VarData | None = None,
     ) -> StringVar:
         """Create a var from a string value.
@@ -558,6 +558,9 @@ class LiteralStringVar(LiteralVar, StringVar):
         Returns:
             The var.
         """
+        # Determine var type in case the value is inherited from str.
+        _var_type = _var_type or type(value) or str
+
         if REFLEX_VAR_OPENING_TAG in value:
             strings_and_vals: list[Var | str] = []
             offset = 0

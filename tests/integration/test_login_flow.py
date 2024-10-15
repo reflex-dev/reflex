@@ -21,9 +21,11 @@ def LoginSample():
     class State(rx.State):
         auth_token: str = rx.LocalStorage("")
 
+        @rx.event
         def logout(self):
             self.set_auth_token("")
 
+        @rx.event
         def login(self):
             self.set_auth_token("12345")
             yield rx.redirect("/")

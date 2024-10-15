@@ -9,7 +9,7 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
-from reflex.event import EventHandler
+from reflex.event import EventHandler, identity_event
 from reflex.utils import types
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.sequence import StringVar
@@ -59,7 +59,7 @@ class RadioGroupRoot(RadixThemesComponent):
     _rename_props = {"onChange": "onValueChange"}
 
     # Fired when the value of the radio group changes.
-    on_change: EventHandler[lambda e0: [e0]]
+    on_change: EventHandler[identity_event(str)]
 
 
 class RadioGroupItem(RadixThemesComponent):
@@ -84,7 +84,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
     items: Var[List[str]]
 
     # The direction of the radio group.
-    direction: Var[LiteralFlexDirection] = LiteralVar.create("column")
+    direction: Var[LiteralFlexDirection] = LiteralVar.create("row")
 
     # The gap between the items of the radio group.
     spacing: Var[LiteralSpacing] = LiteralVar.create("2")
@@ -137,7 +137,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
         Raises:
             TypeError: If the type of items is invalid.
         """
-        direction = props.pop("direction", "column")
+        direction = props.pop("direction", "row")
         spacing = props.pop("spacing", "2")
         size = props.pop("size", "2")
         variant = props.pop("variant", "classic")

@@ -36,6 +36,7 @@ from reflex.constants import (
     MemoizationMode,
     PageNames,
 )
+from reflex.constants.compiler import SpecialAttributes
 from reflex.event import (
     EventChain,
     EventChainVar,
@@ -474,6 +475,17 @@ class Component(BaseComponent, ABC):
         for key in kwargs["event_triggers"]:
             del kwargs[key]
 
+        # Place data_ and aria_ attributes into custom_attrs
+        special_attributes = tuple(
+            key
+            for key in kwargs
+            if key not in fields and SpecialAttributes.is_special(key)
+        )
+        if special_attributes:
+            custom_attrs = kwargs.setdefault("custom_attrs", {})
+            for key in special_attributes:
+                custom_attrs[format.to_kebab_case(key)] = kwargs.pop(key)
+
         # Add style props to the component.
         style = kwargs.get("style", {})
         if isinstance(style, List):
@@ -493,8 +505,6 @@ class Component(BaseComponent, ABC):
                 **{attr: value for attr, value in kwargs.items() if attr not in fields},
             }
         )
-        if "custom_attrs" not in kwargs:
-            kwargs["custom_attrs"] = {}
 
         # Convert class_name to str if it's list
         class_name = kwargs.get("class_name", "")

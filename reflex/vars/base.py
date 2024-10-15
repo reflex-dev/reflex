@@ -56,7 +56,7 @@ from reflex.utils.imports import (
     ParsedImportDict,
     parse_imports,
 )
-from reflex.utils.types import GenericType, Self, get_origin
+from reflex.utils.types import GenericType, Self, get_origin, has_args, unionize
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -429,71 +429,75 @@ class Var(Generic[VAR_TYPE]):
             return self.to(EventVar, output)
         if fixed_output_type is EventChain:
             return self.to(EventChainVar, output)
-        if issubclass(fixed_output_type, Base):
-            return self.to(ObjectVar, output)
+        try:
+            if issubclass(fixed_output_type, Base):
+                return self.to(ObjectVar, output)
+        except TypeError:
+            pass
         if dataclasses.is_dataclass(fixed_output_type) and not issubclass(
             fixed_output_type, Var
         ):
             return self.to(ObjectVar, output)
 
-        if issubclass(output, BooleanVar):
-            return ToBooleanVarOperation.create(self)
+        if inspect.isclass(output):
+            if issubclass(output, BooleanVar):
+                return ToBooleanVarOperation.create(self)
 
-        if issubclass(output, NumberVar):
-            if fixed_type is not None:
-                if fixed_type is Union:
-                    inner_types = get_args(base_type)
-                    if not all(issubclass(t, (int, float)) for t in inner_types):
+            if issubclass(output, NumberVar):
+                if fixed_type is not None:
+                    if fixed_type in types.UnionTypes:
+                        inner_types = get_args(base_type)
+                        if not all(issubclass(t, (int, float)) for t in inner_types):
+                            raise TypeError(
+                                f"Unsupported type {var_type} for NumberVar. Must be int or float."
+                            )
+
+                    elif not issubclass(fixed_type, (int, float)):
                         raise TypeError(
                             f"Unsupported type {var_type} for NumberVar. Must be int or float."
                         )
+                return ToNumberVarOperation.create(self, var_type or float)
 
-                elif not issubclass(fixed_type, (int, float)):
+            if issubclass(output, ArrayVar):
+                if fixed_type is not None and not issubclass(
+                    fixed_type, (list, tuple, set)
+                ):
                     raise TypeError(
-                        f"Unsupported type {var_type} for NumberVar. Must be int or float."
+                        f"Unsupported type {var_type} for ArrayVar. Must be list, tuple, or set."
                     )
-            return ToNumberVarOperation.create(self, var_type or float)
+                return ToArrayOperation.create(self, var_type or list)
 
-        if issubclass(output, ArrayVar):
-            if fixed_type is not None and not issubclass(
-                fixed_type, (list, tuple, set)
-            ):
-                raise TypeError(
-                    f"Unsupported type {var_type} for ArrayVar. Must be list, tuple, or set."
+            if issubclass(output, StringVar):
+                return ToStringOperation.create(self, var_type or str)
+
+            if issubclass(output, EventVar):
+                return ToEventVarOperation.create(self, var_type or EventSpec)
+
+            if issubclass(output, EventChainVar):
+                return ToEventChainVarOperation.create(self, var_type or EventChain)
+
+            if issubclass(output, (ObjectVar, Base)):
+                return ToObjectOperation.create(self, var_type or dict)
+
+            if issubclass(output, FunctionVar):
+                # if fixed_type is not None and not issubclass(fixed_type, Callable):
+                #     raise TypeError(
+                #         f"Unsupported type {var_type} for FunctionVar. Must be Callable."
+                #     )
+                return ToFunctionOperation.create(self, var_type or Callable)
+
+            if issubclass(output, NoneVar):
+                return ToNoneOperation.create(self)
+
+            if dataclasses.is_dataclass(output):
+                return ToObjectOperation.create(self, var_type or dict)
+
+            # If we can't determine the first argument, we just replace the _var_type.
+            if not issubclass(output, Var) or var_type is None:
+                return dataclasses.replace(
+                    self,
+                    _var_type=output,
                 )
-            return ToArrayOperation.create(self, var_type or list)
-
-        if issubclass(output, StringVar):
-            return ToStringOperation.create(self, var_type or str)
-
-        if issubclass(output, EventVar):
-            return ToEventVarOperation.create(self, var_type or EventSpec)
-
-        if issubclass(output, EventChainVar):
-            return ToEventChainVarOperation.create(self, var_type or EventChain)
-
-        if issubclass(output, (ObjectVar, Base)):
-            return ToObjectOperation.create(self, var_type or dict)
-
-        if issubclass(output, FunctionVar):
-            # if fixed_type is not None and not issubclass(fixed_type, Callable):
-            #     raise TypeError(
-            #         f"Unsupported type {var_type} for FunctionVar. Must be Callable."
-            #     )
-            return ToFunctionOperation.create(self, var_type or Callable)
-
-        if issubclass(output, NoneVar):
-            return ToNoneOperation.create(self)
-
-        if dataclasses.is_dataclass(output):
-            return ToObjectOperation.create(self, var_type or dict)
-
-        # If we can't determine the first argument, we just replace the _var_type.
-        if not issubclass(output, Var) or var_type is None:
-            return dataclasses.replace(
-                self,
-                _var_type=output,
-            )
 
         # We couldn't determine the output type to be any other Var type, so we replace the _var_type.
         if var_type is not None:
@@ -530,7 +534,7 @@ class Var(Generic[VAR_TYPE]):
 
         fixed_type = get_origin(var_type) or var_type
 
-        if fixed_type is Union:
+        if fixed_type in types.UnionTypes:
             inner_types = get_args(var_type)
 
             if all(
@@ -568,8 +572,11 @@ class Var(Generic[VAR_TYPE]):
             return self.to(EventVar, self._var_type)
         if issubclass(fixed_type, EventChain):
             return self.to(EventChainVar, self._var_type)
-        if issubclass(fixed_type, Base):
-            return self.to(ObjectVar, self._var_type)
+        try:
+            if issubclass(fixed_type, Base):
+                return self.to(ObjectVar, self._var_type)
+        except TypeError:
+            pass
         if dataclasses.is_dataclass(fixed_type):
             return self.to(ObjectVar, self._var_type)
         return self
@@ -1237,26 +1244,6 @@ def var_operation(
     return wrapper
 
 
-def unionize(*args: Type) -> Type:
-    """Unionize the types.
-
-    Args:
-        args: The types to unionize.
-
-    Returns:
-        The unionized types.
-    """
-    if not args:
-        return Any
-    if len(args) == 1:
-        return args[0]
-    # We are bisecting the args list here to avoid hitting the recursion limit
-    # In Python versions >= 3.11, we can simply do `return Union[*args]`
-    midpoint = len(args) // 2
-    first_half, second_half = args[:midpoint], args[midpoint:]
-    return Union[unionize(*first_half), unionize(*second_half)]
-
-
 def figure_out_type(value: Any) -> types.GenericType:
     """Figure out the type of the value.
 
@@ -1266,6 +1253,11 @@ def figure_out_type(value: Any) -> types.GenericType:
     Returns:
         The type of the value.
     """
+    if isinstance(value, Var):
+        return value._var_type
+    type_ = type(value)
+    if has_args(type_):
+        return type_
     if isinstance(value, list):
         return List[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, set):
@@ -1277,8 +1269,6 @@ def figure_out_type(value: Any) -> types.GenericType:
             unionize(*(figure_out_type(k) for k in value)),
             unionize(*(figure_out_type(v) for v in value.values())),
         ]
-    if isinstance(value, Var):
-        return value._var_type
     return type(value)
 
 

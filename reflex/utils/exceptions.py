@@ -5,6 +5,14 @@ class ReflexError(Exception):
     """Base exception for all Reflex exceptions."""
 
 
+class ConfigError(ReflexError):
+    """Custom exception for config related errors."""
+
+
+class InvalidStateManagerMode(ReflexError, ValueError):
+    """Raised when an invalid state manager mode is provided."""
+
+
 class ReflexRuntimeError(ReflexError, RuntimeError):
     """Custom RuntimeError for Reflex."""
 

@@ -14,16 +14,19 @@ def ServerSideEvent():
     import reflex as rx
 
     class SSState(rx.State):
+        @rx.event
         def set_value_yield(self):
             yield rx.set_value("a", "")
             yield rx.set_value("b", "")
             yield rx.set_value("c", "")
 
+        @rx.event
         def set_value_yield_return(self):
             yield rx.set_value("a", "")
             yield rx.set_value("b", "")
             return rx.set_value("c", "")
 
+        @rx.event
         def set_value_return(self):
             return [
                 rx.set_value("a", ""),
@@ -31,6 +34,7 @@ def ServerSideEvent():
                 rx.set_value("c", ""),
             ]
 
+        @rx.event
         def set_value_return_c(self):
             return rx.set_value("c", "")
 

@@ -1291,19 +1291,19 @@ def test_computed_var_depends_on_parent_non_cached():
     assert ps.dirty_vars == set()
     assert cs.dirty_vars == set()
 
-    dict1 = ps.dict()
+    dict1 = json.loads(json_dumps(ps.dict()))
     assert dict1[ps.get_full_name()] == {
         "no_cache_v": 1,
         "router": formatted_router,
     }
     assert dict1[cs.get_full_name()] == {"dep_v": 2}
-    dict2 = ps.dict()
+    dict2 = json.loads(json_dumps(ps.dict()))
     assert dict2[ps.get_full_name()] == {
         "no_cache_v": 3,
         "router": formatted_router,
     }
     assert dict2[cs.get_full_name()] == {"dep_v": 4}
-    dict3 = ps.dict()
+    dict3 = json.loads(json_dumps(ps.dict()))
     assert dict3[ps.get_full_name()] == {
         "no_cache_v": 5,
         "router": formatted_router,
@@ -2503,7 +2503,10 @@ def test_mutable_copy_vars(mutable_state: MutableTestState, copy_func: Callable)
 
 
 def test_duplicate_substate_class(mocker):
+    # Neuter pytest escape hatch, because we want to test duplicate detection.
     mocker.patch("reflex.state.is_testing_env", lambda: False)
+    # Neuter <locals> state handling since these _are_ defined inside a function.
+    mocker.patch("reflex.state.BaseState._handle_local_def", lambda: None)
     with pytest.raises(ValueError):
 
         class TestState(BaseState):
@@ -3202,6 +3205,7 @@ import reflex as rx
 config = rx.Config(
     app_name="project1",
     redis_url="redis://localhost:6379",
+    state_manager_mode="redis",
     {config_items}
 )
 """

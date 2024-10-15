@@ -8,23 +8,26 @@ import sys
 import types
 import urllib.parse
 from base64 import b64encode
+from functools import partial
 from typing import (
     Any,
     Callable,
     ClassVar,
     Dict,
+    Generic,
     List,
     Optional,
     Tuple,
     Type,
+    TypeVar,
     Union,
     get_type_hints,
 )
 
-from typing_extensions import get_args, get_origin
+from typing_extensions import ParamSpec, get_args, get_origin
 
 from reflex import constants
-from reflex.utils import format
+from reflex.utils import console, format
 from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
 from reflex.utils.types import ArgsSpec, GenericType
 from reflex.vars import VarData
@@ -389,6 +392,8 @@ class EventChain(EventActionsMixin):
 
     args_spec: Optional[Callable] = dataclasses.field(default=None)
 
+    invocation: Optional[Var] = dataclasses.field(default=None)
+
 
 # These chains can be used for their side effects when no other events are desired.
 stop_propagation = EventChain(events=[], args_spec=lambda: []).stop_propagation
@@ -399,23 +404,95 @@ prevent_default = EventChain(events=[], args_spec=lambda: []).prevent_default
     init=True,
     frozen=True,
 )
-class Target:
-    """A Javascript event target."""
+class JavascriptHTMLInputElement:
+    """Interface for a Javascript HTMLInputElement https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement."""
 
-    checked: bool = False
-    value: Any = None
+    value: str = ""
 
 
 @dataclasses.dataclass(
     init=True,
     frozen=True,
 )
-class FrontendEvent:
-    """A Javascript event."""
+class JavascriptInputEvent:
+    """Interface for a Javascript InputEvent https://developer.mozilla.org/en-US/docs/Web/API/InputEvent."""
 
-    target: Target = Target()
+    target: JavascriptHTMLInputElement = JavascriptHTMLInputElement()
+
+
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
+class JavasciptKeyboardEvent:
+    """Interface for a Javascript KeyboardEvent https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent."""
+
     key: str = ""
-    value: Any = None
+
+
+def input_event(e: Var[JavascriptInputEvent]) -> Tuple[Var[str]]:
+    """Get the value from an input event.
+
+    Args:
+        e: The input event.
+
+    Returns:
+        The value from the input event.
+    """
+    return (e.target.value,)
+
+
+def key_event(e: Var[JavasciptKeyboardEvent]) -> Tuple[Var[str]]:
+    """Get the key from a keyboard event.
+
+    Args:
+        e: The keyboard event.
+
+    Returns:
+        The key from the keyboard event.
+    """
+    return (e.key,)
+
+
+def empty_event() -> Tuple[()]:
+    """Empty event handler.
+
+    Returns:
+        An empty tuple.
+    """
+    return tuple()  # type: ignore
+
+
+T = TypeVar("T")
+
+
+def identity_event(event_type: Type[T]) -> Callable[[Var[T]], Tuple[Var[T]]]:
+    """A helper function that returns the input event as output.
+
+    Args:
+        event_type: The type of the event.
+
+    Returns:
+        A function that returns the input event as output.
+    """
+
+    def inner(ev: Var[T]) -> Tuple[Var[T]]:
+        return (ev,)
+
+    inner.__signature__ = inspect.signature(inner).replace(  # type: ignore
+        parameters=[
+            inspect.Parameter(
+                "ev",
+                kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                annotation=Var[event_type],
+            )
+        ],
+        return_annotation=Tuple[Var[event_type]],
+    )
+    inner.__annotations__["ev"] = Var[event_type]
+    inner.__annotations__["return"] = Tuple[Var[event_type]]
+
+    return inner
 
 
 @dataclasses.dataclass(
@@ -946,6 +1023,28 @@ def unwrap_var_annotation(annotation: GenericType):
     return annotation
 
 
+def resolve_annotation(annotations: dict[str, Any], arg_name: str):
+    """Resolve the annotation for the given argument name.
+
+    Args:
+        annotations: The annotations.
+        arg_name: The argument name.
+
+    Returns:
+        The resolved annotation.
+    """
+    annotation = annotations.get(arg_name)
+    if annotation is None:
+        console.deprecate(
+            feature_name="Unannotated event handler arguments",
+            reason="Provide type annotations for event handler arguments.",
+            deprecation_version="0.6.3",
+            removal_version="0.7.0",
+        )
+        return JavascriptInputEvent
+    return annotation
+
+
 def parse_args_spec(arg_spec: ArgsSpec):
     """Parse the args provided in the ArgsSpec of an event trigger.
 
@@ -958,13 +1057,15 @@ def parse_args_spec(arg_spec: ArgsSpec):
     spec = inspect.getfullargspec(arg_spec)
     annotations = get_type_hints(arg_spec)
 
-    return arg_spec(
-        *[
-            Var(f"_{l_arg}").to(
-                unwrap_var_annotation(annotations.get(l_arg, FrontendEvent))
-            )
-            for l_arg in spec.args
-        ]
+    return list(
+        arg_spec(
+            *[
+                Var(f"_{l_arg}").to(
+                    unwrap_var_annotation(resolve_annotation(annotations, l_arg))
+                )
+                for l_arg in spec.args
+            ]
+        )
     )
 
 
@@ -1261,10 +1362,15 @@ class LiteralEventChainVar(CachedVarOperation, LiteralVar, EventChainVar):
             arg_def = ("...args",)
             arg_def_expr = Var(_js_expr="args")
 
+        if self._var_value.invocation is None:
+            invocation = FunctionStringVar.create("addEvents")
+        else:
+            invocation = self._var_value.invocation
+
         return str(
             ArgsFunctionOperation.create(
                 arg_def,
-                FunctionStringVar.create("addEvents").call(
+                invocation.call(
                     LiteralVar.create(
                         [LiteralVar.create(event) for event in self._var_value.events]
                     ),
@@ -1321,3 +1427,116 @@ class ToEventChainVarOperation(ToOperation, EventChainVar):
     _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
 
     _default_var_type: ClassVar[Type] = EventChain
+
+
+G = ParamSpec("G")
+
+IndividualEventType = Union[EventSpec, EventHandler, Callable[G, Any], Var]
+
+EventType = Union[IndividualEventType[G], List[IndividualEventType[G]]]
+
+P = ParamSpec("P")
+T = TypeVar("T")
+
+if sys.version_info >= (3, 10):
+    from typing import Concatenate
+
+    class EventCallback(Generic[P, T]):
+        """A descriptor that wraps a function to be used as an event."""
+
+        def __init__(self, func: Callable[Concatenate[Any, P], T]):
+            """Initialize the descriptor with the function to be wrapped.
+
+            Args:
+                func: The function to be wrapped.
+            """
+            self.func = func
+
+        def __get__(self, instance, owner) -> Callable[P, T]:
+            """Get the function with the instance bound to it.
+
+            Args:
+                instance: The instance to bind to the function.
+                owner: The owner of the function.
+
+            Returns:
+                The function with the instance bound to it
+            """
+            if instance is None:
+                return self.func  # type: ignore
+
+            return partial(self.func, instance)  # type: ignore
+
+    def event_handler(func: Callable[Concatenate[Any, P], T]) -> EventCallback[P, T]:
+        """Wrap a function to be used as an event.
+
+        Args:
+            func: The function to wrap.
+
+        Returns:
+            The wrapped function.
+        """
+        return func  # type: ignore
+else:
+
+    def event_handler(func: Callable[P, T]) -> Callable[P, T]:
+        """Wrap a function to be used as an event.
+
+        Args:
+            func: The function to wrap.
+
+        Returns:
+            The wrapped function.
+        """
+        return func
+
+
+class EventNamespace(types.SimpleNamespace):
+    """A namespace for event related classes."""
+
+    Event = Event
+    EventHandler = EventHandler
+    EventSpec = EventSpec
+    CallableEventSpec = CallableEventSpec
+    EventChain = EventChain
+    EventVar = EventVar
+    LiteralEventVar = LiteralEventVar
+    EventChainVar = EventChainVar
+    LiteralEventChainVar = LiteralEventChainVar
+    ToEventVarOperation = ToEventVarOperation
+    ToEventChainVarOperation = ToEventChainVarOperation
+    EventType = EventType
+
+    __call__ = staticmethod(event_handler)
+    get_event = staticmethod(get_event)
+    get_hydrate_event = staticmethod(get_hydrate_event)
+    fix_events = staticmethod(fix_events)
+    call_event_handler = staticmethod(call_event_handler)
+    call_event_fn = staticmethod(call_event_fn)
+    get_handler_args = staticmethod(get_handler_args)
+    check_fn_match_arg_spec = staticmethod(check_fn_match_arg_spec)
+    resolve_annotation = staticmethod(resolve_annotation)
+    parse_args_spec = staticmethod(parse_args_spec)
+    identity_event = staticmethod(identity_event)
+    input_event = staticmethod(input_event)
+    key_event = staticmethod(key_event)
+    empty_event = staticmethod(empty_event)
+    server_side = staticmethod(server_side)
+    redirect = staticmethod(redirect)
+    console_log = staticmethod(console_log)
+    back = staticmethod(back)
+    window_alert = staticmethod(window_alert)
+    set_focus = staticmethod(set_focus)
+    scroll_to = staticmethod(scroll_to)
+    set_value = staticmethod(set_value)
+    remove_cookie = staticmethod(remove_cookie)
+    clear_local_storage = staticmethod(clear_local_storage)
+    remove_local_storage = staticmethod(remove_local_storage)
+    clear_session_storage = staticmethod(clear_session_storage)
+    remove_session_storage = staticmethod(remove_session_storage)
+    set_clipboard = staticmethod(set_clipboard)
+    download = staticmethod(download)
+    call_script = staticmethod(call_script)
+
+
+event = EventNamespace()
