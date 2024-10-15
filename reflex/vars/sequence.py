@@ -46,7 +46,6 @@ from .base import (
 )
 from .number import (
     BooleanVar,
-    LiteralBooleanVar,
     LiteralNumberVar,
     NumberVar,
     raise_unsupported_operand_types,
@@ -1698,7 +1697,7 @@ class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
         alpha = self._var_value.alpha
         alpha = (
             ternary_operation(
-                LiteralBooleanVar.create(alpha),
+                alpha,
                 LiteralStringVar.create("a"),
                 LiteralStringVar.create("False"),
             )
