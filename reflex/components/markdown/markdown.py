@@ -20,6 +20,9 @@ from reflex.components.tags.tag import Tag
 from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import LiteralVar, Var
+from reflex.vars.sequence import string_ternary_operation
+from reflex.vars.function import ARRAY_ISARRAY
+
 
 # Special vars used in the component map.
 _CHILDREN = Var(_js_expr="children", _var_type=str)
@@ -199,7 +202,7 @@ class Markdown(Component):
             raise ValueError(f"No markdown component found for tag: {tag}.")
 
         special_props = [_PROPS_IN_TAG]
-        children = [_CHILDREN]
+        children = [_CHILDREN if not tag == "codeblock" else string_ternary_operation(ARRAY_ISARRAY.call(_CHILDREN), _CHILDREN.to(LiteralVar)[0], _CHILDREN)]
 
         # For certain tags, the props from the markdown renderer are not actually valid for the component.
         if tag in NO_PROPS_TAGS:
