@@ -1015,17 +1015,23 @@ def call_event_handler(
             "See https://reflex.dev/docs/events/event-arguments/"
         )
 
-    def compare_types(specific_type, accepted_type):
+    def compare_types(provided_type, accepted_type):
         # Check if both are generic types (e.g., List)
-        if get_origin(specific_type) != get_origin(accepted_type):
+        if (get_origin(provided_type) or provided_type) != (
+            get_origin(accepted_type) or accepted_type
+        ):
             return False
 
         # Get type arguments (e.g., int vs. Union[float, int])
-        specific_args = get_args(specific_type)
+        provided_args = get_args(provided_type)
         accepted_args = get_args(accepted_type)
 
         # Ensure all specific types are compatible with accepted types
-        return all(issubclass(s, a) for s, a in zip(specific_args, accepted_args))
+        return all(
+            issubclass(provided_arg, accepted_arg)
+            for provided_arg, accepted_arg in zip(provided_args, accepted_args)
+            if accepted_arg is not Any
+        )
 
     event_spec_return_type = get_type_hints(arg_spec).get("return", None)
 
