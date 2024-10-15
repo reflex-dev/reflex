@@ -1699,7 +1699,7 @@ class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
             ternary_operation(
                 alpha,
                 LiteralStringVar.create("a"),
-                LiteralStringVar.create("False"),
+                LiteralStringVar.create(""),
             )
             if isinstance(alpha, Var)
             else LiteralStringVar.create("a" if alpha else "")
