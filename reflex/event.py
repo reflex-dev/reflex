@@ -32,14 +32,17 @@ from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
 from reflex.utils.types import ArgsSpec, GenericType
 from reflex.vars import VarData
 from reflex.vars.base import (
-    CachedVarOperation,
     LiteralNoneVar,
     LiteralVar,
     ToOperation,
     Var,
-    cached_property_no_lock,
 )
-from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar, FunctionVar
+from reflex.vars.function import (
+    ArgsFunctionOperation,
+    FunctionStringVar,
+    FunctionVar,
+    VarOperationCall,
+)
 from reflex.vars.object import ObjectVar
 
 try:
@@ -1258,7 +1261,7 @@ class EventVar(ObjectVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class LiteralEventVar(CachedVarOperation, LiteralVar, EventVar):
+class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
     """A literal event var."""
 
     _var_value: EventSpec = dataclasses.field(default=None)  # type: ignore
@@ -1270,35 +1273,6 @@ class LiteralEventVar(CachedVarOperation, LiteralVar, EventVar):
             The hash of the var.
         """
         return hash((self.__class__.__name__, self._js_expr))
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return str(
-            FunctionStringVar("Event").call(
-                # event handler name
-                ".".join(
-                    filter(
-                        None,
-                        format.get_event_handler_parts(self._var_value.handler),
-                    )
-                ),
-                # event handler args
-                {str(name): value for name, value in self._var_value.args},
-                # event actions
-                self._var_value.event_actions,
-                # client handler name
-                *(
-                    [self._var_value.client_handler_name]
-                    if self._var_value.client_handler_name
-                    else []
-                ),
-            )
-        )
 
     @classmethod
     def create(
@@ -1320,6 +1294,22 @@ class LiteralEventVar(CachedVarOperation, LiteralVar, EventVar):
             _var_type=EventSpec,
             _var_data=_var_data,
             _var_value=value,
+            _func=FunctionStringVar("Event"),
+            _args=(
+                # event handler name
+                ".".join(
+                    filter(
+                        None,
+                        format.get_event_handler_parts(value.handler),
+                    )
+                ),
+                # event handler args
+                {str(name): value for name, value in value.args},
+                # event actions
+                value.event_actions,
+                # client handler name
+                *([value.client_handler_name] if value.client_handler_name else []),
+            ),
         )
 
 
