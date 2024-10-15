@@ -37,8 +37,8 @@ def create_color_var(color):
         ),
         (
             create_color_var(
-                rx.color(ColorState.color, ColorState.shade, ColorState.alpha)
-            ),  # type: ignore
+                rx.color(ColorState.color, ColorState.shade, ColorState.alpha)  # type: ignore
+            ),
             f'("var(--"+{str(color_state_name)}.color+"-"+({str(color_state_name)}.alpha ? "a" : "")+(((__to_string) => __to_string.toString())({str(color_state_name)}.shade))+")")',
             Color,
         ),
