@@ -1019,9 +1019,16 @@ def call_event_handler(
         )
 
     def compare_types(provided_type, accepted_type):
+        provided_type_origin = get_origin(provided_type)
+        accepted_type_origin = get_origin(accepted_type)
+
+        if provided_type_origin is None and accepted_type_origin is None:
+            # Check if both are concrete types (e.g., int)
+            return issubclass(provided_type, accepted_type)
+
         # Check if both are generic types (e.g., List)
-        if (get_origin(provided_type) or provided_type) != (
-            get_origin(accepted_type) or accepted_type
+        if (provided_type_origin or provided_type) != (
+            accepted_type_origin or accepted_type
         ):
             return False
 
