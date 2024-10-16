@@ -309,6 +309,7 @@ LiteralCodeTheme = Literal[
     "nord",
     "one-dark-pro",
     "one-light",
+    "plain",
     "plastic",
     "poimandres",
     "red",
@@ -815,6 +816,7 @@ class ShikiCodeBlock(Component):
                     "nord",
                     "one-dark-pro",
                     "one-light",
+                    "plain",
                     "plastic",
                     "poimandres",
                     "red",
@@ -869,6 +871,7 @@ class ShikiCodeBlock(Component):
                         "nord",
                         "one-dark-pro",
                         "one-light",
+                        "plain",
                         "plastic",
                         "poimandres",
                         "red",
@@ -981,10 +984,12 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
     def create(  # type: ignore
         cls,
         *children,
-        can_copy: Optional[bool] = False,
-        copy_button: Optional[Union[Component, bool]] = None,
         use_transformers: Optional[Union[Var[bool], bool]] = None,
         show_line_numbers: Optional[Union[Var[bool], bool]] = None,
+        can_copy: Optional[Union[Var[bool], bool]] = None,
+        copy_button: Optional[
+            Union[Component, Var[Optional[Union[Component, bool]]], bool]
+        ] = None,
         language: Optional[
             Union[
                 Literal[
@@ -1456,6 +1461,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                     "nord",
                     "one-dark-pro",
                     "one-light",
+                    "plain",
                     "plastic",
                     "poimandres",
                     "red",
@@ -1510,6 +1516,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                         "nord",
                         "one-dark-pro",
                         "one-light",
+                        "plain",
                         "plastic",
                         "poimandres",
                         "red",
@@ -1592,10 +1599,10 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
 
         Args:
             *children: The children of the component.
-            can_copy: Whether a copy button should appear.
-            copy_button: A custom copy button to override the default one.
             use_transformers: If this is enabled, the default transformers(shikijs transformer) will be used.
             show_line_numbers: If this is enabled line numbers will be shown next to the code block.
+            can_copy: Whether a copy button should appear.
+            copy_button: copy_button: A custom copy button to override the default one.
             language: The language to use.
             theme: The theme to use ("light" or "dark").
             themes: The set of themes to use for different modes.
@@ -1625,10 +1632,12 @@ class CodeblockNamespace(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        can_copy: Optional[bool] = False,
-        copy_button: Optional[Union[Component, bool]] = None,
         use_transformers: Optional[Union[Var[bool], bool]] = None,
         show_line_numbers: Optional[Union[Var[bool], bool]] = None,
+        can_copy: Optional[Union[Var[bool], bool]] = None,
+        copy_button: Optional[
+            Union[Component, Var[Optional[Union[Component, bool]]], bool]
+        ] = None,
         language: Optional[
             Union[
                 Literal[
@@ -2100,6 +2109,7 @@ class CodeblockNamespace(ComponentNamespace):
                     "nord",
                     "one-dark-pro",
                     "one-light",
+                    "plain",
                     "plastic",
                     "poimandres",
                     "red",
@@ -2154,6 +2164,7 @@ class CodeblockNamespace(ComponentNamespace):
                         "nord",
                         "one-dark-pro",
                         "one-light",
+                        "plain",
                         "plastic",
                         "poimandres",
                         "red",
@@ -2236,10 +2247,10 @@ class CodeblockNamespace(ComponentNamespace):
 
         Args:
             *children: The children of the component.
-            can_copy: Whether a copy button should appear.
-            copy_button: A custom copy button to override the default one.
             use_transformers: If this is enabled, the default transformers(shikijs transformer) will be used.
             show_line_numbers: If this is enabled line numbers will be shown next to the code block.
+            can_copy: Whether a copy button should appear.
+            copy_button: copy_button: A custom copy button to override the default one.
             language: The language to use.
             theme: The theme to use ("light" or "dark").
             themes: The set of themes to use for different modes.

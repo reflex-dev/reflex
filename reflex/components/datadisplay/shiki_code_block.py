@@ -670,10 +670,10 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
     show_line_numbers: Var[bool]
 
     # Whether a copy button should appear.
-    can_copy: Var[bool] = False
+    can_copy: Var[bool] = Var.create(False)
 
     # copy_button: A custom copy button to override the default one.
-    copy_button: Var[Optional[Union[Component | bool]]] = None
+    copy_button: Var[Optional[Union[Component, bool]]] = Var.create(None)
 
     @classmethod
     def create(
