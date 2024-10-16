@@ -54,6 +54,12 @@ def test_state():
         def do_something_with_int(self, arg: int):
             pass
 
+        def do_something_with_list_int(self, arg: List[int]):
+            pass
+
+        def do_something_with_list_str(self, arg: List[str]):
+            pass
+
     return TestState
 
 
@@ -109,6 +115,7 @@ def component2() -> Type[Component]:
                 "on_open": identity_event(bool),
                 "on_close": identity_event(bool),
                 "on_user_visited_count_changed": identity_event(int),
+                "on_user_list_changed": identity_event(List[str]),
             }
 
         def _get_imports(self) -> ParsedImportDict:
@@ -594,7 +601,13 @@ def test_get_event_triggers(component1, component2):
     assert component1().get_event_triggers().keys() == default_triggers
     assert (
         component2().get_event_triggers().keys()
-        == {"on_open", "on_close", "on_prop_event", "on_user_visited_count_changed"}
+        == {
+            "on_open",
+            "on_close",
+            "on_prop_event",
+            "on_user_visited_count_changed",
+            "on_user_list_changed",
+        }
         | default_triggers
     )
 
@@ -936,10 +949,15 @@ def test_invalid_event_handler_args(component2, test_state):
         component2.create(
             on_user_visited_count_changed=test_state.do_something_with_bool
         )
+    with pytest.raises(EventHandlerArgTypeMismatch):
+        component2.create(on_user_list_changed=test_state.do_something_with_int)
+    with pytest.raises(EventHandlerArgTypeMismatch):
+        component2.create(on_user_list_changed=test_state.do_something_with_list_int)
 
     component2.create(on_open=test_state.do_something_with_int)
     component2.create(on_open=test_state.do_something_with_bool)
     component2.create(on_user_visited_count_changed=test_state.do_something_with_int)
+    component2.create(on_user_list_changed=test_state.do_something_with_list_str)
 
     # lambda cannot return weird values.
     with pytest.raises(ValueError):
