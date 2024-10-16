@@ -548,24 +548,6 @@ def string_replace_operation(
         var_type=str,
     )
 
-def string_ternary_operation(condition, true_operation, false_operation):
-    """
-    This function generates the JavaScript ternary operation as a string.
-
-    Parameters:
-    condition: The condition for the ternary operation.
-    true_operation: The operation if the condition is true.
-    false_operation: The operation if the condition is false.
-
-    Returns:
-        A string representing the JavaScript ternary operation.
-    """
-    return var_operation_return(
-        js_expression=f"({condition} ? {true_operation} : {false_operation})",
-        var_type=str,
-    )
-
-
 
 # Compile regex for finding reflex var tags.
 _decode_var_pattern_re = (

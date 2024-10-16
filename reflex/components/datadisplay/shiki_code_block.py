@@ -363,6 +363,7 @@ LiteralCodeTheme = Literal[
     "nord",
     "one-dark-pro",
     "one-light",
+    "plain",
     "plastic",
     "poimandres",
     "red",
@@ -668,20 +669,22 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
     # If this is enabled line numbers will be shown next to the code block.
     show_line_numbers: Var[bool]
 
+    # Whether a copy button should appear.
+    can_copy: Var[bool] = False
+
+    # copy_button: A custom copy button to override the default one.
+    copy_button: Var[Optional[Union[Component | bool]]] = None
+
     @classmethod
     def create(
         cls,
         *children,
-        can_copy: bool | None = False,
-        copy_button: bool | Component | None = None,
         **props,
     ) -> Component:
         """Create a code block component using [shiki syntax highlighter](https://shiki.matsu.io/).
 
         Args:
             *children: The children of the component.
-            can_copy: Whether a copy button should appear.
-            copy_button: A custom copy button to override the default one.
             **props: The props to pass to the component.
 
         Returns:
@@ -690,6 +693,8 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
         use_transformers = props.pop("use_transformers", False)
         show_line_numbers = props.pop("show_line_numbers", False)
         language = props.pop("language", None)
+        can_copy = props.pop("can_copy", False)
+        copy_button = props.pop("copy_button", None)
 
         if use_transformers:
             props["transformers"] = [ShikiJsTransformer()]
@@ -704,7 +709,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
         theme = props.pop("theme", None)
         props["theme"] = props["theme"] = (
             cls._map_themes(theme)
-            if theme
+            if theme is not None
             else color_mode_cond(  # Default color scheme responds to global color mode.
                 light="one-light",
                 dark="one-dark-pro",
@@ -751,8 +756,6 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                     ),
                 )
             )
-        else:
-            copy_button = None
 
         if copy_button:
             return ShikiCodeBlock.create(
