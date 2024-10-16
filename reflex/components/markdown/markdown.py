@@ -205,9 +205,9 @@ class Markdown(Component):
             _CHILDREN
             if tag != "codeblock"
             else ternary_operation(
-                ARRAY_ISARRAY.call(_CHILDREN),
+                ARRAY_ISARRAY.call(_CHILDREN),  # type: ignore
                 _CHILDREN.to(list)[0],
-                _CHILDREN,  # type: ignore
+                _CHILDREN,
             ).to(str)
         ]
 
