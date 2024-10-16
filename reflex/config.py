@@ -155,6 +155,56 @@ def get_default_value_for_field(field: dataclasses.Field) -> Any:
         )
 
 
+def interpret_boolean_env(value: str) -> bool:
+    """Interpret a boolean environment variable value.
+
+    Args:
+        value: The environment variable value.
+
+    Returns:
+        The interpreted value.
+
+    Raises:
+        ValueError: If the value is invalid.
+    """
+    true_values = ["true", "1", "yes"]
+    false_values = ["false", "0", "no"]
+
+    if value.lower() in true_values:
+        return True
+    elif value.lower() in false_values:
+        return False
+    else:
+        raise ValueError(f"Invalid boolean value: {value}")
+
+
+def interpret_env_var_value(value: str, field: dataclasses.Field) -> Any:
+    """Interpret an environment variable value based on the field type.
+
+    Args:
+        value: The environment variable value.
+        field: The field.
+
+    Returns:
+        The interpreted value.
+
+    Raises:
+        ValueError: If the value is invalid.
+    """
+    field_type = value_inside_optional(field.type)
+
+    if field_type is bool:
+        return interpret_boolean_env(value)
+
+    elif field_type is str:
+        return value
+
+    else:
+        raise ValueError(
+            f"Invalid type for environment variable {field.name}: {field_type}. This is probably an issue in Reflex."
+        )
+
+
 @dataclasses.dataclass(init=False)
 class EnvironmentVariables:
     """Environment variables class to instantiate environment variables."""
@@ -168,40 +218,11 @@ class EnvironmentVariables:
     def __init__(self):
         """Initialize the environment variables."""
         for field in dataclasses.fields(self):
-            field_name = field.name
+            raw_value = os.getenv(field.name, None)
 
-            field_type = value_inside_optional(field.type)
+            value = interpret_env_var_value(raw_value, field) if raw_value else None
 
-            if field_type is bool:
-                true_values = ["true", "1", "yes"]
-                false_values = ["false", "0", "no"]
-
-                value = os.getenv(field_name, None)
-
-                if value is not None:
-                    if value.lower() in true_values:
-                        value = True
-                    elif value.lower() in false_values:
-                        value = False
-                    else:
-                        raise ValueError(
-                            f"Invalid value for environment variable {field_name}: {value}"
-                        )
-                else:
-                    value = get_default_value_for_field(field)
-
-            elif field_type is str:
-                value = os.getenv(field_name, None)
-
-                if value is None:
-                    value = get_default_value_for_field(field)
-
-            else:
-                raise ValueError(
-                    f"Invalid type for environment variable {field_name}: {field_type}. This is probably an issue in Reflex."
-                )
-
-            setattr(self, field_name, value)
+            setattr(self, field.name, value)
 
 
 environment = EnvironmentVariables()
