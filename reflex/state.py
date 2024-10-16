@@ -40,6 +40,7 @@ from typing import (
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
+from reflex import event
 from reflex.config import get_config
 from reflex.istate.data import RouterData
 from reflex.vars.base import (
@@ -2094,7 +2095,8 @@ class State(BaseState):
 class FrontendEventExceptionState(State):
     """Substate for handling frontend exceptions."""
 
-    def handle_frontend_exception(self, stack: str) -> None:
+    @event
+    def handle_frontend_exception(self, stack: str, component_stack: str) -> None:
         """Handle frontend exceptions.
 
         If a frontend exception handler is provided, it will be called.
@@ -2102,6 +2104,7 @@ class FrontendEventExceptionState(State):
 
         Args:
             stack: The stack trace of the exception.
+            component_stack: The stack trace of the component where the exception occurred.
 
         """
         app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
