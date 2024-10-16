@@ -7,14 +7,12 @@ from typing import Dict, List, Tuple
 from reflex.compiler.compiler import _compile_component
 from reflex.components.component import Component
 from reflex.components.el import div, p
-from reflex.constants import Hooks, Imports
-from reflex.event import EventChain, EventHandler
-from reflex.utils.imports import ImportVar
+from reflex.event import EventHandler
+from reflex.state import FrontendEventExceptionState
 from reflex.vars.base import Var
-from reflex.vars.function import FunctionVar
 
 
-def on_error_spec(error: Var, info: Var[Dict[str, str]]) -> Tuple[Var[str]]:
+def on_error_spec(error: Var, info: Var[Dict[str, str]]) -> Tuple[Var[str], Var[str]]:
     """The spec for the on_error event handler.
 
     Args:
@@ -24,10 +22,10 @@ def on_error_spec(error: Var, info: Var[Dict[str, str]]) -> Tuple[Var[str]]:
     Returns:
         The arguments for the event handler.
     """
-    return (info.componentStack,)
-
-
-LOG_FRONTEND_ERROR = Var("logFrontendError").to(FunctionVar, EventChain)
+    return (
+        error.stack,
+        info.componentStack,
+    )
 
 
 class ErrorBoundary(Component):
@@ -37,32 +35,12 @@ class ErrorBoundary(Component):
     tag = "ErrorBoundary"
 
     # Fired when the boundary catches an error.
-    on_error: EventHandler[on_error_spec] = LOG_FRONTEND_ERROR  # type: ignore
+    on_error: EventHandler[on_error_spec]
 
     # Rendered instead of the children when an error is caught.
     Fallback_component: Var[Component] = Var(_js_expr="Fallback")._replace(
         _var_type=Component
     )
-
-    def add_imports(self) -> dict[str, list[ImportVar]]:
-        """Add imports for the component.
-
-        Returns:
-            The imports to add.
-        """
-        return Imports.EVENTS
-
-    def add_hooks(self) -> List[str | Var]:
-        """Add hooks for the component.
-
-        Returns:
-            The hooks to add.
-        """
-        return (
-            [Hooks.EVENTS, Hooks.FRONTEND_ERRORS]
-            if "on_error" not in self.event_triggers
-            else []
-        )
 
     def add_custom_code(self) -> List[str]:
         """Add custom Javascript code into the page that contains this component.
@@ -92,6 +70,21 @@ class ErrorBoundary(Component):
                 }}
             """
         ]
+
+    @classmethod
+    def create(cls, *children, **props):
+        """Create an ErrorBoundary component.
+
+        Args:
+            *children: The children of the component.
+            **props: The props of the component.
+
+        Returns:
+            The ErrorBoundary component.
+        """
+        if "on_error" not in props:
+            props["on_error"] = FrontendEventExceptionState.handle_frontend_exception
+        return super().create(*children, **props)
 
 
 error_boundary = ErrorBoundary.create

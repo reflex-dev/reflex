@@ -6,19 +6,15 @@
 from typing import Any, Dict, List, Optional, Tuple, Union, overload
 
 from reflex.components.component import Component
-from reflex.event import EventChain, EventType
+from reflex.event import EventType
 from reflex.style import Style
-from reflex.utils.imports import ImportVar
 from reflex.vars.base import Var
-from reflex.vars.function import FunctionVar
 
-def on_error_spec(error: Var, info: Var[Dict[str, str]]) -> Tuple[Var[str]]: ...
-
-LOG_FRONTEND_ERROR = Var("logFrontendError").to(FunctionVar, EventChain)
+def on_error_spec(
+    error: Var, info: Var[Dict[str, str]]
+) -> Tuple[Var[str], Var[str]]: ...
 
 class ErrorBoundary(Component):
-    def add_imports(self) -> dict[str, list[ImportVar]]: ...
-    def add_hooks(self) -> List[str | Var]: ...
     def add_custom_code(self) -> List[str]: ...
     @overload
     @classmethod
@@ -36,7 +32,7 @@ class ErrorBoundary(Component):
         on_click: Optional[EventType[[]]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
         on_double_click: Optional[EventType[[]]] = None,
-        on_error: Optional[EventType[str]] = None,
+        on_error: Optional[EventType[str, str]] = None,
         on_focus: Optional[EventType[[]]] = None,
         on_mount: Optional[EventType[[]]] = None,
         on_mouse_down: Optional[EventType[[]]] = None,
@@ -50,7 +46,7 @@ class ErrorBoundary(Component):
         on_unmount: Optional[EventType[[]]] = None,
         **props,
     ) -> "ErrorBoundary":
-        """Create the component.
+        """Create an ErrorBoundary component.
 
         Args:
             *children: The children of the component.
@@ -64,7 +60,7 @@ class ErrorBoundary(Component):
             **props: The props of the component.
 
         Returns:
-            The component.
+            The ErrorBoundary component.
         """
         ...
 
