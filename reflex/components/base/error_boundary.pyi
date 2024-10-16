@@ -31,7 +31,7 @@ class ErrorBoundary(Component):
         on_click: Optional[EventType[[]]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
         on_double_click: Optional[EventType[[]]] = None,
-        on_error: Optional[EventType[[]]] = None,
+        on_error: Optional[EventType] = None,
         on_focus: Optional[EventType[[]]] = None,
         on_mount: Optional[EventType[[]]] = None,
         on_mouse_down: Optional[EventType[[]]] = None,

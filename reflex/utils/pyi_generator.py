@@ -429,7 +429,7 @@ def _generate_component_create_functiondef(
 
     def figure_out_return_type(annotation: Any):
         if inspect.isclass(annotation) and issubclass(annotation, inspect._empty):
-            return ast.Name(id="Optional[EventType[[]]]")
+            return ast.Name(id="Optional[EventType]")
         if isinstance(annotation, str) and annotation.startswith("Tuple["):
             inside_of_tuple = annotation.removeprefix("Tuple[").removesuffix("]")
 

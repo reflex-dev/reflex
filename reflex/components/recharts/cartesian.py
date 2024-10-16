@@ -252,7 +252,7 @@ class Brush(Recharts):
             A dict mapping the event trigger to the var that is passed to the handler.
         """
         return {
-            EventTriggers.ON_CHANGE: lambda: [],
+            EventTriggers.ON_CHANGE: empty_event,
         }
 
 
@@ -293,10 +293,10 @@ class Cartesian(Recharts):
     name: Var[Union[str, int]]
 
     # The customized event handler of animation start
-    on_animation_start: EventHandler[lambda: []]
+    on_animation_start: EventHandler[empty_event]
 
     # The customized event handler of animation end
-    on_animation_end: EventHandler[lambda: []]
+    on_animation_end: EventHandler[empty_event]
 
     # The customized event handler of click on the component in this group
     on_click: EventHandler[empty_event]
