@@ -399,11 +399,6 @@ class EventChain(EventActionsMixin):
     invocation: Optional[Var] = dataclasses.field(default=None)
 
 
-# These chains can be used for their side effects when no other events are desired.
-stop_propagation = EventChain(events=[], args_spec=lambda: []).stop_propagation
-prevent_default = EventChain(events=[], args_spec=lambda: []).prevent_default
-
-
 @dataclasses.dataclass(
     init=True,
     frozen=True,
@@ -465,6 +460,11 @@ def empty_event() -> Tuple[()]:
         An empty tuple.
     """
     return tuple()  # type: ignore
+
+
+# These chains can be used for their side effects when no other events are desired.
+stop_propagation = EventChain(events=[], args_spec=empty_event).stop_propagation
+prevent_default = EventChain(events=[], args_spec=empty_event).prevent_default
 
 
 T = TypeVar("T")
