@@ -22,11 +22,10 @@ from reflex.vars.function import FunctionStringVar
 from reflex.vars.sequence import StringVar, string_replace_operation
 
 
-def copy_script(id: str, code: StringVar | str) -> Any:
-    """Copy script for the code block.
+def copy_script(code: StringVar | str) -> Any:
+    """Copy script for the code block and modify the child SVG element.
 
     Args:
-        id (str): The ID of the button element.
         code (str): The code to be copied.
 
     Returns:
@@ -34,33 +33,41 @@ def copy_script(id: str, code: StringVar | str) -> Any:
     """
     return call_script(
         f"""
-const button = document.getElementById('{id}');
-const icon = button.querySelector('svg');
-const originalPath = icon.innerHTML;
-const checkmarkPath = '<polyline points="20 6 9 17 4 12"></polyline>';
+// Event listener for the parent click
+document.addEventListener('click', function(event) {{
+    const parent = event.target.closest('div');  // Assumes the parent is a <div> or any container
+    if (parent) {{
+        const svgIcon = parent.querySelector('svg');  // Always targets the <svg> child element
+        const originalPath = svgIcon.innerHTML;
+        const checkmarkPath = '<polyline points="20 6 9 17 4 12"></polyline>';  // Checkmark SVG path
 
-function transition(element, scale, opacity) {{
-    element.style.transform = `scale(${{scale}})`;
-    element.style.opacity = opacity;
-}}
+        function transition(element, scale, opacity) {{
+            element.style.transform = `scale(${{scale}})`;
+            element.style.opacity = opacity;
+        }}
 
-navigator.clipboard.writeText(`{code}`).then(() => {{
-    transition(icon, 0, '0');
+        // Copy the code to clipboard
+        navigator.clipboard.writeText(`{code}`).then(() => {{
+            // Animate the SVG
+            transition(svgIcon, 0, '0');
 
-    setTimeout(() => {{
-        icon.innerHTML = checkmarkPath;
-        icon.setAttribute('viewBox', '0 0 24 24');
-        transition(icon, 1, '1');
-        setTimeout(() => {{
-            transition(icon, 0, '0');
             setTimeout(() => {{
-                icon.innerHTML = originalPath;
-                transition(icon, 1, '1');
+                svgIcon.innerHTML = checkmarkPath;  // Replace content with checkmark
+                svgIcon.setAttribute('viewBox', '0 0 24 24');  // Adjust viewBox if necessary
+                transition(svgIcon, 1, '1');
+
+                setTimeout(() => {{
+                    transition(svgIcon, 0, '0');
+                    setTimeout(() => {{
+                        svgIcon.innerHTML = originalPath;  // Restore original SVG content
+                        transition(svgIcon, 1, '1');
+                    }}, 125);
+                }}, 600);
             }}, 125);
-        }}, 600);
-    }}, 125);
-}}).catch(err => {{
-    console.error('Failed to copy text: ', err);
+        }}).catch(err => {{
+            console.error('Failed to copy text: ', err);
+        }});
+    }}
 }});
 """
     )
@@ -718,18 +725,12 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
 
         if can_copy:
             code = children[0]
-            button_id = (
-                f"copy-button-{hash(code)}"  # Generate a unique ID for each button
-            )
             copy_button = (  # type: ignore
                 copy_button
                 if copy_button is not None
                 else Button.create(
                     Icon.create(tag="copy", size=16, color=color("gray", 11)),
-                    id=button_id,
-                    on_click=copy_script(
-                        button_id, cls._strip_transformer_triggers(code)
-                    ),
+                    on_click=copy_script(cls._strip_transformer_triggers(code)),
                     style=Style(
                         {
                             "position": "absolute",

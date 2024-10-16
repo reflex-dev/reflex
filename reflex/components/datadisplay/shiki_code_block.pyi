@@ -13,7 +13,7 @@ from reflex.vars.base import Var
 from reflex.vars.function import FunctionStringVar
 from reflex.vars.sequence import StringVar
 
-def copy_script(id: str, code: StringVar | str) -> Any: ...
+def copy_script(code: StringVar | str) -> Any: ...
 
 SHIKIJS_TRANSFORMER_FNS = {
     "transformerNotationDiff",
