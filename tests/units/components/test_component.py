@@ -54,10 +54,10 @@ def test_state():
         def do_something_with_int(self, arg: int):
             pass
 
-        def do_something_with_list_int(self, arg: List[int]):
+        def do_something_with_list_int(self, arg: list[int]):
             pass
 
-        def do_something_with_list_str(self, arg: List[str]):
+        def do_something_with_list_str(self, arg: list[str]):
             pass
 
     return TestState
