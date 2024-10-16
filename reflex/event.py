@@ -1293,6 +1293,22 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
             _var_type=EventSpec,
             _var_data=_var_data,
             _var_value=value,
+            _func=FunctionStringVar("Event"),
+            _args=(
+                # event handler name
+                ".".join(
+                    filter(
+                        None,
+                        format.get_event_handler_parts(value.handler),
+                    )
+                ),
+                # event handler args
+                {str(name): value for name, value in value.args},
+                # event actions
+                value.event_actions,
+                # client handler name
+                *([value.client_handler_name] if value.client_handler_name else []),
+            ),
         )
 
 
