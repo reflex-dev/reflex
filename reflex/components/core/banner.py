@@ -165,16 +165,18 @@ class ConnectionToaster(Toaster):
 class ConnectionBanner(Component):
     """A connection banner component."""
 
-    @classmethod
-    def create(cls, comp: Optional[Component] = None) -> Component:
-        """Create a connection banner component.
+    # The component to render when there's a server connection error.
+    comp: Var[Optional[Component]] = None
 
-        Args:
-            comp: The component to render when there's a server connection error.
+    @classmethod
+    def create(cls, **props) -> Component:
+        """Create a connection banner component.
 
         Returns:
             The connection banner component.
         """
+        comp = props.pop("comp", None)
+
         if not comp:
             comp = Flex.create(
                 Text.create(
@@ -195,16 +197,18 @@ class ConnectionBanner(Component):
 class ConnectionModal(Component):
     """A connection status modal window."""
 
-    @classmethod
-    def create(cls, comp: Optional[Component] = None) -> Component:
-        """Create a connection banner component.
+    # The component to render when there's a server connection error.
+    comp: Var[Optional[Component]] = None
 
-        Args:
-            comp: The component to render when there's a server connection error.
+    @classmethod
+    def create(cls, **props) -> Component:
+        """Create a connection banner component.
 
         Returns:
             The connection banner component.
         """
+        comp = props.pop("comp", None)
+
         if not comp:
             comp = Text.create(*default_connection_error())
         return cond(

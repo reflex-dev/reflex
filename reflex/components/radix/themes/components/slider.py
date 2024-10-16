@@ -61,6 +61,9 @@ class Slider(RadixThemesComponent):
     # The name of the slider. Submitted with its owning form as part of a name/value pair.
     name: Var[str]
 
+    # The width of the slider.
+    width: Var[Optional[str]] = "100%"
+
     # The minimum value of the slider.
     min: Var[Union[float, int]]
 
@@ -89,20 +92,19 @@ class Slider(RadixThemesComponent):
     def create(
         cls,
         *children,
-        width: Optional[str] = "100%",
         **props,
     ) -> Component:
         """Create a Slider component.
 
         Args:
             *children: The children of the component.
-            width: The width of the slider.
             **props: The properties of the component.
 
         Returns:
             The component.
         """
         default_value = props.pop("default_value", [50])
+        width = props.pop("width", "100%")
 
         if isinstance(default_value, Var):
             if issubclass(default_value._var_type, (int, float)):

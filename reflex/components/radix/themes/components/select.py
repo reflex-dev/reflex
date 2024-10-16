@@ -180,16 +180,17 @@ class HighLevelSelect(SelectRoot):
     position: Var[Literal["item-aligned", "popper"]]
 
     @classmethod
-    def create(cls, items: Union[List[str], Var[List[str]]], **props) -> Component:
+    def create(cls, **props) -> Component:
         """Create a select component.
 
         Args:
-            items: The items of the select.
             **props: Additional properties to apply to the select component.
 
         Returns:
             The select component.
         """
+        items = props.pop("items")
+
         trigger_prop_list = [
             "placeholder",
             "variant",

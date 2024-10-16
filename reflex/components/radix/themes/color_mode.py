@@ -17,7 +17,7 @@ rx.text(
 
 from __future__ import annotations
 
-from typing import Dict, List, Literal, get_args
+from typing import Dict, List, Literal, get_args, Optional
 
 from reflex.components.component import BaseComponent
 from reflex.components.core.cond import Cond, color_mode_cond, cond
@@ -96,23 +96,28 @@ def _set_static_default(props, position, prop, default):
 class ColorModeIconButton(IconButton):
     """Icon Button for toggling light / dark mode via toggle_color_mode."""
 
+    # The position of the icon button. Follow document flow if None.
+    position: Var[Optional[LiteralPosition]] = None
+
+    # Allow picking the "system" value for the color mode.
+    allow_system: Var[bool] = False
+
     @classmethod
     def create(
         cls,
-        position: LiteralPosition | None = None,
-        allow_system: bool = False,
         **props,
     ):
         """Create a icon button component that calls toggle_color_mode on click.
 
         Args:
-            position: The position of the icon button. Follow document flow if None.
-            allow_system: Allow picking the "system" value for the color mode.
             **props: The props to pass to the component.
 
         Returns:
             The button component.
         """
+        position = props.pop("position", None)
+        allow_system = props.pop("allow_system", None)
+
         # position is used to set nice defaults for positioning the icon button
         if isinstance(position, Var):
             _set_var_default(props, position, "position", "fixed", position)

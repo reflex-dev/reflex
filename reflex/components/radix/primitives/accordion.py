@@ -193,6 +193,12 @@ class AccordionItem(AccordionComponent):
     # When true, prevents the user from interacting with the item.
     disabled: Var[bool]
 
+    # The header of the accordion item.
+    header: Var[Optional[Component | Var]] = None
+
+    # The content of the accordion item.
+    content: Var[Optional[Component | Var]] = None
+
     _valid_children: List[str] = [
         "AccordionHeader",
         "AccordionTrigger",
@@ -205,21 +211,20 @@ class AccordionItem(AccordionComponent):
     def create(
         cls,
         *children,
-        header: Optional[Component | Var] = None,
-        content: Optional[Component | Var] = None,
         **props,
     ) -> Component:
         """Create an accordion item.
 
         Args:
             *children: The list of children to use if header and content are not provided.
-            header: The header of the accordion item.
-            content: The content of the accordion item.
             **props: Additional properties to apply to the accordion item.
 
         Returns:
             The accordion item.
         """
+        header = props.pop("header", None)
+        content = props.pop("content", None)
+
         # The item requires a value to toggle (use a random unique name if not provided).
         value = props.pop("value", get_uuid_string_var())
 
