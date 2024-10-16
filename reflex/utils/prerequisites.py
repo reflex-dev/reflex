@@ -146,14 +146,9 @@ def check_node_version() -> bool:
         Whether the version of Node.js is valid.
     """
     current_version = get_node_version()
-    if current_version:
-        # Compare the version numbers
-        return (
-            current_version >= version.parse(constants.Node.MIN_VERSION)
-            if constants.IS_WINDOWS or path_ops.use_system_node()
-            else current_version == version.parse(constants.Node.VERSION)
-        )
-    return False
+    return current_version is not None and current_version >= version.parse(
+        constants.Node.MIN_VERSION
+    )
 
 
 def get_node_version() -> version.Version | None:
