@@ -69,8 +69,7 @@ def get_web_dir() -> Path:
     Returns:
         The working directory.
     """
-    workdir = Path(os.getenv("REFLEX_WEB_WORKDIR", constants.Dirs.WEB))
-    return workdir
+    return environment.REFLEX_WEB_WORKDIR
 
 
 def _python_version_check():

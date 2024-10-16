@@ -15,7 +15,7 @@ from urllib.parse import urljoin
 import psutil
 
 from reflex import constants
-from reflex.config import get_config
+from reflex.config import environment, get_config
 from reflex.constants.base import LogLevel
 from reflex.utils import console, path_ops
 from reflex.utils.prerequisites import get_web_dir
@@ -184,7 +184,7 @@ def should_use_granian():
     Returns:
         True if Granian should be used.
     """
-    return os.getenv("REFLEX_USE_GRANIAN", "0") == "1"
+    return environment.REFLEX_USE_GRANIAN
 
 
 def get_app_module():

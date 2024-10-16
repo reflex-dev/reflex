@@ -178,6 +178,21 @@ def interpret_boolean_env(value: str) -> bool:
         raise ValueError(f"Invalid boolean value: {value}")
 
 
+def interpret_path_env(value: str) -> Path:
+    """Interpret a path environment variable value.
+
+    Args:
+        value: The environment variable value.
+
+    Returns:
+        The interpreted value.
+
+    Raises:
+        ValueError: If the value is invalid.
+    """
+    return Path(value)
+
+
 def interpret_env_var_value(value: str, field: dataclasses.Field) -> Any:
     """Interpret an environment variable value based on the field type.
 
@@ -199,6 +214,9 @@ def interpret_env_var_value(value: str, field: dataclasses.Field) -> Any:
     elif field_type is str:
         return value
 
+    elif field_type is Path:
+        return interpret_path_env(value)
+
     else:
         raise ValueError(
             f"Invalid type for environment variable {field.name}: {field_type}. This is probably an issue in Reflex."
@@ -214,6 +232,24 @@ class EnvironmentVariables:
 
     # The npm registry to use.
     NPM_CONFIG_REGISTRY: Optional[str] = None
+
+    # Whether to use Granian for the backend. Otherwise, use Uvicorn.
+    REFLEX_USE_GRANIAN: bool = False
+
+    # The username to use for authentication on python package repository. Username and password must both be provided.
+    TWINE_USERNAME: Optional[str] = None
+
+    # The password to use for authentication on python package repository. Username and password must both be provided.
+    TWINE_PASSWORD: Optional[str] = None
+
+    # Whether to use the system installed bun. If set to false, bun will be bundled with the app.
+    REFLEX_USE_SYSTEM_BUN: bool = False
+
+    # Whether to use the system installed node and npm. If set to false, node and npm will be bundled with the app.
+    REFLEX_USE_SYSTEM_NODE: bool = False
+
+    # The working directory for the next.js commands.
+    REFLEX_WEB_WORKDIR: Path = Path(constants.Dirs.WEB)
 
     def __init__(self):
         """Initialize the environment variables."""
