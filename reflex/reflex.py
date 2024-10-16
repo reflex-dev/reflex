@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import atexit
 import os
-import webbrowser
 from pathlib import Path
 from typing import List, Optional
 
@@ -548,18 +547,6 @@ def deploy(
         interactive=interactive,
         loglevel=loglevel.subprocess_level(),
     )
-
-
-@cli.command()
-def demo(
-    frontend_port: str = typer.Option(
-        "3001", help="Specify a different frontend port."
-    ),
-    backend_port: str = typer.Option("8001", help="Specify a different backend port."),
-):
-    """Run the demo app."""
-    # Open the demo app in a terminal.
-    webbrowser.open("https://demo.reflex.run")
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
