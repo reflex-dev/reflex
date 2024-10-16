@@ -185,7 +185,8 @@ def get_node_path() -> str | None:
     """
     node_path = Path(constants.Node.PATH)
     if use_system_node() or not node_path.exists():
-        return str(which("node"))
+        system_node_path = which("node")
+        return str(system_node_path) if system_node_path else None
     return str(node_path)
 
 
@@ -197,7 +198,8 @@ def get_npm_path() -> str | None:
     """
     npm_path = Path(constants.Node.NPM_PATH)
     if use_system_node() or not npm_path.exists():
-        return str(which("npm"))
+        system_npm_path = which("npm")
+        return str(system_npm_path) if system_npm_path else None
     return str(npm_path)
 
 
