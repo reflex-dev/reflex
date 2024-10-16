@@ -21,6 +21,7 @@ from typing import (
     TypeVar,
     Union,
     get_type_hints,
+    overload,
 )
 
 from typing_extensions import ParamSpec, get_args, get_origin
@@ -31,12 +32,15 @@ from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
 from reflex.utils.types import ArgsSpec, GenericType
 from reflex.vars import VarData
 from reflex.vars.base import (
-    CachedVarOperation,
     LiteralVar,
     Var,
-    cached_property_no_lock,
 )
-from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar, FunctionVar
+from reflex.vars.function import (
+    ArgsFunctionOperation,
+    FunctionStringVar,
+    FunctionVar,
+    VarOperationCall,
+)
 from reflex.vars.object import ObjectVar
 
 try:
@@ -392,11 +396,6 @@ class EventChain(EventActionsMixin):
     invocation: Optional[Var] = dataclasses.field(default=None)
 
 
-# These chains can be used for their side effects when no other events are desired.
-stop_propagation = EventChain(events=[], args_spec=lambda: []).stop_propagation
-prevent_default = EventChain(events=[], args_spec=lambda: []).prevent_default
-
-
 @dataclasses.dataclass(
     init=True,
     frozen=True,
@@ -458,6 +457,11 @@ def empty_event() -> Tuple[()]:
         An empty tuple.
     """
     return tuple()  # type: ignore
+
+
+# These chains can be used for their side effects when no other events are desired.
+stop_propagation = EventChain(events=[], args_spec=empty_event).stop_propagation
+prevent_default = EventChain(events=[], args_spec=empty_event).prevent_default
 
 
 T = TypeVar("T")
@@ -1038,7 +1042,8 @@ def resolve_annotation(annotations: dict[str, Any], arg_name: str):
             deprecation_version="0.6.3",
             removal_version="0.7.0",
         )
-        return JavascriptInputEvent
+        # Allow arbitrary attribute access two levels deep until removed.
+        return Dict[str, dict]
     return annotation
 
 
@@ -1255,7 +1260,7 @@ class EventVar(ObjectVar, python_types=EventSpec):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class LiteralEventVar(CachedVarOperation, LiteralVar, EventVar):
+class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
     """A literal event var."""
 
     _var_value: EventSpec = dataclasses.field(default=None)  # type: ignore
@@ -1267,35 +1272,6 @@ class LiteralEventVar(CachedVarOperation, LiteralVar, EventVar):
             The hash of the var.
         """
         return hash((self.__class__.__name__, self._js_expr))
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return str(
-            FunctionStringVar("Event").call(
-                # event handler name
-                ".".join(
-                    filter(
-                        None,
-                        format.get_event_handler_parts(self._var_value.handler),
-                    )
-                ),
-                # event handler args
-                {str(name): value for name, value in self._var_value.args},
-                # event actions
-                self._var_value.event_actions,
-                # client handler name
-                *(
-                    [self._var_value.client_handler_name]
-                    if self._var_value.client_handler_name
-                    else []
-                ),
-            )
-        )
 
     @classmethod
     def create(
@@ -1329,7 +1305,10 @@ class EventChainVar(FunctionVar, python_types=EventChain):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class LiteralEventChainVar(CachedVarOperation, LiteralVar, EventChainVar):
+# Note: LiteralVar is second in the inheritance list allowing it act like a
+# CachedVarOperation (ArgsFunctionOperation) and get the _js_expr from the
+# _cached_var_name property.
+class LiteralEventChainVar(ArgsFunctionOperation, LiteralVar, EventChainVar):
     """A literal event chain var."""
 
     _var_value: EventChain = dataclasses.field(default=None)  # type: ignore
@@ -1341,41 +1320,6 @@ class LiteralEventChainVar(CachedVarOperation, LiteralVar, EventChainVar):
             The hash of the var.
         """
         return hash((self.__class__.__name__, self._js_expr))
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        sig = inspect.signature(self._var_value.args_spec)  # type: ignore
-        if sig.parameters:
-            arg_def = tuple((f"_{p}" for p in sig.parameters))
-            arg_def_expr = LiteralVar.create([Var(_js_expr=arg) for arg in arg_def])
-        else:
-            # add a default argument for addEvents if none were specified in value.args_spec
-            # used to trigger the preventDefault() on the event.
-            arg_def = ("...args",)
-            arg_def_expr = Var(_js_expr="args")
-
-        if self._var_value.invocation is None:
-            invocation = FunctionStringVar.create("addEvents")
-        else:
-            invocation = self._var_value.invocation
-
-        return str(
-            ArgsFunctionOperation.create(
-                arg_def,
-                invocation.call(
-                    LiteralVar.create(
-                        [LiteralVar.create(event) for event in self._var_value.events]
-                    ),
-                    arg_def_expr,
-                    self._var_value.event_actions,
-                ),
-            )
-        )
 
     @classmethod
     def create(
@@ -1392,10 +1336,31 @@ class LiteralEventChainVar(CachedVarOperation, LiteralVar, EventChainVar):
         Returns:
             The created LiteralEventChainVar instance.
         """
+        sig = inspect.signature(value.args_spec)  # type: ignore
+        if sig.parameters:
+            arg_def = tuple((f"_{p}" for p in sig.parameters))
+            arg_def_expr = LiteralVar.create([Var(_js_expr=arg) for arg in arg_def])
+        else:
+            # add a default argument for addEvents if none were specified in value.args_spec
+            # used to trigger the preventDefault() on the event.
+            arg_def = ("...args",)
+            arg_def_expr = Var(_js_expr="args")
+
+        if value.invocation is None:
+            invocation = FunctionStringVar.create("addEvents")
+        else:
+            invocation = value.invocation
+
         return cls(
             _js_expr="",
             _var_type=EventChain,
             _var_data=_var_data,
+            _args_names=arg_def,
+            _return_expr=invocation.call(
+                LiteralVar.create([LiteralVar.create(event) for event in value.events]),
+                arg_def_expr,
+                value.event_actions,
+            ),
             _var_value=value,
         )
 
@@ -1408,6 +1373,11 @@ EventType = Union[IndividualEventType[G], List[IndividualEventType[G]]]
 
 P = ParamSpec("P")
 T = TypeVar("T")
+V = TypeVar("V")
+V2 = TypeVar("V2")
+V3 = TypeVar("V3")
+V4 = TypeVar("V4")
+V5 = TypeVar("V5")
 
 if sys.version_info >= (3, 10):
     from typing import Concatenate
@@ -1423,7 +1393,55 @@ if sys.version_info >= (3, 10):
             """
             self.func = func
 
-        def __get__(self, instance, owner) -> Callable[P, T]:
+        @overload
+        def __get__(
+            self: EventCallback[[V], T], instance: None, owner
+        ) -> Callable[[Union[Var[V], V]], EventSpec]: ...
+
+        @overload
+        def __get__(
+            self: EventCallback[[V, V2], T], instance: None, owner
+        ) -> Callable[[Union[Var[V], V], Union[Var[V2], V2]], EventSpec]: ...
+
+        @overload
+        def __get__(
+            self: EventCallback[[V, V2, V3], T], instance: None, owner
+        ) -> Callable[
+            [Union[Var[V], V], Union[Var[V2], V2], Union[Var[V3], V3]],
+            EventSpec,
+        ]: ...
+
+        @overload
+        def __get__(
+            self: EventCallback[[V, V2, V3, V4], T], instance: None, owner
+        ) -> Callable[
+            [
+                Union[Var[V], V],
+                Union[Var[V2], V2],
+                Union[Var[V3], V3],
+                Union[Var[V4], V4],
+            ],
+            EventSpec,
+        ]: ...
+
+        @overload
+        def __get__(
+            self: EventCallback[[V, V2, V3, V4, V5], T], instance: None, owner
+        ) -> Callable[
+            [
+                Union[Var[V], V],
+                Union[Var[V2], V2],
+                Union[Var[V3], V3],
+                Union[Var[V4], V4],
+                Union[Var[V5], V5],
+            ],
+            EventSpec,
+        ]: ...
+
+        @overload
+        def __get__(self, instance, owner) -> Callable[P, T]: ...
+
+        def __get__(self, instance, owner) -> Callable:
             """Get the function with the instance bound to it.
 
             Args:
