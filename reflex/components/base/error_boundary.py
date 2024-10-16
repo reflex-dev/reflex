@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import List
+from typing import Dict, List, Tuple
 
 from reflex.compiler.compiler import _compile_component
 from reflex.components.component import Component
@@ -14,6 +14,22 @@ from reflex.vars.base import Var
 from reflex.vars.function import FunctionVar
 
 
+def on_error_spec(error: Var, info: Var[Dict[str, str]]) -> Tuple[Var[str]]:
+    """The spec for the on_error event handler.
+
+    Args:
+        error: The error message.
+        info: Additional information about the error.
+
+    Returns:
+        The arguments for the event handler.
+    """
+    return (info.componentStack,)
+
+
+LOG_FRONTEND_ERROR = Var("logFrontendError").to(FunctionVar, EventChain)
+
+
 class ErrorBoundary(Component):
     """A React Error Boundary component that catches unhandled frontend exceptions."""
 
@@ -21,9 +37,7 @@ class ErrorBoundary(Component):
     tag = "ErrorBoundary"
 
     # Fired when the boundary catches an error.
-    on_error: EventHandler[lambda error, info: [error, info]] = Var(  # type: ignore
-        "logFrontendError"
-    ).to(FunctionVar, EventChain)
+    on_error: EventHandler[on_error_spec] = LOG_FRONTEND_ERROR  # type: ignore
 
     # Rendered instead of the children when an error is caught.
     Fallback_component: Var[Component] = Var(_js_expr="Fallback")._replace(
@@ -44,7 +58,11 @@ class ErrorBoundary(Component):
         Returns:
             The hooks to add.
         """
-        return [Hooks.EVENTS, Hooks.FRONTEND_ERRORS]
+        return (
+            [Hooks.EVENTS, Hooks.FRONTEND_ERRORS]
+            if "on_error" not in self.event_triggers
+            else []
+        )
 
     def add_custom_code(self) -> List[str]:
         """Add custom Javascript code into the page that contains this component.
