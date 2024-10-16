@@ -33,7 +33,7 @@ from redis.asyncio import Redis
 
 from reflex import constants, model
 from reflex.compiler import templates
-from reflex.config import Config, get_config
+from reflex.config import Config, environment, get_config
 from reflex.utils import console, net, path_ops, processes
 from reflex.utils.exceptions import GeneratedCodeHasNoFunctionDefs
 from reflex.utils.format import format_library_name
@@ -250,7 +250,7 @@ def windows_npm_escape_hatch() -> bool:
     Returns:
         If the user has set REFLEX_USE_NPM.
     """
-    return os.environ.get("REFLEX_USE_NPM", "").lower() in ["true", "1", "yes"]
+    return environment.REFLEX_USE_NPM
 
 
 def get_app(reload: bool = False) -> ModuleType:

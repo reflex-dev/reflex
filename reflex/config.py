@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import importlib
 import os
 import sys
@@ -10,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Union
 
 from reflex.utils.exceptions import ConfigError
+from reflex.utils.types import value_inside_optional
 
 try:
     import pydantic.v1 as pydantic
@@ -129,6 +131,80 @@ class DBConfig(Base):
             path = f"{host}"
 
         return f"{self.engine}://{path}/{self.database}"
+
+
+def get_default_value_for_field(field: dataclasses.Field) -> Any:
+    """Get the default value for a field.
+
+    Args:
+        field: The field.
+
+    Returns:
+        The default value.
+
+    Raises:
+        ValueError: If no default value is found.
+    """
+    if field.default != dataclasses.MISSING:
+        return field.default
+    elif field.default_factory != dataclasses.MISSING:
+        return field.default_factory()
+    else:
+        raise ValueError(
+            f"Missing value for environment variable {field.name} and no default value found"
+        )
+
+
+@dataclasses.dataclass(init=False)
+class EnvironmentVariables:
+    """Environment variables class to instantiate environment variables."""
+
+    # Whether to use npm over bun to install frontend packages.
+    REFLEX_USE_NPM: bool = False
+
+    # The npm registry to use.
+    NPM_CONFIG_REGISTRY: Optional[str] = None
+
+    def __init__(self):
+        """Initialize the environment variables."""
+        for field in dataclasses.fields(self):
+            field_name = field.name
+
+            field_type = value_inside_optional(field.type)
+
+            if field_type is bool:
+                true_values = ["true", "1", "yes"]
+                false_values = ["false", "0", "no"]
+
+                value = os.getenv(field_name, None)
+
+                if value is not None:
+                    if value.lower() in true_values:
+                        value = True
+                    elif value.lower() in false_values:
+                        value = False
+                    else:
+                        raise ValueError(
+                            f"Invalid value for environment variable {field_name}: {value}"
+                        )
+                else:
+                    value = get_default_value_for_field(field)
+
+            elif field_type is str:
+                value = os.getenv(field_name, None)
+
+                if value is None:
+                    value = get_default_value_for_field(field)
+
+            else:
+                raise ValueError(
+                    f"Invalid type for environment variable {field_name}: {field_type}. This is probably an issue in Reflex."
+                )
+
+            setattr(self, field_name, value)
+
+
+environment = EnvironmentVariables()
 
 
 class Config(Base):
