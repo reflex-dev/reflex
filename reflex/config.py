@@ -256,7 +256,11 @@ class EnvironmentVariables:
         for field in dataclasses.fields(self):
             raw_value = os.getenv(field.name, None)
 
-            value = interpret_env_var_value(raw_value, field) if raw_value else None
+            value = (
+                interpret_env_var_value(raw_value, field)
+                if raw_value is not None
+                else get_default_value_for_field(field)
+            )
 
             setattr(self, field.name, value)
 
