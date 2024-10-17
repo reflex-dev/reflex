@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Set, Union
 
 from typing_extensions import get_type_hints
 
-from reflex.utils.exceptions import ConfigError
+from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
 from reflex.utils.types import value_inside_optional
 
 try:
@@ -167,7 +167,7 @@ def interpret_boolean_env(value: str) -> bool:
         The interpreted value.
 
     Raises:
-        ValueError: If the value is invalid.
+        EnvironmentVarValueError: If the value is invalid.
     """
     true_values = ["true", "1", "yes", "y"]
     false_values = ["false", "0", "no", "n"]
@@ -176,8 +176,7 @@ def interpret_boolean_env(value: str) -> bool:
         return True
     elif value.lower() in false_values:
         return False
-    else:
-        raise ValueError(f"Invalid boolean value: {value}")
+    raise EnvironmentVarValueError(f"Invalid boolean value: {value}")
 
 
 def interpret_int_env(value: str) -> int:
@@ -190,12 +189,12 @@ def interpret_int_env(value: str) -> int:
         The interpreted value.
 
     Raises:
-        ValueError: If the value is invalid.
+        EnvironmentVarValueError: If the value is invalid.
     """
     try:
         return int(value)
     except ValueError as ve:
-        raise ValueError(f"Invalid integer value: {value}") from ve
+        raise EnvironmentVarValueError(f"Invalid integer value: {value}") from ve
 
 
 def interpret_path_env(value: str) -> Path:
@@ -206,8 +205,14 @@ def interpret_path_env(value: str) -> Path:
 
     Returns:
         The interpreted value.
+
+    Raises:
+        EnvironmentVarValueError: If the path does not exist.
     """
-    return Path(value)
+    path = Path(value)
+    if not path.exists():
+        raise EnvironmentVarValueError(f"Path does not exist: {path}")
+    return path
 
 
 def interpret_env_var_value(value: str, field: dataclasses.Field) -> Any:
