@@ -274,6 +274,20 @@ def is_optional(cls: GenericType) -> bool:
     return is_union(cls) and type(None) in get_args(cls)
 
 
+def value_inside_optional(cls: GenericType) -> GenericType:
+    """Get the value inside an Optional type or the original type.
+
+    Args:
+        cls: The class to check.
+
+    Returns:
+        The value inside the Optional type or the original type.
+    """
+    if is_union(cls) and len(args := get_args(cls)) >= 2 and type(None) in args:
+        return unionize(*[arg for arg in args if arg is not type(None)])
+    return cls
+
+
 def get_property_hint(attr: Any | None) -> GenericType | None:
     """Check if an attribute is a property and return its type hint.
 

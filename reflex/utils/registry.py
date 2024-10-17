@@ -1,9 +1,8 @@
 """Utilities for working with registries."""
 
-import os
-
 import httpx
 
+from reflex.config import environment
 from reflex.utils import console, net
 
 
@@ -56,7 +55,4 @@ def _get_npm_registry() -> str:
     Returns:
         str:
     """
-    if npm_registry := os.environ.get("NPM_CONFIG_REGISTRY", ""):
-        return npm_registry
-    else:
-        return get_best_registry()
+    return environment.NPM_CONFIG_REGISTRY or get_best_registry()

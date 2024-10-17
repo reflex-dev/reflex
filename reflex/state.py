@@ -8,7 +8,6 @@ import copy
 import dataclasses
 import functools
 import inspect
-import os
 import pickle
 import sys
 import uuid
@@ -64,6 +63,7 @@ from redis.exceptions import ResponseError
 import reflex.istate.dynamic
 from reflex import constants
 from reflex.base import Base
+from reflex.config import environment
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,
@@ -3272,11 +3272,7 @@ class StateManagerRedis(StateManager):
             )
         except ResponseError:
             # Some redis servers only allow out-of-band configuration, so ignore errors here.
-            ignore_config_error = os.environ.get(
-                "REFLEX_IGNORE_REDIS_CONFIG_ERROR",
-                None,
-            )
-            if not ignore_config_error:
+            if not environment.REFLEX_IGNORE_REDIS_CONFIG_ERROR:
                 raise
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(lock_key_channel)

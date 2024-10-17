@@ -1,6 +1,5 @@
 """Config constants."""
 
-import os
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -9,7 +8,7 @@ from reflex.constants.base import Dirs, Reflex
 from .compiler import Ext
 
 # Alembic migrations
-ALEMBIC_CONFIG = os.environ.get("ALEMBIC_CONFIG", "alembic.ini")
+ALEMBIC_CONFIG = "alembic.ini"
 
 
 class Config(SimpleNamespace):
