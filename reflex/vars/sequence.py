@@ -1155,7 +1155,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE]):
             function_var = ArgsFunctionOperation.create(tuple(), return_value)
         else:
             # generic number var
-            number_var = Var("").to(NumberVar)
+            number_var = Var("").to(NumberVar, int)
 
             first_arg_type = self[number_var]._var_type
 
