@@ -2566,6 +2566,8 @@ class StateManager(Base, ABC):
             The state manager (either disk, memory or redis).
         """
         config = get_config()
+        if prerequisites.parse_redis_url() is not None:
+            config.state_manager_mode = constants.StateManagerMode.REDIS
         if config.state_manager_mode == constants.StateManagerMode.MEMORY:
             return StateManagerMemory(state=state)
         if config.state_manager_mode == constants.StateManagerMode.DISK:
