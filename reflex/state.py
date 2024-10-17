@@ -2103,6 +2103,10 @@ def dynamic(func: Callable[[T], Component]):
 
     Returns:
         The dynamically generated component.
+
+    Raises:
+        ValueError: If the function does not have exactly one parameter.
+        ValueError: If the function does not have a type hint for the state class.
     """
     number_of_parameters = len(inspect.signature(func).parameters)
 
