@@ -35,38 +35,44 @@ def copy_script(code: StringVar | str) -> Any:
         f"""
 // Event listener for the parent click
 document.addEventListener('click', function(event) {{
-    const parent = event.target.closest('div');  // Assumes the parent is a <div> or any container
+    // Find the closest div (parent element)
+    const parent = event.target.closest('div');
+    // If the parent is found
     if (parent) {{
-        const svgIcon = parent.querySelector('svg');  // Always targets the <svg> child element
-        const originalPath = svgIcon.innerHTML;
-        const checkmarkPath = '<polyline points="20 6 9 17 4 12"></polyline>';  // Checkmark SVG path
-
-        function transition(element, scale, opacity) {{
-            element.style.transform = `scale(${{scale}})`;
-            element.style.opacity = opacity;
-        }}
-
-        // Copy the code to clipboard
-        navigator.clipboard.writeText(`{code}`).then(() => {{
-            // Animate the SVG
-            transition(svgIcon, 0, '0');
-
-            setTimeout(() => {{
-                svgIcon.innerHTML = checkmarkPath;  // Replace content with checkmark
-                svgIcon.setAttribute('viewBox', '0 0 24 24');  // Adjust viewBox if necessary
-                transition(svgIcon, 1, '1');
-
+        // Find the SVG element within the parent
+        const svgIcon = parent.querySelector('svg');
+        // If the SVG exists, proceed with the script
+        if (svgIcon) {{
+            const originalPath = svgIcon.innerHTML;
+            const checkmarkPath = '<polyline points="20 6 9 17 4 12"></polyline>';  // Checkmark SVG path
+            function transition(element, scale, opacity) {{
+                element.style.transform = `scale(${{scale}})`;
+                element.style.opacity = opacity;
+            }}
+            // Copy the code to clipboard
+            navigator.clipboard.writeText(`{code}`).then(() => {{
+                // Animate the SVG
+                transition(svgIcon, 0, '0');
                 setTimeout(() => {{
-                    transition(svgIcon, 0, '0');
+                    svgIcon.innerHTML = checkmarkPath;  // Replace content with checkmark
+                    svgIcon.setAttribute('viewBox', '0 0 24 24');  // Adjust viewBox if necessary
+                    transition(svgIcon, 1, '1');
                     setTimeout(() => {{
-                        svgIcon.innerHTML = originalPath;  // Restore original SVG content
-                        transition(svgIcon, 1, '1');
-                    }}, 125);
-                }}, 600);
-            }}, 125);
-        }}).catch(err => {{
-            console.error('Failed to copy text: ', err);
-        }});
+                        transition(svgIcon, 0, '0');
+                        setTimeout(() => {{
+                            svgIcon.innerHTML = originalPath;  // Restore original SVG content
+                            transition(svgIcon, 1, '1');
+                        }}, 125);
+                    }}, 600);
+                }}, 125);
+            }}).catch(err => {{
+                console.error('Failed to copy text: ', err);
+            }});
+        }} else {{
+            console.error('SVG element not found within the parent.');
+        }}
+    }} else {{
+        console.error('Parent element not found.');
     }}
 }});
 """
