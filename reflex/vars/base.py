@@ -1260,22 +1260,25 @@ class LiteralVar(Var):
             if issubclass(base, Var) and base != LiteralVar
         ]
 
-        if len(possible_bases) != 1:
+        if not possible_bases:
             raise TypeError(
-                f"LiteralVar subclass {cls} must have exactly one base class that is a subclass of Var and not LiteralVar."
+                f"LiteralVar subclass {cls} must have a base class that is a subclass of Var and not LiteralVar."
             )
-
-        base_class = possible_bases[0]
 
         var_subclasses = [
             var_subclass
             for var_subclass in _var_subclasses
-            if var_subclass.var_subclass is base_class
+            if var_subclass.var_subclass in possible_bases
         ]
 
         if not var_subclasses:
             raise TypeError(
-                f"Var subclass {base_class} must have a corresponding `python_types` because a literal subclass {cls} is derived from it."
+                f"LiteralVar {cls} must have a base class annotated with `python_types`."
+            )
+
+        if len(var_subclasses) != 1:
+            raise TypeError(
+                f"LiteralVar subclass {cls} must have exactly one base class annotated with `python_types`."
             )
 
         var_subclass = var_subclasses[0]
