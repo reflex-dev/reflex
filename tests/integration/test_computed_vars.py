@@ -22,22 +22,22 @@ def ComputedVars():
         count: int = 0
 
         # cached var with dep on count
-        @rx.var(cache=True, interval=15)
+        @rx.var(interval=15)
         def count1(self) -> int:
             return self.count
 
         # cached backend var with dep on count
-        @rx.var(cache=True, interval=15, backend=True)
+        @rx.var(interval=15, backend=True)
         def count1_backend(self) -> int:
             return self.count
 
         # same as above but implicit backend with `_` prefix
-        @rx.var(cache=True, interval=15)
+        @rx.var(interval=15)
         def _count1_backend(self) -> int:
             return self.count
 
         # explicit disabled auto_deps
-        @rx.var(interval=15, cache=True, auto_deps=False)
+        @rx.var(interval=15, auto_deps=False)
         def count3(self) -> int:
             # this will not add deps, because auto_deps is False
             print(self.count1)
@@ -45,16 +45,19 @@ def ComputedVars():
             return self.count
 
         # explicit dependency on count var
-        @rx.var(cache=True, deps=["count"], auto_deps=False)
+        @rx.var(deps=["count"], auto_deps=False)
         def depends_on_count(self) -> int:
             return self.count
 
         # explicit dependency on count1 var
-        @rx.var(cache=True, deps=[count1], auto_deps=False)
+        @rx.var(deps=[count1], auto_deps=False)
         def depends_on_count1(self) -> int:
             return self.count
 
-        @rx.var(deps=[count3], auto_deps=False, cache=True)
+        @rx.var(
+            deps=[count3],
+            auto_deps=False,
+        )
         def depends_on_count3(self) -> int:
             return self.count
 
