@@ -194,3 +194,4 @@ class ToFunctionOperation(ToOperation, FunctionVar):
 
 
 JSON_STRINGIFY = FunctionStringVar.create("JSON.stringify")
+ARRAY_ISARRAY = FunctionStringVar.create("Array.isArray")
