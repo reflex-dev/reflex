@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import platform
 from enum import Enum
 from importlib import metadata
@@ -10,6 +9,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from platformdirs import PlatformDirs
+
+from .utils import classproperty
 
 IS_WINDOWS = platform.system() == "Windows"
 
@@ -95,27 +96,51 @@ class Templates(SimpleNamespace):
     DEFAULT = "blank"
 
     # The reflex.build frontend host
-    REFLEX_BUILD_FRONTEND = os.environ.get(
-        "REFLEX_BUILD_FRONTEND", "https://flexgen.reflex.run"
-    )
+    REFLEX_BUILD_FRONTEND = "https://flexgen.reflex.run"
 
     # The reflex.build backend host
-    REFLEX_BUILD_BACKEND = os.environ.get(
-        "REFLEX_BUILD_BACKEND", "https://flexgen-prod-flexgen.fly.dev"
-    )
+    REFLEX_BUILD_BACKEND = "https://flexgen-prod-flexgen.fly.dev"
 
-    # The URL to redirect to reflex.build
-    REFLEX_BUILD_URL = (
-        REFLEX_BUILD_FRONTEND + "/gen?reflex_init_token={reflex_init_token}"
-    )
+    @classproperty
+    @classmethod
+    def REFLEX_BUILD_URL(cls):
+        """The URL to redirect to reflex.build.
 
-    # The URL to poll waiting for the user to select a generation.
-    REFLEX_BUILD_POLL_URL = REFLEX_BUILD_BACKEND + "/api/init/{reflex_init_token}"
+        Returns:
+            The URL to redirect to reflex.build.
+        """
+        from reflex.config import environment
 
-    # The URL to fetch the generation's reflex code
-    REFLEX_BUILD_CODE_URL = (
-        REFLEX_BUILD_BACKEND + "/api/gen/{generation_hash}/refactored"
-    )
+        return (
+            environment.REFLEX_BUILD_FRONTEND
+            + "/gen?reflex_init_token={reflex_init_token}"
+        )
+
+    @classproperty
+    @classmethod
+    def REFLEX_BUILD_POLL_URL(cls):
+        """The URL to poll waiting for the user to select a generation.
+
+        Returns:
+            The URL to poll waiting for the user to select a generation.
+        """
+        from reflex.config import environment
+
+        return environment.REFLEX_BUILD_BACKEND + "/api/init/{reflex_init_token}"
+
+    @classproperty
+    @classmethod
+    def REFLEX_BUILD_CODE_URL(cls):
+        """The URL to fetch the generation's reflex code.
+
+        Returns:
+            The URL to fetch the generation's reflex code.
+        """
+        from reflex.config import environment
+
+        return (
+            environment.REFLEX_BUILD_BACKEND + "/api/gen/{generation_hash}/refactored"
+        )
 
     class Dirs(SimpleNamespace):
         """Folders used by the template system of Reflex."""

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from collections import defaultdict
 from typing import Any, ClassVar, Optional, Type, Union
 
@@ -44,7 +43,7 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
             "Database is not initialized, run [bold]reflex db init[/bold] first."
         )
     # Print the SQL queries if the log level is INFO or lower.
-    echo_db_query = os.environ.get("SQLALCHEMY_ECHO") == "True"
+    echo_db_query = environment.SQLALCHEMY_ECHO
     # Needed for the admin dash on sqlite.
     connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
     return sqlmodel.create_engine(url, echo=echo_db_query, connect_args=connect_args)

@@ -286,6 +286,21 @@ class EnvironmentVariables:
     # The directory to store reflex dependencies.
     REFLEX_DIR: Path = Path(constants.Reflex.DIR)
 
+    # Whether to print the SQL queries if the log level is INFO or lower.
+    SQLALCHEMY_ECHO: bool = False
+
+    # Whether to ignore the redis config error. Some redis servers only allow out-of-band configuration.
+    REFLEX_IGNORE_REDIS_CONFIG_ERROR: bool = False
+
+    # Whether to skip purging the web directory in dev mode.
+    REFLEX_PERSIST_WEB_DIR: bool = False
+
+    # The reflex.build frontend host.
+    REFLEX_BUILD_FRONTEND: str = constants.Templates.REFLEX_BUILD_FRONTEND
+
+    # The reflex.build backend host.
+    REFLEX_BUILD_BACKEND: str = constants.Templates.REFLEX_BUILD_BACKEND
+
     def __init__(self):
         """Initialize the environment variables."""
         type_hints = get_type_hints(type(self))

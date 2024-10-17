@@ -5,9 +5,9 @@ from __future__ import annotations
 import platform
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Callable, Generic, Type, TypeVar
 
 from .base import IS_WINDOWS
+from .utils import classproperty
 
 
 def get_fnm_name() -> str | None:
@@ -30,34 +30,6 @@ def get_fnm_name() -> str | None:
             return "fnm-arm64"
         return "fnm-linux"
     return None
-
-
-T = TypeVar("T")
-V = TypeVar("V")
-
-
-class classproperty(Generic[T, V]):
-    """A class property decorator."""
-
-    def __init__(self, getter: Callable[[Type[T]], V]) -> None:
-        """Initialize the class property.
-
-        Args:
-            getter: The getter function.
-        """
-        self.getter = getattr(getter, "__func__", getter)
-
-    def __get__(self, instance: Any, owner: Type[T]) -> V:
-        """Get the value of the class property.
-
-        Args:
-            instance: The instance of the class.
-            owner: The class itself.
-
-        Returns:
-            The value of the class property.
-        """
-        return self.getter(owner)
 
 
 # Bun config.
