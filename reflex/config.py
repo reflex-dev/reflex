@@ -180,6 +180,24 @@ def interpret_boolean_env(value: str) -> bool:
         raise ValueError(f"Invalid boolean value: {value}")
 
 
+def interpret_int_env(value: str) -> int:
+    """Interpret an integer environment variable value.
+
+    Args:
+        value: The environment variable value.
+
+    Returns:
+        The interpreted value.
+
+    Raises:
+        ValueError: If the value is invalid.
+    """
+    try:
+        return int(value)
+    except ValueError as ve:
+        raise ValueError(f"Invalid integer value: {value}") from ve
+
+
 def interpret_path_env(value: str) -> Path:
     """Interpret a path environment variable value.
 
@@ -209,10 +227,10 @@ def interpret_env_var_value(value: str, field: dataclasses.Field) -> Any:
 
     if field_type is bool:
         return interpret_boolean_env(value)
-
     elif field_type is str:
         return value
-
+    elif field_type is int:
+        return interpret_int_env(value)
     elif field_type is Path:
         return interpret_path_env(value)
 
@@ -258,6 +276,12 @@ class EnvironmentVariables:
 
     # The directory to store uploaded files.
     REFLEX_UPLOADED_FILES_DIR: Path = Path(constants.Dirs.UPLOADED_FILES)
+
+    # Whether to use seperate processes to compile the frontend and how many. If not set, defaults to thread executor.
+    REFLEX_COMPILE_PROCESSES: Optional[int] = None
+
+    # Whether to use seperate threads to compile the frontend and how many. Defaults to `min(32, os.cpu_count() + 4)`.
+    REFLEX_COMPILE_THREADS: Optional[int] = None
 
     def __init__(self):
         """Initialize the environment variables."""
