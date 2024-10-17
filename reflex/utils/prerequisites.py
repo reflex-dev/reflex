@@ -991,7 +991,7 @@ def needs_reinit(frontend: bool = True) -> bool:
         return False
 
     # Make sure the .reflex directory exists.
-    if not constants.Reflex.DIR.exists():
+    if not environment.REFLEX_DIR.exists():
         return True
 
     # Make sure the .web directory exists in frontend mode.
@@ -1096,7 +1096,7 @@ def ensure_reflex_installation_id() -> Optional[int]:
     """
     try:
         initialize_reflex_user_directory()
-        installation_id_file = constants.Reflex.DIR / "installation_id"
+        installation_id_file = environment.REFLEX_DIR / "installation_id"
 
         installation_id = None
         if installation_id_file.exists():
@@ -1121,7 +1121,7 @@ def ensure_reflex_installation_id() -> Optional[int]:
 def initialize_reflex_user_directory():
     """Initialize the reflex user directory."""
     # Create the reflex directory.
-    path_ops.mkdir(constants.Reflex.DIR)
+    path_ops.mkdir(environment.REFLEX_DIR)
 
 
 def initialize_frontend_dependencies():

@@ -283,6 +283,9 @@ class EnvironmentVariables:
     # Whether to use seperate threads to compile the frontend and how many. Defaults to `min(32, os.cpu_count() + 4)`.
     REFLEX_COMPILE_THREADS: Optional[int] = None
 
+    # The directory to store reflex dependencies.
+    REFLEX_DIR: Path = Path(constants.Reflex.DIR)
+
     def __init__(self):
         """Initialize the environment variables."""
         type_hints = get_type_hints(type(self))
