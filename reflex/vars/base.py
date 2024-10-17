@@ -1278,7 +1278,7 @@ class LiteralVar(Var):
 
         if len(var_subclasses) != 1:
             raise TypeError(
-                f"LiteralVar subclass {cls} must have exactly one base class annotated with `python_types`."
+                f"LiteralVar {cls} must have exactly one base class annotated with `python_types`."
             )
 
         var_subclass = var_subclasses[0]
