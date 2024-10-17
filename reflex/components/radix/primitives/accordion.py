@@ -194,10 +194,10 @@ class AccordionItem(AccordionComponent):
     disabled: Var[bool]
 
     # The header of the accordion item.
-    header: Var[Optional[Component | Var]] = None
+    header: Var[Optional[Union[Component, str]]] = None
 
     # The content of the accordion item.
-    content: Var[Optional[Component | Var]] = None
+    content: Var[Optional[Union[Component, str]]] = None
 
     _valid_children: List[str] = [
         "AccordionHeader",
