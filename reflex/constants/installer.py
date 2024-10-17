@@ -84,7 +84,11 @@ class Bun(SimpleNamespace):
     @classproperty
     @classmethod
     def ROOT_PATH(cls):
-        """The directory to store the bun."""
+        """The directory to store the bun.
+
+        Returns:
+            The directory to store the bun.
+        """
         from reflex.config import environment
 
         return environment.REFLEX_DIR / "bun"
@@ -92,7 +96,11 @@ class Bun(SimpleNamespace):
     @classproperty
     @classmethod
     def DEFAULT_PATH(cls):
-        """Default bun path."""
+        """Default bun path.
+
+        Returns:
+            The default bun path.
+        """
         return cls.ROOT_PATH / "bin" / ("bun" if not IS_WINDOWS else "bun.exe")
 
 
@@ -113,7 +121,11 @@ class Fnm(SimpleNamespace):
     @classproperty
     @classmethod
     def DIR(cls) -> Path:
-        """The directory to store fnm."""
+        """The directory to store fnm.
+
+        Returns:
+            The directory to store fnm.
+        """
         from reflex.config import environment
 
         return environment.REFLEX_DIR / "fnm"
@@ -121,7 +133,11 @@ class Fnm(SimpleNamespace):
     @classproperty
     @classmethod
     def EXE(cls):
-        """The fnm executable binary."""
+        """The fnm executable binary.
+
+        Returns:
+            The fnm executable binary.
+        """
         return cls.DIR / ("fnm.exe" if IS_WINDOWS else "fnm")
 
 
@@ -137,7 +153,11 @@ class Node(SimpleNamespace):
     @classproperty
     @classmethod
     def BIN_PATH(cls):
-        """The node bin path."""
+        """The node bin path.
+
+        Returns:
+            The node bin path.
+        """
         return (
             Fnm.DIR
             / "node-versions"
@@ -149,13 +169,21 @@ class Node(SimpleNamespace):
     @classproperty
     @classmethod
     def PATH(cls):
-        """The default path where node is installed."""
+        """The default path where node is installed.
+
+        Returns:
+            The default path where node is installed.
+        """
         return cls.BIN_PATH / ("node.exe" if IS_WINDOWS else "node")
 
     @classproperty
     @classmethod
     def NPM_PATH(cls):
-        """The default path where npm is installed."""
+        """The default path where npm is installed.
+
+        Returns:
+            The default path where npm is installed.
+        """
         return cls.BIN_PATH / "npm"
 
 
