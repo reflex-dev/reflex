@@ -17,7 +17,7 @@ rx.text(
 
 from __future__ import annotations
 
-from typing import Dict, List, Literal, get_args, Optional
+from typing import Dict, List, Literal, Optional, get_args
 
 from reflex.components.component import BaseComponent
 from reflex.components.core.cond import Cond, color_mode_cond, cond

@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import List, Literal, Union
+from typing import List, Literal
 
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
