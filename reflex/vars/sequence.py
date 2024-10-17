@@ -1167,7 +1167,10 @@ class ArrayVar(Var[ARRAY_VAR_TYPE]):
                 _var_type=first_arg_type,
             ).guess_type()
 
-            function_var = ArgsFunctionOperation.create((arg_name,), fn(first_arg))
+            function_var = ArgsFunctionOperation.create(
+                (arg_name,),
+                Var.create(fn(first_arg)),
+            )
 
         return map_array_operation(self, function_var)
 
