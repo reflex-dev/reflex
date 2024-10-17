@@ -257,7 +257,7 @@ class EnvironmentVariables:
         for field in dataclasses.fields(self):
             raw_value = os.getenv(field.name, None)
 
-            field.type = type_hints[field.name] or field.type
+            field.type = type_hints.get(field.name) or field.type
 
             value = (
                 interpret_env_var_value(raw_value, field)
