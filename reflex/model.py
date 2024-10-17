@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 from collections import defaultdict
-from pathlib import Path
 from typing import Any, ClassVar, Optional, Type, Union
 
 import alembic.autogenerate
@@ -18,9 +17,8 @@ import sqlalchemy
 import sqlalchemy.exc
 import sqlalchemy.orm
 
-from reflex import constants
 from reflex.base import Base
-from reflex.config import get_config
+from reflex.config import environment, get_config
 from reflex.utils import console
 from reflex.utils.compat import sqlmodel, sqlmodel_field_has_primary_key
 
@@ -41,7 +39,7 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     url = url or conf.db_url
     if url is None:
         raise ValueError("No database url configured")
-    if not Path(constants.ALEMBIC_CONFIG).exists():
+    if environment.ALEMBIC_CONFIG.exists():
         console.warn(
             "Database is not initialized, run [bold]reflex db init[/bold] first."
         )
@@ -234,7 +232,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         Returns:
             tuple of (config, script_directory)
         """
-        config = alembic.config.Config(constants.ALEMBIC_CONFIG)
+        config = alembic.config.Config(environment.ALEMBIC_CONFIG)
         return config, alembic.script.ScriptDirectory(
             config.get_main_option("script_location", default="version"),
         )
@@ -269,8 +267,8 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
     def alembic_init(cls):
         """Initialize alembic for the project."""
         alembic.command.init(
-            config=alembic.config.Config(constants.ALEMBIC_CONFIG),
-            directory=str(Path(constants.ALEMBIC_CONFIG).parent / "alembic"),
+            config=alembic.config.Config(environment.ALEMBIC_CONFIG),
+            directory=str(environment.ALEMBIC_CONFIG.parent / "alembic"),
         )
 
     @classmethod
@@ -290,7 +288,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         Returns:
             True when changes have been detected.
         """
-        if not Path(constants.ALEMBIC_CONFIG).exists():
+        if not environment.ALEMBIC_CONFIG.exists():
             return False
 
         config, script_directory = cls._alembic_config()
@@ -391,7 +389,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
             True - indicating the process was successful.
             None - indicating the process was skipped.
         """
-        if not Path(constants.ALEMBIC_CONFIG).exists():
+        if not environment.ALEMBIC_CONFIG.exists():
             return
 
         with cls.get_db_engine().connect() as connection:

@@ -20,6 +20,8 @@ class Dirs(SimpleNamespace):
     # The frontend directories in a project.
     # The web folder where the NextJS app is compiled to.
     WEB = ".web"
+    # The directory where uploaded files are stored.
+    UPLOADED_FILES = "uploaded_files"
     # The name of the assets directory.
     APP_ASSETS = "assets"
     # The name of the assets directory for external ressource (a subfolder of APP_ASSETS).

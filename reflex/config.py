@@ -169,8 +169,8 @@ def interpret_boolean_env(value: str) -> bool:
     Raises:
         ValueError: If the value is invalid.
     """
-    true_values = ["true", "1", "yes"]
-    false_values = ["false", "0", "no"]
+    true_values = ["true", "1", "yes", "y"]
+    false_values = ["false", "0", "no", "n"]
 
     if value.lower() in true_values:
         return True
@@ -249,6 +249,15 @@ class EnvironmentVariables:
 
     # The working directory for the next.js commands.
     REFLEX_WEB_WORKDIR: Path = Path(constants.Dirs.WEB)
+
+    # Path to the alembic config file
+    ALEMBIC_CONFIG: Path = Path(constants.ALEMBIC_CONFIG)
+
+    # Disable SSL verification for HTTPX requests.
+    SSL_NO_VERIFY: bool = False
+
+    # The directory to store uploaded files.
+    REFLEX_UPLOADED_FILES_DIR: Path = Path(constants.Dirs.UPLOADED_FILES)
 
     def __init__(self):
         """Initialize the environment variables."""

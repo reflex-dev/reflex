@@ -1144,7 +1144,7 @@ def check_db_initialized() -> bool:
     Returns:
         True if alembic is initialized (or if database is not used).
     """
-    if get_config().db_url is not None and not Path(constants.ALEMBIC_CONFIG).exists():
+    if get_config().db_url is not None and not environment.ALEMBIC_CONFIG.exists():
         console.error(
             "Database is not initialized. Run [bold]reflex db init[/bold] first."
         )
@@ -1154,7 +1154,7 @@ def check_db_initialized() -> bool:
 
 def check_schema_up_to_date():
     """Check if the sqlmodel metadata matches the current database schema."""
-    if get_config().db_url is None or not Path(constants.ALEMBIC_CONFIG).exists():
+    if get_config().db_url is None or not environment.ALEMBIC_CONFIG.exists():
         return
     with model.Model.get_db_engine().connect() as connection:
         try:
