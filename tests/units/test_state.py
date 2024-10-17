@@ -172,7 +172,7 @@ class GrandchildState(ChildState):
 class GrandchildState2(ChildState2):
     """A grandchild state fixture."""
 
-    @rx.var(cache=True)
+    @rx.var
     def cached(self) -> str:
         """A cached var.
 
@@ -185,7 +185,7 @@ class GrandchildState2(ChildState2):
 class GrandchildState3(ChildState3):
     """A great grandchild state fixture."""
 
-    @rx.var
+    @rx.var(cache=False)
     def computed(self) -> str:
         """A computed var.
 
@@ -765,7 +765,7 @@ async def test_process_event_simple(test_state):
     # The delta should contain the changes, including computed vars.
     # assert update.delta == {"test_state": {"num1": 69, "sum": 72.14}}
     assert update.delta == {
-        TestState.get_full_name(): {"num1": 69, "sum": 72.14, "upper": ""},
+        TestState.get_full_name(): {"num1": 69, "sum": 72.14},
         GrandchildState3.get_full_name(): {"computed": ""},
     }
     assert update.events == []
@@ -792,7 +792,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     assert child_state.value == "HI"
     assert child_state.count == 24
     assert update.delta == {
-        TestState.get_full_name(): {"sum": 3.14, "upper": ""},
+        # TestState.get_full_name(): {"sum": 3.14, "upper": ""},
         ChildState.get_full_name(): {"value": "HI", "count": 24},
         GrandchildState3.get_full_name(): {"computed": ""},
     }
@@ -808,7 +808,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     update = await test_state._process(event).__anext__()
     assert grandchild_state.value2 == "new"
     assert update.delta == {
-        TestState.get_full_name(): {"sum": 3.14, "upper": ""},
+        # TestState.get_full_name(): {"sum": 3.14, "upper": ""},
         GrandchildState.get_full_name(): {"value2": "new"},
         GrandchildState3.get_full_name(): {"computed": ""},
     }
@@ -958,7 +958,7 @@ class InterdependentState(BaseState):
     v1: int = 0
     _v2: int = 1
 
-    @rx.var(cache=True)
+    @rx.var
     def v1x2(self) -> int:
         """Depends on var v1.
 
@@ -967,7 +967,7 @@ class InterdependentState(BaseState):
         """
         return self.v1 * 2
 
-    @rx.var(cache=True)
+    @rx.var
     def v2x2(self) -> int:
         """Depends on backend var _v2.
 
@@ -976,7 +976,7 @@ class InterdependentState(BaseState):
         """
         return self._v2 * 2
 
-    @rx.var(cache=True, backend=True)
+    @rx.var(backend=True)
     def v2x2_backend(self) -> int:
         """Depends on backend var _v2.
 
@@ -985,7 +985,7 @@ class InterdependentState(BaseState):
         """
         return self._v2 * 2
 
-    @rx.var(cache=True)
+    @rx.var
     def v1x2x2(self) -> int:
         """Depends on ComputedVar v1x2.
 
@@ -994,7 +994,7 @@ class InterdependentState(BaseState):
         """
         return self.v1x2 * 2  # type: ignore
 
-    @rx.var(cache=True)
+    @rx.var
     def _v3(self) -> int:
         """Depends on backend var _v2.
 
@@ -1003,7 +1003,7 @@ class InterdependentState(BaseState):
         """
         return self._v2
 
-    @rx.var(cache=True)
+    @rx.var
     def v3x2(self) -> int:
         """Depends on ComputedVar _v3.
 
@@ -1208,7 +1208,7 @@ def test_computed_var_cached():
     class ComputedState(BaseState):
         v: int = 0
 
-        @rx.var(cache=True)
+        @rx.var
         def comp_v(self) -> int:
             nonlocal comp_v_calls
             comp_v_calls += 1
@@ -1233,15 +1233,15 @@ def test_computed_var_cached_depends_on_non_cached():
     class ComputedState(BaseState):
         v: int = 0
 
-        @rx.var
+        @rx.var(cache=False)
         def no_cache_v(self) -> int:
             return self.v
 
-        @rx.var(cache=True)
+        @rx.var
         def dep_v(self) -> int:
             return self.no_cache_v  # type: ignore
 
-        @rx.var(cache=True)
+        @rx.var
         def comp_v(self) -> int:
             return self.v
 
@@ -1273,14 +1273,14 @@ def test_computed_var_depends_on_parent_non_cached():
     counter = 0
 
     class ParentState(BaseState):
-        @rx.var
+        @rx.var(cache=False)
         def no_cache_v(self) -> int:
             nonlocal counter
             counter += 1
             return counter
 
     class ChildState(ParentState):
-        @rx.var(cache=True)
+        @rx.var
         def dep_v(self) -> int:
             return self.no_cache_v  # type: ignore
 
@@ -1326,7 +1326,7 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
         def handler(self):
             self.x = self.x + 1
 
-        @rx.var(cache=True)
+        @rx.var
         def cached_x_side_effect(self) -> int:
             self.handler()
             nonlocal counter
@@ -1362,7 +1362,7 @@ def test_computed_var_dependencies():
         def testprop(self) -> int:
             return self.v
 
-        @rx.var(cache=True)
+        @rx.var
         def comp_v(self) -> int:
             """Direct access.
 
@@ -1371,7 +1371,7 @@ def test_computed_var_dependencies():
             """
             return self.v
 
-        @rx.var(cache=True, backend=True)
+        @rx.var(backend=True)
         def comp_v_backend(self) -> int:
             """Direct access backend var.
 
@@ -1380,7 +1380,7 @@ def test_computed_var_dependencies():
             """
             return self.v
 
-        @rx.var(cache=True)
+        @rx.var
         def comp_v_via_property(self) -> int:
             """Access v via property.
 
@@ -1389,7 +1389,7 @@ def test_computed_var_dependencies():
             """
             return self.testprop
 
-        @rx.var(cache=True)
+        @rx.var
         def comp_w(self):
             """Nested lambda.
 
@@ -1398,7 +1398,7 @@ def test_computed_var_dependencies():
             """
             return lambda: self.w
 
-        @rx.var(cache=True)
+        @rx.var
         def comp_x(self):
             """Nested function.
 
@@ -1411,7 +1411,7 @@ def test_computed_var_dependencies():
 
             return _
 
-        @rx.var(cache=True)
+        @rx.var
         def comp_y(self) -> List[int]:
             """Comprehension iterating over attribute.
 
@@ -1420,7 +1420,7 @@ def test_computed_var_dependencies():
             """
             return [round(y) for y in self.y]
 
-        @rx.var(cache=True)
+        @rx.var
         def comp_z(self) -> List[bool]:
             """Comprehension accesses attribute.
 
@@ -1923,10 +1923,10 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     assert json.loads(mcall.args[1]) == dataclasses.asdict(
         StateUpdate(
             delta={
-                parent_state.get_full_name(): {
-                    "upper": "",
-                    "sum": 3.14,
-                },
+                # parent_state.get_full_name(): {
+                #     "upper": "",
+                #     "sum": 3.14,
+                # },
                 grandchild_state.get_full_name(): {
                     "value2": "42",
                 },
@@ -1945,7 +1945,7 @@ class BackgroundTaskState(BaseState):
     order: List[str] = []
     dict_list: Dict[str, List[int]] = {"foo": [1, 2, 3]}
 
-    @rx.var
+    @rx.var(cache=False)
     def computed_order(self) -> List[str]:
         """Get the order as a computed var.
 
@@ -2921,10 +2921,10 @@ async def test_get_state(mock_app: rx.App, token: str):
     grandchild_state.value2 = "set_value"
 
     assert test_state.get_delta() == {
-        TestState.get_full_name(): {
-            "sum": 3.14,
-            "upper": "",
-        },
+        # TestState.get_full_name(): {
+        #     "sum": 3.14,
+        #     "upper": "",
+        # },
         GrandchildState.get_full_name(): {
             "value2": "set_value",
         },
@@ -2962,10 +2962,10 @@ async def test_get_state(mock_app: rx.App, token: str):
     child_state2.value = "set_c2_value"
 
     assert new_test_state.get_delta() == {
-        TestState.get_full_name(): {
-            "sum": 3.14,
-            "upper": "",
-        },
+        # TestState.get_full_name(): {
+        #     "sum": 3.14,
+        #     "upper": "",
+        # },
         ChildState2.get_full_name(): {
             "value": "set_c2_value",
         },
@@ -3091,8 +3091,8 @@ def test_potentially_dirty_substates():
         def bar(self) -> str:
             return ""
 
-    assert RxState._potentially_dirty_substates() == {State}
-    assert State._potentially_dirty_substates() == {C1}
+    assert RxState._potentially_dirty_substates() == set()
+    assert State._potentially_dirty_substates() == set()
     assert C1._potentially_dirty_substates() == set()
 
 
@@ -3107,7 +3107,7 @@ def test_router_var_dep() -> None:
     class RouterVarDepState(RouterVarParentState):
         """A state with a router var dependency."""
 
-        @rx.var(cache=True)
+        @rx.var
         def foo(self) -> str:
             return self.router.page.params.get("foo", "")
 
@@ -3227,7 +3227,7 @@ class MixinState(State, mixin=True):
     _backend: int = 0
     _backend_no_default: dict
 
-    @rx.var(cache=True)
+    @rx.var
     def computed(self) -> str:
         """A computed var on mixin state.
 

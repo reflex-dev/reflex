@@ -1531,7 +1531,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         self,
         fget: Callable[[BASE_STATE], RETURN_TYPE],
         initial_value: RETURN_TYPE | types.Unset = types.Unset(),
-        cache: bool = False,
+        cache: bool = True,
         deps: Optional[List[Union[str, Var]]] = None,
         auto_deps: bool = True,
         interval: Optional[Union[int, datetime.timedelta]] = None,
@@ -1924,7 +1924,7 @@ if TYPE_CHECKING:
 def computed_var(
     fget: None = None,
     initial_value: Any | types.Unset = types.Unset(),
-    cache: bool = False,
+    cache: bool = True,
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
@@ -1937,7 +1937,7 @@ def computed_var(
 def computed_var(
     fget: Callable[[BASE_STATE], RETURN_TYPE],
     initial_value: RETURN_TYPE | types.Unset = types.Unset(),
-    cache: bool = False,
+    cache: bool = True,
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
@@ -1949,7 +1949,7 @@ def computed_var(
 def computed_var(
     fget: Callable[[BASE_STATE], Any] | None = None,
     initial_value: Any | types.Unset = types.Unset(),
-    cache: bool = False,
+    cache: bool = True,
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
