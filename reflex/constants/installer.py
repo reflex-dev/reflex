@@ -5,8 +5,6 @@ from __future__ import annotations
 import platform
 from types import SimpleNamespace
 
-from reflex.config import environment
-
 from .base import IS_WINDOWS, Reflex
 
 
@@ -55,9 +53,6 @@ class Bun(SimpleNamespace):
     # Path of the bunfig file
     CONFIG_PATH = "bunfig.toml"
 
-    # The environment variable to use the system installed bun.
-    USE_SYSTEM = environment.REFLEX_USE_SYSTEM_BUN
-
 
 # FNM config.
 class Fnm(SimpleNamespace):
@@ -100,9 +95,6 @@ class Node(SimpleNamespace):
 
     # The default path where npm is installed.
     NPM_PATH = BIN_PATH / "npm"
-
-    # The environment variable to use the system installed node.
-    USE_SYSTEM = environment.REFLEX_USE_SYSTEM_NODE
 
 
 class PackageJson(SimpleNamespace):
