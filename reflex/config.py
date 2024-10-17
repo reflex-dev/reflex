@@ -188,9 +188,6 @@ def interpret_path_env(value: str) -> Path:
 
     Returns:
         The interpreted value.
-
-    Raises:
-        ValueError: If the value is invalid.
     """
     return Path(value)
 
@@ -260,13 +257,13 @@ class EnvironmentVariables:
         for field in dataclasses.fields(self):
             raw_value = os.getenv(field.name, None)
 
+            field.type = type_hints[field.name] or field.type
+
             value = (
                 interpret_env_var_value(raw_value, field)
                 if raw_value is not None
                 else get_default_value_for_field(field)
             )
-
-            field.type = type_hints[field.name] or field.type
 
             setattr(self, field.name, value)
 
