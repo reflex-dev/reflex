@@ -10,6 +10,8 @@ import urllib.parse
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Union
 
+from typing_extensions import get_type_hints
+
 from reflex.utils.exceptions import ConfigError
 from reflex.utils.types import value_inside_optional
 
@@ -253,6 +255,8 @@ class EnvironmentVariables:
 
     def __init__(self):
         """Initialize the environment variables."""
+        type_hints = get_type_hints(type(self))
+
         for field in dataclasses.fields(self):
             raw_value = os.getenv(field.name, None)
 
@@ -261,6 +265,8 @@ class EnvironmentVariables:
                 if raw_value is not None
                 else get_default_value_for_field(field)
             )
+
+            field.type = type_hints[field.name] or field.type
 
             setattr(self, field.name, value)
 
