@@ -8,7 +8,6 @@ import typing
 from inspect import isclass
 from typing import (
     Any,
-    ClassVar,
     Dict,
     List,
     NoReturn,
@@ -27,7 +26,6 @@ from reflex.utils.types import GenericType, get_attribute_access_type, get_origi
 from .base import (
     CachedVarOperation,
     LiteralVar,
-    ToOperation,
     Var,
     VarData,
     cached_property_no_lock,
@@ -48,7 +46,7 @@ ARRAY_INNER_TYPE = TypeVar("ARRAY_INNER_TYPE")
 OTHER_KEY_TYPE = TypeVar("OTHER_KEY_TYPE")
 
 
-class ObjectVar(Var[OBJECT_TYPE]):
+class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
     """Base class for immutable object vars."""
 
     def _key_type(self) -> Type:
@@ -519,34 +517,6 @@ class ObjectItemOperation(CachedVarOperation, Var):
             _object=object,
             _key=key if isinstance(key, Var) else LiteralVar.create(key),
         )
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ToObjectOperation(ToOperation, ObjectVar):
-    """Operation to convert a var to an object."""
-
-    _original: Var = dataclasses.field(
-        default_factory=lambda: LiteralObjectVar.create({})
-    )
-
-    _default_var_type: ClassVar[GenericType] = dict
-
-    def __getattr__(self, name: str) -> Any:
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute of the var.
-        """
-        if name == "_js_expr":
-            return self._original._js_expr
-        return ObjectVar.__getattr__(self, name)
 
 
 @var_operation
