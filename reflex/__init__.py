@@ -329,6 +329,7 @@ _MAPPING: dict = {
         "SessionStorage",
         "ComponentState",
         "State",
+        "dynamic",
     ],
     "style": ["Style", "toggle_color_mode"],
     "utils.imports": ["ImportVar"],

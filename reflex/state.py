@@ -31,6 +31,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypeVar,
     Union,
     cast,
     get_args,
@@ -2089,6 +2090,47 @@ class State(BaseState):
 
     # The hydrated bool.
     is_hydrated: bool = False
+
+
+T = TypeVar("T", bound=BaseState)
+
+
+def dynamic(func: Callable[[T], Component]):
+    """Create a dynamically generated components from a state class.
+
+    Args:
+        func: The function to generate the component.
+
+    Returns:
+        The dynamically generated component.
+    """
+    number_of_parameters = len(inspect.signature(func).parameters)
+
+    func_signature = get_type_hints(func)
+
+    if "return" in func_signature:
+        func_signature.pop("return")
+
+    values = list(func_signature.values())
+
+    if number_of_parameters != 1:
+        raise ValueError(
+            "The function must have exactly one parameter, which is the state class."
+        )
+
+    if len(values) != 1:
+        raise ValueError(
+            "You must provide a type hint for the state class in the function."
+        )
+
+    state_class: Type[T] = values[0]
+
+    def wrapper() -> Component:
+        from reflex.components.base.fragment import fragment
+
+        return fragment(state_class._evaluate(lambda state: func(state)))
+
+    return wrapper
 
 
 class FrontendEventExceptionState(State):
