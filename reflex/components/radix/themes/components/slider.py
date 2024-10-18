@@ -62,7 +62,7 @@ class Slider(RadixThemesComponent):
     name: Var[str]
 
     # The width of the slider.
-    width: Var[Optional[str]] = "100%"
+    width: Var[Optional[str]] = Var.create("100%")
 
     # The minimum value of the slider.
     min: Var[Union[float, int]]

@@ -166,7 +166,7 @@ class ConnectionBanner(Component):
     """A connection banner component."""
 
     # The component to render when there's a server connection error.
-    comp: Var[Optional[Component]] = None
+    comp: Var[Optional[Component]] = Var.create(None)
 
     @classmethod
     def create(cls, **props) -> Component:
@@ -198,7 +198,7 @@ class ConnectionModal(Component):
     """A connection status modal window."""
 
     # The component to render when there's a server connection error.
-    comp: Var[Optional[Component]] = None
+    comp: Var[Optional[Component]] = Var.create(None)
 
     @classmethod
     def create(cls, **props) -> Component:

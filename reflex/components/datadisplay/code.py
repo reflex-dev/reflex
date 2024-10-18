@@ -391,7 +391,7 @@ class CodeBlock(Component):
     theme: Var[Union[Theme, str]] = Theme.one_light
 
     # The language to use.
-    language: Var[LiteralCodeLanguage] = "python"  # type: ignore
+    language: Var[LiteralCodeLanguage] = Var.create("python")
 
     # The code to display.
     code: Var[str]
@@ -412,10 +412,10 @@ class CodeBlock(Component):
     code_tag_props: Var[Dict[str, str]]
 
     # Whether a copy button should appear.
-    can_copy: Var[Optional[bool]] = False
+    can_copy: Var[Optional[bool]] = Var.create(False)
 
     # A custom copy button to override the default one.
-    copy_button: Var[Optional[Union[bool, Component]]] = None
+    copy_button: Var[Optional[Union[bool, Component]]] = Var.create(None)
 
     def add_imports(self) -> ImportDict:
         """Add imports for the CodeBlock component.

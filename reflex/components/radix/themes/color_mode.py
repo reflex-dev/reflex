@@ -97,10 +97,10 @@ class ColorModeIconButton(IconButton):
     """Icon Button for toggling light / dark mode via toggle_color_mode."""
 
     # The position of the icon button. Follow document flow if None.
-    position: Var[Optional[LiteralPosition]] = None
+    position: Var[Optional[LiteralPosition]] = Var.create(None)
 
     # Allow picking the "system" value for the color mode.
-    allow_system: Var[bool] = False
+    allow_system: Var[bool] = Var.create(False)
 
     @classmethod
     def create(

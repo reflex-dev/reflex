@@ -13,10 +13,10 @@ class Stack(Flex):
     """A stack component."""
 
     # The spacing between each stack item.
-    spacing: LiteralSpacing = "3"
+    spacing: Var[LiteralSpacing] = Var.create("3")
 
     # The alignment of the stack items.
-    align: LiteralAlign = "start"
+    align: Var[LiteralAlign] = Var.create("start")
 
     @classmethod
     def create(
