@@ -519,8 +519,8 @@ def test_var_indexing_types(var, type_):
         type_ : The type on indexed object.
 
     """
-    assert var[2]._var_type == type_[0]
-    assert var[3]._var_type == type_[1]
+    assert var[0]._var_type == type_[0]
+    assert var[1]._var_type == type_[1]
 
 
 def test_var_indexing_str():
