@@ -702,7 +702,6 @@ class HighLevelSelect(SelectRoot):
 
         Args:
             items: The items of the select.
-            items: The items of the select.
             placeholder: The placeholder of the select.
             label: The label of the select.
             color_scheme: The color of the select.
@@ -875,7 +874,6 @@ class Select(ComponentNamespace):
         """Create a select component.
 
         Args:
-            items: The items of the select.
             items: The items of the select.
             placeholder: The placeholder of the select.
             label: The label of the select.
