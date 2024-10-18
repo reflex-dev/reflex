@@ -1126,7 +1126,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 continue
             dynamic_vars[param] = DynamicRouteVar(
                 fget=func,
-                cache=True,
                 _js_expr=param,
                 _var_data=VarData.from_state(cls),
             )

@@ -43,11 +43,11 @@ def LifespanApp():
             lifespan_task_global = 0
 
     class LifespanState(rx.State):
-        @rx.var
+        @rx.var(cache=False)
         def task_global(self) -> int:
             return lifespan_task_global
 
-        @rx.var
+        @rx.var(cache=False)
         def context_global(self) -> int:
             return lifespan_context_global
 
