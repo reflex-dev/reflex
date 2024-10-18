@@ -143,7 +143,6 @@ class ConnectionBanner(Component):
     def create(  # type: ignore
         cls,
         *children,
-        comp: Optional[Union[Component, Var[Optional[Component]]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -169,6 +168,9 @@ class ConnectionBanner(Component):
     ) -> "ConnectionBanner":
         """Create a connection banner component.
 
+        Args:
+            comp: The component to render when there's a server connection error.
+
         Returns:
             The connection banner component.
         """
@@ -180,7 +182,6 @@ class ConnectionModal(Component):
     def create(  # type: ignore
         cls,
         *children,
-        comp: Optional[Union[Component, Var[Optional[Component]]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -205,6 +206,9 @@ class ConnectionModal(Component):
         **props,
     ) -> "ConnectionModal":
         """Create a connection banner component.
+
+        Args:
+            comp: The component to render when there's a server connection error.
 
         Returns:
             The connection banner component.
