@@ -184,6 +184,7 @@ from .state import Cookie as Cookie
 from .state import LocalStorage as LocalStorage
 from .state import SessionStorage as SessionStorage
 from .state import State as State
+from .state import dynamic as dynamic
 from .state import var as var
 from .style import Style as Style
 from .style import toggle_color_mode as toggle_color_mode
