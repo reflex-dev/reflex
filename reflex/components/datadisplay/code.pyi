@@ -356,8 +356,6 @@ class CodeBlock(Component):
     def create(  # type: ignore
         cls,
         *children,
-        can_copy: Optional[bool] = False,
-        copy_button: Optional[Union[Component, bool]] = None,
         theme: Optional[Union[Theme, Var[Union[Theme, str]], str]] = None,
         language: Optional[
             Union[
@@ -933,6 +931,10 @@ class CodeBlock(Component):
         wrap_long_lines: Optional[Union[Var[bool], bool]] = None,
         custom_style: Optional[Dict[str, Union[str, Var, Color]]] = None,
         code_tag_props: Optional[Union[Dict[str, str], Var[Dict[str, str]]]] = None,
+        can_copy: Optional[Union[Var[Optional[bool]], bool]] = None,
+        copy_button: Optional[
+            Union[Component, Var[Optional[Union[Component, bool]]], bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -960,8 +962,6 @@ class CodeBlock(Component):
 
         Args:
             *children: The children of the component.
-            can_copy: Whether a copy button should appears.
-            copy_button: A custom copy button to override the default one.
             theme: The theme to use ("light" or "dark").
             language: The language to use.
             code: The code to display.
@@ -970,6 +970,8 @@ class CodeBlock(Component):
             wrap_long_lines: Whether to wrap long lines.
             custom_style: A custom style for the code block.
             code_tag_props: Props passed down to the code tag.
+            can_copy: Whether a copy button should appear.
+            copy_button: A custom copy button to override the default one.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -991,8 +993,6 @@ class CodeblockNamespace(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        can_copy: Optional[bool] = False,
-        copy_button: Optional[Union[Component, bool]] = None,
         theme: Optional[Union[Theme, Var[Union[Theme, str]], str]] = None,
         language: Optional[
             Union[
@@ -1568,6 +1568,10 @@ class CodeblockNamespace(ComponentNamespace):
         wrap_long_lines: Optional[Union[Var[bool], bool]] = None,
         custom_style: Optional[Dict[str, Union[str, Var, Color]]] = None,
         code_tag_props: Optional[Union[Dict[str, str], Var[Dict[str, str]]]] = None,
+        can_copy: Optional[Union[Var[Optional[bool]], bool]] = None,
+        copy_button: Optional[
+            Union[Component, Var[Optional[Union[Component, bool]]], bool]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1595,8 +1599,6 @@ class CodeblockNamespace(ComponentNamespace):
 
         Args:
             *children: The children of the component.
-            can_copy: Whether a copy button should appears.
-            copy_button: A custom copy button to override the default one.
             theme: The theme to use ("light" or "dark").
             language: The language to use.
             code: The code to display.
@@ -1605,6 +1607,8 @@ class CodeblockNamespace(ComponentNamespace):
             wrap_long_lines: Whether to wrap long lines.
             custom_style: A custom style for the code block.
             code_tag_props: Props passed down to the code tag.
+            can_copy: Whether a copy button should appear.
+            copy_button: A custom copy button to override the default one.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

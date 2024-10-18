@@ -134,8 +134,50 @@ class UnorderedList(BaseList, Ul):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Union[Iterable, Var[Iterable]]] = None,
-        list_style_type: Optional[LiteralListStyleTypeUnordered] = "disc",
+        list_style_type: Optional[
+            Union[
+                Literal[
+                    "armenian",
+                    "decimal",
+                    "decimal-leading-zero",
+                    "georgian",
+                    "hiragana",
+                    "katakana",
+                    "lower-alpha",
+                    "lower-greek",
+                    "lower-latin",
+                    "lower-roman",
+                    "none",
+                    "upper-alpha",
+                    "upper-latin",
+                    "upper-roman",
+                ],
+                Var[
+                    Literal[
+                        "armenian",
+                        "decimal",
+                        "decimal-leading-zero",
+                        "georgian",
+                        "hiragana",
+                        "katakana",
+                        "lower-alpha",
+                        "lower-greek",
+                        "lower-latin",
+                        "lower-roman",
+                        "none",
+                        "upper-alpha",
+                        "upper-latin",
+                        "upper-roman",
+                    ]
+                ],
+            ]
+        ] = None,
+        items: Optional[
+            Union[
+                Union[Iterable, Var[Iterable]],
+                Var[Optional[Union[Iterable, Var[Iterable]]]],
+            ]
+        ] = None,
         access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_capitalize: Optional[
             Union[Var[Union[bool, int, str]], bool, int, str]
@@ -187,8 +229,8 @@ class UnorderedList(BaseList, Ul):
 
         Args:
             *children: The children of the component.
+            list_style_type: The style of the list. Default to "none".
             items: A list of items to add to the list.
-            list_style_type: The style of the list.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.

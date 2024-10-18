@@ -75,6 +75,17 @@ class ColorModeIconButton(IconButton):
     def create(  # type: ignore
         cls,
         *children,
+        position: Optional[
+            Union[
+                Literal["bottom-left", "bottom-right", "top-left", "top-right"],
+                Var[
+                    Optional[
+                        Literal["bottom-left", "bottom-right", "top-left", "top-right"]
+                    ]
+                ],
+            ]
+        ] = None,
+        allow_system: Optional[Union[Var[bool], bool]] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         size: Optional[
             Union[
