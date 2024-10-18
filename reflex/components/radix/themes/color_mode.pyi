@@ -237,7 +237,7 @@ class ColorModeIconButton(IconButton):
         on_unmount: Optional[EventType[[]]] = None,
         **props,
     ) -> "ColorModeIconButton":
-        """Create a icon button component that calls toggle_color_mode on click.
+        """Create an icon button component that calls toggle_color_mode on click.
 
         Args:
             position: The position of the icon button. Follow document flow if None.

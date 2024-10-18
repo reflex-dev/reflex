@@ -107,7 +107,7 @@ class ColorModeIconButton(IconButton):
         cls,
         **props,
     ):
-        """Create a icon button component that calls toggle_color_mode on click.
+        """Create an icon button component that calls toggle_color_mode on click.
 
         Args:
             **props: The props to pass to the component.
@@ -120,7 +120,7 @@ class ColorModeIconButton(IconButton):
 
         # position is used to set nice defaults for positioning the icon button
         if isinstance(position, Var):
-            _set_var_default(props, position, "position", "fixed", position)
+            _set_var_default(props, position, "position", "fixed", position)  # type: ignore
             _set_var_default(props, position, "bottom", "2rem")
             _set_var_default(props, position, "top", "2rem")
             _set_var_default(props, position, "left", "2rem")

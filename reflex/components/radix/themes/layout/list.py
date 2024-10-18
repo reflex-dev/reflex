@@ -47,7 +47,7 @@ class BaseList(Component):
     ] = Var.create("none")
 
     # A list of items to add to the list.
-    items: Var[Optional[Var[Iterable]]] = None
+    items: Var[Optional[Var[Iterable]]] = Var.create(None)
 
     @classmethod
     def create(
