@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import List, Literal
+from typing import List, Literal, Union
 
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
@@ -180,17 +180,16 @@ class HighLevelSelect(SelectRoot):
     position: Var[Literal["item-aligned", "popper"]]
 
     @classmethod
-    def create(cls, **props) -> Component:
+    def create(cls, items: Union[List[str], Var[List[str]]], **props) -> Component:
         """Create a select component.
 
         Args:
+            items: The items of the select.
             **props: Additional properties to apply to the select component.
 
         Returns:
             The select component.
         """
-        items = props.pop("items")
-
         trigger_prop_list = [
             "placeholder",
             "variant",
