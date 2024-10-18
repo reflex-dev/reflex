@@ -13,7 +13,7 @@ from reflex.components.core.cond import color_mode_cond
 from reflex.components.el.elements.forms import Button
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.layout.box import Box
-from reflex.event import call_script
+from reflex.event import call_script, set_clipboard
 from reflex.style import Style
 from reflex.utils.exceptions import VarTypeError
 from reflex.utils.imports import ImportVar
@@ -22,11 +22,9 @@ from reflex.vars.function import FunctionStringVar
 from reflex.vars.sequence import StringVar, string_replace_operation
 
 
-def copy_script(code: StringVar | str) -> Any:
+def copy_script() -> Any:
     """Copy script for the code block and modify the child SVG element.
 
-    Args:
-        code (str): The code to be copied.
 
     Returns:
         Any: The result of calling the script.
@@ -49,30 +47,25 @@ document.addEventListener('click', function(event) {{
                 element.style.transform = `scale(${{scale}})`;
                 element.style.opacity = opacity;
             }}
-            // Copy the code to clipboard
-            navigator.clipboard.writeText(`{code}`).then(() => {{
-                // Animate the SVG
-                transition(svgIcon, 0, '0');
+            // Animate the SVG
+            transition(svgIcon, 0, '0');
+            setTimeout(() => {{
+                svgIcon.innerHTML = checkmarkPath;  // Replace content with checkmark
+                svgIcon.setAttribute('viewBox', '0 0 24 24');  // Adjust viewBox if necessary
+                transition(svgIcon, 1, '1');
                 setTimeout(() => {{
-                    svgIcon.innerHTML = checkmarkPath;  // Replace content with checkmark
-                    svgIcon.setAttribute('viewBox', '0 0 24 24');  // Adjust viewBox if necessary
-                    transition(svgIcon, 1, '1');
+                    transition(svgIcon, 0, '0');
                     setTimeout(() => {{
-                        transition(svgIcon, 0, '0');
-                        setTimeout(() => {{
-                            svgIcon.innerHTML = originalPath;  // Restore original SVG content
-                            transition(svgIcon, 1, '1');
-                        }}, 125);
-                    }}, 600);
-                }}, 125);
-            }}).catch(err => {{
-                console.error('Failed to copy text: ', err);
-            }});
+                        svgIcon.innerHTML = originalPath;  // Restore original SVG content
+                        transition(svgIcon, 1, '1');
+                    }}, 125);
+                }}, 600);
+            }}, 125);
         }} else {{
-            console.error('SVG element not found within the parent.');
+            // console.error('SVG element not found within the parent.');
         }}
     }} else {{
-        console.error('Parent element not found.');
+        // console.error('Parent element not found.');
     }}
 }});
 """
@@ -736,7 +729,10 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                 if copy_button is not None
                 else Button.create(
                     Icon.create(tag="copy", size=16, color=color("gray", 11)),
-                    on_click=copy_script(cls._strip_transformer_triggers(code)),
+                    on_click=[
+                        set_clipboard(cls._strip_transformer_triggers(code)),  # type: ignore
+                        copy_script(),
+                    ],
                     style=Style(
                         {
                             "position": "absolute",
