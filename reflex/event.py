@@ -1412,7 +1412,7 @@ class ToEventChainVarOperation(ToOperation, EventChainVar):
 
 G = ParamSpec("G")
 
-IndividualEventType = Union[EventSpec, EventHandler, Callable[G, Any], Var]
+IndividualEventType = Union[EventSpec, EventHandler, Callable[G, Any], Var[Any]]
 
 EventType = Union[IndividualEventType[G], List[IndividualEventType[G]]]
 
