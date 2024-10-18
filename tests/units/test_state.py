@@ -3020,7 +3020,7 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
 
         child3_var: int = 0
 
-        @rx.var
+        @rx.var(cache=False)
         def v(self):
             pass
 
