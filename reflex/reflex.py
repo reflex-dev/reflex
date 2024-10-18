@@ -13,7 +13,7 @@ from reflex_cli.deployments import deployments_cli
 from reflex_cli.utils import dependency
 
 from reflex import constants
-from reflex.config import get_config
+from reflex.config import environment, get_config
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
@@ -406,7 +406,7 @@ def db_init():
         return
 
     # Check the alembic config.
-    if Path(constants.ALEMBIC_CONFIG).exists():
+    if environment.ALEMBIC_CONFIG.exists():
         console.error(
             "Database is already initialized. Use "
             "[bold]reflex db makemigrations[/bold] to create schema change "
