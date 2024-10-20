@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import inspect
 import os
 import sys
 import urllib.parse
@@ -10,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Union
 
 from reflex.utils.exceptions import ConfigError
+from reflex.utils.types import is_optional, is_union
 
 try:
     import pydantic.v1 as pydantic
@@ -299,15 +301,23 @@ class Config(Base):
                     )
 
                 # Convert the env var to the expected type.
+                type_ = field.type_
+                if is_optional(type_):
+                    type_ = type_.__args__[0] or type_.__args__[1]
+                # TODO: This just handles the first type in a Union. Needs refactoring.
+                if is_union(type_):
+                    type_ = type_.__args__[0]
                 try:
-                    if issubclass(field.type_, bool):
+                    if type_ is bool or (
+                        inspect.isclass(type_) and issubclass(type_, bool)
+                    ):
                         # special handling for bool values
                         env_var = env_var.lower() in ["true", "1", "yes"]
                     else:
-                        env_var = field.type_(env_var)
+                        env_var = type_(env_var)
                 except ValueError as ve:
                     console.error(
-                        f"Could not convert {key.upper()}={env_var} to type {field.type_}"
+                        f"Could not convert {key.upper()}={env_var} to type {type_}"
                     )
                     raise EnvVarValueError from ve
 

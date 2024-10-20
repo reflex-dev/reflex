@@ -1,5 +1,6 @@
 import multiprocessing
 import os
+from typing import Any, Dict
 
 import pytest
 
@@ -28,6 +29,7 @@ def test_set_app_name(base_config_values):
     "env_var, value",
     [
         ("APP_NAME", "my_test_app"),
+        ("BUN_PATH", "/test"),
         ("FRONTEND_PORT", 3001),
         ("FRONTEND_PATH", "/test"),
         ("BACKEND_PORT", 8001),
@@ -41,7 +43,12 @@ def test_set_app_name(base_config_values):
         ("TELEMETRY_ENABLED", True),
     ],
 )
-def test_update_from_env(base_config_values, monkeypatch, env_var, value):
+def test_update_from_env(
+    base_config_values: Dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    env_var: str,
+    value: Any,
+):
     """Test that environment variables override config values.
 
     Args:
