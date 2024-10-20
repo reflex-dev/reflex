@@ -300,7 +300,7 @@ class Config(Base):
 
                 # Convert the env var to the expected type.
                 try:
-                    if issubclass(field.type_, bool):
+                    if issubclass(field.type_, type) and issubclass(field.type_, bool):
                         # special handling for bool values
                         env_var = env_var.lower() in ["true", "1", "yes"]
                     else:
