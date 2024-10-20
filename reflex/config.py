@@ -300,7 +300,7 @@ class Config(Base):
 
                 # Convert the env var to the expected type.
                 try:
-                    if field.type_ == bool or (
+                    if field.type_ is bool or (
                         issubclass(field.type_, type) and issubclass(field.type_, bool)
                     ):
                         # special handling for bool values
