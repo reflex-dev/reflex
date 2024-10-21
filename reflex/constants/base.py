@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import platform
 from enum import Enum
 from importlib import metadata
@@ -10,6 +9,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from platformdirs import PlatformDirs
+
+from .utils import classproperty
 
 IS_WINDOWS = platform.system() == "Windows"
 
@@ -20,6 +21,8 @@ class Dirs(SimpleNamespace):
     # The frontend directories in a project.
     # The web folder where the NextJS app is compiled to.
     WEB = ".web"
+    # The directory where uploaded files are stored.
+    UPLOADED_FILES = "uploaded_files"
     # The name of the assets directory.
     APP_ASSETS = "assets"
     # The name of the assets directory for external ressource (a subfolder of APP_ASSETS).
@@ -64,21 +67,13 @@ class Reflex(SimpleNamespace):
 
     # Files and directories used to init a new project.
     # The directory to store reflex dependencies.
-    # Get directory value from enviroment variables if it exists.
-    _dir = os.environ.get("REFLEX_DIR", "")
+    # on windows, we use C:/Users/<username>/AppData/Local/reflex.
+    # on macOS, we use ~/Library/Application Support/reflex.
+    # on linux, we use ~/.local/share/reflex.
+    # If user sets REFLEX_DIR envroment variable use that instead.
+    DIR = PlatformDirs(MODULE_NAME, False).user_data_path
 
-    DIR = Path(
-        _dir
-        or (
-            # on windows, we use C:/Users/<username>/AppData/Local/reflex.
-            # on macOS, we use ~/Library/Application Support/reflex.
-            # on linux, we use ~/.local/share/reflex.
-            # If user sets REFLEX_DIR envroment variable use that instead.
-            PlatformDirs(MODULE_NAME, False).user_data_dir
-        )
-    )
     # The root directory of the reflex library.
-
     ROOT_DIR = Path(__file__).parents[2]
 
     RELEASES_URL = f"https://api.github.com/repos/reflex-dev/templates/releases"
@@ -101,27 +96,51 @@ class Templates(SimpleNamespace):
     DEFAULT = "blank"
 
     # The reflex.build frontend host
-    REFLEX_BUILD_FRONTEND = os.environ.get(
-        "REFLEX_BUILD_FRONTEND", "https://flexgen.reflex.run"
-    )
+    REFLEX_BUILD_FRONTEND = "https://flexgen.reflex.run"
 
     # The reflex.build backend host
-    REFLEX_BUILD_BACKEND = os.environ.get(
-        "REFLEX_BUILD_BACKEND", "https://flexgen-prod-flexgen.fly.dev"
-    )
+    REFLEX_BUILD_BACKEND = "https://flexgen-prod-flexgen.fly.dev"
 
-    # The URL to redirect to reflex.build
-    REFLEX_BUILD_URL = (
-        REFLEX_BUILD_FRONTEND + "/gen?reflex_init_token={reflex_init_token}"
-    )
+    @classproperty
+    @classmethod
+    def REFLEX_BUILD_URL(cls):
+        """The URL to redirect to reflex.build.
 
-    # The URL to poll waiting for the user to select a generation.
-    REFLEX_BUILD_POLL_URL = REFLEX_BUILD_BACKEND + "/api/init/{reflex_init_token}"
+        Returns:
+            The URL to redirect to reflex.build.
+        """
+        from reflex.config import environment
 
-    # The URL to fetch the generation's reflex code
-    REFLEX_BUILD_CODE_URL = (
-        REFLEX_BUILD_BACKEND + "/api/gen/{generation_hash}/refactored"
-    )
+        return (
+            environment.REFLEX_BUILD_FRONTEND
+            + "/gen?reflex_init_token={reflex_init_token}"
+        )
+
+    @classproperty
+    @classmethod
+    def REFLEX_BUILD_POLL_URL(cls):
+        """The URL to poll waiting for the user to select a generation.
+
+        Returns:
+            The URL to poll waiting for the user to select a generation.
+        """
+        from reflex.config import environment
+
+        return environment.REFLEX_BUILD_BACKEND + "/api/init/{reflex_init_token}"
+
+    @classproperty
+    @classmethod
+    def REFLEX_BUILD_CODE_URL(cls):
+        """The URL to fetch the generation's reflex code.
+
+        Returns:
+            The URL to fetch the generation's reflex code.
+        """
+        from reflex.config import environment
+
+        return (
+            environment.REFLEX_BUILD_BACKEND + "/api/gen/{generation_hash}/refactored"
+        )
 
     class Dirs(SimpleNamespace):
         """Folders used by the template system of Reflex."""
@@ -225,6 +244,9 @@ SKIP_COMPILE_ENV_VAR = "__REFLEX_SKIP_COMPILE"
 
 # This env var stores the execution mode of the app
 ENV_MODE_ENV_VAR = "REFLEX_ENV_MODE"
+
+ENV_BACKEND_ONLY_ENV_VAR = "REFLEX_BACKEND_ONLY"
+ENV_FRONTEND_ONLY_ENV_VAR = "REFLEX_FRONTEND_ONLY"
 
 # Testing variables.
 # Testing os env set by pytest when running a test case.
