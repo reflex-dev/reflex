@@ -163,7 +163,7 @@ class Markdown(Component):
                 "remark-gfm@3.0.1": ImportVar(
                     tag=_REMARK_GFM._js_expr, is_default=True
                 ),
-                "remark-unwrap-images@4.0.0": ImportVar(
+                "remark-unwrap-images@5.0.0": ImportVar(
                     tag=_REMARK_UNWRAP_IMAGES._js_expr, is_default=True
                 ),
                 "rehype-katex@6.0.3": ImportVar(
