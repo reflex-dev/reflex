@@ -381,7 +381,7 @@ for theme_name in dir(Theme):
 class CodeBlock(Component):
     """A code block."""
 
-    library = "react-syntax-highlighter@15.5.0"
+    library = "react-syntax-highlighter@15.6.1"
 
     tag = "PrismAsyncLight"
 
