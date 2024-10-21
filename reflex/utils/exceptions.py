@@ -135,3 +135,7 @@ class SetUndefinedStateVarError(ReflexError, AttributeError):
 
 class StateSchemaMismatchError(ReflexError, TypeError):
     """Raised when the serialized schema of a state class does not match the current schema."""
+
+
+class EnvironmentVarValueError(ReflexError, ValueError):
+    """Raised when an environment variable is set to an invalid value."""

@@ -33,7 +33,7 @@ from redis.asyncio import Redis
 
 from reflex import constants, model
 from reflex.compiler import templates
-from reflex.config import Config, get_config
+from reflex.config import Config, environment, get_config
 from reflex.utils import console, net, path_ops, processes
 from reflex.utils.exceptions import GeneratedCodeHasNoFunctionDefs
 from reflex.utils.format import format_library_name
@@ -69,8 +69,7 @@ def get_web_dir() -> Path:
     Returns:
         The working directory.
     """
-    workdir = Path(os.getenv("REFLEX_WEB_WORKDIR", constants.Dirs.WEB))
-    return workdir
+    return environment.REFLEX_WEB_WORKDIR
 
 
 def _python_version_check():
@@ -250,7 +249,7 @@ def windows_npm_escape_hatch() -> bool:
     Returns:
         If the user has set REFLEX_USE_NPM.
     """
-    return os.environ.get("REFLEX_USE_NPM", "").lower() in ["true", "1", "yes"]
+    return environment.REFLEX_USE_NPM
 
 
 def get_app(reload: bool = False) -> ModuleType:
@@ -992,7 +991,7 @@ def needs_reinit(frontend: bool = True) -> bool:
         return False
 
     # Make sure the .reflex directory exists.
-    if not constants.Reflex.DIR.exists():
+    if not environment.REFLEX_DIR.exists():
         return True
 
     # Make sure the .web directory exists in frontend mode.
@@ -1097,7 +1096,7 @@ def ensure_reflex_installation_id() -> Optional[int]:
     """
     try:
         initialize_reflex_user_directory()
-        installation_id_file = constants.Reflex.DIR / "installation_id"
+        installation_id_file = environment.REFLEX_DIR / "installation_id"
 
         installation_id = None
         if installation_id_file.exists():
@@ -1122,7 +1121,7 @@ def ensure_reflex_installation_id() -> Optional[int]:
 def initialize_reflex_user_directory():
     """Initialize the reflex user directory."""
     # Create the reflex directory.
-    path_ops.mkdir(constants.Reflex.DIR)
+    path_ops.mkdir(environment.REFLEX_DIR)
 
 
 def initialize_frontend_dependencies():
@@ -1145,7 +1144,7 @@ def check_db_initialized() -> bool:
     Returns:
         True if alembic is initialized (or if database is not used).
     """
-    if get_config().db_url is not None and not Path(constants.ALEMBIC_CONFIG).exists():
+    if get_config().db_url is not None and not environment.ALEMBIC_CONFIG.exists():
         console.error(
             "Database is not initialized. Run [bold]reflex db init[/bold] first."
         )
@@ -1155,7 +1154,7 @@ def check_db_initialized() -> bool:
 
 def check_schema_up_to_date():
     """Check if the sqlmodel metadata matches the current database schema."""
-    if get_config().db_url is None or not Path(constants.ALEMBIC_CONFIG).exists():
+    if get_config().db_url is None or not environment.ALEMBIC_CONFIG.exists():
         return
     with model.Model.get_db_engine().connect() as connection:
         try:
