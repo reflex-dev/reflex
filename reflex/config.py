@@ -157,11 +157,12 @@ def get_default_value_for_field(field: dataclasses.Field) -> Any:
         )
 
 
-def interpret_boolean_env(value: str) -> bool:
+def interpret_boolean_env(value: str, field_name: str) -> bool:
     """Interpret a boolean environment variable value.
 
     Args:
         value: The environment variable value.
+        field_name: The field name.
 
     Returns:
         The interpreted value.
@@ -176,14 +177,15 @@ def interpret_boolean_env(value: str) -> bool:
         return True
     elif value.lower() in false_values:
         return False
-    raise EnvironmentVarValueError(f"Invalid boolean value: {value}")
+    raise EnvironmentVarValueError(f"Invalid boolean value: {value} for {field_name}")
 
 
-def interpret_int_env(value: str) -> int:
+def interpret_int_env(value: str, field_name: str) -> int:
     """Interpret an integer environment variable value.
 
     Args:
         value: The environment variable value.
+        field_name: The field name.
 
     Returns:
         The interpreted value.
@@ -194,14 +196,17 @@ def interpret_int_env(value: str) -> int:
     try:
         return int(value)
     except ValueError as ve:
-        raise EnvironmentVarValueError(f"Invalid integer value: {value}") from ve
+        raise EnvironmentVarValueError(
+            f"Invalid integer value: {value} for {field_name}"
+        ) from ve
 
 
-def interpret_path_env(value: str) -> Path:
+def interpret_path_env(value: str, field_name: str) -> Path:
     """Interpret a path environment variable value.
 
     Args:
         value: The environment variable value.
+        field_name: The field name.
 
     Returns:
         The interpreted value.
@@ -211,7 +216,7 @@ def interpret_path_env(value: str) -> Path:
     """
     path = Path(value)
     if not path.exists():
-        raise EnvironmentVarValueError(f"Path does not exist: {path}")
+        raise EnvironmentVarValueError(f"Path does not exist: {path} for {field_name}")
     return path
 
 
@@ -239,13 +244,13 @@ def interpret_env_var_value(
         )
 
     if field_type is bool:
-        return interpret_boolean_env(value)
+        return interpret_boolean_env(value, field_name)
     elif field_type is str:
         return value
     elif field_type is int:
-        return interpret_int_env(value)
+        return interpret_int_env(value, field_name)
     elif field_type is Path:
-        return interpret_path_env(value)
+        return interpret_path_env(value, field_name)
 
     else:
         raise ValueError(
