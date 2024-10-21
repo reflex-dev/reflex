@@ -76,6 +76,7 @@ from reflex.utils import console, format, path_ops, prerequisites, types
 from reflex.utils.exceptions import (
     ComputedVarShadowsBaseVars,
     ComputedVarShadowsStateVar,
+    DynamicComponentInvalidSignature,
     DynamicRouteArgShadowsStateVar,
     EventHandlerShadowsBuiltInStateMethod,
     ImmutableStateError,
@@ -2105,8 +2106,8 @@ def dynamic(func: Callable[[T], Component]):
         The dynamically generated component.
 
     Raises:
-        ValueError: If the function does not have exactly one parameter.
-        ValueError: If the function does not have a type hint for the state class.
+        DynamicComponentInvalidSignature: If the function does not have exactly one parameter.
+        DynamicComponentInvalidSignature: If the function does not have a type hint for the state class.
     """
     number_of_parameters = len(inspect.signature(func).parameters)
 
@@ -2118,12 +2119,12 @@ def dynamic(func: Callable[[T], Component]):
     values = list(func_signature.values())
 
     if number_of_parameters != 1:
-        raise ValueError(
+        raise DynamicComponentInvalidSignature(
             "The function must have exactly one parameter, which is the state class."
         )
 
     if len(values) != 1:
-        raise ValueError(
+        raise DynamicComponentInvalidSignature(
             "You must provide a type hint for the state class in the function."
         )
 
