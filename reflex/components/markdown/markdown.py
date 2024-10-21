@@ -204,9 +204,10 @@ class Markdown(Component):
         children = [
             _CHILDREN
             if tag != "codeblock"
+            # For codeblock, the mapping for some cases returns an array of elements. Let's join them into a string.
             else ternary_operation(
                 ARRAY_ISARRAY.call(_CHILDREN),  # type: ignore
-                _CHILDREN.to(list).join(""),
+                _CHILDREN.to(list).join("\n"),
                 _CHILDREN,
             ).to(str)
         ]
