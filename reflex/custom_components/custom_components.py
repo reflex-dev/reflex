@@ -17,7 +17,7 @@ import typer
 from tomlkit.exceptions import TOMLKitError
 
 from reflex import constants
-from reflex.config import get_config
+from reflex.config import environment, get_config
 from reflex.constants import CustomComponents
 from reflex.utils import console
 
@@ -609,14 +609,14 @@ def publish(
         help="The API token to use for authentication on python package repository. If token is provided, no username/password should be provided at the same time",
     ),
     username: Optional[str] = typer.Option(
-        os.getenv("TWINE_USERNAME"),
+        environment.TWINE_USERNAME,
         "-u",
         "--username",
         show_default="TWINE_USERNAME environment variable value if set",
         help="The username to use for authentication on python package repository. Username and password must both be provided.",
     ),
     password: Optional[str] = typer.Option(
-        os.getenv("TWINE_PASSWORD"),
+        environment.TWINE_PASSWORD,
         "-p",
         "--password",
         show_default="TWINE_PASSWORD environment variable value if set",

@@ -1557,8 +1557,8 @@ class ComputedVar(Var[RETURN_TYPE]):
             "return", Any
         )
 
-        kwargs["_js_expr"] = kwargs.pop("_js_expr", fget.__name__)
-        kwargs["_var_type"] = kwargs.pop("_var_type", hint)
+        kwargs.setdefault("_js_expr", fget.__name__)
+        kwargs.setdefault("_var_type", hint)
 
         Var.__init__(
             self,
@@ -1566,6 +1566,9 @@ class ComputedVar(Var[RETURN_TYPE]):
             _var_type=kwargs.pop("_var_type"),
             _var_data=kwargs.pop("_var_data", None),
         )
+
+        if kwargs:
+            raise TypeError(f"Unexpected keyword arguments: {tuple(kwargs)}")
 
         if backend is None:
             backend = fget.__name__.startswith("_")
