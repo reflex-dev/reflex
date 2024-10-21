@@ -545,7 +545,7 @@ class LiteralStringVar(LiteralVar, StringVar):
     def create(
         cls,
         value: str,
-        _var_type: GenericType | None = str,
+        _var_type: GenericType | None = None,
         _var_data: VarData | None = None,
     ) -> StringVar:
         """Create a var from a string value.
@@ -558,6 +558,9 @@ class LiteralStringVar(LiteralVar, StringVar):
         Returns:
             The var.
         """
+        # Determine var type in case the value is inherited from str.
+        _var_type = _var_type or type(value) or str
+
         if REFLEX_VAR_OPENING_TAG in value:
             strings_and_vals: list[Var | str] = []
             offset = 0
@@ -886,6 +889,12 @@ class ArrayVar(Var[ARRAY_VAR_TYPE]):
 
     @overload
     def __getitem__(
+        self: ARRAY_VAR_OF_LIST_ELEMENT[Tuple[KEY_TYPE, VALUE_TYPE]],
+        i: int | NumberVar,
+    ) -> ArrayVar[Tuple[KEY_TYPE, VALUE_TYPE]]: ...
+
+    @overload
+    def __getitem__(
         self: ARRAY_VAR_OF_LIST_ELEMENT[Tuple[INNER_ARRAY_VAR, ...]],
         i: int | NumberVar,
     ) -> ArrayVar[Tuple[INNER_ARRAY_VAR, ...]]: ...
@@ -1146,7 +1155,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE]):
             function_var = ArgsFunctionOperation.create(tuple(), return_value)
         else:
             # generic number var
-            number_var = Var("").to(NumberVar)
+            number_var = Var("").to(NumberVar, int)
 
             first_arg_type = self[number_var]._var_type
 
@@ -1158,7 +1167,10 @@ class ArrayVar(Var[ARRAY_VAR_TYPE]):
                 _var_type=first_arg_type,
             ).guess_type()
 
-            function_var = ArgsFunctionOperation.create((arg_name,), fn(first_arg))
+            function_var = ArgsFunctionOperation.create(
+                (arg_name,),
+                Var.create(fn(first_arg)),
+            )
 
         return map_array_operation(self, function_var)
 

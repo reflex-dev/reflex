@@ -23,18 +23,6 @@ def set_env_json():
     )
 
 
-def set_os_env(**kwargs):
-    """Set os environment variables.
-
-    Args:
-        kwargs: env key word args.
-    """
-    for key, value in kwargs.items():
-        if not value:
-            continue
-        os.environ[key.upper()] = value
-
-
 def generate_sitemap_config(deploy_url: str, export=False):
     """Generate the sitemap config file.
 

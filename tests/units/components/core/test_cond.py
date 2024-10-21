@@ -6,7 +6,7 @@ import pytest
 from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond, cond
 from reflex.components.radix.themes.typography.text import Text
-from reflex.state import BaseState, State
+from reflex.state import BaseState
 from reflex.utils.format import format_state_name
 from reflex.vars.base import LiteralVar, Var, computed_var
 
@@ -45,7 +45,7 @@ def test_validate_cond(cond_state: BaseState):
         Text.create("cond is True"),
         Text.create("cond is False"),
     )
-    cond_dict = cond_component.render() if type(cond_component) == Fragment else {}
+    cond_dict = cond_component.render() if type(cond_component) is Fragment else {}
     assert cond_dict["name"] == "Fragment"
 
     [condition] = cond_dict["children"]
@@ -124,7 +124,7 @@ def test_cond_no_else():
 def test_cond_computed_var():
     """Test if cond works with computed vars."""
 
-    class CondStateComputed(State):
+    class CondStateComputed(BaseState):
         @computed_var
         def computed_int(self) -> int:
             return 0

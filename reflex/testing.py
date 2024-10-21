@@ -292,8 +292,6 @@ class AppHarness:
         if isinstance(self.app_instance._state_manager, StateManagerRedis):
             # Create our own redis connection for testing.
             self.state_manager = StateManagerRedis.create(self.app_instance.state)
-        elif isinstance(self.app_instance._state_manager, StateManagerDisk):
-            self.state_manager = StateManagerDisk.create(self.app_instance.state)
         else:
             self.state_manager = self.app_instance._state_manager
 
@@ -396,9 +394,14 @@ class AppHarness:
 
         def consume_frontend_output():
             while True:
-                line = (
-                    self.frontend_process.stdout.readline()  # pyright: ignore [reportOptionalMemberAccess]
-                )
+                try:
+                    line = (
+                        self.frontend_process.stdout.readline()  # pyright: ignore [reportOptionalMemberAccess]
+                    )
+                # catch I/O operation on closed file.
+                except ValueError as e:
+                    print(e)
+                    break
                 if not line:
                     break
                 print(line)

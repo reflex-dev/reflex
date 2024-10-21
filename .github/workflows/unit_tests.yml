@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-12]
+        os: [ubuntu-latest, windows-latest]
         python-version: ['3.9.18', '3.10.13', '3.11.5', '3.12.0']
         # Windows is a bit behind on Python version availability in Github
         exclude:
@@ -41,6 +41,7 @@ jobs:
           - os: windows-latest
             python-version: '3.9.13'
     runs-on: ${{ matrix.os }}
+
     # Service containers to run with `runner-job`
     services:
       # Label used to access the service container
@@ -78,4 +79,30 @@ jobs:
           export PYTHONUNBUFFERED=1
           poetry run uv pip install "pydantic~=1.10"
           poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
-      - run: poetry run coverage html
+      - name: Generate coverage report
+        run: poetry run coverage html
+
+  unit-tests-macos:
+    timeout-minutes: 30
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9.18', '3.10.13', '3.11.5', '3.12.0']
+    runs-on: macos-12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-poetry-install: true
+          create-venv-at-path: .venv
+      - name: Run unit tests
+        run: |
+          export PYTHONUNBUFFERED=1
+          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+      - name: Run unit tests w/ pydantic v1
+        run: |
+          export PYTHONUNBUFFERED=1
+          poetry run uv pip install "pydantic~=1.10"
+          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=

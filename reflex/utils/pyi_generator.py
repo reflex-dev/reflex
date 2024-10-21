@@ -70,7 +70,7 @@ DEFAULT_TYPING_IMPORTS = {
 DEFAULT_IMPORTS = {
     "typing": sorted(DEFAULT_TYPING_IMPORTS),
     "reflex.components.core.breakpoints": ["Breakpoints"],
-    "reflex.event": ["EventChain", "EventHandler", "EventSpec"],
+    "reflex.event": ["EventChain", "EventHandler", "EventSpec", "EventType"],
     "reflex.style": ["Style"],
     "reflex.vars.base": ["Var"],
 }
@@ -427,18 +427,58 @@ def _generate_component_create_functiondef(
     all_props = [arg[0].arg for arg in prop_kwargs]
     kwargs.extend(prop_kwargs)
 
+    def figure_out_return_type(annotation: Any):
+        if inspect.isclass(annotation) and issubclass(annotation, inspect._empty):
+            return ast.Name(id="Optional[EventType]")
+        if isinstance(annotation, str) and annotation.startswith("Tuple["):
+            inside_of_tuple = annotation.removeprefix("Tuple[").removesuffix("]")
+
+            if inside_of_tuple == "()":
+                return ast.Name(id="Optional[EventType[[]]]")
+
+            arguments: list[str] = [""]
+
+            bracket_count = 0
+
+            for char in inside_of_tuple:
+                if char == "[":
+                    bracket_count += 1
+                elif char == "]":
+                    bracket_count -= 1
+
+                if char == "," and bracket_count == 0:
+                    arguments.append("")
+                else:
+                    arguments[-1] += char
+
+            arguments = [argument.strip() for argument in arguments]
+
+            arguments_without_var = [
+                argument.removeprefix("Var[").removesuffix("]")
+                if argument.startswith("Var[")
+                else argument
+                for argument in arguments
+            ]
+
+            return ast.Name(
+                id=f"Optional[EventType[{', '.join(arguments_without_var)}]]"
+            )
+        return ast.Name(id="Optional[EventType]")
+
+    event_triggers = clz().get_event_triggers()
+
     # event handler kwargs
     kwargs.extend(
         (
             ast.arg(
                 arg=trigger,
-                annotation=ast.Name(
-                    id="Optional[Union[EventHandler, EventSpec, list, Callable, Var]]"
+                annotation=figure_out_return_type(
+                    inspect.signature(event_triggers[trigger]).return_annotation
                 ),
             ),
             ast.Constant(value=None),
         )
-        for trigger in sorted(clz().get_event_triggers())
+        for trigger in sorted(event_triggers)
     )
     logger.debug(f"Generated {clz.__name__}.create method with {len(kwargs)} kwargs")
     create_args = ast.arguments(

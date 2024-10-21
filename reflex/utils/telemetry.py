@@ -94,9 +94,7 @@ def _raise_on_missing_project_hash() -> bool:
         False when compilation should be skipped (i.e. no .web directory is required).
         Otherwise return True.
     """
-    if should_skip_compile():
-        return False
-    return True
+    return not should_skip_compile()
 
 
 def _prepare_event(event: str, **kwargs) -> dict:

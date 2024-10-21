@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from reflex.components.component import NoSSRComponent
-from reflex.event import EventHandler
+from reflex.event import EventHandler, empty_event, identity_event
 from reflex.vars.base import Var
 
 
@@ -12,7 +12,7 @@ class ReactPlayer(NoSSRComponent):
     reference: https://github.com/cookpete/react-player.
     """
 
-    library = "react-player@2.12.0"
+    library = "react-player@2.16.0"
 
     tag = "ReactPlayer"
 
@@ -46,49 +46,49 @@ class ReactPlayer(NoSSRComponent):
     height: Var[str]
 
     # Called when media is loaded and ready to play. If playing is set to true, media will play immediately.
-    on_ready: EventHandler[lambda: []]
+    on_ready: EventHandler[empty_event]
 
     # Called when media starts playing.
-    on_start: EventHandler[lambda: []]
+    on_start: EventHandler[empty_event]
 
     # Called when media starts or resumes playing after pausing or buffering.
-    on_play: EventHandler[lambda: []]
+    on_play: EventHandler[empty_event]
 
     # Callback containing played and loaded progress as a fraction, and playedSeconds and loadedSeconds in seconds. eg { played: 0.12, playedSeconds: 11.3, loaded: 0.34, loadedSeconds: 16.7 }
     on_progress: EventHandler[lambda progress: [progress]]
 
     # Callback containing duration of the media, in seconds.
-    on_duration: EventHandler[lambda seconds: [seconds]]
+    on_duration: EventHandler[identity_event(float)]
 
     # Called when media is paused.
-    on_pause: EventHandler[lambda: []]
+    on_pause: EventHandler[empty_event]
 
     # Called when media starts buffering.
-    on_buffer: EventHandler[lambda: []]
+    on_buffer: EventHandler[empty_event]
 
     # Called when media has finished buffering. Works for files, YouTube and Facebook.
-    on_buffer_end: EventHandler[lambda: []]
+    on_buffer_end: EventHandler[empty_event]
 
     # Called when media seeks with seconds parameter.
-    on_seek: EventHandler[lambda seconds: [seconds]]
+    on_seek: EventHandler[identity_event(float)]
 
     # Called when playback rate of the player changed. Only supported by YouTube, Vimeo (if enabled), Wistia, and file paths.
-    on_playback_rate_change: EventHandler[lambda e0: []]
+    on_playback_rate_change: EventHandler[empty_event]
 
     # Called when playback quality of the player changed. Only supported by YouTube (if enabled).
-    on_playback_quality_change: EventHandler[lambda e0: []]
+    on_playback_quality_change: EventHandler[empty_event]
 
     # Called when media finishes playing. Does not fire when loop is set to true.
-    on_ended: EventHandler[lambda: []]
+    on_ended: EventHandler[empty_event]
 
     # Called when an error occurs whilst attempting to play media.
-    on_error: EventHandler[lambda: []]
+    on_error: EventHandler[empty_event]
 
     # Called when user clicks the light mode preview.
-    on_click_preview: EventHandler[lambda: []]
+    on_click_preview: EventHandler[empty_event]
 
     # Called when picture-in-picture mode is enabled.
-    on_enable_pip: EventHandler[lambda: []]
+    on_enable_pip: EventHandler[empty_event]
 
     # Called when picture-in-picture mode is disabled.
-    on_disable_pip: EventHandler[lambda: []]
+    on_disable_pip: EventHandler[empty_event]

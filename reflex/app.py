@@ -69,7 +69,7 @@ from reflex.components.core.client_side_routing import (
 )
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
-from reflex.config import get_config
+from reflex.config import environment, get_config
 from reflex.event import Event, EventHandler, EventSpec, window_alert
 from reflex.model import Model, get_db_status
 from reflex.page import (
@@ -919,16 +919,32 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         executor = None
         if (
             platform.system() in ("Linux", "Darwin")
-            and os.environ.get("REFLEX_COMPILE_PROCESSES") is not None
+            and (number_of_processes := environment.REFLEX_COMPILE_PROCESSES)
+            is not None
         ):
             executor = concurrent.futures.ProcessPoolExecutor(
-                max_workers=int(os.environ.get("REFLEX_COMPILE_PROCESSES", 0)) or None,
+                max_workers=number_of_processes,
                 mp_context=multiprocessing.get_context("fork"),
             )
         else:
             executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=int(os.environ.get("REFLEX_COMPILE_THREADS", 0)) or None,
+                max_workers=environment.REFLEX_COMPILE_THREADS
             )
+
+        for route, component in self.pages.items():
+            component._add_style_recursive(self.style, self.theme)
+
+            ExecutorSafeFunctions.COMPONENTS[route] = component
+
+        for route, page in self.unevaluated_pages.items():
+            if route in self.pages:
+                continue
+
+            ExecutorSafeFunctions.UNCOMPILED_PAGES[route] = page
+
+        ExecutorSafeFunctions.STATE = self.state
+
+        pages_results = []
 
         for route, component in self.pages.items():
             component._add_style_recursive(self.style, self.theme)

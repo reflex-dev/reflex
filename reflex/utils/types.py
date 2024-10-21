@@ -18,6 +18,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -102,14 +103,14 @@ if TYPE_CHECKING:
 
     # ArgsSpec = Callable[[Var], list[Var]]
     ArgsSpec = (
-        Callable[[], List[Var]]
-        | Callable[[Var], List[Var]]
-        | Callable[[Var, Var], List[Var]]
-        | Callable[[Var, Var, Var], List[Var]]
-        | Callable[[Var, Var, Var, Var], List[Var]]
-        | Callable[[Var, Var, Var, Var, Var], List[Var]]
-        | Callable[[Var, Var, Var, Var, Var, Var], List[Var]]
-        | Callable[[Var, Var, Var, Var, Var, Var, Var], List[Var]]
+        Callable[[], Sequence[Var]]
+        | Callable[[Var], Sequence[Var]]
+        | Callable[[Var, Var], Sequence[Var]]
+        | Callable[[Var, Var, Var], Sequence[Var]]
+        | Callable[[Var, Var, Var, Var], Sequence[Var]]
+        | Callable[[Var, Var, Var, Var, Var], Sequence[Var]]
+        | Callable[[Var, Var, Var, Var, Var, Var], Sequence[Var]]
+        | Callable[[Var, Var, Var, Var, Var, Var, Var], Sequence[Var]]
     )
 else:
     ArgsSpec = Callable[..., List[Any]]
@@ -182,6 +183,26 @@ def is_generic_alias(cls: GenericType) -> bool:
     return isinstance(cls, GenericAliasTypes)
 
 
+def unionize(*args: GenericType) -> Type:
+    """Unionize the types.
+
+    Args:
+        args: The types to unionize.
+
+    Returns:
+        The unionized types.
+    """
+    if not args:
+        return Any
+    if len(args) == 1:
+        return args[0]
+    # We are bisecting the args list here to avoid hitting the recursion limit
+    # In Python versions >= 3.11, we can simply do `return Union[*args]`
+    midpoint = len(args) // 2
+    first_half, second_half = args[:midpoint], args[midpoint:]
+    return Union[unionize(*first_half), unionize(*second_half)]
+
+
 def is_none(cls: GenericType) -> bool:
     """Check if a class is None.
 
@@ -220,6 +241,27 @@ def is_literal(cls: GenericType) -> bool:
     return get_origin(cls) is Literal
 
 
+def has_args(cls) -> bool:
+    """Check if the class has generic parameters.
+
+    Args:
+        cls: The class to check.
+
+    Returns:
+        Whether the class has generic
+    """
+    if get_args(cls):
+        return True
+
+    # Check if the class inherits from a generic class (using __orig_bases__)
+    if hasattr(cls, "__orig_bases__"):
+        for base in cls.__orig_bases__:
+            if get_args(base):
+                return True
+
+    return False
+
+
 def is_optional(cls: GenericType) -> bool:
     """Check if a class is an Optional.
 
@@ -230,6 +272,20 @@ def is_optional(cls: GenericType) -> bool:
         Whether the class is an Optional.
     """
     return is_union(cls) and type(None) in get_args(cls)
+
+
+def value_inside_optional(cls: GenericType) -> GenericType:
+    """Get the value inside an Optional type or the original type.
+
+    Args:
+        cls: The class to check.
+
+    Returns:
+        The value inside the Optional type or the original type.
+    """
+    if is_union(cls) and len(args := get_args(cls)) >= 2 and type(None) in args:
+        return unionize(*[arg for arg in args if arg is not type(None)])
+    return cls
 
 
 def get_property_hint(attr: Any | None) -> GenericType | None:
@@ -337,11 +393,9 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             return type_
     elif is_union(cls):
         # Check in each arg of the annotation.
-        for arg in get_args(cls):
-            type_ = get_attribute_access_type(arg, name)
-            if type_ is not None:
-                # Return the first attribute type that is accessible.
-                return type_
+        return unionize(
+            *(get_attribute_access_type(arg, name) for arg in get_args(cls))
+        )
     elif isinstance(cls, type):
         # Bare class
         if sys.version_info >= (3, 10):
@@ -374,7 +428,7 @@ def get_base_class(cls: GenericType) -> Type:
     if is_literal(cls):
         # only literals of the same type are supported.
         arg_type = type(get_args(cls)[0])
-        if not all(type(arg) == arg_type for arg in get_args(cls)):
+        if not all(type(arg) is arg_type for arg in get_args(cls)):
             raise TypeError("only literals of the same type are supported")
         return type(get_args(cls)[0])
 
@@ -525,7 +579,11 @@ def is_backend_base_variable(name: str, cls: Type) -> bool:
     if name.startswith(f"_{cls.__name__}__"):
         return False
 
-    hints = get_type_hints(cls)
+    # Extract the namespace of the original module if defined (dynamic substates).
+    if callable(getattr(cls, "_get_type_hints", None)):
+        hints = cls._get_type_hints()
+    else:
+        hints = get_type_hints(cls)
     if name in hints:
         hint = get_origin(hints[name])
         if hint == ClassVar:
@@ -538,7 +596,7 @@ def is_backend_base_variable(name: str, cls: Type) -> bool:
 
     if name in cls.__dict__:
         value = cls.__dict__[name]
-        if type(value) == classmethod:
+        if type(value) is classmethod:
             return False
         if callable(value):
             return False
