@@ -117,18 +117,18 @@ class PackageJson(SimpleNamespace):
     PATH = "package.json"
 
     DEPENDENCIES = {
-        "@babel/standalone": "7.25.7",
+        "@babel/standalone": "7.25.8",
         "@emotion/react": "11.13.3",
         "axios": "1.7.7",
         "json5": "2.2.3",
-        "next": "14.2.14",
+        "next": "14.2.15",
         "next-sitemap": "4.2.3",
         "next-themes": "0.3.0",
         "react": "18.3.1",
         "react-dom": "18.3.1",
         "react-focus-lock": "2.13.2",
         "socket.io-client": "4.8.0",
-        "universal-cookie": "7.2.0",
+        "universal-cookie": "7.2.1",
     }
     DEV_DEPENDENCIES = {
         "autoprefixer": "10.4.20",
