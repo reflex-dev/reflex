@@ -157,6 +157,7 @@ def get_default_value_for_field(field: dataclasses.Field) -> Any:
         )
 
 
+# TODO: Change all interpret_.* signatures to value: str, field: dataclasses.Field once we migrate rx.Config to dataclasses
 def interpret_boolean_env(value: str, field_name: str) -> bool:
     """Interpret a boolean environment variable value.
 
