@@ -1,5 +1,6 @@
 import multiprocessing
 import os
+from pathlib import Path
 from typing import Any, Dict
 
 import pytest
@@ -30,7 +31,6 @@ def test_set_app_name(base_config_values):
     "env_var, value",
     [
         ("APP_NAME", "my_test_app"),
-        ("BUN_PATH", "/test"),
         ("FRONTEND_PORT", 3001),
         ("FRONTEND_PATH", "/test"),
         ("BACKEND_PORT", 8001),
@@ -62,6 +62,29 @@ def test_update_from_env(
     assert os.environ.get(env_var) == str(value)
     config = rx.Config(**base_config_values)
     assert getattr(config, env_var.lower()) == value
+
+
+def test_update_from_env_path(
+    base_config_values: Dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+):
+    """Test that environment variables override config values.
+
+    Args:
+        base_config_values: Config values.
+        monkeypatch: The pytest monkeypatch object.
+        tmp_path: The pytest tmp_path fixture object.
+    """
+    monkeypatch.setenv("BUN_PATH", "/test")
+    assert os.environ.get("BUN_PATH") == "/test"
+    with pytest.raises(ValueError):
+        rx.Config(**base_config_values)
+
+    monkeypatch.setenv("BUN_PATH", str(tmp_path))
+    assert os.environ.get("BUN_PATH") == str(tmp_path)
+    config = rx.Config(**base_config_values)
+    assert config.bun_path == tmp_path
 
 
 @pytest.mark.parametrize(
