@@ -2,6 +2,8 @@
 
 from .base import (
     COOKIES,
+    ENV_BACKEND_ONLY_ENV_VAR,
+    ENV_FRONTEND_ONLY_ENV_VAR,
     ENV_MODE_ENV_VAR,
     IS_WINDOWS,
     LOCAL_STORAGE,

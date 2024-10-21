@@ -496,6 +496,24 @@ def is_prod_mode() -> bool:
     return current_mode == constants.Env.PROD.value
 
 
+def is_frontend_only() -> bool:
+    """Check if the app is running in frontend-only mode.
+
+    Returns:
+        True if the app is running in frontend-only mode.
+    """
+    return os.environ.get(constants.ENV_FRONTEND_ONLY_ENV_VAR, "").lower() == "true"
+
+
+def is_backend_only() -> bool:
+    """Check if the app is running in backend-only mode.
+
+    Returns:
+        True if the app is running in backend-only mode.
+    """
+    return os.environ.get(constants.ENV_BACKEND_ONLY_ENV_VAR, "").lower() == "true"
+
+
 def should_skip_compile() -> bool:
     """Whether the app should skip compile.
 
