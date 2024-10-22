@@ -7,7 +7,6 @@ from typing import Any, Dict, Optional, Union, overload
 
 from typing_extensions import TypedDict
 
-import reflex
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventType
 from reflex.style import Style
@@ -65,9 +64,7 @@ class ReactPlayer(NoSSRComponent):
         on_play: Optional[EventType[[]]] = None,
         on_playback_quality_change: Optional[EventType[[]]] = None,
         on_playback_rate_change: Optional[EventType[[]]] = None,
-        on_progress: Optional[
-            EventType[reflex.components.react_player.react_player.Progress]
-        ] = None,
+        on_progress: Optional[EventType[Progress]] = None,
         on_ready: Optional[EventType[[]]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_seek: Optional[EventType[float]] = None,
