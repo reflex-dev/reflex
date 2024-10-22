@@ -13,8 +13,8 @@ from reflex.vars.base import Var
 from ..base import RadixThemesComponent
 
 on_value_event_spec = (
-    identity_event(list[int]),
     identity_event(list[Union[int, float]]),
+    identity_event(list[int]),
     identity_event(list[float]),
 )
 
@@ -142,8 +142,8 @@ class Slider(RadixThemesComponent):
         on_blur: Optional[EventType[[]]] = None,
         on_change: Optional[
             Union[
-                EventType[list[int]],
                 EventType[list[Union[int, float]]],
+                EventType[list[int]],
                 EventType[list[float]],
             ]
         ] = None,
@@ -163,8 +163,8 @@ class Slider(RadixThemesComponent):
         on_unmount: Optional[EventType[[]]] = None,
         on_value_commit: Optional[
             Union[
-                EventType[list[int]],
                 EventType[list[Union[int, float]]],
+                EventType[list[int]],
                 EventType[list[float]],
             ]
         ] = None,
