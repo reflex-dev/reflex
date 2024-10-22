@@ -5,7 +5,9 @@
 # ------------------------------------------------------
 from typing import Any, Dict, Literal, Optional, Union, overload
 
-from reflex.event import EventType
+from reflex.event import (
+    EventType,
+)
 from reflex.style import Style
 from reflex.vars.base import Var
 

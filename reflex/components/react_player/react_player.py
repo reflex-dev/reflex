@@ -2,9 +2,20 @@
 
 from __future__ import annotations
 
+from typing_extensions import TypedDict
+
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventHandler, empty_event, identity_event
 from reflex.vars.base import Var
+
+
+class Progress(TypedDict):
+    """Callback containing played and loaded progress as a fraction, and playedSeconds and loadedSeconds in seconds."""
+
+    played: float
+    playedSeconds: float
+    loaded: float
+    loadedSeconds: float
 
 
 class ReactPlayer(NoSSRComponent):
@@ -55,7 +66,7 @@ class ReactPlayer(NoSSRComponent):
     on_play: EventHandler[empty_event]
 
     # Callback containing played and loaded progress as a fraction, and playedSeconds and loadedSeconds in seconds. eg { played: 0.12, playedSeconds: 11.3, loaded: 0.34, loadedSeconds: 16.7 }
-    on_progress: EventHandler[lambda progress: [progress]]
+    on_progress: EventHandler[identity_event(Progress)]
 
     # Callback containing duration of the media, in seconds.
     on_duration: EventHandler[identity_event(float)]
