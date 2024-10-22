@@ -1064,6 +1064,9 @@ def call_event_handler(
 
     Returns:
         The event spec from calling the event handler.
+
+    # noqa: DAR401 failure
+
     """
     parsed_args = parse_args_spec(arg_spec)  # type: ignore
 
@@ -1097,22 +1100,41 @@ def call_event_handler(
             # Check if both are concrete types (e.g., int)
             return issubclass(provided_type, accepted_type)
 
-        provided_type_origin = (
-            Union if provided_type_origin is types.UnionType else provided_type_origin
-        )
-        accepted_type_origin = (
-            Union if accepted_type_origin is types.UnionType else accepted_type_origin
-        )
+        if hasattr(types, "UnionType"):
+            provided_type_origin = (
+                Union
+                if provided_type_origin is types.UnionType
+                else provided_type_origin
+            )
+            accepted_type_origin = (
+                Union
+                if accepted_type_origin is types.UnionType
+                else accepted_type_origin
+            )
+
+        # Get type arguments (e.g., int vs. Union[float, int])
+        provided_args = get_args(provided_type)
+        accepted_args = get_args(accepted_type)
+
+        if accepted_type_origin is Union:
+            if provided_type_origin is not Union:
+                return any(
+                    compare_types(provided_type, accepted_arg)
+                    for accepted_arg in accepted_args
+                )
+            return all(
+                any(
+                    compare_types(provided_arg, accepted_arg)
+                    for accepted_arg in accepted_args
+                )
+                for provided_arg in provided_args
+            )
 
         # Check if both are generic types (e.g., List)
         if (provided_type_origin or provided_type) != (
             accepted_type_origin or accepted_type
         ):
             return False
-
-        # Get type arguments (e.g., int vs. Union[float, int])
-        provided_args = get_args(provided_type)
-        accepted_args = get_args(accepted_type)
 
         # Ensure all specific types are compatible with accepted types
         return all(
