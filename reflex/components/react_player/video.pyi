@@ -58,7 +58,7 @@ class Video(ReactPlayer):
         on_play: Optional[EventType[[]]] = None,
         on_playback_quality_change: Optional[EventType[[]]] = None,
         on_playback_rate_change: Optional[EventType[[]]] = None,
-        on_progress: Optional[EventType] = None,
+        on_progress: Optional[EventType[Progress]] = None,
         on_ready: Optional[EventType[[]]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_seek: Optional[EventType[float]] = None,
