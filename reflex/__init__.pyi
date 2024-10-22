@@ -184,6 +184,7 @@ from .model import session as session
 from .page import page as page
 from .state import ComponentState as ComponentState
 from .state import State as State
+from .state import dynamic as dynamic
 from .state import var as var
 from .style import Style as Style
 from .style import toggle_color_mode as toggle_color_mode

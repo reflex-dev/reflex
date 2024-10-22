@@ -331,6 +331,7 @@ _MAPPING: dict = {
         "var",
         "ComponentState",
         "State",
+        "dynamic",
     ],
     "style": ["Style", "toggle_color_mode"],
     "utils.imports": ["ImportVar"],
