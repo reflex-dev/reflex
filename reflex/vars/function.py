@@ -180,6 +180,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
 
 
 JSON_STRINGIFY = FunctionStringVar.create("JSON.stringify")
+ARRAY_ISARRAY = FunctionStringVar.create("Array.isArray")
 PROTOTYPE_TO_STRING = FunctionStringVar.create(
     "((__to_string) => __to_string.toString())"
 )
