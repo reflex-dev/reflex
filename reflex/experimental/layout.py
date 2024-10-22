@@ -14,7 +14,7 @@ from reflex.components.radix.themes.layout.container import Container
 from reflex.components.radix.themes.layout.stack import HStack
 from reflex.event import call_script
 from reflex.experimental import hooks
-from reflex.state import ComponentState
+from reflex.istate.builtins import ComponentState
 from reflex.style import Style
 from reflex.vars.base import Var
 

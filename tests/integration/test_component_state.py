@@ -5,7 +5,8 @@ from typing import Generator
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex.state import State, _substate_key
+from reflex.istate.builtins import State
+from reflex.state import _substate_key
 from reflex.testing import AppHarness
 
 from . import utils

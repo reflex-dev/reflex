@@ -8,7 +8,7 @@ from reflex.compiler.compiler import _compile_component
 from reflex.components.component import Component
 from reflex.components.el import div, p
 from reflex.event import EventHandler
-from reflex.state import FrontendEventExceptionState
+from reflex.istate.builtins import FrontendEventExceptionState
 from reflex.vars.base import Var
 
 

@@ -320,6 +320,7 @@ _MAPPING: dict = {
         "upload_files",
         "window_alert",
     ],
+    "istate.builtins": ["ComponentState", "State"],
     "middleware": ["middleware", "Middleware"],
     "model": ["session", "Model"],
     "state": [
@@ -327,8 +328,6 @@ _MAPPING: dict = {
         "Cookie",
         "LocalStorage",
         "SessionStorage",
-        "ComponentState",
-        "State",
     ],
     "style": ["Style", "toggle_color_mode"],
     "utils.imports": ["ImportVar"],

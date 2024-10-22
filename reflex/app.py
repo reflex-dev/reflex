@@ -66,6 +66,7 @@ from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
 from reflex.config import environment, get_config
 from reflex.event import Event, EventHandler, EventSpec, window_alert
+from reflex.istate.builtins import State
 from reflex.model import Model, get_db_status
 from reflex.page import (
     DECORATED_PAGES,
@@ -78,7 +79,6 @@ from reflex.route import (
 from reflex.state import (
     BaseState,
     RouterData,
-    State,
     StateManager,
     StateUpdate,
     _substate_key,

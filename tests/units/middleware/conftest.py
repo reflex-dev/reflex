@@ -1,7 +1,7 @@
 import pytest
 
 from reflex.event import Event
-from reflex.state import State
+from reflex.istate.builtins import State
 
 
 def create_event(name):

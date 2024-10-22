@@ -9,7 +9,7 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.tags import IterTag
 from reflex.constants import MemoizationMode
-from reflex.state import ComponentState
+from reflex.istate.builtins import ComponentState
 from reflex.vars.base import LiteralVar, Var
 
 

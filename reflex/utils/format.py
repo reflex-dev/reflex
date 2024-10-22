@@ -429,7 +429,7 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     # Get the function name
     name = parts[-1]
 
-    from reflex.state import State
+    from reflex.istate.builtins import State
 
     if state_full_name == "state" and name not in State.__dict__:
         return ("", to_snake_case(handler.fn.__qualname__))

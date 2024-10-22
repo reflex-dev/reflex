@@ -24,14 +24,13 @@ from reflex.base import Base
 from reflex.components.sonner.toast import Toaster
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
+from reflex.istate.builtins import OnLoadInternalState, State
 from reflex.state import (
     BaseState,
     ImmutableStateError,
     LockExpiredError,
     MutableProxy,
-    OnLoadInternalState,
     RouterData,
-    State,
     StateManager,
     StateManagerDisk,
     StateManagerMemory,
@@ -2768,7 +2767,8 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
         mocker: pytest mock object.
     """
     mocker.patch(
-        "reflex.state.State.class_subclasses", {test_state, OnLoadInternalState}
+        "reflex.istate.builtins.State.class_subclasses",
+        {test_state, OnLoadInternalState},
     )
     app = app_module_mock.app = App(
         state=State, load_events={"index": [test_state.test_handler]}
@@ -2814,7 +2814,8 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         mocker: pytest mock object.
     """
     mocker.patch(
-        "reflex.state.State.class_subclasses", {OnLoadState, OnLoadInternalState}
+        "reflex.istate.builtins.State.class_subclasses",
+        {OnLoadState, OnLoadInternalState},
     )
     app = app_module_mock.app = App(
         state=State,
@@ -3213,7 +3214,8 @@ config = rx.Config(
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
         reflex.config.get_config(reload=True)
-        from reflex.state import State, StateManager
+        from reflex.istate.builtins import State
+        from reflex.state import StateManager
 
         state_manager = StateManager.create(state=State)
         assert state_manager.lock_expiration == expected_values[0]  # type: ignore
