@@ -321,14 +321,14 @@ _MAPPING: dict = {
         "window_alert",
     ],
     "istate.builtins": ["ComponentState", "State"],
-    "middleware": ["middleware", "Middleware"],
-    "model": ["session", "Model"],
-    "state": [
-        "var",
+    "istate.storage": [
         "Cookie",
         "LocalStorage",
         "SessionStorage",
     ],
+    "middleware": ["middleware", "Middleware"],
+    "model": ["session", "Model"],
+    "state": ["var"],
     "style": ["Style", "toggle_color_mode"],
     "utils.imports": ["ImportVar"],
     "utils.serializers": ["serializer"],

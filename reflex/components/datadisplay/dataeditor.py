@@ -109,19 +109,6 @@ class DataEditorTheme(Base):
     text_medium: Optional[str] = None
 
 
-def on_edit_spec(pos, data: dict[str, Any]):
-    """The on edit spec function.
-
-    Args:
-        pos: The position of the edit event.
-        data: The data of the edit event.
-
-    Returns:
-        The position and data.
-    """
-    return [pos, data]
-
-
 class Bounds(TypedDict):
     """The bounds of the group header."""
 
@@ -149,7 +136,7 @@ class Rectangle(TypedDict):
 class GridSelectionCurrent(TypedDict):
     """The current selection."""
 
-    cell: list[int]
+    cell: tuple[int, int]
     range: Rectangle
     rangeStack: list[Rectangle]
 
@@ -167,7 +154,7 @@ class GroupHeaderClickedEventArgs(TypedDict):
 
     kind: str
     group: str
-    location: list[int]
+    location: tuple[int, int]
     bounds: Bounds
     isEdge: bool
     shiftKey: bool
@@ -178,7 +165,7 @@ class GroupHeaderClickedEventArgs(TypedDict):
     localEventY: int
     button: int
     buttons: int
-    scrollEdge: list[int]
+    scrollEdge: tuple[int, int]
 
 
 class GridCell(TypedDict):
@@ -306,10 +293,10 @@ class DataEditor(NoSSRComponent):
     on_cell_context_menu: EventHandler[identity_event(Tuple[int, int])]
 
     # Fired when a cell is edited.
-    on_cell_edited: EventHandler[on_edit_spec]
+    on_cell_edited: EventHandler[identity_event(Tuple[int, int], GridCell)]
 
     # Fired when a group header is clicked.
-    on_group_header_clicked: EventHandler[on_edit_spec]
+    on_group_header_clicked: EventHandler[identity_event(Tuple[int, int], GridCell)]
 
     # Fired when a group header is right-clicked.
     on_group_header_context_menu: EventHandler[
@@ -335,7 +322,9 @@ class DataEditor(NoSSRComponent):
     on_delete: EventHandler[identity_event(GridSelection)]
 
     # Fired when editing is finished.
-    on_finished_editing: EventHandler[identity_event(Union[GridCell, None], list[int])]
+    on_finished_editing: EventHandler[
+        identity_event(Union[GridCell, None], tuple[int, int])
+    ]
 
     # Fired when a row is appended.
     on_row_appended: EventHandler[empty_event]

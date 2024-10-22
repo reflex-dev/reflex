@@ -5,10 +5,18 @@
 # ------------------------------------------------------
 from typing import Any, Dict, Optional, Union, overload
 
+from typing_extensions import TypedDict
+
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventType
 from reflex.style import Style
 from reflex.vars.base import Var
+
+class Progress(TypedDict):
+    played: float
+    playedSeconds: float
+    loaded: float
+    loadedSeconds: float
 
 class ReactPlayer(NoSSRComponent):
     @overload
@@ -56,7 +64,7 @@ class ReactPlayer(NoSSRComponent):
         on_play: Optional[EventType[[]]] = None,
         on_playback_quality_change: Optional[EventType[[]]] = None,
         on_playback_rate_change: Optional[EventType[[]]] = None,
-        on_progress: Optional[EventType] = None,
+        on_progress: Optional[EventType[Progress]] = None,
         on_ready: Optional[EventType[[]]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_seek: Optional[EventType[float]] = None,

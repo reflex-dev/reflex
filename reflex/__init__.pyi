@@ -176,14 +176,14 @@ from .event import window_alert as window_alert
 from .experimental import _x as _x
 from .istate.builtins import ComponentState as ComponentState
 from .istate.builtins import State as State
+from .istate.storage import Cookie as Cookie
+from .istate.storage import LocalStorage as LocalStorage
+from .istate.storage import SessionStorage as SessionStorage
 from .middleware import Middleware as Middleware
 from .middleware import middleware as middleware
 from .model import Model as Model
 from .model import session as session
 from .page import page as page
-from .state import Cookie as Cookie
-from .state import LocalStorage as LocalStorage
-from .state import SessionStorage as SessionStorage
 from .state import var as var
 from .style import Style as Style
 from .style import toggle_color_mode as toggle_color_mode

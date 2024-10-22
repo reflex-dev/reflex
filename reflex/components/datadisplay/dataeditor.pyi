@@ -78,8 +78,6 @@ class DataEditorTheme(Base):
     text_light: Optional[str]
     text_medium: Optional[str]
 
-def on_edit_spec(pos, data: dict[str, Any]): ...
-
 class Bounds(TypedDict):
     x: int
     y: int
@@ -96,7 +94,7 @@ class Rectangle(TypedDict):
     height: int
 
 class GridSelectionCurrent(TypedDict):
-    cell: list[int]
+    cell: tuple[int, int]
     range: Rectangle
     rangeStack: list[Rectangle]
 
@@ -108,7 +106,7 @@ class GridSelection(TypedDict):
 class GroupHeaderClickedEventArgs(TypedDict):
     kind: str
     group: str
-    location: list[int]
+    location: tuple[int, int]
     bounds: Bounds
     isEdge: bool
     shiftKey: bool
@@ -119,7 +117,7 @@ class GroupHeaderClickedEventArgs(TypedDict):
     localEventY: int
     button: int
     buttons: int
-    scrollEdge: list[int]
+    scrollEdge: tuple[int, int]
 
 class GridCell(TypedDict):
     span: Optional[List[int]]
@@ -189,17 +187,17 @@ class DataEditor(NoSSRComponent):
         on_cell_activated: Optional[EventType[tuple[int, int]]] = None,
         on_cell_clicked: Optional[EventType[tuple[int, int]]] = None,
         on_cell_context_menu: Optional[EventType[tuple[int, int]]] = None,
-        on_cell_edited: Optional[EventType] = None,
+        on_cell_edited: Optional[EventType[tuple[int, int], GridCell]] = None,
         on_click: Optional[EventType[[]]] = None,
         on_column_resize: Optional[EventType[GridColumn, int]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
         on_delete: Optional[EventType[GridSelection]] = None,
         on_double_click: Optional[EventType[[]]] = None,
         on_finished_editing: Optional[
-            EventType[Union[GridCell, None], list[int]]
+            EventType[Union[GridCell, None], tuple[int, int]]
         ] = None,
         on_focus: Optional[EventType[[]]] = None,
-        on_group_header_clicked: Optional[EventType] = None,
+        on_group_header_clicked: Optional[EventType[tuple[int, int], GridCell]] = None,
         on_group_header_context_menu: Optional[
             EventType[int, GroupHeaderClickedEventArgs]
         ] = None,
