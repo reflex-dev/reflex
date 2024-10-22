@@ -344,7 +344,7 @@ class DataEditor(NoSSRComponent):
     on_selection_cleared: EventHandler[empty_event]
 
     # Fired when a column is resized.
-    on_column_resize: EventHandler[identity_event(GridColumn, int, int)]
+    on_column_resize: EventHandler[identity_event(GridColumn, int)]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the component.

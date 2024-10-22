@@ -191,7 +191,7 @@ class DataEditor(NoSSRComponent):
         on_cell_context_menu: Optional[EventType[tuple[int, int]]] = None,
         on_cell_edited: Optional[EventType] = None,
         on_click: Optional[EventType[[]]] = None,
-        on_column_resize: Optional[EventType[GridColumn, int, int]] = None,
+        on_column_resize: Optional[EventType[GridColumn, int]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
         on_delete: Optional[EventType[GridSelection]] = None,
         on_double_click: Optional[EventType[[]]] = None,
