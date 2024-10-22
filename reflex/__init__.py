@@ -320,13 +320,15 @@ _MAPPING: dict = {
         "upload_files",
         "window_alert",
     ],
+    "istate.storage": [
+        "Cookie",
+        "LocalStorage",
+        "SessionStorage",
+    ],
     "middleware": ["middleware", "Middleware"],
     "model": ["session", "Model"],
     "state": [
         "var",
-        "Cookie",
-        "LocalStorage",
-        "SessionStorage",
         "ComponentState",
         "State",
     ],
