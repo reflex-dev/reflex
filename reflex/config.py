@@ -436,7 +436,7 @@ class Config(Base):
     # Attributes that were explicitly set by the user.
     _non_default_attributes: Set[str] = pydantic.PrivateAttr(set())
 
-    # file path to env file
+    # Path to file containing key-values pairs to override in the environment; Dotenv format.
     env_file: Optional[str] = None
 
     def __init__(self, *args, **kwargs):
