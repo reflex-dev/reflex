@@ -412,10 +412,10 @@ class CodeBlock(Component):
     code_tag_props: Var[Dict[str, str]]
 
     # Whether a copy button should appear.
-    can_copy: Var[Optional[bool]] = Var.create(False)
+    can_copy: Optional[bool] = False
 
     # A custom copy button to override the default one.
-    copy_button: Var[Optional[Union[bool, Component]]] = Var.create(None)
+    copy_button: Optional[Union[bool, Component]] = None
 
     def add_imports(self) -> ImportDict:
         """Add imports for the CodeBlock component.
@@ -539,6 +539,9 @@ class CodeBlock(Component):
         )
 
         return out
+
+    def _exclude_props(self) -> list[str]:
+        return ["can_copy", "copy_button"]
 
 
 class CodeblockNamespace(ComponentNamespace):

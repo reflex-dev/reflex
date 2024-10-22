@@ -76,16 +76,9 @@ class ColorModeIconButton(IconButton):
         cls,
         *children,
         position: Optional[
-            Union[
-                Literal["bottom-left", "bottom-right", "top-left", "top-right"],
-                Var[
-                    Optional[
-                        Literal["bottom-left", "bottom-right", "top-left", "top-right"]
-                    ]
-                ],
-            ]
+            Literal["bottom-left", "bottom-right", "top-left", "top-right"]
         ] = None,
-        allow_system: Optional[Union[Var[bool], bool]] = None,
+        allow_system: Optional[bool] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         size: Optional[
             Union[

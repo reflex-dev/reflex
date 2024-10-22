@@ -42,12 +42,12 @@ class BaseList(Component):
     tag = "ul"
 
     # The style of the list. Default to "none".
-    list_style_type: Var[
-        Union[LiteralListStyleTypeUnordered, LiteralListStyleTypeOrdered]
-    ] = Var.create("none")
+    list_style_type: Union[
+        LiteralListStyleTypeUnordered, LiteralListStyleTypeOrdered
+    ] = "none"
 
     # A list of items to add to the list.
-    items: Var[Optional[Var[Iterable]]] = Var.create(None)
+    items: Optional[Union[Iterable, Var[Iterable]]] = None
 
     @classmethod
     def create(
@@ -91,7 +91,7 @@ class BaseList(Component):
         }
 
     def _exclude_props(self) -> list[str]:
-        return ["items"]
+        return ["items", "list_style_type"]
 
 
 class UnorderedList(BaseList, Ul):
@@ -100,7 +100,7 @@ class UnorderedList(BaseList, Ul):
     tag = "ul"
 
     # The style of the list.
-    list_style_type: Var[LiteralListStyleTypeOrdered] = Var.create("disc")
+    list_style_type: LiteralListStyleTypeOrdered = "disc"
 
     @classmethod
     def create(
@@ -133,7 +133,7 @@ class OrderedList(BaseList, Ol):
     tag = "ol"
 
     # The style of the list.
-    list_style_type: Var[LiteralListStyleTypeOrdered] = Var.create("decimal")
+    list_style_type: LiteralListStyleTypeOrdered = "decimal"
 
     @classmethod
     def create(

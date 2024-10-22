@@ -194,10 +194,9 @@ class AccordionItem(AccordionComponent):
     disabled: Var[bool]
 
     # The header of the accordion item.
-    header: Var[Optional[Union[Component, str]]] = Var.create(None)
-
+    header: Optional[Union[Component, str, Var[Union[Component, str]]]] = None
     # The content of the accordion item.
-    content: Var[Optional[Union[Component, str]]] = Var.create(None)
+    content: Optional[Union[Component, str, Var[Union[Component, str]]]] = None
 
     _valid_children: List[str] = [
         "AccordionHeader",
@@ -295,6 +294,9 @@ class AccordionItem(AccordionComponent):
                 "border_bottom": divider_style,
             },
         }
+
+    def _exclude_props(self) -> list[str]:
+        return ["header", "content"]
 
 
 class AccordionHeader(AccordionComponent):

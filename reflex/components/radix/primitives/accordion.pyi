@@ -305,10 +305,10 @@ class AccordionItem(AccordionComponent):
         value: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         header: Optional[
-            Union[Component, Var[Optional[Union[Component, str]]], str]
+            Union[Component, Union[Component, Var[Union[Component, str]], str], str]
         ] = None,
         content: Optional[
-            Union[Component, Var[Optional[Union[Component, str]]], str]
+            Union[Component, Union[Component, Var[Union[Component, str]], str], str]
         ] = None,
         color_scheme: Optional[
             Union[

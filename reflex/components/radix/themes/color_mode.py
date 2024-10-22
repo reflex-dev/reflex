@@ -97,10 +97,10 @@ class ColorModeIconButton(IconButton):
     """Icon Button for toggling light / dark mode via toggle_color_mode."""
 
     # The position of the icon button. Follow document flow if None.
-    position: Var[Optional[LiteralPosition]] = Var.create(None)
+    position: Optional[LiteralPosition] = None
 
     # Allow picking the "system" value for the color mode.
-    allow_system: Var[bool] = Var.create(False)
+    allow_system: bool = False
 
     @classmethod
     def create(
@@ -165,6 +165,9 @@ class ColorModeIconButton(IconButton):
             on_click=toggle_color_mode,
             **props,
         )
+
+    def _exclude_props(self) -> list[str]:
+        return ["position", "allow_system"]
 
 
 class ColorModeSwitch(Switch):

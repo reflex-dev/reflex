@@ -35,54 +35,26 @@ class BaseList(Component):
     def create(  # type: ignore
         cls,
         *children,
-        list_style_type: Optional[
-            Union[
-                Literal[
-                    "armenian",
-                    "decimal",
-                    "decimal-leading-zero",
-                    "georgian",
-                    "hiragana",
-                    "katakana",
-                    "lower-alpha",
-                    "lower-greek",
-                    "lower-latin",
-                    "lower-roman",
-                    "none",
-                    "upper-alpha",
-                    "upper-latin",
-                    "upper-roman",
-                ],
-                Literal["circle", "disc", "none", "square"],
-                Var[
-                    Union[
-                        Literal[
-                            "armenian",
-                            "decimal",
-                            "decimal-leading-zero",
-                            "georgian",
-                            "hiragana",
-                            "katakana",
-                            "lower-alpha",
-                            "lower-greek",
-                            "lower-latin",
-                            "lower-roman",
-                            "none",
-                            "upper-alpha",
-                            "upper-latin",
-                            "upper-roman",
-                        ],
-                        Literal["circle", "disc", "none", "square"],
-                    ]
-                ],
-            ]
+        list_style_type: Union[
+            Literal["circle", "disc", "none", "square"],
+            Literal[
+                "armenian",
+                "decimal",
+                "decimal-leading-zero",
+                "georgian",
+                "hiragana",
+                "katakana",
+                "lower-alpha",
+                "lower-greek",
+                "lower-latin",
+                "lower-roman",
+                "none",
+                "upper-alpha",
+                "upper-latin",
+                "upper-roman",
+            ],
         ] = None,
-        items: Optional[
-            Union[
-                Union[Iterable, Var[Iterable]],
-                Var[Optional[Union[Iterable, Var[Iterable]]]],
-            ]
-        ] = None,
+        items: Optional[Union[Iterable, Union[Iterable, Var[Iterable]]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -134,50 +106,8 @@ class UnorderedList(BaseList, Ul):
     def create(  # type: ignore
         cls,
         *children,
-        list_style_type: Optional[
-            Union[
-                Literal[
-                    "armenian",
-                    "decimal",
-                    "decimal-leading-zero",
-                    "georgian",
-                    "hiragana",
-                    "katakana",
-                    "lower-alpha",
-                    "lower-greek",
-                    "lower-latin",
-                    "lower-roman",
-                    "none",
-                    "upper-alpha",
-                    "upper-latin",
-                    "upper-roman",
-                ],
-                Var[
-                    Literal[
-                        "armenian",
-                        "decimal",
-                        "decimal-leading-zero",
-                        "georgian",
-                        "hiragana",
-                        "katakana",
-                        "lower-alpha",
-                        "lower-greek",
-                        "lower-latin",
-                        "lower-roman",
-                        "none",
-                        "upper-alpha",
-                        "upper-latin",
-                        "upper-roman",
-                    ]
-                ],
-            ]
-        ] = None,
-        items: Optional[
-            Union[
-                Union[Iterable, Var[Iterable]],
-                Var[Optional[Union[Iterable, Var[Iterable]]]],
-            ]
-        ] = None,
+        list_style_type: Optional[LiteralListStyleTypeOrdered] = None,
+        items: Optional[Union[Iterable, Union[Iterable, Var[Iterable]]]] = None,
         access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_capitalize: Optional[
             Union[Var[Union[bool, int, str]], bool, int, str]
@@ -267,50 +197,8 @@ class OrderedList(BaseList, Ol):
     def create(  # type: ignore
         cls,
         *children,
-        list_style_type: Optional[
-            Union[
-                Literal[
-                    "armenian",
-                    "decimal",
-                    "decimal-leading-zero",
-                    "georgian",
-                    "hiragana",
-                    "katakana",
-                    "lower-alpha",
-                    "lower-greek",
-                    "lower-latin",
-                    "lower-roman",
-                    "none",
-                    "upper-alpha",
-                    "upper-latin",
-                    "upper-roman",
-                ],
-                Var[
-                    Literal[
-                        "armenian",
-                        "decimal",
-                        "decimal-leading-zero",
-                        "georgian",
-                        "hiragana",
-                        "katakana",
-                        "lower-alpha",
-                        "lower-greek",
-                        "lower-latin",
-                        "lower-roman",
-                        "none",
-                        "upper-alpha",
-                        "upper-latin",
-                        "upper-roman",
-                    ]
-                ],
-            ]
-        ] = None,
-        items: Optional[
-            Union[
-                Union[Iterable, Var[Iterable]],
-                Var[Optional[Union[Iterable, Var[Iterable]]]],
-            ]
-        ] = None,
+        list_style_type: Optional[LiteralListStyleTypeOrdered] = None,
+        items: Optional[Union[Iterable, Union[Iterable, Var[Iterable]]]] = None,
         reversed: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         start: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         type: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
@@ -495,54 +383,26 @@ class List(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        list_style_type: Optional[
-            Union[
-                Literal[
-                    "armenian",
-                    "decimal",
-                    "decimal-leading-zero",
-                    "georgian",
-                    "hiragana",
-                    "katakana",
-                    "lower-alpha",
-                    "lower-greek",
-                    "lower-latin",
-                    "lower-roman",
-                    "none",
-                    "upper-alpha",
-                    "upper-latin",
-                    "upper-roman",
-                ],
-                Literal["circle", "disc", "none", "square"],
-                Var[
-                    Union[
-                        Literal[
-                            "armenian",
-                            "decimal",
-                            "decimal-leading-zero",
-                            "georgian",
-                            "hiragana",
-                            "katakana",
-                            "lower-alpha",
-                            "lower-greek",
-                            "lower-latin",
-                            "lower-roman",
-                            "none",
-                            "upper-alpha",
-                            "upper-latin",
-                            "upper-roman",
-                        ],
-                        Literal["circle", "disc", "none", "square"],
-                    ]
-                ],
-            ]
+        list_style_type: Union[
+            Literal["circle", "disc", "none", "square"],
+            Literal[
+                "armenian",
+                "decimal",
+                "decimal-leading-zero",
+                "georgian",
+                "hiragana",
+                "katakana",
+                "lower-alpha",
+                "lower-greek",
+                "lower-latin",
+                "lower-roman",
+                "none",
+                "upper-alpha",
+                "upper-latin",
+                "upper-roman",
+            ],
         ] = None,
-        items: Optional[
-            Union[
-                Union[Iterable, Var[Iterable]],
-                Var[Optional[Union[Iterable, Var[Iterable]]]],
-            ]
-        ] = None,
+        items: Optional[Union[Iterable, Union[Iterable, Var[Iterable]]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

@@ -931,10 +931,8 @@ class CodeBlock(Component):
         wrap_long_lines: Optional[Union[Var[bool], bool]] = None,
         custom_style: Optional[Dict[str, Union[str, Var, Color]]] = None,
         code_tag_props: Optional[Union[Dict[str, str], Var[Dict[str, str]]]] = None,
-        can_copy: Optional[Union[Var[Optional[bool]], bool]] = None,
-        copy_button: Optional[
-            Union[Component, Var[Optional[Union[Component, bool]]], bool]
-        ] = None,
+        can_copy: Optional[bool] = None,
+        copy_button: Optional[Union[Component, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1568,10 +1566,8 @@ class CodeblockNamespace(ComponentNamespace):
         wrap_long_lines: Optional[Union[Var[bool], bool]] = None,
         custom_style: Optional[Dict[str, Union[str, Var, Color]]] = None,
         code_tag_props: Optional[Union[Dict[str, str], Var[Dict[str, str]]]] = None,
-        can_copy: Optional[Union[Var[Optional[bool]], bool]] = None,
-        copy_button: Optional[
-            Union[Component, Var[Optional[Union[Component, bool]]], bool]
-        ] = None,
+        can_copy: Optional[bool] = None,
+        copy_button: Optional[Union[Component, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
