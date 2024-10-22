@@ -16,6 +16,7 @@ from typing import (
     Generic,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -389,7 +390,9 @@ class CallableEventSpec(EventSpec):
 class EventChain(EventActionsMixin):
     """Container for a chain of events that will be executed in order."""
 
-    events: List[Union[EventSpec, EventVar]] = dataclasses.field(default_factory=list)
+    events: Sequence[Union[EventSpec, EventVar, EventCallback]] = dataclasses.field(
+        default_factory=list
+    )
 
     args_spec: Optional[Callable] = dataclasses.field(default=None)
 
@@ -1467,6 +1470,24 @@ if sys.version_info >= (3, 10):
                 func: The function to be wrapped.
             """
             self.func = func
+
+        @property
+        def prevent_default(self):
+            """Prevent default behavior.
+
+            Returns:
+                The event callback with prevent default behavior.
+            """
+            return self
+
+        @property
+        def stop_propagation(self):
+            """Stop event propagation.
+
+            Returns:
+                The event callback with stop propagation behavior.
+            """
+            return self
 
         @overload
         def __call__(
