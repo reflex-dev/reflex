@@ -743,6 +743,7 @@ export const useEventLoop = (
       addEvents([
         Event(`${exception_state_name}.handle_frontend_exception`, {
           stack: error.stack,
+          component_stack: "",
         }),
       ]);
       return false;
@@ -754,6 +755,7 @@ export const useEventLoop = (
       addEvents([
         Event(`${exception_state_name}.handle_frontend_exception`, {
           stack: event.reason.stack,
+          component_stack: "",
         }),
       ]);
       return false;
