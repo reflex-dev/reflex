@@ -490,8 +490,6 @@ class Config(Base):
         """
         from reflex.utils.exceptions import EnvVarValueError
 
-        print("update from env")
-
         if self.env_file:
             from dotenv import load_dotenv
 
