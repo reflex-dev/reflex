@@ -335,7 +335,7 @@ class DataEditor(NoSSRComponent):
     on_delete: EventHandler[identity_event(GridSelection)]
 
     # Fired when editing is finished.
-    on_finished_editing: EventHandler[identity_event(Optional[GridCell], list[int])]
+    on_finished_editing: EventHandler[identity_event(Union[GridCell, None], list[int])]
 
     # Fired when a row is appended.
     on_row_appended: EventHandler[empty_event]
