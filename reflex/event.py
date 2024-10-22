@@ -16,6 +16,7 @@ from typing import (
     Generic,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -395,7 +396,9 @@ class EventChain(EventActionsMixin):
 
     events: List[Union[EventSpec, EventVar]] = dataclasses.field(default_factory=list)
 
-    args_spec: Optional[Callable] = dataclasses.field(default=None)
+    args_spec: Optional[Union[Callable, Sequence[Callable]]] = dataclasses.field(
+        default=None
+    )
 
     invocation: Optional[Var] = dataclasses.field(default=None)
 
@@ -1040,7 +1043,7 @@ def get_hydrate_event(state) -> str:
 
 def call_event_handler(
     event_handler: EventHandler | EventSpec,
-    arg_spec: ArgsSpec,
+    arg_spec: ArgsSpec | Sequence[ArgsSpec],
     key: Optional[str] = None,
 ) -> EventSpec:
     """Call an event handler to get the event spec.
@@ -1084,12 +1087,22 @@ def call_event_handler(
         )
 
     def compare_types(provided_type, accepted_type):
+        if accepted_type is Any:
+            return True
+
         provided_type_origin = get_origin(provided_type)
         accepted_type_origin = get_origin(accepted_type)
 
         if provided_type_origin is None and accepted_type_origin is None:
             # Check if both are concrete types (e.g., int)
             return issubclass(provided_type, accepted_type)
+
+        provided_type_origin = (
+            Union if provided_type_origin is types.UnionType else provided_type_origin
+        )
+        accepted_type_origin = (
+            Union if accepted_type_origin is types.UnionType else accepted_type_origin
+        )
 
         # Check if both are generic types (e.g., List)
         if (provided_type_origin or provided_type) != (
@@ -1103,48 +1116,70 @@ def call_event_handler(
 
         # Ensure all specific types are compatible with accepted types
         return all(
-            issubclass(provided_arg, accepted_arg)
+            compare_types(provided_arg, accepted_arg)
             for provided_arg, accepted_arg in zip(provided_args, accepted_args)
             if accepted_arg is not Any
         )
 
-    event_spec_return_type = get_type_hints(arg_spec).get("return", None)
+    all_arg_spec = [arg_spec] if not isinstance(arg_spec, Sequence) else arg_spec
 
-    if (
-        event_spec_return_type is not None
-        and get_origin(event_spec_return_type) is tuple
-    ):
-        args = get_args(event_spec_return_type)
+    event_spec_return_types = list(
+        filter(
+            lambda event_spec_return_type: event_spec_return_type is not None
+            and get_origin(event_spec_return_type) is tuple,
+            (get_type_hints(arg_spec).get("return", None) for arg_spec in all_arg_spec),
+        )
+    )
 
-        args_types_without_vars = [
-            arg if get_origin(arg) is not Var else get_args(arg)[0] for arg in args
-        ]
+    if event_spec_return_types:
+        failures = []
 
-        try:
-            type_hints_of_provided_callback = get_type_hints(event_handler.fn)
-        except NameError:
-            type_hints_of_provided_callback = {}
+        for event_spec_return_type in event_spec_return_types:
+            args = get_args(event_spec_return_type)
 
-        # check that args of event handler are matching the spec if type hints are provided
-        for i, arg in enumerate(provided_callback_fullspec.args[1:]):
-            if arg not in type_hints_of_provided_callback:
-                continue
+            args_types_without_vars = [
+                arg if get_origin(arg) is not Var else get_args(arg)[0] for arg in args
+            ]
 
             try:
-                compare_result = compare_types(
-                    args_types_without_vars[i], type_hints_of_provided_callback[arg]
-                )
-            except TypeError as e:
-                raise TypeError(
-                    f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_handler.fn.__qualname__} provided for {key}."
-                ) from e
+                type_hints_of_provided_callback = get_type_hints(event_handler.fn)
+            except NameError:
+                type_hints_of_provided_callback = {}
 
-            if compare_result:
-                continue
-            else:
-                raise EventHandlerArgTypeMismatch(
-                    f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {type_hints_of_provided_callback[arg]} as annotated in {event_handler.fn.__qualname__} instead."
-                )
+            failed_type_check = False
+
+            # check that args of event handler are matching the spec if type hints are provided
+            for i, arg in enumerate(provided_callback_fullspec.args[1:]):
+                if arg not in type_hints_of_provided_callback:
+                    continue
+
+                try:
+                    compare_result = compare_types(
+                        args_types_without_vars[i], type_hints_of_provided_callback[arg]
+                    )
+                except TypeError as e:
+                    raise TypeError(
+                        f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_handler.fn.__qualname__} provided for {key}."
+                    ) from e
+
+                if compare_result:
+                    continue
+                else:
+                    failure = EventHandlerArgTypeMismatch(
+                        f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {type_hints_of_provided_callback[arg]} as annotated in {event_handler.fn.__qualname__} instead."
+                    )
+                    if len(event_spec_return_types) == 1:
+                        raise failure
+                    else:
+                        failures.append(failure)
+                        failed_type_check = True
+                        break
+
+            if not failed_type_check:
+                return event_handler(*parsed_args)
+
+        if failures:
+            raise EventHandlerArgTypeMismatch("\n".join([str(f) for f in failures]))
 
     return event_handler(*parsed_args)  # type: ignore
 
@@ -1186,7 +1221,7 @@ def resolve_annotation(annotations: dict[str, Any], arg_name: str):
     return annotation
 
 
-def parse_args_spec(arg_spec: ArgsSpec):
+def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
     """Parse the args provided in the ArgsSpec of an event trigger.
 
     Args:
@@ -1195,6 +1230,8 @@ def parse_args_spec(arg_spec: ArgsSpec):
     Returns:
         The parsed args.
     """
+    # if there's multiple, the first is the default
+    arg_spec = arg_spec[0] if isinstance(arg_spec, Sequence) else arg_spec
     spec = inspect.getfullargspec(arg_spec)
     annotations = get_type_hints(arg_spec)
 
@@ -1501,7 +1538,12 @@ class LiteralEventChainVar(ArgsFunctionOperation, LiteralVar, EventChainVar):
         Returns:
             The created LiteralEventChainVar instance.
         """
-        sig = inspect.signature(value.args_spec)  # type: ignore
+        arg_spec = (
+            value.args_spec[0]
+            if isinstance(value.args_spec, Sequence)
+            else value.args_spec
+        )
+        sig = inspect.signature(arg_spec)  # type: ignore
         if sig.parameters:
             arg_def = tuple((f"_{p}" for p in sig.parameters))
             arg_def_expr = LiteralVar.create([Var(_js_expr=arg) for arg in arg_def])
