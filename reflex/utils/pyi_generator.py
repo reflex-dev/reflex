@@ -214,7 +214,9 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
     return res
 
 
-def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
+def _generate_imports(
+    typing_imports: Iterable[str],
+) -> list[ast.ImportFrom | ast.Import]:
     """Generate the import statements for the stub file.
 
     Args:
@@ -228,6 +230,7 @@ def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
             ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])
             for name, values in DEFAULT_IMPORTS.items()
         ],
+        ast.Import([ast.alias("reflex")]),
     ]
 
 
@@ -390,6 +393,8 @@ def type_to_ast(typ) -> ast.AST:
     # Handle plain types (int, str, custom classes, etc.)
     if origin is None:
         if hasattr(typ, "__name__"):
+            if typ.__module__.startswith("reflex."):
+                return ast.Name(id=typ.__module__ + "." + typ.__name__)
             return ast.Name(id=typ.__name__)
         elif hasattr(typ, "_name"):
             return ast.Name(id=typ._name)
