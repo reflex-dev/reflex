@@ -1515,7 +1515,7 @@ if sys.version_info >= (3, 10):
         @overload
         def __get__(self, instance, owner) -> Callable[P, T]: ...
 
-        def __get__(self, instance, owner) -> Callable:
+        def __get__(self, instance, owner) -> Callable:  # type: ignore
             """Get the function with the instance bound to it.
 
             Args:
@@ -1563,7 +1563,9 @@ IndividualEventType = Union[
     EventSpec, EventHandler, Callable[G, Any], EventCallback[G, Any], Var[Any]
 ]
 
-EventType = Union[IndividualEventType[G], List[IndividualEventType[G]]]
+ItemOrList = Union[V, List[V]]
+
+EventType = ItemOrList[IndividualEventType[G]]
 
 
 class EventNamespace(types.SimpleNamespace):
