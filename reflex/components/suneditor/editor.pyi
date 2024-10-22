@@ -128,7 +128,7 @@ class Editor(NoSSRComponent):
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[EventType[str]] = None,
-        on_change: Optional[EventType] = None,
+        on_change: Optional[EventType[str]] = None,
         on_click: Optional[EventType[[]]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
         on_copy: Optional[EventType[[]]] = None,
@@ -136,7 +136,7 @@ class Editor(NoSSRComponent):
         on_double_click: Optional[EventType[[]]] = None,
         on_focus: Optional[EventType[[]]] = None,
         on_input: Optional[EventType[[]]] = None,
-        on_load: Optional[EventType] = None,
+        on_load: Optional[EventType[bool]] = None,
         on_mount: Optional[EventType[[]]] = None,
         on_mouse_down: Optional[EventType[[]]] = None,
         on_mouse_enter: Optional[EventType[[]]] = None,
@@ -148,8 +148,8 @@ class Editor(NoSSRComponent):
         on_paste: Optional[EventType[str, bool]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
-        toggle_code_view: Optional[EventType] = None,
-        toggle_full_screen: Optional[EventType] = None,
+        toggle_code_view: Optional[EventType[bool]] = None,
+        toggle_full_screen: Optional[EventType[bool]] = None,
         **props,
     ) -> "Editor":
         """Create an instance of Editor. No children allowed.

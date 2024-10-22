@@ -58,7 +58,7 @@ class Moment(NoSSRComponent):
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[EventType[[]]] = None,
-        on_change: Optional[EventType] = None,
+        on_change: Optional[EventType[str]] = None,
         on_click: Optional[EventType[[]]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
         on_double_click: Optional[EventType[[]]] = None,

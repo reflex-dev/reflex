@@ -177,7 +177,7 @@ class RadioCardsRoot(RadixThemesComponent):
         on_mouse_up: Optional[EventType[[]]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
-        on_value_change: Optional[EventType] = None,
+        on_value_change: Optional[EventType[str]] = None,
         **props,
     ) -> "RadioCardsRoot":
         """Create a new component instance.

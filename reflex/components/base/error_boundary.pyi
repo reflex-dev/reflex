@@ -11,7 +11,7 @@ from reflex.style import Style
 from reflex.vars.base import Var
 
 def on_error_spec(
-    error: Var, info: Var[Dict[str, str]]
+    error: Var[Dict[str, str]], info: Var[Dict[str, str]]
 ) -> Tuple[Var[str], Var[str]]: ...
 
 class ErrorBoundary(Component):
