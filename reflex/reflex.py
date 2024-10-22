@@ -486,7 +486,9 @@ def deploy(
         help="The environment variables to set: <key>=<value>. For multiple envs, repeat this option, e.g. --env k1=v2 --env k2=v2.",
     ),
     vmtype: Optional[str] = typer.Option(
-        None, "--vmtype", help="Vm type. Run reflex apps vmtype list to get options."
+        None,
+        "--vmtype",
+        help="Vm type id. Run reflex apps vmtypes list to get options.",
     ),
     hostname: Optional[str] = typer.Option(
         None,
