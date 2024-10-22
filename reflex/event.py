@@ -24,7 +24,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import ParamSpec, get_args, get_origin
+from typing_extensions import ParamSpec, Protocol, get_args, get_origin
 
 from reflex import constants
 from reflex.utils import console, format
@@ -465,33 +465,97 @@ prevent_default = EventChain(events=[], args_spec=empty_event).prevent_default
 
 
 T = TypeVar("T")
+U = TypeVar("U")
 
 
-def identity_event(event_type: Type[T]) -> Callable[[Var[T]], Tuple[Var[T]]]:
+# def identity_event(event_type: Type[T]) -> Callable[[Var[T]], Tuple[Var[T]]]:
+#     """A helper function that returns the input event as output.
+
+#     Args:
+#         event_type: The type of the event.
+
+#     Returns:
+#         A function that returns the input event as output.
+#     """
+
+#     def inner(ev: Var[T]) -> Tuple[Var[T]]:
+#         return (ev,)
+
+#     inner.__signature__ = inspect.signature(inner).replace(  # type: ignore
+#         parameters=[
+#             inspect.Parameter(
+#                 "ev",
+#                 kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+#                 annotation=Var[event_type],
+#             )
+#         ],
+#         return_annotation=Tuple[Var[event_type]],
+#     )
+#     inner.__annotations__["ev"] = Var[event_type]
+#     inner.__annotations__["return"] = Tuple[Var[event_type]]
+
+#     return inner
+
+
+class IdentityEventReturn(Generic[T], Protocol):
+    """Protocol for an identity event return."""
+
+    def __call__(self, *values: Var[T]) -> Tuple[Var[T], ...]:
+        """Return the input values.
+
+        Args:
+            *values: The values to return.
+
+        Returns:
+            The input values.
+        """
+        return values
+
+
+@overload
+def identity_event(event_type: Type[T], /) -> Callable[[Var[T]], Tuple[Var[T]]]: ...  # type: ignore
+
+
+@overload
+def identity_event(
+    event_type_1: Type[T], event_type2: Type[U], /
+) -> Callable[[Var[T], Var[U]], Tuple[Var[T], Var[U]]]: ...
+
+
+@overload
+def identity_event(*event_types: Type[T]) -> IdentityEventReturn[T]: ...
+
+
+def identity_event(*event_types: Type[T]) -> IdentityEventReturn[T]:  # type: ignore
     """A helper function that returns the input event as output.
 
     Args:
-        event_type: The type of the event.
+        *event_types: The types of the events.
 
     Returns:
         A function that returns the input event as output.
     """
 
-    def inner(ev: Var[T]) -> Tuple[Var[T]]:
-        return (ev,)
+    def inner(*values: Var[T]) -> Tuple[Var[T], ...]:
+        return values
+
+    inner_type = tuple(Var[event_type] for event_type in event_types)
+    return_annotation = Tuple[inner_type]  # type: ignore
 
     inner.__signature__ = inspect.signature(inner).replace(  # type: ignore
         parameters=[
             inspect.Parameter(
-                "ev",
+                f"ev_{i}",
                 kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
                 annotation=Var[event_type],
             )
+            for i, event_type in enumerate(event_types)
         ],
-        return_annotation=Tuple[Var[event_type]],
+        return_annotation=return_annotation,
     )
-    inner.__annotations__["ev"] = Var[event_type]
-    inner.__annotations__["return"] = Tuple[Var[event_type]]
+    for i, event_type in enumerate(event_types):
+        inner.__annotations__[f"ev_{i}"] = Var[event_type]
+    inner.__annotations__["return"] = return_annotation
 
     return inner
 
