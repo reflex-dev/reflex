@@ -5,6 +5,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
+from typing_extensions import TypedDict
+
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
@@ -118,6 +120,78 @@ def on_edit_spec(pos, data: dict[str, Any]):
         The position and data.
     """
     return [pos, data]
+
+
+class Bounds(TypedDict):
+    """The bounds of the group header."""
+
+    x: int
+    y: int
+    width: int
+    height: int
+
+
+class CompatSelection(TypedDict):
+    """The selection."""
+
+    items: list
+
+
+class Rectangle(TypedDict):
+    """The bounds of the group header."""
+
+    x: int
+    y: int
+    width: int
+    height: int
+
+
+class GridSelectionCurrent(TypedDict):
+    """The current selection."""
+
+    cell: list[int]
+    range: Rectangle
+    rangeStack: list[Rectangle]
+
+
+class GridSelection(TypedDict):
+    """The grid selection."""
+
+    current: Optional[GridSelectionCurrent]
+    columns: CompatSelection
+    rows: CompatSelection
+
+
+class GroupHeaderClickedEventArgs(TypedDict):
+    """The arguments for the group header clicked event."""
+
+    kind: str
+    group: str
+    location: list[int]
+    bounds: Bounds
+    isEdge: bool
+    shiftKey: bool
+    ctrlKey: bool
+    metaKey: bool
+    isTouch: bool
+    localEventX: int
+    localEventY: int
+    button: int
+    buttons: int
+    scrollEdge: list[int]
+
+
+class GridCell(TypedDict):
+    """The grid cell."""
+
+    span: Optional[List[int]]
+
+
+class GridColumn(TypedDict):
+    """The grid column."""
+
+    title: str
+    group: Optional[str]
 
 
 class DataEditor(NoSSRComponent):
@@ -238,10 +312,12 @@ class DataEditor(NoSSRComponent):
     on_group_header_clicked: EventHandler[on_edit_spec]
 
     # Fired when a group header is right-clicked.
-    on_group_header_context_menu: EventHandler[lambda grp_idx, data: [grp_idx, data]]
+    on_group_header_context_menu: EventHandler[
+        identity_event(int, GroupHeaderClickedEventArgs)
+    ]
 
     # Fired when a group header is renamed.
-    on_group_header_renamed: EventHandler[lambda idx, val: [idx, val]]
+    on_group_header_renamed: EventHandler[identity_event(str, str)]
 
     # Fired when a header is clicked.
     on_header_clicked: EventHandler[identity_event(Tuple[int, int])]
@@ -250,16 +326,16 @@ class DataEditor(NoSSRComponent):
     on_header_context_menu: EventHandler[identity_event(Tuple[int, int])]
 
     # Fired when a header menu item is clicked.
-    on_header_menu_click: EventHandler[lambda col, pos: [col, pos]]
+    on_header_menu_click: EventHandler[identity_event(int, Rectangle)]
 
     # Fired when an item is hovered.
     on_item_hovered: EventHandler[identity_event(Tuple[int, int])]
 
     # Fired when a selection is deleted.
-    on_delete: EventHandler[lambda selection: [selection]]
+    on_delete: EventHandler[identity_event(GridSelection)]
 
     # Fired when editing is finished.
-    on_finished_editing: EventHandler[lambda new_value, movement: [new_value, movement]]
+    on_finished_editing: EventHandler[identity_event(Optional[GridCell], list[int])]
 
     # Fired when a row is appended.
     on_row_appended: EventHandler[empty_event]
@@ -268,7 +344,7 @@ class DataEditor(NoSSRComponent):
     on_selection_cleared: EventHandler[empty_event]
 
     # Fired when a column is resized.
-    on_column_resize: EventHandler[lambda col, width: [col, width]]
+    on_column_resize: EventHandler[identity_event(GridColumn, int, int)]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the component.
