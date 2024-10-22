@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "reflex"
-version = "0.6.3dev1"
+version = "0.6.4dev1"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [
@@ -33,6 +33,7 @@ jinja2 = ">=3.1.2,<4.0"
 psutil = ">=5.9.4,<7.0"
 pydantic = ">=1.10.2,<3.0"
 python-multipart = ">=0.0.5,<0.1"
+python-dotenv = ">=1.0.1"
 python-socketio = ">=5.7.0,<6.0"
 redis = ">=4.3.5,<6.0"
 rich = ">=13.0.0,<14.0"
@@ -68,9 +69,9 @@ darglint = ">=1.8.1,<2.0"
 toml = ">=0.10.2,<1.0"
 pytest-asyncio = ">=0.24.0"
 pytest-cov = ">=4.0.0,<6.0"
-ruff = "^0.6.9"
+ruff = "^0.7.0"
 pandas = ">=2.1.1,<3.0"
-pillow = ">=10.0.0,<11.0"
+pillow = ">=10.0.0,<12.0"
 plotly = ">=5.13.0,<6.0"
 asynctest = ">=0.13.0,<1.0"
 pre-commit = ">=3.2.1"
@@ -91,7 +92,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.ruff]
 target-version = "py39"
 lint.select = ["B", "D", "E", "F", "I", "SIM", "W"]
-lint.ignore = ["B008", "D203", "D205", "D213", "D401", "D406", "D407", "E501", "F403", "F405", "F541"]
+lint.ignore = ["B008", "D203", "D205", "D213", "D401", "D406", "D407", "E501", "F403", "F405", "F541", "SIM115"]
 lint.pydocstyle.convention = "google"
 
 [tool.ruff.lint.per-file-ignores]

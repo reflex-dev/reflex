@@ -5,6 +5,7 @@ import pytest
 
 import reflex as rx
 import reflex.config
+from reflex.config import environment
 from reflex.constants import Endpoint
 
 
@@ -178,7 +179,7 @@ def test_replace_defaults(
 
 
 def reflex_dir_constant():
-    return rx.constants.Reflex.DIR
+    return environment.REFLEX_DIR
 
 
 def test_reflex_dir_env_var(monkeypatch, tmp_path):
