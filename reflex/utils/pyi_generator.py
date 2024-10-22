@@ -375,12 +375,13 @@ def _extract_class_props_as_ast_nodes(
     return kwargs
 
 
-def type_to_ast(typ) -> ast.AST:
+def type_to_ast(typ, cls: type) -> ast.AST:
     """Converts any type annotation into its AST representation.
     Handles nested generic types, unions, etc.
 
     Args:
         typ: The type annotation to convert.
+        cls: The class where the type annotation is used.
 
     Returns:
         The AST representation of the type annotation.
@@ -394,6 +395,14 @@ def type_to_ast(typ) -> ast.AST:
     if origin is None:
         if hasattr(typ, "__name__"):
             if typ.__module__.startswith("reflex."):
+                typ_parts = typ.__module__.split(".")
+                cls_parts = cls.__module__.split(".")
+
+                zipped = list(zip(typ_parts, cls_parts, strict=False))
+
+                if all(a == b for a, b in zipped) and len(typ_parts) == len(cls_parts):
+                    return ast.Name(id=typ.__name__)
+
                 return ast.Name(id=typ.__module__ + "." + typ.__name__)
             return ast.Name(id=typ.__name__)
         elif hasattr(typ, "_name"):
@@ -411,7 +420,7 @@ def type_to_ast(typ) -> ast.AST:
         return ast.Name(id=base_name)
 
     # Convert all type arguments recursively
-    arg_nodes = [type_to_ast(arg) for arg in args]
+    arg_nodes = [type_to_ast(arg, cls) for arg in args]
 
     # Special case for single-argument types (like List[T] or Optional[T])
     if len(arg_nodes) == 1:
@@ -492,7 +501,7 @@ def _generate_component_create_functiondef(
             ]
 
             # Convert each argument type to its AST representation
-            type_args = [type_to_ast(arg) for arg in arguments_without_var]
+            type_args = [type_to_ast(arg, cls=clz) for arg in arguments_without_var]
 
             # Join the type arguments with commas for EventType
             args_str = ", ".join(ast.unparse(arg) for arg in type_args)
