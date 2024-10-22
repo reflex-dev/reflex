@@ -220,6 +220,12 @@ class Config(Base):
     # Number of gunicorn workers from user
     gunicorn_workers: Optional[int] = None
 
+    # Number of requests before a worker is restarted
+    gunicorn_max_requests: int = 100
+
+    # Variance limit for max requests; gunicorn only
+    gunicorn_max_requests_jitter: int = 25
+
     # Maximum expiration lock time for redis state manager
     redis_lock_expiration: int = constants.Expiration.LOCK
 
