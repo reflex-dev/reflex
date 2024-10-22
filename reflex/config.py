@@ -430,6 +430,9 @@ class Config(Base):
     # Attributes that were explicitly set by the user.
     _non_default_attributes: Set[str] = pydantic.PrivateAttr(set())
 
+    # file path to env file
+    env_file: Optional[str] = None
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 
@@ -471,6 +474,7 @@ class Config(Base):
 
     def update_from_env(self) -> dict[str, Any]:
         """Update the config values based on set environment variables.
+        If there is a set env_file, it is loaded first.
 
         Returns:
             The updated config values.
@@ -479,6 +483,14 @@ class Config(Base):
             EnvVarValueError: If an environment variable is set to an invalid type.
         """
         from reflex.utils.exceptions import EnvVarValueError
+
+        print("update from env")
+
+        if self.env_file:
+            from dotenv import load_dotenv
+
+            # load env file if exists
+            load_dotenv(self.env_file, override=True)
 
         updated_values = {}
         # Iterate over the fields.
