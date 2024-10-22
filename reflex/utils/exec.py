@@ -337,8 +337,8 @@ def run_uvicorn_backend_prod(host, port, loglevel):
 
     app_module = get_app_module()
 
-    RUN_BACKEND_PROD = f"gunicorn --worker-class {config.gunicorn_worker_class} --preload --timeout {config.timeout} --log-level critical".split()
-    RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {config.timeout}".split()
+    RUN_BACKEND_PROD = f"gunicorn --worker-class {config.gunicorn_worker_class} --max-requests {config.gunicorn_max_requests} --max-requests-jitter {config.gunicorn_max_requests_jitter} --preload --timeout {config.timeout} --log-level critical".split()
+    RUN_BACKEND_PROD_WINDOWS = f"uvicorn --limit-max-requests {config.gunicorn_max_requests} --timeout-keep-alive {config.timeout}".split()
     command = (
         [
             *RUN_BACKEND_PROD_WINDOWS,
