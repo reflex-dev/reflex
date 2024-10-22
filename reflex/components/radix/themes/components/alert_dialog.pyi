@@ -42,7 +42,7 @@ class AlertDialogRoot(RadixThemesComponent):
         on_mouse_out: Optional[EventType[[]]] = None,
         on_mouse_over: Optional[EventType[[]]] = None,
         on_mouse_up: Optional[EventType[[]]] = None,
-        on_open_change: Optional[EventType] = None,
+        on_open_change: Optional[EventType[bool]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,

@@ -12,7 +12,9 @@ from reflex.state import FrontendEventExceptionState
 from reflex.vars.base import Var
 
 
-def on_error_spec(error: Var, info: Var[Dict[str, str]]) -> Tuple[Var[str], Var[str]]:
+def on_error_spec(
+    error: Var[Dict[str, str]], info: Var[Dict[str, str]]
+) -> Tuple[Var[str], Var[str]]:
     """The spec for the on_error event handler.
 
     Args:
