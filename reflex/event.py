@@ -16,7 +16,6 @@ from typing import (
     Generic,
     List,
     Optional,
-    Self,
     Tuple,
     Type,
     TypeVar,
@@ -1510,7 +1509,9 @@ if sys.version_info >= (3, 10):
             return self.func(*values)  # type: ignore
 
         @overload
-        def __get__(self, instance: None, owner) -> Self: ...
+        def __get__(
+            self: EventCallback[P, T], instance: None, owner
+        ) -> EventCallback[P, T]: ...
 
         @overload
         def __get__(self, instance, owner) -> Callable[P, T]: ...
