@@ -713,7 +713,8 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         response.raise_for_status()
 
     # Save the script to a temporary file.
-    with tempfile.NamedTemporaryFile() as script, open(script.name, "w") as f:
+    script = tempfile.NamedTemporaryFile()
+    with open(script.name, "w") as f:
         f.write(response.text)
 
     # Run the script.
