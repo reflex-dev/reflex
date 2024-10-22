@@ -1100,6 +1100,7 @@ def call_event_handler(
             # Check if both are concrete types (e.g., int)
             return issubclass(provided_type, accepted_type)
 
+        # Remove this check when Python 3.10 is the minimum supported version
         if hasattr(types, "UnionType"):
             provided_type_origin = (
                 Union
