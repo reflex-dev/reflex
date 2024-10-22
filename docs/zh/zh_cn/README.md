@@ -10,7 +10,6 @@
 
 ### **✨ 使用 Python 创建高效且可自定义的网页应用程序,几秒钟内即可部署.✨**
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
-![tests](https://github.com/pynecone-io/pynecone/actions/workflows/integration.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentaiton](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
@@ -35,7 +34,7 @@ Reflex 是一个使用纯Python构建全栈web应用的库。
 
 ## ⚙️ 安装
 
-打开一个终端并且运行(要求Python3.8+):
+打开一个终端并且运行(要求Python3.9+):
 
 ```bash
 pip install reflex

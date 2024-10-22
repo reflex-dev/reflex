@@ -33,7 +33,7 @@ class Stack(Flex):
         """
         # Apply the default classname
         given_class_name = props.pop("class_name", [])
-        if isinstance(given_class_name, str):
+        if not isinstance(given_class_name, list):
             given_class_name = [given_class_name]
         props["class_name"] = ["rx-Stack", *given_class_name]
 

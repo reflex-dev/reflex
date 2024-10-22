@@ -2,11 +2,12 @@
 
 import argparse
 import os
+from pathlib import Path
 
 from utils import get_directory_size, get_python_version, send_data_to_posthog
 
 
-def get_package_size(venv_path, os_name):
+def get_package_size(venv_path: Path, os_name):
     """Get the size of a specified package.
 
     Args:
@@ -26,14 +27,12 @@ def get_package_size(venv_path, os_name):
 
     is_windows = "windows" in os_name
 
-    full_path = (
-        ["lib", f"python{python_version}", "site-packages"]
+    package_dir: Path = (
+        venv_path / "lib" / f"python{python_version}" / "site-packages"
         if not is_windows
-        else ["Lib", "site-packages"]
+        else venv_path / "Lib" / "site-packages"
     )
-
-    package_dir = os.path.join(venv_path, *full_path)
-    if not os.path.exists(package_dir):
+    if not package_dir.exists():
         raise ValueError(
             "Error: Virtual environment does not exist or is not activated."
         )
@@ -63,9 +62,9 @@ def insert_benchmarking_data(
         path: The path to the dir or file to check size.
     """
     if "./dist" in path:
-        size = get_directory_size(path)
+        size = get_directory_size(Path(path))
     else:
-        size = get_package_size(path, os_type_version)
+        size = get_package_size(Path(path), os_type_version)
 
     # Prepare the event data
     properties = {

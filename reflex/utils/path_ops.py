@@ -9,6 +9,7 @@ import shutil
 from pathlib import Path
 
 from reflex import constants
+from reflex.config import environment
 
 # Shorthand for join.
 join = os.linesep.join
@@ -129,7 +130,25 @@ def which(program: str | Path) -> str | Path | None:
     return shutil.which(str(program))
 
 
-def get_node_bin_path() -> str | None:
+def use_system_node() -> bool:
+    """Check if the system node should be used.
+
+    Returns:
+        Whether the system node should be used.
+    """
+    return environment.REFLEX_USE_SYSTEM_NODE
+
+
+def use_system_bun() -> bool:
+    """Check if the system bun should be used.
+
+    Returns:
+        Whether the system bun should be used.
+    """
+    return environment.REFLEX_USE_SYSTEM_BUN
+
+
+def get_node_bin_path() -> Path | None:
     """Get the node binary dir path.
 
     Returns:
@@ -138,8 +157,8 @@ def get_node_bin_path() -> str | None:
     bin_path = Path(constants.Node.BIN_PATH)
     if not bin_path.exists():
         str_path = which("node")
-        return str(Path(str_path).parent.resolve()) if str_path else str_path
-    return str(bin_path.resolve())
+        return Path(str_path).parent.resolve() if str_path else None
+    return bin_path.resolve()
 
 
 def get_node_path() -> str | None:
@@ -149,8 +168,9 @@ def get_node_path() -> str | None:
         The path to the node binary file.
     """
     node_path = Path(constants.Node.PATH)
-    if not node_path.exists():
-        return str(which("node"))
+    if use_system_node() or not node_path.exists():
+        system_node_path = which("node")
+        return str(system_node_path) if system_node_path else None
     return str(node_path)
 
 
@@ -161,8 +181,9 @@ def get_npm_path() -> str | None:
         The path to the npm binary file.
     """
     npm_path = Path(constants.Node.NPM_PATH)
-    if not npm_path.exists():
-        return str(which("npm"))
+    if use_system_node() or not npm_path.exists():
+        system_npm_path = which("npm")
+        return str(system_npm_path) if system_npm_path else None
     return str(npm_path)
 
 
@@ -183,7 +204,7 @@ def update_json_file(file_path: str | Path, update_dict: dict[str, int | str]):
 
     # Read the existing json object from the file.
     json_object = {}
-    if fp.stat().st_size == 0:
+    if fp.stat().st_size:
         with open(fp) as f:
             json_object = json.load(f)
 
