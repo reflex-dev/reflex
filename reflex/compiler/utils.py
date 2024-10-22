@@ -28,7 +28,8 @@ from reflex.components.base import (
     Title,
 )
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.state import BaseState, Cookie, LocalStorage, SessionStorage
+from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
+from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
 from reflex.utils.imports import ImportVar, ParsedImportDict
