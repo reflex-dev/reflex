@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Literal, Optional, Union, overload
 
 from typing_extensions import TypedDict
 
+import reflex
 from reflex.base import Base
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventType
@@ -191,22 +192,34 @@ class DataEditor(NoSSRComponent):
         on_cell_context_menu: Optional[EventType[tuple[int, int]]] = None,
         on_cell_edited: Optional[EventType] = None,
         on_click: Optional[EventType[[]]] = None,
-        on_column_resize: Optional[EventType[GridColumn, int]] = None,
+        on_column_resize: Optional[
+            EventType[reflex.components.datadisplay.dataeditor.GridColumn, int]
+        ] = None,
         on_context_menu: Optional[EventType[[]]] = None,
-        on_delete: Optional[EventType[GridSelection]] = None,
+        on_delete: Optional[
+            EventType[reflex.components.datadisplay.dataeditor.GridSelection]
+        ] = None,
         on_double_click: Optional[EventType[[]]] = None,
         on_finished_editing: Optional[
-            EventType[Union[GridCell, None], list[int]]
+            EventType[
+                Union[reflex.components.datadisplay.dataeditor.GridCell, None],
+                list[int],
+            ]
         ] = None,
         on_focus: Optional[EventType[[]]] = None,
         on_group_header_clicked: Optional[EventType] = None,
         on_group_header_context_menu: Optional[
-            EventType[int, GroupHeaderClickedEventArgs]
+            EventType[
+                int,
+                reflex.components.datadisplay.dataeditor.GroupHeaderClickedEventArgs,
+            ]
         ] = None,
         on_group_header_renamed: Optional[EventType[str, str]] = None,
         on_header_clicked: Optional[EventType[tuple[int, int]]] = None,
         on_header_context_menu: Optional[EventType[tuple[int, int]]] = None,
-        on_header_menu_click: Optional[EventType[int, Rectangle]] = None,
+        on_header_menu_click: Optional[
+            EventType[int, reflex.components.datadisplay.dataeditor.Rectangle]
+        ] = None,
         on_item_hovered: Optional[EventType[tuple[int, int]]] = None,
         on_mount: Optional[EventType[[]]] = None,
         on_mouse_down: Optional[EventType[[]]] = None,
