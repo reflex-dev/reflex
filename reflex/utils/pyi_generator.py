@@ -16,7 +16,7 @@ from itertools import chain
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
-from typing import Any, Callable, Iterable, Type, get_args
+from typing import Any, Callable, Iterable, Type, get_args, get_origin
 
 from reflex.components.component import Component
 from reflex.utils import types as rx_types
@@ -430,13 +430,28 @@ def _generate_component_create_functiondef(
     def figure_out_return_type(annotation: Any):
         if inspect.isclass(annotation) and issubclass(annotation, inspect._empty):
             return ast.Name(id="Optional[EventType]")
+
+        if not isinstance(annotation, str) and get_origin(annotation) is tuple:
+            arguments = get_args(annotation)
+
+            arguments_without_var = [
+                get_args(argument)[0] if get_origin(argument) == Var else argument
+                for argument in arguments
+            ]
+
+            return ast.Name(
+                id=f"Optional[EventType[{', '.join(
+                    [arg.__name__ for arg in arguments_without_var]
+                )}]]"
+            )
+
         if isinstance(annotation, str) and annotation.startswith("Tuple["):
             inside_of_tuple = annotation.removeprefix("Tuple[").removesuffix("]")
 
             if inside_of_tuple == "()":
                 return ast.Name(id="Optional[EventType[[]]]")
 
-            arguments: list[str] = [""]
+            arguments = [""]
 
             bracket_count = 0
 
