@@ -1,5 +1,7 @@
 """Client-side storage classes for reflex state variables."""
 
+from __future__ import annotations
+
 from typing import Any
 
 from reflex.utils import format
