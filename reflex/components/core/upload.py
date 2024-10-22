@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
-from typing import Callable, ClassVar, Dict, List, Optional
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple
 
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
 from reflex.components.el.elements.forms import Input
 from reflex.components.radix.themes.layout.box import Box
+from reflex.config import environment
 from reflex.constants import Dirs
 from reflex.event import (
     CallableEventSpec,
@@ -125,9 +125,7 @@ def get_upload_dir() -> Path:
     """
     Upload.is_used = True
 
-    uploaded_files_dir = Path(
-        os.environ.get("REFLEX_UPLOADED_FILES_DIR", "./uploaded_files")
-    )
+    uploaded_files_dir = environment.REFLEX_UPLOADED_FILES_DIR
     uploaded_files_dir.mkdir(parents=True, exist_ok=True)
     return uploaded_files_dir
 
@@ -157,7 +155,7 @@ def get_upload_url(file_path: str) -> Var[str]:
     return uploaded_files_url_prefix + "/" + file_path
 
 
-def _on_drop_spec(files: Var):
+def _on_drop_spec(files: Var) -> Tuple[Var[Any]]:
     """Args spec for the on_drop event trigger.
 
     Args:
@@ -166,7 +164,7 @@ def _on_drop_spec(files: Var):
     Returns:
         Signature for on_drop handler including the files to upload.
     """
-    return [files]
+    return (files,)
 
 
 class UploadFilesProvider(Component):
@@ -179,7 +177,7 @@ class UploadFilesProvider(Component):
 class Upload(MemoizationLeaf):
     """A file upload component."""
 
-    library = "react-dropzone@14.2.3"
+    library = "react-dropzone@14.2.10"
 
     tag = "ReactDropzone"
 

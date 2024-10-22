@@ -64,7 +64,7 @@ from reflex.components.core.client_side_routing import (
 )
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
-from reflex.config import get_config
+from reflex.config import environment, get_config
 from reflex.event import Event, EventHandler, EventSpec, window_alert
 from reflex.model import Model, get_db_status
 from reflex.page import (
@@ -431,25 +431,12 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             The generated component.
 
         Raises:
-            VarOperationTypeError: When an invalid component var related function is passed.
-            TypeError: When an invalid component function is passed.
             exceptions.MatchTypeError: If the return types of match cases in rx.match are different.
         """
-        from reflex.utils.exceptions import VarOperationTypeError
-
         try:
             return component if isinstance(component, Component) else component()
         except exceptions.MatchTypeError:
             raise
-        except TypeError as e:
-            message = str(e)
-            if "Var" in message:
-                raise VarOperationTypeError(
-                    "You may be trying to use an invalid Python function on a state var. "
-                    "When referencing a var inside your render code, only limited var operations are supported. "
-                    "See the var operation docs here: https://reflex.dev/docs/vars/var-operations/"
-                ) from e
-            raise e
 
     def add_page(
         self,
@@ -970,15 +957,16 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         executor = None
         if (
             platform.system() in ("Linux", "Darwin")
-            and os.environ.get("REFLEX_COMPILE_PROCESSES") is not None
+            and (number_of_processes := environment.REFLEX_COMPILE_PROCESSES)
+            is not None
         ):
             executor = concurrent.futures.ProcessPoolExecutor(
-                max_workers=int(os.environ.get("REFLEX_COMPILE_PROCESSES", 0)) or None,
+                max_workers=number_of_processes,
                 mp_context=multiprocessing.get_context("fork"),
             )
         else:
             executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=int(os.environ.get("REFLEX_COMPILE_THREADS", 0)) or None,
+                max_workers=environment.REFLEX_COMPILE_THREADS
             )
 
         with executor:
@@ -1536,7 +1524,9 @@ class EventNamespace(AsyncNamespace):
         """
         fields = json.loads(data)
         # Get the event.
-        event = Event(**{k: v for k, v in fields.items() if k != "handler"})
+        event = Event(
+            **{k: v for k, v in fields.items() if k not in ("handler", "event_actions")}
+        )
 
         self.token_to_sid[event.token] = sid
         self.sid_to_token[sid] = event.token

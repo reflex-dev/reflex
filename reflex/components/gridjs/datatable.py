@@ -15,9 +15,9 @@ from reflex.vars.base import LiteralVar, Var, is_computed_var
 class Gridjs(Component):
     """A component that wraps a nivo bar component."""
 
-    library = "gridjs-react@6.0.1"
+    library = "gridjs-react@6.1.1"
 
-    lib_dependencies: List[str] = ["gridjs@6.0.6"]
+    lib_dependencies: List[str] = ["gridjs@6.2.0"]
 
 
 class DataTable(Gridjs):

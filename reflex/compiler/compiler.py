@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Type, Union
@@ -16,7 +15,7 @@ from reflex.components.component import (
     CustomComponent,
     StatefulComponent,
 )
-from reflex.config import get_config
+from reflex.config import environment, get_config
 from reflex.state import BaseState
 from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils.exec import is_prod_mode
@@ -40,6 +39,20 @@ def _compile_document_root(root: Component) -> str:
     )
 
 
+def _normalize_library_name(lib: str) -> str:
+    """Normalize the library name.
+
+    Args:
+        lib: The library name to normalize.
+
+    Returns:
+        The normalized library name.
+    """
+    if lib == "react":
+        return "React"
+    return lib.replace("@", "").replace("/", "_").replace("-", "_")
+
+
 def _compile_app(app_root: Component) -> str:
     """Compile the app template component.
 
@@ -49,10 +62,20 @@ def _compile_app(app_root: Component) -> str:
     Returns:
         The compiled app.
     """
+    from reflex.components.dynamic import bundled_libraries
+
+    window_libraries = [
+        (_normalize_library_name(name), name) for name in bundled_libraries
+    ] + [
+        ("utils_context", f"/{constants.Dirs.UTILS}/context"),
+        ("utils_state", f"/{constants.Dirs.UTILS}/state"),
+    ]
+
     return templates.APP_ROOT.render(
         imports=utils.compile_imports(app_root._get_all_imports()),
         custom_codes=app_root._get_all_custom_code(),
         hooks={**app_root._get_all_hooks_internal(), **app_root._get_all_hooks()},
+        window_libraries=window_libraries,
         render=app_root.render(),
     )
 
@@ -503,7 +526,7 @@ def remove_tailwind_from_postcss() -> tuple[str, str]:
 
 def purge_web_pages_dir():
     """Empty out .web/pages directory."""
-    if not is_prod_mode() and os.environ.get("REFLEX_PERSIST_WEB_DIR"):
+    if not is_prod_mode() and environment.REFLEX_PERSIST_WEB_DIR:
         # Skip purging the web directory in dev mode if REFLEX_PERSIST_WEB_DIR is set.
         return
 

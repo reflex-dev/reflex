@@ -16,7 +16,13 @@ from reflex.components.component import (
 )
 from reflex.components.radix.themes.layout.box import Box
 from reflex.constants import EventTriggers
-from reflex.event import EventChain, EventHandler, parse_args_spec
+from reflex.event import (
+    EventChain,
+    EventHandler,
+    empty_event,
+    input_event,
+    parse_args_spec,
+)
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
@@ -832,7 +838,7 @@ def test_component_event_trigger_arbitrary_args():
 
     assert comp.render()["props"][0] == (
         "onFoo={((__e, _alpha, _bravo, _charlie) => ((addEvents("
-        f'[(Event("{C1State.get_full_name()}.mock_handler", ({{ ["_e"] : __e["target"]["value"], ["_bravo"] : _bravo["nested"], ["_charlie"] : (_charlie["custom"] + 42) }})))], '
+        f'[(Event("{C1State.get_full_name()}.mock_handler", ({{ ["_e"] : __e["target"]["value"], ["_bravo"] : _bravo["nested"], ["_charlie"] : (_charlie["custom"] + 42) }}), ({{  }})))], '
         "[__e, _alpha, _bravo, _charlie], ({  })))))}"
     )
 
@@ -1178,7 +1184,7 @@ TEST_VAR = LiteralVar.create("test")._replace(
 )
 FORMATTED_TEST_VAR = LiteralVar.create(f"foo{TEST_VAR}bar")
 STYLE_VAR = TEST_VAR._replace(_js_expr="style")
-EVENT_CHAIN_VAR = TEST_VAR._replace(_var_type=EventChain)
+EVENT_CHAIN_VAR = TEST_VAR.to(EventChain)
 ARG_VAR = Var(_js_expr="arg")
 
 TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "test"}})._replace(
@@ -1224,6 +1230,7 @@ class EventState(rx.State):
 
     v: int = 42
 
+    @rx.event
     def handler(self):
         """A handler that does nothing."""
 
@@ -1778,7 +1785,7 @@ def test_custom_component_declare_event_handlers_in_fields():
             return {
                 **super().get_event_triggers(),
                 "on_a": lambda e0: [e0],
-                "on_b": lambda e0: [e0.target.value],
+                "on_b": input_event,
                 "on_c": lambda e0: [],
                 "on_d": lambda: [],
                 "on_e": lambda: [],
@@ -1787,9 +1794,9 @@ def test_custom_component_declare_event_handlers_in_fields():
 
     class TestComponent(Component):
         on_a: EventHandler[lambda e0: [e0]]
-        on_b: EventHandler[lambda e0: [e0.target.value]]
-        on_c: EventHandler[lambda e0: []]
-        on_d: EventHandler[lambda: []]
+        on_b: EventHandler[input_event]
+        on_c: EventHandler[empty_event]
+        on_d: EventHandler[empty_event]
         on_e: EventHandler
         on_f: EventHandler[lambda a, b, c: [c, b, a]]
 
@@ -2141,6 +2148,7 @@ def test_add_style_foreach():
 class TriggerState(rx.State):
     """Test state with event handlers."""
 
+    @rx.event
     def do_something(self):
         """Sample event handler."""
         pass
@@ -2159,7 +2167,7 @@ class TriggerState(rx.State):
                 rx.text("random text", on_click=TriggerState.do_something),
                 rx.text(
                     "random text",
-                    on_click=Var(_js_expr="toggleColorMode", _var_type=EventChain),
+                    on_click=Var(_js_expr="toggleColorMode").to(EventChain),
                 ),
             ),
             True,
@@ -2169,7 +2177,7 @@ class TriggerState(rx.State):
                 rx.text("random text", on_click=rx.console_log("log")),
                 rx.text(
                     "random text",
-                    on_click=Var(_js_expr="toggleColorMode", _var_type=EventChain),
+                    on_click=Var(_js_expr="toggleColorMode").to(EventChain),
                 ),
             ),
             False,
@@ -2209,3 +2217,56 @@ class TriggerState(rx.State):
 )
 def test_has_state_event_triggers(component, output):
     assert component._has_stateful_event_triggers() == output
+
+
+class SpecialComponent(Box):
+    """A special component with custom attributes."""
+
+    data_prop: Var[str]
+    aria_prop: Var[str]
+
+
+@pytest.mark.parametrize(
+    ("component_kwargs", "exp_custom_attrs", "exp_style"),
+    [
+        (
+            {"data_test": "test", "aria_test": "test"},
+            {"data-test": "test", "aria-test": "test"},
+            {},
+        ),
+        (
+            {"data-test": "test", "aria-test": "test"},
+            {"data-test": "test", "aria-test": "test"},
+            {},
+        ),
+        (
+            {"custom_attrs": {"data-existing": "test"}, "data_new": "test"},
+            {"data-existing": "test", "data-new": "test"},
+            {},
+        ),
+        (
+            {"data_test": "test", "data_prop": "prop"},
+            {"data-test": "test"},
+            {},
+        ),
+        (
+            {"aria_test": "test", "aria_prop": "prop"},
+            {"aria-test": "test"},
+            {},
+        ),
+    ],
+)
+def test_special_props(component_kwargs, exp_custom_attrs, exp_style):
+    """Test that data_ and aria_ special props are correctly added to the component.
+
+    Args:
+        component_kwargs: The component kwargs.
+        exp_custom_attrs: The expected custom attributes.
+        exp_style: The expected style.
+    """
+    component = SpecialComponent.create(**component_kwargs)
+    assert component.custom_attrs == exp_custom_attrs
+    assert component.style == exp_style
+    for prop in SpecialComponent.get_props():
+        if prop in component_kwargs:
+            assert getattr(component, prop)._var_value == component_kwargs[prop]
