@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import enum
-from typing import Dict, List, Literal, Optional, Union
+from typing import Dict, List, Literal, Optional, Tuple, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
-from reflex.event import EventHandler
+from reflex.event import EventHandler, empty_event, identity_event
 from reflex.utils.format import to_camel_case
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import Var
@@ -66,6 +66,35 @@ class EditorOptions(Base):
 
     # List of buttons to use in the toolbar.
     button_list: Optional[List[Union[List[str], str]]]
+
+
+def on_blur_spec(e: Var, content: Var[str]) -> Tuple[Var[str]]:
+    """A helper function to specify the on_blur event handler.
+
+    Args:
+        e: The event.
+        content: The content of the editor.
+
+    Returns:
+        A tuple containing the content of the editor.
+    """
+    return (content,)
+
+
+def on_paste_spec(
+    e: Var, clean_data: Var[str], max_char_count: Var[bool]
+) -> Tuple[Var[str], Var[bool]]:
+    """A helper function to specify the on_paste event handler.
+
+    Args:
+        e: The event.
+        clean_data: The clean data.
+        max_char_count: The maximum character count.
+
+    Returns:
+        A tuple containing the clean data and the maximum character count.
+    """
+    return (clean_data, max_char_count)
 
 
 class Editor(NoSSRComponent):
@@ -178,36 +207,31 @@ class Editor(NoSSRComponent):
     disable_toolbar: Var[bool]
 
     # Fired when the editor content changes.
-    on_change: EventHandler[lambda content: [content]]
+    on_change: EventHandler[identity_event(str)]
 
     # Fired when the something is inputted in the editor.
-    on_input: EventHandler[lambda e: [e]]
+    on_input: EventHandler[empty_event]
 
     # Fired when the editor loses focus.
-    on_blur: EventHandler[lambda e, content: [content]]
+    on_blur: EventHandler[on_blur_spec]
 
     # Fired when the editor is loaded.
-    on_load: EventHandler[lambda reload: [reload]]
-
-    # Fired when the editor is resized.
-    on_resize_editor: EventHandler[lambda height, prev_height: [height, prev_height]]
+    on_load: EventHandler[identity_event(bool)]
 
     # Fired when the editor content is copied.
-    on_copy: EventHandler[lambda e, clipboard_data: [clipboard_data]]
+    on_copy: EventHandler[empty_event]
 
     # Fired when the editor content is cut.
-    on_cut: EventHandler[lambda e, clipboard_data: [clipboard_data]]
+    on_cut: EventHandler[empty_event]
 
     # Fired when the editor content is pasted.
-    on_paste: EventHandler[
-        lambda e, clean_data, max_char_count: [clean_data, max_char_count]
-    ]
+    on_paste: EventHandler[on_paste_spec]
 
     # Fired when the code view is toggled.
-    toggle_code_view: EventHandler[lambda is_code_view: [is_code_view]]
+    toggle_code_view: EventHandler[identity_event(bool)]
 
     # Fired when the full screen mode is toggled.
-    toggle_full_screen: EventHandler[lambda is_full_screen: [is_full_screen]]
+    toggle_full_screen: EventHandler[identity_event(bool)]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the Editor component.
