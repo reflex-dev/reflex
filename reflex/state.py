@@ -879,11 +879,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         if len(path) == 0:
             return cls
+        print("get_name: ", cls.get_name())
         if path[0] == cls.get_name():
             if len(path) == 1:
                 return cls
             path = path[1:]
         for substate in cls.get_substates():
+            print("substate get_name: ", substate.get_name())
             if path[0] == substate.get_name():
                 return substate.get_class_substate(path[1:])
         raise ValueError(f"Invalid path: {path}")
