@@ -418,6 +418,12 @@ class Config(Base):
     # Number of gunicorn workers from user
     gunicorn_workers: Optional[int] = None
 
+    # Number of requests before a worker is restarted
+    gunicorn_max_requests: int = 100
+
+    # Variance limit for max requests; gunicorn only
+    gunicorn_max_requests_jitter: int = 25
+
     # Indicate which type of state manager to use
     state_manager_mode: constants.StateManagerMode = constants.StateManagerMode.DISK
 
