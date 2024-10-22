@@ -12,7 +12,6 @@ from functools import partial
 from typing import (
     Any,
     Callable,
-    ClassVar,
     Dict,
     Generic,
     List,
@@ -33,9 +32,7 @@ from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
 from reflex.utils.types import ArgsSpec, GenericType
 from reflex.vars import VarData
 from reflex.vars.base import (
-    LiteralNoneVar,
     LiteralVar,
-    ToOperation,
     Var,
 )
 from reflex.vars.function import (
@@ -1318,7 +1315,7 @@ def get_fn_signature(fn: Callable) -> inspect.Signature:
     return signature.replace(parameters=(new_param, *signature.parameters.values()))
 
 
-class EventVar(ObjectVar):
+class EventVar(ObjectVar, python_types=EventSpec):
     """Base class for event vars."""
 
 
@@ -1379,7 +1376,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
         )
 
 
-class EventChainVar(FunctionVar):
+class EventChainVar(FunctionVar, python_types=EventChain):
     """Base class for event chain vars."""
 
 
@@ -1446,32 +1443,6 @@ class LiteralEventChainVar(ArgsFunctionOperation, LiteralVar, EventChainVar):
             ),
             _var_value=value,
         )
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ToEventVarOperation(ToOperation, EventVar):
-    """Result of a cast to an event var."""
-
-    _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
-
-    _default_var_type: ClassVar[Type] = EventSpec
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ToEventChainVarOperation(ToOperation, EventChainVar):
-    """Result of a cast to an event chain var."""
-
-    _original: Var = dataclasses.field(default_factory=lambda: LiteralNoneVar.create())
-
-    _default_var_type: ClassVar[Type] = EventChain
 
 
 G = ParamSpec("G")
@@ -1601,8 +1572,6 @@ class EventNamespace(types.SimpleNamespace):
     LiteralEventVar = LiteralEventVar
     EventChainVar = EventChainVar
     LiteralEventChainVar = LiteralEventChainVar
-    ToEventVarOperation = ToEventVarOperation
-    ToEventChainVarOperation = ToEventChainVarOperation
     EventType = EventType
 
     __call__ = staticmethod(event_handler)
