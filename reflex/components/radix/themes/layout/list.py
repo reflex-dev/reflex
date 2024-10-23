@@ -42,9 +42,9 @@ class BaseList(Component):
     tag = "ul"
 
     # The style of the list. Default to "none".
-    list_style_type: Union[
+    list_style_type: Optional[Union[
         LiteralListStyleTypeUnordered, LiteralListStyleTypeOrdered
-    ] = "none"
+    ]] = "none"
 
     # A list of items to add to the list.
     items: Optional[Union[Iterable, Var[Iterable]]] = None
