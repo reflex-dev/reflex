@@ -499,8 +499,6 @@ class Config(Base):
         Returns:
             The updated config values.
         """
-        from reflex.utils.exceptions import EnvVarValueError
-
         if self.env_file:
             from dotenv import load_dotenv
 
