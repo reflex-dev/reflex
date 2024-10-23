@@ -522,6 +522,12 @@ def deploy(
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
+    token: Optional[str] == typer.Option(
+        None,
+        "--token",
+        help="token to use for auth",
+        hidden=True,
+    ),
 ):
     """Deploy the app to the Reflex hosting service."""
     from reflex_cli import cli as hosting_cli
@@ -560,6 +566,7 @@ def deploy(
         hostname=hostname,
         interactive=interactive,
         loglevel=loglevel.subprocess_level(),
+        token=token
     )
 
 
