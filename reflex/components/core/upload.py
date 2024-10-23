@@ -224,7 +224,7 @@ class Upload(MemoizationLeaf):
     on_drop: EventHandler[_on_drop_spec]
 
     @classmethod
-    def create(cls, *children, multiple=True, **props) -> Component:
+    def create(cls, *children, **props) -> Component:
         """Create an upload component.
 
         Args:
@@ -238,7 +238,7 @@ class Upload(MemoizationLeaf):
         # Mark the Upload component as used in the app.
         cls.is_used = True
 
-        props["multiple"] = multiple
+        props["multiple"].set_default(True)
 
         # Apply the default classname
         given_class_name = props.pop("class_name", [])
