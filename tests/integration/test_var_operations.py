@@ -710,7 +710,7 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("float_neq_str", "true"),
         # float, list
         ("float_or_list", "10.5"),
-        ("float_and_list", "12"),
+        ("float_and_list", "[1,2]"),
         ("float_eq_list", "false"),
         ("float_neq_list", "true"),
         # float, dict
@@ -739,7 +739,7 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("str_eq_int", "false"),
         ("str_neq_int", "true"),
         # str, list
-        ("str_and_list", "12"),
+        ("str_and_list", "[1,2]"),
         ("str_or_list", "first"),
         ("str_eq_list", "false"),
         ("str_neq_list", "true"),
@@ -757,7 +757,7 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("list_eq_list", "false"),
         ("list_neq_list", "true"),
         ("list_and_list", "[3,4]"),
-        ("list_or_list", "12"),
+        ("list_or_list", "[1,2]"),
         ("list_contains", "true"),
         ("list_pluck", '["obj_1","obj_2"]'),
         ("list_reverse", "[2,1]"),
@@ -769,13 +769,13 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("list_join_range4", "0,1,2"),
         # list, int
         ("list_mult_int", "[1,2,1,2,1,2,1,2,1,2]"),
-        ("list_or_int", "12"),
+        ("list_or_int", "[1,2]"),
         ("list_and_int", "10"),
         ("list_eq_int", "false"),
         ("list_neq_int", "true"),
         # list, dict
         ("list_and_dict", '{"1":2}'),
-        ("list_or_dict", "12"),
+        ("list_or_dict", "[1,2]"),
         ("list_eq_dict", "false"),
         ("list_neq_dict", "true"),
         # dict, dict
@@ -794,7 +794,7 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("foreach_list_nested", "1\n1\n2"),
         # rx.memo component with state
         ("memo_comp", "1210"),
-        ("memo_comp_nested", "[3,4]5"),
+        ("memo_comp_nested", "345"),
         # foreach in a match
         ("foreach_in_match", "first\nsecond\nthird"),
     ]
