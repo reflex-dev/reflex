@@ -29,7 +29,11 @@ HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {
         const $form = ev.target
         ev.preventDefault()
-        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}};
+        const {{ form_data }} = {
+            ...Object.fromEntries(new FormData($form).entries()),
+            ...{{ field_ref_mapping }},
+            ...Object.fromEntries(Array.from($form.children).filter(el => el.name).map(el => [el.name, getElementValue(el)])),
+        };
 
         ({{ on_submit_event_chain }}());
 
@@ -187,7 +191,7 @@ class Form(BaseHTML):
         """
         return {
             "react": "useCallback",
-            f"/{Dirs.STATE_PATH}": ["getRefValue", "getRefValues"],
+            f"/{Dirs.STATE_PATH}": ["getRefValue", "getRefValues", "getElementValue"],
         }
 
     def add_hooks(self) -> list[str]:
