@@ -2381,15 +2381,29 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
         Returns:
             The name of the var.
         """
-        tag = self._var_value._render()
+        tag = self._var_value.render()
 
-        props = Var.create(tag.props).to(ObjectVar)
-        for prop in tag.special_props:
+        props = {}
+
+        special_props = []
+
+        for prop_str in tag["props"]:
+            if "=" not in prop_str:
+                special_props.append(Var(prop_str).to(ObjectVar))
+                continue
+            prop = prop_str.index("=")
+            key = prop_str[:prop]
+            value = prop_str[prop + 2 : -1]
+            props[key] = value
+
+        props = Var.create({Var.create(k): Var(v) for k, v in props.items()})
+
+        for prop in special_props:
             props = props.merge(prop)
 
-        contents = getattr(self._var_value, "contents", None)
+        contents = tag["contents"][1:-1] if tag["contents"] else None
 
-        tag_name = Var(tag.name) if tag.name else Var("Fragment")
+        tag_name = Var(tag.get("name", None) or "Fragment")
 
         return str(
             FunctionStringVar.create(
@@ -2397,7 +2411,7 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
             ).call(
                 tag_name,
                 props,
-                *([Var.create(contents)] if contents is not None else []),
+                *([Var(contents)] if contents is not None else []),
                 *[Var.create(child) for child in self._var_value.children],
             )
         )
