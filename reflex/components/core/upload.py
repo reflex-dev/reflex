@@ -277,7 +277,7 @@ class Upload(MemoizationLeaf):
         root_props_unique_name = get_unique_variable_name()
 
         event_var, callback_str = StatefulComponent._get_memoized_event_triggers(
-            Box.create(on_click=upload_props["on_drop"])
+            Box.create(on_click=upload_props["on_drop"])  # type: ignore
         )["on_click"]
 
         upload_props["on_drop"] = event_var
