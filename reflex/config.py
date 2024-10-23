@@ -491,10 +491,15 @@ class Config(Base):
         from reflex.utils.exceptions import EnvVarValueError
 
         if self.env_file:
-            from dotenv import load_dotenv
+            try:
+                from dotenv import load_dotenv  # type: ignore
 
-            # load env file if exists
-            load_dotenv(self.env_file, override=True)
+                # load env file if exists
+                load_dotenv(self.env_file, override=True)
+            except ImportError:
+                console.error(
+                    """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
+                )
 
         updated_values = {}
         # Iterate over the fields.
