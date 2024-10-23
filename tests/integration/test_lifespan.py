@@ -51,6 +51,7 @@ def LifespanApp():
         def context_global(self) -> int:
             return lifespan_context_global
 
+        @rx.event
         def tick(self, date):
             pass
 

@@ -5,6 +5,7 @@
 # ------------------------------------------------------
 from typing import Any, Dict, Optional, Union, overload
 
+import reflex
 from reflex.components.react_player.react_player import ReactPlayer
 from reflex.event import EventType
 from reflex.style import Style
@@ -41,7 +42,7 @@ class Video(ReactPlayer):
         on_context_menu: Optional[EventType[[]]] = None,
         on_disable_pip: Optional[EventType[[]]] = None,
         on_double_click: Optional[EventType[[]]] = None,
-        on_duration: Optional[EventType] = None,
+        on_duration: Optional[EventType[float]] = None,
         on_enable_pip: Optional[EventType[[]]] = None,
         on_ended: Optional[EventType[[]]] = None,
         on_error: Optional[EventType[[]]] = None,
@@ -58,10 +59,12 @@ class Video(ReactPlayer):
         on_play: Optional[EventType[[]]] = None,
         on_playback_quality_change: Optional[EventType[[]]] = None,
         on_playback_rate_change: Optional[EventType[[]]] = None,
-        on_progress: Optional[EventType] = None,
+        on_progress: Optional[
+            EventType[reflex.components.react_player.react_player.Progress]
+        ] = None,
         on_ready: Optional[EventType[[]]] = None,
         on_scroll: Optional[EventType[[]]] = None,
-        on_seek: Optional[EventType] = None,
+        on_seek: Optional[EventType[float]] = None,
         on_start: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,

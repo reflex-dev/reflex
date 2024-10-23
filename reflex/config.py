@@ -432,6 +432,12 @@ class Config(Base):
     # Number of gunicorn workers from user
     gunicorn_workers: Optional[int] = None
 
+    # Number of requests before a worker is restarted
+    gunicorn_max_requests: int = 100
+
+    # Variance limit for max requests; gunicorn only
+    gunicorn_max_requests_jitter: int = 25
+
     # Indicate which type of state manager to use
     state_manager_mode: constants.StateManagerMode = constants.StateManagerMode.DISK
 
@@ -443,6 +449,9 @@ class Config(Base):
 
     # Attributes that were explicitly set by the user.
     _non_default_attributes: Set[str] = pydantic.PrivateAttr(set())
+
+    # Path to file containing key-values pairs to override in the environment; Dotenv format.
+    env_file: Optional[str] = None
 
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
@@ -485,10 +494,19 @@ class Config(Base):
 
     def update_from_env(self) -> dict[str, Any]:
         """Update the config values based on set environment variables.
+        If there is a set env_file, it is loaded first.
 
         Returns:
             The updated config values.
         """
+        from reflex.utils.exceptions import EnvVarValueError
+
+        if self.env_file:
+            from dotenv import load_dotenv
+
+            # load env file if exists
+            load_dotenv(self.env_file, override=True)
+
         updated_values = {}
         # Iterate over the fields.
         for key, field in self.__fields__.items():

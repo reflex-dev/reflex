@@ -40,7 +40,7 @@ class Clipboard(Fragment):
         on_mouse_out: Optional[EventType[[]]] = None,
         on_mouse_over: Optional[EventType[[]]] = None,
         on_mouse_up: Optional[EventType[[]]] = None,
-        on_paste: Optional[EventType] = None,
+        on_paste: Optional[EventType[list[tuple[str, str]]]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,

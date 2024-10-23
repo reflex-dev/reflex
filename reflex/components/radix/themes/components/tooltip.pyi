@@ -5,7 +5,9 @@
 # ------------------------------------------------------
 from typing import Any, Dict, Literal, Optional, Union, overload
 
-from reflex.event import EventType
+from reflex.event import (
+    EventType,
+)
 from reflex.style import Style
 from reflex.vars.base import Var
 
@@ -76,7 +78,7 @@ class Tooltip(RadixThemesComponent):
         on_mouse_out: Optional[EventType[[]]] = None,
         on_mouse_over: Optional[EventType[[]]] = None,
         on_mouse_up: Optional[EventType[[]]] = None,
-        on_open_change: Optional[EventType] = None,
+        on_open_change: Optional[EventType[bool]] = None,
         on_pointer_down_outside: Optional[EventType[[]]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,

@@ -6,6 +6,8 @@
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional, Union, overload
 
+from typing_extensions import TypedDict
+
 from reflex.base import Base
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventType
@@ -76,7 +78,53 @@ class DataEditorTheme(Base):
     text_light: Optional[str]
     text_medium: Optional[str]
 
-def on_edit_spec(pos, data: dict[str, Any]): ...
+class Bounds(TypedDict):
+    x: int
+    y: int
+    width: int
+    height: int
+
+class CompatSelection(TypedDict):
+    items: list
+
+class Rectangle(TypedDict):
+    x: int
+    y: int
+    width: int
+    height: int
+
+class GridSelectionCurrent(TypedDict):
+    cell: tuple[int, int]
+    range: Rectangle
+    rangeStack: list[Rectangle]
+
+class GridSelection(TypedDict):
+    current: Optional[GridSelectionCurrent]
+    columns: CompatSelection
+    rows: CompatSelection
+
+class GroupHeaderClickedEventArgs(TypedDict):
+    kind: str
+    group: str
+    location: tuple[int, int]
+    bounds: Bounds
+    isEdge: bool
+    shiftKey: bool
+    ctrlKey: bool
+    metaKey: bool
+    isTouch: bool
+    localEventX: int
+    localEventY: int
+    button: int
+    buttons: int
+    scrollEdge: tuple[int, int]
+
+class GridCell(TypedDict):
+    span: Optional[List[int]]
+
+class GridColumn(TypedDict):
+    title: str
+    group: Optional[str]
 
 class DataEditor(NoSSRComponent):
     def add_imports(self) -> ImportDict: ...
@@ -136,24 +184,28 @@ class DataEditor(NoSSRComponent):
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[EventType[[]]] = None,
-        on_cell_activated: Optional[EventType] = None,
-        on_cell_clicked: Optional[EventType] = None,
-        on_cell_context_menu: Optional[EventType] = None,
-        on_cell_edited: Optional[EventType] = None,
+        on_cell_activated: Optional[EventType[tuple[int, int]]] = None,
+        on_cell_clicked: Optional[EventType[tuple[int, int]]] = None,
+        on_cell_context_menu: Optional[EventType[tuple[int, int]]] = None,
+        on_cell_edited: Optional[EventType[tuple[int, int], GridCell]] = None,
         on_click: Optional[EventType[[]]] = None,
-        on_column_resize: Optional[EventType] = None,
+        on_column_resize: Optional[EventType[GridColumn, int]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
-        on_delete: Optional[EventType] = None,
+        on_delete: Optional[EventType[GridSelection]] = None,
         on_double_click: Optional[EventType[[]]] = None,
-        on_finished_editing: Optional[EventType] = None,
+        on_finished_editing: Optional[
+            EventType[Union[GridCell, None], tuple[int, int]]
+        ] = None,
         on_focus: Optional[EventType[[]]] = None,
-        on_group_header_clicked: Optional[EventType] = None,
-        on_group_header_context_menu: Optional[EventType] = None,
-        on_group_header_renamed: Optional[EventType] = None,
-        on_header_clicked: Optional[EventType] = None,
-        on_header_context_menu: Optional[EventType] = None,
-        on_header_menu_click: Optional[EventType] = None,
-        on_item_hovered: Optional[EventType] = None,
+        on_group_header_clicked: Optional[EventType[tuple[int, int], GridCell]] = None,
+        on_group_header_context_menu: Optional[
+            EventType[int, GroupHeaderClickedEventArgs]
+        ] = None,
+        on_group_header_renamed: Optional[EventType[str, str]] = None,
+        on_header_clicked: Optional[EventType[tuple[int, int]]] = None,
+        on_header_context_menu: Optional[EventType[tuple[int, int]]] = None,
+        on_header_menu_click: Optional[EventType[int, Rectangle]] = None,
+        on_item_hovered: Optional[EventType[tuple[int, int]]] = None,
         on_mount: Optional[EventType[[]]] = None,
         on_mouse_down: Optional[EventType[[]]] = None,
         on_mouse_enter: Optional[EventType[[]]] = None,
