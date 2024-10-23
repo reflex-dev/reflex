@@ -328,7 +328,10 @@ _MAPPING: dict = {
     ],
     "middleware": ["middleware", "Middleware"],
     "model": ["session", "Model"],
-    "state": ["var"],
+    "state": [
+        "var",
+        "dynamic",
+    ],
     "style": ["Style", "toggle_color_mode"],
     "utils.imports": ["ImportVar"],
     "utils.serializers": ["serializer"],

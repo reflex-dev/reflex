@@ -30,6 +30,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypeVar,
     Union,
     cast,
     get_args,
@@ -78,6 +79,7 @@ from reflex.utils import console, format, path_ops, prerequisites, types
 from reflex.utils.exceptions import (
     ComputedVarShadowsBaseVars,
     ComputedVarShadowsStateVar,
+    DynamicComponentInvalidSignature,
     DynamicRouteArgShadowsStateVar,
     EventHandlerShadowsBuiltInStateMethod,
     ImmutableStateError,
@@ -93,6 +95,9 @@ from reflex.vars import VarData
 
 Delta = Dict[str, Any]
 var = computed_var
+
+if TYPE_CHECKING:
+    from reflex.components.component import Component
 
 
 # If the state is this large, it's considered a performance issue.
@@ -2083,6 +2088,51 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if substate_schema != state._to_schema():
             raise StateSchemaMismatchError()
         return state
+
+
+T = TypeVar("T", bound=BaseState)
+
+
+def dynamic(func: Callable[[T], Component]):
+    """Create a dynamically generated components from a state class.
+
+    Args:
+        func: The function to generate the component.
+
+    Returns:
+        The dynamically generated component.
+
+    Raises:
+        DynamicComponentInvalidSignature: If the function does not have exactly one parameter.
+        DynamicComponentInvalidSignature: If the function does not have a type hint for the state class.
+    """
+    number_of_parameters = len(inspect.signature(func).parameters)
+
+    func_signature = get_type_hints(func)
+
+    if "return" in func_signature:
+        func_signature.pop("return")
+
+    values = list(func_signature.values())
+
+    if number_of_parameters != 1:
+        raise DynamicComponentInvalidSignature(
+            "The function must have exactly one parameter, which is the state class."
+        )
+
+    if len(values) != 1:
+        raise DynamicComponentInvalidSignature(
+            "You must provide a type hint for the state class in the function."
+        )
+
+    state_class: Type[T] = values[0]
+
+    def wrapper() -> Component:
+        from reflex.components.base.fragment import fragment
+
+        return fragment(state_class._evaluate(lambda state: func(state)))
+
+    return wrapper
 
 
 class StateProxy(wrapt.ObjectProxy):

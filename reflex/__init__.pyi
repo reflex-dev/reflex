@@ -184,6 +184,7 @@ from .middleware import middleware as middleware
 from .model import Model as Model
 from .model import session as session
 from .page import page as page
+from .state import dynamic as dynamic
 from .state import var as var
 from .style import Style as Style
 from .style import toggle_color_mode as toggle_color_mode
