@@ -557,7 +557,6 @@ def deploy(
             backend=backend,
             zipping=zipping,
             loglevel=loglevel.subprocess_level(),
-            upload_db_file=upload_db_file,
         ),
         regions=regions,
         envs=envs,
