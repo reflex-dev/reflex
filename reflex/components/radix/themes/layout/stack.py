@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from reflex.components.component import Component
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import LiteralAlign, LiteralSpacing
 from .flex import Flex, LiteralFlexDirection
@@ -33,7 +33,7 @@ class Stack(Flex):
         """
         # Apply the default classname
         given_class_name = props.pop("class_name", [])
-        if isinstance(given_class_name, str):
+        if not isinstance(given_class_name, list):
             given_class_name = [given_class_name]
         props["class_name"] = ["rx-Stack", *given_class_name]
 

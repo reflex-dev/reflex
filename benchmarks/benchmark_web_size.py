@@ -2,6 +2,7 @@
 
 import argparse
 import os
+from pathlib import Path
 
 from utils import get_directory_size, send_data_to_posthog
 
@@ -28,7 +29,7 @@ def insert_benchmarking_data(
         pr_id: The id of the PR.
         path: The path to the dir or file to check size.
     """
-    size = get_directory_size(path)
+    size = get_directory_size(Path(path))
 
     # Prepare the event data
     properties = {

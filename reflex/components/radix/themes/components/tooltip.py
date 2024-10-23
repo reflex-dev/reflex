@@ -3,9 +3,9 @@
 from typing import Dict, Literal, Union
 
 from reflex.components.component import Component
-from reflex.event import EventHandler
+from reflex.event import EventHandler, empty_event, identity_event
 from reflex.utils import format
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import (
     RadixThemesComponent,
@@ -85,13 +85,13 @@ class Tooltip(RadixThemesComponent):
     aria_label: Var[str]
 
     # Fired when the open state changes.
-    on_open_change: EventHandler[lambda e0: [e0.target.value]]
+    on_open_change: EventHandler[identity_event(bool)]
 
     # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[lambda e0: [e0.target.value]]
+    on_escape_key_down: EventHandler[empty_event]
 
     # Fired when the pointer is down outside the tooltip.
-    on_pointer_down_outside: EventHandler[lambda e0: [e0.target.value]]
+    on_pointer_down_outside: EventHandler[empty_event]
 
     @classmethod
     def create(cls, *children, **props) -> Component:

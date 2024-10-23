@@ -23,8 +23,8 @@ jobs:
     strategy:
       matrix:
         state_manager: ['redis', 'memory']
-        python-version: ['3.8.18', '3.11.5', '3.12.0']
-    runs-on: ubuntu-latest
+        python-version: ['3.11.5', '3.12.0']
+    runs-on: ubuntu-22.04
     services:
       # Label used to access the service container
       redis:
@@ -47,16 +47,11 @@ jobs:
           create-venv-at-path: .venv
       - run: poetry run uv pip install pyvirtualdisplay pillow playwright pytest-playwright
       - name: Run app harness tests
-        uses: nick-fields/retry@v3
         env:
           SCREENSHOT_DIR: /tmp/screenshots
           REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
-        with:
-          timeout_minutes: 30
-          max_attempts: 2
-          command: |
-            poetry run playwright install --with-deps
-            poetry run pytest integration
+        run: |
+          poetry run pytest tests/integration
       - uses: actions/upload-artifact@v4
         name: Upload failed test screenshots
         if: always()

@@ -9,6 +9,7 @@ import copy
 import functools
 import inspect
 import io
+import json
 import multiprocessing
 import os
 import platform
@@ -63,7 +64,7 @@ from reflex.components.core.client_side_routing import (
 )
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
-from reflex.config import get_config
+from reflex.config import environment, get_config
 from reflex.event import Event, EventHandler, EventSpec, window_alert
 from reflex.model import Model, get_db_status
 from reflex.page import (
@@ -269,13 +270,12 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 "`connect_error_component` is deprecated, use `overlay_component` instead"
             )
         super().__init__(**kwargs)
-        base_state_subclasses = BaseState.__subclasses__()
 
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
-        if not is_testing_env() and len(base_state_subclasses) > 1:
-            # Only one Base State class is allowed.
+        if not is_testing_env() and BaseState.__subclasses__() != [State]:
+            # Only rx.State is allowed as Base State subclass.
             raise ValueError(
-                "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
+                "rx.BaseState cannot be subclassed directly. Use rx.State instead"
             )
 
         if "breakpoints" in self.style:
@@ -431,25 +431,12 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             The generated component.
 
         Raises:
-            VarOperationTypeError: When an invalid component var related function is passed.
-            TypeError: When an invalid component function is passed.
             exceptions.MatchTypeError: If the return types of match cases in rx.match are different.
         """
-        from reflex.utils.exceptions import VarOperationTypeError
-
         try:
             return component if isinstance(component, Component) else component()
         except exceptions.MatchTypeError:
             raise
-        except TypeError as e:
-            message = str(e)
-            if "Var" in message:
-                raise VarOperationTypeError(
-                    "You may be trying to use an invalid Python function on a state var. "
-                    "When referencing a var inside your render code, only limited var operations are supported. "
-                    "See the var operation docs here: https://reflex.dev/docs/vars/var-operations/"
-                ) from e
-            raise e
 
     def add_page(
         self,
@@ -482,9 +469,8 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         """
         # If the route is not set, get it from the callable.
         if route is None:
-            assert isinstance(
-                component, Callable
-            ), "Route must be set if component is not a callable."
+            if not isinstance(component, Callable):
+                raise ValueError("Route must be set if component is not a callable.")
             # Format the route.
             route = format.format_route(component.__name__)
         else:
@@ -824,7 +810,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             for dep in deps:
                 if dep not in state.vars and dep not in state.backend_vars:
                     raise exceptions.VarDependencyError(
-                        f"ComputedVar {var._var_name} on state {state.__name__} has an invalid dependency {dep}"
+                        f"ComputedVar {var._js_expr} on state {state.__name__} has an invalid dependency {dep}"
                     )
 
         for substate in state.class_subclasses:
@@ -971,15 +957,16 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         executor = None
         if (
             platform.system() in ("Linux", "Darwin")
-            and os.environ.get("REFLEX_COMPILE_PROCESSES") is not None
+            and (number_of_processes := environment.REFLEX_COMPILE_PROCESSES)
+            is not None
         ):
             executor = concurrent.futures.ProcessPoolExecutor(
-                max_workers=int(os.environ.get("REFLEX_COMPILE_PROCESSES", 0)) or None,
+                max_workers=number_of_processes,
                 mp_context=multiprocessing.get_context("fork"),
             )
         else:
             executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=int(os.environ.get("REFLEX_COMPILE_THREADS", 0)) or None,
+                max_workers=environment.REFLEX_COMPILE_THREADS
             )
 
         with executor:
@@ -1528,20 +1515,28 @@ class EventNamespace(AsyncNamespace):
     async def on_event(self, sid, data):
         """Event for receiving front-end websocket events.
 
+        Raises:
+            RuntimeError: If the Socket.IO is badly initialized.
+
         Args:
             sid: The Socket.IO session id.
             data: The event data.
         """
+        fields = json.loads(data)
         # Get the event.
-        event = Event.parse_raw(data)
+        event = Event(
+            **{k: v for k, v in fields.items() if k not in ("handler", "event_actions")}
+        )
 
         self.token_to_sid[event.token] = sid
         self.sid_to_token[sid] = event.token
 
         # Get the event environment.
-        assert self.app.sio is not None
+        if self.app.sio is None:
+            raise RuntimeError("Socket.IO is not initialized.")
         environ = self.app.sio.get_environ(sid, self.namespace)
-        assert environ is not None
+        if environ is None:
+            raise RuntimeError("Socket.IO environ is not initialized.")
 
         # Get the client headers.
         headers = {

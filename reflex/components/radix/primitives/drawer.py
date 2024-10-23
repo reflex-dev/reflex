@@ -10,8 +10,9 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import Theme
 from reflex.components.radix.themes.layout.flex import Flex
-from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.event import EventHandler, empty_event, identity_event
+from reflex.utils import console
+from reflex.vars.base import Var
 
 
 class DrawerComponent(RadixPrimitiveComponent):
@@ -60,7 +61,7 @@ class DrawerRoot(DrawerComponent):
     preventScrollRestoration: Var[bool]
 
     # Fires when the drawer is opened.
-    on_open_change: EventHandler[lambda e0: [e0]]
+    on_open_change: EventHandler[identity_event(bool)]
 
 
 class DrawerTrigger(DrawerComponent):
@@ -127,20 +128,20 @@ class DrawerContent(DrawerComponent):
         base_style.update(style)
         return {"css": base_style}
 
-    # Fired when the drawer content is opened.
-    on_open_auto_focus: EventHandler[lambda e0: [e0.target.value]]
+    # Fired when the drawer content is opened. Deprecated.
+    on_open_auto_focus: EventHandler[empty_event]
 
-    # Fired when the drawer content is closed.
-    on_close_auto_focus: EventHandler[lambda e0: [e0.target.value]]
+    # Fired when the drawer content is closed. Deprecated.
+    on_close_auto_focus: EventHandler[empty_event]
 
-    # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[lambda e0: [e0.target.value]]
+    # Fired when the escape key is pressed. Deprecated.
+    on_escape_key_down: EventHandler[empty_event]
 
-    # Fired when the pointer is down outside the drawer content.
-    on_pointer_down_outside: EventHandler[lambda e0: [e0.target.value]]
+    # Fired when the pointer is down outside the drawer content. Deprecated.
+    on_pointer_down_outside: EventHandler[empty_event]
 
-    # Fired when interacting outside the drawer content.
-    on_interact_outside: EventHandler[lambda e0: [e0.target.value]]
+    # Fired when interacting outside the drawer content. Deprecated.
+    on_interact_outside: EventHandler[empty_event]
 
     @classmethod
     def create(cls, *children, **props):
@@ -157,6 +158,23 @@ class DrawerContent(DrawerComponent):
         Returns:
                  The drawer content.
         """
+        deprecated_properties = [
+            "on_open_auto_focus",
+            "on_close_auto_focus",
+            "on_escape_key_down",
+            "on_pointer_down_outside",
+            "on_interact_outside",
+        ]
+
+        for prop in deprecated_properties:
+            if prop in props:
+                console.deprecate(
+                    feature_name="drawer content events",
+                    reason=f"The `{prop}` event is deprecated and will be removed in 0.7.0.",
+                    deprecation_version="0.6.3",
+                    removal_version="0.7.0",
+                )
+
         comp = super().create(*children, **props)
 
         return Theme.create(comp)

@@ -1,16 +1,32 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import List, Literal, Optional, Union
+from __future__ import annotations
+
+from typing import List, Literal, Optional, Tuple, Union
 
 from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import (
     LiteralAccentColor,
     RadixThemesComponent,
 )
+
+
+def on_value_event_spec(
+    value: Var[List[int | float]],
+) -> Tuple[Var[List[int | float]]]:
+    """Event handler spec for the value event.
+
+    Args:
+        value: The value of the event.
+
+    Returns:
+        The event handler spec.
+    """
+    return (value,)  # type: ignore
 
 
 class Slider(RadixThemesComponent):
@@ -64,10 +80,10 @@ class Slider(RadixThemesComponent):
     _rename_props = {"onChange": "onValueChange"}
 
     # Fired when the value of the slider changes.
-    on_change: EventHandler[lambda e0: [e0]]
+    on_change: EventHandler[on_value_event_spec]
 
     # Fired when a thumb is released after being dragged.
-    on_value_commit: EventHandler[lambda e0: [e0]]
+    on_value_commit: EventHandler[on_value_event_spec]
 
     @classmethod
     def create(

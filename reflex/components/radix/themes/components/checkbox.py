@@ -6,9 +6,8 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
-from reflex.event import EventHandler
-from reflex.ivars.base import LiteralVar
-from reflex.vars import Var
+from reflex.event import EventHandler, identity_event
+from reflex.vars.base import LiteralVar, Var
 
 from ..base import (
     LiteralAccentColor,
@@ -62,7 +61,7 @@ class Checkbox(RadixThemesComponent):
     _rename_props = {"onChange": "onCheckedChange"}
 
     # Fired when the checkbox is checked or unchecked.
-    on_change: EventHandler[lambda e0: [e0]]
+    on_change: EventHandler[identity_event(bool)]
 
 
 class HighLevelCheckbox(RadixThemesComponent):
@@ -113,7 +112,7 @@ class HighLevelCheckbox(RadixThemesComponent):
     _rename_props = {"onChange": "onCheckedChange"}
 
     # Fired when the checkbox is checked or unchecked.
-    on_change: EventHandler[lambda e0: [e0]]
+    on_change: EventHandler[identity_event(bool)]
 
     @classmethod
     def create(cls, text: Var[str] = LiteralVar.create(""), **props) -> Component:

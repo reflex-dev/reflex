@@ -3,7 +3,7 @@
 from typing import Optional
 
 from reflex.components.component import Component
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from .base import NextComponent
 

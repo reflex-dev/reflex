@@ -5,7 +5,8 @@ from typing import List, Literal, Union
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
-from reflex.vars import Var
+from reflex.event import empty_event, identity_event
+from reflex.vars.base import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -47,10 +48,10 @@ class SelectRoot(RadixThemesComponent):
     _rename_props = {"onChange": "onValueChange"}
 
     # Fired when the value of the select changes.
-    on_change: rx.EventHandler[lambda e0: [e0]]
+    on_change: rx.EventHandler[identity_event(str)]
 
     # Fired when the select is opened or closed.
-    on_open_change: rx.EventHandler[lambda e0: [e0]]
+    on_open_change: rx.EventHandler[identity_event(bool)]
 
 
 class SelectTrigger(RadixThemesComponent):
@@ -103,13 +104,13 @@ class SelectContent(RadixThemesComponent):
     align_offset: Var[int]
 
     # Fired when the select content is closed.
-    on_close_auto_focus: rx.EventHandler[lambda e0: [e0]]
+    on_close_auto_focus: rx.EventHandler[empty_event]
 
     # Fired when the escape key is pressed.
-    on_escape_key_down: rx.EventHandler[lambda e0: [e0]]
+    on_escape_key_down: rx.EventHandler[empty_event]
 
     # Fired when a pointer down event happens outside the select content.
-    on_pointer_down_outside: rx.EventHandler[lambda e0: [e0]]
+    on_pointer_down_outside: rx.EventHandler[empty_event]
 
 
 class SelectGroup(RadixThemesComponent):

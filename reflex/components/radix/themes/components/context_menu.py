@@ -4,8 +4,8 @@ from typing import List, Literal
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
-from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.event import EventHandler, empty_event, identity_event
+from reflex.vars.base import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -24,7 +24,7 @@ class ContextMenuRoot(RadixThemesComponent):
     _invalid_children: List[str] = ["ContextMenuItem"]
 
     # Fired when the open state changes.
-    on_open_change: EventHandler[lambda e0: [e0]]
+    on_open_change: EventHandler[identity_event(bool)]
 
 
 class ContextMenuTrigger(RadixThemesComponent):
@@ -64,19 +64,19 @@ class ContextMenuContent(RadixThemesComponent):
     avoid_collisions: Var[bool]
 
     # Fired when the context menu is closed.
-    on_close_auto_focus: EventHandler[lambda e0: [e0]]
+    on_close_auto_focus: EventHandler[empty_event]
 
     # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[lambda e0: [e0]]
+    on_escape_key_down: EventHandler[empty_event]
 
     # Fired when a pointer down event happens outside the context menu.
-    on_pointer_down_outside: EventHandler[lambda e0: [e0]]
+    on_pointer_down_outside: EventHandler[empty_event]
 
     # Fired when focus moves outside the context menu.
-    on_focus_outside: EventHandler[lambda e0: [e0]]
+    on_focus_outside: EventHandler[empty_event]
 
     # Fired when interacting outside the context menu.
-    on_interact_outside: EventHandler[lambda e0: [e0]]
+    on_interact_outside: EventHandler[empty_event]
 
 
 class ContextMenuSub(RadixThemesComponent):
@@ -107,16 +107,16 @@ class ContextMenuSubContent(RadixThemesComponent):
     _valid_parents: List[str] = ["ContextMenuSub"]
 
     # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[lambda e0: [e0]]
+    on_escape_key_down: EventHandler[empty_event]
 
     # Fired when a pointer down event happens outside the context menu.
-    on_pointer_down_outside: EventHandler[lambda e0: [e0]]
+    on_pointer_down_outside: EventHandler[empty_event]
 
     # Fired when focus moves outside the context menu.
-    on_focus_outside: EventHandler[lambda e0: [e0]]
+    on_focus_outside: EventHandler[empty_event]
 
     # Fired when interacting outside the context menu.
-    on_interact_outside: EventHandler[lambda e0: [e0]]
+    on_interact_outside: EventHandler[empty_event]
 
 
 class ContextMenuItem(RadixThemesComponent):

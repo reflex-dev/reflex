@@ -1,26 +1,27 @@
 """Moment component for humanized date rendering."""
 
+import dataclasses
 from typing import List, Optional
 
-from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
-from reflex.event import EventHandler
+from reflex.event import EventHandler, identity_event
 from reflex.utils.imports import ImportDict
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 
-class MomentDelta(Base):
+@dataclasses.dataclass(frozen=True)
+class MomentDelta:
     """A delta used for add/subtract prop in Moment."""
 
-    years: Optional[int]
-    quarters: Optional[int]
-    months: Optional[int]
-    weeks: Optional[int]
-    days: Optional[int]
-    hours: Optional[int]
-    minutess: Optional[int]
-    seconds: Optional[int]
-    milliseconds: Optional[int]
+    years: Optional[int] = dataclasses.field(default=None)
+    quarters: Optional[int] = dataclasses.field(default=None)
+    months: Optional[int] = dataclasses.field(default=None)
+    weeks: Optional[int] = dataclasses.field(default=None)
+    days: Optional[int] = dataclasses.field(default=None)
+    hours: Optional[int] = dataclasses.field(default=None)
+    minutess: Optional[int] = dataclasses.field(default=None)
+    seconds: Optional[int] = dataclasses.field(default=None)
+    milliseconds: Optional[int] = dataclasses.field(default=None)
 
 
 class Moment(NoSSRComponent):
@@ -92,7 +93,7 @@ class Moment(NoSSRComponent):
     tz: Var[str]
 
     # Fires when the date changes.
-    on_change: EventHandler[lambda date: [date]]
+    on_change: EventHandler[identity_event(str)]
 
     def add_imports(self) -> ImportDict:
         """Add the imports for the Moment component.
