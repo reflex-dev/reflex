@@ -137,7 +137,6 @@ class Upload(MemoizationLeaf):
 
         Args:
             *children: The children of the component.
-            multiple: Whether to allow multiple files to be uploaded.
             accept: The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as  values.  supported MIME types: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
             disabled: Whether the dropzone is disabled.
             max_files: The maximum number of files that can be uploaded.

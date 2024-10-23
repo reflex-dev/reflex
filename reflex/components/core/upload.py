@@ -229,7 +229,6 @@ class Upload(MemoizationLeaf):
 
         Args:
             *children: The children of the component.
-            multiple: Whether to allow multiple files to be uploaded.
             **props: The properties of the component.
 
         Returns:
