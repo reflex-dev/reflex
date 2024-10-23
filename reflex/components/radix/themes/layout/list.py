@@ -100,7 +100,7 @@ class UnorderedList(BaseList, Ul):
     tag = "ul"
 
     # The style of the list.
-    list_style_type: LiteralListStyleTypeOrdered = "disc"
+    list_style_type: LiteralListStyleTypeUnordered = "disc"
 
     @classmethod
     def create(

@@ -106,7 +106,7 @@ class UnorderedList(BaseList, Ul):
     def create(  # type: ignore
         cls,
         *children,
-        list_style_type: Optional[LiteralListStyleTypeOrdered] = None,
+        list_style_type: Optional[LiteralListStyleTypeUnordered] = None,
         items: Optional[Union[Iterable, Union[Iterable, Var[Iterable]]]] = None,
         access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_capitalize: Optional[
