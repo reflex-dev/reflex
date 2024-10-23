@@ -238,7 +238,7 @@ class Upload(MemoizationLeaf):
         # Mark the Upload component as used in the app.
         cls.is_used = True
 
-        props["multiple"].set_default(True)
+        props.setdefault("multiple", True)
 
         # Apply the default classname
         given_class_name = props.pop("class_name", [])
