@@ -522,7 +522,7 @@ def deploy(
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
-    token: Optional[str] == typer.Option(
+    token: Optional[str] = typer.Option(
         None,
         "--token",
         help="token to use for auth",
@@ -566,7 +566,7 @@ def deploy(
         hostname=hostname,
         interactive=interactive,
         loglevel=loglevel.subprocess_level(),
-        token=token
+        token=token,
     )
 
 
