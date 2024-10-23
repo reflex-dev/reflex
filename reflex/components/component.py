@@ -2365,6 +2365,47 @@ def empty_component() -> Component:
     return Bare.create("")
 
 
+def render_dict_to_var(tag: dict) -> Var:
+    """Convert a render dict to a Var.
+
+    Args:
+        tag: The render dict.
+
+    Returns:
+        The Var.
+    """
+    props = {}
+
+    special_props = []
+
+    for prop_str in tag["props"]:
+        if "=" not in prop_str:
+            special_props.append(Var(prop_str).to(ObjectVar))
+            continue
+        prop = prop_str.index("=")
+        key = prop_str[:prop]
+        value = prop_str[prop + 2 : -1]
+        props[key] = value
+
+    props = Var.create({Var.create(k): Var(v) for k, v in props.items()})
+
+    for prop in special_props:
+        props = props.merge(prop)
+
+    contents = tag["contents"][1:-1] if tag["contents"] else None
+
+    tag_name = Var(tag.get("name") or "Fragment")
+
+    return FunctionStringVar.create(
+        "jsx",
+    ).call(
+        tag_name,
+        props,
+        *([Var(contents)] if contents is not None else []),
+        *[render_dict_to_var(child) for child in tag["children"]],
+    )
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
@@ -2381,40 +2422,7 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
         Returns:
             The name of the var.
         """
-        tag = self._var_value.render()
-
-        props = {}
-
-        special_props = []
-
-        for prop_str in tag["props"]:
-            if "=" not in prop_str:
-                special_props.append(Var(prop_str).to(ObjectVar))
-                continue
-            prop = prop_str.index("=")
-            key = prop_str[:prop]
-            value = prop_str[prop + 2 : -1]
-            props[key] = value
-
-        props = Var.create({Var.create(k): Var(v) for k, v in props.items()})
-
-        for prop in special_props:
-            props = props.merge(prop)
-
-        contents = tag["contents"][1:-1] if tag["contents"] else None
-
-        tag_name = Var(tag.get("name", None) or "Fragment")
-
-        return str(
-            FunctionStringVar.create(
-                "jsx",
-            ).call(
-                tag_name,
-                props,
-                *([Var(contents)] if contents is not None else []),
-                *[Var.create(child) for child in self._var_value.children],
-            )
-        )
+        return str(render_dict_to_var(self._var_value.render()))
 
     @cached_property_no_lock
     def _cached_get_all_var_data(self) -> VarData | None:
