@@ -946,21 +946,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
 
         pages_results = []
 
-        for route, component in self.pages.items():
-            component._add_style_recursive(self.style, self.theme)
-
-            ExecutorSafeFunctions.COMPONENTS[route] = component
-
-        for route, page in self.unevaluated_pages.items():
-            if route in self.pages:
-                continue
-
-            ExecutorSafeFunctions.UNCOMPILED_PAGES[route] = page
-
-        ExecutorSafeFunctions.STATE = self.state
-
-        pages_results = []
-
         with executor:
             result_futures = []
             pages_futures = []
