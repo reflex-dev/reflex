@@ -863,6 +863,11 @@ export const getRefValue = (ref) => {
   return getElementValue(ref.current)
 }
 
+/**
+ * Get the form submission value for a given element.
+ * @param el The element to get the value from.
+ * @returns The value.
+ */
 export const getElementValue = (el) => {
   if (el.type == "checkbox") {
     return el.checked; // chakra
