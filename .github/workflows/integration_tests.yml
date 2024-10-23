@@ -153,9 +153,9 @@ jobs:
         run: poetry run reflex init
       - name: Run Website and Check for errors
         run: |
-              # Check that npm is home
-              npm -v
-              poetry run bash scripts/integration.sh ./reflex-web prod
+          # Check that npm is home
+          npm -v
+          poetry run bash scripts/integration.sh ./reflex-web prod
       - name: Measure and upload .web size
         run:
           poetry run python benchmarks/benchmark_web_size.py --os "${{ matrix.os }}"
