@@ -38,6 +38,7 @@ from reflex.constants import (
 )
 from reflex.constants.compiler import SpecialAttributes
 from reflex.event import (
+    EventCallback,
     EventChain,
     EventChainVar,
     EventHandler,
@@ -1126,6 +1127,8 @@ class Component(BaseComponent, ABC):
         for trigger in self.event_triggers.values():
             if isinstance(trigger, EventChain):
                 for event in trigger.events:
+                    if isinstance(event, EventCallback):
+                        continue
                     if isinstance(event, EventSpec):
                         if event.handler.state_full_name:
                             return True
