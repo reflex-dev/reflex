@@ -5,11 +5,17 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple
 
-from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
+from reflex.components.component import (
+    Component,
+    ComponentNamespace,
+    MemoizationLeaf,
+    StatefulComponent,
+)
 from reflex.components.el.elements.forms import Input
 from reflex.components.radix.themes.layout.box import Box
 from reflex.config import environment
 from reflex.constants import Dirs
+from reflex.constants.compiler import Imports
 from reflex.event import (
     CallableEventSpec,
     EventChain,
@@ -19,9 +25,10 @@ from reflex.event import (
     call_script,
     parse_args_spec,
 )
+from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
-from reflex.vars.base import CallableVar, LiteralVar, Var
+from reflex.vars.base import CallableVar, LiteralVar, Var, get_unique_variable_name
 from reflex.vars.sequence import LiteralStringVar
 
 DEFAULT_UPLOAD_ID: str = "default"
@@ -179,9 +186,7 @@ class Upload(MemoizationLeaf):
 
     library = "react-dropzone@14.2.10"
 
-    tag = "ReactDropzone"
-
-    is_default = True
+    tag = ""
 
     # The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as
     # values.
@@ -201,7 +206,7 @@ class Upload(MemoizationLeaf):
     min_size: Var[int]
 
     # Whether to allow multiple files to be uploaded.
-    multiple: Var[bool] = True  # type: ignore
+    multiple: Var[bool]
 
     # Whether to disable click to upload.
     no_click: Var[bool]
@@ -219,11 +224,12 @@ class Upload(MemoizationLeaf):
     on_drop: EventHandler[_on_drop_spec]
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(cls, *children, multiple=True, **props) -> Component:
         """Create an upload component.
 
         Args:
             *children: The children of the component.
+            multiple: Whether to allow multiple files to be uploaded.
             **props: The properties of the component.
 
         Returns:
@@ -231,6 +237,8 @@ class Upload(MemoizationLeaf):
         """
         # Mark the Upload component as used in the app.
         cls.is_used = True
+
+        props["multiple"] = multiple
 
         # Apply the default classname
         given_class_name = props.pop("class_name", [])
@@ -243,17 +251,6 @@ class Upload(MemoizationLeaf):
         upload_props = {
             key: value for key, value in props.items() if key in supported_props
         }
-        # The file input to use.
-        upload = Input.create(type="file")
-        upload.special_props = [Var(_js_expr="{...getInputProps()}", _var_type=None)]
-
-        # The dropzone to use.
-        zone = Box.create(
-            upload,
-            *children,
-            **{k: v for k, v in props.items() if k not in supported_props},
-        )
-        zone.special_props = [Var(_js_expr="{...getRootProps()}", _var_type=None)]
 
         # Create the component.
         upload_props["id"] = props.get("id", DEFAULT_UPLOAD_ID)
@@ -275,9 +272,71 @@ class Upload(MemoizationLeaf):
                     ),
                 )
             upload_props["on_drop"] = on_drop
+
+        input_props_unique_name = get_unique_variable_name()
+        root_props_unique_name = get_unique_variable_name()
+
+        event_var, callback_str = StatefulComponent._get_memoized_event_triggers(
+            Box.create(on_click=upload_props["on_drop"])
+        )["on_click"]
+
+        upload_props["on_drop"] = event_var
+
+        upload_props = {
+            format.to_camel_case(key): value for key, value in upload_props.items()
+        }
+
+        var_data = VarData.merge(
+            VarData(
+                imports=Imports.EVENTS,
+                hooks={
+                    "const [addEvents, connectError] = useContext(EventLoopContext);": None
+                },
+            ),
+            event_var._get_all_var_data(),
+            VarData(
+                hooks={
+                    callback_str: None,
+                    f"const {{getRootProps: {root_props_unique_name}, getInputProps: {input_props_unique_name}}} = useDropzone({
+                    str(Var.create({
+                        'onDrop': event_var,
+                        **upload_props,
+                    }))
+                });": None,
+                },
+                imports={
+                    "react-dropzone": "useDropzone",
+                    **Imports.EVENTS,
+                },
+            ),
+        )
+
+        # The file input to use.
+        upload = Input.create(type="file")
+        upload.special_props = [
+            Var(
+                _js_expr=f"{{...{input_props_unique_name}()}}",
+                _var_type=None,
+                _var_data=var_data,
+            )
+        ]
+
+        # The dropzone to use.
+        zone = Box.create(
+            upload,
+            *children,
+            **{k: v for k, v in props.items() if k not in supported_props},
+        )
+        zone.special_props = [
+            Var(
+                _js_expr=f"{{...{root_props_unique_name}()}}",
+                _var_type=None,
+                _var_data=var_data,
+            )
+        ]
+
         return super().create(
             zone,
-            **upload_props,
         )
 
     @classmethod
@@ -294,11 +353,6 @@ class Upload(MemoizationLeaf):
             placeholder = parse_args_spec(_on_drop_spec)[0]
             return (arg_value[0], placeholder)
         return arg_value
-
-    def _render(self):
-        out = super()._render()
-        out.args = ("getRootProps", "getInputProps")
-        return out
 
     @staticmethod
     def _get_app_wrap_components() -> dict[tuple[int, str], Component]:

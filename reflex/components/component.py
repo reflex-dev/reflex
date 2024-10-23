@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import dataclasses
 import typing
 from abc import ABC, abstractmethod
 from functools import lru_cache, wraps
@@ -58,7 +59,14 @@ from reflex.utils.imports import (
     parse_imports,
 )
 from reflex.vars import VarData
-from reflex.vars.base import LiteralVar, Var
+from reflex.vars.base import (
+    CachedVarOperation,
+    LiteralVar,
+    Var,
+    cached_property_no_lock,
+)
+from reflex.vars.function import FunctionStringVar
+from reflex.vars.object import ObjectVar
 from reflex.vars.sequence import LiteralArrayVar
 
 
@@ -2340,3 +2348,119 @@ class MemoizationLeaf(Component):
 
 
 load_dynamic_serializer()
+
+
+class ComponentVar(Var[Component], python_types=Component):
+    """A Var that represents a Component."""
+
+
+def empty_component() -> Component:
+    """Create an empty component.
+
+    Returns:
+        An empty component.
+    """
+    from reflex.components.base.bare import Bare
+
+    return Bare.create("")
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+)
+class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
+    """A Var that represents a Component."""
+
+    _var_value: Component = dataclasses.field(default_factory=empty_component)
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """Get the name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        tag = self._var_value._render()
+
+        props = Var.create(tag.props).to(ObjectVar)
+        for prop in tag.special_props:
+            props = props.merge(prop)
+
+        contents = getattr(self._var_value, "contents", None)
+
+        tag_name = Var(tag.name) if tag.name else Var("Fragment")
+
+        return str(
+            FunctionStringVar.create(
+                "jsx",
+            ).call(
+                tag_name,
+                props,
+                *([Var.create(contents)] if contents is not None else []),
+                *[Var.create(child) for child in self._var_value.children],
+            )
+        )
+
+    @cached_property_no_lock
+    def _cached_get_all_var_data(self) -> VarData | None:
+        """Get the VarData for the var.
+
+        Returns:
+            The VarData for the var.
+        """
+        return VarData.merge(
+            VarData(
+                imports={
+                    "@emotion/react": [
+                        ImportVar(tag="jsx"),
+                    ],
+                }
+            ),
+            VarData(
+                imports=self._var_value._get_all_imports(collapse=True),
+            ),
+            *(
+                [
+                    VarData(
+                        imports={
+                            "react": [
+                                ImportVar(tag="Fragment"),
+                            ],
+                        }
+                    )
+                ]
+                if not self._var_value.tag
+                else []
+            ),
+        )
+
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__,))
+
+    @classmethod
+    def create(
+        cls,
+        value: Component,
+        _var_data: VarData | None = None,
+    ):
+        """Create a var from a value.
+
+        Args:
+            value: The value of the var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return LiteralComponentVar(
+            _js_expr="",
+            _var_type=type(value),
+            _var_data=_var_data,
+            _var_value=value,
+        )
