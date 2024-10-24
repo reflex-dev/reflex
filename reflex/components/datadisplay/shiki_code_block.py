@@ -12,6 +12,7 @@ from reflex.components.core.colors import color
 from reflex.components.core.cond import color_mode_cond
 from reflex.components.el.elements.forms import Button
 from reflex.components.lucide.icon import Icon
+from reflex.components.props import NoExtrasAllowedProps
 from reflex.components.radix.themes.layout.box import Box
 from reflex.event import call_script, set_clipboard
 from reflex.style import Style
@@ -390,6 +391,23 @@ LiteralCodeTheme = Literal[
 ]
 
 
+class Position(NoExtrasAllowedProps):
+    """Position of the decoration."""
+
+    line: str
+    character: str
+
+
+class ShikiDecorations(NoExtrasAllowedProps):
+    """Decorations for the code block."""
+
+    start: Union[int, Position]
+    end: Union[int, Position]
+    tag_name: str = "span"
+    properties: dict[str, Any] = {}
+    always_wrap: bool = False
+
+
 class ShikiBaseTransformers(Base):
     """Base for creating transformers."""
 
@@ -538,7 +556,7 @@ class ShikiCodeBlock(Component):
     )
 
     # The decorations to use for the syntax highlighter.
-    decorations: Var[list[dict[str, Any]]] = Var.create([])
+    decorations: Var[list[ShikiDecorations]] = Var.create([])
 
     @classmethod
     def create(
@@ -558,6 +576,7 @@ class ShikiCodeBlock(Component):
         # Separate props for the code block and the wrapper
         code_block_props = {}
         code_wrapper_props = {}
+        decorations = props.pop("decorations", [])
 
         class_props = cls.get_props()
 
@@ -576,6 +595,9 @@ class ShikiCodeBlock(Component):
             if isinstance(transformer, ShikiBaseTransformers) and transformer.style:
                 transformer_styles.update(transformer.style)
         transformer_styles.update(code_wrapper_props.pop("style", {}))
+
+        decorations = [ShikiDecorations(**decoration) for decoration in decorations]
+        code_block_props["decorations"] = decorations
 
         return Box.create(
             code_block,

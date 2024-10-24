@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.props import NoExtrasAllowedProps
 from reflex.event import EventType
 from reflex.style import Style
 from reflex.vars.base import Var
@@ -327,6 +328,17 @@ LiteralCodeTheme = Literal[
     "vitesse-dark",
     "vitesse-light",
 ]
+
+class Position(NoExtrasAllowedProps):
+    line: str
+    character: str
+
+class ShikiDecorations(NoExtrasAllowedProps):
+    start: Union[int, Position]
+    end: Union[int, Position]
+    tag_name: str
+    properties: dict[str, Any]
+    always_wrap: bool
 
 class ShikiBaseTransformers(Base):
     library: str
@@ -907,7 +919,7 @@ class ShikiCodeBlock(Component):
             ]
         ] = None,
         decorations: Optional[
-            Union[Var[list[dict[str, Any]]], list[dict[str, Any]]]
+            Union[Var[list[ShikiDecorations]], list[ShikiDecorations]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -1534,7 +1546,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
             ]
         ] = None,
         decorations: Optional[
-            Union[Var[list[dict[str, Any]]], list[dict[str, Any]]]
+            Union[Var[list[ShikiDecorations]], list[ShikiDecorations]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -2164,7 +2176,7 @@ class CodeblockNamespace(ComponentNamespace):
             ]
         ] = None,
         decorations: Optional[
-            Union[Var[list[dict[str, Any]]], list[dict[str, Any]]]
+            Union[Var[list[ShikiDecorations]], list[ShikiDecorations]]
         ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
