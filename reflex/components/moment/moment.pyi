@@ -51,6 +51,7 @@ class Moment(NoSSRComponent):
         unix: Optional[Union[Var[bool], bool]] = None,
         local: Optional[Union[Var[bool], bool]] = None,
         tz: Optional[Union[Var[str], str]] = None,
+        locale: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -75,7 +76,7 @@ class Moment(NoSSRComponent):
         on_unmount: Optional[EventType[[]]] = None,
         **props,
     ) -> "Moment":
-        """Create a Moment component.
+        """Create the component.
 
         Args:
             *children: The children of the component.
@@ -99,15 +100,16 @@ class Moment(NoSSRComponent):
             unix: Tells Moment to parse the given date value as a unix timestamp.
             local: Outputs the result in local time.
             tz: Display the date in the given timezone.
+            locale: The locale to use when rendering.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The properties of the component.
+            **props: The props of the component.
 
         Returns:
-            The Moment Component.
+            The component.
         """
         ...
