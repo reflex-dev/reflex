@@ -906,6 +906,9 @@ class ShikiCodeBlock(Component):
                 list[Union[ShikiBaseTransformers, dict[str, Any]]],
             ]
         ] = None,
+        decorations: Optional[
+            Union[Var[list[dict[str, Any]]], list[dict[str, Any]]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -938,6 +941,7 @@ class ShikiCodeBlock(Component):
             themes: The set of themes to use for different modes.
             code: The code to display.
             transformers: The transformers to use for the syntax highlighter.
+            decorations: The decorations to use for the syntax highlighter.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -965,10 +969,8 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
         *children,
         use_transformers: Optional[Union[Var[bool], bool]] = None,
         show_line_numbers: Optional[Union[Var[bool], bool]] = None,
-        can_copy: Optional[Union[Var[bool], bool]] = None,
-        copy_button: Optional[
-            Union[Component, Var[Optional[Union[Component, bool]]], bool]
-        ] = None,
+        can_copy: Optional[bool] = None,
+        copy_button: Optional[Union[Component, bool]] = None,
         language: Optional[
             Union[
                 Literal[
@@ -1531,6 +1533,9 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                 list[Union[ShikiBaseTransformers, dict[str, Any]]],
             ]
         ] = None,
+        decorations: Optional[
+            Union[Var[list[dict[str, Any]]], list[dict[str, Any]]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1567,6 +1572,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
             themes: The set of themes to use for different modes.
             code: The code to display.
             transformers: The transformers to use for the syntax highlighter.
+            decorations: The decorations to use for the syntax highlighter.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1593,10 +1599,8 @@ class CodeblockNamespace(ComponentNamespace):
         *children,
         use_transformers: Optional[Union[Var[bool], bool]] = None,
         show_line_numbers: Optional[Union[Var[bool], bool]] = None,
-        can_copy: Optional[Union[Var[bool], bool]] = None,
-        copy_button: Optional[
-            Union[Component, Var[Optional[Union[Component, bool]]], bool]
-        ] = None,
+        can_copy: Optional[bool] = None,
+        copy_button: Optional[Union[Component, bool]] = None,
         language: Optional[
             Union[
                 Literal[
@@ -2159,6 +2163,9 @@ class CodeblockNamespace(ComponentNamespace):
                 list[Union[ShikiBaseTransformers, dict[str, Any]]],
             ]
         ] = None,
+        decorations: Optional[
+            Union[Var[list[dict[str, Any]]], list[dict[str, Any]]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2195,6 +2202,7 @@ class CodeblockNamespace(ComponentNamespace):
             themes: The set of themes to use for different modes.
             code: The code to display.
             transformers: The transformers to use for the syntax highlighter.
+            decorations: The decorations to use for the syntax highlighter.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

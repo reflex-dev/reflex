@@ -537,6 +537,9 @@ class ShikiCodeBlock(Component):
         []
     )
 
+    # The decorations to use for the syntax highlighter.
+    decorations: Var[list[dict[str, Any]]] = []
+
     @classmethod
     def create(
         cls,
@@ -676,10 +679,10 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
     show_line_numbers: Var[bool]
 
     # Whether a copy button should appear.
-    can_copy: Var[bool] = Var.create(False)
+    can_copy: bool = False
 
     # copy_button: A custom copy button to override the default one.
-    copy_button: Var[Optional[Union[Component, bool]]] = Var.create(None)
+    copy_button: Optional[Union[Component, bool]] = None
 
     @classmethod
     def create(
