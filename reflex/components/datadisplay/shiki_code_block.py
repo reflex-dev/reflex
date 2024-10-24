@@ -538,7 +538,7 @@ class ShikiCodeBlock(Component):
     )
 
     # The decorations to use for the syntax highlighter.
-    decorations: Var[list[dict[str, Any]]] = []
+    decorations: Var[list[dict[str, Any]]] = Var.create([])
 
     @classmethod
     def create(
