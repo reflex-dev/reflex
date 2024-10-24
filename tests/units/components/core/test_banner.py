@@ -12,7 +12,7 @@ def test_websocket_target_url():
     var_data = url._get_all_var_data()
     assert var_data is not None
     assert sorted(tuple((key for key, _ in var_data.imports))) == sorted(
-        ("/utils/state", "/env.json")
+        ("$/utils/state", "$/env.json")
     )
 
 
