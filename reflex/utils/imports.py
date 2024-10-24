@@ -26,7 +26,7 @@ def merge_imports(
             # If the lib is an absolute path, we need to prefix it with a $
             lib = (
                 "$" + lib
-                if lib.startswith(("/utils/", "/components/", "/styles/"))
+                if lib.startswith(("/utils/", "/components/", "/styles/", "/public/"))
                 else lib
             )
             if isinstance(fields, (list, tuple, set)):
