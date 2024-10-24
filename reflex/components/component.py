@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import dataclasses
 import typing
 from abc import ABC, abstractmethod
 from functools import lru_cache, wraps
@@ -59,7 +60,15 @@ from reflex.utils.imports import (
     parse_imports,
 )
 from reflex.vars import VarData
-from reflex.vars.base import LiteralVar, Var
+from reflex.vars.base import (
+    CachedVarOperation,
+    LiteralVar,
+    Var,
+    cached_property_no_lock,
+)
+from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar
+from reflex.vars.number import ternary_operation
+from reflex.vars.object import ObjectVar
 from reflex.vars.sequence import LiteralArrayVar
 
 
@@ -2345,3 +2354,203 @@ class MemoizationLeaf(Component):
 
 
 load_dynamic_serializer()
+
+
+class ComponentVar(Var[Component], python_types=BaseComponent):
+    """A Var that represents a Component."""
+
+
+def empty_component() -> Component:
+    """Create an empty component.
+
+    Returns:
+        An empty component.
+    """
+    from reflex.components.base.bare import Bare
+
+    return Bare.create("")
+
+
+def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) -> Var:
+    """Convert a render dict to a Var.
+
+    Args:
+        tag: The render dict.
+        imported_names: The names of the imported components.
+
+    Returns:
+        The Var.
+    """
+    if not isinstance(tag, dict):
+        if isinstance(tag, Component):
+            return render_dict_to_var(tag.render(), imported_names)
+        return Var.create(tag)
+
+    if "iterable" in tag:
+        function_return = Var.create(
+            [
+                render_dict_to_var(child.render(), imported_names)
+                for child in tag["children"]
+            ]
+        )
+
+        func = ArgsFunctionOperation.create(
+            (tag["arg_var_name"], tag["index_var_name"]),
+            function_return,
+        )
+
+        return FunctionStringVar.create("Array.prototype.map.call").call(
+            tag["iterable"]
+            if not isinstance(tag["iterable"], ObjectVar)
+            else tag["iterable"].items(),
+            func,
+        )
+
+    if tag["name"] == "match":
+        element = tag["cond"]
+
+        conditionals = tag["default"]
+
+        for case in tag["match_cases"][::-1]:
+            condition = case[0].to_string() == element.to_string()
+            for pattern in case[1:-1]:
+                condition = condition | (pattern.to_string() == element.to_string())
+
+            conditionals = ternary_operation(
+                condition,
+                case[-1],
+                conditionals,
+            )
+
+        return conditionals
+
+    if "cond" in tag:
+        return ternary_operation(
+            tag["cond"],
+            render_dict_to_var(tag["true_value"], imported_names),
+            render_dict_to_var(tag["false_value"], imported_names)
+            if tag["false_value"] is not None
+            else Var.create(None),
+        )
+
+    props = {}
+
+    special_props = []
+
+    for prop_str in tag["props"]:
+        if "=" not in prop_str:
+            special_props.append(Var(prop_str).to(ObjectVar))
+            continue
+        prop = prop_str.index("=")
+        key = prop_str[:prop]
+        value = prop_str[prop + 2 : -1]
+        props[key] = value
+
+    props = Var.create({Var.create(k): Var(v) for k, v in props.items()})
+
+    for prop in special_props:
+        props = props.merge(prop)
+
+    contents = tag["contents"][1:-1] if tag["contents"] else None
+
+    raw_tag_name = tag.get("name")
+    tag_name = Var(raw_tag_name or "Fragment")
+
+    tag_name = (
+        Var.create(raw_tag_name)
+        if raw_tag_name
+        and raw_tag_name.split(".")[0] not in imported_names
+        and raw_tag_name.lower() == raw_tag_name
+        else tag_name
+    )
+
+    return FunctionStringVar.create(
+        "jsx",
+    ).call(
+        tag_name,
+        props,
+        *([Var(contents)] if contents is not None else []),
+        *[render_dict_to_var(child, imported_names) for child in tag["children"]],
+    )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+)
+class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
+    """A Var that represents a Component."""
+
+    _var_value: BaseComponent = dataclasses.field(default_factory=empty_component)
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """Get the name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        var_data = self._get_all_var_data()
+        if var_data is not None:
+            # flatten imports
+            imported_names = {j.alias or j.name for i in var_data.imports for j in i[1]}
+        else:
+            imported_names = set()
+        return str(render_dict_to_var(self._var_value.render(), imported_names))
+
+    @cached_property_no_lock
+    def _cached_get_all_var_data(self) -> VarData | None:
+        """Get the VarData for the var.
+
+        Returns:
+            The VarData for the var.
+        """
+        return VarData.merge(
+            VarData(
+                imports={
+                    "@emotion/react": [
+                        ImportVar(tag="jsx"),
+                    ],
+                }
+            ),
+            VarData(
+                imports=self._var_value._get_all_imports(),
+            ),
+            VarData(
+                imports={
+                    "react": [
+                        ImportVar(tag="Fragment"),
+                    ],
+                }
+            ),
+        )
+
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.__class__.__name__, self._js_expr))
+
+    @classmethod
+    def create(
+        cls,
+        value: Component,
+        _var_data: VarData | None = None,
+    ):
+        """Create a var from a value.
+
+        Args:
+            value: The value of the var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return LiteralComponentVar(
+            _js_expr="",
+            _var_type=type(value),
+            _var_data=_var_data,
+            _var_value=value,
+        )

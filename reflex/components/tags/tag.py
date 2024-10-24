@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 from reflex.event import EventChain
 from reflex.utils import format, types
@@ -22,9 +22,6 @@ class Tag:
 
     # The inner contents of the tag.
     contents: str = ""
-
-    # Args to pass to the tag.
-    args: Optional[Tuple[str, ...]] = None
 
     # Special props that aren't key value pairs.
     special_props: List[Var] = dataclasses.field(default_factory=list)
