@@ -10,6 +10,7 @@ from reflex.components.core.cond import color_mode_cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.button import Button
 from reflex.components.radix.themes.layout.box import Box
+from reflex.components.markdown.markdown import MarkdownComponentMapMixin, _PROPS, _CHILDREN
 from reflex.constants.colors import Color
 from reflex.event import set_clipboard
 from reflex.style import Style
@@ -378,7 +379,7 @@ for theme_name in dir(Theme):
     setattr(Theme, theme_name, getattr(Theme, theme_name)._replace(_var_type=Theme))
 
 
-class CodeBlock(Component):
+class CodeBlock(Component, MarkdownComponentMapMixin):
     """A code block."""
 
     library = "react-syntax-highlighter@15.6.1"
@@ -542,6 +543,28 @@ class CodeBlock(Component):
 
     def _exclude_props(self) -> list[str]:
         return ["can_copy", "copy_button"]
+
+    @classmethod
+    def get_component_map_custom_code(cls) -> str:
+        """Get the custom code for the component.
+
+        Returns:
+            The custom code for the component.
+        """
+        return """
+const match = (className || '').match(/language-(?<lang>.*)/);
+    const language = match ? match[1] : '';
+    if (language) {
+    (async () => {
+      try {
+        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{language}}`);
+        SyntaxHighlighter.registerLanguage(language, module.default);
+      } catch (error) {
+        console.error(`Error importing language module for ${language}:`, error);
+      }
+    })();
+  }       
+        """
 
 
 class CodeblockNamespace(ComponentNamespace):
