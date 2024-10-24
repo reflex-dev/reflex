@@ -25,7 +25,7 @@ export function Code ({code, theme, language, transformers, decorations, ...divP
           setCodeResult(result);
         }
         fetchCode();
-      }, [code, language, theme, transformers]
+      }, [code, language, theme, transformers, decorations]
 
     )
     return (
