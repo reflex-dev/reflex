@@ -67,7 +67,7 @@ class Clipboard(Fragment):
             The import dict for the component.
         """
         return {
-            "/utils/helpers/paste.js": ImportVar(
+            "$/utils/helpers/paste.js": ImportVar(
                 tag="usePasteHandler", is_default=True
             ),
         }

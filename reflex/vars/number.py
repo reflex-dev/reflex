@@ -1090,7 +1090,7 @@ boolean_types = Union[BooleanVar, bool]
 
 
 _IS_TRUE_IMPORT: ImportDict = {
-    f"/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
 }
 
 

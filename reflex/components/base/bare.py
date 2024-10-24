@@ -62,7 +62,9 @@ class Bare(Component):
         """
         imports = super()._get_all_imports()
         if isinstance(self.contents, LiteralComponentVar):
-            imports |= self.contents._var_value._get_all_imports()
+            var_data = self.contents._get_all_var_data()
+            if var_data:
+                imports |= {k: list(v) for k, v in var_data.imports}
         return imports
 
     def _get_all_dynamic_imports(self) -> set[str]:

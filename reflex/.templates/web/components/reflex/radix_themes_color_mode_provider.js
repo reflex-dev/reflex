@@ -5,7 +5,7 @@ import {
   defaultColorMode,
   isDevMode,
   lastCompiledTimeStamp
-} from "/utils/context.js";
+} from "$/utils/context.js";
 
 export default function RadixThemesColorModeProvider({ children }) {
   const { theme, resolvedTheme, setTheme } = useTheme();

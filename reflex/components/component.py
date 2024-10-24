@@ -1314,7 +1314,9 @@ class Component(BaseComponent, ABC):
         if self._get_ref_hook():
             # Handle hooks needed for attaching react refs to DOM nodes.
             _imports.setdefault("react", set()).add(ImportVar(tag="useRef"))
-            _imports.setdefault(f"/{Dirs.STATE_PATH}", set()).add(ImportVar(tag="refs"))
+            _imports.setdefault(f"$/{Dirs.STATE_PATH}", set()).add(
+                ImportVar(tag="refs")
+            )
 
         if self._get_mount_lifecycle_hook():
             # Handle hooks for `on_mount` / `on_unmount`.
@@ -1671,7 +1673,7 @@ class CustomComponent(Component):
     """A custom user-defined component."""
 
     # Use the components library.
-    library = f"/{Dirs.COMPONENTS_PATH}"
+    library = f"$/{Dirs.COMPONENTS_PATH}"
 
     # The function that creates the component.
     component_fn: Callable[..., Component] = Component.create
@@ -2511,18 +2513,12 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
             VarData(
                 imports=self._var_value._get_all_imports(),
             ),
-            *(
-                [
-                    VarData(
-                        imports={
-                            "react": [
-                                ImportVar(tag="Fragment"),
-                            ],
-                        }
-                    )
-                ]
-                if not self._var_value.tag
-                else []
+            VarData(
+                imports={
+                    "react": [
+                        ImportVar(tag="Fragment"),
+                    ],
+                }
             ),
         )
 

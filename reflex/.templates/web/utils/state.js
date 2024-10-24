@@ -2,7 +2,7 @@
 import axios from "axios";
 import io from "socket.io-client";
 import JSON5 from "json5";
-import env from "/env.json";
+import env from "$/env.json";
 import Cookies from "universal-cookie";
 import { useEffect, useRef, useState } from "react";
 import Router, { useRouter } from "next/router";
@@ -13,9 +13,8 @@ import {
   state_name,
   exception_state_name,
 } from "utils/context.js";
-import debounce from "/utils/helpers/debounce";
-import throttle from "/utils/helpers/throttle";
-import * as Babel from "@babel/standalone";
+import debounce from "$/utils/helpers/debounce";
+import throttle from "$/utils/helpers/throttle";
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
@@ -139,8 +138,7 @@ export const evalReactComponent = async (component) => {
   if (!window.React && window.__reflex) {
     window.React = window.__reflex.react;
   }
-  const output = Babel.transform(component, { presets: ["react"] }).code;
-  const encodedJs = encodeURIComponent(output);
+  const encodedJs = encodeURIComponent(component);
   const dataUri = "data:text/javascript;charset=utf-8," + encodedJs;
   const module = await eval(`import(dataUri)`);
   return module.default;

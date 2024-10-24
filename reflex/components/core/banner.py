@@ -66,8 +66,8 @@ class WebsocketTargetURL(Var):
             _js_expr="getBackendURL(env.EVENT).href",
             _var_data=VarData(
                 imports={
-                    "/env.json": [ImportVar(tag="env", is_default=True)],
-                    f"/{Dirs.STATE_PATH}": [ImportVar(tag="getBackendURL")],
+                    "$/env.json": [ImportVar(tag="env", is_default=True)],
+                    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="getBackendURL")],
                 },
             ),
             _var_type=WebsocketTargetURL,
