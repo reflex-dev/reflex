@@ -21,7 +21,7 @@ def StatelessApp():
     app.add_page(index)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def stateless_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Create a stateless app AppHarness.
 
