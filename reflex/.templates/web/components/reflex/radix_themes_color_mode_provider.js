@@ -4,7 +4,7 @@ import {
   ColorModeContext,
   defaultColorMode,
   isDevMode,
-  lastCompiledTimeStamp
+  lastCompiledTimeStamp,
 } from "$/utils/context.js";
 
 export default function RadixThemesColorModeProvider({ children }) {
@@ -37,7 +37,7 @@ export default function RadixThemesColorModeProvider({ children }) {
     const allowedModes = ["light", "dark", "system"];
     if (!allowedModes.includes(mode)) {
       console.error(
-        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`,
+        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`
       );
       mode = defaultColorMode;
     }

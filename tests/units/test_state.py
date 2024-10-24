@@ -106,6 +106,7 @@ class TestState(BaseState):
     fig: Figure = Figure()
     dt: datetime.datetime = datetime.datetime.fromisoformat("1989-11-09T18:53:00+01:00")
     _backend: int = 0
+    asynctest: int = 0
 
     @ComputedVar
     def sum(self) -> float:
@@ -128,6 +129,14 @@ class TestState(BaseState):
     def do_something(self):
         """Do something."""
         pass
+
+    async def set_asynctest(self, value: int):
+        """Set the asynctest value. Intentionally overwrite the default setter with an async one.
+
+        Args:
+            value: The new value.
+        """
+        self.asynctest = value
 
 
 class ChildState(TestState):
@@ -313,6 +322,7 @@ def test_class_vars(test_state):
         "upper",
         "fig",
         "dt",
+        "asynctest",
     }
 
 
@@ -733,6 +743,7 @@ def test_reset(test_state, child_state):
         "mapping",
         "dt",
         "_backend",
+        "asynctest",
     }
 
     # The dirty vars should be reset.
@@ -3179,6 +3190,13 @@ async def test_setvar(mock_app: rx.App, token: str):
         TestState.setvar(42, 42)
 
 
+@pytest.mark.asyncio
+async def test_setvar_async_setter():
+    """Test that overridden async setters raise Exception when used with setvar."""
+    with pytest.raises(NotImplementedError):
+        TestState.setvar("asynctest", 42)
+
+
 @pytest.mark.skipif("REDIS_URL" not in os.environ, reason="Test requires redis")
 @pytest.mark.parametrize(
     "expiration_kwargs, expected_values",
@@ -3313,3 +3331,36 @@ def test_assignment_to_undeclared_vars():
 
     state.handle_supported_regular_vars()
     state.handle_non_var()
+
+
+@pytest.mark.asyncio
+async def test_deserialize_gc_state_disk(token):
+    """Test that a state can be deserialized from disk with a grandchild state.
+
+    Args:
+        token: A token.
+    """
+
+    class Root(BaseState):
+        pass
+
+    class State(Root):
+        num: int = 42
+
+    class Child(State):
+        foo: str = "bar"
+
+    dsm = StateManagerDisk(state=Root)
+    async with dsm.modify_state(token) as root:
+        s = await root.get_state(State)
+        s.num += 1
+        c = await root.get_state(Child)
+        assert s._get_was_touched()
+        assert not c._get_was_touched()
+
+    dsm2 = StateManagerDisk(state=Root)
+    root = await dsm2.get_state(token)
+    s = await root.get_state(State)
+    assert s.num == 43
+    c = await root.get_state(Child)
+    assert c.foo == "bar"
