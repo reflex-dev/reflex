@@ -2053,7 +2053,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         try:
             return pickle.dumps((self._to_schema(), self))
-        except (pickle.PicklingError, AttributeError):
+        except (pickle.PicklingError, AttributeError) as og_pickle_error:
             error = (
                 f"Failed to serialize state {self.get_full_name()} due to unpicklable object. "
                 "This state will not be persisted. "
@@ -2063,7 +2063,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
                 return dill.dumps((self._to_schema(), self))
             except ImportError:
-                error += "Consider `pip install 'dill>=0.3.8'` for more exotic serialization support. "
+                error += (
+                    f"Pickle error: {og_pickle_error}. "
+                    "Consider `pip install 'dill>=0.3.8'` for more exotic serialization support."
+                )
             except (pickle.PicklingError, TypeError, ValueError) as ex:
                 error += f"Dill was also unable to pickle the state: {ex}"
         console.warn(error)

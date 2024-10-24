@@ -3360,6 +3360,7 @@ def test_fallback_pickle():
     class DillState(BaseState):
         _o: Obj | None = None
         _f: Callable | None = None
+        _g: Any = None
 
     state = DillState(_reflex_internal_init=True)  # type: ignore
     state._o = Obj(_f=lambda: 42)
@@ -3370,3 +3371,10 @@ def test_fallback_pickle():
     unpickled_state = BaseState._deserialize(pk)
     assert unpickled_state._f() == 420
     assert unpickled_state._o._f() == 42
+
+    # Some object, like generator, are still unpicklable with dill.
+    state._g = (i for i in range(10))
+    pk = state._serialize()
+    assert len(pk) == 0
+    with pytest.raises(EOFError):
+        BaseState._deserialize(pk)
