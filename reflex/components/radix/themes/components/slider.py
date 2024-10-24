@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from typing import List, Literal, Optional, Tuple, Union
+from typing import List, Literal, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
-from reflex.event import EventHandler
+from reflex.event import EventHandler, identity_event
 from reflex.vars.base import Var
 
 from ..base import (
@@ -14,19 +14,11 @@ from ..base import (
     RadixThemesComponent,
 )
 
-
-def on_value_event_spec(
-    value: Var[List[int | float]],
-) -> Tuple[Var[List[int | float]]]:
-    """Event handler spec for the value event.
-
-    Args:
-        value: The value of the event.
-
-    Returns:
-        The event handler spec.
-    """
-    return (value,)  # type: ignore
+on_value_event_spec = (
+    identity_event(list[Union[int, float]]),
+    identity_event(list[int]),
+    identity_event(list[float]),
+)
 
 
 class Slider(RadixThemesComponent):
