@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useReducer, useState } from "react"
-import { applyDelta, Event, hydrateClientStorage, useEventLoop, refs } from "/utils/state.js"
+import { applyDelta, Event, hydrateClientStorage, useEventLoop, refs } from "$/utils/state.js"
 
 {% if initial_state %}
 export const initialState = {{ initial_state|json_dumps }}
@@ -58,6 +58,8 @@ export const initialEvents = () => [
 ]
 {% else %}
 export const state_name = undefined
+
+export const exception_state_name = undefined
 
 export const onLoadInternalEvent = () => []
 

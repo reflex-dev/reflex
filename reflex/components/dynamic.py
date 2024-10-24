@@ -90,7 +90,7 @@ def load_dynamic_serializer():
         for lib, names in component._get_all_imports().items():
             formatted_lib_name = format_library_name(lib)
             if (
-                not lib.startswith((".", "/"))
+                not lib.startswith((".", "/", "$/"))
                 and not lib.startswith("http")
                 and formatted_lib_name not in libs_in_window
             ):
@@ -106,7 +106,7 @@ def load_dynamic_serializer():
         # Rewrite imports from `/` to destructure from window
         for ix, line in enumerate(module_code_lines[:]):
             if line.startswith("import "):
-                if 'from "/' in line:
+                if 'from "$/' in line or 'from "/' in line:
                     module_code_lines[ix] = (
                         line.replace("import ", "const ", 1).replace(
                             " from ", " = window['__reflex'][", 1
@@ -157,7 +157,7 @@ def load_dynamic_serializer():
             merge_var_data=VarData.merge(
                 VarData(
                     imports={
-                        f"/{constants.Dirs.STATE_PATH}": [
+                        f"$/{constants.Dirs.STATE_PATH}": [
                             imports.ImportVar(tag="evalReactComponent"),
                         ],
                         "react": [

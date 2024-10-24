@@ -187,7 +187,7 @@ class Form(BaseHTML):
         """
         return {
             "react": "useCallback",
-            f"/{Dirs.STATE_PATH}": ["getRefValue", "getRefValues"],
+            f"$/{Dirs.STATE_PATH}": ["getRefValue", "getRefValues"],
         }
 
     def add_hooks(self) -> list[str]:

@@ -251,7 +251,7 @@ class Toaster(Component):
             _js_expr=f"{toast_ref} = toast",
             _var_data=VarData(
                 imports={
-                    "/utils/state": [ImportVar(tag="refs")],
+                    "$/utils/state": [ImportVar(tag="refs")],
                     self.library: [ImportVar(tag="toast", install=False)],
                 }
             ),

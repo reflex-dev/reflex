@@ -114,8 +114,8 @@ class Imports(SimpleNamespace):
 
     EVENTS = {
         "react": [ImportVar(tag="useContext")],
-        f"/{Dirs.CONTEXTS_PATH}": [ImportVar(tag="EventLoopContext")],
-        f"/{Dirs.STATE_PATH}": [ImportVar(tag=CompileVars.TO_EVENT)],
+        f"$/{Dirs.CONTEXTS_PATH}": [ImportVar(tag="EventLoopContext")],
+        f"$/{Dirs.STATE_PATH}": [ImportVar(tag=CompileVars.TO_EVENT)],
     }
 
 
