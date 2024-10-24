@@ -8,7 +8,7 @@ from typing import Any, ClassVar, Dict, Literal, Optional, Union, overload
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
-from reflex.components.props import PropsBase
+from reflex.components.props import NoExtrasAllowedProps, PropsBase
 from reflex.event import EventSpec, EventType
 from reflex.style import Style
 from reflex.utils.serializers import serializer
@@ -31,7 +31,7 @@ class ToastAction(Base):
 @serializer
 def serialize_action(action: ToastAction) -> dict: ...
 
-class ToastProps(PropsBase):
+class ToastProps(PropsBase, NoExtrasAllowedProps):
     title: Optional[Union[str, Var]]
     description: Optional[Union[str, Var]]
     close_button: Optional[bool]
@@ -51,11 +51,6 @@ class ToastProps(PropsBase):
     on_auto_close: Optional[Any]
 
     def dict(self, *args, **kwargs) -> dict[str, Any]: ...
-
-    class Config:
-        arbitrary_types_allowed = True
-        use_enum_values = True
-        extra = "forbid"
 
 class Toaster(Component):
     is_used: ClassVar[bool] = False

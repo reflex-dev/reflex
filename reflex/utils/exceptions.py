@@ -143,3 +143,7 @@ class EnvironmentVarValueError(ReflexError, ValueError):
 
 class DynamicComponentInvalidSignature(ReflexError, TypeError):
     """Raised when a dynamic component has an invalid signature."""
+
+
+class InvalidPropValueError(ReflexError, ValueError):
+    """Raised when a prop value is invalid."""

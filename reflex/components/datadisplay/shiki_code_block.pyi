@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.props import NoExtrasAllowedProps
 from reflex.event import EventType
 from reflex.style import Style
 from reflex.vars.base import Var
@@ -327,6 +328,17 @@ LiteralCodeTheme = Literal[
     "vitesse-dark",
     "vitesse-light",
 ]
+
+class Position(NoExtrasAllowedProps):
+    line: str
+    character: str
+
+class ShikiDecorations(NoExtrasAllowedProps):
+    start: Union[int, Position]
+    end: Union[int, Position]
+    tag_name: str
+    properties: dict[str, Any]
+    always_wrap: bool
 
 class ShikiBaseTransformers(Base):
     library: str
@@ -906,6 +918,9 @@ class ShikiCodeBlock(Component):
                 list[Union[ShikiBaseTransformers, dict[str, Any]]],
             ]
         ] = None,
+        decorations: Optional[
+            Union[Var[list[ShikiDecorations]], list[ShikiDecorations]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -938,6 +953,7 @@ class ShikiCodeBlock(Component):
             themes: The set of themes to use for different modes.
             code: The code to display.
             transformers: The transformers to use for the syntax highlighter.
+            decorations: The decorations to use for the syntax highlighter.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -965,10 +981,8 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
         *children,
         use_transformers: Optional[Union[Var[bool], bool]] = None,
         show_line_numbers: Optional[Union[Var[bool], bool]] = None,
-        can_copy: Optional[Union[Var[bool], bool]] = None,
-        copy_button: Optional[
-            Union[Component, Var[Optional[Union[Component, bool]]], bool]
-        ] = None,
+        can_copy: Optional[bool] = None,
+        copy_button: Optional[Union[Component, bool]] = None,
         language: Optional[
             Union[
                 Literal[
@@ -1531,6 +1545,9 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                 list[Union[ShikiBaseTransformers, dict[str, Any]]],
             ]
         ] = None,
+        decorations: Optional[
+            Union[Var[list[ShikiDecorations]], list[ShikiDecorations]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -1567,6 +1584,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
             themes: The set of themes to use for different modes.
             code: The code to display.
             transformers: The transformers to use for the syntax highlighter.
+            decorations: The decorations to use for the syntax highlighter.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1593,10 +1611,8 @@ class CodeblockNamespace(ComponentNamespace):
         *children,
         use_transformers: Optional[Union[Var[bool], bool]] = None,
         show_line_numbers: Optional[Union[Var[bool], bool]] = None,
-        can_copy: Optional[Union[Var[bool], bool]] = None,
-        copy_button: Optional[
-            Union[Component, Var[Optional[Union[Component, bool]]], bool]
-        ] = None,
+        can_copy: Optional[bool] = None,
+        copy_button: Optional[Union[Component, bool]] = None,
         language: Optional[
             Union[
                 Literal[
@@ -2159,6 +2175,9 @@ class CodeblockNamespace(ComponentNamespace):
                 list[Union[ShikiBaseTransformers, dict[str, Any]]],
             ]
         ] = None,
+        decorations: Optional[
+            Union[Var[list[ShikiDecorations]], list[ShikiDecorations]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -2195,6 +2214,7 @@ class CodeblockNamespace(ComponentNamespace):
             themes: The set of themes to use for different modes.
             code: The code to display.
             transformers: The transformers to use for the syntax highlighter.
+            decorations: The decorations to use for the syntax highlighter.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
