@@ -2235,7 +2235,7 @@ class StatefulComponent(BaseComponent):
         """
         if self.rendered_as_shared:
             return {
-                f"/{Dirs.UTILS}/{PageNames.STATEFUL_COMPONENTS}": [
+                f"$/{Dirs.UTILS}/{PageNames.STATEFUL_COMPONENTS}": [
                     ImportVar(tag=self.tag)
                 ]
             }

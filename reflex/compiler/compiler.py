@@ -315,7 +315,7 @@ def _compile_stateful_components(
     # Don't import from the file that we're about to create.
     all_imports = utils.merge_imports(*all_import_dicts)
     all_imports.pop(
-        f"/{constants.Dirs.UTILS}/{constants.PageNames.STATEFUL_COMPONENTS}", None
+        f"$/{constants.Dirs.UTILS}/{constants.PageNames.STATEFUL_COMPONENTS}", None
     )
 
     return templates.STATEFUL_COMPONENTS.render(
