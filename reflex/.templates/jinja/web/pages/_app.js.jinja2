@@ -1,11 +1,11 @@
 {% extends "web/pages/base_page.js.jinja2" %}
 
 {% block early_imports %}
-import '/styles/styles.css'
+import '$/styles/styles.css'
 {% endblock %}
 
 {% block declaration %}
-import { EventLoopProvider, StateProvider, defaultColorMode } from "/utils/context.js";
+import { EventLoopProvider, StateProvider, defaultColorMode } from "$/utils/context.js";
 import { ThemeProvider } from 'next-themes'
 {% for library_alias, library_path in  window_libraries %}
 import * as {{library_alias}} from "{{library_path}}";

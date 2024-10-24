@@ -67,8 +67,8 @@ def _compile_app(app_root: Component) -> str:
     window_libraries = [
         (_normalize_library_name(name), name) for name in bundled_libraries
     ] + [
-        ("utils_context", f"/{constants.Dirs.UTILS}/context"),
-        ("utils_state", f"/{constants.Dirs.UTILS}/state"),
+        ("utils_context", f"$/{constants.Dirs.UTILS}/context"),
+        ("utils_state", f"$/{constants.Dirs.UTILS}/state"),
     ]
 
     return templates.APP_ROOT.render(
@@ -228,7 +228,7 @@ def _compile_components(
     """
     imports = {
         "react": [ImportVar(tag="memo")],
-        f"/{constants.Dirs.STATE_PATH}": [ImportVar(tag="E"), ImportVar(tag="isTrue")],
+        f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="E"), ImportVar(tag="isTrue")],
     }
     component_renders = []
 

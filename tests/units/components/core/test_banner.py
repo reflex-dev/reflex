@@ -22,10 +22,10 @@ def test_connection_banner():
     assert sorted(tuple(_imports)) == sorted(
         (
             "react",
-            "/utils/context",
-            "/utils/state",
+            "$/utils/context",
+            "$/utils/state",
             "@radix-ui/themes@^3.0.0",
-            "/env.json",
+            "$/env.json",
         )
     )
 
@@ -40,10 +40,10 @@ def test_connection_modal():
     assert sorted(tuple(_imports)) == sorted(
         (
             "react",
-            "/utils/context",
-            "/utils/state",
+            "$/utils/context",
+            "$/utils/state",
             "@radix-ui/themes@^3.0.0",
-            "/env.json",
+            "$/env.json",
         )
     )
 
