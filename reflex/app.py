@@ -648,6 +648,14 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         admin_dash = self.admin_dash
 
         if admin_dash and admin_dash.models:
+            console.deprecate(
+                feature_name="Reflex Admin Dashboard",
+                reason="in favor of `reflex_ag_grid.model_wrapper` in the `reflex-ag-grid package. "
+                "Follow the link https://reflex.dev/docs/library/tables-and-data-grids/ag-grid/ to learn more.",
+                deprecation_version="0.6.4",
+                removal_version="0.7.0",
+            )
+
             # Build the admin dashboard
             admin = (
                 admin_dash.admin
