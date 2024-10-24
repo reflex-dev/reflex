@@ -10,7 +10,6 @@ from reflex.event import EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
-from ..base import LiteralAlign, LiteralSpacing
 from .flex import Flex
 
 class Stack(Flex):
@@ -19,8 +18,18 @@ class Stack(Flex):
     def create(  # type: ignore
         cls,
         *children,
-        spacing: Optional[LiteralSpacing] = "3",
-        align: Optional[LiteralAlign] = "start",
+        spacing: Optional[
+            Union[
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+            ]
+        ] = None,
+        align: Optional[
+            Union[
+                Literal["baseline", "center", "end", "start", "stretch"],
+                Var[Literal["baseline", "center", "end", "start", "stretch"]],
+            ]
+        ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
             Union[
@@ -114,8 +123,8 @@ class Stack(Flex):
 
         Args:
             *children: The children of the stack.
-            spacing: The spacing between each stack item.
-            align: The alignment of the stack items.
+            spacing: Gap between children: "0" - "9"
+            align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
             justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
@@ -155,12 +164,22 @@ class VStack(Stack):
     def create(  # type: ignore
         cls,
         *children,
-        spacing: Optional[LiteralSpacing] = "3",
-        align: Optional[LiteralAlign] = "start",
         direction: Optional[
             Union[
                 Literal["column", "column-reverse", "row", "row-reverse"],
                 Var[Literal["column", "column-reverse", "row", "row-reverse"]],
+            ]
+        ] = None,
+        spacing: Optional[
+            Union[
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+            ]
+        ] = None,
+        align: Optional[
+            Union[
+                Literal["baseline", "center", "end", "start", "stretch"],
+                Var[Literal["baseline", "center", "end", "start", "stretch"]],
             ]
         ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
@@ -239,9 +258,9 @@ class VStack(Stack):
 
         Args:
             *children: The children of the stack.
-            spacing: The spacing between each stack item.
-            align: The alignment of the stack items.
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
+            spacing: Gap between children: "0" - "9"
+            align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
             wrap: Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
@@ -280,12 +299,22 @@ class HStack(Stack):
     def create(  # type: ignore
         cls,
         *children,
-        spacing: Optional[LiteralSpacing] = "3",
-        align: Optional[LiteralAlign] = "start",
         direction: Optional[
             Union[
                 Literal["column", "column-reverse", "row", "row-reverse"],
                 Var[Literal["column", "column-reverse", "row", "row-reverse"]],
+            ]
+        ] = None,
+        spacing: Optional[
+            Union[
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+            ]
+        ] = None,
+        align: Optional[
+            Union[
+                Literal["baseline", "center", "end", "start", "stretch"],
+                Var[Literal["baseline", "center", "end", "start", "stretch"]],
             ]
         ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
@@ -364,9 +393,9 @@ class HStack(Stack):
 
         Args:
             *children: The children of the stack.
-            spacing: The spacing between each stack item.
-            align: The alignment of the stack items.
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
+            spacing: Gap between children: "0" - "9"
+            align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
             wrap: Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
