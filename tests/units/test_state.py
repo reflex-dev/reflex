@@ -3358,8 +3358,8 @@ def test_fallback_pickle():
     """Test that state serialization will fall back to dill."""
 
     class DillState(BaseState):
-        _o: Obj | None = None
-        _f: Callable | None = None
+        _o: Optional[Obj] = None
+        _f: Optional[Callable] = None
         _g: Any = None
 
     state = DillState(_reflex_internal_init=True)  # type: ignore
