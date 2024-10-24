@@ -74,6 +74,11 @@ def get_base_component_map() -> dict[str, Callable]:
     }
 
 
+class MarkdownComponentMapMixin:
+    def get_component_map_custom_code(self) -> str:
+        return ""
+
+
 class Markdown(Component):
     """A markdown component."""
 
@@ -127,7 +132,7 @@ class Markdown(Component):
         )
 
     def _get_all_custom_components(
-        self, seen: set[str] | None = None
+            self, seen: set[str] | None = None
     ) -> set[CustomComponent]:
         """Get all the custom components used by the component.
 
@@ -179,8 +184,8 @@ class Markdown(Component):
                 component(_MOCK_ARG)._get_all_imports()  # type: ignore
                 for component in self.component_map.values()
             ],
-            CodeBlock.create(theme=Theme.light)._get_imports(),
-            Code.create()._get_imports(),
+            # CodeBlock.create(theme=Theme.light)._get_imports(),
+            # Code.create()._get_imports(),
         ]
 
     def get_component(self, tag: str, **props) -> Component:
@@ -251,22 +256,13 @@ class Markdown(Component):
             )
             for tag in self.component_map
         }
-
+        codeblock_component = self.get_component("codeblock")
+        codeblock_custom_code = codeblock_component.get_component_map_custom_code() if hasattr(codeblock_component,
+                                                                                               "get_component_map_custom_code") else ""
         # Separate out inline code and code blocks.
         components["code"] = Var(
             _js_expr=f"""(({{node, inline, className, {_CHILDREN._js_expr}, {_PROPS._js_expr}}}) => {{
-    const match = (className || '').match(/language-(?<lang>.*)/);
-    const language = match ? match[1] : '';
-    if (language) {{
-    (async () => {{
-      try {{
-        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{language}}`);
-        SyntaxHighlighter.registerLanguage(language, module.default);
-      }} catch (error) {{
-        console.error(`Error importing language module for ${{language}}:`, error);
-      }}
-    }})();
-  }}
+    {codeblock_custom_code};
     return inline ? (
         {self.format_component("code")}
     ) : (
