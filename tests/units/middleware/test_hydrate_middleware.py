@@ -3,8 +3,9 @@ from __future__ import annotations
 import pytest
 
 from reflex.app import App
+from reflex.istate.builtins import State
 from reflex.middleware.hydrate_middleware import HydrateMiddleware
-from reflex.state import State, StateUpdate
+from reflex.state import StateUpdate
 
 
 class TestState(State):
@@ -38,7 +39,7 @@ async def test_preprocess_no_events(hydrate_middleware, event1, mocker):
         event1: An Event.
         mocker: pytest mock object.
     """
-    mocker.patch("reflex.state.State.class_subclasses", {TestState})
+    mocker.patch("reflex.istate.builtins.State.class_subclasses", {TestState})
     state = State()
     update = await hydrate_middleware.preprocess(
         app=App(state=State),

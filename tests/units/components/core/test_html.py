@@ -1,7 +1,7 @@
 import pytest
 
 from reflex.components.core.html import Html
-from reflex.state import State
+from reflex.istate.builtins import State
 
 
 def test_html_no_children():

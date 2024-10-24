@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import ClassVar, List
 
 import reflex as rx
-from reflex.state import BaseState, State
+from reflex.istate.builtins import State
+from reflex.state import BaseState
 
 
 class UploadState(BaseState):

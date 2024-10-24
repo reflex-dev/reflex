@@ -43,13 +43,13 @@ import reflex.utils.exec
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
+from reflex.istate.builtins import reload_state_module
 from reflex.state import (
     BaseState,
     StateManager,
     StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
-    reload_state_module,
 )
 
 try:

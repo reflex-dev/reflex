@@ -279,7 +279,7 @@ def get_app(reload: bool = False) -> ModuleType:
         app = __import__(module, fromlist=(constants.CompileVars.APP,))
 
         if reload:
-            from reflex.state import reload_state_module
+            from reflex.istate.builtins import reload_state_module
 
             # Reset rx.State subclasses to avoid conflict when reloading.
             reload_state_module(module=module)

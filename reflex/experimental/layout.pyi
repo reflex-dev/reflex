@@ -11,7 +11,7 @@ from reflex.components.component import Component, ComponentNamespace, Memoizati
 from reflex.components.radix.primitives.drawer import DrawerRoot
 from reflex.components.radix.themes.layout.box import Box
 from reflex.event import EventType
-from reflex.state import ComponentState
+from reflex.istate.builtins import ComponentState
 from reflex.style import Style
 from reflex.vars.base import Var
 

@@ -174,6 +174,8 @@ from .event import stop_propagation as stop_propagation
 from .event import upload_files as upload_files
 from .event import window_alert as window_alert
 from .experimental import _x as _x
+from .istate.builtins import ComponentState as ComponentState
+from .istate.builtins import State as State
 from .istate.storage import Cookie as Cookie
 from .istate.storage import LocalStorage as LocalStorage
 from .istate.storage import SessionStorage as SessionStorage
@@ -182,8 +184,6 @@ from .middleware import middleware as middleware
 from .model import Model as Model
 from .model import session as session
 from .page import page as page
-from .state import ComponentState as ComponentState
-from .state import State as State
 from .state import dynamic as dynamic
 from .state import var as var
 from .style import Style as Style

@@ -10,7 +10,7 @@ from reflex.components.core.upload import (
     get_upload_url,
 )
 from reflex.event import EventSpec
-from reflex.state import State
+from reflex.istate.builtins import State
 from reflex.vars.base import LiteralVar, Var
 
 

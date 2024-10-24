@@ -21,7 +21,7 @@ from typing import (
     Union,
 )
 
-import reflex.state
+import reflex.istate.builtins
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
 from reflex.components.core.breakpoints import Breakpoints
@@ -225,7 +225,7 @@ class Component(BaseComponent, ABC):
     _memoization_mode: MemoizationMode = MemoizationMode()
 
     # State class associated with this component instance
-    State: Optional[Type[reflex.state.State]] = None
+    State: Optional[Type[reflex.istate.builtins.State]] = None
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the component.

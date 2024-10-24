@@ -34,13 +34,12 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import Event
+from reflex.istate.builtins import OnLoadInternalState, State
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
 from reflex.state import (
     BaseState,
-    OnLoadInternalState,
     RouterData,
-    State,
     StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
@@ -760,7 +759,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
         mocker: pytest mocker object.
     """
     mocker.patch(
-        "reflex.state.State.class_subclasses",
+        "reflex.istate.builtins.State.class_subclasses",
         {state if state is FileUploadState else FileStateBase1},
     )
     state._tmp_path = tmp_path
