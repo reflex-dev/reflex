@@ -3346,3 +3346,27 @@ async def test_deserialize_gc_state_disk(token):
     assert s.num == 43
     c = await root.get_state(Child)
     assert c.foo == "bar"
+
+
+class Obj(Base):
+    """A object containing a callable for testing fallback pickle."""
+
+    _f: Callable
+
+
+def test_fallback_pickle():
+    """Test that state serialization will fall back to dill."""
+
+    class DillState(BaseState):
+        _o: Obj | None = None
+        _f: Callable | None = None
+
+    state = DillState(_reflex_internal_init=True)  # type: ignore
+    state._o = Obj(_f=lambda: 42)
+    state._f = lambda: 420
+
+    pk = state._serialize()
+
+    unpickled_state = BaseState._deserialize(pk)
+    assert unpickled_state._f() == 420
+    assert unpickled_state._o._f() == 42
