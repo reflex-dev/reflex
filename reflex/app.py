@@ -85,7 +85,7 @@ from reflex.state import (
     code_uses_state_contexts,
 )
 from reflex.utils import codespaces, console, exceptions, format, prerequisites, types
-from reflex.utils.exec import is_prod_mode, is_testing_env, should_skip_compile
+from reflex.utils.exec import is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
 
 # Define custom types.
@@ -718,7 +718,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             Whether the app should be compiled.
         """
         # Check the environment variable.
-        if should_skip_compile():
+        if environment.REFLEX_SKIP_COMPILE.get:
             return False
 
         nocompile = prerequisites.get_web_dir() / constants.NOCOMPILE_FILE
@@ -957,7 +957,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         executor = None
         if (
             platform.system() in ("Linux", "Darwin")
-            and (number_of_processes := environment.REFLEX_COMPILE_PROCESSES)
+            and (number_of_processes := environment.REFLEX_COMPILE_PROCESSES.get)
             is not None
         ):
             executor = concurrent.futures.ProcessPoolExecutor(
@@ -966,7 +966,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             )
         else:
             executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=environment.REFLEX_COMPILE_THREADS
+                max_workers=environment.REFLEX_COMPILE_THREADS.get
             )
 
         with executor:

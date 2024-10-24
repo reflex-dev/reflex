@@ -250,7 +250,9 @@ class AppHarness:
 
     def _initialize_app(self):
         # disable telemetry reporting for tests
-        os.environ["TELEMETRY_ENABLED"] = "false"
+        from reflex.config import environment
+
+        environment.TELEMETRY_ENABLED = False
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
             app_globals = self._get_globals_from_signature(self.app_source)
@@ -942,9 +944,11 @@ class AppHarnessProd(AppHarness):
             raise RuntimeError("Frontend did not start")
 
     def _start_backend(self):
+        from reflex.config import environment
+
         if self.app_instance is None:
             raise RuntimeError("App was not initialized.")
-        os.environ[reflex.constants.SKIP_COMPILE_ENV_VAR] = "yes"
+        environment.REFLEX_SKIP_COMPILE.set(True)
         self.backend = uvicorn.Server(
             uvicorn.Config(
                 app=self.app_instance,
@@ -958,10 +962,12 @@ class AppHarnessProd(AppHarness):
         self.backend_thread.start()
 
     def _poll_for_servers(self, timeout: TimeoutType = None) -> socket.socket:
+        from reflex.config import environment
+
         try:
             return super()._poll_for_servers(timeout)
         finally:
-            os.environ.pop(reflex.constants.SKIP_COMPILE_ENV_VAR, None)
+            environment.REFLEX_SKIP_COMPILE.set(False)
 
     def stop(self):
         """Stop the frontend python webserver."""

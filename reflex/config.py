@@ -8,7 +8,17 @@ import os
 import sys
 import urllib.parse
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Set,
+    TypeVar,
+    get_args,
+)
 
 from typing_extensions import get_type_hints
 
@@ -259,86 +269,178 @@ def interpret_env_var_value(
         )
 
 
-@dataclasses.dataclass(init=False)
+T = TypeVar("T")
+
+
+class EnvVar(Generic[T]):
+    """Environment variable."""
+
+    name: str
+    default: Any
+    type_: T
+
+    def __init__(self, name: str, default: Any, type_: T) -> None:
+        """Initialize the environment variable.
+
+        Args:
+            name: The environment variable name.
+            default: The default value.
+            type_: The type of the value.
+        """
+        self.name = name
+        self.default = default
+        self.type_ = type_
+
+    def getenv(self) -> Any:
+        """Get the environment variable from os.environ.
+
+        Returns:
+            The environment variable value.
+        """
+        return os.getenv(self.name, None)
+
+    @property
+    def get(self) -> T:
+        """Get the interpreted environment variable value.
+
+        Returns:
+            The interpreted value.
+        """
+        env_value = self.getenv()
+        if env_value is not None:
+            return interpret_env_var_value(env_value, self.type_, self.name)
+        return self.default
+
+    def set(self, value: T) -> None:
+        """Set the environment variable.
+
+        Args:
+            value: The value to set.
+        """
+        if value is None:
+            _ = os.environ.pop(self.name, None)
+        else:
+            os.environ[self.name] = str(value)
+
+
+class env_var:  # type: ignore
+    """Descriptor for environment variables."""
+
+    name: str
+    default: Any
+
+    def __init__(self, default: Any):
+        """Initialize the descriptor.
+
+        Args:
+            default: The default value.
+        """
+        self.default = default
+
+    def __set_name__(self, owner, name):
+        """Set the name of the descriptor.
+
+        Args:
+            owner: The owner class.
+            name: The name of the descriptor.
+        """
+        self.name = name
+
+    def __get__(self, instance, owner):
+        """Get the EnvVar instance.
+
+        Args:
+            instance: The instance.
+            owner: The owner class.
+        """
+        type_ = get_args(get_type_hints(owner)[self.name])[0]
+        return EnvVar[type_](name=self.name, default=self.default, type_=type_)
+
+
+if TYPE_CHECKING:
+
+    def env_var(default) -> EnvVar:
+        """Typing helper for the env_var descriptor."""
+        return default
+
+
 class EnvironmentVariables:
     """Environment variables class to instantiate environment variables."""
 
     # Whether to use npm over bun to install frontend packages.
-    REFLEX_USE_NPM: bool = False
+    REFLEX_USE_NPM: EnvVar[bool] = env_var(False)
 
     # The npm registry to use.
-    NPM_CONFIG_REGISTRY: Optional[str] = None
+    NPM_CONFIG_REGISTRY: EnvVar[Optional[str]] = env_var(None)
 
     # Whether to use Granian for the backend. Otherwise, use Uvicorn.
-    REFLEX_USE_GRANIAN: bool = False
+    REFLEX_USE_GRANIAN: EnvVar[bool] = env_var(False)
 
     # The username to use for authentication on python package repository. Username and password must both be provided.
-    TWINE_USERNAME: Optional[str] = None
+    TWINE_USERNAME: EnvVar[Optional[str]] = env_var(None)
 
     # The password to use for authentication on python package repository. Username and password must both be provided.
-    TWINE_PASSWORD: Optional[str] = None
+    TWINE_PASSWORD: EnvVar[Optional[str]] = env_var(None)
 
     # Whether to use the system installed bun. If set to false, bun will be bundled with the app.
-    REFLEX_USE_SYSTEM_BUN: bool = False
+    REFLEX_USE_SYSTEM_BUN: EnvVar[bool] = env_var(False)
 
     # Whether to use the system installed node and npm. If set to false, node and npm will be bundled with the app.
-    REFLEX_USE_SYSTEM_NODE: bool = False
+    REFLEX_USE_SYSTEM_NODE: EnvVar[bool] = env_var(False)
 
     # The working directory for the next.js commands.
-    REFLEX_WEB_WORKDIR: Path = Path(constants.Dirs.WEB)
+    REFLEX_WEB_WORKDIR: EnvVar[Path] = env_var(Path(constants.Dirs.WEB))
 
     # Path to the alembic config file
-    ALEMBIC_CONFIG: Path = Path(constants.ALEMBIC_CONFIG)
+    ALEMBIC_CONFIG: EnvVar[Path] = env_var(Path(constants.ALEMBIC_CONFIG))
 
     # Disable SSL verification for HTTPX requests.
-    SSL_NO_VERIFY: bool = False
+    SSL_NO_VERIFY: EnvVar[bool] = env_var(False)
 
     # The directory to store uploaded files.
-    REFLEX_UPLOADED_FILES_DIR: Path = Path(constants.Dirs.UPLOADED_FILES)
+    REFLEX_UPLOADED_FILES_DIR: EnvVar[Path] = env_var(
+        Path(constants.Dirs.UPLOADED_FILES)
+    )
 
-    # Whether to use seperate processes to compile the frontend and how many. If not set, defaults to thread executor.
-    REFLEX_COMPILE_PROCESSES: Optional[int] = None
+    # Whether to use separate processes to compile the frontend and how many. If not set, defaults to thread executor.
+    REFLEX_COMPILE_PROCESSES: EnvVar[Optional[int]] = env_var(None)
 
-    # Whether to use seperate threads to compile the frontend and how many. Defaults to `min(32, os.cpu_count() + 4)`.
-    REFLEX_COMPILE_THREADS: Optional[int] = None
+    # Whether to use separate threads to compile the frontend and how many. Defaults to `min(32, os.cpu_count() + 4)`.
+    REFLEX_COMPILE_THREADS: EnvVar[Optional[int]] = env_var(None)
 
     # The directory to store reflex dependencies.
-    REFLEX_DIR: Path = Path(constants.Reflex.DIR)
+    REFLEX_DIR: EnvVar[Path] = env_var(Path(constants.Reflex.DIR))
 
     # Whether to print the SQL queries if the log level is INFO or lower.
-    SQLALCHEMY_ECHO: bool = False
+    SQLALCHEMY_ECHO: EnvVar[bool] = env_var(False)
 
     # Whether to ignore the redis config error. Some redis servers only allow out-of-band configuration.
-    REFLEX_IGNORE_REDIS_CONFIG_ERROR: bool = False
+    REFLEX_IGNORE_REDIS_CONFIG_ERROR: EnvVar[bool] = env_var(False)
 
     # Whether to skip purging the web directory in dev mode.
-    REFLEX_PERSIST_WEB_DIR: bool = False
+    REFLEX_PERSIST_WEB_DIR: EnvVar[bool] = env_var(False)
 
     # The reflex.build frontend host.
-    REFLEX_BUILD_FRONTEND: str = constants.Templates.REFLEX_BUILD_FRONTEND
+    REFLEX_BUILD_FRONTEND: EnvVar[str] = env_var(
+        constants.Templates.REFLEX_BUILD_FRONTEND
+    )
 
     # The reflex.build backend host.
-    REFLEX_BUILD_BACKEND: str = constants.Templates.REFLEX_BUILD_BACKEND
+    REFLEX_BUILD_BACKEND: EnvVar[str] = env_var(
+        constants.Templates.REFLEX_BUILD_BACKEND
+    )
 
-    def __init__(self):
-        """Initialize the environment variables."""
-        type_hints = get_type_hints(type(self))
+    # If this env var is set to "yes", App.compile will be a no-op
+    REFLEX_SKIP_COMPILE: EnvVar[bool] = env_var(False)
 
-        for field in dataclasses.fields(self):
-            raw_value = os.getenv(field.name, None)
+    # This env var stores the execution mode of the app
+    REFLEX_ENV_MODE: EnvVar[constants.Env] = env_var(constants.Env.DEV)
 
-            field.type = type_hints.get(field.name) or field.type
+    # Whether to run the backend only. Exclusive with REFLEX_FRONTEND_ONLY.
+    REFLEX_BACKEND_ONLY: EnvVar[bool] = env_var(False)
 
-            value = (
-                interpret_env_var_value(raw_value, field.type, field.name)
-                if raw_value is not None
-                else get_default_value_for_field(field)
-            )
-
-            setattr(self, field.name, value)
-
-
-environment = EnvironmentVariables()
+    # Whether to run the frontend only. Exclusive with REFLEX_BACKEND_ONLY.
+    REFLEX_FRONTEND_ONLY: EnvVar[bool] = env_var(False)
 
 
 class Config(Base):

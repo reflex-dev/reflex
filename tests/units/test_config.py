@@ -209,7 +209,7 @@ def test_replace_defaults(
 
 
 def reflex_dir_constant():
-    return environment.REFLEX_DIR
+    return environment.REFLEX_DIR.get
 
 
 def test_reflex_dir_env_var(monkeypatch, tmp_path):
@@ -222,5 +222,6 @@ def test_reflex_dir_env_var(monkeypatch, tmp_path):
     monkeypatch.setenv("REFLEX_DIR", str(tmp_path))
 
     mp_ctx = multiprocessing.get_context(method="spawn")
+    assert reflex_dir_constant() == tmp_path
     with mp_ctx.Pool(processes=1) as pool:
         assert pool.apply(reflex_dir_constant) == tmp_path

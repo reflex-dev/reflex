@@ -69,7 +69,7 @@ def get_web_dir() -> Path:
     Returns:
         The working directory.
     """
-    return environment.REFLEX_WEB_WORKDIR
+    return environment.REFLEX_WEB_WORKDIR.get
 
 
 def _python_version_check():
@@ -249,7 +249,7 @@ def windows_npm_escape_hatch() -> bool:
     Returns:
         If the user has set REFLEX_USE_NPM.
     """
-    return environment.REFLEX_USE_NPM
+    return environment.REFLEX_USE_NPM.get
 
 
 def get_app(reload: bool = False) -> ModuleType:
@@ -991,7 +991,7 @@ def needs_reinit(frontend: bool = True) -> bool:
         return False
 
     # Make sure the .reflex directory exists.
-    if not environment.REFLEX_DIR.exists():
+    if not environment.REFLEX_DIR.get.exists():
         return True
 
     # Make sure the .web directory exists in frontend mode.
@@ -1096,7 +1096,7 @@ def ensure_reflex_installation_id() -> Optional[int]:
     """
     try:
         initialize_reflex_user_directory()
-        installation_id_file = environment.REFLEX_DIR / "installation_id"
+        installation_id_file = environment.REFLEX_DIR.get / "installation_id"
 
         installation_id = None
         if installation_id_file.exists():
@@ -1121,7 +1121,7 @@ def ensure_reflex_installation_id() -> Optional[int]:
 def initialize_reflex_user_directory():
     """Initialize the reflex user directory."""
     # Create the reflex directory.
-    path_ops.mkdir(environment.REFLEX_DIR)
+    path_ops.mkdir(environment.REFLEX_DIR.get)
 
 
 def initialize_frontend_dependencies():
@@ -1144,7 +1144,7 @@ def check_db_initialized() -> bool:
     Returns:
         True if alembic is initialized (or if database is not used).
     """
-    if get_config().db_url is not None and not environment.ALEMBIC_CONFIG.exists():
+    if get_config().db_url is not None and not environment.ALEMBIC_CONFIG.get.exists():
         console.error(
             "Database is not initialized. Run [bold]reflex db init[/bold] first."
         )
@@ -1154,7 +1154,7 @@ def check_db_initialized() -> bool:
 
 def check_schema_up_to_date():
     """Check if the sqlmodel metadata matches the current database schema."""
-    if get_config().db_url is None or not environment.ALEMBIC_CONFIG.exists():
+    if get_config().db_url is None or not environment.ALEMBIC_CONFIG.get.exists():
         return
     with model.Model.get_db_engine().connect() as connection:
         try:

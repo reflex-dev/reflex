@@ -184,7 +184,7 @@ def should_use_granian():
     Returns:
         True if Granian should be used.
     """
-    return environment.REFLEX_USE_GRANIAN
+    return environment.REFLEX_USE_GRANIAN.get
 
 
 def get_app_module():
@@ -369,7 +369,9 @@ def run_uvicorn_backend_prod(host, port, loglevel):
         command,
         run=True,
         show_logs=True,
-        env={constants.SKIP_COMPILE_ENV_VAR: "yes"},  # skip compile for prod backend
+        env={
+            environment.REFLEX_SKIP_COMPILE.name: "yes"
+        },  # skip compile for prod backend
     )
 
 
@@ -405,7 +407,7 @@ def run_granian_backend_prod(host, port, loglevel):
             run=True,
             show_logs=True,
             env={
-                constants.SKIP_COMPILE_ENV_VAR: "yes"
+                environment.REFLEX_SKIP_COMPILE.name: "yes"
             },  # skip compile for prod backend
         )
     except ImportError:
@@ -490,34 +492,8 @@ def is_prod_mode() -> bool:
         True if the app is running in production mode or False if running in dev mode.
     """
     current_mode = os.environ.get(
-        constants.ENV_MODE_ENV_VAR,
+        environment.REFLEX_ENV_MODE.get,
         constants.Env.DEV.value,
     )
+    current_mode = environment.REFLEX_ENV_MODE.get
     return current_mode == constants.Env.PROD.value
-
-
-def is_frontend_only() -> bool:
-    """Check if the app is running in frontend-only mode.
-
-    Returns:
-        True if the app is running in frontend-only mode.
-    """
-    return os.environ.get(constants.ENV_FRONTEND_ONLY_ENV_VAR, "").lower() == "true"
-
-
-def is_backend_only() -> bool:
-    """Check if the app is running in backend-only mode.
-
-    Returns:
-        True if the app is running in backend-only mode.
-    """
-    return os.environ.get(constants.ENV_BACKEND_ONLY_ENV_VAR, "").lower() == "true"
-
-
-def should_skip_compile() -> bool:
-    """Whether the app should skip compile.
-
-    Returns:
-        True if the app should skip compile.
-    """
-    return os.environ.get(constants.SKIP_COMPILE_ENV_VAR) == "yes"
