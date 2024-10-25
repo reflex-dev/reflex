@@ -182,7 +182,7 @@ class ClientStateVar(Var):
         if value is not NoValue:
             # This is a hack to make it work like an EventSpec taking an arg
             value_var = LiteralVar.create(value)
-            _var_data = _var_data.merge(value_var._get_all_var_data())
+            _var_data = VarData.merge(_var_data, value_var._get_all_var_data())
             value_str = str(value_var)
 
             if value_str.startswith("_"):
