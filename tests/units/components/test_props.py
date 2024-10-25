@@ -52,7 +52,7 @@ class PropB(NoExtrasAllowedProps):
 )
 def test_no_extras_allowed_props(props_class, kwargs, should_raise):
     if should_raise:
-        with pytest.raises((InvalidPropValueError, ValidationError)):
+        with pytest.raises((ValidationError, InvalidPropValueError)):
             props_class(**kwargs)
     else:
         props_instance = props_class(**kwargs)

@@ -254,7 +254,7 @@ class Toaster(Component):
         if message == "" and ("title" not in props or "description" not in props):
             raise ValueError("Toast message or title or description must be provided.")
         if props:
-            args = LiteralVar.create(ToastProps(component_name="rx.toast", **props))
+            args = LiteralVar.create(ToastProps(component_name="rx.toast", **props))  # type: ignore
             toast = f"{toast_command}(`{message}`, {str(args)})"
         else:
             toast = f"{toast_command}(`{message}`)"
