@@ -1968,6 +1968,10 @@ class StatefulComponent(BaseComponent):
         """
         from reflex.components.core.foreach import Foreach
 
+        if isinstance(component, CustomComponent):
+            # Do not memoize custom components.
+            return None
+
         if component._memoization_mode.disposition == MemoizationDisposition.NEVER:
             # Never memoize this component.
             return None
