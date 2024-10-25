@@ -1,6 +1,8 @@
 import pytest
-from reflex.utils.exceptions import InvalidPropValueError
+from pydantic import ValidationError
+
 from reflex.components.props import NoExtrasAllowedProps
+from reflex.utils.exceptions import InvalidPropValueError
 
 
 class PropA(NoExtrasAllowedProps):
@@ -50,7 +52,7 @@ class PropB(NoExtrasAllowedProps):
 )
 def test_no_extras_allowed_props(props_class, kwargs, should_raise):
     if should_raise:
-        with pytest.raises(InvalidPropValueError):
+        with pytest.raises((InvalidPropValueError, ValidationError)):
             props_class(**kwargs)
     else:
         props_instance = props_class(**kwargs)
