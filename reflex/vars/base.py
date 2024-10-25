@@ -151,8 +151,7 @@ class VarData:
         """
         return dict((k, list(v)) for k, v in self.imports)
 
-    @classmethod
-    def merge(cls, *others: VarData | None) -> VarData | None:
+    def merge(self, *others: VarData | None) -> VarData | None:
         """Merge multiple var data objects.
 
         Args:
@@ -161,21 +160,24 @@ class VarData:
         Returns:
             The merged var data object.
         """
-        state = ""
-        field_name = ""
-        _imports = {}
-        hooks = {}
-        for var_data in others:
-            if var_data is None:
-                continue
-            state = state or var_data.state
-            field_name = field_name or var_data.field_name
-            _imports = imports.merge_imports(_imports, var_data.imports)
-            hooks.update(
-                var_data.hooks
-                if isinstance(var_data.hooks, dict)
-                else {k: None for k in var_data.hooks}
-            )
+        all_var_datas = [self] + [
+            var_data for var_data in others if var_data is not None
+        ]
+
+        field_name = next(
+            (var_data.field_name for var_data in all_var_datas if var_data.field_name),
+            "",
+        )
+
+        state = next(
+            (var_data.state for var_data in all_var_datas if var_data.state), ""
+        )
+
+        hooks = {hook: None for var_data in all_var_datas for hook in var_data.hooks}
+
+        _imports = imports.merge_imports(
+            *(var_data.imports for var_data in all_var_datas)
+        )
 
         if state or _imports or hooks or field_name:
             return VarData(
@@ -184,6 +186,7 @@ class VarData:
                 imports=_imports,
                 hooks=hooks,
             )
+
         return None
 
     def __bool__(self) -> bool:
