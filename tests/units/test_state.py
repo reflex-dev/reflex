@@ -106,6 +106,7 @@ class TestState(BaseState):
     fig: Figure = Figure()
     dt: datetime.datetime = datetime.datetime.fromisoformat("1989-11-09T18:53:00+01:00")
     _backend: int = 0
+    asynctest: int = 0
 
     @ComputedVar
     def sum(self) -> float:
@@ -128,6 +129,14 @@ class TestState(BaseState):
     def do_something(self):
         """Do something."""
         pass
+
+    async def set_asynctest(self, value: int):
+        """Set the asynctest value. Intentionally overwrite the default setter with an async one.
+
+        Args:
+            value: The new value.
+        """
+        self.asynctest = value
 
 
 class ChildState(TestState):
@@ -313,6 +322,7 @@ def test_class_vars(test_state):
         "upper",
         "fig",
         "dt",
+        "asynctest",
     }
 
 
@@ -733,6 +743,7 @@ def test_reset(test_state, child_state):
         "mapping",
         "dt",
         "_backend",
+        "asynctest",
     }
 
     # The dirty vars should be reset.
@@ -3179,6 +3190,13 @@ async def test_setvar(mock_app: rx.App, token: str):
         TestState.setvar(42, 42)
 
 
+@pytest.mark.asyncio
+async def test_setvar_async_setter():
+    """Test that overridden async setters raise Exception when used with setvar."""
+    with pytest.raises(NotImplementedError):
+        TestState.setvar("asynctest", 42)
+
+
 @pytest.mark.skipif("REDIS_URL" not in os.environ, reason="Test requires redis")
 @pytest.mark.parametrize(
     "expiration_kwargs, expected_values",
@@ -3346,3 +3364,35 @@ async def test_deserialize_gc_state_disk(token):
     assert s.num == 43
     c = await root.get_state(Child)
     assert c.foo == "bar"
+
+
+class Obj(Base):
+    """A object containing a callable for testing fallback pickle."""
+
+    _f: Callable
+
+
+def test_fallback_pickle():
+    """Test that state serialization will fall back to dill."""
+
+    class DillState(BaseState):
+        _o: Optional[Obj] = None
+        _f: Optional[Callable] = None
+        _g: Any = None
+
+    state = DillState(_reflex_internal_init=True)  # type: ignore
+    state._o = Obj(_f=lambda: 42)
+    state._f = lambda: 420
+
+    pk = state._serialize()
+
+    unpickled_state = BaseState._deserialize(pk)
+    assert unpickled_state._f() == 420
+    assert unpickled_state._o._f() == 42
+
+    # Some object, like generator, are still unpicklable with dill.
+    state._g = (i for i in range(10))
+    pk = state._serialize()
+    assert len(pk) == 0
+    with pytest.raises(EOFError):
+        BaseState._deserialize(pk)

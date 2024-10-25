@@ -601,6 +601,7 @@ formatted_router = {
                     "sum": 3.14,
                     "upper": "",
                     "router": formatted_router,
+                    "asynctest": 0,
                 },
                 ChildState.get_full_name(): {
                     "count": 23,
