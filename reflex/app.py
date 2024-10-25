@@ -883,7 +883,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         progress.start()
         task = progress.add_task(
             f"[{get_compilation_time()}] Compiling:",
-            total=len(self.unevaluated_pages)
+            total=len(self.pages)
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,
         )
@@ -948,37 +948,15 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         for route, component in zip(self.pages, page_components):
             ExecutorSafeFunctions.COMPONENTS[route] = component
 
-        for route, page in self.unevaluated_pages.items():
-            if route in self.pages:
-                continue
-
-            ExecutorSafeFunctions.UNCOMPILED_PAGES[route] = page
-
         ExecutorSafeFunctions.STATE = self.state
-
-        pages_results = []
 
         with executor:
             result_futures = []
-            pages_futures = []
 
             def _submit_work(fn, *args, **kwargs):
                 f = executor.submit(fn, *args, **kwargs)
                 # f = executor.apipe(fn, *args, **kwargs)
                 result_futures.append(f)
-
-            # Compile all page components.
-            for route in self.unevaluated_pages:
-                if route in self.pages:
-                    continue
-
-                f = executor.submit(
-                    ExecutorSafeFunctions.compile_unevaluated_page,
-                    route,
-                    self.style,
-                    self.theme,
-                )
-                pages_futures.append(f)
 
             # Compile the pre-compiled pages.
             for route in self.pages:
@@ -1007,16 +985,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 compile_results.append(future.result())
                 progress.advance(task)
 
-            for future in concurrent.futures.as_completed(pages_futures):
-                pages_results.append(future.result())
-                progress.advance(task)
-
-        for route, component, compiled_page in pages_results:
-            self._check_routes_conflict(route)
-            self.pages[route] = component
-            compile_results.append(compiled_page)
-
-        for _, component in self.pages.items():
+        for component in self.pages.values():
             # Add component._get_all_imports() to all_imports.
             all_imports.update(component._get_all_imports())
 
