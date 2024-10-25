@@ -160,9 +160,13 @@ class VarData:
         Returns:
             The merged var data object.
         """
-        all_var_datas = [self] + [
-            var_data for var_data in others if var_data is not None
-        ]
+        all_var_datas = list(filter(None, (self, *others)))
+
+        if not all_var_datas:
+            return None
+
+        if len(all_var_datas) == 1:
+            return all_var_datas[0]
 
         # Get the first non-empty field name or default to empty string.
         field_name = next(
