@@ -218,6 +218,7 @@ class EventHandlerSetVar(EventHandler):
         Raises:
             AttributeError: If the given Var name does not exist on the state.
             EventHandlerValueError: If the given Var name is not a str
+            NotImplementedError: If the setter for the given Var is async
         """
         from reflex.utils.exceptions import EventHandlerValueError
 
@@ -226,11 +227,20 @@ class EventHandlerSetVar(EventHandler):
                 raise EventHandlerValueError(
                     f"Var name must be passed as a string, got {args[0]!r}"
                 )
+
+            handler = getattr(self.state_cls, constants.SETTER_PREFIX + args[0], None)
+
             # Check that the requested Var setter exists on the State at compile time.
-            if getattr(self.state_cls, constants.SETTER_PREFIX + args[0], None) is None:
+            if handler is None:
                 raise AttributeError(
                     f"Variable `{args[0]}` cannot be set on `{self.state_cls.get_full_name()}`"
                 )
+
+            if asyncio.iscoroutinefunction(handler.fn):
+                raise NotImplementedError(
+                    f"Setter for {args[0]} is async, which is not supported."
+                )
+
         return super().__call__(*args)
 
 
@@ -2053,12 +2063,24 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         try:
             return pickle.dumps((self._to_schema(), self))
-        except pickle.PicklingError:
-            console.warn(
+        except (pickle.PicklingError, AttributeError) as og_pickle_error:
+            error = (
                 f"Failed to serialize state {self.get_full_name()} due to unpicklable object. "
-                "This state will not be persisted."
+                "This state will not be persisted. "
             )
-            return b""
+            try:
+                import dill
+
+                return dill.dumps((self._to_schema(), self))
+            except ImportError:
+                error += (
+                    f"Pickle error: {og_pickle_error}. "
+                    "Consider `pip install 'dill>=0.3.8'` for more exotic serialization support."
+                )
+            except (pickle.PicklingError, TypeError, ValueError) as ex:
+                error += f"Dill was also unable to pickle the state: {ex}"
+        console.warn(error)
+        return b""
 
     @classmethod
     def _deserialize(
@@ -2725,9 +2747,13 @@ class StateManagerDisk(StateManager):
         for substate in state.get_substates():
             substate_token = _substate_key(client_token, substate)
 
+            fresh_instance = await root_state.get_state(substate)
             instance = await self.load_state(substate_token)
-            if instance is None:
-                instance = await root_state.get_state(substate)
+            if instance is not None:
+                # Ensure all substates exist, even if they weren't serialized previously.
+                instance.substates = fresh_instance.substates
+            else:
+                instance = fresh_instance
             state.substates[substate.get_name()] = instance
             instance.parent_state = state
 

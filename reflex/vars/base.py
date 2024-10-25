@@ -217,7 +217,7 @@ class VarData:
                 ): None
             },
             imports={
-                f"/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="StateContexts")],
+                f"$/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="StateContexts")],
                 "react": [ImportVar(tag="useContext")],
             },
         )
@@ -956,7 +956,7 @@ class Var(Generic[VAR_TYPE]):
             _js_expr="refs",
             _var_data=VarData(
                 imports={
-                    f"/{constants.Dirs.STATE_PATH}": [imports.ImportVar(tag="refs")]
+                    f"$/{constants.Dirs.STATE_PATH}": [imports.ImportVar(tag="refs")]
                 }
             ),
         ).to(ObjectVar, Dict[str, str])
@@ -2530,7 +2530,7 @@ def get_uuid_string_var() -> Var:
     unique_uuid_var = get_unique_variable_name()
     unique_uuid_var_data = VarData(
         imports={
-            f"/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")},  # type: ignore
+            f"$/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")},  # type: ignore
             "react": "useMemo",
         },
         hooks={f"const {unique_uuid_var} = useMemo(generateUUID, [])": None},

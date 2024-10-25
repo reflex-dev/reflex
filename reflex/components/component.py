@@ -38,6 +38,7 @@ from reflex.constants import (
 )
 from reflex.constants.compiler import SpecialAttributes
 from reflex.event import (
+    EventCallback,
     EventChain,
     EventChainVar,
     EventHandler,
@@ -1126,6 +1127,8 @@ class Component(BaseComponent, ABC):
         for trigger in self.event_triggers.values():
             if isinstance(trigger, EventChain):
                 for event in trigger.events:
+                    if isinstance(event, EventCallback):
+                        continue
                     if isinstance(event, EventSpec):
                         if event.handler.state_full_name:
                             return True
@@ -1305,7 +1308,9 @@ class Component(BaseComponent, ABC):
         if self._get_ref_hook():
             # Handle hooks needed for attaching react refs to DOM nodes.
             _imports.setdefault("react", set()).add(ImportVar(tag="useRef"))
-            _imports.setdefault(f"/{Dirs.STATE_PATH}", set()).add(ImportVar(tag="refs"))
+            _imports.setdefault(f"$/{Dirs.STATE_PATH}", set()).add(
+                ImportVar(tag="refs")
+            )
 
         if self._get_mount_lifecycle_hook():
             # Handle hooks for `on_mount` / `on_unmount`.
@@ -1662,7 +1667,7 @@ class CustomComponent(Component):
     """A custom user-defined component."""
 
     # Use the components library.
-    library = f"/{Dirs.COMPONENTS_PATH}"
+    library = f"$/{Dirs.COMPONENTS_PATH}"
 
     # The function that creates the component.
     component_fn: Callable[..., Component] = Component.create
@@ -2230,7 +2235,7 @@ class StatefulComponent(BaseComponent):
         """
         if self.rendered_as_shared:
             return {
-                f"/{Dirs.UTILS}/{PageNames.STATEFUL_COMPONENTS}": [
+                f"$/{Dirs.UTILS}/{PageNames.STATEFUL_COMPONENTS}": [
                     ImportVar(tag=self.tag)
                 ]
             }

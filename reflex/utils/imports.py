@@ -23,6 +23,12 @@ def merge_imports(
         for lib, fields in (
             import_dict if isinstance(import_dict, tuple) else import_dict.items()
         ):
+            # If the lib is an absolute path, we need to prefix it with a $
+            lib = (
+                "$" + lib
+                if lib.startswith(("/utils/", "/components/", "/styles/", "/public/"))
+                else lib
+            )
             if isinstance(fields, (list, tuple, set)):
                 all_imports[lib].extend(
                     (

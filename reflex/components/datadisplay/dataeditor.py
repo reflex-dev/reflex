@@ -344,7 +344,7 @@ class DataEditor(NoSSRComponent):
         return {
             "": f"{format.format_library_name(self.library)}/dist/index.css",
             self.library: "GridCellKind",
-            "/utils/helpers/dataeditor.js": ImportVar(
+            "$/utils/helpers/dataeditor.js": ImportVar(
                 tag="formatDataEditorCells", is_default=False, install=False
             ),
         }
