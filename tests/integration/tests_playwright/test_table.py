@@ -7,6 +7,14 @@ from playwright.sync_api import Page
 
 from reflex.testing import AppHarness
 
+expected_col_headers = ["Name", "Age", "Location"]
+expected_row_headers = ["John", "Jane", "Joe"]
+expected_cells_data = [
+    ["30", "New York"],
+    ["31", "San Fransisco"],
+    ["32", "Los Angeles"],
+]
+
 
 def Table():
     """App using table component."""
@@ -73,20 +81,20 @@ def test_table(page: Page, table_app: AppHarness):
         table_app: Harness for Table app
         page: Playwright page instance
     """
-    assert table_app.app_instance is not None, "app is not running"
     assert table_app.frontend_url is not None, "frontend url is not available"
 
     page.goto(table_app.frontend_url)
     table = page.get_by_role("table")
 
+    # Check column headers
     headers = table.get_by_role("columnheader").all_inner_texts()
-    assert headers == ["Name", "Age", "Location"]
+    assert headers == expected_col_headers
 
-    rows = [
-        row.split("\t")
-        for row in table.locator("tbody").all_inner_texts()[0].splitlines()
-    ]
+    # Check rows headers
+    rows = table.get_by_role("rowheader").all_inner_texts()
+    assert rows == expected_row_headers
 
-    assert rows[0] == ["John", "30", "New York"]
-    assert rows[1] == ["Jane", "31", "San Fransisco"]
-    assert rows[2] == ["Joe", "32", "Los Angeles"]
+    # Check cells
+    rows = table.get_by_role("cell").all_inner_texts()
+    for i, expected_row in enumerate(expected_cells_data):
+        assert [rows[idx := i * 2], rows[idx + 1]] == expected_row
