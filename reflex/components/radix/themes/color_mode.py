@@ -116,7 +116,7 @@ class ColorModeIconButton(IconButton):
             The button component.
         """
         position = props.pop("position", None)
-        allow_system = props.pop("allow_system", None)
+        allow_system = props.pop("allow_system", False)
 
         # position is used to set nice defaults for positioning the icon button
         if isinstance(position, Var):

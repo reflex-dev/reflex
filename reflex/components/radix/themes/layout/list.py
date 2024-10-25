@@ -47,7 +47,7 @@ class BaseList(Component):
     ] = "none"
 
     # A list of items to add to the list.
-    items: Optional[Union[Iterable, Var[Iterable]]] = None
+    items: Var[Iterable] = Var.create([])
 
     @classmethod
     def create(
@@ -99,9 +99,6 @@ class UnorderedList(BaseList, Ul):
 
     tag = "ul"
 
-    # The style of the list.
-    list_style_type: LiteralListStyleTypeUnordered = "disc"
-
     @classmethod
     def create(
         cls,
@@ -131,9 +128,6 @@ class OrderedList(BaseList, Ol):
     """Display an ordered list."""
 
     tag = "ol"
-
-    # The style of the list.
-    list_style_type: LiteralListStyleTypeOrdered = "decimal"
 
     @classmethod
     def create(

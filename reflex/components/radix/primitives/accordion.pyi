@@ -304,12 +304,8 @@ class AccordionItem(AccordionComponent):
         *children,
         value: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
-        header: Optional[
-            Union[Component, Union[Component, Var[Union[Component, str]], str], str]
-        ] = None,
-        content: Optional[
-            Union[Component, Union[Component, Var[Union[Component, str]], str], str]
-        ] = None,
+        header: Optional[Union[Component, Var[Union[Component, str]], str]] = None,
+        content: Optional[Union[Component, Var[Union[Component, str]], str]] = None,
         color_scheme: Optional[
             Union[
                 Literal[

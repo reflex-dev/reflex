@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Literal, Optional, Tuple, Union
+from typing import Any, List, Literal, Tuple, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
@@ -194,9 +194,9 @@ class AccordionItem(AccordionComponent):
     disabled: Var[bool]
 
     # The header of the accordion item.
-    header: Optional[Union[Component, str, Var[Union[Component, str]]]] = None
+    header: Var[Union[Component, str]] = Var.create(None)
     # The content of the accordion item.
-    content: Optional[Union[Component, str, Var[Union[Component, str]]]] = None
+    content: Var[Union[Component, str]] = Var.create(None)
 
     _valid_children: List[str] = [
         "AccordionHeader",
