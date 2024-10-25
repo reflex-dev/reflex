@@ -164,11 +164,13 @@ class VarData:
             var_data for var_data in others if var_data is not None
         ]
 
+        # Get the first non-empty field name or default to empty string.
         field_name = next(
             (var_data.field_name for var_data in all_var_datas if var_data.field_name),
             "",
         )
 
+        # Get the first non-empty state or default to empty string.
         state = next(
             (var_data.state for var_data in all_var_datas if var_data.state), ""
         )
