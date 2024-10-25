@@ -1,8 +1,12 @@
 import pytest
-from pydantic import ValidationError
 
 from reflex.components.props import NoExtrasAllowedProps
 from reflex.utils.exceptions import InvalidPropValueError
+
+try:
+    from pydantic.v1 import ValidationError
+except ModuleNotFoundError:
+    from pydantic import ValidationError
 
 
 class PropA(NoExtrasAllowedProps):
