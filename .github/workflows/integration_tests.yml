@@ -125,7 +125,7 @@ jobs:
 
     env:
       REFLEX_WEB_WINDOWS_OVERRIDE: "1"
-      REFLEX_WEB_WINDOWS_MAX_ROUTES: "50"
+      REFLEX_WEB_WINDOWS_MAX_ROUTES: "25"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
