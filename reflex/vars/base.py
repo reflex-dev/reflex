@@ -159,6 +159,8 @@ class VarData:
 
         Returns:
             The merged var data object.
+
+        # noqa: DAR102 *all
         """
         all_var_datas = list(filter(None, all))
 
