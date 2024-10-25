@@ -165,7 +165,7 @@ class PackageJson(SimpleNamespace):
     class Commands(SimpleNamespace):
         """The commands to define in package.json."""
 
-        DEV = "next dev --turbo"
+        DEV = "next dev"
         EXPORT = "next build"
         EXPORT_SITEMAP = "next build && next-sitemap"
         PROD = "next start"
