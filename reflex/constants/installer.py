@@ -120,7 +120,7 @@ class Node(SimpleNamespace):
     # The Node version.
     VERSION = "22.10.0"
     # The minimum required node version.
-    MIN_VERSION = "18.17.0"
+    MIN_VERSION = "18.18.0"
 
     @classproperty
     @classmethod
