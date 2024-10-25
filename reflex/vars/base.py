@@ -151,16 +151,16 @@ class VarData:
         """
         return dict((k, list(v)) for k, v in self.imports)
 
-    def merge(self: VarData | None, *others: VarData | None) -> VarData | None:
+    def merge(*all: VarData | None) -> VarData | None:
         """Merge multiple var data objects.
 
         Args:
-            *others: The var data objects to merge.
+            *all: The var data objects to merge.
 
         Returns:
             The merged var data object.
         """
-        all_var_datas = list(filter(None, (self, *others)))
+        all_var_datas = list(filter(None, all))
 
         if not all_var_datas:
             return None
