@@ -330,8 +330,8 @@ LiteralCodeTheme = Literal[
 ]
 
 class Position(NoExtrasAllowedProps):
-    line: str
-    character: str
+    line: int
+    character: int
 
 class ShikiDecorations(NoExtrasAllowedProps):
     start: Union[int, Position]

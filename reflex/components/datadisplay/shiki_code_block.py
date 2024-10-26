@@ -394,8 +394,8 @@ LiteralCodeTheme = Literal[
 class Position(NoExtrasAllowedProps):
     """Position of the decoration."""
 
-    line: str
-    character: str
+    line: int
+    character: int
 
 
 class ShikiDecorations(NoExtrasAllowedProps):
@@ -586,6 +586,10 @@ class ShikiCodeBlock(Component):
                 value
             )
 
+        # cast decorations into ShikiDecorations.
+        decorations = [ShikiDecorations(**decoration) for decoration in decorations]
+        code_block_props["decorations"] = decorations
+
         code_block_props["code"] = children[0]
         code_block = super().create(**code_block_props)
 
@@ -595,9 +599,6 @@ class ShikiCodeBlock(Component):
             if isinstance(transformer, ShikiBaseTransformers) and transformer.style:
                 transformer_styles.update(transformer.style)
         transformer_styles.update(code_wrapper_props.pop("style", {}))
-
-        decorations = [ShikiDecorations(**decoration) for decoration in decorations]
-        code_block_props["decorations"] = decorations
 
         return Box.create(
             code_block,
