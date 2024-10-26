@@ -8,6 +8,8 @@ import multiprocessing
 import platform
 import warnings
 
+from reflex.config import environment
+
 try:
     from datetime import UTC, datetime
 except ImportError:
@@ -93,8 +95,6 @@ def _raise_on_missing_project_hash() -> bool:
         False when compilation should be skipped (i.e. no .web directory is required).
         Otherwise return True.
     """
-    from reflex.config import environment
-
     return not environment.REFLEX_SKIP_COMPILE
 
 

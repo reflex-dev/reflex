@@ -16,8 +16,6 @@ except ModuleNotFoundError:
         from pydantic.fields import ModelField  # type: ignore
 
 
-
-
 def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None:
     """Ensure that the field's name does not shadow an existing attribute of the model.
 
