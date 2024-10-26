@@ -40,8 +40,8 @@ def test_set_app_name(base_config_values):
         ("DB_URL", "postgresql://user:pass@localhost:5432/db"),
         ("REDIS_URL", "redis://localhost:6379"),
         ("TIMEOUT", 600),
-        (environment.TELEMETRY_ENABLED.name, False),
-        (environment.TELEMETRY_ENABLED.name, True),
+        ("TELEMETRY_ENABLED", False),
+        ("TELEMETRY_ENABLED", True),
     ],
 )
 def test_update_from_env(

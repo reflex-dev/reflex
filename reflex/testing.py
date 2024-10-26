@@ -252,7 +252,7 @@ class AppHarness:
     def _initialize_app(self):
         # disable telemetry reporting for tests
 
-        environment.TELEMETRY_ENABLED.set(False)
+        os.environ["TELEMETRY_ENABLED"] = "false"
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
             app_globals = self._get_globals_from_signature(self.app_source)

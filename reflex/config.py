@@ -474,9 +474,6 @@ class EnvironmentVariables:
     # Whether to run the frontend only. Exclusive with REFLEX_BACKEND_ONLY.
     REFLEX_FRONTEND_ONLY: EnvVar[bool] = env_var(False)
 
-    # Whether to send telemetry data to Reflex.
-    TELEMETRY_ENABLED: EnvVar[bool] = env_var(True)
-
     # Reflex internal env to reload the config.
     RELOAD_CONFIG: EnvVar[bool] = env_var(False, internal=True)
 
