@@ -960,8 +960,6 @@ class AppHarnessProd(AppHarness):
         self.backend_thread.start()
 
     def _poll_for_servers(self, timeout: TimeoutType = None) -> socket.socket:
-        from reflex.config import environment
-
         try:
             return super()._poll_for_servers(timeout)
         finally:
