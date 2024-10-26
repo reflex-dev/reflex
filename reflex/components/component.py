@@ -1972,6 +1972,10 @@ class StatefulComponent(BaseComponent):
             # Do not memoize custom components.
             return None
 
+        if component._get_app_wrap_components():
+            # Do not memoize app wrap components.
+            return None
+
         if component._memoization_mode.disposition == MemoizationDisposition.NEVER:
             # Never memoize this component.
             return None
