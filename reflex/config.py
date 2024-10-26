@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import dataclasses
+import enum
 import importlib
+import inspect
 import os
 import sys
 import urllib.parse
@@ -231,6 +233,28 @@ def interpret_path_env(value: str, field_name: str) -> Path:
     return path
 
 
+def interpret_enum_env(value: str, field_type: GenericType, field_name: str) -> Any:
+    """Interpret an enum environment variable value.
+
+    Args:
+        value: The environment variable value.
+        field_type: The field type.
+        field_name: The field name.
+
+    Returns:
+        The interpreted value.
+
+    Raises:
+        EnvironmentVarValueError: If the value is invalid.
+    """
+    try:
+        return field_type(value)
+    except ValueError as ve:
+        raise EnvironmentVarValueError(
+            f"Invalid enum value: {value} for {field_name}"
+        ) from ve
+
+
 def interpret_env_var_value(
     value: str, field_type: GenericType, field_name: str
 ) -> Any:
@@ -262,6 +286,8 @@ def interpret_env_var_value(
         return interpret_int_env(value, field_name)
     elif field_type is Path:
         return interpret_path_env(value, field_name)
+    elif inspect.isclass(field_type) and issubclass(field_type, enum.Enum):
+        return interpret_enum_env(value, field_type, field_name)
 
     else:
         raise ValueError(
@@ -291,6 +317,7 @@ class EnvVar(Generic[T]):
         self.default = default
         self.type_ = type_
 
+    @property
     def getenv(self) -> Any:
         """Get the environment variable from os.environ.
 
@@ -306,13 +333,13 @@ class EnvVar(Generic[T]):
         Returns:
             The interpreted value.
         """
-        env_value = self.getenv()
+        env_value = self.getenv
         if env_value is not None:
             return interpret_env_var_value(env_value, self.type_, self.name)
         return self.default
 
-    def set(self, value: T) -> None:
-        """Set the environment variable.
+    def set(self, value: T | None) -> None:
+        """Set the environment variable. None unsets the variable.
 
         Args:
             value: The value to set.
@@ -320,6 +347,8 @@ class EnvVar(Generic[T]):
         if value is None:
             _ = os.environ.pop(self.name, None)
         else:
+            if isinstance(value, enum.Enum):
+                value = value.value
             os.environ[self.name] = str(value)
 
 
@@ -328,14 +357,17 @@ class env_var:  # type: ignore
 
     name: str
     default: Any
+    internal: bool = False
 
-    def __init__(self, default: Any):
+    def __init__(self, default: Any, internal: bool = False) -> None:
         """Initialize the descriptor.
 
         Args:
             default: The default value.
+            internal: Whether the environment variable is reflex internal.
         """
         self.default = default
+        self.internal = internal
 
     def __set_name__(self, owner, name):
         """Set the name of the descriptor.
@@ -354,12 +386,15 @@ class env_var:  # type: ignore
             owner: The owner class.
         """
         type_ = get_args(get_type_hints(owner)[self.name])[0]
-        return EnvVar[type_](name=self.name, default=self.default, type_=type_)
+        name = self.name
+        if self.internal:
+            name = f"__{name}"
+        return EnvVar(name=self.name, default=self.default, type_=type_)
 
 
 if TYPE_CHECKING:
 
-    def env_var(default) -> EnvVar:
+    def env_var(default, internal=False) -> EnvVar:
         """Typing helper for the env_var descriptor."""
         return default
 
@@ -430,9 +465,6 @@ class EnvironmentVariables:
         constants.Templates.REFLEX_BUILD_BACKEND
     )
 
-    # If this env var is set to "yes", App.compile will be a no-op
-    REFLEX_SKIP_COMPILE: EnvVar[bool] = env_var(False)
-
     # This env var stores the execution mode of the app
     REFLEX_ENV_MODE: EnvVar[constants.Env] = env_var(constants.Env.DEV)
 
@@ -444,6 +476,12 @@ class EnvironmentVariables:
 
     # Whether to send telemetry data to Reflex.
     TELEMETRY_ENABLED: EnvVar[bool] = env_var(True)
+
+    # Reflex internal env to reload the config.
+    RELOAD_CONFIG: EnvVar[bool] = env_var(False, internal=True)
+
+    # If this env var is set to "yes", App.compile will be a no-op
+    REFLEX_SKIP_COMPILE: EnvVar[bool] = env_var(False, internal=True)
 
 
 environment = EnvironmentVariables()

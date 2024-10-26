@@ -491,9 +491,5 @@ def is_prod_mode() -> bool:
     Returns:
         True if the app is running in production mode or False if running in dev mode.
     """
-    current_mode = os.environ.get(
-        environment.REFLEX_ENV_MODE.get,
-        constants.Env.DEV.value,
-    )
     current_mode = environment.REFLEX_ENV_MODE.get
-    return current_mode == constants.Env.PROD.value
+    return current_mode == constants.Env.PROD

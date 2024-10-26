@@ -31,7 +31,7 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
     """
     from reflex.utils.exceptions import VarNameError
 
-    reload = os.getenv(constants.RELOAD_CONFIG) == "True"
+    reload = os.getenv("RELOAD_CONFIG") == "True"
     for base in bases:
         try:
             if not reload and getattr(base, field_name, None):
