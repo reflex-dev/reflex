@@ -151,31 +151,41 @@ class VarData:
         """
         return dict((k, list(v)) for k, v in self.imports)
 
-    @classmethod
-    def merge(cls, *others: VarData | None) -> VarData | None:
+    def merge(*all: VarData | None) -> VarData | None:
         """Merge multiple var data objects.
 
         Args:
-            *others: The var data objects to merge.
+            *all: The var data objects to merge.
 
         Returns:
             The merged var data object.
+
+        # noqa: DAR102 *all
         """
-        state = ""
-        field_name = ""
-        _imports = {}
-        hooks = {}
-        for var_data in others:
-            if var_data is None:
-                continue
-            state = state or var_data.state
-            field_name = field_name or var_data.field_name
-            _imports = imports.merge_imports(_imports, var_data.imports)
-            hooks.update(
-                var_data.hooks
-                if isinstance(var_data.hooks, dict)
-                else {k: None for k in var_data.hooks}
-            )
+        all_var_datas = list(filter(None, all))
+
+        if not all_var_datas:
+            return None
+
+        if len(all_var_datas) == 1:
+            return all_var_datas[0]
+
+        # Get the first non-empty field name or default to empty string.
+        field_name = next(
+            (var_data.field_name for var_data in all_var_datas if var_data.field_name),
+            "",
+        )
+
+        # Get the first non-empty state or default to empty string.
+        state = next(
+            (var_data.state for var_data in all_var_datas if var_data.state), ""
+        )
+
+        hooks = {hook: None for var_data in all_var_datas for hook in var_data.hooks}
+
+        _imports = imports.merge_imports(
+            *(var_data.imports for var_data in all_var_datas)
+        )
 
         if state or _imports or hooks or field_name:
             return VarData(
@@ -184,6 +194,7 @@ class VarData:
                 imports=_imports,
                 hooks=hooks,
             )
+
         return None
 
     def __bool__(self) -> bool:
@@ -217,7 +228,7 @@ class VarData:
                 ): None
             },
             imports={
-                f"/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="StateContexts")],
+                f"$/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="StateContexts")],
                 "react": [ImportVar(tag="useContext")],
             },
         )
@@ -956,7 +967,7 @@ class Var(Generic[VAR_TYPE]):
             _js_expr="refs",
             _var_data=VarData(
                 imports={
-                    f"/{constants.Dirs.STATE_PATH}": [imports.ImportVar(tag="refs")]
+                    f"$/{constants.Dirs.STATE_PATH}": [imports.ImportVar(tag="refs")]
                 }
             ),
         ).to(ObjectVar, Dict[str, str])
@@ -2530,7 +2541,7 @@ def get_uuid_string_var() -> Var:
     unique_uuid_var = get_unique_variable_name()
     unique_uuid_var_data = VarData(
         imports={
-            f"/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")},  # type: ignore
+            f"$/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")},  # type: ignore
             "react": "useMemo",
         },
         hooks={f"const {unique_uuid_var} = useMemo(generateUUID, [])": None},

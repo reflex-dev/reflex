@@ -252,7 +252,7 @@ class AppHarness:
         # disable telemetry reporting for tests
         from reflex.config import environment
 
-        environment.TELEMETRY_ENABLED = False
+        environment.TELEMETRY_ENABLED.set(False)
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
             app_globals = self._get_globals_from_signature(self.app_source)

@@ -38,7 +38,7 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     url = url or conf.db_url
     if url is None:
         raise ValueError("No database url configured")
-    if environment.ALEMBIC_CONFIG.get.exists():
+    if not environment.ALEMBIC_CONFIG.get.exists():
         console.warn(
             "Database is not initialized, run [bold]reflex db init[/bold] first."
         )

@@ -29,7 +29,7 @@ DEFAULT_UPLOAD_ID: str = "default"
 upload_files_context_var_data: VarData = VarData(
     imports={
         "react": "useContext",
-        f"/{Dirs.CONTEXTS_PATH}": "UploadFilesContext",
+        f"$/{Dirs.CONTEXTS_PATH}": "UploadFilesContext",
     },
     hooks={
         "const [filesById, setFilesById] = useContext(UploadFilesContext);": None,
@@ -134,8 +134,8 @@ uploaded_files_url_prefix = Var(
     _js_expr="getBackendURL(env.UPLOAD)",
     _var_data=VarData(
         imports={
-            f"/{Dirs.STATE_PATH}": "getBackendURL",
-            "/env.json": ImportVar(tag="env", is_default=True),
+            f"$/{Dirs.STATE_PATH}": "getBackendURL",
+            "$/env.json": ImportVar(tag="env", is_default=True),
         }
     ),
 ).to(str)
@@ -170,7 +170,7 @@ def _on_drop_spec(files: Var) -> Tuple[Var[Any]]:
 class UploadFilesProvider(Component):
     """AppWrap component that provides a dict of selected files by ID via useContext."""
 
-    library = f"/{Dirs.CONTEXTS_PATH}"
+    library = f"$/{Dirs.CONTEXTS_PATH}"
     tag = "UploadFilesProvider"
 
 

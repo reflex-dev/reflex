@@ -442,6 +442,12 @@ class EnvironmentVariables:
     # Whether to run the frontend only. Exclusive with REFLEX_BACKEND_ONLY.
     REFLEX_FRONTEND_ONLY: EnvVar[bool] = env_var(False)
 
+    # Whether to send telemetry data to Reflex.
+    TELEMETRY_ENABLED: EnvVar[bool] = env_var(True)
+
+
+environment = EnvironmentVariables()
+
 
 class Config(Base):
     """The config defines runtime settings for the app.
@@ -602,10 +608,15 @@ class Config(Base):
             The updated config values.
         """
         if self.env_file:
-            from dotenv import load_dotenv
+            try:
+                from dotenv import load_dotenv  # type: ignore
 
-            # load env file if exists
-            load_dotenv(self.env_file, override=True)
+                # load env file if exists
+                load_dotenv(self.env_file, override=True)
+            except ImportError:
+                console.error(
+                    """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
+                )
 
         updated_values = {}
         # Iterate over the fields.
