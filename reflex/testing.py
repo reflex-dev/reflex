@@ -43,6 +43,7 @@ import reflex.utils.exec
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
+from reflex.config import environment
 from reflex.state import (
     BaseState,
     StateManager,
@@ -250,7 +251,6 @@ class AppHarness:
 
     def _initialize_app(self):
         # disable telemetry reporting for tests
-        from reflex.config import environment
 
         environment.TELEMETRY_ENABLED.set(False)
         self.app_path.mkdir(parents=True, exist_ok=True)
@@ -944,8 +944,6 @@ class AppHarnessProd(AppHarness):
             raise RuntimeError("Frontend did not start")
 
     def _start_backend(self):
-        from reflex.config import environment
-
         if self.app_instance is None:
             raise RuntimeError("App was not initialized.")
         environment.REFLEX_SKIP_COMPILE.set(True)
