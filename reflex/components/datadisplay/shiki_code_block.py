@@ -254,6 +254,7 @@ LiteralCodeLanguage = Literal[
     "pascal",
     "perl",
     "php",
+    "plain",
     "plsql",
     "po",
     "postcss",
@@ -370,10 +371,11 @@ LiteralCodeTheme = Literal[
     "nord",
     "one-dark-pro",
     "one-light",
-    "plain",
     "plastic",
     "poimandres",
     "red",
+    # rose-pine themes dont work with the current version of shikijs transformers
+    # https://github.com/shikijs/shiki/issues/730
     "rose-pine",
     "rose-pine-dawn",
     "rose-pine-moon",
