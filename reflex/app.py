@@ -900,6 +900,18 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         all_imports = {}
         custom_components = set()
 
+        # This has to happen before compiling stateful components as that
+        # prevents recursive functions from reaching all components.
+        for component in self.pages.values():
+            # Add component._get_all_imports() to all_imports.
+            all_imports.update(component._get_all_imports())
+
+            # Add the app wrappers from this component.
+            app_wrappers.update(component._get_all_app_wrap_components())
+
+            # Add the custom components from the page to the set.
+            custom_components |= component._get_all_custom_components()
+
         # Perform auto-memoization of stateful components.
         (
             stateful_components_path,
@@ -984,16 +996,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             for future in concurrent.futures.as_completed(result_futures):
                 compile_results.append(future.result())
                 progress.advance(task)
-
-        for component in self.pages.values():
-            # Add component._get_all_imports() to all_imports.
-            all_imports.update(component._get_all_imports())
-
-            # Add the app wrappers from this component.
-            app_wrappers.update(component._get_all_app_wrap_components())
-
-            # Add the custom components from the page to the set.
-            custom_components |= component._get_all_custom_components()
 
         app_root = self._app_root(app_wrappers=app_wrappers)
 
