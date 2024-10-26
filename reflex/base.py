@@ -16,7 +16,6 @@ except ModuleNotFoundError:
         from pydantic.fields import ModelField  # type: ignore
 
 
-from reflex import constants
 
 
 def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None:
