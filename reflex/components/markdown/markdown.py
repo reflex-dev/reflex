@@ -20,6 +20,8 @@ from reflex.components.tags.tag import Tag
 from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import LiteralVar, Var
+from reflex.vars.function import ARRAY_ISARRAY
+from reflex.vars.number import ternary_operation
 
 # Special vars used in the component map.
 _CHILDREN = Var(_js_expr="children", _var_type=str)
@@ -75,7 +77,7 @@ def get_base_component_map() -> dict[str, Callable]:
 class Markdown(Component):
     """A markdown component."""
 
-    library = "react-markdown@9.0.1"
+    library = "react-markdown@8.0.7"
 
     tag = "ReactMarkdown"
 
@@ -157,19 +159,19 @@ class Markdown(Component):
         return [
             {
                 "": "katex/dist/katex.min.css",
-                "remark-math@6.0.0": ImportVar(
+                "remark-math@5.1.1": ImportVar(
                     tag=_REMARK_MATH._js_expr, is_default=True
                 ),
-                "remark-gfm@4.0.0": ImportVar(
+                "remark-gfm@3.0.1": ImportVar(
                     tag=_REMARK_GFM._js_expr, is_default=True
                 ),
                 "remark-unwrap-images@4.0.0": ImportVar(
                     tag=_REMARK_UNWRAP_IMAGES._js_expr, is_default=True
                 ),
-                "rehype-katex@7.0.1": ImportVar(
+                "rehype-katex@6.0.3": ImportVar(
                     tag=_REHYPE_KATEX._js_expr, is_default=True
                 ),
-                "rehype-raw@7.0.0": ImportVar(
+                "rehype-raw@6.1.1": ImportVar(
                     tag=_REHYPE_RAW._js_expr, is_default=True
                 ),
             },
@@ -199,7 +201,16 @@ class Markdown(Component):
             raise ValueError(f"No markdown component found for tag: {tag}.")
 
         special_props = [_PROPS_IN_TAG]
-        children = [_CHILDREN]
+        children = [
+            _CHILDREN
+            if tag != "codeblock"
+            # For codeblock, the mapping for some cases returns an array of elements. Let's join them into a string.
+            else ternary_operation(
+                ARRAY_ISARRAY.call(_CHILDREN),  # type: ignore
+                _CHILDREN.to(list).join("\n"),
+                _CHILDREN,
+            ).to(str)
+        ]
 
         # For certain tags, the props from the markdown renderer are not actually valid for the component.
         if tag in NO_PROPS_TAGS:

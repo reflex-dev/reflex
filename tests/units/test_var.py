@@ -1,5 +1,6 @@
 import json
 import math
+import sys
 import typing
 from typing import Dict, List, Optional, Set, Tuple, Union, cast
 
@@ -398,6 +399,44 @@ def test_list_tuple_contains(var, expected):
     assert str(var.contains(other_var)) == f"{expected}.includes(other)"
 
 
+class Foo(rx.Base):
+    """Foo class."""
+
+    bar: int
+    baz: str
+
+
+class Bar(rx.Base):
+    """Bar class."""
+
+    bar: str
+    baz: str
+    foo: int
+
+
+@pytest.mark.parametrize(
+    ("var", "var_type"),
+    (
+        [
+            (Var(_js_expr="", _var_type=Foo | Bar).guess_type(), Foo | Bar),
+            (Var(_js_expr="", _var_type=Foo | Bar).guess_type().bar, Union[int, str]),
+        ]
+        if sys.version_info >= (3, 10)
+        else []
+    )
+    + [
+        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type(), Union[Foo, Bar]),
+        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().baz, str),
+        (
+            Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().foo,
+            Union[int, None],
+        ),
+    ],
+)
+def test_var_types(var, var_type):
+    assert var._var_type == var_type
+
+
 @pytest.mark.parametrize(
     "var, expected",
     [
@@ -480,8 +519,8 @@ def test_var_indexing_types(var, type_):
         type_ : The type on indexed object.
 
     """
-    assert var[2]._var_type == type_[0]
-    assert var[3]._var_type == type_[1]
+    assert var[0]._var_type == type_[0]
+    assert var[1]._var_type == type_[1]
 
 
 def test_var_indexing_str():
@@ -1809,3 +1848,6 @@ def test_to_string_operation():
 
     assert cast(Var, TestState.email)._var_type == Email
     assert cast(Var, TestState.optional_email)._var_type == Optional[Email]
+
+    single_var = Var.create(Email())
+    assert single_var._var_type == Email

@@ -15,7 +15,7 @@ from urllib.parse import urljoin
 import psutil
 
 from reflex import constants
-from reflex.config import get_config
+from reflex.config import environment, get_config
 from reflex.constants.base import LogLevel
 from reflex.utils import console, path_ops
 from reflex.utils.prerequisites import get_web_dir
@@ -184,7 +184,7 @@ def should_use_granian():
     Returns:
         True if Granian should be used.
     """
-    return os.getenv("REFLEX_USE_GRANIAN", "0") == "1"
+    return environment.REFLEX_USE_GRANIAN
 
 
 def get_app_module():
@@ -337,8 +337,8 @@ def run_uvicorn_backend_prod(host, port, loglevel):
 
     app_module = get_app_module()
 
-    RUN_BACKEND_PROD = f"gunicorn --worker-class {config.gunicorn_worker_class} --preload --timeout {config.timeout} --log-level critical".split()
-    RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {config.timeout}".split()
+    RUN_BACKEND_PROD = f"gunicorn --worker-class {config.gunicorn_worker_class} --max-requests {config.gunicorn_max_requests} --max-requests-jitter {config.gunicorn_max_requests_jitter} --preload --timeout {config.timeout} --log-level critical".split()
+    RUN_BACKEND_PROD_WINDOWS = f"uvicorn --limit-max-requests {config.gunicorn_max_requests} --timeout-keep-alive {config.timeout}".split()
     command = (
         [
             *RUN_BACKEND_PROD_WINDOWS,
@@ -494,6 +494,24 @@ def is_prod_mode() -> bool:
         constants.Env.DEV.value,
     )
     return current_mode == constants.Env.PROD.value
+
+
+def is_frontend_only() -> bool:
+    """Check if the app is running in frontend-only mode.
+
+    Returns:
+        True if the app is running in frontend-only mode.
+    """
+    return os.environ.get(constants.ENV_FRONTEND_ONLY_ENV_VAR, "").lower() == "true"
+
+
+def is_backend_only() -> bool:
+    """Check if the app is running in backend-only mode.
+
+    Returns:
+        True if the app is running in backend-only mode.
+    """
+    return os.environ.get(constants.ENV_BACKEND_ONLY_ENV_VAR, "").lower() == "true"
 
 
 def should_skip_compile() -> bool:

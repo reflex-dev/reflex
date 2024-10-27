@@ -89,6 +89,8 @@ from reflex.utils import (
     lazy_loader,
 )
 
+from .event import event as event
+
 # import this here explicitly to avoid returning the page module since page attr has the
 # same name as page module(page.py)
 from .page import page as page
@@ -318,15 +320,18 @@ _MAPPING: dict = {
         "upload_files",
         "window_alert",
     ],
+    "istate.storage": [
+        "Cookie",
+        "LocalStorage",
+        "SessionStorage",
+    ],
     "middleware": ["middleware", "Middleware"],
     "model": ["session", "Model"],
     "state": [
         "var",
-        "Cookie",
-        "LocalStorage",
-        "SessionStorage",
         "ComponentState",
         "State",
+        "dynamic",
     ],
     "style": ["Style", "toggle_color_mode"],
     "utils.imports": ["ImportVar"],
@@ -336,7 +341,6 @@ _MAPPING: dict = {
 
 _SUBMODULES: set[str] = {
     "components",
-    "event",
     "app",
     "style",
     "admin",

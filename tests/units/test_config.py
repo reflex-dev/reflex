@@ -1,10 +1,13 @@
 import multiprocessing
 import os
+from pathlib import Path
+from typing import Any, Dict
 
 import pytest
 
 import reflex as rx
 import reflex.config
+from reflex.config import environment
 from reflex.constants import Endpoint
 
 
@@ -41,7 +44,12 @@ def test_set_app_name(base_config_values):
         ("TELEMETRY_ENABLED", True),
     ],
 )
-def test_update_from_env(base_config_values, monkeypatch, env_var, value):
+def test_update_from_env(
+    base_config_values: Dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    env_var: str,
+    value: Any,
+):
     """Test that environment variables override config values.
 
     Args:
@@ -54,6 +62,29 @@ def test_update_from_env(base_config_values, monkeypatch, env_var, value):
     assert os.environ.get(env_var) == str(value)
     config = rx.Config(**base_config_values)
     assert getattr(config, env_var.lower()) == value
+
+
+def test_update_from_env_path(
+    base_config_values: Dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+):
+    """Test that environment variables override config values.
+
+    Args:
+        base_config_values: Config values.
+        monkeypatch: The pytest monkeypatch object.
+        tmp_path: The pytest tmp_path fixture object.
+    """
+    monkeypatch.setenv("BUN_PATH", "/test")
+    assert os.environ.get("BUN_PATH") == "/test"
+    with pytest.raises(ValueError):
+        rx.Config(**base_config_values)
+
+    monkeypatch.setenv("BUN_PATH", str(tmp_path))
+    assert os.environ.get("BUN_PATH") == str(tmp_path)
+    config = rx.Config(**base_config_values)
+    assert config.bun_path == tmp_path
 
 
 @pytest.mark.parametrize(
@@ -178,7 +209,7 @@ def test_replace_defaults(
 
 
 def reflex_dir_constant():
-    return rx.constants.Reflex.DIR
+    return environment.REFLEX_DIR
 
 
 def test_reflex_dir_env_var(monkeypatch, tmp_path):

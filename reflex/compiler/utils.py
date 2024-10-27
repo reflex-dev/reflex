@@ -28,7 +28,8 @@ from reflex.components.base import (
     Title,
 )
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.state import BaseState, Cookie, LocalStorage, SessionStorage
+from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
+from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
 from reflex.utils.imports import ImportVar, ParsedImportDict
@@ -82,6 +83,12 @@ def validate_imports(import_dict: ParsedImportDict):
                 f"{_import.tag}/{_import.alias}" if _import.alias else _import.tag
             )
             if import_name in used_tags:
+                already_imported = used_tags[import_name]
+                if (already_imported[0] == "$" and already_imported[1:] == lib) or (
+                    lib[0] == "$" and lib[1:] == already_imported
+                ):
+                    used_tags[import_name] = lib if lib[0] == "$" else already_imported
+                    continue
                 raise ValueError(
                     f"Can not compile, the tag {import_name} is used multiple time from {lib} and {used_tags[import_name]}"
                 )

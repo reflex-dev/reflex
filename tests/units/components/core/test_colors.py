@@ -14,6 +14,7 @@ class ColorState(rx.State):
     color: str = "mint"
     color_part: str = "tom"
     shade: int = 4
+    alpha: bool = False
 
 
 color_state_name = ColorState.get_full_name().replace(".", "__")
@@ -31,7 +32,14 @@ def create_color_var(color):
         (create_color_var(rx.color("mint", 3, True)), '"var(--mint-a3)"', Color),
         (
             create_color_var(rx.color(ColorState.color, ColorState.shade)),  # type: ignore
-            f'("var(--"+{str(color_state_name)}.color+"-"+{str(color_state_name)}.shade+")")',
+            f'("var(--"+{str(color_state_name)}.color+"-"+(((__to_string) => __to_string.toString())({str(color_state_name)}.shade))+")")',
+            Color,
+        ),
+        (
+            create_color_var(
+                rx.color(ColorState.color, ColorState.shade, ColorState.alpha)  # type: ignore
+            ),
+            f'("var(--"+{str(color_state_name)}.color+"-"+({str(color_state_name)}.alpha ? "a" : "")+(((__to_string) => __to_string.toString())({str(color_state_name)}.shade))+")")',
             Color,
         ),
         (
@@ -43,7 +51,7 @@ def create_color_var(color):
             create_color_var(
                 rx.color(f"{ColorState.color_part}ato", f"{ColorState.shade}")  # type: ignore
             ),
-            f'("var(--"+{str(color_state_name)}.color_part+"ato-"+{str(color_state_name)}.shade+")")',
+            f'("var(--"+({str(color_state_name)}.color_part+"ato")+"-"+{str(color_state_name)}.shade+")")',
             Color,
         ),
         (

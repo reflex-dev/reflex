@@ -8,8 +8,8 @@ import copy
 import dataclasses
 import functools
 import inspect
-import os
 import pickle
+import sys
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -30,6 +30,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypeVar,
     Union,
     cast,
     get_args,
@@ -39,8 +40,12 @@ from typing import (
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
+from reflex import event
 from reflex.config import get_config
 from reflex.istate.data import RouterData
+from reflex.istate.storage import (
+    ClientStorageBase,
+)
 from reflex.vars.base import (
     ComputedVar,
     DynamicRouteVar,
@@ -60,8 +65,10 @@ import wrapt
 from redis.asyncio import Redis
 from redis.exceptions import ResponseError
 
+import reflex.istate.dynamic
 from reflex import constants
 from reflex.base import Base
+from reflex.config import environment
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,
@@ -73,9 +80,11 @@ from reflex.utils import console, format, path_ops, prerequisites, types
 from reflex.utils.exceptions import (
     ComputedVarShadowsBaseVars,
     ComputedVarShadowsStateVar,
+    DynamicComponentInvalidSignature,
     DynamicRouteArgShadowsStateVar,
     EventHandlerShadowsBuiltInStateMethod,
     ImmutableStateError,
+    InvalidStateManagerMode,
     LockExpiredError,
     SetUndefinedStateVarError,
     StateSchemaMismatchError,
@@ -211,6 +220,7 @@ class EventHandlerSetVar(EventHandler):
         Raises:
             AttributeError: If the given Var name does not exist on the state.
             EventHandlerValueError: If the given Var name is not a str
+            NotImplementedError: If the setter for the given Var is async
         """
         from reflex.utils.exceptions import EventHandlerValueError
 
@@ -219,11 +229,20 @@ class EventHandlerSetVar(EventHandler):
                 raise EventHandlerValueError(
                     f"Var name must be passed as a string, got {args[0]!r}"
                 )
+
+            handler = getattr(self.state_cls, constants.SETTER_PREFIX + args[0], None)
+
             # Check that the requested Var setter exists on the State at compile time.
-            if getattr(self.state_cls, constants.SETTER_PREFIX + args[0], None) is None:
+            if handler is None:
                 raise AttributeError(
                     f"Variable `{args[0]}` cannot be set on `{self.state_cls.get_full_name()}`"
                 )
+
+            if asyncio.iscoroutinefunction(handler.fn):
+                raise NotImplementedError(
+                    f"Setter for {args[0]} is async, which is not supported."
+                )
+
         return super().__call__(*args)
 
 
@@ -424,6 +443,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if mixin:
             return
 
+        # Handle locally-defined states for pickling.
+        if "<locals>" in cls.__qualname__:
+            cls._handle_local_def()
+
         # Validate the module name.
         cls._validate_module_name()
 
@@ -470,7 +493,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         new_backend_vars.update(
             {
                 name: cls._get_var_default(name, annotation_value)
-                for name, annotation_value in get_type_hints(cls).items()
+                for name, annotation_value in cls._get_type_hints().items()
                 if name not in new_backend_vars
                 and types.is_backend_base_variable(name, cls)
             }
@@ -645,6 +668,39 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 and mixin._mixin is True
             )
         ]
+
+    @classmethod
+    def _handle_local_def(cls):
+        """Handle locally-defined states for pickling."""
+        known_names = dir(reflex.istate.dynamic)
+        proposed_name = cls.__name__
+        for ix in range(len(known_names)):
+            if proposed_name not in known_names:
+                break
+            proposed_name = f"{cls.__name__}_{ix}"
+        setattr(reflex.istate.dynamic, proposed_name, cls)
+        cls.__original_name__ = cls.__name__
+        cls.__original_module__ = cls.__module__
+        cls.__name__ = cls.__qualname__ = proposed_name
+        cls.__module__ = reflex.istate.dynamic.__name__
+
+    @classmethod
+    def _get_type_hints(cls) -> dict[str, Any]:
+        """Get the type hints for this class.
+
+        If the class is dynamic, evaluate the type hints with the original
+        module in the local namespace.
+
+        Returns:
+            The type hints dict.
+        """
+        original_module = getattr(cls, "__original_module__", None)
+        if original_module is not None:
+            localns = sys.modules[original_module].__dict__
+        else:
+            localns = None
+
+        return get_type_hints(cls, localns=localns)
 
     @classmethod
     def _init_var_dependency_dicts(cls):
@@ -1209,7 +1265,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             name not in self.vars
             and name not in self.get_skip_vars()
             and not name.startswith("__")
-            and not name.startswith(f"_{type(self).__name__}__")
+            and not name.startswith(
+                f"_{getattr(type(self), '__original_name__', type(self).__name__)}__"
+            )
         ):
             raise SetUndefinedStateVarError(
                 f"The state variable '{name}' has not been defined in '{type(self).__name__}'. "
@@ -1879,13 +1937,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self.dirty_vars.update(self._always_dirty_computed_vars)
             self._mark_dirty()
 
-        def dictify(value: Any):
-            if dataclasses.is_dataclass(value) and not isinstance(value, type):
-                return dataclasses.asdict(value)
-            return value
-
         base_vars = {
-            prop_name: dictify(self.get_value(getattr(self, prop_name)))
+            prop_name: self.get_value(getattr(self, prop_name))
             for prop_name in self.base_vars
         }
         if initial and include_computed:
@@ -2010,12 +2063,24 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         try:
             return pickle.dumps((self._to_schema(), self))
-        except pickle.PicklingError:
-            console.warn(
+        except (pickle.PicklingError, AttributeError) as og_pickle_error:
+            error = (
                 f"Failed to serialize state {self.get_full_name()} due to unpicklable object. "
-                "This state will not be persisted."
+                "This state will not be persisted. "
             )
-            return b""
+            try:
+                import dill
+
+                return dill.dumps((self._to_schema(), self))
+            except ImportError:
+                error += (
+                    f"Pickle error: {og_pickle_error}. "
+                    "Consider `pip install 'dill>=0.3.8'` for more exotic serialization support."
+                )
+            except (pickle.PicklingError, TypeError, ValueError) as ex:
+                error += f"Dill was also unable to pickle the state: {ex}"
+        console.warn(error)
+        return b""
 
     @classmethod
     def _deserialize(
@@ -2054,10 +2119,56 @@ class State(BaseState):
     is_hydrated: bool = False
 
 
+T = TypeVar("T", bound=BaseState)
+
+
+def dynamic(func: Callable[[T], Component]):
+    """Create a dynamically generated components from a state class.
+
+    Args:
+        func: The function to generate the component.
+
+    Returns:
+        The dynamically generated component.
+
+    Raises:
+        DynamicComponentInvalidSignature: If the function does not have exactly one parameter.
+        DynamicComponentInvalidSignature: If the function does not have a type hint for the state class.
+    """
+    number_of_parameters = len(inspect.signature(func).parameters)
+
+    func_signature = get_type_hints(func)
+
+    if "return" in func_signature:
+        func_signature.pop("return")
+
+    values = list(func_signature.values())
+
+    if number_of_parameters != 1:
+        raise DynamicComponentInvalidSignature(
+            "The function must have exactly one parameter, which is the state class."
+        )
+
+    if len(values) != 1:
+        raise DynamicComponentInvalidSignature(
+            "You must provide a type hint for the state class in the function."
+        )
+
+    state_class: Type[T] = values[0]
+
+    def wrapper() -> Component:
+        from reflex.components.base.fragment import fragment
+
+        return fragment(state_class._evaluate(lambda state: func(state)))
+
+    return wrapper
+
+
 class FrontendEventExceptionState(State):
     """Substate for handling frontend exceptions."""
 
-    def handle_frontend_exception(self, stack: str) -> None:
+    @event
+    def handle_frontend_exception(self, stack: str, component_stack: str) -> None:
         """Handle frontend exceptions.
 
         If a frontend exception handler is provided, it will be called.
@@ -2065,6 +2176,7 @@ class FrontendEventExceptionState(State):
 
         Args:
             stack: The stack trace of the exception.
+            component_stack: The stack trace of the component where the exception occurred.
 
         """
         app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
@@ -2203,10 +2315,13 @@ class ComponentState(State, mixin=True):
         cls._per_component_state_instance_count += 1
         state_cls_name = f"{cls.__name__}_n{cls._per_component_state_instance_count}"
         component_state = type(
-            state_cls_name, (cls, State), {"__module__": __name__}, mixin=False
+            state_cls_name,
+            (cls, State),
+            {"__module__": reflex.istate.dynamic.__name__},
+            mixin=False,
         )
         # Save a reference to the dynamic state for pickle/unpickle.
-        globals()[state_cls_name] = component_state
+        setattr(reflex.istate.dynamic, state_cls_name, component_state)
         component = component_state.get_component(*children, **props)
         component.State = component_state
         return component
@@ -2519,20 +2634,32 @@ class StateManager(Base, ABC):
         Args:
             state: The state class to use.
 
+        Raises:
+            InvalidStateManagerMode: If the state manager mode is invalid.
+
         Returns:
-            The state manager (either memory or redis).
+            The state manager (either disk, memory or redis).
         """
-        redis = prerequisites.get_redis()
-        if redis is not None:
-            # make sure expiration values are obtained only from the config object on creation
-            config = get_config()
-            return StateManagerRedis(
-                state=state,
-                redis=redis,
-                token_expiration=config.redis_token_expiration,
-                lock_expiration=config.redis_lock_expiration,
-            )
-        return StateManagerDisk(state=state)
+        config = get_config()
+        if prerequisites.parse_redis_url() is not None:
+            config.state_manager_mode = constants.StateManagerMode.REDIS
+        if config.state_manager_mode == constants.StateManagerMode.MEMORY:
+            return StateManagerMemory(state=state)
+        if config.state_manager_mode == constants.StateManagerMode.DISK:
+            return StateManagerDisk(state=state)
+        if config.state_manager_mode == constants.StateManagerMode.REDIS:
+            redis = prerequisites.get_redis()
+            if redis is not None:
+                # make sure expiration values are obtained only from the config object on creation
+                return StateManagerRedis(
+                    state=state,
+                    redis=redis,
+                    token_expiration=config.redis_token_expiration,
+                    lock_expiration=config.redis_lock_expiration,
+                )
+        raise InvalidStateManagerMode(
+            f"Expected one of: DISK, MEMORY, REDIS, got {config.state_manager_mode}"
+        )
 
     @abstractmethod
     async def get_state(self, token: str) -> BaseState:
@@ -2790,9 +2917,13 @@ class StateManagerDisk(StateManager):
         for substate in state.get_substates():
             substate_token = _substate_key(client_token, substate)
 
+            fresh_instance = await root_state.get_state(substate)
             instance = await self.load_state(substate_token)
-            if instance is None:
-                instance = await root_state.get_state(substate)
+            if instance is not None:
+                # Ensure all substates exist, even if they weren't serialized previously.
+                instance.substates = fresh_instance.substates
+            else:
+                instance = fresh_instance
             state.substates[substate.get_name()] = instance
             instance.parent_state = state
 
@@ -3222,11 +3353,7 @@ class StateManagerRedis(StateManager):
             )
         except ResponseError:
             # Some redis servers only allow out-of-band configuration, so ignore errors here.
-            ignore_config_error = os.environ.get(
-                "REFLEX_IGNORE_REDIS_CONFIG_ERROR",
-                None,
-            )
-            if not ignore_config_error:
+            if not environment.REFLEX_IGNORE_REDIS_CONFIG_ERROR:
                 raise
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(lock_key_channel)
@@ -3296,143 +3423,6 @@ def get_state_manager() -> StateManager:
     """
     app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
     return app.state_manager
-
-
-class ClientStorageBase:
-    """Base class for client-side storage."""
-
-    def options(self) -> dict[str, Any]:
-        """Get the options for the storage.
-
-        Returns:
-            All set options for the storage (not None).
-        """
-        return {
-            format.to_camel_case(k): v for k, v in vars(self).items() if v is not None
-        }
-
-
-class Cookie(ClientStorageBase, str):
-    """Represents a state Var that is stored as a cookie in the browser."""
-
-    name: str | None
-    path: str
-    max_age: int | None
-    domain: str | None
-    secure: bool | None
-    same_site: str
-
-    def __new__(
-        cls,
-        object: Any = "",
-        encoding: str | None = None,
-        errors: str | None = None,
-        /,
-        name: str | None = None,
-        path: str = "/",
-        max_age: int | None = None,
-        domain: str | None = None,
-        secure: bool | None = None,
-        same_site: str = "lax",
-    ):
-        """Create a client-side Cookie (str).
-
-        Args:
-            object: The initial object.
-            encoding: The encoding to use.
-            errors: The error handling scheme to use.
-            name: The name of the cookie on the client side.
-            path: Cookie path. Use / as the path if the cookie should be accessible on all pages.
-            max_age: Relative max age of the cookie in seconds from when the client receives it.
-            domain: Domain for the cookie (sub.domain.com or .allsubdomains.com).
-            secure: Is the cookie only accessible through HTTPS?
-            same_site: Whether the cookie is sent with third party requests.
-                One of (true|false|none|lax|strict)
-
-        Returns:
-            The client-side Cookie object.
-
-        Note: expires (absolute Date) is not supported at this time.
-        """
-        if encoding or errors:
-            inst = super().__new__(cls, object, encoding or "utf-8", errors or "strict")
-        else:
-            inst = super().__new__(cls, object)
-        inst.name = name
-        inst.path = path
-        inst.max_age = max_age
-        inst.domain = domain
-        inst.secure = secure
-        inst.same_site = same_site
-        return inst
-
-
-class LocalStorage(ClientStorageBase, str):
-    """Represents a state Var that is stored in localStorage in the browser."""
-
-    name: str | None
-    sync: bool = False
-
-    def __new__(
-        cls,
-        object: Any = "",
-        encoding: str | None = None,
-        errors: str | None = None,
-        /,
-        name: str | None = None,
-        sync: bool = False,
-    ) -> "LocalStorage":
-        """Create a client-side localStorage (str).
-
-        Args:
-            object: The initial object.
-            encoding: The encoding to use.
-            errors: The error handling scheme to use.
-            name: The name of the storage key on the client side.
-            sync: Whether changes should be propagated to other tabs.
-
-        Returns:
-            The client-side localStorage object.
-        """
-        if encoding or errors:
-            inst = super().__new__(cls, object, encoding or "utf-8", errors or "strict")
-        else:
-            inst = super().__new__(cls, object)
-        inst.name = name
-        inst.sync = sync
-        return inst
-
-
-class SessionStorage(ClientStorageBase, str):
-    """Represents a state Var that is stored in sessionStorage in the browser."""
-
-    name: str | None
-
-    def __new__(
-        cls,
-        object: Any = "",
-        encoding: str | None = None,
-        errors: str | None = None,
-        /,
-        name: str | None = None,
-    ) -> "SessionStorage":
-        """Create a client-side sessionStorage (str).
-
-        Args:
-            object: The initial object.
-            encoding: The encoding to use.
-            errors: The error handling scheme to use
-            name: The name of the storage on the client side
-
-        Returns:
-            The client-side sessionStorage object.
-        """
-        if encoding or errors:
-            inst = super().__new__(cls, object, encoding or "utf-8", errors or "strict")
-        else:
-            inst = super().__new__(cls, object)
-        inst.name = name
-        return inst
 
 
 class MutableProxy(wrapt.ObjectProxy):
