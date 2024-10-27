@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 from reflex import constants
+from reflex.utils.exec import is_backend_only
 
 
 def asset(
@@ -48,7 +49,7 @@ def asset(
         The relative URL to the asset.
     """
     assets = constants.Dirs.APP_ASSETS
-    backend_only = os.environ.get(constants.ENV_BACKEND_ONLY, "false").lower() == "true"
+    backend_only = is_backend_only()
 
     # Local asset handling
     if not shared:
