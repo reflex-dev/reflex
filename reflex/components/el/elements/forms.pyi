@@ -270,7 +270,7 @@ class Fieldset(Element):
         """
         ...
 
-def on_submit_event_spec() -> Tuple[Var[Dict[str, str]]]: ...
+def on_submit_event_spec() -> Tuple[Var[Dict[str, Any]]]: ...
 
 class Form(BaseHTML):
     @overload
@@ -337,7 +337,7 @@ class Form(BaseHTML):
         on_mouse_over: Optional[EventType[[]]] = None,
         on_mouse_up: Optional[EventType[[]]] = None,
         on_scroll: Optional[EventType[[]]] = None,
-        on_submit: Optional[EventType[Dict[str, str]]] = None,
+        on_submit: Optional[EventType[Dict[str, Any]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,
     ) -> "Form":
