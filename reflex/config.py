@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import dataclasses
+import enum
 import importlib
+import inspect
 import os
 import sys
 import urllib.parse
@@ -221,6 +223,28 @@ def interpret_path_env(value: str, field_name: str) -> Path:
     return path
 
 
+def interpret_enum_env(value: str, field_type: GenericType, field_name: str) -> Any:
+    """Interpret an enum environment variable value.
+
+    Args:
+        value: The environment variable value.
+        field_type: The field type.
+        field_name: The field name.
+
+    Returns:
+        The interpreted value.
+
+    Raises:
+        EnvironmentVarValueError: If the value is invalid.
+    """
+    try:
+        return field_type(value)
+    except ValueError as ve:
+        raise EnvironmentVarValueError(
+            f"Invalid enum value: {value} for {field_name}"
+        ) from ve
+
+
 def interpret_env_var_value(
     value: str, field_type: GenericType, field_name: str
 ) -> Any:
@@ -252,6 +276,8 @@ def interpret_env_var_value(
         return interpret_int_env(value, field_name)
     elif field_type is Path:
         return interpret_path_env(value, field_name)
+    elif inspect.isclass(field_type) and issubclass(field_type, enum.Enum):
+        return interpret_enum_env(value, field_type, field_name)
 
     else:
         raise ValueError(
