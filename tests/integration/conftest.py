@@ -43,7 +43,7 @@ def pytest_exception_interact(node, call, report):
         call: The pytest call describing when/where the test was invoked.
         report: The pytest log report object.
     """
-    screenshot_dir = os.environ.get("SCREENSHOT_DIR")
+    screenshot_dir = environment.SCREENSHOT_DIR.get
     if DISPLAY is None or screenshot_dir is None:
         return
 

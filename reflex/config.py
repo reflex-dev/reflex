@@ -500,6 +500,9 @@ class EnvironmentVariables:
     # Arguments to pass to the app harness driver.
     APP_HARNESS_DRIVER_ARGS: EnvVar[str] = env_var("")
 
+    # Where to save screenshots when tests fail.
+    SCREENSHOT_DIR: EnvVar[Optional[Path]] = env_var(None)
+
 
 environment = EnvironmentVariables()
 
