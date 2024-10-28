@@ -491,6 +491,9 @@ class EnvironmentVariables:
     # If this env var is set to "yes", App.compile will be a no-op
     REFLEX_SKIP_COMPILE: EnvVar[bool] = env_var(False, internal=True)
 
+    # Whether to run app harness tests in headless mode.
+    APP_HARNESS_HEADLESS: EnvVar[bool] = env_var(False)
+
 
 environment = EnvironmentVariables()
 
