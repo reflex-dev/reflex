@@ -23,7 +23,7 @@ LiteralColorMode = Literal["system", "light", "dark"]
 
 # Reference the global ColorModeContext
 color_mode_imports = {
-    f"/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="ColorModeContext")],
+    f"$/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="ColorModeContext")],
     "react": [ImportVar(tag="useContext")],
 }
 

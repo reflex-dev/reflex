@@ -30,6 +30,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypeVar,
     Union,
     cast,
     get_args,
@@ -79,6 +80,7 @@ from reflex.utils import console, format, path_ops, prerequisites, types
 from reflex.utils.exceptions import (
     ComputedVarShadowsBaseVars,
     ComputedVarShadowsStateVar,
+    DynamicComponentInvalidSignature,
     DynamicRouteArgShadowsStateVar,
     EventHandlerShadowsBuiltInStateMethod,
     ImmutableStateError,
@@ -218,6 +220,7 @@ class EventHandlerSetVar(EventHandler):
         Raises:
             AttributeError: If the given Var name does not exist on the state.
             EventHandlerValueError: If the given Var name is not a str
+            NotImplementedError: If the setter for the given Var is async
         """
         from reflex.utils.exceptions import EventHandlerValueError
 
@@ -226,11 +229,20 @@ class EventHandlerSetVar(EventHandler):
                 raise EventHandlerValueError(
                     f"Var name must be passed as a string, got {args[0]!r}"
                 )
+
+            handler = getattr(self.state_cls, constants.SETTER_PREFIX + args[0], None)
+
             # Check that the requested Var setter exists on the State at compile time.
-            if getattr(self.state_cls, constants.SETTER_PREFIX + args[0], None) is None:
+            if handler is None:
                 raise AttributeError(
                     f"Variable `{args[0]}` cannot be set on `{self.state_cls.get_full_name()}`"
                 )
+
+            if asyncio.iscoroutinefunction(handler.fn):
+                raise NotImplementedError(
+                    f"Setter for {args[0]} is async, which is not supported."
+                )
+
         return super().__call__(*args)
 
 
@@ -2051,12 +2063,24 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         try:
             return pickle.dumps((self._to_schema(), self))
-        except pickle.PicklingError:
-            console.warn(
+        except (pickle.PicklingError, AttributeError) as og_pickle_error:
+            error = (
                 f"Failed to serialize state {self.get_full_name()} due to unpicklable object. "
-                "This state will not be persisted."
+                "This state will not be persisted. "
             )
-            return b""
+            try:
+                import dill
+
+                return dill.dumps((self._to_schema(), self))
+            except ImportError:
+                error += (
+                    f"Pickle error: {og_pickle_error}. "
+                    "Consider `pip install 'dill>=0.3.8'` for more exotic serialization support."
+                )
+            except (pickle.PicklingError, TypeError, ValueError) as ex:
+                error += f"Dill was also unable to pickle the state: {ex}"
+        console.warn(error)
+        return b""
 
     @classmethod
     def _deserialize(
@@ -2093,6 +2117,51 @@ class State(BaseState):
 
     # The hydrated bool.
     is_hydrated: bool = False
+
+
+T = TypeVar("T", bound=BaseState)
+
+
+def dynamic(func: Callable[[T], Component]):
+    """Create a dynamically generated components from a state class.
+
+    Args:
+        func: The function to generate the component.
+
+    Returns:
+        The dynamically generated component.
+
+    Raises:
+        DynamicComponentInvalidSignature: If the function does not have exactly one parameter.
+        DynamicComponentInvalidSignature: If the function does not have a type hint for the state class.
+    """
+    number_of_parameters = len(inspect.signature(func).parameters)
+
+    func_signature = get_type_hints(func)
+
+    if "return" in func_signature:
+        func_signature.pop("return")
+
+    values = list(func_signature.values())
+
+    if number_of_parameters != 1:
+        raise DynamicComponentInvalidSignature(
+            "The function must have exactly one parameter, which is the state class."
+        )
+
+    if len(values) != 1:
+        raise DynamicComponentInvalidSignature(
+            "You must provide a type hint for the state class in the function."
+        )
+
+    state_class: Type[T] = values[0]
+
+    def wrapper() -> Component:
+        from reflex.components.base.fragment import fragment
+
+        return fragment(state_class._evaluate(lambda state: func(state)))
+
+    return wrapper
 
 
 class FrontendEventExceptionState(State):
@@ -2848,9 +2917,13 @@ class StateManagerDisk(StateManager):
         for substate in state.get_substates():
             substate_token = _substate_key(client_token, substate)
 
+            fresh_instance = await root_state.get_state(substate)
             instance = await self.load_state(substate_token)
-            if instance is None:
-                instance = await root_state.get_state(substate)
+            if instance is not None:
+                # Ensure all substates exist, even if they weren't serialized previously.
+                instance.substates = fresh_instance.substates
+            else:
+                instance = fresh_instance
             state.substates[substate.get_name()] = instance
             instance.parent_state = state
 

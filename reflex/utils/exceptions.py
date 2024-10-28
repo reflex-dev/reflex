@@ -143,3 +143,7 @@ class StateSchemaMismatchError(ReflexError, TypeError):
 
 class EnvironmentVarValueError(ReflexError, ValueError):
     """Raised when an environment variable is set to an invalid value."""
+
+
+class DynamicComponentInvalidSignature(ReflexError, TypeError):
+    """Raised when a dynamic component has an invalid signature."""

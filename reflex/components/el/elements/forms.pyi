@@ -1376,10 +1376,10 @@ class Textarea(BaseHTML):
         on_unmount: Optional[EventType[[]]] = None,
         **props,
     ) -> "Textarea":
-        """Create the component.
+        """Create a textarea component.
 
         Args:
-            *children: The children of the component.
+            *children: The children of the textarea.
             auto_complete: Whether the form control should have autocomplete enabled
             auto_focus: Automatically focuses the textarea when the page loads
             auto_height: Automatically fit the content height to the text (use min-height with this prop)
@@ -1419,10 +1419,13 @@ class Textarea(BaseHTML):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: The properties of the textarea.
 
         Returns:
-            The component.
+            The textarea component.
+
+        Raises:
+            ValueError: when `enter_key_submit` is combined with `on_key_down`.
         """
         ...
 

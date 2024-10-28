@@ -35,7 +35,6 @@ ColorType = Literal[
     "amber",
     "gold",
     "bronze",
-    "gray",
     "accent",
     "black",
     "white",

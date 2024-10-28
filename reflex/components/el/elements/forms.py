@@ -187,7 +187,7 @@ class Form(BaseHTML):
         """
         return {
             "react": "useCallback",
-            f"/{Dirs.STATE_PATH}": ["getRefValue", "getRefValues"],
+            f"$/{Dirs.STATE_PATH}": ["getRefValue", "getRefValues"],
         }
 
     def add_hooks(self) -> list[str]:
@@ -615,6 +615,42 @@ class Textarea(BaseHTML):
     # Fired when a key is released
     on_key_up: EventHandler[key_event]
 
+    @classmethod
+    def create(cls, *children, **props):
+        """Create a textarea component.
+
+        Args:
+            *children: The children of the textarea.
+            **props: The properties of the textarea.
+
+        Returns:
+            The textarea component.
+
+        Raises:
+            ValueError: when `enter_key_submit` is combined with `on_key_down`.
+        """
+        enter_key_submit = props.get("enter_key_submit")
+        auto_height = props.get("auto_height")
+        custom_attrs = props.setdefault("custom_attrs", {})
+
+        if enter_key_submit is not None:
+            enter_key_submit = Var.create(enter_key_submit)
+            if "on_key_down" in props:
+                raise ValueError(
+                    "Cannot combine `enter_key_submit` with `on_key_down`.",
+                )
+            custom_attrs["on_key_down"] = Var(
+                _js_expr=f"(e) => enterKeySubmitOnKeyDown(e, {str(enter_key_submit)})",
+                _var_data=VarData.merge(enter_key_submit._get_all_var_data()),
+            )
+        if auto_height is not None:
+            auto_height = Var.create(auto_height)
+            custom_attrs["on_input"] = Var(
+                _js_expr=f"(e) => autoHeightOnInput(e, {str(auto_height)})",
+                _var_data=VarData.merge(auto_height._get_all_var_data()),
+            )
+        return super().create(*children, **props)
+
     def _exclude_props(self) -> list[str]:
         return super()._exclude_props() + [
             "auto_height",
@@ -633,28 +669,6 @@ class Textarea(BaseHTML):
         if self.enter_key_submit is not None:
             custom_code.add(ENTER_KEY_SUBMIT_JS)
         return custom_code
-
-    def _render(self) -> Tag:
-        tag = super()._render()
-        if self.enter_key_submit is not None:
-            if "on_key_down" in self.event_triggers:
-                raise ValueError(
-                    "Cannot combine `enter_key_submit` with `on_key_down`.",
-                )
-            tag.add_props(
-                on_key_down=Var(
-                    _js_expr=f"(e) => enterKeySubmitOnKeyDown(e, {str(self.enter_key_submit)})",
-                    _var_data=VarData.merge(self.enter_key_submit._get_all_var_data()),
-                )
-            )
-        if self.auto_height is not None:
-            tag.add_props(
-                on_input=Var(
-                    _js_expr=f"(e) => autoHeightOnInput(e, {str(self.auto_height)})",
-                    _var_data=VarData.merge(self.auto_height._get_all_var_data()),
-                )
-            )
-        return tag
 
 
 button = Button.create

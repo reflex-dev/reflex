@@ -394,7 +394,9 @@ class CallableEventSpec(EventSpec):
 class EventChain(EventActionsMixin):
     """Container for a chain of events that will be executed in order."""
 
-    events: List[Union[EventSpec, EventVar]] = dataclasses.field(default_factory=list)
+    events: Sequence[Union[EventSpec, EventVar, EventCallback]] = dataclasses.field(
+        default_factory=list
+    )
 
     args_spec: Optional[Union[Callable, Sequence[Callable]]] = dataclasses.field(
         default=None
@@ -1540,13 +1542,8 @@ class LiteralEventChainVar(ArgsFunctionOperation, LiteralVar, EventChainVar):
         )
 
 
-G = ParamSpec("G")
-
-IndividualEventType = Union[EventSpec, EventHandler, Callable[G, Any], Var[Any]]
-
-EventType = Union[IndividualEventType[G], List[IndividualEventType[G]]]
-
 P = ParamSpec("P")
+Q = ParamSpec("Q")
 T = TypeVar("T")
 V = TypeVar("V")
 V2 = TypeVar("V2")
@@ -1568,55 +1565,73 @@ if sys.version_info >= (3, 10):
             """
             self.func = func
 
+        @property
+        def prevent_default(self):
+            """Prevent default behavior.
+
+            Returns:
+                The event callback with prevent default behavior.
+            """
+            return self
+
+        @property
+        def stop_propagation(self):
+            """Stop event propagation.
+
+            Returns:
+                The event callback with stop propagation behavior.
+            """
+            return self
+
         @overload
-        def __get__(
-            self: EventCallback[[V], T], instance: None, owner
-        ) -> Callable[[Union[Var[V], V]], EventSpec]: ...
+        def __call__(
+            self: EventCallback[Concatenate[V, Q], T], value: V | Var[V]
+        ) -> EventCallback[Q, T]: ...
+
+        @overload
+        def __call__(
+            self: EventCallback[Concatenate[V, V2, Q], T],
+            value: V | Var[V],
+            value2: V2 | Var[V2],
+        ) -> EventCallback[Q, T]: ...
+
+        @overload
+        def __call__(
+            self: EventCallback[Concatenate[V, V2, V3, Q], T],
+            value: V | Var[V],
+            value2: V2 | Var[V2],
+            value3: V3 | Var[V3],
+        ) -> EventCallback[Q, T]: ...
+
+        @overload
+        def __call__(
+            self: EventCallback[Concatenate[V, V2, V3, V4, Q], T],
+            value: V | Var[V],
+            value2: V2 | Var[V2],
+            value3: V3 | Var[V3],
+            value4: V4 | Var[V4],
+        ) -> EventCallback[Q, T]: ...
+
+        def __call__(self, *values) -> EventCallback:  # type: ignore
+            """Call the function with the values.
+
+            Args:
+                *values: The values to call the function with.
+
+            Returns:
+                The function with the values.
+            """
+            return self.func(*values)  # type: ignore
 
         @overload
         def __get__(
-            self: EventCallback[[V, V2], T], instance: None, owner
-        ) -> Callable[[Union[Var[V], V], Union[Var[V2], V2]], EventSpec]: ...
-
-        @overload
-        def __get__(
-            self: EventCallback[[V, V2, V3], T], instance: None, owner
-        ) -> Callable[
-            [Union[Var[V], V], Union[Var[V2], V2], Union[Var[V3], V3]],
-            EventSpec,
-        ]: ...
-
-        @overload
-        def __get__(
-            self: EventCallback[[V, V2, V3, V4], T], instance: None, owner
-        ) -> Callable[
-            [
-                Union[Var[V], V],
-                Union[Var[V2], V2],
-                Union[Var[V3], V3],
-                Union[Var[V4], V4],
-            ],
-            EventSpec,
-        ]: ...
-
-        @overload
-        def __get__(
-            self: EventCallback[[V, V2, V3, V4, V5], T], instance: None, owner
-        ) -> Callable[
-            [
-                Union[Var[V], V],
-                Union[Var[V2], V2],
-                Union[Var[V3], V3],
-                Union[Var[V4], V4],
-                Union[Var[V5], V5],
-            ],
-            EventSpec,
-        ]: ...
+            self: EventCallback[P, T], instance: None, owner
+        ) -> EventCallback[P, T]: ...
 
         @overload
         def __get__(self, instance, owner) -> Callable[P, T]: ...
 
-        def __get__(self, instance, owner) -> Callable:
+        def __get__(self, instance, owner) -> Callable:  # type: ignore
             """Get the function with the instance bound to it.
 
             Args:
@@ -1643,6 +1658,9 @@ if sys.version_info >= (3, 10):
         return func  # type: ignore
 else:
 
+    class EventCallback(Generic[P, T]):
+        """A descriptor that wraps a function to be used as an event."""
+
     def event_handler(func: Callable[P, T]) -> Callable[P, T]:
         """Wrap a function to be used as an event.
 
@@ -1653,6 +1671,17 @@ else:
             The wrapped function.
         """
         return func
+
+
+G = ParamSpec("G")
+
+IndividualEventType = Union[
+    EventSpec, EventHandler, Callable[G, Any], EventCallback[G, Any], Var[Any]
+]
+
+ItemOrList = Union[V, List[V]]
+
+EventType = ItemOrList[IndividualEventType[G]]
 
 
 class EventNamespace(types.SimpleNamespace):
