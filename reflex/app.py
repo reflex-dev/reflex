@@ -504,7 +504,10 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         # Check if the route given is valid
         verify_route_validity(route)
 
-        if route in self.unevaluated_pages and environment.RELOAD_CONFIG.get:
+        # TODO: this was broken?
+        if route in self.unevaluated_pages and (
+            environment.RELOAD_CONFIG.get in [True, False]
+        ):
             # when the app is reloaded(typically for app harness tests), we should maintain
             # the latest render function of a route.This applies typically to decorated pages
             # since they are only added when app._compile is called.
