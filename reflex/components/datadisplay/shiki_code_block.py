@@ -589,7 +589,12 @@ class ShikiCodeBlock(Component):
             )
 
         # cast decorations into ShikiDecorations.
-        decorations = [ShikiDecorations(**decoration) for decoration in decorations]
+        decorations = [
+            ShikiDecorations(**decoration)
+            if not isinstance(decoration, ShikiDecorations)
+            else decoration
+            for decoration in decorations
+        ]
         code_block_props["decorations"] = decorations
 
         code_block_props["code"] = children[0]
