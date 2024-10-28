@@ -318,7 +318,7 @@ class EnvVar(Generic[T]):
         self.type_ = type_
 
     @property
-    def getenv(self) -> Any:
+    def getenv(self) -> Optional[str]:
         """Get the environment variable from os.environ.
 
         Returns:

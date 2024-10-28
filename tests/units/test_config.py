@@ -8,6 +8,8 @@ import pytest
 import reflex as rx
 import reflex.config
 from reflex.config import (
+    EnvVar,
+    env_var,
     environment,
     interpret_boolean_env,
     interpret_enum_env,
@@ -243,3 +245,26 @@ def test_interpret_int_env() -> None:
 @pytest.mark.parametrize("value, expected", [("true", True), ("false", False)])
 def test_interpret_bool_env(value: str, expected: bool) -> None:
     assert interpret_boolean_env(value, "TELEMETRY_ENABLED") == expected
+
+
+def test_env_var():
+    class TestEnv:
+        BLUBB: EnvVar[str] = env_var("default")
+        INTERNAL: EnvVar[str] = env_var("default", internal=True)
+
+    assert TestEnv.BLUBB.get == "default"
+    assert TestEnv.BLUBB.name == "BLUBB"
+    TestEnv.BLUBB.set("new")
+    assert os.environ.get("BLUBB") == "new"
+    assert TestEnv.BLUBB.get == "new"
+    TestEnv.BLUBB.set(None)
+    assert "BLUBB" not in os.environ
+
+    assert TestEnv.INTERNAL.get == "default"
+    assert TestEnv.INTERNAL.name == "__INTERNAL"
+    TestEnv.INTERNAL.set("new")
+    assert os.environ.get("__INTERNAL") == "new"
+    assert TestEnv.INTERNAL.get == "new"
+    assert TestEnv.INTERNAL.getenv == "new"
+    TestEnv.INTERNAL.set(None)
+    assert "__INTERNAL" not in os.environ
