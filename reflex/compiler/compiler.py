@@ -127,7 +127,7 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None)
 
 
 def _compile_page(
-    component: Component,
+    component: BaseComponent,
     state: Type[BaseState] | None,
 ) -> str:
     """Compile the component given the app state.
@@ -425,7 +425,7 @@ def compile_contexts(
 
 
 def compile_page(
-    path: str, component: Component, state: Type[BaseState] | None
+    path: str, component: BaseComponent, state: Type[BaseState] | None
 ) -> tuple[str, str]:
     """Compile a single page.
 
@@ -540,7 +540,11 @@ if TYPE_CHECKING:
 
 
 def compile_unevaluated_page(
-    route: str, page: UnevaluatedPage, state: Type[BaseState] | None = None
+    route: str,
+    page: UnevaluatedPage,
+    state: Type[BaseState] | None = None,
+    style: ComponentStyle | None = None,
+    theme: Component | None = None,
 ) -> Tuple[Component, bool]:
     """Compiles an uncompiled page into a component and adds meta information.
 
@@ -548,6 +552,8 @@ def compile_unevaluated_page(
         route: The route of the page.
         page: The uncompiled page object.
         state: The state of the app.
+        style: The style of the page.
+        theme: The theme of the page.
 
     Returns:
         The compiled component and whether state should be enabled.
@@ -559,6 +565,8 @@ def compile_unevaluated_page(
     # unpack components that return tuples in an rx.fragment.
     if isinstance(component, tuple):
         component = Fragment.create(*component)
+
+    component._add_style_recursive(style or {}, theme)
 
     enable_state = False
     # Ensure state is enabled if this page uses state.
@@ -627,7 +635,7 @@ class ExecutorSafeFunctions:
 
     """
 
-    COMPONENTS: Dict[str, Component] = {}
+    COMPONENTS: Dict[str, BaseComponent] = {}
     UNCOMPILED_PAGES: Dict[str, UnevaluatedPage] = {}
     STATE: Optional[Type[BaseState]] = None
 

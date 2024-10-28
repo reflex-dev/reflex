@@ -549,7 +549,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             route: The route of the page to compile.
         """
         component, enable_state = compiler.compile_unevaluated_page(
-            route, self.unevaluated_pages[route], self.state
+            route, self.unevaluated_pages[route], self.state, self.style, self.theme
         )
 
         if enable_state:
@@ -842,6 +842,21 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         if constants.Page404.SLUG not in self.unevaluated_pages:
             self.add_custom_404_page()
 
+        # Fix up the style.
+        self.style = evaluate_style_namespaces(self.style)
+
+        # Add the app wrappers.
+        app_wrappers: Dict[tuple[int, str], Component] = {
+            # Default app wrap component renders {children}
+            (0, "AppWrap"): AppWrap.create()
+        }
+
+        if self.theme is not None:
+            # If a theme component was provided, wrap the app with it
+            app_wrappers[(20, "Theme")] = self.theme
+            # Fix #2992 by removing the top-level appearance prop
+            self.theme.appearance = None
+
         for route in self.unevaluated_pages:
             self._compile_page(route)
 
@@ -868,7 +883,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         progress.start()
         task = progress.add_task(
             f"[{get_compilation_time()}] Compiling:",
-            total=len(self.unevaluated_pages)
+            total=len(self.pages)
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,
         )
@@ -879,25 +894,40 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         # Store the compile results.
         compile_results = []
 
-        # Add the app wrappers.
-        app_wrappers: Dict[tuple[int, str], Component] = {
-            # Default app wrap component renders {children}
-            (0, "AppWrap"): AppWrap.create()
-        }
-        if self.theme is not None:
-            # If a theme component was provided, wrap the app with it
-            app_wrappers[(20, "Theme")] = self.theme
-
         progress.advance(task)
-
-        # Fix up the style.
-        self.style = evaluate_style_namespaces(self.style)
 
         # Track imports and custom components found.
         all_imports = {}
         custom_components = set()
 
+        # This has to happen before compiling stateful components as that
+        # prevents recursive functions from reaching all components.
+        for component in self.pages.values():
+            # Add component._get_all_imports() to all_imports.
+            all_imports.update(component._get_all_imports())
+
+            # Add the app wrappers from this component.
+            app_wrappers.update(component._get_all_app_wrap_components())
+
+            # Add the custom components from the page to the set.
+            custom_components |= component._get_all_custom_components()
+
+        # Perform auto-memoization of stateful components.
+        (
+            stateful_components_path,
+            stateful_components_code,
+            page_components,
+        ) = compiler.compile_stateful_components(self.pages.values())
+
         progress.advance(task)
+
+        # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
+        if code_uses_state_contexts(stateful_components_code) and self.state is None:
+            raise ReflexRuntimeError(
+                "To access rx.State in frontend components, at least one "
+                "subclass of rx.State must be defined in the app."
+            )
+        compile_results.append((stateful_components_path, stateful_components_code))
 
         # Compile the root document before fork.
         compile_results.append(
@@ -907,10 +937,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 html_custom_attrs=self.html_custom_attrs,  # type: ignore
             )
         )
-
-        # Fix #2992 by removing the top-level appearance prop
-        if self.theme is not None:
-            self.theme.appearance = None
 
         progress.advance(task)
 
@@ -931,42 +957,18 @@ class App(MiddlewareMixin, LifespanMixin, Base):
                 max_workers=environment.REFLEX_COMPILE_THREADS
             )
 
-        for route, component in self.pages.items():
-            component._add_style_recursive(self.style, self.theme)
-
+        for route, component in zip(self.pages, page_components):
             ExecutorSafeFunctions.COMPONENTS[route] = component
-
-        for route, page in self.unevaluated_pages.items():
-            if route in self.pages:
-                continue
-
-            ExecutorSafeFunctions.UNCOMPILED_PAGES[route] = page
 
         ExecutorSafeFunctions.STATE = self.state
 
-        pages_results = []
-
         with executor:
             result_futures = []
-            pages_futures = []
 
             def _submit_work(fn, *args, **kwargs):
                 f = executor.submit(fn, *args, **kwargs)
                 # f = executor.apipe(fn, *args, **kwargs)
                 result_futures.append(f)
-
-            # Compile all page components.
-            for route in self.unevaluated_pages:
-                if route in self.pages:
-                    continue
-
-                f = executor.submit(
-                    ExecutorSafeFunctions.compile_unevaluated_page,
-                    route,
-                    self.style,
-                    self.theme,
-                )
-                pages_futures.append(f)
 
             # Compile the pre-compiled pages.
             for route in self.pages:
@@ -994,42 +996,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             for future in concurrent.futures.as_completed(result_futures):
                 compile_results.append(future.result())
                 progress.advance(task)
-
-            for future in concurrent.futures.as_completed(pages_futures):
-                pages_results.append(future.result())
-                progress.advance(task)
-
-        for route, component, compiled_page in pages_results:
-            self._check_routes_conflict(route)
-            self.pages[route] = component
-            compile_results.append(compiled_page)
-
-        for _, component in self.pages.items():
-            # Add component._get_all_imports() to all_imports.
-            all_imports.update(component._get_all_imports())
-
-            # Add the app wrappers from this component.
-            app_wrappers.update(component._get_all_app_wrap_components())
-
-            # Add the custom components from the page to the set.
-            custom_components |= component._get_all_custom_components()
-
-        # Perform auto-memoization of stateful components.
-        (
-            stateful_components_path,
-            stateful_components_code,
-            page_components,
-        ) = compiler.compile_stateful_components(self.pages.values())
-
-        progress.advance(task)
-
-        # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
-        if code_uses_state_contexts(stateful_components_code) and self.state is None:
-            raise ReflexRuntimeError(
-                "To access rx.State in frontend components, at least one "
-                "subclass of rx.State must be defined in the app."
-            )
-        compile_results.append((stateful_components_path, stateful_components_code))
 
         app_root = self._app_root(app_wrappers=app_wrappers)
 
