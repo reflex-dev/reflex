@@ -389,10 +389,10 @@ class env_var:  # type: ignore
             The EnvVar instance.
         """
         type_ = get_args(get_type_hints(owner)[self.name])[0]
-        name = self.name
+        env_name = self.name
         if self.internal:
-            name = f"__{name}"
-        return EnvVar(name=self.name, default=self.default, type_=type_)
+            env_name = f"__{env_name}"
+        return EnvVar(name=env_name, default=self.default, type_=type_)
 
 
 if TYPE_CHECKING:
