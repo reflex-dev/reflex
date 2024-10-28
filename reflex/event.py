@@ -1491,6 +1491,11 @@ if sys.version_info >= (3, 10):
 
         @overload
         def __call__(
+            self: EventCallback[Q, T],
+        ) -> EventCallback[Q, T]: ...
+
+        @overload
+        def __call__(
             self: EventCallback[Concatenate[V, Q], T], value: V | Var[V]
         ) -> EventCallback[Q, T]: ...
 
