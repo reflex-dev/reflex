@@ -69,7 +69,7 @@ from reflex.components.core.client_side_routing import (
 )
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
-from reflex.config import environment, get_config
+from reflex.config import environment, get_config, interpret_boolean_env
 from reflex.event import Event, EventHandler, EventSpec, window_alert
 from reflex.model import Model, get_db_status
 from reflex.page import (
@@ -505,7 +505,10 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         # Check if the route given is valid
         verify_route_validity(route)
 
-        if route in self.unevaluated_pages and os.getenv(constants.RELOAD_CONFIG):
+        if route in self.unevaluated_pages and interpret_boolean_env(
+            os.getenv(constants.RELOAD_CONFIG),
+            field_name="RELOAD_CONFIG",
+        ):
             # when the app is reloaded(typically for app harness tests), we should maintain
             # the latest render function of a route.This applies typically to decorated pages
             # since they are only added when app._compile is called.
