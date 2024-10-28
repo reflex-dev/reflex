@@ -95,7 +95,7 @@ def _raise_on_missing_project_hash() -> bool:
         False when compilation should be skipped (i.e. no .web directory is required).
         Otherwise return True.
     """
-    return not environment.REFLEX_SKIP_COMPILE
+    return not environment.REFLEX_SKIP_COMPILE.get
 
 
 def _prepare_event(event: str, **kwargs) -> dict:
