@@ -620,7 +620,7 @@ class AppHarness:
         if environment.APP_HARNESS_HEADLESS.get:
             want_headless = True
         if driver_clz is None:
-            requested_driver = os.environ.get("APP_HARNESS_DRIVER", "Chrome")
+            requested_driver = environment.APP_HARNESS_DRIVER.get
             driver_clz = getattr(webdriver, requested_driver)
             if driver_options is None:
                 driver_options = getattr(webdriver, f"{requested_driver}Options")()
@@ -642,7 +642,7 @@ class AppHarness:
                 driver_options.add_argument("headless")
         if driver_options is None:
             raise RuntimeError(f"Could not determine options for {driver_clz}")
-        if args := os.environ.get("APP_HARNESS_DRIVER_ARGS"):
+        if args := environment.APP_HARNESS_DRIVER_ARGS.get:
             for arg in args.split(","):
                 driver_options.add_argument(arg)
         if driver_option_args is not None:

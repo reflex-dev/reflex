@@ -494,6 +494,12 @@ class EnvironmentVariables:
     # Whether to run app harness tests in headless mode.
     APP_HARNESS_HEADLESS: EnvVar[bool] = env_var(False)
 
+    # Which app harness driver to use.
+    APP_HARNESS_DRIVER: EnvVar[str] = env_var("Chrome")
+
+    # Arguments to pass to the app harness driver.
+    APP_HARNESS_DRIVER_ARGS: EnvVar[str] = env_var("")
+
 
 environment = EnvironmentVariables()
 
