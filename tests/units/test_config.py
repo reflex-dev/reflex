@@ -7,8 +7,13 @@ import pytest
 
 import reflex as rx
 import reflex.config
-from reflex.config import environment
-from reflex.constants import Endpoint
+from reflex.config import (
+    environment,
+    interpret_boolean_env,
+    interpret_enum_env,
+    interpret_int_env,
+)
+from reflex.constants import Endpoint, Env
 
 
 def test_requires_app_name():
@@ -208,11 +213,11 @@ def test_replace_defaults(
         assert getattr(c, key) == value
 
 
-def reflex_dir_constant():
+def reflex_dir_constant() -> Path:
     return environment.REFLEX_DIR.get
 
 
-def test_reflex_dir_env_var(monkeypatch, tmp_path):
+def test_reflex_dir_env_var(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Test that the REFLEX_DIR environment variable is used to set the Reflex.DIR constant.
 
     Args:
@@ -225,3 +230,16 @@ def test_reflex_dir_env_var(monkeypatch, tmp_path):
     assert reflex_dir_constant() == tmp_path
     with mp_ctx.Pool(processes=1) as pool:
         assert pool.apply(reflex_dir_constant) == tmp_path
+
+
+def test_interpret_enum_env() -> None:
+    assert interpret_enum_env(Env.PROD.value, Env, "REFLEX_ENV") == Env.PROD
+
+
+def test_interpret_int_env() -> None:
+    assert interpret_int_env("3001", "FRONTEND_PORT") == 3001
+
+
+@pytest.mark.parametrize("value, expected", [("true", True), ("false", False)])
+def test_interpret_bool_env(value: str, expected: bool) -> None:
+    assert interpret_boolean_env(value, "TELEMETRY_ENABLED") == expected
