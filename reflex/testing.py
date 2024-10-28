@@ -963,7 +963,7 @@ class AppHarnessProd(AppHarness):
         try:
             return super()._poll_for_servers(timeout)
         finally:
-            environment.REFLEX_SKIP_COMPILE.set(False)
+            environment.REFLEX_SKIP_COMPILE.set(None)
 
     def stop(self):
         """Stop the frontend python webserver."""

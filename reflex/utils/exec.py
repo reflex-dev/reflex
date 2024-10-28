@@ -370,7 +370,7 @@ def run_uvicorn_backend_prod(host, port, loglevel):
         run=True,
         show_logs=True,
         env={
-            environment.REFLEX_SKIP_COMPILE.name: "yes"
+            environment.REFLEX_SKIP_COMPILE.name: "true"
         },  # skip compile for prod backend
     )
 
@@ -407,7 +407,7 @@ def run_granian_backend_prod(host, port, loglevel):
             run=True,
             show_logs=True,
             env={
-                environment.REFLEX_SKIP_COMPILE.name: "yes"
+                environment.REFLEX_SKIP_COMPILE.name: "true"
             },  # skip compile for prod backend
         )
     except ImportError:
