@@ -724,3 +724,67 @@ def validate_parameter_literals(func):
 # Store this here for performance.
 StateBases = get_base_class(StateVar)
 StateIterBases = get_base_class(StateIterVar)
+
+
+def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> bool:
+    """Check if a type hint is a subclass of another type hint.
+
+    Args:
+        possible_subclass: The type hint to check.
+        possible_superclass: The type hint to check against.
+
+    Returns:
+        Whether the type hint is a subclass of the other type hint.
+    """
+    if possible_superclass is Any:
+        return True
+
+    provided_type_origin = get_origin(possible_subclass)
+    accepted_type_origin = get_origin(possible_superclass)
+
+    if provided_type_origin is None and accepted_type_origin is None:
+        # In this case, we are dealing with a non-generic type, so we can use issubclass
+        return issubclass(possible_subclass, possible_superclass)
+
+    # Remove this check when Python 3.10 is the minimum supported version
+    if hasattr(types, "UnionType"):
+        provided_type_origin = (
+            Union if provided_type_origin is types.UnionType else provided_type_origin
+        )
+        accepted_type_origin = (
+            Union if accepted_type_origin is types.UnionType else accepted_type_origin
+        )
+
+    # Get type arguments (e.g., [float, int] for Dict[float, int])
+    provided_args = get_args(possible_subclass)
+    accepted_args = get_args(possible_superclass)
+
+    if accepted_type_origin is Union:
+        if provided_type_origin is not Union:
+            return any(
+                typehint_issubclass(possible_subclass, accepted_arg)
+                for accepted_arg in accepted_args
+            )
+        return all(
+            any(
+                typehint_issubclass(provided_arg, accepted_arg)
+                for accepted_arg in accepted_args
+            )
+            for provided_arg in provided_args
+        )
+
+    # Check if the origin of both types is the same (e.g., list for List[int])
+    # This probably should be issubclass instead of ==
+    if (provided_type_origin or possible_subclass) != (
+        accepted_type_origin or possible_superclass
+    ):
+        return False
+
+    # Ensure all specific types are compatible with accepted types
+    # Note this is not necessarily correct, as it doesn't check against contravariance and covariance
+    # It also ignores when the length of the arguments is different
+    return all(
+        typehint_issubclass(provided_arg, accepted_arg)
+        for provided_arg, accepted_arg in zip(provided_args, accepted_args)
+        if accepted_arg is not Any
+    )
