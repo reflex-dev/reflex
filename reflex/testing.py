@@ -249,7 +249,8 @@ class AppHarness:
         return textwrap.dedent(source)
 
     def _initialize_app(self):
-        os.environ["TELEMETRY_ENABLED"] = ""  # disable telemetry reporting for tests
+        # disable telemetry reporting for tests
+        os.environ["TELEMETRY_ENABLED"] = "false"
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
             app_globals = self._get_globals_from_signature(self.app_source)
@@ -292,8 +293,6 @@ class AppHarness:
         if isinstance(self.app_instance._state_manager, StateManagerRedis):
             # Create our own redis connection for testing.
             self.state_manager = StateManagerRedis.create(self.app_instance.state)
-        elif isinstance(self.app_instance._state_manager, StateManagerDisk):
-            self.state_manager = StateManagerDisk.create(self.app_instance.state)
         else:
             self.state_manager = self.app_instance._state_manager
 
@@ -340,6 +339,9 @@ class AppHarness:
 
         This is necessary when the backend is restarted and the state manager is a
         StateManagerRedis instance.
+
+        Raises:
+            RuntimeError: when the state manager cannot be reset
         """
         if (
             self.app_instance is not None
@@ -354,7 +356,8 @@ class AppHarness:
             self.app_instance._state_manager = StateManagerRedis.create(
                 state=self.app_instance.state,
             )
-            assert isinstance(self.app_instance.state_manager, StateManagerRedis)
+            if not isinstance(self.app_instance.state_manager, StateManagerRedis):
+                raise RuntimeError("Failed to reset state manager.")
 
     def _start_frontend(self):
         # Set up the frontend.
@@ -392,9 +395,14 @@ class AppHarness:
 
         def consume_frontend_output():
             while True:
-                line = (
-                    self.frontend_process.stdout.readline()  # pyright: ignore [reportOptionalMemberAccess]
-                )
+                try:
+                    line = (
+                        self.frontend_process.stdout.readline()  # pyright: ignore [reportOptionalMemberAccess]
+                    )
+                # catch I/O operation on closed file.
+                except ValueError as e:
+                    print(e)
+                    break
                 if not line:
                     break
                 print(line)
@@ -787,13 +795,13 @@ class AppHarness:
         Raises:
             RuntimeError: when the app hasn't started running
             TimeoutError: when the timeout expires before any states are seen
+            ValueError: when the state_manager is not a memory state manager
         """
         if self.app_instance is None:
             raise RuntimeError("App is not running.")
         state_manager = self.app_instance.state_manager
-        assert isinstance(
-            state_manager, (StateManagerMemory, StateManagerDisk)
-        ), "Only works with memory state manager"
+        if not isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
+            raise ValueError("Only works with memory or disk state manager")
         if not self._poll_for(
             target=lambda: state_manager.states,
             timeout=timeout,

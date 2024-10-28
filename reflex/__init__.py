@@ -89,6 +89,8 @@ from reflex.utils import (
     lazy_loader,
 )
 
+from .event import event as event
+
 # import this here explicitly to avoid returning the page module since page attr has the
 # same name as page module(page.py)
 from .page import page as page
@@ -206,6 +208,13 @@ RADIX_PRIMITIVES_MAPPING: dict = {
     "components.radix.primitives.form": [
         "form",
     ],
+    "components.radix.primitives.progress": [
+        "progress",
+    ],
+}
+
+RADIX_PRIMITIVES_SHORTCUT_MAPPING: dict = {
+    k: v for k, v in RADIX_PRIMITIVES_MAPPING.items() if "progress" not in k
 }
 
 COMPONENTS_CORE_MAPPING: dict = {
@@ -248,7 +257,7 @@ RADIX_MAPPING: dict = {
     **RADIX_THEMES_COMPONENTS_MAPPING,
     **RADIX_THEMES_TYPOGRAPHY_MAPPING,
     **RADIX_THEMES_LAYOUT_MAPPING,
-    **RADIX_PRIMITIVES_MAPPING,
+    **RADIX_PRIMITIVES_SHORTCUT_MAPPING,
 }
 
 _MAPPING: dict = {
@@ -311,25 +320,27 @@ _MAPPING: dict = {
         "upload_files",
         "window_alert",
     ],
+    "istate.storage": [
+        "Cookie",
+        "LocalStorage",
+        "SessionStorage",
+    ],
     "middleware": ["middleware", "Middleware"],
     "model": ["session", "Model"],
     "state": [
         "var",
-        "Cookie",
-        "LocalStorage",
-        "SessionStorage",
         "ComponentState",
         "State",
+        "dynamic",
     ],
     "style": ["Style", "toggle_color_mode"],
     "utils.imports": ["ImportVar"],
     "utils.serializers": ["serializer"],
-    "vars": ["Var"],
+    "vars": ["Var", "field", "Field"],
 }
 
 _SUBMODULES: set[str] = {
     "components",
-    "event",
     "app",
     "style",
     "admin",

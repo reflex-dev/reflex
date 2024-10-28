@@ -8,7 +8,6 @@ import typing
 from inspect import isclass
 from typing import (
     Any,
-    ClassVar,
     Dict,
     List,
     NoReturn,
@@ -27,7 +26,6 @@ from reflex.utils.types import GenericType, get_attribute_access_type, get_origi
 from .base import (
     CachedVarOperation,
     LiteralVar,
-    ToOperation,
     Var,
     VarData,
     cached_property_no_lock,
@@ -48,7 +46,7 @@ ARRAY_INNER_TYPE = TypeVar("ARRAY_INNER_TYPE")
 OTHER_KEY_TYPE = TypeVar("OTHER_KEY_TYPE")
 
 
-class ObjectVar(Var[OBJECT_TYPE]):
+class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
     """Base class for immutable object vars."""
 
     def _key_type(self) -> Type:
@@ -118,6 +116,8 @@ class ObjectVar(Var[OBJECT_TYPE]):
             The entries of the object.
         """
         return object_entries_operation(self)
+
+    items = entries
 
     def merge(self, other: ObjectVar):
         """Merge two objects.
@@ -260,7 +260,9 @@ class ObjectVar(Var[OBJECT_TYPE]):
             var_type = get_args(var_type)[0]
 
         fixed_type = var_type if isclass(var_type) else get_origin(var_type)
-        if isclass(fixed_type) and not issubclass(fixed_type, dict):
+        if (isclass(fixed_type) and not issubclass(fixed_type, dict)) or (
+            fixed_type in types.UnionTypes
+        ):
             attribute_type = get_attribute_access_type(var_type, name)
             if attribute_type is None:
                 raise VarAttributeError(
@@ -515,34 +517,6 @@ class ObjectItemOperation(CachedVarOperation, Var):
             _object=object,
             _key=key if isinstance(key, Var) else LiteralVar.create(key),
         )
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ToObjectOperation(ToOperation, ObjectVar):
-    """Operation to convert a var to an object."""
-
-    _original: Var = dataclasses.field(
-        default_factory=lambda: LiteralObjectVar.create({})
-    )
-
-    _default_var_type: ClassVar[GenericType] = dict
-
-    def __getattr__(self, name: str) -> Any:
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute of the var.
-        """
-        if name == "_js_expr":
-            return self._original._js_expr
-        return ObjectVar.__getattr__(self, name)
 
 
 @var_operation

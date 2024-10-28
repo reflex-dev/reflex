@@ -10,9 +10,11 @@ from reflex.event import EventChain, EventHandler
 from reflex.utils import format
 from reflex.utils.exceptions import ReflexError
 from reflex.utils.imports import ImportVar
+from reflex.utils.types import get_origin
 from reflex.vars import VarData
 from reflex.vars.base import CallableVar, LiteralVar, Var
 from reflex.vars.function import FunctionVar
+from reflex.vars.object import ObjectVar
 
 SYSTEM_COLOR_MODE: str = "system"
 LIGHT_COLOR_MODE: str = "light"
@@ -21,7 +23,7 @@ LiteralColorMode = Literal["system", "light", "dark"]
 
 # Reference the global ColorModeContext
 color_mode_imports = {
-    f"/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="ColorModeContext")],
+    f"$/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="ColorModeContext")],
     "react": [ImportVar(tag="useContext")],
 }
 
@@ -188,7 +190,20 @@ def convert(
             out[k] = return_value
 
     for key, value in style_dict.items():
-        keys = format_style_key(key)
+        keys = (
+            format_style_key(key)
+            if not isinstance(value, (dict, ObjectVar))
+            or (
+                isinstance(value, Breakpoints)
+                and all(not isinstance(v, dict) for v in value.values())
+            )
+            or (
+                isinstance(value, ObjectVar)
+                and not issubclass(get_origin(value._var_type) or value._var_type, dict)
+            )
+            else (key,)
+        )
+
         if isinstance(value, Var):
             return_val = value
             new_var_data = value._get_all_var_data()
@@ -283,7 +298,7 @@ def _format_emotion_style_pseudo_selector(key: str) -> str:
     """Format a pseudo selector for emotion CSS-in-JS.
 
     Args:
-        key: Underscore-prefixed or colon-prefixed pseudo selector key (_hover).
+        key: Underscore-prefixed or colon-prefixed pseudo selector key (_hover/:hover).
 
     Returns:
         A self-referential pseudo selector key (&:hover).

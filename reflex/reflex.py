@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import atexit
 import os
-import webbrowser
 from pathlib import Path
 from typing import List, Optional
 
@@ -14,7 +13,7 @@ from reflex_cli.deployments import deployments_cli
 from reflex_cli.utils import dependency
 
 from reflex import constants
-from reflex.config import get_config
+from reflex.config import environment, get_config
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
@@ -113,9 +112,6 @@ def _init(
         prerequisites.initialize_main_module_index_from_generation(
             app_name, generation_hash=generation_hash
         )
-
-    # Migrate Pynecone projects to Reflex.
-    prerequisites.migrate_to_reflex()
 
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()
@@ -229,7 +225,8 @@ def _run(
             exec.run_frontend_prod,
             exec.run_backend_prod,
         )
-    assert setup_frontend and frontend_cmd and backend_cmd, "Invalid env"
+    if not setup_frontend or not frontend_cmd or not backend_cmd:
+        raise ValueError("Invalid env")
 
     # Post a telemetry event.
     telemetry.send(f"run-{env.value}")
@@ -247,13 +244,23 @@ def _run(
 
     # In prod mode, run the backend on a separate thread.
     if backend and env == constants.Env.PROD:
-        commands.append((backend_cmd, backend_host, backend_port))
+        commands.append(
+            (
+                backend_cmd,
+                backend_host,
+                backend_port,
+                loglevel.subprocess_level(),
+                frontend,
+            )
+        )
 
     # Start the frontend and backend.
     with processes.run_concurrently_context(*commands):
         # In dev mode, run the backend on the main thread.
         if backend and env == constants.Env.DEV:
-            backend_cmd(backend_host, int(backend_port))
+            backend_cmd(
+                backend_host, int(backend_port), loglevel.subprocess_level(), frontend
+            )
             # The windows uvicorn bug workaround
             # https://github.com/reflex-dev/reflex/issues/2335
             if constants.IS_WINDOWS and exec.frontend_process:
@@ -267,9 +274,17 @@ def run(
         constants.Env.DEV, help="The environment to run the app in."
     ),
     frontend: bool = typer.Option(
-        False, "--frontend-only", help="Execute only frontend."
+        False,
+        "--frontend-only",
+        help="Execute only frontend.",
+        envvar=constants.ENV_FRONTEND_ONLY_ENV_VAR,
     ),
-    backend: bool = typer.Option(False, "--backend-only", help="Execute only backend."),
+    backend: bool = typer.Option(
+        False,
+        "--backend-only",
+        help="Execute only backend.",
+        envvar=constants.ENV_BACKEND_ONLY_ENV_VAR,
+    ),
     frontend_port: str = typer.Option(
         config.frontend_port, help="Specify a different frontend port."
     ),
@@ -284,6 +299,12 @@ def run(
     ),
 ):
     """Run the app in the current directory."""
+    if frontend and backend:
+        console.error("Cannot use both --frontend-only and --backend-only options.")
+        raise typer.Exit(1)
+    os.environ[constants.ENV_BACKEND_ONLY_ENV_VAR] = str(backend).lower()
+    os.environ[constants.ENV_FRONTEND_ONLY_ENV_VAR] = str(frontend).lower()
+
     _run(env, frontend, backend, frontend_port, backend_port, backend_host, loglevel)
 
 
@@ -325,7 +346,7 @@ def export(
         backend=backend,
         zip_dest_dir=zip_dest_dir,
         upload_db_file=upload_db_file,
-        loglevel=loglevel,
+        loglevel=loglevel.subprocess_level(),
     )
 
 
@@ -399,7 +420,7 @@ def db_init():
         return
 
     # Check the alembic config.
-    if Path(constants.ALEMBIC_CONFIG).exists():
+    if environment.ALEMBIC_CONFIG.exists():
         console.error(
             "Database is already initialized. Use "
             "[bold]reflex db makemigrations[/bold] to create schema change "
@@ -560,7 +581,7 @@ def deploy(
             frontend=frontend,
             backend=backend,
             zipping=zipping,
-            loglevel=loglevel,
+            loglevel=loglevel.subprocess_level(),
             upload_db_file=upload_db_file,
         ),
         key=key,
@@ -574,20 +595,8 @@ def deploy(
         interactive=interactive,
         with_metrics=with_metrics,
         with_tracing=with_tracing,
-        loglevel=loglevel.value,
+        loglevel=loglevel.subprocess_level(),
     )
-
-
-@cli.command()
-def demo(
-    frontend_port: str = typer.Option(
-        "3001", help="Specify a different frontend port."
-    ),
-    backend_port: str = typer.Option("8001", help="Specify a different backend port."),
-):
-    """Run the demo app."""
-    # Open the demo app in a terminal.
-    webbrowser.open("https://demo.reflex.run")
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import dataclasses
 import inspect
 import json
 import os
@@ -10,7 +9,8 @@ import re
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
 from reflex import constants
-from reflex.utils import exceptions, types
+from reflex.utils import exceptions
+from reflex.utils.console import deprecate
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
@@ -345,6 +345,7 @@ def format_prop(
     Raises:
         exceptions.InvalidStylePropError: If the style prop value is not a valid type.
         TypeError: If the prop is not valid.
+        ValueError: If the prop is not a string.
     """
     # import here to avoid circular import.
     from reflex.event import EventChain
@@ -358,19 +359,7 @@ def format_prop(
 
         # Handle event props.
         if isinstance(prop, EventChain):
-            sig = inspect.signature(prop.args_spec)  # type: ignore
-            if sig.parameters:
-                arg_def = ",".join(f"_{p}" for p in sig.parameters)
-                arg_def_expr = f"[{arg_def}]"
-            else:
-                # add a default argument for addEvents if none were specified in prop.args_spec
-                # used to trigger the preventDefault() on the event.
-                arg_def = "...args"
-                arg_def_expr = "args"
-
-            chain = ",".join([format_event(event) for event in prop.events])
-            event = f"addEvents([{chain}], {arg_def_expr}, {json_dumps(prop.event_actions)})"
-            prop = f"({arg_def}) => {event}"
+            return str(Var.create(prop))
 
         # Handle other types.
         elif isinstance(prop, str):
@@ -391,7 +380,8 @@ def format_prop(
         raise TypeError(f"Could not format prop: {prop} of type {type(prop)}") from e
 
     # Wrap the variable in braces.
-    assert isinstance(prop, str), "The prop must be a string."
+    if not isinstance(prop, str):
+        raise ValueError(f"Invalid prop: {prop}. Expected a string.")
     return wrap(prop, "{", check_first=False)
 
 
@@ -410,22 +400,11 @@ def format_props(*single_props, **key_value_props) -> list[str]:
 
     return [
         (
-            f"{name}={format_prop(prop)}"
-            if isinstance(prop, Var) and not isinstance(prop, Var)
-            else (
-                f"{name}={{{format_prop(prop if isinstance(prop, Var) else LiteralVar.create(prop))}}}"
-            )
+            f"{name}={{{format_prop(prop if isinstance(prop, Var) else LiteralVar.create(prop))}}}"
         )
         for name, prop in sorted(key_value_props.items())
         if prop is not None
-    ] + [
-        (
-            str(prop)
-            if isinstance(prop, Var) and not isinstance(prop, Var)
-            else f"{str(LiteralVar.create(prop))}"
-        )
-        for prop in single_props
-    ]
+    ] + [(f"{str(LiteralVar.create(prop))}") for prop in single_props]
 
 
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
@@ -512,6 +491,37 @@ def format_event(event_spec: EventSpec) -> str:
 
 if TYPE_CHECKING:
     from reflex.vars import Var
+
+
+def format_event_chain(
+    event_chain: EventChain | Var[EventChain],
+    event_arg: Var | None = None,
+) -> str:
+    """DEPRECATED: format an event chain as a javascript invocation.
+
+    Use str(rx.Var.create(event_chain)) instead.
+
+    Args:
+        event_chain: The event chain to format.
+        event_arg: this argument is ignored.
+
+    Returns:
+        Compiled javascript code to queue the given event chain on the frontend.
+    """
+    deprecate(
+        feature_name="format_event_chain",
+        reason="Use str(rx.Var.create(event_chain)) instead",
+        deprecation_version="0.6.0",
+        removal_version="0.7.0",
+    )
+
+    from reflex.vars import Var
+    from reflex.vars.function import ArgsFunctionOperation
+
+    result = Var.create(event_chain)
+    if isinstance(result, ArgsFunctionOperation):
+        result = result._return_expr
+    return str(result)
 
 
 def format_queue_events(
@@ -604,56 +614,6 @@ def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
     return {k.replace("-", "_"): v for k, v in params.items()}
 
 
-def format_state(value: Any, key: Optional[str] = None) -> Any:
-    """Recursively format values in the given state.
-
-    Args:
-        value: The state to format.
-        key: The key associated with the value (optional).
-
-    Returns:
-        The formatted state.
-
-    Raises:
-        TypeError: If the given value is not a valid state.
-    """
-    from reflex.utils import serializers
-
-    # Handle dicts.
-    if isinstance(value, dict):
-        return {k: format_state(v, k) for k, v in value.items()}
-
-    # Hand dataclasses.
-    if dataclasses.is_dataclass(value):
-        if isinstance(value, type):
-            raise TypeError(
-                f"Cannot format state of type {type(value)}. Please provide an instance of the dataclass."
-            )
-        return {k: format_state(v, k) for k, v in dataclasses.asdict(value).items()}
-
-    # Handle lists, sets, typles.
-    if isinstance(value, types.StateIterBases):
-        return [format_state(v) for v in value]
-
-    # Return state vars as is.
-    if isinstance(value, types.StateBases):
-        return value
-
-    # Serialize the value.
-    serialized = serializers.serialize(value)
-    if serialized is not None:
-        return serialized
-
-    if key is None:
-        raise TypeError(
-            f"No JSON serializer found for var {value} of type {type(value)}."
-        )
-    else:
-        raise TypeError(
-            f"No JSON serializer found for State Var '{key}' of value {value} of type {type(value)}."
-        )
-
-
 def format_state_name(state_name: str) -> str:
     """Format a state name, replacing dots with double underscore.
 
@@ -692,6 +652,8 @@ def format_library_name(library_fullname: str):
     Returns:
         The name without the @version if it was part of the name
     """
+    if library_fullname.startswith("https://"):
+        return library_fullname
     lib, at, version = library_fullname.rpartition("@")
     if not lib:
         lib = at + version

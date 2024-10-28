@@ -20,6 +20,8 @@ from reflex.components.tags.tag import Tag
 from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import LiteralVar, Var
+from reflex.vars.function import ARRAY_ISARRAY
+from reflex.vars.number import ternary_operation
 
 # Special vars used in the component map.
 _CHILDREN = Var(_js_expr="children", _var_type=str)
@@ -95,12 +97,16 @@ class Markdown(Component):
             *children: The children of the component.
             **props: The properties of the component.
 
+        Raises:
+            ValueError: If the children are not valid.
+
         Returns:
             The markdown component.
         """
-        assert (
-            len(children) == 1 and types._isinstance(children[0], Union[str, Var])
-        ), "Markdown component must have exactly one child containing the markdown source."
+        if len(children) != 1 or not types._isinstance(children[0], Union[str, Var]):
+            raise ValueError(
+                "Markdown component must have exactly one child containing the markdown source."
+            )
 
         # Update the base component map with the custom component map.
         component_map = {**get_base_component_map(), **props.pop("component_map", {})}
@@ -147,7 +153,7 @@ class Markdown(Component):
         Returns:
             The imports for the markdown component.
         """
-        from reflex.components.datadisplay.code import CodeBlock
+        from reflex.components.datadisplay.code import CodeBlock, Theme
         from reflex.components.radix.themes.typography.code import Code
 
         return [
@@ -173,8 +179,8 @@ class Markdown(Component):
                 component(_MOCK_ARG)._get_all_imports()  # type: ignore
                 for component in self.component_map.values()
             ],
-            CodeBlock.create(theme="light")._get_imports(),  # type: ignore,
-            Code.create()._get_imports(),  # type: ignore,
+            CodeBlock.create(theme=Theme.light)._get_imports(),
+            Code.create()._get_imports(),
         ]
 
     def get_component(self, tag: str, **props) -> Component:
@@ -195,7 +201,16 @@ class Markdown(Component):
             raise ValueError(f"No markdown component found for tag: {tag}.")
 
         special_props = [_PROPS_IN_TAG]
-        children = [_CHILDREN]
+        children = [
+            _CHILDREN
+            if tag != "codeblock"
+            # For codeblock, the mapping for some cases returns an array of elements. Let's join them into a string.
+            else ternary_operation(
+                ARRAY_ISARRAY.call(_CHILDREN),  # type: ignore
+                _CHILDREN.to(list).join("\n"),
+                _CHILDREN,
+            ).to(str)
+        ]
 
         # For certain tags, the props from the markdown renderer are not actually valid for the component.
         if tag in NO_PROPS_TAGS:

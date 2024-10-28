@@ -11,7 +11,6 @@
 ### **✨ 即時デプロイが可能な、Pure Python で作ったパフォーマンスと汎用性が高い Web アプリケーション ✨**
 
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
-![tests](https://github.com/pynecone-io/pynecone/actions/workflows/integration.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentation](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
@@ -38,7 +37,7 @@ Reflex がどのように動作しているかを知るには、[アーキテク
 
 ## ⚙️ インストール
 
-ターミナルを開いて以下のコマンドを実行してください。（Python 3.8 以上が必要です。）:
+ターミナルを開いて以下のコマンドを実行してください。（Python 3.9 以上が必要です。）:
 
 ```bash
 pip install reflex
