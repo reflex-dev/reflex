@@ -384,6 +384,9 @@ class env_var:  # type: ignore
         Args:
             instance: The instance.
             owner: The owner class.
+
+        Returns:
+            The EnvVar instance.
         """
         type_ = get_args(get_type_hints(owner)[self.name])[0]
         name = self.name
@@ -395,7 +398,15 @@ class env_var:  # type: ignore
 if TYPE_CHECKING:
 
     def env_var(default, internal=False) -> EnvVar:
-        """Typing helper for the env_var descriptor."""
+        """Typing helper for the env_var descriptor.
+
+        Args:
+            default: The default value.
+            internal: Whether the environment variable is reflex internal.
+
+        Returns:
+            The EnvVar instance.
+        """
         return default
 
 
