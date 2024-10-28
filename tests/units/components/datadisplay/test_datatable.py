@@ -45,8 +45,8 @@ def test_validate_data_table(data_table_state: rx.State, expected: str) -> None:
         var = getattr(var, expected)
 
     assert data_table_dict["props"] == [
-        f"columns={{{var.columns._var_name}}}",
-        f"data={{{var.data._var_name}}}",
+        f"columns={{{str(var.columns)}}}",
+        f"data={{{str(var.data)}}}",
     ]
 
 
