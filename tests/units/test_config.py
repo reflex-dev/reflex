@@ -251,6 +251,7 @@ def test_env_var():
     class TestEnv:
         BLUBB: EnvVar[str] = env_var("default")
         INTERNAL: EnvVar[str] = env_var("default", internal=True)
+        BOOLEAN: EnvVar[bool] = env_var(False)
 
     assert TestEnv.BLUBB.get == "default"
     assert TestEnv.BLUBB.name == "BLUBB"
@@ -268,3 +269,14 @@ def test_env_var():
     assert TestEnv.INTERNAL.getenv == "new"
     TestEnv.INTERNAL.set(None)
     assert "__INTERNAL" not in os.environ
+
+    assert TestEnv.BOOLEAN.get is False
+    assert TestEnv.BOOLEAN.name == "BOOLEAN"
+    TestEnv.BOOLEAN.set(True)
+    assert os.environ.get("BOOLEAN") == "True"
+    assert TestEnv.BOOLEAN.get is True
+    TestEnv.BOOLEAN.set(False)
+    assert os.environ.get("BOOLEAN") == "False"
+    assert TestEnv.BOOLEAN.get is False
+    TestEnv.BOOLEAN.set(None)
+    assert "BOOLEAN" not in os.environ
