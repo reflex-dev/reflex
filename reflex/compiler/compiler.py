@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Iterable, Optional, Type, Union
+from typing import TYPE_CHECKING, Dict, Iterable, Optional, Tuple, Type, Union
 
 from reflex import constants
 from reflex.compiler import templates, utils
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
     BaseComponent,
     Component,
@@ -126,8 +127,8 @@ def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None)
 
 
 def _compile_page(
-    component: Component,
-    state: Type[BaseState],
+    component: BaseComponent,
+    state: Type[BaseState] | None,
 ) -> str:
     """Compile the component given the app state.
 
@@ -142,7 +143,7 @@ def _compile_page(
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
-    kwargs = {"state_name": state.get_name()} if state else {}
+    kwargs = {"state_name": state.get_name()} if state is not None else {}
 
     return templates.PAGE.render(
         imports=imports,
@@ -424,7 +425,7 @@ def compile_contexts(
 
 
 def compile_page(
-    path: str, component: Component, state: Type[BaseState]
+    path: str, component: BaseComponent, state: Type[BaseState] | None
 ) -> tuple[str, str]:
     """Compile a single page.
 
@@ -534,6 +535,81 @@ def purge_web_pages_dir():
     utils.empty_dir(get_web_dir() / constants.Dirs.PAGES, keep_files=["_app.js"])
 
 
+if TYPE_CHECKING:
+    from reflex.app import UnevaluatedPage
+
+
+def compile_unevaluated_page(
+    route: str,
+    page: UnevaluatedPage,
+    state: Type[BaseState] | None = None,
+    style: ComponentStyle | None = None,
+    theme: Component | None = None,
+) -> Tuple[Component, bool]:
+    """Compiles an uncompiled page into a component and adds meta information.
+
+    Args:
+        route: The route of the page.
+        page: The uncompiled page object.
+        state: The state of the app.
+        style: The style of the page.
+        theme: The theme of the page.
+
+    Returns:
+        The compiled component and whether state should be enabled.
+    """
+    # Generate the component if it is a callable.
+    component = page.component
+    component = component if isinstance(component, Component) else component()
+
+    # unpack components that return tuples in an rx.fragment.
+    if isinstance(component, tuple):
+        component = Fragment.create(*component)
+
+    component._add_style_recursive(style or {}, theme)
+
+    enable_state = False
+    # Ensure state is enabled if this page uses state.
+    if state is None:
+        if page.on_load or component._has_stateful_event_triggers():
+            enable_state = True
+        else:
+            for var in component._get_vars(include_children=True):
+                var_data = var._get_all_var_data()
+                if not var_data:
+                    continue
+                if not var_data.state:
+                    continue
+                enable_state = True
+                break
+
+    from reflex.app import OverlayFragment
+    from reflex.utils.format import make_default_page_title
+
+    component = OverlayFragment.create(component)
+
+    meta_args = {
+        "title": (
+            page.title
+            if page.title is not None
+            else make_default_page_title(get_config().app_name, route)
+        ),
+        "image": page.image,
+        "meta": page.meta,
+    }
+
+    if page.description is not None:
+        meta_args["description"] = page.description
+
+    # Add meta information to the component.
+    utils.add_meta(
+        component,
+        **meta_args,
+    )
+
+    return component, enable_state
+
+
 class ExecutorSafeFunctions:
     """Helper class to allow parallelisation of parts of the compilation process.
 
@@ -559,13 +635,12 @@ class ExecutorSafeFunctions:
 
     """
 
-    COMPILE_PAGE_ARGS_BY_ROUTE = {}
-    COMPILE_APP_APP_ROOT: Component | None = None
-    CUSTOM_COMPONENTS: set[CustomComponent] | None = None
-    STYLE: ComponentStyle | None = None
+    COMPONENTS: Dict[str, BaseComponent] = {}
+    UNCOMPILED_PAGES: Dict[str, UnevaluatedPage] = {}
+    STATE: Optional[Type[BaseState]] = None
 
     @classmethod
-    def compile_page(cls, route: str):
+    def compile_page(cls, route: str) -> tuple[str, str]:
         """Compile a page.
 
         Args:
@@ -574,39 +649,38 @@ class ExecutorSafeFunctions:
         Returns:
             The path and code of the compiled page.
         """
-        return compile_page(*cls.COMPILE_PAGE_ARGS_BY_ROUTE[route])
+        return compile_page(route, cls.COMPONENTS[route], cls.STATE)
 
     @classmethod
-    def compile_app(cls):
-        """Compile the app.
+    def compile_unevaluated_page(
+        cls,
+        route: str,
+        style: ComponentStyle,
+        theme: Component | None,
+    ) -> tuple[str, Component, tuple[str, str]]:
+        """Compile an unevaluated page.
+
+        Args:
+            route: The route of the page to compile.
+            style: The style of the page.
+            theme: The theme of the page.
 
         Returns:
-            The path and code of the compiled app.
-
-        Raises:
-            ValueError: If the app root is not set.
+            The route, compiled component, and compiled page.
         """
-        if cls.COMPILE_APP_APP_ROOT is None:
-            raise ValueError("COMPILE_APP_APP_ROOT should be set")
-        return compile_app(cls.COMPILE_APP_APP_ROOT)
+        component, enable_state = compile_unevaluated_page(
+            route, cls.UNCOMPILED_PAGES[route]
+        )
+        component = component if isinstance(component, Component) else component()
+        component._add_style_recursive(style, theme)
+        return route, component, compile_page(route, component, cls.STATE)
 
     @classmethod
-    def compile_custom_components(cls):
-        """Compile the custom components.
-
-        Returns:
-            The path and code of the compiled custom components.
-
-        Raises:
-            ValueError: If the custom components are not set.
-        """
-        if cls.CUSTOM_COMPONENTS is None:
-            raise ValueError("CUSTOM_COMPONENTS should be set")
-        return compile_components(cls.CUSTOM_COMPONENTS)
-
-    @classmethod
-    def compile_theme(cls):
+    def compile_theme(cls, style: ComponentStyle | None) -> tuple[str, str]:
         """Compile the theme.
+
+        Args:
+            style: The style to compile.
 
         Returns:
             The path and code of the compiled theme.
@@ -614,6 +688,6 @@ class ExecutorSafeFunctions:
         Raises:
             ValueError: If the style is not set.
         """
-        if cls.STYLE is None:
+        if style is None:
             raise ValueError("STYLE should be set")
-        return compile_theme(cls.STYLE)
+        return compile_theme(style)
