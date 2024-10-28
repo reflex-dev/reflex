@@ -108,6 +108,10 @@ def test_is_generic_alias(cls: type, expected: bool):
         (Dict[str, int], Dict[str, int], True),
         (Dict[str, bool], Dict[str, int], True),
         (Dict[str, int], Dict[str, bool], False),
+        (Dict[str, Any], dict[str, str], False),
+        (Dict[str, str], dict[str, str], True),
+        (Dict[str, str], dict[str, Any], True),
+        (Dict[str, Any], dict[str, Any], True),
     ],
 )
 def test_typehint_issubclass(subclass, superclass, expected):
