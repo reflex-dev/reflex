@@ -3396,3 +3396,10 @@ def test_fallback_pickle():
     assert len(pk) == 0
     with pytest.raises(EOFError):
         BaseState._deserialize(pk)
+
+
+def test_typed_state() -> None:
+    class TypedState(rx.State):
+        field: rx.Field[str] = rx.field("")
+
+    _ = TypedState(field="str")
