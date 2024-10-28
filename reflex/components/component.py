@@ -645,7 +645,7 @@ class Component(BaseComponent, ABC):
         # Look for component specific triggers,
         # e.g. variable declared as EventHandler types.
         for field in self.get_fields().values():
-            if types._issubclass(field.type_, EventHandler):
+            if types._issubclass(field.outer_type_, EventHandler):
                 args_spec = None
                 annotation = field.annotation
                 if (metadata := getattr(annotation, "__metadata__", None)) is not None:
