@@ -1104,7 +1104,7 @@ def call_event_handler(
     if event_spec_return_types:
         failures = []
 
-        for event_spec_return_type in event_spec_return_types:
+        for i, event_spec_return_type in enumerate(event_spec_return_types):
             args = get_args(event_spec_return_type)
 
             args_types_without_vars = [
@@ -1146,6 +1146,11 @@ def call_event_handler(
                         break
 
             if not failed_type_check:
+                if i:
+                    console.warn(
+                        f"Event handler {key} expects {args_types_without_vars} but got {type_hints_of_provided_callback} as annotated in {event_handler.fn.__qualname__} instead. "
+                        f"This may lead to unexpected behavior but is intentionally ignored for {key}."
+                    )
                 return event_handler(*parsed_args)
 
         if failures:
