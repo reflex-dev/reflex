@@ -213,14 +213,8 @@ def interpret_path_env(value: str, field_name: str) -> Path:
 
     Returns:
         The interpreted value.
-
-    Raises:
-        EnvironmentVarValueError: If the path does not exist.
     """
-    path = Path(value)
-    if not path.exists():
-        raise EnvironmentVarValueError(f"Path does not exist: {path} for {field_name}")
-    return path
+    return Path(value)
 
 
 def interpret_enum_env(value: str, field_type: GenericType, field_name: str) -> Any:
