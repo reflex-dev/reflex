@@ -1061,8 +1061,6 @@ def call_event_handler(
 
     Raises:
         EventHandlerArgMismatch: if number of arguments expected by event_handler doesn't match the spec.
-        EventHandlerArgTypeMismatch: if the annotations of args accepted by event_handler differs from the spec of the event trigger.
-        TypeError: if a failure occurs while comparing types.
 
     Returns:
         The event spec from calling the event handler.
@@ -1129,10 +1127,15 @@ def call_event_handler(
                     compare_result = typehint_issubclass(
                         args_types_without_vars[i], type_hints_of_provided_callback[arg]
                     )
-                except TypeError as e:
-                    raise TypeError(
+                except TypeError:
+                    # TODO: In 0.7.0, remove this block and raise the exception
+                    # raise TypeError(
+                    #     f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_handler.fn.__qualname__} provided for {key}."
+                    # ) from e
+                    console.warn(
                         f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_handler.fn.__qualname__} provided for {key}."
-                    ) from e
+                    )
+                    compare_result = False
 
                 if compare_result:
                     continue
@@ -1140,12 +1143,9 @@ def call_event_handler(
                     failure = EventHandlerArgTypeMismatch(
                         f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {type_hints_of_provided_callback[arg]} as annotated in {event_handler.fn.__qualname__} instead."
                     )
-                    if len(event_spec_return_types) == 1:
-                        raise failure
-                    else:
-                        failures.append(failure)
-                        failed_type_check = True
-                        break
+                    failures.append(failure)
+                    failed_type_check = True
+                    break
 
             if not failed_type_check:
                 if event_spec_index:
@@ -1172,7 +1172,12 @@ def call_event_handler(
                 return event_handler(*parsed_args)
 
         if failures:
-            raise EventHandlerArgTypeMismatch("\n".join([str(f) for f in failures]))
+            console.deprecate(
+                "Mismatched event handler argument types",
+                "\n".join([str(f) for f in failures]),
+                "0.6.5",
+                "0.7.0",
+            )
 
     return event_handler(*parsed_args)  # type: ignore
 
