@@ -1597,8 +1597,7 @@ class EventNamespace(types.SimpleNamespace):
     EventChainVar = EventChainVar
     LiteralEventChainVar = LiteralEventChainVar
     EventType = EventType
-
-    # __call__ = staticmethod(event_handler)
+    EventCallback = EventCallback
 
     if sys.version_info >= (3, 10):
 
