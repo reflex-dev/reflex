@@ -303,8 +303,22 @@ def interpret_env_var_value(
         )
 
 
-@dataclasses.dataclass(init=False)
-class ExistingPath(Path):
+class PathMeta(type):
+    """Metaclass for Path."""
+
+    def __getattr__(cls, name):
+        """Get the attribute from the Path class.
+
+        Args:
+            name: The attribute name.
+
+        Returns:
+            The attribute.
+        """
+        return getattr(Path, name)
+
+
+class ExistingPath(Path, metaclass=PathMeta):
     """A path that must exist."""
 
 
