@@ -1646,18 +1646,18 @@ class EventNamespace(types.SimpleNamespace):
 
         @overload
         @staticmethod
-        def event_handler(
+        def __call__(
             func: None = None, *, background: bool | None = None
         ) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
 
         @overload
         @staticmethod
-        def event_handler(
+        def __call__(
             func: Callable[P, T], *, background: bool | None = None
         ) -> Callable[P, T]: ...
 
         @staticmethod
-        def event_handler(
+        def __call__(
             func: Callable[P, T] | None = None,
             *,
             background: bool | None = None,
@@ -1716,5 +1716,3 @@ class EventNamespace(types.SimpleNamespace):
 
 
 event = EventNamespace()
-
-event.event_handler()
