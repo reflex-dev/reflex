@@ -303,7 +303,11 @@ def interpret_env_var_value(
         )
 
 
-ExistingPath = Annotated[Path, {"exists": True}]
+class PathExistsFlag:
+    """Flag to indicate that a path must exist."""
+
+
+ExistingPath = Annotated[Path, PathExistsFlag]
 
 
 @dataclasses.dataclass(init=False)
@@ -336,7 +340,7 @@ class EnvironmentVariables:
 
     # Path to the alembic config file
     ALEMBIC_CONFIG: ExistingPath = dataclasses.field(
-        default_factory=lambda: ExistingPath(constants.ALEMBIC_CONFIG)
+        default_factory=lambda: Path(constants.ALEMBIC_CONFIG)
     )
 
     # Disable SSL verification for HTTPX requests.
@@ -450,7 +454,7 @@ class Config(Base):
     telemetry_enabled: bool = True
 
     # The bun path
-    bun_path: ExistingPath = ExistingPath(constants.Bun.DEFAULT_PATH)
+    bun_path: ExistingPath = Path(constants.Bun.DEFAULT_PATH)
 
     # List of origins that are allowed to connect to the backend API.
     cors_allowed_origins: List[str] = ["*"]
@@ -574,7 +578,7 @@ class Config(Base):
                     )
 
                 # Interpret the value.
-                value = interpret_env_var_value(env_var, field.type_, field.name)
+                value = interpret_env_var_value(env_var, field.outer_type_, field.name)
 
                 # Set the value.
                 updated_values[key] = value
