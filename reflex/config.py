@@ -204,6 +204,25 @@ def interpret_int_env(value: str, field_name: str) -> int:
         ) from ve
 
 
+def interpret_existing_path_env(value: str, field_name: str) -> ExistingPath:
+    """Interpret a path environment variable value as an existing path.
+
+    Args:
+        value: The environment variable value.
+        field_name: The field name.
+
+    Returns:
+        The interpreted value.
+
+    Raises:
+        EnvironmentVarValueError: If the path does not exist.
+    """
+    path = ExistingPath(value)
+    if not path.exists():
+        raise EnvironmentVarValueError(f"Path does not exist: {path} for {field_name}")
+    return path
+
+
 def interpret_path_env(value: str, field_name: str) -> Path:
     """Interpret a path environment variable value.
 
@@ -217,10 +236,7 @@ def interpret_path_env(value: str, field_name: str) -> Path:
     Raises:
         EnvironmentVarValueError: If the path does not exist.
     """
-    path = Path(value)
-    if not path.exists():
-        raise EnvironmentVarValueError(f"Path does not exist: {path} for {field_name}")
-    return path
+    return Path(value)
 
 
 def interpret_enum_env(value: str, field_type: GenericType, field_name: str) -> Any:
@@ -276,6 +292,8 @@ def interpret_env_var_value(
         return interpret_int_env(value, field_name)
     elif field_type is Path:
         return interpret_path_env(value, field_name)
+    elif field_type is ExistingPath:
+        return interpret_existing_path_env(value, field_name)
     elif inspect.isclass(field_type) and issubclass(field_type, enum.Enum):
         return interpret_enum_env(value, field_type, field_name)
 
@@ -283,6 +301,10 @@ def interpret_env_var_value(
         raise ValueError(
             f"Invalid type for environment variable {field_name}: {field_type}. This is probably an issue in Reflex."
         )
+
+
+class ExistingPath(Path):
+    """A path that must exist."""
 
 
 @dataclasses.dataclass(init=False)
@@ -314,7 +336,7 @@ class EnvironmentVariables:
     REFLEX_WEB_WORKDIR: Path = Path(constants.Dirs.WEB)
 
     # Path to the alembic config file
-    ALEMBIC_CONFIG: Path = Path(constants.ALEMBIC_CONFIG)
+    ALEMBIC_CONFIG: ExistingPath = ExistingPath(constants.ALEMBIC_CONFIG)
 
     # Disable SSL verification for HTTPX requests.
     SSL_NO_VERIFY: bool = False
