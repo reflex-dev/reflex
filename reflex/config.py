@@ -12,7 +12,7 @@ import urllib.parse
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
-from typing_extensions import get_type_hints
+from typing_extensions import Annotated, get_type_hints
 
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
 from reflex.utils.types import GenericType, is_union, value_inside_optional
@@ -303,17 +303,7 @@ def interpret_env_var_value(
         )
 
 
-class ExistingPath(Path):
-    """A path that must exist."""
-
-    @property
-    def __class__(self):
-        """Get the class of the path.
-
-        Returns:
-            The class of the path.
-        """
-        return Path
+ExistingPath = Annotated[Path, {"exists": True}]
 
 
 @dataclasses.dataclass(init=False)
