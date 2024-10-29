@@ -1389,7 +1389,7 @@ def upload(app: App):
         if isinstance(func, EventHandler):
             if func.is_background:
                 raise UploadTypeError(
-                    f"@rx.background is not supported for upload handler `{handler}`.",
+                    f"@rx.event(background=True) is not supported for upload handler `{handler}`.",
                 )
             func = func.fn
         if isinstance(func, functools.partial):

@@ -874,7 +874,7 @@ async def test_upload_file_background(state, tmp_path, token):
         await fn(request_mock, [file_mock])
     assert (
         err.value.args[0]
-        == f"@rx.background is not supported for upload handler `{state.get_full_name()}.bg_upload`."
+        == f"@rx.event(background=True) is not supported for upload handler `{state.get_full_name()}.bg_upload`."
     )
 
     if isinstance(app.state_manager, StateManagerRedis):

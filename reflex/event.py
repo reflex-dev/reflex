@@ -83,7 +83,7 @@ class Event:
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 
 
-def background(fn):
+def background(fn, *, __internal_reflex_call: bool = False):
     """Decorator to mark event handler as running in the background.
 
     Args:
@@ -96,6 +96,13 @@ def background(fn):
     Raises:
         TypeError: If the function is not a coroutine function or async generator.
     """
+    if not __internal_reflex_call:
+        console.deprecate(
+            "background-decorator",
+            "Use `rx.event(background=True)` instead.",
+            "0.6.5",
+            "0.7.0",
+        )
     if not inspect.iscoroutinefunction(fn) and not inspect.isasyncgenfunction(fn):
         raise TypeError("Background task must be async function or generator.")
     setattr(fn, BACKGROUND_TASK_MARKER, True)
@@ -1457,6 +1464,8 @@ V3 = TypeVar("V3")
 V4 = TypeVar("V4")
 V5 = TypeVar("V5")
 
+background_event_decorator = background
+
 if sys.version_info >= (3, 10):
     from typing import Concatenate
 
@@ -1557,31 +1566,85 @@ if sys.version_info >= (3, 10):
 
             return partial(self.func, instance)  # type: ignore
 
-    def event_handler(func: Callable[Concatenate[Any, P], T]) -> EventCallback[P, T]:
+    @overload
+    def event_handler(
+        func: None = None, *, background: bool | None = None
+    ) -> Callable[[Callable[Concatenate[Any, P], T]], EventCallback[P, T]]: ...
+
+    @overload
+    def event_handler(
+        func: Callable[Concatenate[Any, P], T],
+        *,
+        background: bool | None = None,
+    ) -> EventCallback[P, T]: ...
+
+    def event_handler(
+        func: Callable[Concatenate[Any, P], T] | None = None,
+        *,
+        background: bool | None = None,
+    ) -> Union[
+        EventCallback[P, T],
+        Callable[[Callable[Concatenate[Any, P], T]], EventCallback[P, T]],
+    ]:
         """Wrap a function to be used as an event.
 
         Args:
             func: The function to wrap.
+            background: Whether the event should be run in the background. Defaults to False.
 
         Returns:
             The wrapped function.
         """
-        return func  # type: ignore
+
+        def wrapper(func: Callable[Concatenate[Any, P], T]) -> EventCallback[P, T]:
+            if background is True:
+                return background_event_decorator(func, __interal_reflex_call=True)  # type: ignore
+            return func  # type: ignore
+
+        if func is not None:
+            return wrapper(func)
+        return wrapper
 else:
 
     class EventCallback(Generic[P, T]):
         """A descriptor that wraps a function to be used as an event."""
 
-    def event_handler(func: Callable[P, T]) -> Callable[P, T]:
+    @overload
+    def event_handler(
+        func: None = None, *, background: bool | None = None
+    ) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
+
+    @overload
+    def event_handler(
+        func: Callable[P, T], *, background: bool | None = None
+    ) -> Callable[P, T]: ...
+
+    def event_handler(
+        func: Callable[P, T] | None = None,
+        *,
+        background: bool | None = None,
+    ) -> Union[
+        Callable[P, T],
+        Callable[[Callable[P, T]], Callable[P, T]],
+    ]:
         """Wrap a function to be used as an event.
 
         Args:
             func: The function to wrap.
+            background: Whether the event should be run in the background. Defaults to False.
 
         Returns:
             The wrapped function.
         """
-        return func
+
+        def wrapper(func: Callable[P, T]) -> Callable[P, T]:
+            if background is True:
+                return background_event_decorator(func, __interal_reflex_call=True)  # type: ignore
+            return func  # type: ignore
+
+        if func is not None:
+            return wrapper(func)
+        return wrapper
 
 
 G = ParamSpec("G")
