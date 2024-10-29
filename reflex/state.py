@@ -91,7 +91,7 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import serializer
-from reflex.utils.types import get_origin, override
+from reflex.utils.types import _isinstance, get_origin, override
 from reflex.vars import VarData
 
 if TYPE_CHECKING:
@@ -636,7 +636,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         def computed_var_func(state: Self):
             result = f(state)
 
-            if not isinstance(result, of_type):
+            if not _isinstance(result, of_type):
                 console.warn(
                     f"Inline ComputedVar {f} expected type {of_type}, got {type(result)}. "
                     "You can specify expected type with `of_type` argument."
@@ -1272,6 +1272,19 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             raise SetUndefinedStateVarError(
                 f"The state variable '{name}' has not been defined in '{type(self).__name__}'. "
                 f"All state variables must be declared before they can be set."
+            )
+
+        fields = self.get_fields()
+
+        if name in fields and not _isinstance(
+            value, (field_type := fields[name].outer_type_)
+        ):
+            console.deprecate(
+                "mismatched-type-assignment",
+                f"Tried to assign value {value} of type {type(value)} to field {type(self).__name__}.{name} of type {field_type}."
+                " This might lead to unexpected behavior.",
+                "0.6.5",
+                "0.7.0",
             )
 
         # Set the attribute.
