@@ -2,9 +2,20 @@
 
 from __future__ import annotations
 
+from typing_extensions import TypedDict
+
 from reflex.components.component import NoSSRComponent
-from reflex.event import EventHandler, empty_event
+from reflex.event import EventHandler, empty_event, identity_event
 from reflex.vars.base import Var
+
+
+class Progress(TypedDict):
+    """Callback containing played and loaded progress as a fraction, and playedSeconds and loadedSeconds in seconds."""
+
+    played: float
+    playedSeconds: float
+    loaded: float
+    loadedSeconds: float
 
 
 class ReactPlayer(NoSSRComponent):
@@ -55,10 +66,10 @@ class ReactPlayer(NoSSRComponent):
     on_play: EventHandler[empty_event]
 
     # Callback containing played and loaded progress as a fraction, and playedSeconds and loadedSeconds in seconds. eg { played: 0.12, playedSeconds: 11.3, loaded: 0.34, loadedSeconds: 16.7 }
-    on_progress: EventHandler[lambda progress: [progress]]
+    on_progress: EventHandler[identity_event(Progress)]
 
     # Callback containing duration of the media, in seconds.
-    on_duration: EventHandler[lambda seconds: [seconds]]
+    on_duration: EventHandler[identity_event(float)]
 
     # Called when media is paused.
     on_pause: EventHandler[empty_event]
@@ -70,13 +81,13 @@ class ReactPlayer(NoSSRComponent):
     on_buffer_end: EventHandler[empty_event]
 
     # Called when media seeks with seconds parameter.
-    on_seek: EventHandler[lambda seconds: [seconds]]
+    on_seek: EventHandler[identity_event(float)]
 
     # Called when playback rate of the player changed. Only supported by YouTube, Vimeo (if enabled), Wistia, and file paths.
-    on_playback_rate_change: EventHandler[lambda e0: []]
+    on_playback_rate_change: EventHandler[empty_event]
 
     # Called when playback quality of the player changed. Only supported by YouTube (if enabled).
-    on_playback_quality_change: EventHandler[lambda e0: []]
+    on_playback_quality_change: EventHandler[empty_event]
 
     # Called when media finishes playing. Does not fire when loop is set to true.
     on_ended: EventHandler[empty_event]

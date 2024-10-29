@@ -249,7 +249,8 @@ class AppHarness:
         return textwrap.dedent(source)
 
     def _initialize_app(self):
-        os.environ["TELEMETRY_ENABLED"] = ""  # disable telemetry reporting for tests
+        # disable telemetry reporting for tests
+        os.environ["TELEMETRY_ENABLED"] = "false"
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
             app_globals = self._get_globals_from_signature(self.app_source)

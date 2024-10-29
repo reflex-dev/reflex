@@ -9,6 +9,7 @@ import shutil
 from pathlib import Path
 
 from reflex import constants
+from reflex.config import environment
 
 # Shorthand for join.
 join = os.linesep.join
@@ -129,30 +130,13 @@ def which(program: str | Path) -> str | Path | None:
     return shutil.which(str(program))
 
 
-def use_system_install(var_name: str) -> bool:
-    """Check if the system install should be used.
-
-    Args:
-        var_name: The name of the environment variable.
-
-    Raises:
-        ValueError: If the variable name is invalid.
-
-    Returns:
-        Whether the associated env var should use the system install.
-    """
-    if not var_name.startswith("REFLEX_USE_SYSTEM_"):
-        raise ValueError("Invalid system install variable name.")
-    return os.getenv(var_name, "").lower() in ["true", "1", "yes"]
-
-
 def use_system_node() -> bool:
     """Check if the system node should be used.
 
     Returns:
         Whether the system node should be used.
     """
-    return use_system_install(constants.Node.USE_SYSTEM_VAR)
+    return environment.REFLEX_USE_SYSTEM_NODE
 
 
 def use_system_bun() -> bool:
@@ -161,7 +145,7 @@ def use_system_bun() -> bool:
     Returns:
         Whether the system bun should be used.
     """
-    return use_system_install(constants.Bun.USE_SYSTEM_VAR)
+    return environment.REFLEX_USE_SYSTEM_BUN
 
 
 def get_node_bin_path() -> Path | None:
@@ -185,7 +169,8 @@ def get_node_path() -> str | None:
     """
     node_path = Path(constants.Node.PATH)
     if use_system_node() or not node_path.exists():
-        return str(which("node"))
+        system_node_path = which("node")
+        return str(system_node_path) if system_node_path else None
     return str(node_path)
 
 
@@ -197,7 +182,8 @@ def get_npm_path() -> str | None:
     """
     npm_path = Path(constants.Node.NPM_PATH)
     if use_system_node() or not npm_path.exists():
-        return str(which("npm"))
+        system_npm_path = which("npm")
+        return str(system_npm_path) if system_npm_path else None
     return str(npm_path)
 
 

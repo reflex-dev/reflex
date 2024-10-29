@@ -2,6 +2,7 @@
 
 import pytest
 
+import reflex as rx
 from reflex.components.base.script import Script
 from reflex.state import BaseState
 
@@ -35,14 +36,17 @@ def test_script_neither():
 class EvState(BaseState):
     """State for testing event handlers."""
 
+    @rx.event
     def on_ready(self):
         """Empty event handler."""
         pass
 
+    @rx.event
     def on_load(self):
         """Empty event handler."""
         pass
 
+    @rx.event
     def on_error(self):
         """Empty event handler."""
         pass

@@ -36,7 +36,9 @@ from reflex.constants import (
     MemoizationMode,
     PageNames,
 )
+from reflex.constants.compiler import SpecialAttributes
 from reflex.event import (
+    EventCallback,
     EventChain,
     EventChainVar,
     EventHandler,
@@ -44,6 +46,7 @@ from reflex.event import (
     EventVar,
     call_event_fn,
     call_event_handler,
+    empty_event,
     get_handler_args,
 )
 from reflex.style import Style, format_as_emotion
@@ -474,6 +477,17 @@ class Component(BaseComponent, ABC):
         for key in kwargs["event_triggers"]:
             del kwargs[key]
 
+        # Place data_ and aria_ attributes into custom_attrs
+        special_attributes = tuple(
+            key
+            for key in kwargs
+            if key not in fields and SpecialAttributes.is_special(key)
+        )
+        if special_attributes:
+            custom_attrs = kwargs.setdefault("custom_attrs", {})
+            for key in special_attributes:
+                custom_attrs[format.to_kebab_case(key)] = kwargs.pop(key)
+
         # Add style props to the component.
         style = kwargs.get("style", {})
         if isinstance(style, List):
@@ -493,8 +507,6 @@ class Component(BaseComponent, ABC):
                 **{attr: value for attr, value in kwargs.items() if attr not in fields},
             }
         )
-        if "custom_attrs" not in kwargs:
-            kwargs["custom_attrs"] = {}
 
         # Convert class_name to str if it's list
         class_name = kwargs.get("class_name", "")
@@ -613,32 +625,32 @@ class Component(BaseComponent, ABC):
 
         """
         default_triggers = {
-            EventTriggers.ON_FOCUS: lambda: [],
-            EventTriggers.ON_BLUR: lambda: [],
-            EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_CONTEXT_MENU: lambda: [],
-            EventTriggers.ON_DOUBLE_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda: [],
-            EventTriggers.ON_MOUSE_OUT: lambda: [],
-            EventTriggers.ON_MOUSE_OVER: lambda: [],
-            EventTriggers.ON_MOUSE_UP: lambda: [],
-            EventTriggers.ON_SCROLL: lambda: [],
-            EventTriggers.ON_MOUNT: lambda: [],
-            EventTriggers.ON_UNMOUNT: lambda: [],
+            EventTriggers.ON_FOCUS: empty_event,
+            EventTriggers.ON_BLUR: empty_event,
+            EventTriggers.ON_CLICK: empty_event,
+            EventTriggers.ON_CONTEXT_MENU: empty_event,
+            EventTriggers.ON_DOUBLE_CLICK: empty_event,
+            EventTriggers.ON_MOUSE_DOWN: empty_event,
+            EventTriggers.ON_MOUSE_ENTER: empty_event,
+            EventTriggers.ON_MOUSE_LEAVE: empty_event,
+            EventTriggers.ON_MOUSE_MOVE: empty_event,
+            EventTriggers.ON_MOUSE_OUT: empty_event,
+            EventTriggers.ON_MOUSE_OVER: empty_event,
+            EventTriggers.ON_MOUSE_UP: empty_event,
+            EventTriggers.ON_SCROLL: empty_event,
+            EventTriggers.ON_MOUNT: empty_event,
+            EventTriggers.ON_UNMOUNT: empty_event,
         }
 
         # Look for component specific triggers,
         # e.g. variable declared as EventHandler types.
         for field in self.get_fields().values():
-            if types._issubclass(field.type_, EventHandler):
+            if types._issubclass(field.outer_type_, EventHandler):
                 args_spec = None
                 annotation = field.annotation
                 if (metadata := getattr(annotation, "__metadata__", None)) is not None:
                     args_spec = metadata[0]
-                default_triggers[field.name] = args_spec or (lambda: [])
+                default_triggers[field.name] = args_spec or (empty_event)  # type: ignore
         return default_triggers
 
     def __repr__(self) -> str:
@@ -1115,6 +1127,8 @@ class Component(BaseComponent, ABC):
         for trigger in self.event_triggers.values():
             if isinstance(trigger, EventChain):
                 for event in trigger.events:
+                    if isinstance(event, EventCallback):
+                        continue
                     if isinstance(event, EventSpec):
                         if event.handler.state_full_name:
                             return True
@@ -1294,7 +1308,9 @@ class Component(BaseComponent, ABC):
         if self._get_ref_hook():
             # Handle hooks needed for attaching react refs to DOM nodes.
             _imports.setdefault("react", set()).add(ImportVar(tag="useRef"))
-            _imports.setdefault(f"/{Dirs.STATE_PATH}", set()).add(ImportVar(tag="refs"))
+            _imports.setdefault(f"$/{Dirs.STATE_PATH}", set()).add(
+                ImportVar(tag="refs")
+            )
 
         if self._get_mount_lifecycle_hook():
             # Handle hooks for `on_mount` / `on_unmount`.
@@ -1651,7 +1667,7 @@ class CustomComponent(Component):
     """A custom user-defined component."""
 
     # Use the components library.
-    library = f"/{Dirs.COMPONENTS_PATH}"
+    library = f"$/{Dirs.COMPONENTS_PATH}"
 
     # The function that creates the component.
     component_fn: Callable[..., Component] = Component.create
@@ -1695,7 +1711,7 @@ class CustomComponent(Component):
                 value = self._create_event_chain(
                     value=value,
                     args_spec=event_triggers_in_component_declaration.get(
-                        key, lambda: []
+                        key, empty_event
                     ),
                 )
                 self.props[format.to_camel_case(key)] = value
@@ -2219,7 +2235,7 @@ class StatefulComponent(BaseComponent):
         """
         if self.rendered_as_shared:
             return {
-                f"/{Dirs.UTILS}/{PageNames.STATEFUL_COMPONENTS}": [
+                f"$/{Dirs.UTILS}/{PageNames.STATEFUL_COMPONENTS}": [
                     ImportVar(tag=self.tag)
                 ]
             }

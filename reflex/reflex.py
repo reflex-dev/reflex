@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import atexit
 import os
-import webbrowser
 from pathlib import Path
 from typing import List, Optional
 
@@ -14,7 +13,7 @@ from reflex_cli.deployments import deployments_cli
 from reflex_cli.utils import dependency
 
 from reflex import constants
-from reflex.config import get_config
+from reflex.config import environment, get_config
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
@@ -275,9 +274,17 @@ def run(
         constants.Env.DEV, help="The environment to run the app in."
     ),
     frontend: bool = typer.Option(
-        False, "--frontend-only", help="Execute only frontend."
+        False,
+        "--frontend-only",
+        help="Execute only frontend.",
+        envvar=constants.ENV_FRONTEND_ONLY_ENV_VAR,
     ),
-    backend: bool = typer.Option(False, "--backend-only", help="Execute only backend."),
+    backend: bool = typer.Option(
+        False,
+        "--backend-only",
+        help="Execute only backend.",
+        envvar=constants.ENV_BACKEND_ONLY_ENV_VAR,
+    ),
     frontend_port: str = typer.Option(
         config.frontend_port, help="Specify a different frontend port."
     ),
@@ -292,6 +299,12 @@ def run(
     ),
 ):
     """Run the app in the current directory."""
+    if frontend and backend:
+        console.error("Cannot use both --frontend-only and --backend-only options.")
+        raise typer.Exit(1)
+    os.environ[constants.ENV_BACKEND_ONLY_ENV_VAR] = str(backend).lower()
+    os.environ[constants.ENV_FRONTEND_ONLY_ENV_VAR] = str(frontend).lower()
+
     _run(env, frontend, backend, frontend_port, backend_port, backend_host, loglevel)
 
 
@@ -407,7 +420,7 @@ def db_init():
         return
 
     # Check the alembic config.
-    if Path(constants.ALEMBIC_CONFIG).exists():
+    if environment.ALEMBIC_CONFIG.exists():
         console.error(
             "Database is already initialized. Use "
             "[bold]reflex db makemigrations[/bold] to create schema change "
@@ -584,18 +597,6 @@ def deploy(
         with_tracing=with_tracing,
         loglevel=loglevel.subprocess_level(),
     )
-
-
-@cli.command()
-def demo(
-    frontend_port: str = typer.Option(
-        "3001", help="Specify a different frontend port."
-    ),
-    backend_port: str = typer.Option("8001", help="Specify a different backend port."),
-):
-    """Run the demo app."""
-    # Open the demo app in a terminal.
-    webbrowser.open("https://demo.reflex.run")
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")

@@ -6,7 +6,7 @@ from typing import Any, Type, Union
 
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
-from reflex.event import EventHandler
+from reflex.event import EventHandler, empty_event
 from reflex.vars import VarData
 from reflex.vars.base import Var
 
@@ -46,7 +46,7 @@ class DebounceInput(Component):
     element: Var[Type[Component]]
 
     # Fired when the input value changes
-    on_change: EventHandler[lambda e0: [e0.value]]
+    on_change: EventHandler[empty_event]
 
     @classmethod
     def create(cls, *children: Component, **props: Any) -> Component:
@@ -118,7 +118,7 @@ class DebounceInput(Component):
                 _var_type=Type[Component],
                 _var_data=VarData(
                     imports=child._get_imports(),
-                    hooks=child._get_hooks_internal(),
+                    hooks=child._get_all_hooks(),
                 ),
             ),
         )
@@ -128,6 +128,10 @@ class DebounceInput(Component):
         component.event_triggers.update(child.event_triggers)
         component.children = child.children
         component._rename_props = child._rename_props
+        outer_get_all_custom_code = component._get_all_custom_code
+        component._get_all_custom_code = lambda: outer_get_all_custom_code().union(
+            child._get_all_custom_code()
+        )
         return component
 
     def _render(self):

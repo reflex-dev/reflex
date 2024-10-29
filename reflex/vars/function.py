@@ -4,21 +4,20 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Any, Callable, ClassVar, Optional, Tuple, Type, Union
+from typing import Any, Callable, Optional, Tuple, Type, Union
 
 from reflex.utils.types import GenericType
 
 from .base import (
     CachedVarOperation,
     LiteralVar,
-    ToOperation,
     Var,
     VarData,
     cached_property_no_lock,
 )
 
 
-class FunctionVar(Var[Callable]):
+class FunctionVar(Var[Callable], python_types=Callable):
     """Base class for immutable function vars."""
 
     def __call__(self, *args: Var | Any) -> ArgsFunctionOperation:
@@ -180,17 +179,8 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
         )
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ToFunctionOperation(ToOperation, FunctionVar):
-    """Base class of converting a var to a function."""
-
-    _original: Var = dataclasses.field(default_factory=lambda: LiteralVar.create(None))
-
-    _default_var_type: ClassVar[GenericType] = Callable
-
-
 JSON_STRINGIFY = FunctionStringVar.create("JSON.stringify")
+ARRAY_ISARRAY = FunctionStringVar.create("Array.isArray")
+PROTOTYPE_TO_STRING = FunctionStringVar.create(
+    "((__to_string) => __to_string.toString())"
+)

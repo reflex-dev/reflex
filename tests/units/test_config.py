@@ -1,11 +1,19 @@
 import multiprocessing
 import os
+from pathlib import Path
+from typing import Any, Dict
 
 import pytest
 
 import reflex as rx
 import reflex.config
-from reflex.constants import Endpoint
+from reflex.config import (
+    environment,
+    interpret_boolean_env,
+    interpret_enum_env,
+    interpret_int_env,
+)
+from reflex.constants import Endpoint, Env
 
 
 def test_requires_app_name():
@@ -41,7 +49,12 @@ def test_set_app_name(base_config_values):
         ("TELEMETRY_ENABLED", True),
     ],
 )
-def test_update_from_env(base_config_values, monkeypatch, env_var, value):
+def test_update_from_env(
+    base_config_values: Dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    env_var: str,
+    value: Any,
+):
     """Test that environment variables override config values.
 
     Args:
@@ -54,6 +67,29 @@ def test_update_from_env(base_config_values, monkeypatch, env_var, value):
     assert os.environ.get(env_var) == str(value)
     config = rx.Config(**base_config_values)
     assert getattr(config, env_var.lower()) == value
+
+
+def test_update_from_env_path(
+    base_config_values: Dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+):
+    """Test that environment variables override config values.
+
+    Args:
+        base_config_values: Config values.
+        monkeypatch: The pytest monkeypatch object.
+        tmp_path: The pytest tmp_path fixture object.
+    """
+    monkeypatch.setenv("BUN_PATH", "/test")
+    assert os.environ.get("BUN_PATH") == "/test"
+    with pytest.raises(ValueError):
+        rx.Config(**base_config_values)
+
+    monkeypatch.setenv("BUN_PATH", str(tmp_path))
+    assert os.environ.get("BUN_PATH") == str(tmp_path)
+    config = rx.Config(**base_config_values)
+    assert config.bun_path == tmp_path
 
 
 @pytest.mark.parametrize(
@@ -177,11 +213,11 @@ def test_replace_defaults(
         assert getattr(c, key) == value
 
 
-def reflex_dir_constant():
-    return rx.constants.Reflex.DIR
+def reflex_dir_constant() -> Path:
+    return environment.REFLEX_DIR
 
 
-def test_reflex_dir_env_var(monkeypatch, tmp_path):
+def test_reflex_dir_env_var(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Test that the REFLEX_DIR environment variable is used to set the Reflex.DIR constant.
 
     Args:
@@ -193,3 +229,16 @@ def test_reflex_dir_env_var(monkeypatch, tmp_path):
     mp_ctx = multiprocessing.get_context(method="spawn")
     with mp_ctx.Pool(processes=1) as pool:
         assert pool.apply(reflex_dir_constant) == tmp_path
+
+
+def test_interpret_enum_env() -> None:
+    assert interpret_enum_env(Env.PROD.value, Env, "REFLEX_ENV") == Env.PROD
+
+
+def test_interpret_int_env() -> None:
+    assert interpret_int_env("3001", "FRONTEND_PORT") == 3001
+
+
+@pytest.mark.parametrize("value, expected", [("true", True), ("false", False)])
+def test_interpret_bool_env(value: str, expected: bool) -> None:
+    assert interpret_boolean_env(value, "TELEMETRY_ENABLED") == expected

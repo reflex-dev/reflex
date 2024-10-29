@@ -2,7 +2,7 @@
 import axios from "axios";
 import io from "socket.io-client";
 import JSON5 from "json5";
-import env from "/env.json";
+import env from "$/env.json";
 import Cookies from "universal-cookie";
 import { useEffect, useRef, useState } from "react";
 import Router, { useRouter } from "next/router";
@@ -12,9 +12,9 @@ import {
   onLoadInternalEvent,
   state_name,
   exception_state_name,
-} from "utils/context.js";
-import debounce from "/utils/helpers/debounce";
-import throttle from "/utils/helpers/throttle";
+} from "$/utils/context.js";
+import debounce from "$/utils/helpers/debounce";
+import throttle from "$/utils/helpers/throttle";
 import * as Babel from "@babel/standalone";
 
 // Endpoint URLs.
@@ -743,6 +743,7 @@ export const useEventLoop = (
       addEvents([
         Event(`${exception_state_name}.handle_frontend_exception`, {
           stack: error.stack,
+          component_stack: "",
         }),
       ]);
       return false;
@@ -754,6 +755,7 @@ export const useEventLoop = (
       addEvents([
         Event(`${exception_state_name}.handle_frontend_exception`, {
           stack: event.reason.stack,
+          component_stack: "",
         }),
       ]);
       return false;
