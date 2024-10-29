@@ -257,8 +257,8 @@ class Markdown(Component):
             for tag in self.component_map
         }
         codeblock_component = self.get_component("codeblock")
-        codeblock_custom_code = codeblock_component.get_component_map_custom_code() if hasattr(codeblock_component,
-                                                                                               "get_component_map_custom_code") else ""
+        custom_code_list = self._get_custom_code_from_children(codeblock_component)
+        codeblock_custom_code = "\n".join(custom_code_list)
         # Separate out inline code and code blocks.
         components["code"] = Var(
             _js_expr=f"""(({{node, inline, className, {_CHILDREN._js_expr}, {_PROPS._js_expr}}}) => {{
@@ -273,6 +273,26 @@ class Markdown(Component):
 
         return components
 
+    def _get_custom_code_from_children(self, component) -> list[str]:
+        """Recursively get markdown custom code from children components.
+
+        Args:
+            component: The component to check for custom code.
+
+        Returns:
+            A list of markdown custom code strings.
+        """
+        custom_code_list = []
+        if hasattr(component, "get_component_map_custom_code"):
+            custom_code_list.append(component.get_component_map_custom_code())
+
+        if isinstance(component, CustomComponent):
+            custom_code_list.extend(self._get_custom_code_from_children(component.component_fn(*component.get_prop_vars())))
+        else:
+            for child in component.children:
+                custom_code_list.extend(self._get_custom_code_from_children(child))
+
+        return custom_code_list
     @staticmethod
     def _component_map_hash(component_map) -> str:
         inp = str(
@@ -284,12 +304,12 @@ class Markdown(Component):
         return f"ComponentMap_{self.component_map_hash}"
 
     def _get_custom_code(self) -> str | None:
-        hooks = set()
+        hooks = {}
         for _component in self.component_map.values():
             comp = _component(_MOCK_ARG)
             hooks.update(comp._get_all_hooks_internal())
             hooks.update(comp._get_all_hooks())
-        formatted_hooks = "\n".join(hooks)
+        formatted_hooks = "\n".join(hooks.keys())
         return f"""
         function {self._get_component_map_name()} () {{
             {formatted_hooks}

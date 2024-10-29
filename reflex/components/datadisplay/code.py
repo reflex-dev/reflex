@@ -379,6 +379,8 @@ for theme_name in dir(Theme):
     setattr(Theme, theme_name, getattr(Theme, theme_name)._replace(_var_type=Theme))
 
 
+LANGUAGE_VAR = Var(_js_expr="__language")
+
 class CodeBlock(Component, MarkdownComponentMapMixin):
     """A code block."""
 
@@ -426,30 +428,13 @@ class CodeBlock(Component, MarkdownComponentMapMixin):
         """
         imports_: ImportDict = {}
 
-        if (
-            self.language is not None
-            and (language_without_quotes := str(self.language).replace('"', ""))
-            in LiteralCodeLanguage.__args__  # type: ignore
-        ):
-            imports_[
-                f"react-syntax-highlighter/dist/cjs/languages/prism/{language_without_quotes}"
-            ] = [
-                ImportVar(
-                    tag=format.to_camel_case(language_without_quotes),
-                    is_default=True,
-                    install=False,
-                )
-            ]
-
-        return imports_
-
-    def _get_custom_code(self) -> Optional[str]:
-        if (
-            self.language is not None
-            and (language_without_quotes := str(self.language).replace('"', ""))
-            in LiteralCodeLanguage.__args__  # type: ignore
-        ):
-            return f"{self.alias}.registerLanguage('{language_without_quotes}', {format.to_camel_case(language_without_quotes)})"
+    # def _get_custom_code(self) -> Optional[str]:
+    #     if (
+    #         self.language is not None
+    #         and (language_without_quotes := str(self.language).replace('"', ""))
+    #         in LiteralCodeLanguage.__args__  # type: ignore
+    #     ):
+    #         return f"{self.alias}.registerLanguage('{language_without_quotes}', {format.to_camel_case(language_without_quotes)})"
 
     @classmethod
     def create(
@@ -535,8 +520,9 @@ class CodeBlock(Component, MarkdownComponentMapMixin):
 
         theme = self.theme
 
-        out.add_props(style=theme).remove_props("theme", "code").add_props(
-            children=self.code
+
+        out.add_props(style=theme).remove_props("theme", "code", "language").add_props(
+            children=self.code, language=LANGUAGE_VAR
         )
 
         return out
@@ -565,6 +551,29 @@ const match = (className || '').match(/language-(?<lang>.*)/);
     })();
   }       
         """
+
+
+    def add_hooks(self) -> list[str | Var]:
+        """Add hooks for the component.
+
+        Returns:
+            The hooks for the component.
+        """
+        return [
+            f"const {str(LANGUAGE_VAR)} = {str(self.language)}",
+            f"""
+ if ({str(LANGUAGE_VAR)}) {{
+    (async () => {{
+      try {{
+        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{str(LANGUAGE_VAR)}}}`);
+        SyntaxHighlighter.registerLanguage({str(LANGUAGE_VAR)}, module.default);
+      }} catch (error) {{
+        console.error(`Error importing language module for ${{{str(LANGUAGE_VAR)}}}:`, error);
+      }}
+    }})();
+  }}                
+            """
+        ]
 
 
 class CodeblockNamespace(ComponentNamespace):
