@@ -232,9 +232,6 @@ def interpret_path_env(value: str, field_name: str) -> Path:
 
     Returns:
         The interpreted value.
-
-    Raises:
-        EnvironmentVarValueError: If the path does not exist.
     """
     return Path(value)
 
