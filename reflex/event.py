@@ -1149,8 +1149,24 @@ def call_event_handler(
 
             if not failed_type_check:
                 if event_spec_index:
+                    args = get_args(event_spec_return_types[0])
+
+                    args_types_without_vars = [
+                        arg if get_origin(arg) is not Var else get_args(arg)[0]
+                        for arg in args
+                    ]
+
+                    expect_string = ", ".join(
+                        repr(arg) for arg in args_types_without_vars
+                    ).replace("[", "\\[")
+
+                    given_string = ", ".join(
+                        repr(type_hints_of_provided_callback.get(arg, Any))
+                        for arg in provided_callback_fullspec.args[1:]
+                    ).replace("[", "\\[")
+
                     console.warn(
-                        f"Event handler {key} expects {args_types_without_vars} but got {type_hints_of_provided_callback} as annotated in {event_handler.fn.__qualname__} instead. "
+                        f"Event handler {key} expects ({expect_string}) -> () but got ({given_string}) -> () as annotated in {event_handler.fn.__qualname__} instead. "
                         f"This may lead to unexpected behavior but is intentionally ignored for {key}."
                     )
                 return event_handler(*parsed_args)
