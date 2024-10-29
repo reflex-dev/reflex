@@ -30,7 +30,6 @@ from reflex.utils import imports
 from reflex.utils.exceptions import (
     EventFnArgMismatch,
     EventHandlerArgMismatch,
-    EventHandlerArgTypeMismatch,
 )
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import VarData
@@ -944,20 +943,21 @@ def test_invalid_event_handler_args(component2, test_state):
             on_prop_event=[test_state.do_something_arg, test_state.do_something]
         )
 
-    # Event Handler types must match
-    with pytest.raises(EventHandlerArgTypeMismatch):
-        component2.create(
-            on_user_visited_count_changed=test_state.do_something_with_bool
-        )
-    with pytest.raises(EventHandlerArgTypeMismatch):
-        component2.create(on_user_list_changed=test_state.do_something_with_int)
-    with pytest.raises(EventHandlerArgTypeMismatch):
-        component2.create(on_user_list_changed=test_state.do_something_with_list_int)
+    # Enable 0.7.0 behavior
+    # # Event Handler types must match
+    # with pytest.raises(EventHandlerArgTypeMismatch):
+    #     component2.create(
+    #         on_user_visited_count_changed=test_state.do_something_with_bool
+    #     )
+    # with pytest.raises(EventHandlerArgTypeMismatch):
+    #     component2.create(on_user_list_changed=test_state.do_something_with_int)
+    # with pytest.raises(EventHandlerArgTypeMismatch):
+    #     component2.create(on_user_list_changed=test_state.do_something_with_list_int)
 
-    component2.create(on_open=test_state.do_something_with_int)
-    component2.create(on_open=test_state.do_something_with_bool)
-    component2.create(on_user_visited_count_changed=test_state.do_something_with_int)
-    component2.create(on_user_list_changed=test_state.do_something_with_list_str)
+    # component2.create(on_open=test_state.do_something_with_int)
+    # component2.create(on_open=test_state.do_something_with_bool)
+    # component2.create(on_user_visited_count_changed=test_state.do_something_with_int)
+    # component2.create(on_user_list_changed=test_state.do_something_with_list_str)
 
     # lambda cannot return weird values.
     with pytest.raises(ValueError):
