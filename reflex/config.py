@@ -12,7 +12,7 @@ import urllib.parse
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
-from typing_extensions import get_type_hints
+from typing_extensions import Annotated, get_type_hints
 
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
 from reflex.utils.types import GenericType, is_union, value_inside_optional
@@ -204,8 +204,8 @@ def interpret_int_env(value: str, field_name: str) -> int:
         ) from ve
 
 
-def interpret_path_env(value: str, field_name: str) -> Path:
-    """Interpret a path environment variable value.
+def interpret_existing_path_env(value: str, field_name: str) -> ExistingPath:
+    """Interpret a path environment variable value as an existing path.
 
     Args:
         value: The environment variable value.
@@ -221,6 +221,19 @@ def interpret_path_env(value: str, field_name: str) -> Path:
     if not path.exists():
         raise EnvironmentVarValueError(f"Path does not exist: {path} for {field_name}")
     return path
+
+
+def interpret_path_env(value: str, field_name: str) -> Path:
+    """Interpret a path environment variable value.
+
+    Args:
+        value: The environment variable value.
+        field_name: The field name.
+
+    Returns:
+        The interpreted value.
+    """
+    return Path(value)
 
 
 def interpret_enum_env(value: str, field_type: GenericType, field_name: str) -> Any:
@@ -276,6 +289,8 @@ def interpret_env_var_value(
         return interpret_int_env(value, field_name)
     elif field_type is Path:
         return interpret_path_env(value, field_name)
+    elif field_type is ExistingPath:
+        return interpret_existing_path_env(value, field_name)
     elif inspect.isclass(field_type) and issubclass(field_type, enum.Enum):
         return interpret_enum_env(value, field_type, field_name)
 
@@ -283,6 +298,13 @@ def interpret_env_var_value(
         raise ValueError(
             f"Invalid type for environment variable {field_name}: {field_type}. This is probably an issue in Reflex."
         )
+
+
+class PathExistsFlag:
+    """Flag to indicate that a path must exist."""
+
+
+ExistingPath = Annotated[Path, PathExistsFlag]
 
 
 @dataclasses.dataclass(init=False)
@@ -314,7 +336,7 @@ class EnvironmentVariables:
     REFLEX_WEB_WORKDIR: Path = Path(constants.Dirs.WEB)
 
     # Path to the alembic config file
-    ALEMBIC_CONFIG: Path = Path(constants.ALEMBIC_CONFIG)
+    ALEMBIC_CONFIG: ExistingPath = Path(constants.ALEMBIC_CONFIG)
 
     # Disable SSL verification for HTTPX requests.
     SSL_NO_VERIFY: bool = False
@@ -427,7 +449,7 @@ class Config(Base):
     telemetry_enabled: bool = True
 
     # The bun path
-    bun_path: Path = constants.Bun.DEFAULT_PATH
+    bun_path: ExistingPath = constants.Bun.DEFAULT_PATH
 
     # List of origins that are allowed to connect to the backend API.
     cors_allowed_origins: List[str] = ["*"]
@@ -551,7 +573,7 @@ class Config(Base):
                     )
 
                 # Interpret the value.
-                value = interpret_env_var_value(env_var, field.type_, field.name)
+                value = interpret_env_var_value(env_var, field.outer_type_, field.name)
 
                 # Set the value.
                 updated_values[key] = value
