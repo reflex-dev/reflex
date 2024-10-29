@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Literal
+from typing import Literal, Union
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
@@ -55,8 +55,20 @@ class HoverCardContent(elements.Div, RadixThemesComponent):
     # The preferred alignment against the trigger. May change when collisions occur.
     align: Var[Literal["start", "center", "end"]]
 
+    # An offset in pixels from the "start" or "end" alignment options.
+    align_offset: Var[int]
+
     # Whether or not the hover card should avoid collisions with its trigger.
     avoid_collisions: Var[bool]
+    
+    # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { top: 20, left: 20 }.
+    collision_padding: Var[Union[int, dict[str, int]]]
+
+    # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless
+    sticky: Var[Literal["partial", "always"]]
+
+    # Hovercard size "1" - "3"
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
 
 class HoverCard(ComponentNamespace):
