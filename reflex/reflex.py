@@ -573,7 +573,7 @@ cli.add_typer(db_cli, name="db", help="Subcommands for managing the database sch
 cli.add_typer(script_cli, name="script", help="Subcommands running helper scripts.")
 cli.add_typer(
     deployments_cli,
-    name="deployments",
+    name="apps",
     help="Subcommands for managing the Deployments.",
 )
 cli.add_typer(
