@@ -1566,85 +1566,11 @@ if sys.version_info >= (3, 10):
 
             return partial(self.func, instance)  # type: ignore
 
-    @overload
-    def event_handler(
-        func: None = None, *, background: bool | None = None
-    ) -> Callable[[Callable[Concatenate[Any, P], T]], EventCallback[P, T]]: ...
 
-    @overload
-    def event_handler(
-        func: Callable[Concatenate[Any, P], T],
-        *,
-        background: bool | None = None,
-    ) -> EventCallback[P, T]: ...
-
-    def event_handler(
-        func: Callable[Concatenate[Any, P], T] | None = None,
-        *,
-        background: bool | None = None,
-    ) -> Union[
-        EventCallback[P, T],
-        Callable[[Callable[Concatenate[Any, P], T]], EventCallback[P, T]],
-    ]:
-        """Wrap a function to be used as an event.
-
-        Args:
-            func: The function to wrap.
-            background: Whether the event should be run in the background. Defaults to False.
-
-        Returns:
-            The wrapped function.
-        """
-
-        def wrapper(func: Callable[Concatenate[Any, P], T]) -> EventCallback[P, T]:
-            if background is True:
-                return background_event_decorator(func, __internal_reflex_call=True)  # type: ignore
-            return func  # type: ignore
-
-        if func is not None:
-            return wrapper(func)
-        return wrapper
 else:
 
     class EventCallback(Generic[P, T]):
         """A descriptor that wraps a function to be used as an event."""
-
-    @overload
-    def event_handler(
-        func: None = None, *, background: bool | None = None
-    ) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
-
-    @overload
-    def event_handler(
-        func: Callable[P, T], *, background: bool | None = None
-    ) -> Callable[P, T]: ...
-
-    def event_handler(
-        func: Callable[P, T] | None = None,
-        *,
-        background: bool | None = None,
-    ) -> Union[
-        Callable[P, T],
-        Callable[[Callable[P, T]], Callable[P, T]],
-    ]:
-        """Wrap a function to be used as an event.
-
-        Args:
-            func: The function to wrap.
-            background: Whether the event should be run in the background. Defaults to False.
-
-        Returns:
-            The wrapped function.
-        """
-
-        def wrapper(func: Callable[P, T]) -> Callable[P, T]:
-            if background is True:
-                return background_event_decorator(func, __internal_reflex_call=True)  # type: ignore
-            return func  # type: ignore
-
-        if func is not None:
-            return wrapper(func)
-        return wrapper
 
 
 G = ParamSpec("G")
@@ -1672,7 +1598,93 @@ class EventNamespace(types.SimpleNamespace):
     LiteralEventChainVar = LiteralEventChainVar
     EventType = EventType
 
-    __call__ = staticmethod(event_handler)
+    # __call__ = staticmethod(event_handler)
+
+    if sys.version_info >= (3, 10):
+
+        @overload
+        @staticmethod
+        def __call__(
+            func: None = None, *, background: bool | None = None
+        ) -> Callable[[Callable[Concatenate[Any, P], T]], EventCallback[P, T]]: ...
+
+        @overload
+        @staticmethod
+        def __call__(
+            func: Callable[Concatenate[Any, P], T],
+            *,
+            background: bool | None = None,
+        ) -> EventCallback[P, T]: ...
+
+        @staticmethod
+        def __call__(
+            func: Callable[Concatenate[Any, P], T] | None = None,
+            *,
+            background: bool | None = None,
+        ) -> Union[
+            EventCallback[P, T],
+            Callable[[Callable[Concatenate[Any, P], T]], EventCallback[P, T]],
+        ]:
+            """Wrap a function to be used as an event.
+
+            Args:
+                func: The function to wrap.
+                background: Whether the event should be run in the background. Defaults to False.
+
+            Returns:
+                The wrapped function.
+            """
+
+            def wrapper(func: Callable[Concatenate[Any, P], T]) -> EventCallback[P, T]:
+                if background is True:
+                    return background_event_decorator(func, __internal_reflex_call=True)  # type: ignore
+                return func  # type: ignore
+
+            if func is not None:
+                return wrapper(func)
+            return wrapper
+    else:
+
+        @overload
+        @staticmethod
+        def event_handler(
+            func: None = None, *, background: bool | None = None
+        ) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
+
+        @overload
+        @staticmethod
+        def event_handler(
+            func: Callable[P, T], *, background: bool | None = None
+        ) -> Callable[P, T]: ...
+
+        @staticmethod
+        def event_handler(
+            func: Callable[P, T] | None = None,
+            *,
+            background: bool | None = None,
+        ) -> Union[
+            Callable[P, T],
+            Callable[[Callable[P, T]], Callable[P, T]],
+        ]:
+            """Wrap a function to be used as an event.
+
+            Args:
+                func: The function to wrap.
+                background: Whether the event should be run in the background. Defaults to False.
+
+            Returns:
+                The wrapped function.
+            """
+
+            def wrapper(func: Callable[P, T]) -> Callable[P, T]:
+                if background is True:
+                    return background_event_decorator(func, __internal_reflex_call=True)  # type: ignore
+                return func  # type: ignore
+
+            if func is not None:
+                return wrapper(func)
+            return wrapper
+
     get_event = staticmethod(get_event)
     get_hydrate_event = staticmethod(get_hydrate_event)
     fix_events = staticmethod(fix_events)
@@ -1705,3 +1717,5 @@ class EventNamespace(types.SimpleNamespace):
 
 
 event = EventNamespace()
+
+event.event_handler()

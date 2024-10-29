@@ -23,7 +23,6 @@ def BackgroundTask():
         iterations: int = 10
 
         @rx.event(background=True)
-        @rx.event
         async def handle_event(self):
             async with self:
                 self._task_id += 1
@@ -33,7 +32,6 @@ def BackgroundTask():
                 await asyncio.sleep(0.005)
 
         @rx.event(background=True)
-        @rx.event
         async def handle_event_yield_only(self):
             async with self:
                 self._task_id += 1
@@ -62,7 +60,6 @@ def BackgroundTask():
             await asyncio.sleep(0.02)
 
         @rx.event(background=True)
-        @rx.event
         async def non_blocking_pause(self):
             await asyncio.sleep(0.02)
 
@@ -75,14 +72,12 @@ def BackgroundTask():
                 await asyncio.sleep(0.005)
 
         @rx.event(background=True)
-        @rx.event
         async def handle_racy_event(self):
             await asyncio.gather(
                 self.racy_task(), self.racy_task(), self.racy_task(), self.racy_task()
             )
 
         @rx.event(background=True)
-        @rx.event
         async def nested_async_with_self(self):
             async with self:
                 self.counter += 1
@@ -95,7 +90,6 @@ def BackgroundTask():
             await third_state._triple_count()
 
         @rx.event(background=True)
-        @rx.event
         async def yield_in_async_with_self(self):
             async with self:
                 self.counter += 1
@@ -104,7 +98,6 @@ def BackgroundTask():
 
     class OtherState(rx.State):
         @rx.event(background=True)
-        @rx.event
         async def get_other_state(self):
             async with self:
                 state = await self.get_state(State)
