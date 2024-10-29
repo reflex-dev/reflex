@@ -738,6 +738,8 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
     """
     if possible_superclass is Any:
         return True
+    if possible_subclass is Any:
+        return False
 
     provided_type_origin = get_origin(possible_subclass)
     accepted_type_origin = get_origin(possible_superclass)
