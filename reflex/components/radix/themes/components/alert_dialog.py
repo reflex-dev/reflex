@@ -24,6 +24,9 @@ class AlertDialogRoot(RadixThemesComponent):
     # Fired when the open state changes.
     on_open_change: EventHandler[identity_event(bool)]
 
+    # The open state of the dialog when it is initially rendered. Use when you do not need to control its open state.
+    default_open: Var[bool]
+
 
 class AlertDialogTrigger(RadixThemesTriggerComponent):
     """Wraps the control that will open the dialog."""
