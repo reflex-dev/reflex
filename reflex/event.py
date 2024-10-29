@@ -1598,7 +1598,7 @@ if sys.version_info >= (3, 10):
 
         def wrapper(func: Callable[Concatenate[Any, P], T]) -> EventCallback[P, T]:
             if background is True:
-                return background_event_decorator(func, __interal_reflex_call=True)  # type: ignore
+                return background_event_decorator(func, __internal_reflex_call=True)  # type: ignore
             return func  # type: ignore
 
         if func is not None:
@@ -1639,7 +1639,7 @@ else:
 
         def wrapper(func: Callable[P, T]) -> Callable[P, T]:
             if background is True:
-                return background_event_decorator(func, __interal_reflex_call=True)  # type: ignore
+                return background_event_decorator(func, __internal_reflex_call=True)  # type: ignore
             return func  # type: ignore
 
         if func is not None:
