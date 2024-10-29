@@ -943,7 +943,7 @@ def test_invalid_event_handler_args(component2, test_state):
             on_prop_event=[test_state.do_something_arg, test_state.do_something]
         )
 
-    # Enable 0.7.0 behavior
+    # Enable when 0.7.0 happens
     # # Event Handler types must match
     # with pytest.raises(EventHandlerArgTypeMismatch):
     #     component2.create(
