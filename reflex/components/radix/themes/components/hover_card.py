@@ -67,6 +67,9 @@ class HoverCardContent(elements.Div, RadixThemesComponent):
     # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless
     sticky: Var[Literal["partial", "always"]]
 
+    # Whether to hide the content when the trigger becomes fully occluded.
+    hide_when_detached: Var[bool]
+
     # Hovercard size "1" - "3"
     size: Var[Responsive[Literal["1", "2", "3"]]]
 
