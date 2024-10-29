@@ -303,6 +303,7 @@ def interpret_env_var_value(
         )
 
 
+@dataclasses.dataclass(init=False)
 class ExistingPath(Path):
     """A path that must exist."""
 
@@ -336,7 +337,9 @@ class EnvironmentVariables:
     REFLEX_WEB_WORKDIR: Path = Path(constants.Dirs.WEB)
 
     # Path to the alembic config file
-    ALEMBIC_CONFIG: ExistingPath = ExistingPath(constants.ALEMBIC_CONFIG)
+    ALEMBIC_CONFIG: ExistingPath = dataclasses.field(
+        default_factory=lambda: ExistingPath(constants.ALEMBIC_CONFIG)
+    )
 
     # Disable SSL verification for HTTPX requests.
     SSL_NO_VERIFY: bool = False
@@ -449,7 +452,7 @@ class Config(Base):
     telemetry_enabled: bool = True
 
     # The bun path
-    bun_path: Path = constants.Bun.DEFAULT_PATH
+    bun_path: ExistingPath = ExistingPath(constants.Bun.DEFAULT_PATH)
 
     # List of origins that are allowed to connect to the backend API.
     cors_allowed_origins: List[str] = ["*"]
