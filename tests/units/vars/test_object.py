@@ -73,7 +73,8 @@ def test_guess(type_: GenericType) -> None:
 
 @pytest.mark.parametrize("type_", [Base, Bare])
 def test_state(type_: GenericType) -> None:
-    var = ObjectState.bare
+    attr_name = type_.__name__.lower()
+    var = getattr(ObjectState, attr_name)
     assert var._var_type is type_
 
     quantity = var.quantity
