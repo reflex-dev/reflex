@@ -70,7 +70,14 @@ from reflex.components.core.client_side_routing import (
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
 from reflex.config import environment, get_config
-from reflex.event import Event, EventHandler, EventSpec, window_alert
+from reflex.event import (
+    Event,
+    EventHandler,
+    EventSpec,
+    EventType,
+    IndividualEventType,
+    window_alert,
+)
 from reflex.model import Model, get_db_status
 from reflex.page import (
     DECORATED_PAGES,
@@ -189,7 +196,7 @@ class UnevaluatedPage:
     title: Union[Var, str, None]
     description: Union[Var, str, None]
     image: str
-    on_load: Union[EventHandler, EventSpec, List[Union[EventHandler, EventSpec]], None]
+    on_load: Union[EventType[[]], None]
     meta: List[Dict[str, str]]
 
 
@@ -259,7 +266,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
     _state_manager: Optional[StateManager] = None
 
     # Mapping from a route to event handlers to trigger when the page loads. PRIVATE.
-    load_events: Dict[str, List[Union[EventHandler, EventSpec]]] = {}
+    load_events: Dict[str, List[IndividualEventType[[]]]] = {}
 
     # Admin dashboard to view and manage the database. PRIVATE.
     admin_dash: Optional[AdminDash] = None
@@ -471,9 +478,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         title: str | Var | None = None,
         description: str | Var | None = None,
         image: str = constants.DefaultPage.IMAGE,
-        on_load: (
-            EventHandler | EventSpec | list[EventHandler | EventSpec] | None
-        ) = None,
+        on_load: EventType[[]] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
     ):
         """Add a page to the app.
@@ -559,7 +564,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         self._check_routes_conflict(route)
         self.pages[route] = component
 
-    def get_load_events(self, route: str) -> list[EventHandler | EventSpec]:
+    def get_load_events(self, route: str) -> list[IndividualEventType[[]]]:
         """Get the load events for a route.
 
         Args:
@@ -618,9 +623,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         title: str = constants.Page404.TITLE,
         image: str = constants.Page404.IMAGE,
         description: str = constants.Page404.DESCRIPTION,
-        on_load: (
-            EventHandler | EventSpec | list[EventHandler | EventSpec] | None
-        ) = None,
+        on_load: EventType[[]] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
     ):
         """Define a custom 404 page for any url having no match.
