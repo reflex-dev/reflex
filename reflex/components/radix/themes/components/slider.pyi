@@ -13,8 +13,8 @@ from reflex.vars.base import Var
 from ..base import RadixThemesComponent
 
 def on_value_event_spec(
-    value: Var[List[int | float]],
-) -> Tuple[Var[List[int | float]]]: ...
+    value: Var[List[Union[int, float]]],
+) -> Tuple[Var[List[Union[int, float]]]]: ...
 
 class Slider(RadixThemesComponent):
     @overload
@@ -138,7 +138,7 @@ class Slider(RadixThemesComponent):
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[EventType[[]]] = None,
-        on_change: Optional[EventType[List[int | float]]] = None,
+        on_change: Optional[EventType[List[Union[int, float]]]] = None,
         on_click: Optional[EventType[[]]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
         on_double_click: Optional[EventType[[]]] = None,
@@ -153,7 +153,7 @@ class Slider(RadixThemesComponent):
         on_mouse_up: Optional[EventType[[]]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
-        on_value_commit: Optional[EventType[List[int | float]]] = None,
+        on_value_commit: Optional[EventType[List[Union[int, float]]]] = None,
         **props,
     ) -> "Slider":
         """Create a Slider component.
