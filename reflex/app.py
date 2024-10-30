@@ -270,7 +270,7 @@ class App(MiddlewareMixin, LifespanMixin):
     _state_manager: Optional[StateManager] = None
 
     # Mapping from a route to event handlers to trigger when the page loads. PRIVATE.
-    load_events: Dict[str, List[IndividualEventType[[...]]]] = dataclasses.field(
+    load_events: Dict[str, List[IndividualEventType[[]]]] = dataclasses.field(
         default_factory=dict
     )
 

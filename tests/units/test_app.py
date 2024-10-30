@@ -1211,7 +1211,7 @@ async def test_process_events(mocker, token: str):
     ],
 )
 def test_overlay_component(
-    state: State | None,
+    state: Type[State] | None,
     overlay_component: Component | ComponentCallable | None,
     exp_page_child: Type[Component] | None,
 ):
