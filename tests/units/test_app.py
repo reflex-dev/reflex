@@ -1403,13 +1403,6 @@ def test_app_state_determination():
     assert a4.state is not None
 
 
-# for coverage
-def test_raise_on_connect_error():
-    """Test that the connect_error function is called."""
-    with pytest.raises(ValueError):
-        App(connect_error_component="Foo")
-
-
 def test_raise_on_state():
     """Test that the state is set."""
     # state kwargs is deprecated, we just make sure the app is created anyway.

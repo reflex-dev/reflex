@@ -46,7 +46,6 @@ from starlette_admin.contrib.sqla.view import ModelView
 from reflex import constants
 from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
-from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.compiler.compiler import (
@@ -200,7 +199,8 @@ class UnevaluatedPage:
     meta: List[Dict[str, str]]
 
 
-class App(MiddlewareMixin, LifespanMixin, Base):
+@dataclasses.dataclass()
+class App(MiddlewareMixin, LifespanMixin):
     """The main Reflex app that encapsulates the backend and frontend.
 
     Every Reflex app needs an app defined in its main module.
@@ -222,24 +222,26 @@ class App(MiddlewareMixin, LifespanMixin, Base):
     """
 
     # The global [theme](https://reflex.dev/docs/styling/theming/#theme) for the entire app.
-    theme: Optional[Component] = themes.theme(accent_color="blue")
+    theme: Optional[Component] = dataclasses.field(
+        default_factory=lambda: themes.theme(accent_color="blue")
+    )
 
     # The [global style](https://reflex.dev/docs/styling/overview/#global-styles}) for the app.
-    style: ComponentStyle = {}
+    style: ComponentStyle = dataclasses.field(default_factory=dict)
 
     # A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
-    stylesheets: List[str] = []
+    stylesheets: List[str] = dataclasses.field(default_factory=list)
 
     # A component that is present on every page (defaults to the Connection Error banner).
     overlay_component: Optional[Union[Component, ComponentCallable]] = (
-        default_overlay_component()
+        dataclasses.field(default_factory=default_overlay_component)
     )
 
     # Error boundary component to wrap the app with.
     error_boundary: Optional[ComponentCallable] = default_error_boundary
 
     # Components to add to the head of every page.
-    head_components: List[Component] = []
+    head_components: List[Component] = dataclasses.field(default_factory=list)
 
     # The Socket.IO AsyncServer instance.
     sio: Optional[AsyncServer] = None
@@ -251,10 +253,12 @@ class App(MiddlewareMixin, LifespanMixin, Base):
     html_custom_attrs: Optional[Dict[str, str]] = None
 
     # A map from a route to an unevaluated page. PRIVATE.
-    unevaluated_pages: Dict[str, UnevaluatedPage] = {}
+    unevaluated_pages: Dict[str, UnevaluatedPage] = dataclasses.field(
+        default_factory=dict
+    )
 
     # A map from a page route to the component to render. Users should use `add_page`. PRIVATE.
-    pages: Dict[str, Component] = {}
+    pages: Dict[str, Component] = dataclasses.field(default_factory=dict)
 
     # The backend API object. PRIVATE.
     api: FastAPI = None  # type: ignore
@@ -266,7 +270,9 @@ class App(MiddlewareMixin, LifespanMixin, Base):
     _state_manager: Optional[StateManager] = None
 
     # Mapping from a route to event handlers to trigger when the page loads. PRIVATE.
-    load_events: Dict[str, List[IndividualEventType[[]]]] = {}
+    load_events: Dict[str, List[IndividualEventType[[...]]]] = dataclasses.field(
+        default_factory=dict
+    )
 
     # Admin dashboard to view and manage the database. PRIVATE.
     admin_dash: Optional[AdminDash] = None
@@ -275,7 +281,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
     event_namespace: Optional[EventNamespace] = None
 
     # Background tasks that are currently running. PRIVATE.
-    background_tasks: Set[asyncio.Task] = set()
+    background_tasks: Set[asyncio.Task] = dataclasses.field(default_factory=set)
 
     # Frontend Error Handler Function
     frontend_exception_handler: Callable[[Exception], None] = (
@@ -287,23 +293,14 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         [Exception], Union[EventSpec, List[EventSpec], None]
     ] = default_backend_exception_handler
 
-    def __init__(self, **kwargs):
+    def __post_init__(self):
         """Initialize the app.
-
-        Args:
-            **kwargs: Kwargs to initialize the app with.
 
         Raises:
             ValueError: If the event namespace is not provided in the config.
                         Also, if there are multiple client subclasses of rx.BaseState(Subclasses of rx.BaseState should consist
                         of the DefaultState and the client app state).
         """
-        if "connect_error_component" in kwargs:
-            raise ValueError(
-                "`connect_error_component` is deprecated, use `overlay_component` instead"
-            )
-        super().__init__(**kwargs)
-
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
         if not is_testing_env() and BaseState.__subclasses__() != [State]:
             # Only rx.State is allowed as Base State subclass.
