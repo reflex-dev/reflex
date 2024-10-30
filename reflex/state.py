@@ -2346,7 +2346,7 @@ class StateProxy(wrapt.ObjectProxy):
         class State(rx.State):
             counter: int = 0
 
-            @rx.background
+            @rx.event(background=True)
             async def bg_increment(self):
                 await asyncio.sleep(1)
                 async with self:
@@ -3248,7 +3248,7 @@ class StateManagerRedis(StateManager):
             raise LockExpiredError(
                 f"Lock expired for token {token} while processing. Consider increasing "
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
-                "or use `@rx.background` decorator for long-running tasks."
+                "or use `@rx.event(background=True)` decorator for long-running tasks."
             )
         client_token, substate_name = _split_substate_key(token)
         # If the substate name on the token doesn't match the instance name, it cannot have a parent.

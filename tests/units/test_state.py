@@ -1965,7 +1965,7 @@ class BackgroundTaskState(BaseState):
         """
         return self.order
 
-    @rx.background
+    @rx.event(background=True)
     async def background_task(self):
         """A background task that updates the state."""
         async with self:
@@ -2002,7 +2002,7 @@ class BackgroundTaskState(BaseState):
             self.other()  # direct calling event handlers works in context
             self._private_method()
 
-    @rx.background
+    @rx.event(background=True)
     async def background_task_reset(self):
         """A background task that resets the state."""
         with pytest.raises(ImmutableStateError):
@@ -2016,7 +2016,7 @@ class BackgroundTaskState(BaseState):
         async with self:
             self.order.append("reset")
 
-    @rx.background
+    @rx.event(background=True)
     async def background_task_generator(self):
         """A background task generator that does nothing.
 
