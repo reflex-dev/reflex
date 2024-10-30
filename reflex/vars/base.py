@@ -64,6 +64,7 @@ from reflex.utils.imports import (
     parse_imports,
 )
 from reflex.utils.types import GenericType, Self, get_origin, has_args, unionize
+from reflex.vars.object import LiteralObjectVar
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -579,10 +580,35 @@ class Var(Generic[VAR_TYPE]):
         var_type: type[list] | type[tuple] | type[set] = list,
     ) -> ArrayVar: ...
 
+    VAR_TYPE_ARG = TypeVar("VAR_TYPE_ARG")
+
     @overload
     def to(
-        self, output: Type[ObjectVar], var_type: types.GenericType = dict
-    ) -> ObjectVar: ...
+        self,
+        output: Type[LiteralObjectVar[Any]],
+        var_type: None = None,
+    ) -> LiteralObjectVar[VAR_TYPE]: ...
+
+    @overload
+    def to(
+        self,
+        output: Type[LiteralObjectVar[Any]],
+        var_type: Type[VAR_TYPE_ARG],
+    ) -> LiteralObjectVar[VAR_TYPE_ARG]: ...
+
+    @overload
+    def to(
+        self,
+        output: Type[ObjectVar[Any]],
+        var_type: None = None,
+    ) -> ObjectVar[VAR_TYPE]: ...
+
+    @overload
+    def to(
+        self,
+        output: Type[ObjectVar[Any]],
+        var_type: Type[VAR_TYPE_ARG],
+    ) -> ObjectVar[VAR_TYPE_ARG]: ...
 
     @overload
     def to(
