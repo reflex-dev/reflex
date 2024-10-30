@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Literal, Union, Dict
+from typing import Dict, Literal, Union
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
@@ -60,7 +60,7 @@ class HoverCardContent(elements.Div, RadixThemesComponent):
 
     # Whether or not the hover card should avoid collisions with its trigger.
     avoid_collisions: Var[bool]
-    
+
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { top: 20, left: 20 }.
     collision_padding: Var[Union[float, int, Dict[str, Union[float, int]]]]
 

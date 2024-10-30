@@ -76,7 +76,6 @@ class DrawerRoot(DrawerComponent):
     close_threshold: Var[float]
 
 
-
 class DrawerTrigger(DrawerComponent):
     """The button that opens the dialog."""
 
@@ -275,12 +274,14 @@ class DrawerDescription(DrawerComponent):
         base_style.update(style)
         return {"css": base_style}
 
+
 class DrawerHandle(DrawerComponent):
     """A description for the drawer."""
 
     tag = "Drawer.Handle"
 
     alias = "Vaul" + tag
+
 
 class Drawer(ComponentNamespace):
     """A namespace for Drawer components."""

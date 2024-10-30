@@ -67,12 +67,8 @@ class DrawerRoot(DrawerComponent):
     def create(  # type: ignore
         cls,
         *children,
+        default_open: Optional[Union[Var[bool], bool]] = None,
         open: Optional[Union[Var[bool], bool]] = None,
-        should_scale_background: Optional[Union[Var[bool], bool]] = None,
-        close_threshold: Optional[Union[Var[float], float]] = None,
-        snap_points: Optional[List[Union[float, str]]] = None,
-        fade_from_index: Optional[Union[Var[int], int]] = None,
-        scroll_lock_timeout: Optional[Union[Var[int], int]] = None,
         modal: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
             Union[
@@ -80,7 +76,14 @@ class DrawerRoot(DrawerComponent):
                 Var[Literal["bottom", "left", "right", "top"]],
             ]
         ] = None,
+        dismissible: Optional[Union[Var[bool], bool]] = None,
+        handle_only: Optional[Union[Var[bool], bool]] = None,
+        snap_points: Optional[List[Union[float, str]]] = None,
+        fade_from_index: Optional[Union[Var[int], int]] = None,
+        scroll_lock_timeout: Optional[Union[Var[int], int]] = None,
         preventScrollRestoration: Optional[Union[Var[bool], bool]] = None,
+        should_scale_background: Optional[Union[Var[bool], bool]] = None,
+        close_threshold: Optional[Union[Var[float], float]] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -88,6 +91,7 @@ class DrawerRoot(DrawerComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[EventType[bool]] = None,
         on_blur: Optional[EventType[[]]] = None,
         on_click: Optional[EventType[[]]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
@@ -110,15 +114,18 @@ class DrawerRoot(DrawerComponent):
 
         Args:
             *children: The children of the component.
+            default_open: The open state of the drawer when it is initially rendered. Use when you do not need to control its open state.
             open: Whether the drawer is open or not.
-            should_scale_background: Enable background scaling, it requires an element with [vaul-drawer-wrapper] data attribute to scale its background.
-            close_threshold: Number between 0 and 1 that determines when the drawer should be closed.
+            modal: When `False`, it allows to interact with elements outside of the drawer without closing it. Defaults to `True`.
+            direction: Direction of the drawer. This adjust the animations and the drag direction. Defaults to `"bottom"`
+            dismissible: When false dragging, clicking outside, pressing esc, etc. will not close the drawer. Use this in combination with the open prop, otherwise you won't be able to open/close the drawer.
+            handle_only: When true dragging will only be possible by the handle.
             snap_points: Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account.
             fade_from_index: Index of a snapPoint from which the overlay fade should be applied. Defaults to the last snap point.
             scroll_lock_timeout: Duration for which the drawer is not draggable after scrolling content inside of the drawer. Defaults to 500ms
-            modal: When `False`, it allows to interact with elements outside of the drawer without closing it. Defaults to `True`.
-            direction: Direction of the drawer. Defaults to `"bottom"`
             preventScrollRestoration: When `True`, it prevents scroll restoration. Defaults to `True`.
+            should_scale_background: Enable background scaling, it requires an element with [vaul-drawer-wrapper] data attribute to scale its background.
+            close_threshold: Number between 0 and 1 that determines when the drawer should be closed.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
@@ -464,6 +471,54 @@ class DrawerDescription(DrawerComponent):
         """
         ...
 
+class DrawerHandle(DrawerComponent):
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        as_child: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[EventType[[]]] = None,
+        on_click: Optional[EventType[[]]] = None,
+        on_context_menu: Optional[EventType[[]]] = None,
+        on_double_click: Optional[EventType[[]]] = None,
+        on_focus: Optional[EventType[[]]] = None,
+        on_mount: Optional[EventType[[]]] = None,
+        on_mouse_down: Optional[EventType[[]]] = None,
+        on_mouse_enter: Optional[EventType[[]]] = None,
+        on_mouse_leave: Optional[EventType[[]]] = None,
+        on_mouse_move: Optional[EventType[[]]] = None,
+        on_mouse_out: Optional[EventType[[]]] = None,
+        on_mouse_over: Optional[EventType[[]]] = None,
+        on_mouse_up: Optional[EventType[[]]] = None,
+        on_scroll: Optional[EventType[[]]] = None,
+        on_unmount: Optional[EventType[[]]] = None,
+        **props,
+    ) -> "DrawerHandle":
+        """Create the component.
+
+        Args:
+            *children: The children of the component.
+            as_child: Change the default rendered element for the one passed as a child.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The props of the component.
+
+        Returns:
+            The component.
+        """
+        ...
+
 class Drawer(ComponentNamespace):
     root = staticmethod(DrawerRoot.create)
     trigger = staticmethod(DrawerTrigger.create)
@@ -473,16 +528,13 @@ class Drawer(ComponentNamespace):
     close = staticmethod(DrawerClose.create)
     title = staticmethod(DrawerTitle.create)
     description = staticmethod(DrawerDescription.create)
+    handle = staticmethod(DrawerHandle.create)
 
     @staticmethod
     def __call__(
         *children,
+        default_open: Optional[Union[Var[bool], bool]] = None,
         open: Optional[Union[Var[bool], bool]] = None,
-        should_scale_background: Optional[Union[Var[bool], bool]] = None,
-        close_threshold: Optional[Union[Var[float], float]] = None,
-        snap_points: Optional[List[Union[float, str]]] = None,
-        fade_from_index: Optional[Union[Var[int], int]] = None,
-        scroll_lock_timeout: Optional[Union[Var[int], int]] = None,
         modal: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
             Union[
@@ -490,7 +542,14 @@ class Drawer(ComponentNamespace):
                 Var[Literal["bottom", "left", "right", "top"]],
             ]
         ] = None,
+        dismissible: Optional[Union[Var[bool], bool]] = None,
+        handle_only: Optional[Union[Var[bool], bool]] = None,
+        snap_points: Optional[List[Union[float, str]]] = None,
+        fade_from_index: Optional[Union[Var[int], int]] = None,
+        scroll_lock_timeout: Optional[Union[Var[int], int]] = None,
         preventScrollRestoration: Optional[Union[Var[bool], bool]] = None,
+        should_scale_background: Optional[Union[Var[bool], bool]] = None,
+        close_threshold: Optional[Union[Var[float], float]] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -498,6 +557,7 @@ class Drawer(ComponentNamespace):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[EventType[bool]] = None,
         on_blur: Optional[EventType[[]]] = None,
         on_click: Optional[EventType[[]]] = None,
         on_context_menu: Optional[EventType[[]]] = None,
@@ -520,15 +580,18 @@ class Drawer(ComponentNamespace):
 
         Args:
             *children: The children of the component.
+            default_open: The open state of the drawer when it is initially rendered. Use when you do not need to control its open state.
             open: Whether the drawer is open or not.
-            should_scale_background: Enable background scaling, it requires an element with [vaul-drawer-wrapper] data attribute to scale its background.
-            close_threshold: Number between 0 and 1 that determines when the drawer should be closed.
+            modal: When `False`, it allows to interact with elements outside of the drawer without closing it. Defaults to `True`.
+            direction: Direction of the drawer. This adjust the animations and the drag direction. Defaults to `"bottom"`
+            dismissible: When false dragging, clicking outside, pressing esc, etc. will not close the drawer. Use this in combination with the open prop, otherwise you won't be able to open/close the drawer.
+            handle_only: When true dragging will only be possible by the handle.
             snap_points: Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account.
             fade_from_index: Index of a snapPoint from which the overlay fade should be applied. Defaults to the last snap point.
             scroll_lock_timeout: Duration for which the drawer is not draggable after scrolling content inside of the drawer. Defaults to 500ms
-            modal: When `False`, it allows to interact with elements outside of the drawer without closing it. Defaults to `True`.
-            direction: Direction of the drawer. Defaults to `"bottom"`
             preventScrollRestoration: When `True`, it prevents scroll restoration. Defaults to `True`.
+            should_scale_background: Enable background scaling, it requires an element with [vaul-drawer-wrapper] data attribute to scale its background.
+            close_threshold: Number between 0 and 1 that determines when the drawer should be closed.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
