@@ -777,8 +777,15 @@ def scroll_to(elem_id: str, align_to_top: bool | Var[bool] = True) -> EventSpec:
     Returns:
         An EventSpec to scroll the page to the selected element.
     """
-    js_code = f"document.getElementById('{elem_id}').scrollIntoView({str(Var.create(align_to_top))});"
-    return call_script(js_code)
+    get_element_by_id = FunctionStringVar.create("document.getElementById")
+
+    return call_script(
+        get_element_by_id(elem_id)
+        .call(elem_id)
+        .to(ObjectVar)
+        .scrollIntoView.to(FunctionVar)
+        .call(align_to_top)
+    )
 
 
 def set_value(ref: str, value: Any) -> EventSpec:
