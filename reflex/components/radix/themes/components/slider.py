@@ -16,8 +16,8 @@ from ..base import (
 
 
 def on_value_event_spec(
-    value: Var[List[int | float]],
-) -> Tuple[Var[List[int | float]]]:
+    value: Var[List[Union[int, float]]],
+) -> Tuple[Var[List[Union[int, float]]]]:
     """Event handler spec for the value event.
 
     Args:
