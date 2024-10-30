@@ -767,17 +767,17 @@ def set_focus(ref: str) -> EventSpec:
     )
 
 
-def scroll_to(elem_id: str) -> EventSpec:
+def scroll_to(elem_id: str, align_to_top: bool | Var[bool] = True) -> EventSpec:
     """Select the id of a html element for scrolling into view.
 
     Args:
-        elem_id: the id of the element
+        elem_id: The id of the element to scroll to.
+        align_to_top: Whether to scroll to the top (True) or bottom (False) of the element.
 
     Returns:
         An EventSpec to scroll the page to the selected element.
     """
-    js_code = f"document.getElementById('{elem_id}').scrollIntoView();"
-
+    js_code = f"document.getElementById('{elem_id}').scrollIntoView({str(Var.create(align_to_top))});"
     return call_script(js_code)
 
 
