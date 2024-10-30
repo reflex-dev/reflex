@@ -105,6 +105,15 @@ var = computed_var
 # If the state is this large, it's considered a performance issue.
 TOO_LARGE_SERIALIZED_STATE = 100 * 1024  # 100kb
 
+# Errors caught during pickling of state
+HANDLED_PICKLE_ERRORS = (
+    pickle.PicklingError,
+    AttributeError,
+    IndexError,
+    TypeError,
+    ValueError,
+)
+
 
 def _no_chain_background_task(
     state_cls: Type["BaseState"], name: str, fn: Callable
@@ -2076,7 +2085,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         try:
             return pickle.dumps((self._to_schema(), self))
-        except (pickle.PicklingError, AttributeError) as og_pickle_error:
+        except HANDLED_PICKLE_ERRORS as og_pickle_error:
             error = (
                 f"Failed to serialize state {self.get_full_name()} due to unpicklable object. "
                 "This state will not be persisted. "
@@ -2090,7 +2099,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     f"Pickle error: {og_pickle_error}. "
                     "Consider `pip install 'dill>=0.3.8'` for more exotic serialization support."
                 )
-            except (pickle.PicklingError, TypeError, ValueError) as ex:
+            except HANDLED_PICKLE_ERRORS as ex:
                 error += f"Dill was also unable to pickle the state: {ex}"
         console.warn(error)
         return b""
