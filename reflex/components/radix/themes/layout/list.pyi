@@ -54,6 +54,27 @@ class BaseList(Component):
                     "upper-roman",
                 ],
                 Literal["circle", "disc", "none", "square"],
+                Var[
+                    Union[
+                        Literal[
+                            "armenian",
+                            "decimal",
+                            "decimal-leading-zero",
+                            "georgian",
+                            "hiragana",
+                            "katakana",
+                            "lower-alpha",
+                            "lower-greek",
+                            "lower-latin",
+                            "lower-roman",
+                            "none",
+                            "upper-alpha",
+                            "upper-latin",
+                            "upper-roman",
+                        ],
+                        Literal["circle", "disc", "none", "square"],
+                    ]
+                ],
             ]
         ] = None,
         items: Optional[Union[Iterable, Var[Iterable]]] = None,
@@ -127,6 +148,27 @@ class UnorderedList(BaseList, Ul):
                     "upper-roman",
                 ],
                 Literal["circle", "disc", "none", "square"],
+                Var[
+                    Union[
+                        Literal[
+                            "armenian",
+                            "decimal",
+                            "decimal-leading-zero",
+                            "georgian",
+                            "hiragana",
+                            "katakana",
+                            "lower-alpha",
+                            "lower-greek",
+                            "lower-latin",
+                            "lower-roman",
+                            "none",
+                            "upper-alpha",
+                            "upper-latin",
+                            "upper-roman",
+                        ],
+                        Literal["circle", "disc", "none", "square"],
+                    ]
+                ],
             ]
         ] = None,
         items: Optional[Union[Iterable, Var[Iterable]]] = None,
@@ -238,6 +280,27 @@ class OrderedList(BaseList, Ol):
                     "upper-roman",
                 ],
                 Literal["circle", "disc", "none", "square"],
+                Var[
+                    Union[
+                        Literal[
+                            "armenian",
+                            "decimal",
+                            "decimal-leading-zero",
+                            "georgian",
+                            "hiragana",
+                            "katakana",
+                            "lower-alpha",
+                            "lower-greek",
+                            "lower-latin",
+                            "lower-roman",
+                            "none",
+                            "upper-alpha",
+                            "upper-latin",
+                            "upper-roman",
+                        ],
+                        Literal["circle", "disc", "none", "square"],
+                    ]
+                ],
             ]
         ] = None,
         items: Optional[Union[Iterable, Var[Iterable]]] = None,
@@ -444,6 +507,27 @@ class List(ComponentNamespace):
                     "upper-roman",
                 ],
                 Literal["circle", "disc", "none", "square"],
+                Var[
+                    Union[
+                        Literal[
+                            "armenian",
+                            "decimal",
+                            "decimal-leading-zero",
+                            "georgian",
+                            "hiragana",
+                            "katakana",
+                            "lower-alpha",
+                            "lower-greek",
+                            "lower-latin",
+                            "lower-roman",
+                            "none",
+                            "upper-alpha",
+                            "upper-latin",
+                            "upper-roman",
+                        ],
+                        Literal["circle", "disc", "none", "square"],
+                    ]
+                ],
             ]
         ] = None,
         items: Optional[Union[Iterable, Var[Iterable]]] = None,

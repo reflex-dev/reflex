@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Literal, Optional, Union
+from typing import Any, Iterable, Literal, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.foreach import Foreach
@@ -42,7 +42,7 @@ class BaseList(Component):
     tag = "ul"
 
     # The style of the list. Default to "none".
-    list_style_type: Optional[
+    list_style_type: Var[
         Union[LiteralListStyleTypeUnordered, LiteralListStyleTypeOrdered]
     ] = "none"
 
