@@ -642,21 +642,18 @@ def test_component_create_unallowed_types(children, test_component):
                 "name": "Fragment",
                 "props": [],
                 "contents": "",
-                "args": None,
                 "special_props": [],
                 "children": [
                     {
                         "name": "RadixThemesText",
                         "props": ['as={"p"}'],
                         "contents": "",
-                        "args": None,
                         "special_props": [],
                         "children": [
                             {
                                 "name": "",
                                 "props": [],
                                 "contents": '{"first_text"}',
-                                "args": None,
                                 "special_props": [],
                                 "children": [],
                                 "autofocus": False,
@@ -671,15 +668,12 @@ def test_component_create_unallowed_types(children, test_component):
         (
             (rx.text("first_text"), rx.text("second_text")),
             {
-                "args": None,
                 "autofocus": False,
                 "children": [
                     {
-                        "args": None,
                         "autofocus": False,
                         "children": [
                             {
-                                "args": None,
                                 "autofocus": False,
                                 "children": [],
                                 "contents": '{"first_text"}',
@@ -694,11 +688,9 @@ def test_component_create_unallowed_types(children, test_component):
                         "special_props": [],
                     },
                     {
-                        "args": None,
                         "autofocus": False,
                         "children": [
                             {
-                                "args": None,
                                 "autofocus": False,
                                 "children": [],
                                 "contents": '{"second_text"}',
@@ -722,15 +714,12 @@ def test_component_create_unallowed_types(children, test_component):
         (
             (rx.text("first_text"), rx.box((rx.text("second_text"),))),
             {
-                "args": None,
                 "autofocus": False,
                 "children": [
                     {
-                        "args": None,
                         "autofocus": False,
                         "children": [
                             {
-                                "args": None,
                                 "autofocus": False,
                                 "children": [],
                                 "contents": '{"first_text"}',
@@ -745,19 +734,15 @@ def test_component_create_unallowed_types(children, test_component):
                         "special_props": [],
                     },
                     {
-                        "args": None,
                         "autofocus": False,
                         "children": [
                             {
-                                "args": None,
                                 "autofocus": False,
                                 "children": [
                                     {
-                                        "args": None,
                                         "autofocus": False,
                                         "children": [
                                             {
-                                                "args": None,
                                                 "autofocus": False,
                                                 "children": [],
                                                 "contents": '{"second_text"}',
@@ -1117,10 +1102,10 @@ def test_component_with_only_valid_children(fixture, request):
 @pytest.mark.parametrize(
     "component,rendered",
     [
-        (rx.text("hi"), '<RadixThemesText as={"p"}>\n  {"hi"}\n</RadixThemesText>'),
+        (rx.text("hi"), '<RadixThemesText as={"p"}>\n\n{"hi"}\n</RadixThemesText>'),
         (
             rx.box(rx.heading("test", size="3")),
-            '<RadixThemesBox>\n  <RadixThemesHeading size={"3"}>\n  {"test"}\n</RadixThemesHeading>\n</RadixThemesBox>',
+            '<RadixThemesBox>\n\n<RadixThemesHeading size={"3"}>\n\n{"test"}\n</RadixThemesHeading>\n</RadixThemesBox>',
         ),
     ],
 )
