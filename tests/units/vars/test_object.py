@@ -1,3 +1,5 @@
+from typing import assert_type, reveal_type
+
 import pytest
 
 import reflex as rx
@@ -85,3 +87,23 @@ def test_state_to_operation(type_: GenericType) -> None:
 
     var = ObjectState.bare.to(ObjectVar)
     assert var._var_type is type_
+
+
+def test_typing() -> None:
+    # Bare
+    var = ObjectState.bare.to(ObjectVar)
+    reveal_type(var)
+    assert_type(var, ObjectVar[Bare])
+
+    var = ObjectState.base.to(ObjectVar, Base)
+    reveal_type(var)
+    assert_type(var, ObjectVar[Base])
+
+    # Base
+    var = ObjectState.base.to(ObjectVar)
+    reveal_type(var)
+    assert_type(var, ObjectVar[Base])
+
+    var = ObjectState.base.to(LiteralObjectVar, Base)
+    reveal_type(var)
+    assert_type(var, LiteralObjectVar[Base])
