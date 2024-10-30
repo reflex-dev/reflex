@@ -137,6 +137,7 @@ class FormRoot(FormComponent, HTMLForm):
 
         Args:
             *children: The children of the form.
+            on_clear_server_errors: Fired when the errors are cleared.
             as_child: Change the default rendered element for the one passed as a child.
             accept: MIME types the server accepts for file upload
             accept_charset: Character encodings to be used for form submission
@@ -149,6 +150,7 @@ class FormRoot(FormComponent, HTMLForm):
             target: Where to display the response after submitting the form
             reset_on_submit: If true, the form will be cleared after submit.
             handle_submit_unique_name: The name used to make this form's submit handler function unique.
+            on_submit: Fired when the form is submitted
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -602,6 +604,7 @@ class Form(FormRoot):
 
         Args:
             *children: The children of the form.
+            on_clear_server_errors: Fired when the errors are cleared.
             as_child: Change the default rendered element for the one passed as a child.
             accept: MIME types the server accepts for file upload
             accept_charset: Character encodings to be used for form submission
@@ -614,6 +617,7 @@ class Form(FormRoot):
             target: Where to display the response after submitting the form
             reset_on_submit: If true, the form will be cleared after submit.
             handle_submit_unique_name: The name used to make this form's submit handler function unique.
+            on_submit: Fired when the form is submitted
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -724,6 +728,7 @@ class FormNamespace(ComponentNamespace):
 
         Args:
             *children: The children of the form.
+            on_clear_server_errors: Fired when the errors are cleared.
             as_child: Change the default rendered element for the one passed as a child.
             accept: MIME types the server accepts for file upload
             accept_charset: Character encodings to be used for form submission
@@ -736,6 +741,7 @@ class FormNamespace(ComponentNamespace):
             target: Where to display the response after submitting the form
             reset_on_submit: If true, the form will be cleared after submit.
             handle_submit_unique_name: The name used to make this form's submit handler function unique.
+            on_submit: Fired when the form is submitted
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.

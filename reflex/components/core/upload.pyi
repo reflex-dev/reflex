@@ -146,6 +146,7 @@ class Upload(MemoizationLeaf):
             no_click: Whether to disable click to upload.
             no_drag: Whether to disable drag and drop.
             no_keyboard: Whether to disable using the space/enter keys to upload.
+            on_drop: Fired when files are dropped.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -211,6 +212,7 @@ class StyledUpload(Upload):
             no_click: Whether to disable click to upload.
             no_drag: Whether to disable drag and drop.
             no_keyboard: Whether to disable using the space/enter keys to upload.
+            on_drop: Fired when files are dropped.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -276,6 +278,7 @@ class UploadNamespace(ComponentNamespace):
             no_click: Whether to disable click to upload.
             no_drag: Whether to disable drag and drop.
             no_keyboard: Whether to disable using the space/enter keys to upload.
+            on_drop: Fired when files are dropped.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

@@ -201,6 +201,7 @@ class RadioCardsRoot(RadixThemesComponent):
             orientation: The orientation of the component.
             dir: The reading direction of the radio group. If omitted,  inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode.
             loop: When true, keyboard navigation will loop from last item to first, and vice versa.
+            on_value_change: Event handler called when the value changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

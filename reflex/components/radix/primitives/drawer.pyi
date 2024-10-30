@@ -119,6 +119,7 @@ class DrawerRoot(DrawerComponent):
             modal: When `False`, it allows to interact with elements outside of the drawer without closing it. Defaults to `True`.
             direction: Direction of the drawer. Defaults to `"bottom"`
             preventScrollRestoration: When `True`, it prevents scroll restoration. Defaults to `True`.
+            on_open_change: Fires when the drawer is opened or closed.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
@@ -166,8 +167,15 @@ class DrawerTrigger(DrawerComponent):
         """Create a new DrawerTrigger instance.
 
         Args:
-            children: The children of the element.
-            props: The properties of the element.
+            *children: The children of the element.
+            as_child: Change the default rendered element for the one passed as a child.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the element.
 
         Returns:
             The new DrawerTrigger instance.
@@ -360,8 +368,15 @@ class DrawerClose(DrawerTrigger):
         """Create a new DrawerTrigger instance.
 
         Args:
-            children: The children of the element.
-            props: The properties of the element.
+            *children: The children of the element.
+            as_child: Change the default rendered element for the one passed as a child.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the element.
 
         Returns:
             The new DrawerTrigger instance.
@@ -529,6 +544,7 @@ class Drawer(ComponentNamespace):
             modal: When `False`, it allows to interact with elements outside of the drawer without closing it. Defaults to `True`.
             direction: Direction of the drawer. Defaults to `"bottom"`
             preventScrollRestoration: When `True`, it prevents scroll restoration. Defaults to `True`.
+            on_open_change: Fires when the drawer is opened or closed.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.

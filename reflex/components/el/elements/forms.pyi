@@ -356,6 +356,7 @@ class Form(BaseHTML):
             target: Where to display the response after submitting the form
             reset_on_submit: If true, the form will be cleared after submit.
             handle_submit_unique_name: The name used to make this form's submit handler function unique.
+            on_submit: Fired when the form is submitted
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -520,6 +521,11 @@ class Input(BaseHTML):
             type: Specifies the type of input
             use_map: Name of the image map used with the input
             value: Value of the input
+            on_change: Fired when the input value changes
+            on_focus: Fired when the input gains focus
+            on_blur: Fired when the input loses focus
+            on_key_down: Fired when a key is pressed down
+            on_key_up: Fired when a key is released
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -1269,6 +1275,7 @@ class Select(BaseHTML):
             name: Name of the select, used when submitting the form
             required: Indicates that the select control must have a selected option
             size: Number of visible options in a drop-down list
+            on_change: Fired when the select value changes
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -1397,6 +1404,11 @@ class Textarea(BaseHTML):
             rows: Visible number of lines in the text control
             value: The controlled value of the textarea, read only unless used with on_change
             wrap: How the text in the textarea is to be wrapped when submitting the form
+            on_change: Fired when the input value changes
+            on_focus: Fired when the input gains focus
+            on_blur: Fired when the input loses focus
+            on_key_down: Fired when a key is pressed down
+            on_key_up: Fired when a key is released
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
