@@ -2725,6 +2725,7 @@ class OnLoadState(State):
 
     num: int = 0
 
+    @rx.event
     def test_handler(self):
         """Test handler."""
         self.num += 1
