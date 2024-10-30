@@ -619,10 +619,6 @@ class Var(Generic[VAR_TYPE]):
         """
         from .object import ObjectVar
 
-        base_type = var_type
-        if types.is_optional(base_type):
-            base_type = types.get_args(base_type)[0]
-
         fixed_output_type = get_origin(output) or output
 
         # If the first argument is a python type, we map it to the corresponding Var type.
