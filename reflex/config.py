@@ -451,6 +451,9 @@ class Config(Base):
     # The bun path
     bun_path: ExistingPath = constants.Bun.DEFAULT_PATH
 
+    # Timeout to do a production build of a frontend page.
+    static_page_generation_timeout: int = 60
+
     # List of origins that are allowed to connect to the backend API.
     cors_allowed_origins: List[str] = ["*"]
 
