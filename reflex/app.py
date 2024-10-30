@@ -929,6 +929,8 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             )
         compile_results.append((stateful_components_path, stateful_components_code))
 
+        progress.advance(task)
+
         # Compile the root document before fork.
         compile_results.append(
             compiler.compile_document_root(
