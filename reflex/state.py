@@ -3729,7 +3729,8 @@ def _json_dumps_wrapper(*args, **kwargs):
     Returns:
         The JSON string.
     """
-    _orig_default = kwargs.pop("default", None)
+    if "cls" not in kwargs:
+        _orig_default = kwargs.pop("default", None)
 
     def _default(obj):
         if _orig_default is not None:
@@ -3743,7 +3744,8 @@ def _json_dumps_wrapper(*args, **kwargs):
             pass
         raise TypeError()
 
-    kwargs["default"] = _default
+    if "cls" not in kwargs:
+        kwargs["default"] = _default
     return _orig_json_dumps(*args, **kwargs)
 
 
