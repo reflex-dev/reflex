@@ -44,7 +44,7 @@ class BaseList(Component):
     # The style of the list. Default to "none".
     list_style_type: Var[
         Union[LiteralListStyleTypeUnordered, LiteralListStyleTypeOrdered]
-    ] = "none"
+    ] = Var.create("none")
 
     # A list of items to add to the list.
     items: Var[Iterable] = Var.create([])
