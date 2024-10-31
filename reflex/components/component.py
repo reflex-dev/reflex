@@ -17,6 +17,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Sequence,
     Set,
     Type,
     Union,
@@ -533,7 +534,7 @@ class Component(BaseComponent, ABC):
 
     def _create_event_chain(
         self,
-        args_spec: Any,
+        args_spec: types.ArgsSpec | Sequence[types.ArgsSpec],
         value: Union[
             Var,
             EventHandler,
@@ -599,7 +600,7 @@ class Component(BaseComponent, ABC):
 
         # If the input is a callable, create an event chain.
         elif isinstance(value, Callable):
-            result = call_event_fn(value, args_spec)
+            result = call_event_fn(value, args_spec, key=key)
             if isinstance(result, Var):
                 # Recursively call this function if the lambda returned an EventChain Var.
                 return self._create_event_chain(args_spec, result, key=key)
@@ -629,14 +630,16 @@ class Component(BaseComponent, ABC):
                 event_actions={},
             )
 
-    def get_event_triggers(self) -> Dict[str, Any]:
+    def get_event_triggers(
+        self,
+    ) -> Dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]]:
         """Get the event triggers for the component.
 
         Returns:
             The event triggers.
 
         """
-        default_triggers = {
+        default_triggers: Dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
             EventTriggers.ON_FOCUS: empty_event,
             EventTriggers.ON_BLUR: empty_event,
             EventTriggers.ON_CLICK: empty_event,
@@ -1142,7 +1145,10 @@ class Component(BaseComponent, ABC):
                     if isinstance(event, EventCallback):
                         continue
                     if isinstance(event, EventSpec):
-                        if event.handler.state_full_name:
+                        if (
+                            event.handler.state_full_name
+                            and event.handler.state_full_name != "state"
+                        ):
                             return True
                     else:
                         if event._var_state:

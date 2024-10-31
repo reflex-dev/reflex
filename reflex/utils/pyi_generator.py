@@ -16,7 +16,7 @@ from itertools import chain
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
-from typing import Any, Callable, Iterable, Type, get_args, get_origin
+from typing import Any, Callable, Iterable, Sequence, Type, get_args, get_origin
 
 from reflex.components.component import Component
 from reflex.utils import types as rx_types
@@ -560,7 +560,7 @@ def _generate_component_create_functiondef(
                                     inspect.signature(event_specs).return_annotation
                                 )
                                 if not isinstance(
-                                    event_specs := event_triggers[trigger], tuple
+                                    event_specs := event_triggers[trigger], Sequence
                                 )
                                 else ast.Subscript(
                                     ast.Name("Union"),
