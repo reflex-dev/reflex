@@ -587,6 +587,8 @@ def initialize_web_directory():
 
     initialize_package_json()
 
+    initialize_bun_config()
+
     path_ops.mkdir(get_web_dir() / constants.Dirs.PUBLIC)
 
     update_next_config()
@@ -611,16 +613,26 @@ def _compile_package_json():
 def initialize_package_json():
     """Render and write in .web the package.json file."""
     output_path = get_web_dir() / constants.PackageJson.PATH
-    code = _compile_package_json()
-    output_path.write_text(code)
+    output_path.write_text(_compile_package_json())
+
+
+def initialize_bun_config():
+    """Initialize the bun config file."""
+    bun_config_path = get_web_dir() / constants.Bun.CONFIG_PATH
+
+    if (custom_bunfig := Path(constants.Bun.CONFIG_PATH)).exists():
+        custom_bunfig_content = custom_bunfig.read_text()
+        if "registry =" in custom_bunfig_content:
+            bun_config_path.write_text(custom_bunfig_content)
+            return
+        else:
+            console.error(
+                "The custom bunfig.toml file is invalid. Using default value."
+            )
 
     best_registry = _get_npm_registry()
-    bun_config_path = get_web_dir() / constants.Bun.CONFIG_PATH
     bun_config_path.write_text(
-        f"""
-[install]
-registry = "{best_registry}"
-"""
+        constants.Bun.DEFAULT_CONFIG.format(registry=best_registry)
     )
 
 
