@@ -677,6 +677,7 @@ def _update_next_config(
         "compress": config.next_compression,
         "reactStrictMode": config.react_strict_mode,
         "trailingSlash": True,
+        "staticPageGenerationTimeout": config.static_page_generation_timeout,
     }
     if transpile_packages:
         next_config["transpilePackages"] = list(

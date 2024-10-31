@@ -4,12 +4,10 @@ from __future__ import annotations
 
 from typing import Any, ClassVar, Literal, Optional, Union
 
-from pydantic import ValidationError
-
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
-from reflex.components.props import PropsBase
+from reflex.components.props import NoExtrasAllowedProps, PropsBase
 from reflex.event import (
     EventSpec,
     call_script,
@@ -72,7 +70,7 @@ def _toast_callback_signature(toast: Var) -> list[Var]:
     ]
 
 
-class ToastProps(PropsBase):
+class ToastProps(PropsBase, NoExtrasAllowedProps):
     """Props for the toast component."""
 
     # Toast's title, renders above the description.
@@ -132,24 +130,6 @@ class ToastProps(PropsBase):
     # Function that gets called when the toast disappears automatically after it's timeout (duration` prop).
     on_auto_close: Optional[Any]
 
-    def __init__(self, **kwargs):
-        """Initialize the props.
-
-        Args:
-            kwargs: Kwargs to initialize the props.
-
-        Raises:
-            ValueError: If invalid props are passed on instantiation.
-        """
-        try:
-            super().__init__(**kwargs)
-        except ValidationError as e:
-            invalid_fields = ", ".join([error["loc"][0] for error in e.errors()])  # type: ignore
-            supported_props_str = ", ".join(f'"{field}"' for field in self.get_fields())
-            raise ValueError(
-                f"Invalid prop(s) {invalid_fields} for rx.toast. Supported props are {supported_props_str}"
-            ) from None
-
     def dict(self, *args, **kwargs) -> dict[str, Any]:
         """Convert the object to a dictionary.
 
@@ -180,13 +160,6 @@ class ToastProps(PropsBase):
                 self.on_auto_close, _toast_callback_signature
             )
         return d
-
-    class Config:
-        """Pydantic config."""
-
-        arbitrary_types_allowed = True
-        use_enum_values = True
-        extra = "forbid"
 
 
 class Toaster(Component):
@@ -281,7 +254,7 @@ class Toaster(Component):
         if message == "" and ("title" not in props or "description" not in props):
             raise ValueError("Toast message or title or description must be provided.")
         if props:
-            args = LiteralVar.create(ToastProps(**props))
+            args = LiteralVar.create(ToastProps(component_name="rx.toast", **props))  # type: ignore
             toast = f"{toast_command}(`{message}`, {str(args)})"
         else:
             toast = f"{toast_command}(`{message}`)"

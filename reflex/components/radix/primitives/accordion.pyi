@@ -280,6 +280,7 @@ class AccordionRoot(AccordionComponent):
             duration: The time in milliseconds to animate open and close
             easing: The easing function to use for the animation.
             show_dividers: Whether to show divider lines between items.
+            on_value_change: Fired when the opened the accordions changes.
             color_scheme: The color scheme of the component.
             variant: The variant of the component.
             as_child: Change the default rendered element for the one passed as a child.

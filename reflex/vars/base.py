@@ -63,7 +63,14 @@ from reflex.utils.imports import (
     ParsedImportDict,
     parse_imports,
 )
-from reflex.utils.types import GenericType, Self, get_origin, has_args, unionize
+from reflex.utils.types import (
+    GenericType,
+    Self,
+    _isinstance,
+    get_origin,
+    has_args,
+    unionize,
+)
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -611,10 +618,6 @@ class Var(Generic[VAR_TYPE]):
             The converted var.
         """
         from .object import ObjectVar
-
-        base_type = var_type
-        if types.is_optional(base_type):
-            base_type = types.get_args(base_type)[0]
 
         fixed_output_type = get_origin(output) or output
 
@@ -1833,6 +1836,14 @@ class ComputedVar(Var[RETURN_TYPE]):
             "return", Any
         )
 
+        if hint is Any:
+            console.deprecate(
+                "untyped-computed-var",
+                "ComputedVar should have a return type annotation.",
+                "0.6.5",
+                "0.7.0",
+            )
+
         kwargs.setdefault("_js_expr", fget.__name__)
         kwargs.setdefault("_var_type", hint)
 
@@ -2026,17 +2037,28 @@ class ComputedVar(Var[RETURN_TYPE]):
             )
 
         if not self._cache:
-            return self.fget(instance)
+            value = self.fget(instance)
+        else:
+            # handle caching
+            if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
+                # Set cache attr on state instance.
+                setattr(instance, self._cache_attr, self.fget(instance))
+                # Ensure the computed var gets serialized to redis.
+                instance._was_touched = True
+                # Set the last updated timestamp on the state instance.
+                setattr(instance, self._last_updated_attr, datetime.datetime.now())
+            value = getattr(instance, self._cache_attr)
 
-        # handle caching
-        if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
-            # Set cache attr on state instance.
-            setattr(instance, self._cache_attr, self.fget(instance))
-            # Ensure the computed var gets serialized to redis.
-            instance._was_touched = True
-            # Set the last updated timestamp on the state instance.
-            setattr(instance, self._last_updated_attr, datetime.datetime.now())
-        return getattr(instance, self._cache_attr)
+        if not _isinstance(value, self._var_type):
+            console.deprecate(
+                "mismatched-computed-var-return",
+                f"Computed var {type(instance).__name__}.{self._js_expr} returned value of type {type(value)}, "
+                f"expected {self._var_type}. This might cause unexpected behavior.",
+                "0.6.5",
+                "0.7.0",
+            )
+
+        return value
 
     def _deps(
         self,

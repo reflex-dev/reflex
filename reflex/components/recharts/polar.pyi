@@ -391,6 +391,14 @@ class PolarAngleAxis(Recharts):
             orientation: The orientation of axis text. Default: "outer"
             stroke: The stroke color of axis. Default: rx.color("gray", 10)
             allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
+            on_click: The customized event handler of click on the ticks of this axis.
+            on_mouse_down: The customized event handler of mousedown on the the ticks of this axis.
+            on_mouse_up: The customized event handler of mouseup on the ticks of this axis.
+            on_mouse_move: The customized event handler of mousemove on the ticks of this axis.
+            on_mouse_over: The customized event handler of mouseover on the ticks of this axis.
+            on_mouse_out: The customized event handler of mouseout on the ticks of this axis.
+            on_mouse_enter: The customized event handler of moustenter on the ticks of this axis.
+            on_mouse_leave: The customized event handler of mouseleave on the ticks of this axis.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

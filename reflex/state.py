@@ -93,7 +93,7 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import serializer
-from reflex.utils.types import get_origin, override
+from reflex.utils.types import _isinstance, get_origin, override
 from reflex.vars import VarData
 
 if TYPE_CHECKING:
@@ -106,6 +106,15 @@ var = computed_var
 
 # If the state is this large, it's considered a performance issue.
 TOO_LARGE_SERIALIZED_STATE = 100 * 1024  # 100kb
+
+# Errors caught during pickling of state
+HANDLED_PICKLE_ERRORS = (
+    pickle.PicklingError,
+    AttributeError,
+    IndexError,
+    TypeError,
+    ValueError,
+)
 
 
 def _no_chain_background_task(
@@ -638,7 +647,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         def computed_var_func(state: Self):
             result = f(state)
 
-            if not isinstance(result, of_type):
+            if not _isinstance(result, of_type):
                 console.warn(
                     f"Inline ComputedVar {f} expected type {of_type}, got {type(result)}. "
                     "You can specify expected type with `of_type` argument."
@@ -1274,6 +1283,19 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             raise SetUndefinedStateVarError(
                 f"The state variable '{name}' has not been defined in '{type(self).__name__}'. "
                 f"All state variables must be declared before they can be set."
+            )
+
+        fields = self.get_fields()
+
+        if name in fields and not _isinstance(
+            value, (field_type := fields[name].outer_type_)
+        ):
+            console.deprecate(
+                "mismatched-type-assignment",
+                f"Tried to assign value {value} of type {type(value)} to field {type(self).__name__}.{name} of type {field_type}."
+                " This might lead to unexpected behavior.",
+                "0.6.5",
+                "0.7.0",
             )
 
         # Set the attribute.
@@ -2065,7 +2087,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         try:
             return pickle.dumps((self._to_schema(), self))
-        except (pickle.PicklingError, AttributeError) as og_pickle_error:
+        except HANDLED_PICKLE_ERRORS as og_pickle_error:
             error = (
                 f"Failed to serialize state {self.get_full_name()} due to unpicklable object. "
                 "This state will not be persisted. "
@@ -2079,7 +2101,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     f"Pickle error: {og_pickle_error}. "
                     "Consider `pip install 'dill>=0.3.8'` for more exotic serialization support."
                 )
-            except (pickle.PicklingError, TypeError, ValueError) as ex:
+            except HANDLED_PICKLE_ERRORS as ex:
                 error += f"Dill was also unable to pickle the state: {ex}"
         console.warn(error)
         return b""
@@ -2348,7 +2370,7 @@ class StateProxy(wrapt.ObjectProxy):
         class State(rx.State):
             counter: int = 0
 
-            @rx.background
+            @rx.event(background=True)
             async def bg_increment(self):
                 await asyncio.sleep(1)
                 async with self:
@@ -3250,7 +3272,7 @@ class StateManagerRedis(StateManager):
             raise LockExpiredError(
                 f"Lock expired for token {token} while processing. Consider increasing "
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
-                "or use `@rx.background` decorator for long-running tasks."
+                "or use `@rx.event(background=True)` decorator for long-running tasks."
             )
         client_token, substate_name = _split_substate_key(token)
         # If the substate name on the token doesn't match the instance name, it cannot have a parent.

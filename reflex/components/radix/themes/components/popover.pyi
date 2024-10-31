@@ -55,6 +55,7 @@ class PopoverRoot(RadixThemesComponent):
             *children: Child components.
             open: The controlled open state of the popover.
             modal: The modality of the popover. When set to true, interaction with outside elements will be disabled and only popover content will be visible to screen readers.
+            on_open_change: Fired when the open state changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -207,6 +208,12 @@ class PopoverContent(elements.Div, RadixThemesComponent):
             align: The preferred alignment against the anchor. May change when collisions occur.
             align_offset: The vertical distance in pixels from the anchor.
             avoid_collisions: When true, overrides the side andalign preferences to prevent collisions with boundary edges.
+            on_open_auto_focus: Fired when the dialog is opened.
+            on_close_auto_focus: Fired when the dialog is closed.
+            on_escape_key_down: Fired when the escape key is pressed.
+            on_pointer_down_outside: Fired when the pointer is down outside the dialog.
+            on_focus_outside: Fired when focus moves outside the dialog.
+            on_interact_outside: Fired when the pointer interacts outside the dialog.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
