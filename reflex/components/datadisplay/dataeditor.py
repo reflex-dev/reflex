@@ -424,7 +424,7 @@ class DataEditor(NoSSRComponent):
                 props["theme"] = DataEditorTheme(**theme)
 
         # Allow by default to select a region of cells in the grid.
-        props.setdefault("get_cell_for_selection", True)
+        props.setdefault("get_cells_for_selection", True)
 
         # Disable on_paste by default if not provided.
         props.setdefault("on_paste", False)

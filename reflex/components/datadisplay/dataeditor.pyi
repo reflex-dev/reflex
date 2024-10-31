@@ -140,7 +140,7 @@ class DataEditor(NoSSRComponent):
         ] = None,
         data: Optional[Union[List[List[Any]], Var[List[List[Any]]]]] = None,
         get_cell_content: Optional[Union[Var[str], str]] = None,
-        get_cell_for_selection: Optional[Union[Var[bool], bool]] = None,
+        get_cells_for_selection: Optional[Union[Var[bool], bool]] = None,
         on_paste: Optional[Union[Var[bool], bool]] = None,
         draw_focus_ring: Optional[Union[Var[bool], bool]] = None,
         fixed_shadow_x: Optional[Union[Var[bool], bool]] = None,
@@ -228,7 +228,7 @@ class DataEditor(NoSSRComponent):
             columns: Headers of the columns for the data grid.
             data: The data.
             get_cell_content: The name of the callback used to find the data to display.
-            get_cell_for_selection: Allow selection for copying.
+            get_cells_for_selection: Allow selection for copying.
             on_paste: Allow paste.
             draw_focus_ring: Controls the drawing of the focus ring.
             fixed_shadow_x: Enables or disables the overlay shadow when scrolling horizontally.
