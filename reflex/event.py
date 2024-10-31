@@ -87,7 +87,7 @@ class Event:
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 
 
-def background(fn):
+def background(fn, *, __internal_reflex_call: bool = False):
     """Decorator to mark event handler as running in the background.
 
     Args:
@@ -100,6 +100,13 @@ def background(fn):
     Raises:
         TypeError: If the function is not a coroutine function or async generator.
     """
+    if not __internal_reflex_call:
+        console.deprecate(
+            "background-decorator",
+            "Use `rx.event(background=True)` instead.",
+            "0.6.5",
+            "0.7.0",
+        )
     if not inspect.iscoroutinefunction(fn) and not inspect.isasyncgenfunction(fn):
         raise TypeError("Background task must be async function or generator.")
     setattr(fn, BACKGROUND_TASK_MARKER, True)
@@ -766,18 +773,25 @@ def set_focus(ref: str) -> EventSpec:
     )
 
 
-def scroll_to(elem_id: str) -> EventSpec:
+def scroll_to(elem_id: str, align_to_top: bool | Var[bool] = True) -> EventSpec:
     """Select the id of a html element for scrolling into view.
 
     Args:
-        elem_id: the id of the element
+        elem_id: The id of the element to scroll to.
+        align_to_top: Whether to scroll to the top (True) or bottom (False) of the element.
 
     Returns:
         An EventSpec to scroll the page to the selected element.
     """
-    js_code = f"document.getElementById('{elem_id}').scrollIntoView();"
+    get_element_by_id = FunctionStringVar.create("document.getElementById")
 
-    return call_script(js_code)
+    return call_script(
+        get_element_by_id(elem_id)
+        .call(elem_id)
+        .to(ObjectVar)
+        .scrollIntoView.to(FunctionVar)
+        .call(align_to_top)
+    )
 
 
 def set_value(ref: str, value: Any) -> EventSpec:
@@ -1579,6 +1593,8 @@ V3 = TypeVar("V3")
 V4 = TypeVar("V4")
 V5 = TypeVar("V5")
 
+background_event_decorator = background
+
 if sys.version_info >= (3, 10):
     from typing import Concatenate
 
@@ -1610,6 +1626,11 @@ if sys.version_info >= (3, 10):
                 The event callback with stop propagation behavior.
             """
             return self
+
+        @overload
+        def __call__(
+            self: EventCallback[Q, T],
+        ) -> EventCallback[Q, T]: ...
 
         @overload
         def __call__(
@@ -1674,31 +1695,11 @@ if sys.version_info >= (3, 10):
 
             return partial(self.func, instance)  # type: ignore
 
-    def event_handler(func: Callable[Concatenate[Any, P], T]) -> EventCallback[P, T]:
-        """Wrap a function to be used as an event.
 
-        Args:
-            func: The function to wrap.
-
-        Returns:
-            The wrapped function.
-        """
-        return func  # type: ignore
 else:
 
     class EventCallback(Generic[P, T]):
         """A descriptor that wraps a function to be used as an event."""
-
-    def event_handler(func: Callable[P, T]) -> Callable[P, T]:
-        """Wrap a function to be used as an event.
-
-        Args:
-            func: The function to wrap.
-
-        Returns:
-            The wrapped function.
-        """
-        return func
 
 
 G = ParamSpec("G")
@@ -1725,8 +1726,93 @@ class EventNamespace(types.SimpleNamespace):
     EventChainVar = EventChainVar
     LiteralEventChainVar = LiteralEventChainVar
     EventType = EventType
+    EventCallback = EventCallback
 
-    __call__ = staticmethod(event_handler)
+    if sys.version_info >= (3, 10):
+
+        @overload
+        @staticmethod
+        def __call__(
+            func: None = None, *, background: bool | None = None
+        ) -> Callable[[Callable[Concatenate[Any, P], T]], EventCallback[P, T]]: ...
+
+        @overload
+        @staticmethod
+        def __call__(
+            func: Callable[Concatenate[Any, P], T],
+            *,
+            background: bool | None = None,
+        ) -> EventCallback[P, T]: ...
+
+        @staticmethod
+        def __call__(
+            func: Callable[Concatenate[Any, P], T] | None = None,
+            *,
+            background: bool | None = None,
+        ) -> Union[
+            EventCallback[P, T],
+            Callable[[Callable[Concatenate[Any, P], T]], EventCallback[P, T]],
+        ]:
+            """Wrap a function to be used as an event.
+
+            Args:
+                func: The function to wrap.
+                background: Whether the event should be run in the background. Defaults to False.
+
+            Returns:
+                The wrapped function.
+            """
+
+            def wrapper(func: Callable[Concatenate[Any, P], T]) -> EventCallback[P, T]:
+                if background is True:
+                    return background_event_decorator(func, __internal_reflex_call=True)  # type: ignore
+                return func  # type: ignore
+
+            if func is not None:
+                return wrapper(func)
+            return wrapper
+    else:
+
+        @overload
+        @staticmethod
+        def __call__(
+            func: None = None, *, background: bool | None = None
+        ) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
+
+        @overload
+        @staticmethod
+        def __call__(
+            func: Callable[P, T], *, background: bool | None = None
+        ) -> Callable[P, T]: ...
+
+        @staticmethod
+        def __call__(
+            func: Callable[P, T] | None = None,
+            *,
+            background: bool | None = None,
+        ) -> Union[
+            Callable[P, T],
+            Callable[[Callable[P, T]], Callable[P, T]],
+        ]:
+            """Wrap a function to be used as an event.
+
+            Args:
+                func: The function to wrap.
+                background: Whether the event should be run in the background. Defaults to False.
+
+            Returns:
+                The wrapped function.
+            """
+
+            def wrapper(func: Callable[P, T]) -> Callable[P, T]:
+                if background is True:
+                    return background_event_decorator(func, __internal_reflex_call=True)  # type: ignore
+                return func  # type: ignore
+
+            if func is not None:
+                return wrapper(func)
+            return wrapper
+
     get_event = staticmethod(get_event)
     get_hydrate_event = staticmethod(get_hydrate_event)
     fix_events = staticmethod(fix_events)

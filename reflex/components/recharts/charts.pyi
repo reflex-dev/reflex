@@ -51,6 +51,10 @@ class ChartBase(RechartsCharts):
             *children: The children of the chart component.
             width: The width of chart container. String or Integer
             height: The height of chart container.
+            on_click: The customized event handler of click on the component in this chart
+            on_mouse_enter: The customized event handler of mouseenter on the component in this chart
+            on_mouse_move: The customized event handler of mousemove on the component in this chart
+            on_mouse_leave: The customized event handler of mouseleave on the component in this chart
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -125,6 +129,10 @@ class CategoricalChartBase(ChartBase):
             stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             width: The width of chart container. String or Integer
             height: The height of chart container.
+            on_click: The customized event handler of click on the component in this chart
+            on_mouse_enter: The customized event handler of mouseenter on the component in this chart
+            on_mouse_move: The customized event handler of mousemove on the component in this chart
+            on_mouse_leave: The customized event handler of mouseleave on the component in this chart
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -207,6 +215,10 @@ class AreaChart(CategoricalChartBase):
             stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             width: The width of chart container. String or Integer
             height: The height of chart container.
+            on_click: The customized event handler of click on the component in this chart
+            on_mouse_enter: The customized event handler of mouseenter on the component in this chart
+            on_mouse_move: The customized event handler of mousemove on the component in this chart
+            on_mouse_leave: The customized event handler of mouseleave on the component in this chart
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -291,6 +303,10 @@ class BarChart(CategoricalChartBase):
             layout: The layout of area in the chart. 'horizontal' | 'vertical'. Default: "horizontal"
             width: The width of chart container. String or Integer
             height: The height of chart container.
+            on_click: The customized event handler of click on the component in this chart
+            on_mouse_enter: The customized event handler of mouseenter on the component in this chart
+            on_mouse_move: The customized event handler of mousemove on the component in this chart
+            on_mouse_leave: The customized event handler of mouseleave on the component in this chart
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -365,6 +381,10 @@ class LineChart(CategoricalChartBase):
             stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             width: The width of chart container. String or Integer
             height: The height of chart container.
+            on_click: The customized event handler of click on the component in this chart
+            on_mouse_enter: The customized event handler of mouseenter on the component in this chart
+            on_mouse_move: The customized event handler of mousemove on the component in this chart
+            on_mouse_leave: The customized event handler of mouseleave on the component in this chart
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -455,6 +475,10 @@ class ComposedChart(CategoricalChartBase):
             stack_offset: The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
             width: The width of chart container. String or Integer
             height: The height of chart container.
+            on_click: The customized event handler of click on the component in this chart
+            on_mouse_enter: The customized event handler of mouseenter on the component in this chart
+            on_mouse_move: The customized event handler of mousemove on the component in this chart
+            on_mouse_leave: The customized event handler of mouseleave on the component in this chart
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -505,8 +529,16 @@ class PieChart(ChartBase):
         Args:
             *children: The children of the chart component.
             margin: The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
+            on_mouse_down: The customized event handler of mousedown on the sectors in this group
+            on_mouse_up: The customized event handler of mouseup on the sectors in this group
+            on_mouse_over: The customized event handler of mouseover on the sectors in this group
+            on_mouse_out: The customized event handler of mouseout on the sectors in this group
             width: The width of chart container. String or Integer
             height: The height of chart container.
+            on_click: The customized event handler of click on the component in this chart
+            on_mouse_enter: The customized event handler of mouseenter on the component in this chart
+            on_mouse_move: The customized event handler of mousemove on the component in this chart
+            on_mouse_leave: The customized event handler of mouseleave on the component in this chart
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -562,6 +594,9 @@ class RadarChart(ChartBase):
             outer_radius: The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: "80%"
             width: The width of chart container. String or Integer
             height: The height of chart container.
+            on_click: The customized event handler of click on the component in this chart
+            on_mouse_enter: The customized event handler of mouseenter on the component in this chart
+            on_mouse_leave: The customized event handler of mouseleave on the component in this chart
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -634,6 +669,10 @@ class RadialBarChart(ChartBase):
             bar_size: The size of each bar. If the barSize is not specified, the size of bar will be calculated by the barCategoryGap, barGap and the quantity of bar groups.
             width: The width of chart container. String or Integer
             height: The height of chart container.
+            on_click: The customized event handler of click on the component in this chart
+            on_mouse_enter: The customized event handler of mouseenter on the component in this chart
+            on_mouse_move: The customized event handler of mousemove on the component in this chart
+            on_mouse_leave: The customized event handler of mouseleave on the component in this chart
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -680,6 +719,10 @@ class ScatterChart(ChartBase):
             margin: The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "bottom": 5, "left": 5}
             width: The width of chart container. String or Integer
             height: The height of chart container.
+            on_click: The customized event handler of click on the component in this chart
+            on_mouse_enter: The customized event handler of mouseenter on the component in this chart
+            on_mouse_move: The customized event handler of mousemove on the component in this chart
+            on_mouse_leave: The customized event handler of mouseleave on the component in this chart
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -736,6 +779,10 @@ class FunnelChart(ChartBase):
             stroke: The stroke color of each bar. String | Object
             width: The width of chart container. String or Integer
             height: The height of chart container.
+            on_click: The customized event handler of click on the component in this chart
+            on_mouse_enter: The customized event handler of mouseenter on the component in this chart
+            on_mouse_move: The customized event handler of mousemove on the component in this chart
+            on_mouse_leave: The customized event handler of mouseleave on the component in this chart
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -809,6 +856,8 @@ class Treemap(RechartsCharts):
             animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
             animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
             animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default: "ease"
+            on_animation_start: The customized event handler of animation start
+            on_animation_end: The customized event handler of animation end
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

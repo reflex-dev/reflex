@@ -33,8 +33,8 @@ def copy_script() -> Any:
         f"""
 // Event listener for the parent click
 document.addEventListener('click', function(event) {{
-    // Find the closest div (parent element)
-    const parent = event.target.closest('div');
+    // Find the closest button (parent element)
+    const parent = event.target.closest('button');
     // If the parent is found
     if (parent) {{
         // Find the SVG element within the parent
