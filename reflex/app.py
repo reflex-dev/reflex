@@ -12,7 +12,6 @@ import inspect
 import io
 import json
 import multiprocessing
-import os
 import platform
 import sys
 import traceback
@@ -505,10 +504,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         # Check if the route given is valid
         verify_route_validity(route)
 
-        # TODO: this was broken?
-        if route in self.unevaluated_pages and os.getenv(
-            environment.RELOAD_CONFIG.name
-        ):
+        if route in self.unevaluated_pages and environment.RELOAD_CONFIG.is_set():
             # when the app is reloaded(typically for app harness tests), we should maintain
             # the latest render function of a route.This applies typically to decorated pages
             # since they are only added when app._compile is called.

@@ -332,23 +332,45 @@ class EnvVar(Generic[T]):
         self.default = default
         self.type_ = type_
 
-    def getenv(self) -> Optional[str]:
-        """Get the environment variable from os.environ.
+    def interpret(self, value: str) -> T:
+        """Interpret the environment variable value.
+
+        Args:
+            value: The environment variable value.
+
+        Returns:
+            The interpreted value.
+        """
+        return interpret_env_var_value(value, self.type_, self.name)
+
+    def getenv(self) -> Optional[T]:
+        """Get the interpreted environment variable value.
 
         Returns:
             The environment variable value.
         """
-        return os.getenv(self.name, None)
+        env_value = os.getenv(self.name, None)
+        if env_value is not None:
+            return self.interpret(env_value)
+        return None
+
+    def is_set(self) -> bool:
+        """Check if the environment variable is set.
+
+        Returns:
+            True if the environment variable is set.
+        """
+        return self.name in os.environ
 
     def get(self) -> T:
-        """Get the interpreted environment variable value.
+        """Get the interpreted environment variable value or the default value if not set.
 
         Returns:
             The interpreted value.
         """
         env_value = self.getenv()
         if env_value is not None:
-            return interpret_env_var_value(env_value, self.type_, self.name)
+            return env_value
         return self.default
 
     def set(self, value: T | None) -> None:
