@@ -485,6 +485,51 @@ def is_testing_env() -> bool:
     return constants.PYTEST_CURRENT_TEST in os.environ
 
 
+def is_frontend_only() -> bool:
+    """Check if the app is running in frontend-only mode.
+
+    Returns:
+        True if the app is running in frontend-only mode.
+    """
+    console.deprecate(
+        "is_frontend_only() is deprecated and will be removed in a future release.",
+        reason="Use `environment.REFLEX_FRONTEND_ONLY.get()` instead.",
+        deprecation_version="0.6.5",
+        removal_version="0.7.0",
+    )
+    return environment.REFLEX_FRONTEND_ONLY.get()
+
+
+def is_backend_only() -> bool:
+    """Check if the app is running in backend-only mode.
+
+    Returns:
+        True if the app is running in backend-only mode.
+    """
+    console.deprecate(
+        "is_backend_only() is deprecated and will be removed in a future release.",
+        reason="Use `environment.REFLEX_BACKEND_ONLY.get()` instead.",
+        deprecation_version="0.6.5",
+        removal_version="0.7.0",
+    )
+    return environment.REFLEX_BACKEND_ONLY.get()
+
+
+def should_skip_compile() -> bool:
+    """Whether the app should skip compile.
+
+    Returns:
+        True if the app should skip compile.
+    """
+    console.deprecate(
+        "should_skip_compile() is deprecated and will be removed in a future release.",
+        reason="Use `environment.REFLEX_SKIP_COMPILE.get()` instead.",
+        deprecation_version="0.6.5",
+        removal_version="0.7.0",
+    )
+    return environment.REFLEX_SKIP_COMPILE.get()
+
+
 def is_prod_mode() -> bool:
     """Check if the app is running in production mode.
 
