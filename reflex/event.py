@@ -1073,9 +1073,6 @@ def call_event_handler(
         event_spec: The lambda that define the argument(s) to pass to the event handler.
         key: The key to pass to the event handler.
 
-    Raises:
-        EventFnArgMismatch: if number of arguments expected by event_handler doesn't match the spec.
-
     Returns:
         The event spec from calling the event handler.
 
