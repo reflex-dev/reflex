@@ -532,7 +532,11 @@ class CodeBlock(Component, MarkdownComponentMap):
 
     @classmethod
     def _get_language_registration_hook(cls) -> str:
-        """Get the hook to register the language."""
+        """Get the hook to register the language.
+
+        Returns:
+            The hook to register the language.
+        """
         return f"""
  if ({str(_LANGUAGE)}) {{
     (async () => {{
