@@ -9,6 +9,7 @@ import re
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
 from reflex import constants
+from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import exceptions
 from reflex.utils.console import deprecate
 
@@ -439,7 +440,7 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
 
     from reflex.state import State
 
-    if state_full_name == "state" and name not in State.__dict__:
+    if state_full_name == FRONTEND_EVENT_STATE and name not in State.__dict__:
         return ("", to_snake_case(handler.fn.__qualname__))
 
     return (state_full_name, name)

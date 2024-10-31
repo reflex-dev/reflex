@@ -28,6 +28,7 @@ from typing import (
 from typing_extensions import ParamSpec, Protocol, get_args, get_origin
 
 from reflex import constants
+from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import console, format
 from reflex.utils.exceptions import (
     EventFnArgMismatch,
@@ -688,7 +689,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     fn.__qualname__ = name
     fn.__signature__ = sig
     return EventSpec(
-        handler=EventHandler(fn=fn, state_full_name="state"),
+        handler=EventHandler(fn=fn, state_full_name=FRONTEND_EVENT_STATE),
         args=tuple(
             (
                 Var(_js_expr=k),
@@ -1455,7 +1456,7 @@ def get_fn_signature(fn: Callable) -> inspect.Signature:
     """
     signature = inspect.signature(fn)
     new_param = inspect.Parameter(
-        "state", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Any
+        FRONTEND_EVENT_STATE, inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Any
     )
     return signature.replace(parameters=(new_param, *signature.parameters.values()))
 
