@@ -12,6 +12,7 @@ from reflex.components.core.colors import color
 from reflex.components.core.cond import color_mode_cond
 from reflex.components.el.elements.forms import Button
 from reflex.components.lucide.icon import Icon
+from reflex.components.props import NoExtrasAllowedProps
 from reflex.components.radix.themes.layout.box import Box
 from reflex.event import call_script, set_clipboard
 from reflex.style import Style
@@ -253,6 +254,7 @@ LiteralCodeLanguage = Literal[
     "pascal",
     "perl",
     "php",
+    "plain",
     "plsql",
     "po",
     "postcss",
@@ -369,10 +371,11 @@ LiteralCodeTheme = Literal[
     "nord",
     "one-dark-pro",
     "one-light",
-    "plain",
     "plastic",
     "poimandres",
     "red",
+    # rose-pine themes dont work with the current version of shikijs transformers
+    # https://github.com/shikijs/shiki/issues/730
     "rose-pine",
     "rose-pine-dawn",
     "rose-pine-moon",
@@ -388,6 +391,23 @@ LiteralCodeTheme = Literal[
     "vitesse-dark",
     "vitesse-light",
 ]
+
+
+class Position(NoExtrasAllowedProps):
+    """Position of the decoration."""
+
+    line: int
+    character: int
+
+
+class ShikiDecorations(NoExtrasAllowedProps):
+    """Decorations for the code block."""
+
+    start: Union[int, Position]
+    end: Union[int, Position]
+    tag_name: str = "span"
+    properties: dict[str, Any] = {}
+    always_wrap: bool = False
 
 
 class ShikiBaseTransformers(Base):
@@ -537,6 +557,9 @@ class ShikiCodeBlock(Component):
         []
     )
 
+    # The decorations to use for the syntax highlighter.
+    decorations: Var[list[ShikiDecorations]] = Var.create([])
+
     @classmethod
     def create(
         cls,
@@ -555,6 +578,7 @@ class ShikiCodeBlock(Component):
         # Separate props for the code block and the wrapper
         code_block_props = {}
         code_wrapper_props = {}
+        decorations = props.pop("decorations", [])
 
         class_props = cls.get_props()
 
@@ -563,6 +587,15 @@ class ShikiCodeBlock(Component):
             (code_block_props if key in class_props else code_wrapper_props)[key] = (
                 value
             )
+
+        # cast decorations into ShikiDecorations.
+        decorations = [
+            ShikiDecorations(**decoration)
+            if not isinstance(decoration, ShikiDecorations)
+            else decoration
+            for decoration in decorations
+        ]
+        code_block_props["decorations"] = decorations
 
         code_block_props["code"] = children[0]
         code_block = super().create(**code_block_props)
@@ -676,10 +709,10 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
     show_line_numbers: Var[bool]
 
     # Whether a copy button should appear.
-    can_copy: Var[bool] = Var.create(False)
+    can_copy: bool = False
 
     # copy_button: A custom copy button to override the default one.
-    copy_button: Var[Optional[Union[Component, bool]]] = Var.create(None)
+    copy_button: Optional[Union[Component, bool]] = None
 
     @classmethod
     def create(
