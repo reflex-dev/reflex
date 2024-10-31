@@ -129,7 +129,9 @@ class FormRoot(FormComponent, HTMLForm):
         on_mouse_over: Optional[EventType[[]]] = None,
         on_mouse_up: Optional[EventType[[]]] = None,
         on_scroll: Optional[EventType[[]]] = None,
-        on_submit: Optional[EventType[Dict[str, Any]]] = None,
+        on_submit: Optional[
+            Union[EventType[Dict[str, Any]], EventType[Dict[str, str]]]
+        ] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,
     ) -> "FormRoot":
@@ -596,7 +598,9 @@ class Form(FormRoot):
         on_mouse_over: Optional[EventType[[]]] = None,
         on_mouse_up: Optional[EventType[[]]] = None,
         on_scroll: Optional[EventType[[]]] = None,
-        on_submit: Optional[EventType[Dict[str, Any]]] = None,
+        on_submit: Optional[
+            Union[EventType[Dict[str, Any]], EventType[Dict[str, str]]]
+        ] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,
     ) -> "Form":
@@ -720,7 +724,9 @@ class FormNamespace(ComponentNamespace):
         on_mouse_over: Optional[EventType[[]]] = None,
         on_mouse_up: Optional[EventType[[]]] = None,
         on_scroll: Optional[EventType[[]]] = None,
-        on_submit: Optional[EventType[Dict[str, Any]]] = None,
+        on_submit: Optional[
+            Union[EventType[Dict[str, Any]], EventType[Dict[str, str]]]
+        ] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,
     ) -> "Form":

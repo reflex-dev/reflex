@@ -90,7 +90,11 @@ class MatchTypeError(ReflexError, TypeError):
 
 
 class EventHandlerArgMismatch(ReflexError, TypeError):
-    """Raised when the number of args accepted by an EventHandler is differs from that provided by the event trigger."""
+    """Raised when the number of args accepted by an EventHandler differs from that provided by the event trigger."""
+
+
+class EventHandlerArgTypeMismatch(ReflexError, TypeError):
+    """Raised when the annotations of args accepted by an EventHandler differs from the spec of the event trigger."""
 
 
 class EventFnArgMismatch(ReflexError, TypeError):

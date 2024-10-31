@@ -480,6 +480,7 @@ class Component(BaseComponent, ABC):
                 kwargs["event_triggers"][key] = self._create_event_chain(
                     value=value,  # type: ignore
                     args_spec=component_specific_triggers[key],
+                    key=key,
                 )
 
         # Remove any keys that were added as events.
@@ -540,12 +541,14 @@ class Component(BaseComponent, ABC):
             List[Union[EventHandler, EventSpec, EventVar]],
             Callable,
         ],
+        key: Optional[str] = None,
     ) -> Union[EventChain, Var]:
         """Create an event chain from a variety of input types.
 
         Args:
             args_spec: The args_spec of the event trigger being bound.
             value: The value to create the event chain from.
+            key: The key of the event trigger being bound.
 
         Returns:
             The event chain.
@@ -560,7 +563,7 @@ class Component(BaseComponent, ABC):
             elif isinstance(value, EventVar):
                 value = [value]
             elif issubclass(value._var_type, (EventChain, EventSpec)):
-                return self._create_event_chain(args_spec, value.guess_type())
+                return self._create_event_chain(args_spec, value.guess_type(), key=key)
             else:
                 raise ValueError(
                     f"Invalid event chain: {str(value)} of type {value._var_type}"
@@ -579,10 +582,10 @@ class Component(BaseComponent, ABC):
             for v in value:
                 if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
-                    events.append(call_event_handler(v, args_spec))
+                    events.append(call_event_handler(v, args_spec, key=key))
                 elif isinstance(v, Callable):
                     # Call the lambda to get the event chain.
-                    result = call_event_fn(v, args_spec)
+                    result = call_event_fn(v, args_spec, key=key)
                     if isinstance(result, Var):
                         raise ValueError(
                             f"Invalid event chain: {v}. Cannot use a Var-returning "
@@ -599,7 +602,7 @@ class Component(BaseComponent, ABC):
             result = call_event_fn(value, args_spec)
             if isinstance(result, Var):
                 # Recursively call this function if the lambda returned an EventChain Var.
-                return self._create_event_chain(args_spec, result)
+                return self._create_event_chain(args_spec, result, key=key)
             events = [*result]
 
         # Otherwise, raise an error.
@@ -1722,6 +1725,7 @@ class CustomComponent(Component):
                     args_spec=event_triggers_in_component_declaration.get(
                         key, empty_event
                     ),
+                    key=key,
                 )
                 self.props[format.to_camel_case(key)] = value
                 continue
