@@ -3400,11 +3400,6 @@ def test_fallback_pickle():
     assert isinstance(unpickled_state2._g, type(threading.Lock()))
 
     # Some object, like generator, are still unpicklable with dill.
-    state._g = (i for i in range(10))
-    pk = state._serialize()
-    assert len(pk) == 0
-    with pytest.raises(EOFError):
-        BaseState._deserialize(pk)
     state3 = DillState(_reflex_internal_init=True)  # type: ignore
     state3._g = (i for i in range(10))
     pk3 = state3._serialize()
