@@ -42,8 +42,7 @@ def get_lighthouse_scores(directory_path: str | Path) -> dict:
     try:
         for filename in directory_path.iterdir():
             if filename.suffix == ".json" and filename.stem != "manifest":
-                file_path = directory_path / filename
-                data = json.loads(file_path.read_text())
+                data = json.loads(filename.read_text())
                 # Extract scores and add them to the dictionary with the filename as key
                 scores[data["finalUrl"].replace("http://localhost:3000/", "/")] = {
                     "performance_score": data["categories"]["performance"]["score"],

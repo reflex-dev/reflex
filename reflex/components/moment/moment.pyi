@@ -101,6 +101,7 @@ class Moment(NoSSRComponent):
             local: Outputs the result in local time.
             tz: Display the date in the given timezone.
             locale: The locale to use when rendering.
+            on_change: Fires when the date changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

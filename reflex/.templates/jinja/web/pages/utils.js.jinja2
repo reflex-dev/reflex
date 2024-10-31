@@ -36,14 +36,10 @@
 {#     component: component dictionary #}
 {% macro render_tag(component) %}
 <{{component.name}} {{- render_props(component.props) }}>
-{%- if component.args is not none -%}
-  {{- render_arg_content(component) }}
-{%- else -%}
-  {{ component.contents }}
-  {% for child in component.children %}
-  {{ render(child) }}
-  {% endfor %}
-{%- endif -%}
+{{ component.contents }}
+{% for child in component.children %}
+{{ render(child) }}
+{% endfor %}
 </{{component.name}}>
 {%- endmacro %}
 

@@ -214,6 +214,11 @@ class TextArea(RadixThemesComponent, elements.Textarea):
             auto_height: Automatically fit the content height to the text (use min-height with this prop)
             cols: Visible width of the text control, in average character widths
             enter_key_submit: Enter key submits form (shift-enter adds new line)
+            on_change: Fired when the input value changes
+            on_focus: Fired when the input gains focus
+            on_blur: Fired when the input loses focus
+            on_key_down: Fired when a key is pressed down
+            on_key_up: Fired when a key is released
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
