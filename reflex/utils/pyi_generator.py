@@ -568,6 +568,7 @@ def _generate_component_create_functiondef(
         )
         for trigger in sorted(event_triggers)
     )
+
     logger.debug(f"Generated {clz.__name__}.create method with {len(kwargs)} kwargs")
     create_args = ast.arguments(
         args=[ast.arg(arg="cls")],
@@ -578,12 +579,17 @@ def _generate_component_create_functiondef(
         kwarg=ast.arg(arg="props"),
         defaults=[],
     )
+
     definition = ast.FunctionDef(
         name="create",
         args=create_args,
         body=[
             ast.Expr(
-                value=ast.Constant(value=_generate_docstrings(all_classes, all_props))
+                value=ast.Constant(
+                    value=_generate_docstrings(
+                        all_classes, [*all_props, *event_triggers]
+                    )
+                ),
             ),
             ast.Expr(
                 value=ast.Ellipsis(),

@@ -106,6 +106,9 @@ class Tooltip(RadixThemesComponent):
             disable_hoverable_content: Prevents Tooltip content from remaining open when hovering.
             force_mount: Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries.
             aria_label: By default, screenreaders will announce the content inside the component. If this is not descriptive enough, or you have content that cannot be announced, use aria-label as a more descriptive label.
+            on_open_change: Fired when the open state changes.
+            on_escape_key_down: Fired when the escape key is pressed.
+            on_pointer_down_outside: Fired when the pointer is down outside the tooltip.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

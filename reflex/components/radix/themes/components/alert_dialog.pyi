@@ -55,6 +55,7 @@ class AlertDialogRoot(RadixThemesComponent):
         Args:
             *children: Child components.
             open: The controlled open state of the dialog.
+            on_open_change: Fired when the open state changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -186,6 +187,9 @@ class AlertDialogContent(elements.Div, RadixThemesComponent):
             *children: Child components.
             size: The size of the content.
             force_mount: Whether to force mount the content on open.
+            on_open_auto_focus: Fired when the dialog is opened.
+            on_close_auto_focus: Fired when the dialog is closed.
+            on_escape_key_down: Fired when the escape key is pressed.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.

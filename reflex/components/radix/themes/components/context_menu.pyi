@@ -52,6 +52,7 @@ class ContextMenuRoot(RadixThemesComponent):
         Args:
             *children: Child components.
             modal: The modality of the context menu. When set to true, interaction with outside elements will be disabled and only menu content will be visible to screen readers.
+            on_open_change: Fired when the open state changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -238,6 +239,11 @@ class ContextMenuContent(RadixThemesComponent):
             high_contrast: Whether to render the button with higher contrast color against background
             align_offset: The vertical distance in pixels from the anchor.
             avoid_collisions: When true, overrides the side and aligns preferences to prevent collisions with boundary edges.
+            on_close_auto_focus: Fired when the context menu is closed.
+            on_escape_key_down: Fired when the escape key is pressed.
+            on_pointer_down_outside: Fired when a pointer down event happens outside the context menu.
+            on_focus_outside: Fired when focus moves outside the context menu.
+            on_interact_outside: Fired when interacting outside the context menu.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -393,6 +399,10 @@ class ContextMenuSubContent(RadixThemesComponent):
         Args:
             *children: Child components.
             loop: When true, keyboard navigation will loop from last item to first, and vice versa.
+            on_escape_key_down: Fired when the escape key is pressed.
+            on_pointer_down_outside: Fired when a pointer down event happens outside the context menu.
+            on_focus_outside: Fired when focus moves outside the context menu.
+            on_interact_outside: Fired when interacting outside the context menu.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
