@@ -332,7 +332,6 @@ class EnvVar(Generic[T]):
         self.default = default
         self.type_ = type_
 
-    @property
     def getenv(self) -> Optional[str]:
         """Get the environment variable from os.environ.
 
@@ -341,14 +340,13 @@ class EnvVar(Generic[T]):
         """
         return os.getenv(self.name, None)
 
-    @property
     def get(self) -> T:
         """Get the interpreted environment variable value.
 
         Returns:
             The interpreted value.
         """
-        env_value = self.getenv
+        env_value = self.getenv()
         if env_value is not None:
             return interpret_env_var_value(env_value, self.type_, self.name)
         return self.default

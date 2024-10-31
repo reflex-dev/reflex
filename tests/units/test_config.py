@@ -216,7 +216,7 @@ def test_replace_defaults(
 
 
 def reflex_dir_constant() -> Path:
-    return environment.REFLEX_DIR.get
+    return environment.REFLEX_DIR.get()
 
 
 def test_reflex_dir_env_var(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -253,30 +253,30 @@ def test_env_var():
         INTERNAL: EnvVar[str] = env_var("default", internal=True)
         BOOLEAN: EnvVar[bool] = env_var(False)
 
-    assert TestEnv.BLUBB.get == "default"
+    assert TestEnv.BLUBB.get() == "default"
     assert TestEnv.BLUBB.name == "BLUBB"
     TestEnv.BLUBB.set("new")
     assert os.environ.get("BLUBB") == "new"
-    assert TestEnv.BLUBB.get == "new"
+    assert TestEnv.BLUBB.get() == "new"
     TestEnv.BLUBB.set(None)
     assert "BLUBB" not in os.environ
 
-    assert TestEnv.INTERNAL.get == "default"
+    assert TestEnv.INTERNAL.get() == "default"
     assert TestEnv.INTERNAL.name == "__INTERNAL"
     TestEnv.INTERNAL.set("new")
     assert os.environ.get("__INTERNAL") == "new"
-    assert TestEnv.INTERNAL.get == "new"
-    assert TestEnv.INTERNAL.getenv == "new"
+    assert TestEnv.INTERNAL.get() == "new"
+    assert TestEnv.INTERNAL.getenv() == "new"
     TestEnv.INTERNAL.set(None)
     assert "__INTERNAL" not in os.environ
 
-    assert TestEnv.BOOLEAN.get is False
+    assert TestEnv.BOOLEAN.get() is False
     assert TestEnv.BOOLEAN.name == "BOOLEAN"
     TestEnv.BOOLEAN.set(True)
     assert os.environ.get("BOOLEAN") == "True"
-    assert TestEnv.BOOLEAN.get is True
+    assert TestEnv.BOOLEAN.get() is True
     TestEnv.BOOLEAN.set(False)
     assert os.environ.get("BOOLEAN") == "False"
-    assert TestEnv.BOOLEAN.get is False
+    assert TestEnv.BOOLEAN.get() is False
     TestEnv.BOOLEAN.set(None)
     assert "BOOLEAN" not in os.environ

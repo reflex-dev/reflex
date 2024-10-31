@@ -184,7 +184,7 @@ def should_use_granian():
     Returns:
         True if Granian should be used.
     """
-    return environment.REFLEX_USE_GRANIAN.get
+    return environment.REFLEX_USE_GRANIAN.get()
 
 
 def get_app_module():
@@ -491,5 +491,5 @@ def is_prod_mode() -> bool:
     Returns:
         True if the app is running in production mode or False if running in dev mode.
     """
-    current_mode = environment.REFLEX_ENV_MODE.get
+    current_mode = environment.REFLEX_ENV_MODE.get()
     return current_mode == constants.Env.PROD
