@@ -381,7 +381,7 @@ class Markdown(Component):
                     component.component_fn(*component.get_prop_vars())
                 )
             )
-        else:
+        elif isinstance(component, Component):
             for child in component.children:
                 custom_code_list.extend(
                     self._get_map_fn_custom_code_from_children(child)
