@@ -485,6 +485,16 @@ def is_testing_env() -> bool:
     return constants.PYTEST_CURRENT_TEST in os.environ
 
 
+def is_prod_mode() -> bool:
+    """Check if the app is running in production mode.
+
+    Returns:
+        True if the app is running in production mode or False if running in dev mode.
+    """
+    current_mode = environment.REFLEX_ENV_MODE.get()
+    return current_mode == constants.Env.PROD
+
+
 def is_frontend_only() -> bool:
     """Check if the app is running in frontend-only mode.
 
@@ -528,13 +538,3 @@ def should_skip_compile() -> bool:
         removal_version="0.7.0",
     )
     return environment.REFLEX_SKIP_COMPILE.get()
-
-
-def is_prod_mode() -> bool:
-    """Check if the app is running in production mode.
-
-    Returns:
-        True if the app is running in production mode or False if running in dev mode.
-    """
-    current_mode = environment.REFLEX_ENV_MODE.get()
-    return current_mode == constants.Env.PROD
