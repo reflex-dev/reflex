@@ -3716,40 +3716,27 @@ def serialize_mutable_proxy(mp: MutableProxy):
     return mp.__wrapped__
 
 
-_orig_json_dumps = json.dumps
+_orig_json_JSONEncoder_default = json.JSONEncoder.default
 
 
-def _json_dumps_wrapper(*args, **kwargs):
-    """Wrap json.dumps to handle MutableProxy objects.
+def _json_JSONEncoder_default_wrapper(self: json.JSONEncoder, o: Any) -> Any:
+    """Wrap JSONEncoder.default to handle MutableProxy objects.
 
     Args:
-        *args: args for json.dumps.
-        **kwargs: kwargs for json.dumps.
+        self: the JSONEncoder instance.
+        o: the object to serialize.
 
     Returns:
-        The JSON string.
+        A JSON-able object.
     """
-    if "cls" not in kwargs:
-        _orig_default = kwargs.pop("default", None)
-
-    def _default(obj):
-        if _orig_default is not None:
-            try:
-                return _orig_default(obj)
-            except TypeError:
-                pass
-        try:
-            return obj.__wrapped__
-        except AttributeError:
-            pass
-        raise TypeError()
-
-    if "cls" not in kwargs:
-        kwargs["default"] = _default
-    return _orig_json_dumps(*args, **kwargs)
+    try:
+        return o.__wrapped__
+    except AttributeError:
+        pass
+    return _orig_json_JSONEncoder_default(self, o)
 
 
-json.dumps = _json_dumps_wrapper
+json.JSONEncoder.default = _json_JSONEncoder_default_wrapper
 
 
 class ImmutableMutableProxy(MutableProxy):
