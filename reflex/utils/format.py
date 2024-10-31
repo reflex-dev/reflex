@@ -197,8 +197,16 @@ def make_default_page_title(app_name: str, route: str) -> str:
     Returns:
         The default page title.
     """
-    title = constants.DefaultPage.TITLE.format(app_name, route)
-    return to_title_case(title, " ")
+    route_parts = [
+        part
+        for part in route.split("/")
+        if part and not (part.startswith("[") and part.endswith("]"))
+    ]
+
+    title = constants.DefaultPage.TITLE.format(
+        app_name, route_parts[-1] if route_parts else constants.PageNames.INDEX_ROUTE
+    )
+    return to_title_case(title)
 
 
 def _escape_js_string(string: str) -> str:
