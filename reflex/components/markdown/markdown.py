@@ -28,6 +28,7 @@ _CHILDREN = Var(_js_expr="children", _var_type=str)
 _PROPS = Var(_js_expr="...props")
 _PROPS_IN_TAG = Var(_js_expr="{...props}")
 _MOCK_ARG = Var(_js_expr="", _var_type=str)
+_LANGUAGE = Var(_js_expr="_language", _var_type=str)
 
 # Special remark plugins.
 _REMARK_MATH = Var(_js_expr="remarkMath")
@@ -74,9 +75,54 @@ def get_base_component_map() -> dict[str, Callable]:
     }
 
 
-class MarkdownComponentMapMixin:
-    def get_component_map_custom_code(self) -> str:
+class MarkdownComponentMap:
+    """Mixin class for handling custom component maps in Markdown components."""
+
+    @classmethod
+    def get_component_map_custom_code(cls) -> str:
+        """Get the custom code for the component map.
+
+        Returns:
+            The custom code for the component map.
+        """
         return ""
+
+    @classmethod
+    def create_map_fn_var(
+        cls, fn_body: str | None = None, fn_args: list | None = None
+    ) -> Var:
+        """Create a function Var for the component map.
+
+        Args:
+            fn_body: The formatted component as a string.
+            fn_args: The function arguments.
+
+        Returns:
+            The function Var for the component map.
+        """
+        fn_args = fn_args or cls.get_fn_args()
+        fn_body = fn_body or cls.get_fn_body()
+        fn_args_str = ", ".join(fn_args)
+
+        return Var(_js_expr=f"(({{{fn_args_str}}}) => {fn_body})")
+
+    @classmethod
+    def get_fn_args(cls) -> list[str]:
+        """Get the function arguments for the component map.
+
+        Returns:
+            The function arguments as a list of strings.
+        """
+        return ["node", _CHILDREN._js_expr, _PROPS._js_expr]
+
+    @classmethod
+    def get_fn_body(cls) -> str:
+        """Get the function body for the component map.
+
+        Returns:
+            The function body as a string.
+        """
+        return "()"
 
 
 class Markdown(Component):
@@ -132,7 +178,7 @@ class Markdown(Component):
         )
 
     def _get_all_custom_components(
-            self, seen: set[str] | None = None
+        self, seen: set[str] | None = None
     ) -> set[CustomComponent]:
         """Get all the custom components used by the component.
 
@@ -158,9 +204,6 @@ class Markdown(Component):
         Returns:
             The imports for the markdown component.
         """
-        from reflex.components.datadisplay.code import CodeBlock, Theme
-        from reflex.components.radix.themes.typography.code import Code
-
         return [
             {
                 "": "katex/dist/katex.min.css",
@@ -184,9 +227,66 @@ class Markdown(Component):
                 component(_MOCK_ARG)._get_all_imports()  # type: ignore
                 for component in self.component_map.values()
             ],
-            # CodeBlock.create(theme=Theme.light)._get_imports(),
-            # Code.create()._get_imports(),
         ]
+
+    def _get_tag_map_fn_var(self, tag: str) -> Var:
+        return self._get_map_fn_var_from_children(self.get_component(tag), tag)
+
+    def format_component_map(self) -> dict[str, Var]:
+        """Format the component map for rendering.
+
+        Returns:
+            The formatted component map.
+        """
+        components = {
+            tag: self._get_tag_map_fn_var(tag)
+            for tag in self.component_map
+            if tag not in ("code", "codeblock")
+        }
+
+        # Separate out inline code and code blocks.
+        components["code"] = self._get_inline_code_fn_var()
+
+        return components
+
+    def _get_inline_code_fn_var(self) -> Var:
+        """Get the function variable for inline code.
+
+        This function creates a Var that represents a function to handle
+        both inline code and code blocks in markdown.
+
+        Returns:
+            The Var for inline code.
+        """
+        # Get any custom code from the codeblock and code components.
+        custom_code_list = self._get_map_fn_custom_code_from_children(
+            self.get_component("codeblock")
+        )
+        custom_code_list.extend(
+            self._get_map_fn_custom_code_from_children(self.get_component("code"))
+        )
+
+        codeblock_custom_code = "\n".join(custom_code_list)
+
+        # Format the code to handle inline and block code.
+        formatted_code = f"""{{{codeblock_custom_code};
+            return inline ? (
+                {self.format_component("code")}
+            ) : (
+                {self.format_component("codeblock", language=_LANGUAGE)}
+            );
+        }}""".replace("\n", " ")
+
+        return MarkdownComponentMap.create_map_fn_var(
+            fn_args=[
+                "node",
+                "inline",
+                "className",
+                _CHILDREN._js_expr,
+                _PROPS._js_expr,
+            ],
+            fn_body=formatted_code,
+        )
 
     def get_component(self, tag: str, **props) -> Component:
         """Get the component for a tag and props.
@@ -244,36 +344,23 @@ class Markdown(Component):
         """
         return str(self.get_component(tag, **props)).replace("\n", "")
 
-    def format_component_map(self) -> dict[str, Var]:
-        """Format the component map for rendering.
+    def _get_map_fn_var_from_children(self, component: Component, tag: str) -> Var:
+        """Create a function Var for the component map for the specified tag.
+
+        Args:
+            component: The component to check for custom code.
+            tag: The tag of the component.
 
         Returns:
-            The formatted component map.
+            The function Var for the component map.
         """
-        components = {
-            tag: Var(
-                _js_expr=f"(({{node, {_CHILDREN._js_expr}, {_PROPS._js_expr}}}) => ({self.format_component(tag)}))"
-            )
-            for tag in self.component_map
-        }
-        codeblock_component = self.get_component("codeblock")
-        custom_code_list = self._get_custom_code_from_children(codeblock_component)
-        codeblock_custom_code = "\n".join(custom_code_list)
-        # Separate out inline code and code blocks.
-        components["code"] = Var(
-            _js_expr=f"""(({{node, inline, className, {_CHILDREN._js_expr}, {_PROPS._js_expr}}}) => {{
-    {codeblock_custom_code};
-    return inline ? (
-        {self.format_component("code")}
-    ) : (
-        {self.format_component("codeblock", language=Var(_js_expr="language", _var_type=str))}
-    );
-      }})""".replace("\n", " ")
-        )
+        if isinstance(component, MarkdownComponentMap):
+            return component.create_map_fn_var(f"({self.format_component(tag)})")
 
-        return components
+        # fallback to the default fn Var creation if the component is not a MarkdownComponentMap.
+        return MarkdownComponentMap.create_map_fn_var(f"({self.format_component(tag)})")
 
-    def _get_custom_code_from_children(self, component) -> list[str]:
+    def _get_map_fn_custom_code_from_children(self, component) -> list[str]:
         """Recursively get markdown custom code from children components.
 
         Args:
@@ -283,16 +370,25 @@ class Markdown(Component):
             A list of markdown custom code strings.
         """
         custom_code_list = []
-        if hasattr(component, "get_component_map_custom_code"):
+        if isinstance(component, MarkdownComponentMap):
             custom_code_list.append(component.get_component_map_custom_code())
 
+        # If the component is a custom component(rx.memo), obtain the underlining
+        # component and get the custom code from the children.
         if isinstance(component, CustomComponent):
-            custom_code_list.extend(self._get_custom_code_from_children(component.component_fn(*component.get_prop_vars())))
+            custom_code_list.extend(
+                self._get_map_fn_custom_code_from_children(
+                    component.component_fn(*component.get_prop_vars())
+                )
+            )
         else:
             for child in component.children:
-                custom_code_list.extend(self._get_custom_code_from_children(child))
+                custom_code_list.extend(
+                    self._get_map_fn_custom_code_from_children(child)
+                )
 
         return custom_code_list
+
     @staticmethod
     def _component_map_hash(component_map) -> str:
         inp = str(

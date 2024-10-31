@@ -8,14 +8,17 @@ from typing import ClassVar, Dict, Literal, Optional, Union
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.cond import color_mode_cond
 from reflex.components.lucide.icon import Icon
+from reflex.components.markdown.markdown import (
+    _LANGUAGE,
+    MarkdownComponentMap,
+)
 from reflex.components.radix.themes.components.button import Button
 from reflex.components.radix.themes.layout.box import Box
-from reflex.components.markdown.markdown import MarkdownComponentMapMixin, _PROPS, _CHILDREN
 from reflex.constants.colors import Color
 from reflex.event import set_clipboard
 from reflex.style import Style
 from reflex.utils import console, format
-from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var, VarData
 
 LiteralCodeLanguage = Literal[
@@ -379,9 +382,7 @@ for theme_name in dir(Theme):
     setattr(Theme, theme_name, getattr(Theme, theme_name)._replace(_var_type=Theme))
 
 
-LANGUAGE_VAR = Var(_js_expr="__language")
-
-class CodeBlock(Component, MarkdownComponentMapMixin):
+class CodeBlock(Component, MarkdownComponentMap):
     """A code block."""
 
     library = "react-syntax-highlighter@15.6.1"
@@ -520,9 +521,8 @@ class CodeBlock(Component, MarkdownComponentMapMixin):
 
         theme = self.theme
 
-
         out.add_props(style=theme).remove_props("theme", "code", "language").add_props(
-            children=self.code, language=LANGUAGE_VAR
+            children=self.code, language=_LANGUAGE
         )
 
         return out
@@ -531,27 +531,33 @@ class CodeBlock(Component, MarkdownComponentMapMixin):
         return ["can_copy", "copy_button"]
 
     @classmethod
+    def _get_language_registration_hook(cls) -> str:
+        """Get the hook to register the language."""
+        return f"""
+ if ({str(_LANGUAGE)}) {{
+    (async () => {{
+      try {{
+        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{str(_LANGUAGE)}}}`);
+        SyntaxHighlighter.registerLanguage({str(_LANGUAGE)}, module.default);
+      }} catch (error) {{
+        console.error(`Error importing language module for ${{{str(_LANGUAGE)}}}:`, error);
+      }}
+    }})();
+  }}
+"""
+
+    @classmethod
     def get_component_map_custom_code(cls) -> str:
         """Get the custom code for the component.
 
         Returns:
             The custom code for the component.
         """
-        return """
+        return f"""
 const match = (className || '').match(/language-(?<lang>.*)/);
-    const language = match ? match[1] : '';
-    if (language) {
-    (async () => {
-      try {
-        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{language}}`);
-        SyntaxHighlighter.registerLanguage(language, module.default);
-      } catch (error) {
-        console.error(`Error importing language module for ${language}:`, error);
-      }
-    })();
-  }       
-        """
-
+const {str(_LANGUAGE)} = match ? match[1] : '';
+{cls._get_language_registration_hook()}
+"""
 
     def add_hooks(self) -> list[str | Var]:
         """Add hooks for the component.
@@ -560,19 +566,8 @@ const match = (className || '').match(/language-(?<lang>.*)/);
             The hooks for the component.
         """
         return [
-            f"const {str(LANGUAGE_VAR)} = {str(self.language)}",
-            f"""
- if ({str(LANGUAGE_VAR)}) {{
-    (async () => {{
-      try {{
-        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{str(LANGUAGE_VAR)}}}`);
-        SyntaxHighlighter.registerLanguage({str(LANGUAGE_VAR)}, module.default);
-      }} catch (error) {{
-        console.error(`Error importing language module for ${{{str(LANGUAGE_VAR)}}}:`, error);
-      }}
-    }})();
-  }}                
-            """
+            f"const {str(_LANGUAGE)} = {str(self.language)}",
+            self._get_language_registration_hook(),
         ]
 
 
