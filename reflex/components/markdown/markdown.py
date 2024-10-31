@@ -8,14 +8,6 @@ from hashlib import md5
 from typing import Any, Callable, Dict, Union
 
 from reflex.components.component import Component, CustomComponent
-from reflex.components.radix.themes.layout.list import (
-    ListItem,
-    OrderedList,
-    UnorderedList,
-)
-from reflex.components.radix.themes.typography.heading import Heading
-from reflex.components.radix.themes.typography.link import Link
-from reflex.components.radix.themes.typography.text import Text
 from reflex.components.tags.tag import Tag
 from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
@@ -54,7 +46,15 @@ def get_base_component_map() -> dict[str, Callable]:
         The base component map.
     """
     from reflex.components.datadisplay.code import CodeBlock
+    from reflex.components.radix.themes.layout.list import (
+        ListItem,
+        OrderedList,
+        UnorderedList,
+    )
     from reflex.components.radix.themes.typography.code import Code
+    from reflex.components.radix.themes.typography.heading import Heading
+    from reflex.components.radix.themes.typography.link import Link
+    from reflex.components.radix.themes.typography.text import Text
 
     return {
         "h1": lambda value: Heading.create(value, as_="h1", size="6", margin_y="0.5em"),
