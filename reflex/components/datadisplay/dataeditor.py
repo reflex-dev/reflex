@@ -206,7 +206,7 @@ class DataEditor(NoSSRComponent):
     get_cell_content: Var[str]
 
     # Allow selection for copying.
-    get_cell_for_selection: Var[bool]
+    get_cells_for_selection: Var[bool]
 
     # Allow paste.
     on_paste: Var[bool]
