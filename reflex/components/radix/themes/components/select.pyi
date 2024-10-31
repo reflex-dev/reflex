@@ -77,6 +77,8 @@ class SelectRoot(RadixThemesComponent):
             name: The name of the select control when submitting the form.
             disabled: When True, prevents the user from interacting with select.
             required: When True, indicates that the user must select a value before the owning form can be submitted.
+            on_change: Props to rename  Fired when the value of the select changes.
+            on_open_change: Fired when the select is opened or closed.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -351,6 +353,9 @@ class SelectContent(RadixThemesComponent):
             side_offset: The distance in pixels from the anchor. Only available when position is set to popper.
             align: The preferred alignment against the anchor. May change when collisions occur. Only available when position is set to popper.
             align_offset: The vertical distance in pixels from the anchor. Only available when position is set to popper.
+            on_close_auto_focus: Fired when the select content is closed.
+            on_escape_key_down: Fired when the escape key is pressed.
+            on_pointer_down_outside: Fired when a pointer down event happens outside the select content.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -719,6 +724,8 @@ class HighLevelSelect(SelectRoot):
             name: The name of the select control when submitting the form.
             disabled: When True, prevents the user from interacting with select.
             required: When True, indicates that the user must select a value before the owning form can be submitted.
+            on_change: Props to rename  Fired when the value of the select changes.
+            on_open_change: Fired when the select is opened or closed.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -893,6 +900,8 @@ class Select(ComponentNamespace):
             name: The name of the select control when submitting the form.
             disabled: When True, prevents the user from interacting with select.
             required: When True, indicates that the user must select a value before the owning form can be submitted.
+            on_change: Props to rename  Fired when the value of the select changes.
+            on_open_change: Fired when the select is opened or closed.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

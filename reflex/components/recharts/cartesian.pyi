@@ -168,6 +168,13 @@ class Axis(Recharts):
             min_tick_gap: The minimum gap between two adjacent labels. Default: 5
             stroke: The stroke color of axis. Default: rx.color("gray", 9)
             text_anchor: The text anchor of axis. Default: "middle"
+            on_click: The customized event handler of click on the ticks of this axis
+            on_mouse_down: The customized event handler of mousedown on the ticks of this axis
+            on_mouse_up: The customized event handler of mouseup on the ticks of this axis
+            on_mouse_move: The customized event handler of mousemove on the ticks of this axis
+            on_mouse_out: The customized event handler of mouseout on the ticks of this axis
+            on_mouse_enter: The customized event handler of mouseenter on the ticks of this axis
+            on_mouse_leave: The customized event handler of mouseleave on the ticks of this axis
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -347,6 +354,13 @@ class XAxis(Axis):
             min_tick_gap: The minimum gap between two adjacent labels. Default: 5
             stroke: The stroke color of axis. Default: rx.color("gray", 9)
             text_anchor: The text anchor of axis. Default: "middle"
+            on_click: The customized event handler of click on the ticks of this axis
+            on_mouse_down: The customized event handler of mousedown on the ticks of this axis
+            on_mouse_up: The customized event handler of mouseup on the ticks of this axis
+            on_mouse_move: The customized event handler of mousemove on the ticks of this axis
+            on_mouse_out: The customized event handler of mouseout on the ticks of this axis
+            on_mouse_enter: The customized event handler of mouseenter on the ticks of this axis
+            on_mouse_leave: The customized event handler of mouseleave on the ticks of this axis
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -522,6 +536,13 @@ class YAxis(Axis):
             min_tick_gap: The minimum gap between two adjacent labels. Default: 5
             stroke: The stroke color of axis. Default: rx.color("gray", 9)
             text_anchor: The text anchor of axis. Default: "middle"
+            on_click: The customized event handler of click on the ticks of this axis
+            on_mouse_down: The customized event handler of mousedown on the ticks of this axis
+            on_mouse_up: The customized event handler of mouseup on the ticks of this axis
+            on_mouse_move: The customized event handler of mousemove on the ticks of this axis
+            on_mouse_out: The customized event handler of mouseout on the ticks of this axis
+            on_mouse_enter: The customized event handler of mouseenter on the ticks of this axis
+            on_mouse_leave: The customized event handler of mouseleave on the ticks of this axis
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -787,6 +808,16 @@ class Cartesian(Recharts):
             animation_easing: The type of easing function. Default: "ease"
             unit: The unit of data. This option will be used in tooltip.
             name: The name of data. This option will be used in tooltip and legend to represent the component. If no value was set to this option, the value of dataKey will be used alternatively.
+            on_animation_start: The customized event handler of animation start
+            on_animation_end: The customized event handler of animation end
+            on_click: The customized event handler of click on the component in this group
+            on_mouse_down: The customized event handler of mousedown on the component in this group
+            on_mouse_up: The customized event handler of mouseup on the component in this group
+            on_mouse_move: The customized event handler of mousemove on the component in this group
+            on_mouse_over: The customized event handler of mouseover on the component in this group
+            on_mouse_out: The customized event handler of mouseout on the component in this group
+            on_mouse_enter: The customized event handler of mouseenter on the component in this group
+            on_mouse_leave: The customized event handler of mouseleave on the component in this group
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -965,6 +996,16 @@ class Area(Cartesian):
             animation_easing: The type of easing function. Default: "ease"
             unit: The unit of data. This option will be used in tooltip.
             name: The name of data. This option will be used in tooltip and legend to represent the component. If no value was set to this option, the value of dataKey will be used alternatively.
+            on_animation_start: The customized event handler of animation start
+            on_animation_end: The customized event handler of animation end
+            on_click: The customized event handler of click on the component in this group
+            on_mouse_down: The customized event handler of mousedown on the component in this group
+            on_mouse_up: The customized event handler of mouseup on the component in this group
+            on_mouse_move: The customized event handler of mousemove on the component in this group
+            on_mouse_over: The customized event handler of mouseover on the component in this group
+            on_mouse_out: The customized event handler of mouseout on the component in this group
+            on_mouse_enter: The customized event handler of mouseenter on the component in this group
+            on_mouse_leave: The customized event handler of mouseleave on the component in this group
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1096,6 +1137,16 @@ class Bar(Cartesian):
             animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
             animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
             animation_easing: The type of easing function. Default: "ease"
+            on_animation_start: The customized event handler of animation start
+            on_animation_end: The customized event handler of animation end
+            on_click: The customized event handler of click on the component in this group
+            on_mouse_down: The customized event handler of mousedown on the component in this group
+            on_mouse_up: The customized event handler of mouseup on the component in this group
+            on_mouse_move: The customized event handler of mousemove on the component in this group
+            on_mouse_over: The customized event handler of mouseover on the component in this group
+            on_mouse_out: The customized event handler of mouseout on the component in this group
+            on_mouse_enter: The customized event handler of mouseenter on the component in this group
+            on_mouse_leave: The customized event handler of mouseleave on the component in this group
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1270,6 +1321,16 @@ class Line(Cartesian):
             animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
             animation_easing: The type of easing function. Default: "ease"
             name: The name of data. This option will be used in tooltip and legend to represent the component. If no value was set to this option, the value of dataKey will be used alternatively.
+            on_animation_start: The customized event handler of animation start
+            on_animation_end: The customized event handler of animation end
+            on_click: The customized event handler of click on the component in this group
+            on_mouse_down: The customized event handler of mousedown on the component in this group
+            on_mouse_up: The customized event handler of mouseup on the component in this group
+            on_mouse_move: The customized event handler of mousemove on the component in this group
+            on_mouse_over: The customized event handler of mouseover on the component in this group
+            on_mouse_out: The customized event handler of mouseout on the component in this group
+            on_mouse_enter: The customized event handler of mouseenter on the component in this group
+            on_mouse_leave: The customized event handler of mouseleave on the component in this group
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1397,6 +1458,14 @@ class Scatter(Recharts):
             animation_begin: Specifies when the animation should begin, the unit of this option is ms. Default: 0
             animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
             animation_easing: The type of easing function. Default: "ease"
+            on_click: The customized event handler of click on the component in this group
+            on_mouse_down: The customized event handler of mousedown on the component in this group
+            on_mouse_up: The customized event handler of mouseup on the component in this group
+            on_mouse_move: The customized event handler of mousemove on the component in this group
+            on_mouse_over: The customized event handler of mouseover on the component in this group
+            on_mouse_out: The customized event handler of mouseout on the component in this group
+            on_mouse_enter: The customized event handler of mouseenter on the component in this group
+            on_mouse_leave: The customized event handler of mouseleave on the component in this group
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1503,6 +1572,16 @@ class Funnel(Recharts):
             animation_easing: The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default "ease"
             stroke: Stroke color. Default: rx.color("gray", 3)
             trapezoids: The coordinates of all the trapezoids in the funnel, usually calculated internally.
+            on_animation_start: The customized event handler of animation start
+            on_animation_end: The customized event handler of animation end
+            on_click: The customized event handler of click on the component in this group
+            on_mouse_down: The customized event handler of mousedown on the component in this group
+            on_mouse_up: The customized event handler of mouseup on the component in this group
+            on_mouse_move: The customized event handler of mousemove on the component in this group
+            on_mouse_over: The customized event handler of mouseover on the component in this group
+            on_mouse_out: The customized event handler of mouseout on the component in this group
+            on_mouse_enter: The customized event handler of mouseenter on the component in this group
+            on_mouse_leave: The customized event handler of mouseleave on the component in this group
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1757,6 +1836,14 @@ class ReferenceDot(Reference):
             r: The radius of dot.
             fill: The color of the area fill.
             stroke: The color of the line stroke.
+            on_click: The customized event handler of click on the component in this chart
+            on_mouse_down: The customized event handler of mousedown on the component in this chart
+            on_mouse_up: The customized event handler of mouseup on the component in this chart
+            on_mouse_over: The customized event handler of mouseover on the component in this chart
+            on_mouse_out: The customized event handler of mouseout on the component in this chart
+            on_mouse_enter: The customized event handler of mouseenter on the component in this chart
+            on_mouse_move: The customized event handler of mousemove on the component in this chart
+            on_mouse_leave: The customized event handler of mouseleave on the component in this chart
             x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
             y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
             if_overflow: Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas. Default: "discard"

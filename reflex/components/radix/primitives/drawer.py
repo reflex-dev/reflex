@@ -60,7 +60,7 @@ class DrawerRoot(DrawerComponent):
     # When `True`, it prevents scroll restoration. Defaults to `True`.
     preventScrollRestoration: Var[bool]
 
-    # Fires when the drawer is opened.
+    # Fires when the drawer is opened or closed.
     on_open_change: EventHandler[identity_event(bool)]
 
 
@@ -79,8 +79,8 @@ class DrawerTrigger(DrawerComponent):
         """Create a new DrawerTrigger instance.
 
         Args:
-            children: The children of the element.
-            props: The properties of the element.
+            *children: The children of the element.
+            **props: The properties of the element.
 
         Returns:
             The new DrawerTrigger instance.

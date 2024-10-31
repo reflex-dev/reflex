@@ -148,6 +148,7 @@ class SegmentedControlRoot(RadixThemesComponent):
             radius: The radius of the segmented control: "none" | "small" | "medium" | "large" | "full"
             default_value: The default value of the segmented control.
             value: The current value of the segmented control.
+            on_change: Handles the `onChange` event for the SegmentedControl component.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

@@ -253,6 +253,22 @@ class DataEditor(NoSSRComponent):
             scroll_offset_x: Initial scroll offset on the horizontal axis.
             scroll_offset_y: Initial scroll offset on the vertical axis.
             theme: global theme
+            on_cell_activated: Fired when a cell is activated.
+            on_cell_clicked: Fired when a cell is clicked.
+            on_cell_context_menu: Fired when a cell is right-clicked.
+            on_cell_edited: Fired when a cell is edited.
+            on_group_header_clicked: Fired when a group header is clicked.
+            on_group_header_context_menu: Fired when a group header is right-clicked.
+            on_group_header_renamed: Fired when a group header is renamed.
+            on_header_clicked: Fired when a header is clicked.
+            on_header_context_menu: Fired when a header is right-clicked.
+            on_header_menu_click: Fired when a header menu item is clicked.
+            on_item_hovered: Fired when an item is hovered.
+            on_delete: Fired when a selection is deleted.
+            on_finished_editing: Fired when editing is finished.
+            on_row_appended: Fired when a row is appended.
+            on_selection_cleared: Fired when the selection is cleared.
+            on_column_resize: Fired when a column is resized.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

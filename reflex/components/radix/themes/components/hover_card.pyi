@@ -59,6 +59,7 @@ class HoverCardRoot(RadixThemesComponent):
             open: The controlled open state of the hover card. Must be used in conjunction with onOpenChange.
             open_delay: The duration from when the mouse enters the trigger until the hover card opens.
             close_delay: The duration from when the mouse leaves the trigger until the hover card closes.
+            on_open_change: Fired when the open state changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -272,6 +273,7 @@ class HoverCard(ComponentNamespace):
             open: The controlled open state of the hover card. Must be used in conjunction with onOpenChange.
             open_delay: The duration from when the mouse enters the trigger until the hover card opens.
             close_delay: The duration from when the mouse leaves the trigger until the hover card closes.
+            on_open_change: Fired when the open state changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
