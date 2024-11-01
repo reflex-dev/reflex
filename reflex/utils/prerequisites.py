@@ -204,7 +204,7 @@ def get_bun_version() -> version.Version | None:
         return None
 
 
-def get_install_package_manager() -> str:
+def get_install_package_manager(on_failure_return_none: bool = False) -> str | None:
     """Get the package manager executable for installation.
       Currently, bun is used for installation only.
 
@@ -217,11 +217,11 @@ def get_install_package_manager() -> str:
         or windows_check_onedrive_in_path()
         or windows_npm_escape_hatch()
     ):
-        return get_package_manager()
+        return get_package_manager(on_failure_return_none)
     return str(get_config().bun_path)
 
 
-def get_package_manager() -> str:
+def get_package_manager(on_failure_return_none: bool = False) -> str | None:
     """Get the package manager executable for running app.
       Currently on unix systems, npm is used for running the app only.
 
@@ -234,6 +234,8 @@ def get_package_manager() -> str:
     npm_path = path_ops.get_npm_path()
     if npm_path is not None:
         npm_path = str(Path(npm_path).resolve())
+    if on_failure_return_none:
+        return None
     raise FileNotFoundError("NPM not found. You may need to run `reflex init`.")
 
 
