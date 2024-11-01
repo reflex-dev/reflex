@@ -421,22 +421,6 @@ class CodeBlock(Component, MarkdownComponentMap):
     # A custom copy button to override the default one.
     copy_button: Optional[Union[bool, Component]] = None
 
-    def add_imports(self) -> ImportDict:
-        """Add imports for the CodeBlock component.
-
-        Returns:
-            The import dict.
-        """
-        imports_: ImportDict = {}
-
-    # def _get_custom_code(self) -> Optional[str]:
-    #     if (
-    #         self.language is not None
-    #         and (language_without_quotes := str(self.language).replace('"', ""))
-    #         in LiteralCodeLanguage.__args__  # type: ignore
-    #     ):
-    #         return f"{self.alias}.registerLanguage('{language_without_quotes}', {format.to_camel_case(language_without_quotes)})"
-
     @classmethod
     def create(
         cls,
