@@ -137,7 +137,7 @@ def test_create_map_fn_var_subclass(cls, fn_body, fn_args, expected):
                     value, **props
                 )
             },
-            """(({node, inline, className, children, ...props}) => {;             return inline ? (                 <RadixThemesCode {...props}>{children}</RadixThemesCode>             ) : (                 <RadixThemesBox css={({ ["pre"] : ({ ["margin"] : "0", ["padding"] : "24px", ["background"] : "transparent", ["overflow-x"] : "auto", ["border-radius"] : "6px" }) })} {...props}><ShikiCode code={((Array.isArray(children)) ? children.join("\\n") : children)} decorations={[]} language={_language} theme={((resolvedColorMode === "light") ? "one-light" : "one-dark-pro")} transformers={[]}/></RadixThemesBox>             );         })""",
+            """(({node, inline, className, children, ...props}) => {     const match = (className || '').match(/language-(?<lang>.*)/);     const _language = match ? match[1] : '';      ;             return inline ? (                 <RadixThemesCode {...props}>{children}</RadixThemesCode>             ) : (                 <RadixThemesBox css={({ ["pre"] : ({ ["margin"] : "0", ["padding"] : "24px", ["background"] : "transparent", ["overflow-x"] : "auto", ["border-radius"] : "6px" }) })} {...props}><ShikiCode code={((Array.isArray(children)) ? children.join("\\n") : children)} decorations={[]} language={_language} theme={((resolvedColorMode === "light") ? "one-light" : "one-dark-pro")} transformers={[]}/></RadixThemesBox>             );         })""",
         ),
         (
             "h1",
@@ -160,7 +160,7 @@ def test_create_map_fn_var_subclass(cls, fn_body, fn_args, expected):
                     ShikiHighLevelCodeBlock
                 )
             },
-            """(({node, inline, className, children, ...props}) => {;             return inline ? (                 <RadixThemesCode {...props}>{children}</RadixThemesCode>             ) : (                 <CodeBlock code={((Array.isArray(children)) ? children.join("\\n") : children)} language={_language} {...props}/>             );         })""",
+            """(({node, inline, className, children, ...props}) => {     const match = (className || '').match(/language-(?<lang>.*)/);     const _language = match ? match[1] : '';      ;             return inline ? (                 <RadixThemesCode {...props}>{children}</RadixThemesCode>             ) : (                 <CodeBlock code={((Array.isArray(children)) ? children.join("\\n") : children)} language={_language} {...props}/>             );         })""",
         ),
     ],
 )
