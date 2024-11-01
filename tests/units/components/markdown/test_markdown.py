@@ -19,12 +19,20 @@ class CustomMarkdownComponent(Component, MarkdownComponentMap):
 
     @classmethod
     def get_fn_args(cls) -> list[str]:
-        """Return the function arguments."""
+        """Return the function arguments.
+
+        Returns:
+            The function arguments.
+        """
         return ["custom_node", "custom_children", "custom_props"]
 
     @classmethod
     def get_fn_body(cls) -> str:
-        """Return the function body."""
+        """Return the function body.
+
+        Returns:
+            The function body.
+        """
         return "{return custom_node + custom_children + custom_props;}"
 
 
