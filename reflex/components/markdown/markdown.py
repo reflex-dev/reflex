@@ -89,7 +89,7 @@ class MarkdownComponentMap:
 
     @classmethod
     def create_map_fn_var(
-        cls, fn_body: str | None = None, fn_args: list | None = None
+        cls, fn_body: str | None = None, fn_args: list[str] | None = None
     ) -> Var:
         """Create a function Var for the component map.
 
