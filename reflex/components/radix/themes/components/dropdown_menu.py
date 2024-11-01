@@ -4,7 +4,7 @@ from typing import Dict, List, Literal, Union
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
-from reflex.event import EventHandler, empty_event, identity_event
+from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
 
 from ..base import (
@@ -50,7 +50,7 @@ class DropdownMenuRoot(RadixThemesComponent):
     _invalid_children: List[str] = ["DropdownMenuItem"]
 
     # Fired when the open state changes.
-    on_open_change: EventHandler[identity_event(bool)]
+    on_open_change: EventHandler[passthrough_event_spec(bool)]
 
 
 class DropdownMenuTrigger(RadixThemesTriggerComponent):
@@ -120,19 +120,19 @@ class DropdownMenuContent(RadixThemesComponent):
     hide_when_detached: Var[bool]
 
     # Fired when the dialog is closed.
-    on_close_auto_focus: EventHandler[empty_event]
+    on_close_auto_focus: EventHandler[no_args_event_spec]
 
     # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[empty_event]
+    on_escape_key_down: EventHandler[no_args_event_spec]
 
     # Fired when the pointer is down outside the dialog.
-    on_pointer_down_outside: EventHandler[empty_event]
+    on_pointer_down_outside: EventHandler[no_args_event_spec]
 
     # Fired when focus moves outside the dialog.
-    on_focus_outside: EventHandler[empty_event]
+    on_focus_outside: EventHandler[no_args_event_spec]
 
     # Fired when the pointer interacts outside the dialog.
-    on_interact_outside: EventHandler[empty_event]
+    on_interact_outside: EventHandler[no_args_event_spec]
 
 
 class DropdownMenuSubTrigger(RadixThemesTriggerComponent):
@@ -164,7 +164,7 @@ class DropdownMenuSub(RadixThemesComponent):
     default_open: Var[bool]
 
     # Fired when the open state changes.
-    on_open_change: EventHandler[identity_event(bool)]
+    on_open_change: EventHandler[passthrough_event_spec(bool)]
 
 
 class DropdownMenuSubContent(RadixThemesComponent):
@@ -205,16 +205,16 @@ class DropdownMenuSubContent(RadixThemesComponent):
     _valid_parents: List[str] = ["DropdownMenuSub"]
 
     # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[empty_event]
+    on_escape_key_down: EventHandler[no_args_event_spec]
 
     # Fired when the pointer is down outside the dialog.
-    on_pointer_down_outside: EventHandler[empty_event]
+    on_pointer_down_outside: EventHandler[no_args_event_spec]
 
     # Fired when focus moves outside the dialog.
-    on_focus_outside: EventHandler[empty_event]
+    on_focus_outside: EventHandler[no_args_event_spec]
 
     # Fired when the pointer interacts outside the dialog.
-    on_interact_outside: EventHandler[empty_event]
+    on_interact_outside: EventHandler[no_args_event_spec]
 
 
 class DropdownMenuItem(RadixThemesComponent):
@@ -240,7 +240,7 @@ class DropdownMenuItem(RadixThemesComponent):
     _valid_parents: List[str] = ["DropdownMenuContent", "DropdownMenuSubContent"]
 
     # Fired when the item is selected.
-    on_select: EventHandler[empty_event]
+    on_select: EventHandler[no_args_event_spec]
 
 
 class DropdownMenuSeparator(RadixThemesComponent):

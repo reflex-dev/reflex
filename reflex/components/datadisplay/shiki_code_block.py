@@ -14,7 +14,7 @@ from reflex.components.el.elements.forms import Button
 from reflex.components.lucide.icon import Icon
 from reflex.components.props import NoExtrasAllowedProps
 from reflex.components.radix.themes.layout.box import Box
-from reflex.event import call_script, set_clipboard
+from reflex.event import run_script, set_clipboard
 from reflex.style import Style
 from reflex.utils.exceptions import VarTypeError
 from reflex.utils.imports import ImportVar
@@ -30,7 +30,7 @@ def copy_script() -> Any:
     Returns:
         Any: The result of calling the script.
     """
-    return call_script(
+    return run_script(
         f"""
 // Event listener for the parent click
 document.addEventListener('click', function(event) {{

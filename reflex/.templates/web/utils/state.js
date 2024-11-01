@@ -254,6 +254,25 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
+  if (event.name == "_call_function") {
+    try {
+      const eval_result = event.payload.function();
+      if (event.payload.callback) {
+        if (!!eval_result && typeof eval_result.then === "function") {
+          event.payload.callback(await eval_result);
+        } else {
+          event.payload.callback(eval_result);
+        }
+      }
+    } catch (e) {
+      console.log("_call_function", e);
+      if (window && window?.onerror) {
+        window.onerror(e.message, null, null, null, e);
+      }
+    }
+    return false;
+  }
+
   if (event.name == "_call_script") {
     try {
       const eval_result = eval(event.payload.javascript_code);

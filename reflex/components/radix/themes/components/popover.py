@@ -5,7 +5,7 @@ from typing import Literal
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
-from reflex.event import EventHandler, empty_event, identity_event
+from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
 
 from ..base import (
@@ -26,7 +26,7 @@ class PopoverRoot(RadixThemesComponent):
     modal: Var[bool]
 
     # Fired when the open state changes.
-    on_open_change: EventHandler[identity_event(bool)]
+    on_open_change: EventHandler[passthrough_event_spec(bool)]
 
 
 class PopoverTrigger(RadixThemesTriggerComponent):
@@ -59,22 +59,22 @@ class PopoverContent(elements.Div, RadixThemesComponent):
     avoid_collisions: Var[bool]
 
     # Fired when the dialog is opened.
-    on_open_auto_focus: EventHandler[empty_event]
+    on_open_auto_focus: EventHandler[no_args_event_spec]
 
     # Fired when the dialog is closed.
-    on_close_auto_focus: EventHandler[empty_event]
+    on_close_auto_focus: EventHandler[no_args_event_spec]
 
     # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[empty_event]
+    on_escape_key_down: EventHandler[no_args_event_spec]
 
     # Fired when the pointer is down outside the dialog.
-    on_pointer_down_outside: EventHandler[empty_event]
+    on_pointer_down_outside: EventHandler[no_args_event_spec]
 
     # Fired when focus moves outside the dialog.
-    on_focus_outside: EventHandler[empty_event]
+    on_focus_outside: EventHandler[no_args_event_spec]
 
     # Fired when the pointer interacts outside the dialog.
-    on_interact_outside: EventHandler[empty_event]
+    on_interact_outside: EventHandler[no_args_event_spec]
 
 
 class PopoverClose(RadixThemesTriggerComponent):
