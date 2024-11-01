@@ -208,6 +208,9 @@ def get_install_package_manager(on_failure_return_none: bool = False) -> str | N
     """Get the package manager executable for installation.
       Currently, bun is used for installation only.
 
+    Args:
+        on_failure_return_none: Whether to return None on failure.
+
     Returns:
         The path to the package manager.
     """
@@ -224,6 +227,9 @@ def get_install_package_manager(on_failure_return_none: bool = False) -> str | N
 def get_package_manager(on_failure_return_none: bool = False) -> str | None:
     """Get the package manager executable for running app.
       Currently on unix systems, npm is used for running the app only.
+
+    Args:
+        on_failure_return_none: Whether to return None on failure.
 
     Returns:
         The path to the package manager.
@@ -924,6 +930,9 @@ def install_frontend_packages(packages: set[str], config: Config):
     Args:
         packages: A list of package names to be installed.
         config: The config object.
+
+    Raises:
+        FileNotFoundError: If the package manager is not found.
 
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
