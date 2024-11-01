@@ -108,19 +108,19 @@ class ContextMenuContent(RadixThemesComponent):
     # Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
     hide_when_detached: Var[bool]
 
-    # Fired when the dialog is closed.
+    # Fired when focus moves back after closing.
     on_close_auto_focus: EventHandler[empty_event]
 
     # Fired when the escape key is pressed.
     on_escape_key_down: EventHandler[empty_event]
 
-    # Fired when the pointer is down outside the dialog.
+    # Fired when a pointer down event happens outside the context menu.
     on_pointer_down_outside: EventHandler[empty_event]
 
-    # Fired when focus moves outside the dialog.
+    # Fired when focus moves outside the context menu.
     on_focus_outside: EventHandler[empty_event]
 
-    # Fired when the pointer interacts outside the dialog.
+    # Fired when the pointer interacts outside the context menu.
     on_interact_outside: EventHandler[empty_event]
 
 
@@ -220,7 +220,7 @@ class ContextMenuItem(RadixThemesComponent):
     # When true, prevents the user from interacting with the item.
     disabled: Var[bool]
 
-    # Optional text used for typeahead purposes. By default the typeahead behavior will use the .textContent of the item. Use this when the content is complex, or you have non-textual content inside.
+    # Optional text used for typeahead purposes. By default the typeahead behavior will use the content of the item. Use this when the content is complex, or you have non-textual content inside.
     text_value: Var[str]
 
     _valid_parents: List[str] = ["ContextMenuContent", "ContextMenuSubContent"]

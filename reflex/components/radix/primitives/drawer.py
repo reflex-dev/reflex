@@ -39,22 +39,22 @@ class DrawerRoot(DrawerComponent):
     # Whether the drawer is open or not.
     open: Var[bool]
 
-    # Fires when the drawer is opened.
+    # Fires when the drawer is opened or closed.
     on_open_change: EventHandler[identity_event(bool)]
 
-    # When `False`, it allows to interact with elements outside of the drawer without closing it. Defaults to `True`.
+    # When `False`, it allows interaction with elements outside of the drawer without closing it. Defaults to `True`.
     modal: Var[bool]
 
-    # Direction of the drawer. This adjust the animations and the drag direction. Defaults to `"bottom"`
+    # Direction of the drawer. This adjusts the animations and the drag direction. Defaults to `"bottom"`
     direction: Var[LiteralDirectionType]
 
     # Gets triggered after the open or close animation ends, it receives an open argument with the open state of the drawer by the time the function was triggered.
     on_animation_end: EventHandler[identity_event(bool)]
 
-    # When false dragging, clicking outside, pressing esc, etc. will not close the drawer. Use this in combination with the open prop, otherwise you won't be able to open/close the drawer.
+    # When `False`, dragging, clicking outside, pressing esc, etc. will not close the drawer. Use this in combination with the open prop, otherwise you won't be able to open/close the drawer.
     dismissible: Var[bool]
 
-    # When true dragging will only be possible by the handle.
+    # When `True`, dragging will only be possible by the handle.
     handle_only: Var[bool]
 
     # Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account.
@@ -69,7 +69,7 @@ class DrawerRoot(DrawerComponent):
     # When `True`, it prevents scroll restoration. Defaults to `True`.
     preventScrollRestoration: Var[bool]
 
-    # Enable background scaling, it requires an element with [vaul-drawer-wrapper] data attribute to scale its background.
+    # Enable background scaling, it requires container element with `vaul-drawer-wrapper` attribute to scale its background.
     should_scale_background: Var[bool]
 
     # Number between 0 and 1 that determines when the drawer should be closed.
