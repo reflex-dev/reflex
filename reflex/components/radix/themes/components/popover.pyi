@@ -56,8 +56,8 @@ class PopoverRoot(RadixThemesComponent):
             *children: Child components.
             open: The controlled open state of the popover.
             modal: The modality of the popover. When set to true, interaction with outside elements will be disabled and only popover content will be visible to screen readers.
-            default_open: The open state of the popover when it is initially rendered. Use when you do not need to control its open state.
             on_open_change: Fired when the open state changes.
+            default_open: The open state of the popover when it is initially rendered. Use when you do not need to control its open state.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

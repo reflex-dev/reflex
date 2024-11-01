@@ -60,8 +60,8 @@ class ContextMenuRoot(RadixThemesComponent):
         Args:
             *children: Child components.
             modal: The modality of the context menu. When set to true, interaction with outside elements will be disabled and only menu content will be visible to screen readers.
-            dir: The reading direction of submenus when applicable. If omitted, inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode.
             on_open_change: Fired when the open state changes.
+            dir: The reading direction of submenus when applicable. If omitted, inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -285,11 +285,11 @@ class ContextMenuContent(RadixThemesComponent):
             collision_padding: The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
             sticky: The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
             hide_when_detached: Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
-            on_close_auto_focus: Fired when the context menu is closed.
+            on_close_auto_focus: Fired when focus moves back after closing.
             on_escape_key_down: Fired when the escape key is pressed.
             on_pointer_down_outside: Fired when a pointer down event happens outside the context menu.
             on_focus_outside: Fired when focus moves outside the context menu.
-            on_interact_outside: Fired when interacting outside the context menu.
+            on_interact_outside: Fired when the pointer interacts outside the context menu.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -344,6 +344,7 @@ class ContextMenuSub(RadixThemesComponent):
             *children: Child components.
             open: The controlled open state of the submenu. Must be used in conjunction with `on_open_change`.
             default_open: The open state of the submenu when it is initially rendered. Use when you do not need to control its open state.
+            on_open_change: Fired when the open state changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -604,6 +605,7 @@ class ContextMenuItem(RadixThemesComponent):
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
             disabled: When true, prevents the user from interacting with the item.
             text_value: Optional text used for typeahead purposes. By default the typeahead behavior will use the content of the item. Use this when the content is complex, or you have non-textual content inside.
+            on_select: Fired when the item is selected.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

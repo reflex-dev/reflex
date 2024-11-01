@@ -116,8 +116,10 @@ class DrawerRoot(DrawerComponent):
             *children: The children of the component.
             default_open: The open state of the drawer when it is initially rendered. Use when you do not need to control its open state.
             open: Whether the drawer is open or not.
+            on_open_change: Fires when the drawer is opened or closed.
             modal: When `False`, it allows interaction with elements outside of the drawer without closing it. Defaults to `True`.
             direction: Direction of the drawer. This adjusts the animations and the drag direction. Defaults to `"bottom"`
+            on_animation_end: Gets triggered after the open or close animation ends, it receives an open argument with the open state of the drawer by the time the function was triggered.
             dismissible: When `False`, dragging, clicking outside, pressing esc, etc. will not close the drawer. Use this in combination with the open prop, otherwise you won't be able to open/close the drawer.
             handle_only: When `True`, dragging will only be possible by the handle.
             snap_points: Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account.
@@ -596,8 +598,10 @@ class Drawer(ComponentNamespace):
             *children: The children of the component.
             default_open: The open state of the drawer when it is initially rendered. Use when you do not need to control its open state.
             open: Whether the drawer is open or not.
+            on_open_change: Fires when the drawer is opened or closed.
             modal: When `False`, it allows interaction with elements outside of the drawer without closing it. Defaults to `True`.
             direction: Direction of the drawer. This adjusts the animations and the drag direction. Defaults to `"bottom"`
+            on_animation_end: Gets triggered after the open or close animation ends, it receives an open argument with the open state of the drawer by the time the function was triggered.
             dismissible: When `False`, dragging, clicking outside, pressing esc, etc. will not close the drawer. Use this in combination with the open prop, otherwise you won't be able to open/close the drawer.
             handle_only: When `True`, dragging will only be possible by the handle.
             snap_points: Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account.

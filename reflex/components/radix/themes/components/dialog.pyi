@@ -54,8 +54,8 @@ class DialogRoot(RadixThemesComponent):
         Args:
             *children: Child components.
             open: The controlled open state of the dialog.
-            default_open: The open state of the dialog when it is initially rendered. Use when you do not need to control its open state.
             on_open_change: Fired when the open state changes.
+            default_open: The open state of the dialog when it is initially rendered. Use when you do not need to control its open state.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -404,8 +404,8 @@ class Dialog(ComponentNamespace):
         Args:
             *children: Child components.
             open: The controlled open state of the dialog.
-            default_open: The open state of the dialog when it is initially rendered. Use when you do not need to control its open state.
             on_open_change: Fired when the open state changes.
+            default_open: The open state of the dialog when it is initially rendered. Use when you do not need to control its open state.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
