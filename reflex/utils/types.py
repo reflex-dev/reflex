@@ -303,6 +303,30 @@ def get_property_hint(attr: Any | None) -> GenericType | None:
     return hints.get("return", None)
 
 
+def can_access_properties(cls: GenericType) -> bool:
+    """Check if the class can access properties.
+
+    Args:
+        cls: The class to check.
+
+    Returns:
+        Whether the class can access properties.
+    """
+    from reflex.model import Model
+
+    return (
+        hasattr(cls, "__fields__")
+        or (isinstance(cls, type) and issubclass(cls, DeclarativeBase))
+        or (
+            isinstance(cls, type)
+            and not is_generic_alias(cls)
+            and issubclass(cls, Model)
+        )
+        or (is_union(cls) and all(can_access_properties(arg) for arg in get_args(cls)))
+        or (isinstance(cls, type) and dataclasses.is_dataclass(cls))
+    )
+
+
 def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None:
     """Check if an attribute can be accessed on the cls and return its type.
 

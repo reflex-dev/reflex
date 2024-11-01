@@ -67,6 +67,7 @@ from reflex.utils.types import (
     GenericType,
     Self,
     _isinstance,
+    can_access_properties,
     get_origin,
     has_args,
     unionize,
@@ -630,13 +631,10 @@ class Var(Generic[VAR_TYPE]):
             return get_to_operation(NoneVar).create(self)  # type: ignore
 
         # Handle fixed_output_type being Base or a dataclass.
-        try:
-            if issubclass(fixed_output_type, Base):
-                return self.to(ObjectVar, output)
-        except TypeError:
-            pass
-        if dataclasses.is_dataclass(fixed_output_type) and not issubclass(
-            fixed_output_type, Var
+        if (
+            inspect.isclass(fixed_output_type)
+            and not issubclass(fixed_output_type, Var)
+            and can_access_properties(fixed_output_type)
         ):
             return self.to(ObjectVar, output)
 
@@ -707,11 +705,7 @@ class Var(Generic[VAR_TYPE]):
             ):
                 return self.to(NumberVar, self._var_type)
 
-            if all(
-                inspect.isclass(t)
-                and (issubclass(t, Base) or dataclasses.is_dataclass(t))
-                for t in inner_types
-            ):
+            if all(can_access_properties(t) for t in inner_types):
                 return self.to(ObjectVar, self._var_type)
 
             return self
@@ -730,13 +724,9 @@ class Var(Generic[VAR_TYPE]):
             if issubclass(fixed_type, var_subclass.python_types):
                 return self.to(var_subclass.var_subclass, self._var_type)
 
-        try:
-            if issubclass(fixed_type, Base):
-                return self.to(ObjectVar, self._var_type)
-        except TypeError:
-            pass
-        if dataclasses.is_dataclass(fixed_type):
+        if can_access_properties(fixed_type):
             return self.to(ObjectVar, self._var_type)
+
         return self
 
     def get_default_value(self) -> Any:
