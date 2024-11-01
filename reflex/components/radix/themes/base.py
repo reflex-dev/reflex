@@ -7,9 +7,8 @@ from typing import Any, Dict, Literal
 from reflex.components import Component
 from reflex.components.tags import Tag
 from reflex.config import get_config
-from reflex.ivars.base import ImmutableVar
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]
@@ -222,7 +221,7 @@ class Theme(RadixThemesComponent):
             The import dict.
         """
         _imports: ImportDict = {
-            "/utils/theme.js": [ImportVar(tag="theme", is_default=True)],
+            "$/utils/theme.js": [ImportVar(tag="theme", is_default=True)],
         }
         if get_config().tailwind is None:
             # When tailwind is disabled, import the radix-ui styles directly because they will
@@ -236,8 +235,8 @@ class Theme(RadixThemesComponent):
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         tag = super()._render(props)
         tag.add_props(
-            css=ImmutableVar.create(
-                f"{{...theme.styles.global[':root'], ...theme.styles.global.body}}"
+            css=Var(
+                _js_expr=f"{{...theme.styles.global[':root'], ...theme.styles.global.body}}"
             ),
         )
         return tag
@@ -262,31 +261,11 @@ class ThemePanel(RadixThemesComponent):
         """
         return {"react": "useEffect"}
 
-    def add_hooks(self) -> list[str]:
-        """Add a hook on the ThemePanel to clear chakra-ui-color-mode.
-
-        Returns:
-            The hooks to render.
-        """
-        # The panel freezes the tab if the user color preference differs from the
-        # theme "appearance", so clear it out when theme panel is used.
-        return [
-            """
-            useEffect(() => {
-                if (typeof window !== 'undefined') {
-                    window.onbeforeunload = () => {
-                        localStorage.removeItem('chakra-ui-color-mode');
-                    }
-                    window.onbeforeunload();
-                }
-            }, [])"""
-        ]
-
 
 class RadixThemesColorModeProvider(Component):
     """Next-themes integration for radix themes components."""
 
-    library = "/components/reflex/radix_themes_color_mode_provider.js"
+    library = "$/components/reflex/radix_themes_color_mode_provider.js"
     tag = "RadixThemesColorModeProvider"
     is_default = True
 

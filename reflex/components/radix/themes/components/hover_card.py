@@ -5,8 +5,8 @@ from typing import Literal
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
-from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.event import EventHandler, identity_event
+from reflex.vars.base import Var
 
 from ..base import (
     RadixThemesComponent,
@@ -32,7 +32,7 @@ class HoverCardRoot(RadixThemesComponent):
     close_delay: Var[int]
 
     # Fired when the open state changes.
-    on_open_change: EventHandler[lambda e0: [e0]]
+    on_open_change: EventHandler[identity_event(bool)]
 
 
 class HoverCardTrigger(RadixThemesTriggerComponent):

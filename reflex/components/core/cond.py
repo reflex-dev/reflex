@@ -8,14 +8,14 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
-from reflex.ivars.base import ImmutableVar, LiteralVar
-from reflex.ivars.number import ternary_operation
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
+from reflex.vars.number import ternary_operation
 
 _IS_TRUE_IMPORT: ImportDict = {
-    f"/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
 }
 
 
@@ -119,10 +119,10 @@ def cond(condition: Any, c1: Component) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Any, c2: Any) -> ImmutableVar: ...
+def cond(condition: Any, c1: Any, c2: Any) -> Var: ...
 
 
-def cond(condition: Any, c1: Any, c2: Any = None) -> Component | ImmutableVar:
+def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
     """Create a conditional component or Prop.
 
     Args:
@@ -138,13 +138,13 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | ImmutableVar:
     """
     # Convert the condition to a Var.
     cond_var = LiteralVar.create(condition)
-    assert cond_var is not None, "The condition must be set."
+    if cond_var is None:
+        raise ValueError("The condition must be set.")
 
     # If the first component is a component, create a Cond component.
     if isinstance(c1, BaseComponent):
-        assert c2 is None or isinstance(
-            c2, BaseComponent
-        ), "Both arguments must be components."
+        if c2 is not None and not isinstance(c2, BaseComponent):
+            raise ValueError("Both arguments must be components.")
         return Cond.create(cond_var, c1, c2)
 
     # Otherwise, create a conditional Var.

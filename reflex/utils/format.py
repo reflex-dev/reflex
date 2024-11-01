@@ -9,8 +9,8 @@ import re
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
 
 from reflex import constants
-from reflex.utils import exceptions, types
-from reflex.vars import Var
+from reflex.utils import exceptions
+from reflex.utils.console import deprecate
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
@@ -197,8 +197,16 @@ def make_default_page_title(app_name: str, route: str) -> str:
     Returns:
         The default page title.
     """
-    title = constants.DefaultPage.TITLE.format(app_name, route)
-    return to_title_case(title, " ")
+    route_parts = [
+        part
+        for part in route.split("/")
+        if part and not (part.startswith("[") and part.endswith("]"))
+    ]
+
+    title = constants.DefaultPage.TITLE.format(
+        app_name, route_parts[-1] if route_parts else constants.PageNames.INDEX_ROUTE
+    )
+    return to_title_case(title)
 
 
 def _escape_js_string(string: str) -> str:
@@ -298,9 +306,9 @@ def format_route(route: str, format_case=True) -> str:
 
 
 def format_match(
-    cond: str | ImmutableVar,
-    match_cases: List[List[ImmutableVar]],
-    default: ImmutableVar,
+    cond: str | Var,
+    match_cases: List[List[Var]],
+    default: Var,
 ) -> str:
     """Format a match expression whose return type is a Var.
 
@@ -332,7 +340,7 @@ def format_match(
 
 
 def format_prop(
-    prop: Union[ImmutableVar, EventChain, ComponentStyle, str],
+    prop: Union[Var, EventChain, ComponentStyle, str],
 ) -> Union[int, float, str]:
     """Format a prop.
 
@@ -345,32 +353,21 @@ def format_prop(
     Raises:
         exceptions.InvalidStylePropError: If the style prop value is not a valid type.
         TypeError: If the prop is not valid.
+        ValueError: If the prop is not a string.
     """
     # import here to avoid circular import.
     from reflex.event import EventChain
-    from reflex.ivars import ImmutableVar
     from reflex.utils import serializers
+    from reflex.vars import Var
 
     try:
         # Handle var props.
-        if isinstance(prop, ImmutableVar):
+        if isinstance(prop, Var):
             return str(prop)
 
         # Handle event props.
         if isinstance(prop, EventChain):
-            sig = inspect.signature(prop.args_spec)  # type: ignore
-            if sig.parameters:
-                arg_def = ",".join(f"_{p}" for p in sig.parameters)
-                arg_def_expr = f"[{arg_def}]"
-            else:
-                # add a default argument for addEvents if none were specified in prop.args_spec
-                # used to trigger the preventDefault() on the event.
-                arg_def = "...args"
-                arg_def_expr = "args"
-
-            chain = ",".join([format_event(event) for event in prop.events])
-            event = f"addEvents([{chain}], {arg_def_expr}, {json_dumps(prop.event_actions)})"
-            prop = f"({arg_def}) => {event}"
+            return str(Var.create(prop))
 
         # Handle other types.
         elif isinstance(prop, str):
@@ -391,7 +388,8 @@ def format_prop(
         raise TypeError(f"Could not format prop: {prop} of type {type(prop)}") from e
 
     # Wrap the variable in braces.
-    assert isinstance(prop, str), "The prop must be a string."
+    if not isinstance(prop, str):
+        raise ValueError(f"Invalid prop: {prop}. Expected a string.")
     return wrap(prop, "{", check_first=False)
 
 
@@ -406,26 +404,15 @@ def format_props(*single_props, **key_value_props) -> list[str]:
         The formatted props list.
     """
     # Format all the props.
-    from reflex.ivars.base import ImmutableVar, LiteralVar
+    from reflex.vars.base import LiteralVar, Var
 
     return [
         (
-            f"{name}={format_prop(prop)}"
-            if isinstance(prop, ImmutableVar) and not isinstance(prop, ImmutableVar)
-            else (
-                f"{name}={{{format_prop(prop if isinstance(prop, ImmutableVar) else LiteralVar.create(prop))}}}"
-            )
+            f"{name}={{{format_prop(prop if isinstance(prop, Var) else LiteralVar.create(prop))}}}"
         )
         for name, prop in sorted(key_value_props.items())
         if prop is not None
-    ] + [
-        (
-            str(prop)
-            if isinstance(prop, ImmutableVar) and not isinstance(prop, ImmutableVar)
-            else f"{str(LiteralVar.create(prop))}"
-        )
-        for prop in single_props
-    ]
+    ] + [(f"{str(LiteralVar.create(prop))}") for prop in single_props]
 
 
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
@@ -486,10 +473,10 @@ def format_event(event_spec: EventSpec) -> str:
         [
             ":".join(
                 (
-                    name._var_name,
+                    name._js_expr,
                     (
                         wrap(
-                            json.dumps(val._var_name).strip('"').replace("`", "\\`"),
+                            json.dumps(val._js_expr).strip('"').replace("`", "\\`"),
                             "`",
                         )
                         if val._var_is_string
@@ -511,7 +498,38 @@ def format_event(event_spec: EventSpec) -> str:
 
 
 if TYPE_CHECKING:
-    from reflex.ivars import ImmutableVar
+    from reflex.vars import Var
+
+
+def format_event_chain(
+    event_chain: EventChain | Var[EventChain],
+    event_arg: Var | None = None,
+) -> str:
+    """DEPRECATED: format an event chain as a javascript invocation.
+
+    Use str(rx.Var.create(event_chain)) instead.
+
+    Args:
+        event_chain: The event chain to format.
+        event_arg: this argument is ignored.
+
+    Returns:
+        Compiled javascript code to queue the given event chain on the frontend.
+    """
+    deprecate(
+        feature_name="format_event_chain",
+        reason="Use str(rx.Var.create(event_chain)) instead",
+        deprecation_version="0.6.0",
+        removal_version="0.7.0",
+    )
+
+    from reflex.vars import Var
+    from reflex.vars.function import ArgsFunctionOperation
+
+    result = Var.create(event_chain)
+    if isinstance(result, ArgsFunctionOperation):
+        result = result._return_expr
+    return str(result)
 
 
 def format_queue_events(
@@ -523,7 +541,7 @@ def format_queue_events(
         | None
     ) = None,
     args_spec: Optional[ArgsSpec] = None,
-) -> ImmutableVar[EventChain]:
+) -> Var[EventChain]:
     """Format a list of event handler / event spec as a javascript callback.
 
     The resulting code can be passed to interfaces that expect a callback
@@ -549,10 +567,10 @@ def format_queue_events(
         call_event_fn,
         call_event_handler,
     )
-    from reflex.ivars import FunctionVar, ImmutableVar
+    from reflex.vars import FunctionVar, Var
 
     if not events:
-        return ImmutableVar("(() => null)").to(FunctionVar, EventChain)  # type: ignore
+        return Var("(() => null)").to(FunctionVar, EventChain)  # type: ignore
 
     # If no spec is provided, the function will take no arguments.
     def _default_args_spec():
@@ -577,7 +595,7 @@ def format_queue_events(
             specs = [call_event_handler(spec, args_spec or _default_args_spec)]
         elif isinstance(spec, type(lambda: None)):
             specs = call_event_fn(spec, args_spec or _default_args_spec)  # type: ignore
-            if isinstance(specs, ImmutableVar):
+            if isinstance(specs, Var):
                 raise ValueError(
                     f"Invalid event spec: {specs}. Expected a list of EventSpecs."
                 )
@@ -585,7 +603,7 @@ def format_queue_events(
 
     # Return the final code snippet, expecting queueEvents, processEvent, and socket to be in scope.
     # Typically this snippet will _only_ run from within an rx.call_script eval context.
-    return ImmutableVar(
+    return Var(
         f"{arg_def} => {{queueEvents([{','.join(payloads)}], {constants.CompileVars.SOCKET}); "
         f"processEvent({constants.CompileVars.SOCKET})}}",
     ).to(FunctionVar, EventChain)  # type: ignore
@@ -602,48 +620,6 @@ def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
     """
     params = router_data[constants.RouteVar.QUERY]
     return {k.replace("-", "_"): v for k, v in params.items()}
-
-
-def format_state(value: Any, key: Optional[str] = None) -> Any:
-    """Recursively format values in the given state.
-
-    Args:
-        value: The state to format.
-        key: The key associated with the value (optional).
-
-    Returns:
-        The formatted state.
-
-    Raises:
-        TypeError: If the given value is not a valid state.
-    """
-    from reflex.utils import serializers
-
-    # Handle dicts.
-    if isinstance(value, dict):
-        return {k: format_state(v, k) for k, v in value.items()}
-
-    # Handle lists, sets, typles.
-    if isinstance(value, types.StateIterBases):
-        return [format_state(v) for v in value]
-
-    # Return state vars as is.
-    if isinstance(value, types.StateBases):
-        return value
-
-    # Serialize the value.
-    serialized = serializers.serialize(value)
-    if serialized is not None:
-        return serialized
-
-    if key is None:
-        raise TypeError(
-            f"No JSON serializer found for var {value} of type {type(value)}."
-        )
-    else:
-        raise TypeError(
-            f"No JSON serializer found for State Var '{key}' of value {value} of type {type(value)}."
-        )
 
 
 def format_state_name(state_name: str) -> str:
@@ -684,6 +660,8 @@ def format_library_name(library_fullname: str):
     Returns:
         The name without the @version if it was part of the name
     """
+    if library_fullname.startswith("https://"):
+        return library_fullname
     lib, at, version = library_fullname.rpartition("@")
     if not lib:
         lib = at + version
@@ -727,7 +705,7 @@ def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
     return collapsed
 
 
-def format_array_ref(refs: str, idx: ImmutableVar | None) -> str:
+def format_array_ref(refs: str, idx: Var | None) -> str:
     """Format a ref accessed by array.
 
     Args:
@@ -756,7 +734,7 @@ def format_data_editor_column(col: str | dict):
     Returns:
         The formatted column.
     """
-    from reflex.ivars import ImmutableVar
+    from reflex.vars import Var
 
     if isinstance(col, str):
         return {"title": col, "id": col.lower(), "type": "str"}
@@ -770,7 +748,7 @@ def format_data_editor_column(col: str | dict):
             col["overlayIcon"] = None
         return col
 
-    if isinstance(col, ImmutableVar):
+    if isinstance(col, Var):
         return col
 
     raise ValueError(
@@ -787,9 +765,9 @@ def format_data_editor_cell(cell: Any):
     Returns:
         The formatted cell.
     """
-    from reflex.ivars.base import ImmutableVar
+    from reflex.vars.base import Var
 
     return {
-        "kind": ImmutableVar.create("GridCellKind.Text"),
+        "kind": Var(_js_expr="GridCellKind.Text"),
         "data": cell,
     }

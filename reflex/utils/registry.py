@@ -2,7 +2,8 @@
 
 import httpx
 
-from reflex.utils import console
+from reflex.config import environment
+from reflex.utils import console, net
 
 
 def latency(registry: str) -> int:
@@ -15,7 +16,7 @@ def latency(registry: str) -> int:
         int: The latency of the registry in microseconds.
     """
     try:
-        return httpx.get(registry).elapsed.microseconds
+        return net.get(registry).elapsed.microseconds
     except httpx.HTTPError:
         console.info(f"Failed to connect to {registry}.")
         return 10_000_000
@@ -34,7 +35,7 @@ def average_latency(registry, attempts: int = 3) -> int:
     return sum(latency(registry) for _ in range(attempts)) // attempts
 
 
-def _get_best_registry() -> str:
+def get_best_registry() -> str:
     """Get the best registry based on latency.
 
     Returns:
@@ -46,3 +47,12 @@ def _get_best_registry() -> str:
     ]
 
     return min(registries, key=average_latency)
+
+
+def _get_npm_registry() -> str:
+    """Get npm registry. If environment variable is set, use it first.
+
+    Returns:
+        str:
+    """
+    return environment.NPM_CONFIG_REGISTRY or get_best_registry()

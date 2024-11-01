@@ -9,11 +9,10 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
-from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar, LiteralVar
-from reflex.ivars.sequence import StringVar
+from reflex.event import EventHandler, identity_event
 from reflex.utils import types
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
+from reflex.vars.sequence import StringVar
 
 from ..base import (
     LiteralAccentColor,
@@ -60,7 +59,7 @@ class RadioGroupRoot(RadixThemesComponent):
     _rename_props = {"onChange": "onValueChange"}
 
     # Fired when the value of the radio group changes.
-    on_change: EventHandler[lambda e0: [e0]]
+    on_change: EventHandler[identity_event(str)]
 
 
 class RadioGroupItem(RadixThemesComponent):
@@ -85,7 +84,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
     items: Var[List[str]]
 
     # The direction of the radio group.
-    direction: Var[LiteralFlexDirection] = LiteralVar.create("column")
+    direction: Var[LiteralFlexDirection] = LiteralVar.create("row")
 
     # The gap between the items of the radio group.
     spacing: Var[LiteralSpacing] = LiteralVar.create("2")
@@ -138,7 +137,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
         Raises:
             TypeError: If the type of items is invalid.
         """
-        direction = props.pop("direction", "column")
+        direction = props.pop("direction", "row")
         spacing = props.pop("spacing", "2")
         size = props.pop("size", "2")
         variant = props.pop("variant", "classic")
@@ -146,13 +145,11 @@ class HighLevelRadioGroup(RadixThemesComponent):
         default_value = props.pop("default_value", "")
 
         if (
-            not isinstance(items, (list, ImmutableVar))
-            or isinstance(items, ImmutableVar)
+            not isinstance(items, (list, Var))
+            or isinstance(items, Var)
             and not types._issubclass(items._var_type, list)
         ):
-            items_type = (
-                type(items) if not isinstance(items, ImmutableVar) else items._var_type
-            )
+            items_type = type(items) if not isinstance(items, Var) else items._var_type
             raise TypeError(
                 f"The radio group component takes in a list, got {items_type} instead"
             )
@@ -162,13 +159,13 @@ class HighLevelRadioGroup(RadixThemesComponent):
         # convert only non-strings to json(JSON.stringify) so quotes are not rendered
         # for string literal types.
         if isinstance(default_value, str) or (
-            isinstance(default_value, ImmutableVar) and default_value._var_type is str
+            isinstance(default_value, Var) and default_value._var_type is str
         ):
             default_value = LiteralVar.create(default_value)  # type: ignore
         else:
-            default_value = ImmutableVar.create_safe(default_value).to_string()
+            default_value = LiteralVar.create(default_value).to_string()
 
-        def radio_group_item(value: ImmutableVar) -> Component:
+        def radio_group_item(value: Var) -> Component:
             item_value = rx.cond(
                 value.js_type() == "string",
                 value,

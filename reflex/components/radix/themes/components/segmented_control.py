@@ -3,13 +3,25 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from typing import List, Literal, Union
+from typing import List, Literal, Tuple, Union
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
+
+
+def on_value_change(value: Var[str | List[str]]) -> Tuple[Var[str | List[str]]]:
+    """Handle the on_value_change event.
+
+    Args:
+        value: The value of the event.
+
+    Returns:
+        The value of the event.
+    """
+    return (value,)
 
 
 class SegmentedControlRoot(RadixThemesComponent):
@@ -23,6 +35,7 @@ class SegmentedControlRoot(RadixThemesComponent):
     # Variant of button: "classic" | "surface"
     variant: Var[Literal["classic", "surface"]]
 
+    # The type of the segmented control, either "single" for selecting one option or "multiple" for selecting multiple options.
     type: Var[Literal["single", "multiple"]]
 
     # Override theme color for button
@@ -34,9 +47,11 @@ class SegmentedControlRoot(RadixThemesComponent):
     # The default value of the segmented control.
     default_value: Var[Union[str, List[str]]]
 
+    # The current value of the segmented control.
     value: Var[Union[str, List[str]]]
 
-    on_change: EventHandler[lambda e0: [e0]]
+    # Handles the `onChange` event for the SegmentedControl component.
+    on_change: EventHandler[on_value_change]
 
     _rename_props = {"onChange": "onValueChange"}
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Literal, Optional, Union
+from typing import Any, List, Literal, Tuple, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
@@ -11,9 +11,9 @@ from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
 from reflex.event import EventHandler
-from reflex.ivars.base import ImmutableVar, LiteralVar
 from reflex.style import Style
-from reflex.vars import Var, get_uuid_string_var
+from reflex.vars import get_uuid_string_var
+from reflex.vars.base import LiteralVar, Var
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
@@ -71,6 +71,18 @@ class AccordionComponent(RadixPrimitiveComponent):
         return ["color_scheme", "variant"]
 
 
+def on_value_change(value: Var[str | List[str]]) -> Tuple[Var[str | List[str]]]:
+    """Handle the on_value_change event.
+
+    Args:
+        value: The value of the event.
+
+    Returns:
+        The value of the event.
+    """
+    return (value,)
+
+
 class AccordionRoot(AccordionComponent):
     """An accordion component."""
 
@@ -114,7 +126,7 @@ class AccordionRoot(AccordionComponent):
     _valid_children: List[str] = ["AccordionItem"]
 
     # Fired when the opened the accordions changes.
-    on_value_change: EventHandler[lambda e0: [e0]]
+    on_value_change: EventHandler[on_value_change]
 
     def _exclude_props(self) -> list[str]:
         return super()._exclude_props() + [
@@ -181,6 +193,11 @@ class AccordionItem(AccordionComponent):
     # When true, prevents the user from interacting with the item.
     disabled: Var[bool]
 
+    # The header of the accordion item.
+    header: Var[Union[Component, str]]
+    # The content of the accordion item.
+    content: Var[Union[Component, str]] = Var.create(None)
+
     _valid_children: List[str] = [
         "AccordionHeader",
         "AccordionTrigger",
@@ -193,21 +210,20 @@ class AccordionItem(AccordionComponent):
     def create(
         cls,
         *children,
-        header: Optional[Component | ImmutableVar] = None,
-        content: Optional[Component | ImmutableVar] = None,
         **props,
     ) -> Component:
         """Create an accordion item.
 
         Args:
             *children: The list of children to use if header and content are not provided.
-            header: The header of the accordion item.
-            content: The content of the accordion item.
             **props: Additional properties to apply to the accordion item.
 
         Returns:
             The accordion item.
         """
+        header = props.pop("header", None)
+        content = props.pop("content", None)
+
         # The item requires a value to toggle (use a random unique name if not provided).
         value = props.pop("value", get_uuid_string_var())
 
@@ -278,6 +294,9 @@ class AccordionItem(AccordionComponent):
                 "border_bottom": divider_style,
             },
         }
+
+    def _exclude_props(self) -> list[str]:
+        return ["header", "content"]
 
 
 class AccordionHeader(AccordionComponent):

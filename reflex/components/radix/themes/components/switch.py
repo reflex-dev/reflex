@@ -3,8 +3,8 @@
 from typing import Literal
 
 from reflex.components.core.breakpoints import Responsive
-from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.event import EventHandler, identity_event
+from reflex.vars.base import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -59,7 +59,7 @@ class Switch(RadixThemesComponent):
     _rename_props = {"onChange": "onCheckedChange"}
 
     # Fired when the value of the switch changes
-    on_change: EventHandler[lambda checked: [checked]]
+    on_change: EventHandler[identity_event(bool)]
 
 
 switch = Switch.create

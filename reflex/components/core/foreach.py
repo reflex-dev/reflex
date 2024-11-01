@@ -9,9 +9,8 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.tags import IterTag
 from reflex.constants import MemoizationMode
-from reflex.ivars.base import ImmutableVar
 from reflex.state import ComponentState
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
 
 
 class ForeachVarError(TypeError):
@@ -52,7 +51,7 @@ class Foreach(Component):
             ForeachVarError: If the iterable is of type Any.
             TypeError: If the render function is a ComponentState.
         """
-        iterable = ImmutableVar.create_safe(iterable)
+        iterable = LiteralVar.create(iterable)
         if iterable._var_type == Any:
             raise ForeachVarError(
                 f"Could not foreach over var `{str(iterable)}` of type Any. "
@@ -130,7 +129,7 @@ class Foreach(Component):
             iterable_state=str(tag.iterable),
             arg_name=tag.arg_var_name,
             arg_index=tag.get_index_var_arg(),
-            iterable_type=tag.iterable.upcast()._var_type.mro()[0].__name__,
+            iterable_type=tag.iterable._var_type.mro()[0].__name__,
         )
 
 

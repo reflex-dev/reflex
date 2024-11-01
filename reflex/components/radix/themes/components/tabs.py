@@ -7,8 +7,8 @@ from typing import Any, Dict, List, Literal
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.colors import color
-from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.event import EventHandler, identity_event
+from reflex.vars.base import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -42,7 +42,7 @@ class TabsRoot(RadixThemesComponent):
     _rename_props = {"onChange": "onValueChange"}
 
     # Fired when the value of the tabs changes.
-    on_change: EventHandler[lambda e0: [e0]]
+    on_change: EventHandler[identity_event(str)]
 
     def add_style(self) -> Dict[str, Any] | None:
         """Add style for the component.

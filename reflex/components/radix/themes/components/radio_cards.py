@@ -4,8 +4,8 @@ from types import SimpleNamespace
 from typing import Literal, Union
 
 from reflex.components.core.breakpoints import Responsive
-from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.event import EventHandler, identity_event
+from reflex.vars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -65,7 +65,7 @@ class RadioCardsRoot(RadixThemesComponent):
     loop: Var[bool]
 
     # Event handler called when the value changes.
-    on_value_change: EventHandler[lambda e0: [e0]]
+    on_value_change: EventHandler[identity_event(str)]
 
 
 class RadioCardsItem(RadixThemesComponent):

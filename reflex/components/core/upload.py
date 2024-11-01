@@ -2,14 +2,20 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
-from typing import Callable, ClassVar, Dict, List, Optional
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple
 
-from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
+from reflex.components.component import (
+    Component,
+    ComponentNamespace,
+    MemoizationLeaf,
+    StatefulComponent,
+)
 from reflex.components.el.elements.forms import Input
 from reflex.components.radix.themes.layout.box import Box
+from reflex.config import environment
 from reflex.constants import Dirs
+from reflex.constants.compiler import Imports
 from reflex.event import (
     CallableEventSpec,
     EventChain,
@@ -19,17 +25,18 @@ from reflex.event import (
     call_script,
     parse_args_spec,
 )
-from reflex.ivars.base import ImmutableCallableVar, ImmutableVar, LiteralVar
-from reflex.ivars.sequence import LiteralStringVar
+from reflex.utils import format
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
+from reflex.vars.base import CallableVar, LiteralVar, Var, get_unique_variable_name
+from reflex.vars.sequence import LiteralStringVar
 
 DEFAULT_UPLOAD_ID: str = "default"
 
 upload_files_context_var_data: VarData = VarData(
     imports={
         "react": "useContext",
-        f"/{Dirs.CONTEXTS_PATH}": "UploadFilesContext",
+        f"$/{Dirs.CONTEXTS_PATH}": "UploadFilesContext",
     },
     hooks={
         "const [filesById, setFilesById] = useContext(UploadFilesContext);": None,
@@ -37,8 +44,8 @@ upload_files_context_var_data: VarData = VarData(
 )
 
 
-@ImmutableCallableVar
-def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> ImmutableVar:
+@CallableVar
+def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     """Get the file upload drop trigger.
 
     This var is passed to the dropzone component to update the file list when a
@@ -58,8 +65,8 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> ImmutableVar:
   }})
     """
 
-    return ImmutableVar(
-        _var_name=var_name,
+    return Var(
+        _js_expr=var_name,
         _var_type=EventChain,
         _var_data=VarData.merge(
             upload_files_context_var_data, id_var._get_all_var_data()
@@ -67,8 +74,8 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> ImmutableVar:
     )
 
 
-@ImmutableCallableVar
-def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> ImmutableVar:
+@CallableVar
+def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     """Get the list of selected files.
 
     Args:
@@ -78,8 +85,8 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> ImmutableVar:
         A var referencing the list of selected file paths.
     """
     id_var = LiteralStringVar.create(id_)
-    return ImmutableVar(
-        _var_name=f"(filesById[{str(id_var)}] ? filesById[{str(id_var)}].map((f) => (f.path || f.name)) : [])",
+    return Var(
+        _js_expr=f"(filesById[{str(id_var)}] ? filesById[{str(id_var)}].map((f) => (f.path || f.name)) : [])",
         _var_type=List[str],
         _var_data=VarData.merge(
             upload_files_context_var_data, id_var._get_all_var_data()
@@ -125,19 +132,17 @@ def get_upload_dir() -> Path:
     """
     Upload.is_used = True
 
-    uploaded_files_dir = Path(
-        os.environ.get("REFLEX_UPLOADED_FILES_DIR", "./uploaded_files")
-    )
+    uploaded_files_dir = environment.REFLEX_UPLOADED_FILES_DIR
     uploaded_files_dir.mkdir(parents=True, exist_ok=True)
     return uploaded_files_dir
 
 
-uploaded_files_url_prefix = ImmutableVar(
-    _var_name="getBackendURL(env.UPLOAD)",
+uploaded_files_url_prefix = Var(
+    _js_expr="getBackendURL(env.UPLOAD)",
     _var_data=VarData(
         imports={
-            f"/{Dirs.STATE_PATH}": "getBackendURL",
-            "/env.json": ImportVar(tag="env", is_default=True),
+            f"$/{Dirs.STATE_PATH}": "getBackendURL",
+            "$/env.json": ImportVar(tag="env", is_default=True),
         }
     ),
 ).to(str)
@@ -157,7 +162,7 @@ def get_upload_url(file_path: str) -> Var[str]:
     return uploaded_files_url_prefix + "/" + file_path
 
 
-def _on_drop_spec(files: Var):
+def _on_drop_spec(files: Var) -> Tuple[Var[Any]]:
     """Args spec for the on_drop event trigger.
 
     Args:
@@ -166,24 +171,22 @@ def _on_drop_spec(files: Var):
     Returns:
         Signature for on_drop handler including the files to upload.
     """
-    return [files]
+    return (files,)
 
 
 class UploadFilesProvider(Component):
     """AppWrap component that provides a dict of selected files by ID via useContext."""
 
-    library = f"/{Dirs.CONTEXTS_PATH}"
+    library = f"$/{Dirs.CONTEXTS_PATH}"
     tag = "UploadFilesProvider"
 
 
 class Upload(MemoizationLeaf):
     """A file upload component."""
 
-    library = "react-dropzone@14.2.3"
+    library = "react-dropzone@14.2.10"
 
-    tag = "ReactDropzone"
-
-    is_default = True
+    tag = ""
 
     # The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as
     # values.
@@ -203,7 +206,7 @@ class Upload(MemoizationLeaf):
     min_size: Var[int]
 
     # Whether to allow multiple files to be uploaded.
-    multiple: Var[bool] = True  # type: ignore
+    multiple: Var[bool]
 
     # Whether to disable click to upload.
     no_click: Var[bool]
@@ -234,6 +237,8 @@ class Upload(MemoizationLeaf):
         # Mark the Upload component as used in the app.
         cls.is_used = True
 
+        props.setdefault("multiple", True)
+
         # Apply the default classname
         given_class_name = props.pop("class_name", [])
         if isinstance(given_class_name, str):
@@ -244,21 +249,6 @@ class Upload(MemoizationLeaf):
         supported_props = cls.get_props().union({"on_drop"})
         upload_props = {
             key: value for key, value in props.items() if key in supported_props
-        }
-        # The file input to use.
-        upload = Input.create(type="file")
-        upload.special_props = {
-            ImmutableVar(_var_name="{...getInputProps()}", _var_type=None)
-        }
-
-        # The dropzone to use.
-        zone = Box.create(
-            upload,
-            *children,
-            **{k: v for k, v in props.items() if k not in supported_props},
-        )
-        zone.special_props = {
-            ImmutableVar(_var_name="{...getRootProps()}", _var_type=None)
         }
 
         # Create the component.
@@ -281,15 +271,78 @@ class Upload(MemoizationLeaf):
                     ),
                 )
             upload_props["on_drop"] = on_drop
+
+        input_props_unique_name = get_unique_variable_name()
+        root_props_unique_name = get_unique_variable_name()
+
+        event_var, callback_str = StatefulComponent._get_memoized_event_triggers(
+            Box.create(on_click=upload_props["on_drop"])  # type: ignore
+        )["on_click"]
+
+        upload_props["on_drop"] = event_var
+
+        upload_props = {
+            format.to_camel_case(key): value for key, value in upload_props.items()
+        }
+
+        use_dropzone_arguements = {
+            "onDrop": event_var,
+            **upload_props,
+        }
+
+        left_side = f"const {{getRootProps: {root_props_unique_name}, getInputProps: {input_props_unique_name}}} "
+        right_side = f"useDropzone({str(Var.create(use_dropzone_arguements))})"
+
+        var_data = VarData.merge(
+            VarData(
+                imports=Imports.EVENTS,
+                hooks={
+                    "const [addEvents, connectError] = useContext(EventLoopContext);": None
+                },
+            ),
+            event_var._get_all_var_data(),
+            VarData(
+                hooks={
+                    callback_str: None,
+                    f"{left_side} = {right_side};": None,
+                },
+                imports={
+                    "react-dropzone": "useDropzone",
+                    **Imports.EVENTS,
+                },
+            ),
+        )
+
+        # The file input to use.
+        upload = Input.create(type="file")
+        upload.special_props = [
+            Var(
+                _js_expr=f"{{...{input_props_unique_name}()}}",
+                _var_type=None,
+                _var_data=var_data,
+            )
+        ]
+
+        # The dropzone to use.
+        zone = Box.create(
+            upload,
+            *children,
+            **{k: v for k, v in props.items() if k not in supported_props},
+        )
+        zone.special_props = [
+            Var(
+                _js_expr=f"{{...{root_props_unique_name}()}}",
+                _var_type=None,
+                _var_data=var_data,
+            )
+        ]
+
         return super().create(
             zone,
-            **upload_props,
         )
 
     @classmethod
-    def _update_arg_tuple_for_on_drop(
-        cls, arg_value: tuple[ImmutableVar, ImmutableVar]
-    ):
+    def _update_arg_tuple_for_on_drop(cls, arg_value: tuple[Var, Var]):
         """Helper to update caller-provided EventSpec args for direct use with on_drop.
 
         Args:
@@ -298,15 +351,10 @@ class Upload(MemoizationLeaf):
         Returns:
             The updated arg_value tuple when arg is "files", otherwise the original arg_value.
         """
-        if arg_value[0]._var_name == "files":
+        if arg_value[0]._js_expr == "files":
             placeholder = parse_args_spec(_on_drop_spec)[0]
             return (arg_value[0], placeholder)
         return arg_value
-
-    def _render(self):
-        out = super()._render()
-        out.args = ("getRootProps", "getInputProps")
-        return out
 
     @staticmethod
     def _get_app_wrap_components() -> dict[tuple[int, str], Component]:

@@ -5,8 +5,8 @@ from typing import Literal
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
-from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.event import EventHandler, empty_event, identity_event
+from reflex.vars.base import Var
 
 from ..base import RadixThemesComponent, RadixThemesTriggerComponent
 
@@ -22,7 +22,7 @@ class AlertDialogRoot(RadixThemesComponent):
     open: Var[bool]
 
     # Fired when the open state changes.
-    on_open_change: EventHandler[lambda e0: [e0]]
+    on_open_change: EventHandler[identity_event(bool)]
 
 
 class AlertDialogTrigger(RadixThemesTriggerComponent):
@@ -43,13 +43,13 @@ class AlertDialogContent(elements.Div, RadixThemesComponent):
     force_mount: Var[bool]
 
     # Fired when the dialog is opened.
-    on_open_auto_focus: EventHandler[lambda e0: [e0]]
+    on_open_auto_focus: EventHandler[empty_event]
 
     # Fired when the dialog is closed.
-    on_close_auto_focus: EventHandler[lambda e0: [e0]]
+    on_close_auto_focus: EventHandler[empty_event]
 
     # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[lambda e0: [e0]]
+    on_escape_key_down: EventHandler[empty_event]
 
 
 class AlertDialogTitle(RadixThemesComponent):
