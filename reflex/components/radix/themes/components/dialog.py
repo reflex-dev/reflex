@@ -50,7 +50,7 @@ class DialogContent(elements.Div, RadixThemesComponent):
     size: Var[Responsive[Literal["1", "2", "3", "4"]]]
 
     # Fired when the dialog is opened.
-    on_open_auto_focus: EventHandler[empty_event]
+    on_open_auto_focus: EventHandler[empty_event] 
 
     # Fired when the dialog is closed.
     on_close_auto_focus: EventHandler[empty_event]

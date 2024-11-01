@@ -73,7 +73,7 @@ class DrawerRoot(DrawerComponent):
     should_scale_background: Var[bool]
 
     # Number between 0 and 1 that determines when the drawer should be closed.
-    close_threshold: Var[float]
+    close_threshold: Var[float] 
 
 
 class DrawerTrigger(DrawerComponent):

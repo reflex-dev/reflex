@@ -171,7 +171,7 @@ class ContextMenuSubContent(RadixThemesComponent):
     force_mount: Var[bool]
 
     # The distance in pixels from the trigger. Defaults to 0.
-    side_offset: Var[Union[float, int]]
+    side_offset: Var[Union[float, int]] 
 
     # An offset in pixels from the "start" or "end" alignment options.
     align_offset: Var[Union[float, int]]

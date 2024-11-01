@@ -593,7 +593,7 @@ class ContextMenuItem(RadixThemesComponent):
             shortcut: Shortcut to render a menu item as a link
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
             disabled: When true, prevents the user from interacting with the item.
-            text_value: Optional text used for typeahead purposes. By default the typeahead behavior will use the .textContent of the item. Use this when the content is complex, or you have non-textual content inside.
+            text_value: Optional text used for typeahead purposes. By default the typeahead behavior will use the content of the item. Use this when the content is complex, or you have non-textual content inside.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
