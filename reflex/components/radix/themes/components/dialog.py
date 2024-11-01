@@ -25,6 +25,9 @@ class DialogRoot(RadixThemesComponent):
     # Fired when the open state changes.
     on_open_change: EventHandler[identity_event(bool)]
 
+    # The open state of the dialog when it is initially rendered. Use when you do not need to control its open state.
+    default_open: Var[bool]
+
 
 class DialogTrigger(RadixThemesTriggerComponent):
     """Trigger an action or event, to open a Dialog modal."""

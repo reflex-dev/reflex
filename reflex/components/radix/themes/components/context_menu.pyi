@@ -13,6 +13,13 @@ from reflex.vars.base import Var
 
 from ..base import RadixThemesComponent
 
+LiteralDirType = Literal["ltr", "rtl"]
+LiteralSizeType = Literal["1", "2"]
+LiteralVariantType = Literal["solid", "soft"]
+LiteralSideType = Literal["top", "right", "bottom", "left"]
+LiteralAlignType = Literal["start", "center", "end"]
+LiteralStickyType = Literal["partial", "always"]
+
 class ContextMenuRoot(RadixThemesComponent):
     @overload
     @classmethod
@@ -20,6 +27,7 @@ class ContextMenuRoot(RadixThemesComponent):
         cls,
         *children,
         modal: Optional[Union[Var[bool], bool]] = None,
+        dir: Optional[Union[Literal["ltr", "rtl"], Var[Literal["ltr", "rtl"]]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -53,6 +61,7 @@ class ContextMenuRoot(RadixThemesComponent):
             *children: Child components.
             modal: The modality of the context menu. When set to true, interaction with outside elements will be disabled and only menu content will be visible to screen readers.
             on_open_change: Fired when the open state changes.
+            dir: The reading direction of submenus when applicable. If omitted, inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -196,8 +205,36 @@ class ContextMenuContent(RadixThemesComponent):
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
-        align_offset: Optional[Union[Var[int], int]] = None,
+        as_child: Optional[Union[Var[bool], bool]] = None,
+        loop: Optional[Union[Var[bool], bool]] = None,
+        force_mount: Optional[Union[Var[bool], bool]] = None,
+        side: Optional[
+            Union[
+                Literal["bottom", "left", "right", "top"],
+                Var[Literal["bottom", "left", "right", "top"]],
+            ]
+        ] = None,
+        side_offset: Optional[Union[Var[Union[float, int]], float, int]] = None,
+        align: Optional[
+            Union[
+                Literal["center", "end", "start"],
+                Var[Literal["center", "end", "start"]],
+            ]
+        ] = None,
+        align_offset: Optional[Union[Var[Union[float, int]], float, int]] = None,
         avoid_collisions: Optional[Union[Var[bool], bool]] = None,
+        collision_padding: Optional[
+            Union[
+                Dict[str, Union[float, int]],
+                Var[Union[Dict[str, Union[float, int]], float, int]],
+                float,
+                int,
+            ]
+        ] = None,
+        sticky: Optional[
+            Union[Literal["always", "partial"], Var[Literal["always", "partial"]]]
+        ] = None,
+        hide_when_detached: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -233,17 +270,26 @@ class ContextMenuContent(RadixThemesComponent):
 
         Args:
             *children: Child components.
-            size: Button size "1" - "4"
-            variant: Variant of button: "solid" | "soft" | "outline" | "ghost"
-            color_scheme: Override theme color for button
-            high_contrast: Whether to render the button with higher contrast color against background
-            align_offset: The vertical distance in pixels from the anchor.
-            avoid_collisions: When true, overrides the side and aligns preferences to prevent collisions with boundary edges.
-            on_close_auto_focus: Fired when the context menu is closed.
+            size: Dropdown Menu Content size "1" - "2"
+            variant: Variant of Dropdown Menu Content: "solid" | "soft"
+            color_scheme: Override theme color for Dropdown Menu Content
+            high_contrast: Renders the Dropdown Menu Content in higher contrast
+            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
+            loop: When True, keyboard navigation will loop from last item to first, and vice versa. Defaults to False.
+            force_mount: Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries.
+            side: The preferred side of the trigger to render against when open. Will be reversed when collisions occur and `avoid_collisions` is enabled.The position of the tooltip. Defaults to "top".
+            side_offset: The distance in pixels from the trigger. Defaults to 0.
+            align: The preferred alignment against the trigger. May change when collisions occur. Defaults to "center".
+            align_offset: An offset in pixels from the "start" or "end" alignment options.
+            avoid_collisions: When true, overrides the side and align preferences to prevent collisions with boundary edges. Defaults to True.
+            collision_padding: The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
+            sticky: The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
+            hide_when_detached: Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
+            on_close_auto_focus: Fired when focus moves back after closing.
             on_escape_key_down: Fired when the escape key is pressed.
             on_pointer_down_outside: Fired when a pointer down event happens outside the context menu.
             on_focus_outside: Fired when focus moves outside the context menu.
-            on_interact_outside: Fired when interacting outside the context menu.
+            on_interact_outside: Fired when the pointer interacts outside the context menu.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -263,6 +309,8 @@ class ContextMenuSub(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        open: Optional[Union[Var[bool], bool]] = None,
+        default_open: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -282,6 +330,7 @@ class ContextMenuSub(RadixThemesComponent):
         on_mouse_out: Optional[EventType[[]]] = None,
         on_mouse_over: Optional[EventType[[]]] = None,
         on_mouse_up: Optional[EventType[[]]] = None,
+        on_open_change: Optional[EventType[bool]] = None,
         on_scroll: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,
@@ -293,6 +342,9 @@ class ContextMenuSub(RadixThemesComponent):
 
         Args:
             *children: Child components.
+            open: The controlled open state of the submenu. Must be used in conjunction with `on_open_change`.
+            default_open: The open state of the submenu when it is initially rendered. Use when you do not need to control its open state.
+            on_open_change: Fired when the open state changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -312,7 +364,9 @@ class ContextMenuSubTrigger(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        as_child: Optional[Union[Var[bool], bool]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
+        text_value: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -343,7 +397,9 @@ class ContextMenuSubTrigger(RadixThemesComponent):
 
         Args:
             *children: Child components.
+            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
             disabled: Whether the trigger is disabled
+            text_value: Optional text used for typeahead purposes. By default the typeahead behavior will use the .textContent of the item. Use this when the content is complex, or you have non-textual content inside.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -363,7 +419,24 @@ class ContextMenuSubContent(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        as_child: Optional[Union[Var[bool], bool]] = None,
         loop: Optional[Union[Var[bool], bool]] = None,
+        force_mount: Optional[Union[Var[bool], bool]] = None,
+        side_offset: Optional[Union[Var[Union[float, int]], float, int]] = None,
+        align_offset: Optional[Union[Var[Union[float, int]], float, int]] = None,
+        avoid_collisions: Optional[Union[Var[bool], bool]] = None,
+        collision_padding: Optional[
+            Union[
+                Dict[str, Union[float, int]],
+                Var[Union[Dict[str, Union[float, int]], float, int]],
+                float,
+                int,
+            ]
+        ] = None,
+        sticky: Optional[
+            Union[Literal["always", "partial"], Var[Literal["always", "partial"]]]
+        ] = None,
+        hide_when_detached: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -398,7 +471,15 @@ class ContextMenuSubContent(RadixThemesComponent):
 
         Args:
             *children: Child components.
-            loop: When true, keyboard navigation will loop from last item to first, and vice versa.
+            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
+            loop: When True, keyboard navigation will loop from last item to first, and vice versa. Defaults to False.
+            force_mount: Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries.
+            side_offset: The distance in pixels from the trigger. Defaults to 0.
+            align_offset: An offset in pixels from the "start" or "end" alignment options.
+            avoid_collisions: When true, overrides the side and align preferences to prevent collisions with boundary edges. Defaults to True.
+            collision_padding: The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
+            sticky: The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
+            hide_when_detached: Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
             on_escape_key_down: Fired when the escape key is pressed.
             on_pointer_down_outside: Fired when a pointer down event happens outside the context menu.
             on_focus_outside: Fired when focus moves outside the context menu.
@@ -485,6 +566,9 @@ class ContextMenuItem(RadixThemesComponent):
             ]
         ] = None,
         shortcut: Optional[Union[Var[str], str]] = None,
+        as_child: Optional[Union[Var[bool], bool]] = None,
+        disabled: Optional[Union[Var[bool], bool]] = None,
+        text_value: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -505,6 +589,7 @@ class ContextMenuItem(RadixThemesComponent):
         on_mouse_over: Optional[EventType[[]]] = None,
         on_mouse_up: Optional[EventType[[]]] = None,
         on_scroll: Optional[EventType[[]]] = None,
+        on_select: Optional[EventType[[]]] = None,
         on_unmount: Optional[EventType[[]]] = None,
         **props,
     ) -> "ContextMenuItem":
@@ -517,6 +602,10 @@ class ContextMenuItem(RadixThemesComponent):
             *children: Child components.
             color_scheme: Override theme color for button
             shortcut: Shortcut to render a menu item as a link
+            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
+            disabled: When true, prevents the user from interacting with the item.
+            text_value: Optional text used for typeahead purposes. By default the typeahead behavior will use the content of the item. Use this when the content is complex, or you have non-textual content inside.
+            on_select: Fired when the item is selected.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

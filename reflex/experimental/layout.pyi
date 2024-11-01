@@ -95,12 +95,8 @@ class DrawerSidebar(DrawerRoot):
     def create(  # type: ignore
         cls,
         *children,
+        default_open: Optional[Union[Var[bool], bool]] = None,
         open: Optional[Union[Var[bool], bool]] = None,
-        should_scale_background: Optional[Union[Var[bool], bool]] = None,
-        close_threshold: Optional[Union[Var[float], float]] = None,
-        snap_points: Optional[List[Union[float, str]]] = None,
-        fade_from_index: Optional[Union[Var[int], int]] = None,
-        scroll_lock_timeout: Optional[Union[Var[int], int]] = None,
         modal: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
             Union[
@@ -108,7 +104,14 @@ class DrawerSidebar(DrawerRoot):
                 Var[Literal["bottom", "left", "right", "top"]],
             ]
         ] = None,
+        dismissible: Optional[Union[Var[bool], bool]] = None,
+        handle_only: Optional[Union[Var[bool], bool]] = None,
+        snap_points: Optional[List[Union[float, str]]] = None,
+        fade_from_index: Optional[Union[Var[int], int]] = None,
+        scroll_lock_timeout: Optional[Union[Var[int], int]] = None,
         preventScrollRestoration: Optional[Union[Var[bool], bool]] = None,
+        should_scale_background: Optional[Union[Var[bool], bool]] = None,
+        close_threshold: Optional[Union[Var[float], float]] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -116,6 +119,7 @@ class DrawerSidebar(DrawerRoot):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_animation_end: Optional[EventType[bool]] = None,
         on_blur: Optional[EventType[[]]] = None,
         on_click: Optional[EventType[[]]] = None,
         on_context_menu: Optional[EventType[[]]] = None,

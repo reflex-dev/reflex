@@ -23,7 +23,6 @@ LiteralSideType = Literal["top", "right", "bottom", "left"]
 
 LiteralAlignType = Literal["start", "center", "end"]
 
-
 LiteralStickyType = Literal[
     "partial",
     "always",
@@ -110,9 +109,6 @@ class DropdownMenuContent(RadixThemesComponent):
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
     collision_padding: Var[Union[float, int, Dict[str, Union[float, int]]]]
 
-    # The padding between the arrow and the edges of the content. If your content has border-radius, this will prevent it from overflowing the corners. Defaults to 0.
-    arrow_padding: Var[Union[float, int]]
-
     # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
     sticky: Var[LiteralStickyType]
 
@@ -192,9 +188,6 @@ class DropdownMenuSubContent(RadixThemesComponent):
 
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
     collision_padding: Var[Union[float, int, Dict[str, Union[float, int]]]]
-
-    # The padding between the arrow and the edges of the content. If your content has border-radius, this will prevent it from overflowing the corners. Defaults to 0.
-    arrow_padding: Var[Union[float, int]]
 
     # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
     sticky: Var[LiteralStickyType]

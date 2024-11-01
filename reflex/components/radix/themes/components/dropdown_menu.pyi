@@ -225,7 +225,6 @@ class DropdownMenuContent(RadixThemesComponent):
                 int,
             ]
         ] = None,
-        arrow_padding: Optional[Union[Var[Union[float, int]], float, int]] = None,
         sticky: Optional[
             Union[Literal["always", "partial"], Var[Literal["always", "partial"]]]
         ] = None,
@@ -278,7 +277,6 @@ class DropdownMenuContent(RadixThemesComponent):
             align_offset: An offset in pixels from the "start" or "end" alignment options.
             avoid_collisions: When true, overrides the side and align preferences to prevent collisions with boundary edges. Defaults to True.
             collision_padding: The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-            arrow_padding: The padding between the arrow and the edges of the content. If your content has border-radius, this will prevent it from overflowing the corners. Defaults to 0.
             sticky: The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
             hide_when_detached: Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
             on_close_auto_focus: Fired when the dialog is closed.
@@ -417,7 +415,6 @@ class DropdownMenuSubContent(RadixThemesComponent):
                 int,
             ]
         ] = None,
-        arrow_padding: Optional[Union[Var[Union[float, int]], float, int]] = None,
         sticky: Optional[
             Union[Literal["always", "partial"], Var[Literal["always", "partial"]]]
         ] = None,
@@ -463,7 +460,6 @@ class DropdownMenuSubContent(RadixThemesComponent):
             align_offset: An offset in pixels from the "start" or "end" alignment options.
             avoid_collisions: When true, overrides the side and align preferences to prevent collisions with boundary edges. Defaults to True.
             collision_padding: The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-            arrow_padding: The padding between the arrow and the edges of the content. If your content has border-radius, this will prevent it from overflowing the corners. Defaults to 0.
             sticky: The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
             hide_when_detached: Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
             on_escape_key_down: Fired when the escape key is pressed.
