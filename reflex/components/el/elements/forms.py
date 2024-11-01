@@ -111,6 +111,15 @@ def on_submit_event_spec() -> Tuple[Var[Dict[str, Any]]]:
     return (FORM_DATA,)
 
 
+def on_submit_string_event_spec() -> Tuple[Var[Dict[str, str]]]:
+    """Event handler spec for the on_submit event.
+
+    Returns:
+        The event handler spec.
+    """
+    return (FORM_DATA,)
+
+
 class Form(BaseHTML):
     """Display the form element."""
 
@@ -150,7 +159,7 @@ class Form(BaseHTML):
     handle_submit_unique_name: Var[str]
 
     # Fired when the form is submitted
-    on_submit: EventHandler[on_submit_event_spec]
+    on_submit: EventHandler[on_submit_event_spec, on_submit_string_event_spec]
 
     @classmethod
     def create(cls, *children, **props):

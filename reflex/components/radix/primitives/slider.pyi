@@ -117,6 +117,8 @@ class SliderRoot(SliderComponent):
 
         Args:
             *children: The children of the component.
+            on_value_change: Fired when the value of a thumb changes.
+            on_value_commit: Fired when a thumb is released.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.

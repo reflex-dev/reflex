@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import dataclasses
 import functools
 import inspect
 from typing import Callable, Coroutine, Set, Union
@@ -16,11 +17,14 @@ from reflex.utils.exceptions import InvalidLifespanTaskType
 from .mixin import AppMixin
 
 
+@dataclasses.dataclass
 class LifespanMixin(AppMixin):
     """A Mixin that allow tasks to run during the whole app lifespan."""
 
     # Lifespan tasks that are planned to run.
-    lifespan_tasks: Set[Union[asyncio.Task, Callable]] = set()
+    lifespan_tasks: Set[Union[asyncio.Task, Callable]] = dataclasses.field(
+        default_factory=set
+    )
 
     @contextlib.asynccontextmanager
     async def _run_lifespan_tasks(self, app: FastAPI):

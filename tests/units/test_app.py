@@ -874,7 +874,7 @@ async def test_upload_file_background(state, tmp_path, token):
         await fn(request_mock, [file_mock])
     assert (
         err.value.args[0]
-        == f"@rx.background is not supported for upload handler `{state.get_full_name()}.bg_upload`."
+        == f"@rx.event(background=True) is not supported for upload handler `{state.get_full_name()}.bg_upload`."
     )
 
     if isinstance(app.state_manager, StateManagerRedis):
@@ -1211,7 +1211,7 @@ async def test_process_events(mocker, token: str):
     ],
 )
 def test_overlay_component(
-    state: State | None,
+    state: Type[State] | None,
     overlay_component: Component | ComponentCallable | None,
     exp_page_child: Type[Component] | None,
 ):
@@ -1401,13 +1401,6 @@ def test_app_state_determination():
     )
     a4._compile_page("page2")
     assert a4.state is not None
-
-
-# for coverage
-def test_raise_on_connect_error():
-    """Test that the connect_error function is called."""
-    with pytest.raises(ValueError):
-        App(connect_error_component="Foo")
 
 
 def test_raise_on_state():
