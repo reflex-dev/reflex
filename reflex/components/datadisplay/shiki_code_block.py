@@ -68,7 +68,7 @@ document.addEventListener('click', function(event) {{
     }} else {{
         // console.error('Parent element not found.');
     }}
-}});
+}})
 """
     )
 
