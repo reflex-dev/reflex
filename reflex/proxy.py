@@ -1,4 +1,5 @@
 """Handle proxying frontend requests from the backend server."""
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
