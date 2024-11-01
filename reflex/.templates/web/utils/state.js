@@ -178,11 +178,6 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
-  if (event.name == "_console") {
-    console.log(event.payload.message);
-    return false;
-  }
-
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
     queueEventIfSocketExists(initialEvents(), socket);
@@ -213,12 +208,6 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
-  if (event.name == "_set_clipboard") {
-    const content = event.payload.content;
-    navigator.clipboard.writeText(content);
-    return false;
-  }
-
   if (event.name == "_download") {
     const a = document.createElement("a");
     a.hidden = true;
@@ -230,11 +219,6 @@ export const applyEvent = async (event, socket) => {
     a.download = event.payload.filename;
     a.click();
     a.remove();
-    return false;
-  }
-
-  if (event.name == "_alert") {
-    alert(event.payload.message);
     return false;
   }
 

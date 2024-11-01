@@ -706,7 +706,7 @@ def console_log(message: str | Var[str]) -> EventSpec:
     Returns:
         An event to log the message.
     """
-    return server_side("_console", get_fn_signature(console_log), message=message)
+    return run_script(Var("console").to(dict).log.to(FunctionVar).call(message))
 
 
 def noop() -> EventSpec:
@@ -738,7 +738,7 @@ def window_alert(message: str | Var[str]) -> EventSpec:
     Returns:
         An event to alert the message.
     """
-    return server_side("_alert", get_fn_signature(window_alert), message=message)
+    return run_script(Var("window").to(dict).alert.to(FunctionVar).call(message))
 
 
 def set_focus(ref: str) -> EventSpec:
@@ -881,10 +881,12 @@ def set_clipboard(content: str) -> EventSpec:
     Returns:
         EventSpec: An event to set some content in the clipboard.
     """
-    return server_side(
-        "_set_clipboard",
-        get_fn_signature(set_clipboard),
-        content=content,
+    return run_script(
+        Var("navigator")
+        .to(dict)
+        .clipboard.to(dict)
+        .writeText.to(FunctionVar)
+        .call(content)
     )
 
 
