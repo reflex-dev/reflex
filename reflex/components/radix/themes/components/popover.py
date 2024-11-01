@@ -86,7 +86,7 @@ class PopoverContent(elements.Div, RadixThemesComponent):
     on_focus_outside: EventHandler[empty_event]
 
     # Fired when the pointer interacts outside the dialog.
-    on_interact_outside: EventHandler[empty_event] 
+    on_interact_outside: EventHandler[empty_event]
 
 
 class PopoverClose(RadixThemesTriggerComponent):
