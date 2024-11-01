@@ -971,13 +971,7 @@ def _callback_arg_spec(eval_result):
 
 def call_script(
     javascript_code: str | Var[str],
-    callback: (
-        EventSpec
-        | EventHandler
-        | Callable
-        | List[EventSpec | EventHandler | Callable]
-        | None
-    ) = None,
+    callback: EventType | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -991,12 +985,10 @@ def call_script(
     callback_kwargs = {}
     if callback is not None:
         callback_kwargs = {
-            "callback": str(
-                format.format_queue_events(
-                    callback,
-                    args_spec=lambda result: [result],
-                ),
-            ),
+            "callback": format.format_queue_events(
+                callback,
+                args_spec=lambda result: [result],
+            )._js_expr,
         }
     if isinstance(javascript_code, str):
         # When there is VarData, include it and eval the JS code inline on the client.
