@@ -69,7 +69,7 @@ from redis.exceptions import ResponseError
 import reflex.istate.dynamic
 from reflex import constants
 from reflex.base import Base
-from reflex.config import environment
+from reflex.config import EnvironmentVariables
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,
@@ -932,7 +932,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         module = cls.__module__.replace(".", "___")
         state_name = format.to_snake_case(f"{module}___{cls.__name__}")
-        if constants.compiler.CompileVars.MINIFY_STATES():
+        if EnvironmentVariables.REFLEX_MINIFY_STATES.get():
             return get_minified_state_name(state_name)
         return state_name
 
@@ -3435,7 +3435,7 @@ class StateManagerRedis(StateManager):
             )
         except ResponseError:
             # Some redis servers only allow out-of-band configuration, so ignore errors here.
-            if not environment.REFLEX_IGNORE_REDIS_CONFIG_ERROR.get():
+            if not EnvironmentVariables.REFLEX_IGNORE_REDIS_CONFIG_ERROR.get():
                 raise
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(lock_key_channel)

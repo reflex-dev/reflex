@@ -5,7 +5,7 @@ from enum import Enum
 from types import SimpleNamespace
 
 from reflex.base import Base
-from reflex.constants import Dirs, Env
+from reflex.constants import Dirs
 from reflex.utils.imports import ImportVar
 
 # The prefix used to create setters for state vars.
@@ -13,9 +13,6 @@ SETTER_PREFIX = "set_"
 
 # The file used to specify no compilation.
 NOCOMPILE_FILE = "nocompile"
-
-# The env var to toggle minification of states.
-ENV_MINIFY_STATES = "REFLEX_MINIFY_STATES"
 
 
 class Ext(SimpleNamespace):
@@ -31,22 +28,6 @@ class Ext(SimpleNamespace):
     ZIP = ".zip"
     # The extension for executable files on Windows.
     EXE = ".exe"
-
-
-def minify_states() -> bool:
-    """Whether to minify states.
-
-    Returns:
-        True if states should be minified.
-    """
-    from reflex.config import environment
-
-    env = environment.REFLEX_MINIFY_STATES.get()
-    if env is not None:
-        return env
-
-    # minify states in prod by default
-    return environment.REFLEX_ENV_MODE.get() == Env.PROD
 
 
 class CompileVars(SimpleNamespace):
@@ -80,15 +61,6 @@ class CompileVars(SimpleNamespace):
     CONNECT_ERROR = "connectErrors"
     # The name of the function for converting a dict to an event.
     TO_EVENT = "Event"
-
-    @classmethod
-    def MINIFY_STATES(cls) -> bool:
-        """Whether to minify states.
-
-        Returns:
-            True if states should be minified.
-        """
-        return minify_states()
 
 
 class PageNames(SimpleNamespace):

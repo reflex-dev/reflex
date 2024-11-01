@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from functools import partial
 from typing import Generator, Optional, Type
 
@@ -10,7 +9,7 @@ import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
-from reflex.constants.compiler import ENV_MINIFY_STATES
+from reflex.config import EnvironmentVariables
 from reflex.testing import AppHarness, AppHarnessProd
 
 
@@ -63,13 +62,9 @@ def minify_state_env(
         minify_states: whether to minify state names
     """
     minify_states: Optional[bool] = request.param
-    if minify_states is None:
-        _ = os.environ.pop(ENV_MINIFY_STATES, None)
-    else:
-        os.environ[ENV_MINIFY_STATES] = str(minify_states).lower()
+    EnvironmentVariables.REFLEX_MINIFY_STATES.set(minify_states)
     yield minify_states
-    if minify_states is not None:
-        os.environ.pop(ENV_MINIFY_STATES, None)
+    EnvironmentVariables.REFLEX_MINIFY_STATES.set(None)
 
 
 @pytest.fixture

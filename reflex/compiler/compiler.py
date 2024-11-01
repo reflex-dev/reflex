@@ -16,7 +16,7 @@ from reflex.components.component import (
     CustomComponent,
     StatefulComponent,
 )
-from reflex.config import environment, get_config
+from reflex.config import EnvironmentVariables, get_config
 from reflex.state import BaseState
 from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils.exec import is_prod_mode
@@ -527,7 +527,7 @@ def remove_tailwind_from_postcss() -> tuple[str, str]:
 
 def purge_web_pages_dir():
     """Empty out .web/pages directory."""
-    if not is_prod_mode() and environment.REFLEX_PERSIST_WEB_DIR.get():
+    if not is_prod_mode() and EnvironmentVariables.REFLEX_PERSIST_WEB_DIR.get():
         # Skip purging the web directory in dev mode if REFLEX_PERSIST_WEB_DIR is set.
         return
 

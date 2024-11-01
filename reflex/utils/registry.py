@@ -2,7 +2,7 @@
 
 import httpx
 
-from reflex.config import environment
+from reflex.config import EnvironmentVariables
 from reflex.utils import console, net
 
 
@@ -55,4 +55,4 @@ def _get_npm_registry() -> str:
     Returns:
         str:
     """
-    return environment.NPM_CONFIG_REGISTRY.get() or get_best_registry()
+    return EnvironmentVariables.NPM_CONFIG_REGISTRY.get() or get_best_registry()

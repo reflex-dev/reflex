@@ -61,9 +61,9 @@ class Bun(SimpleNamespace):
         Returns:
             The directory to store the bun.
         """
-        from reflex.config import environment
+        from reflex.config import EnvironmentVariables
 
-        return environment.REFLEX_DIR.get() / "bun"
+        return EnvironmentVariables.REFLEX_DIR.get() / "bun"
 
     @classproperty
     @classmethod
@@ -98,9 +98,9 @@ class Fnm(SimpleNamespace):
         Returns:
             The directory to store fnm.
         """
-        from reflex.config import environment
+        from reflex.config import EnvironmentVariables
 
-        return environment.REFLEX_DIR.get() / "fnm"
+        return EnvironmentVariables.REFLEX_DIR.get() / "fnm"
 
     @classproperty
     @classmethod

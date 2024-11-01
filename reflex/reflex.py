@@ -13,7 +13,7 @@ from reflex_cli.deployments import deployments_cli
 from reflex_cli.utils import dependency
 
 from reflex import constants
-from reflex.config import environment, get_config
+from reflex.config import EnvironmentVariables, get_config
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
@@ -160,7 +160,7 @@ def _run(
     console.set_log_level(loglevel)
 
     # Set env mode in the environment
-    environment.REFLEX_ENV_MODE.set(env)
+    EnvironmentVariables.REFLEX_ENV_MODE.set(env)
 
     # Show system info
     exec.output_system_info()
@@ -277,13 +277,13 @@ def run(
         False,
         "--frontend-only",
         help="Execute only frontend.",
-        envvar=environment.REFLEX_FRONTEND_ONLY.name,
+        envvar=EnvironmentVariables.REFLEX_FRONTEND_ONLY.name,
     ),
     backend: bool = typer.Option(
         False,
         "--backend-only",
         help="Execute only backend.",
-        envvar=environment.REFLEX_BACKEND_ONLY.name,
+        envvar=EnvironmentVariables.REFLEX_BACKEND_ONLY.name,
     ),
     frontend_port: str = typer.Option(
         config.frontend_port, help="Specify a different frontend port."
@@ -302,8 +302,8 @@ def run(
     if frontend and backend:
         console.error("Cannot use both --frontend-only and --backend-only options.")
         raise typer.Exit(1)
-    environment.REFLEX_BACKEND_ONLY.set(backend)
-    environment.REFLEX_FRONTEND_ONLY.set(frontend)
+    EnvironmentVariables.REFLEX_BACKEND_ONLY.set(backend)
+    EnvironmentVariables.REFLEX_FRONTEND_ONLY.set(frontend)
 
     _run(env, frontend, backend, frontend_port, backend_port, backend_host, loglevel)
 
@@ -405,7 +405,7 @@ script_cli = typer.Typer()
 
 def _skip_compile():
     """Skip the compile step."""
-    environment.REFLEX_SKIP_COMPILE.set(True)
+    EnvironmentVariables.REFLEX_SKIP_COMPILE.set(True)
 
 
 @db_cli.command(name="init")
@@ -420,7 +420,7 @@ def db_init():
         return
 
     # Check the alembic config.
-    if environment.ALEMBIC_CONFIG.get().exists():
+    if EnvironmentVariables.ALEMBIC_CONFIG.get().exists():
         console.error(
             "Database is already initialized. Use "
             "[bold]reflex db makemigrations[/bold] to create schema change "

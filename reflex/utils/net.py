@@ -2,7 +2,7 @@
 
 import httpx
 
-from ..config import environment
+from ..config import EnvironmentVariables
 from . import console
 
 
@@ -12,7 +12,7 @@ def _httpx_verify_kwarg() -> bool:
     Returns:
         True if SSL verification is enabled, False otherwise
     """
-    return not environment.SSL_NO_VERIFY.get()
+    return not EnvironmentVariables.SSL_NO_VERIFY.get()
 
 
 def get(url: str, **kwargs) -> httpx.Response:
