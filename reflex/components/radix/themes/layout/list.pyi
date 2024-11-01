@@ -35,7 +35,6 @@ class BaseList(Component):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Union[Iterable, Var[Iterable]]] = None,
         list_style_type: Optional[
             Union[
                 Literal[
@@ -78,6 +77,7 @@ class BaseList(Component):
                 ],
             ]
         ] = None,
+        items: Optional[Union[Iterable, Var[Iterable]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -105,8 +105,8 @@ class BaseList(Component):
 
         Args:
             *children: The children of the component.
-            items: A list of items to add to the list.
             list_style_type: The style of the list. Default to "none".
+            items: A list of items to add to the list.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -129,8 +129,49 @@ class UnorderedList(BaseList, Ul):
     def create(  # type: ignore
         cls,
         *children,
+        list_style_type: Optional[
+            Union[
+                Literal[
+                    "armenian",
+                    "decimal",
+                    "decimal-leading-zero",
+                    "georgian",
+                    "hiragana",
+                    "katakana",
+                    "lower-alpha",
+                    "lower-greek",
+                    "lower-latin",
+                    "lower-roman",
+                    "none",
+                    "upper-alpha",
+                    "upper-latin",
+                    "upper-roman",
+                ],
+                Literal["circle", "disc", "none", "square"],
+                Var[
+                    Union[
+                        Literal[
+                            "armenian",
+                            "decimal",
+                            "decimal-leading-zero",
+                            "georgian",
+                            "hiragana",
+                            "katakana",
+                            "lower-alpha",
+                            "lower-greek",
+                            "lower-latin",
+                            "lower-roman",
+                            "none",
+                            "upper-alpha",
+                            "upper-latin",
+                            "upper-roman",
+                        ],
+                        Literal["circle", "disc", "none", "square"],
+                    ]
+                ],
+            ]
+        ] = None,
         items: Optional[Union[Iterable, Var[Iterable]]] = None,
-        list_style_type: Optional[LiteralListStyleTypeUnordered] = "disc",
         access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_capitalize: Optional[
             Union[Var[Union[bool, int, str]], bool, int, str]
@@ -178,12 +219,12 @@ class UnorderedList(BaseList, Ul):
         on_unmount: Optional[EventType[[]]] = None,
         **props,
     ) -> "UnorderedList":
-        """Create a unordered list component.
+        """Create an unordered list component.
 
         Args:
             *children: The children of the component.
+            list_style_type: The style of the list. Default to "none".
             items: A list of items to add to the list.
-            list_style_type: The style of the list.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -220,8 +261,49 @@ class OrderedList(BaseList, Ol):
     def create(  # type: ignore
         cls,
         *children,
+        list_style_type: Optional[
+            Union[
+                Literal[
+                    "armenian",
+                    "decimal",
+                    "decimal-leading-zero",
+                    "georgian",
+                    "hiragana",
+                    "katakana",
+                    "lower-alpha",
+                    "lower-greek",
+                    "lower-latin",
+                    "lower-roman",
+                    "none",
+                    "upper-alpha",
+                    "upper-latin",
+                    "upper-roman",
+                ],
+                Literal["circle", "disc", "none", "square"],
+                Var[
+                    Union[
+                        Literal[
+                            "armenian",
+                            "decimal",
+                            "decimal-leading-zero",
+                            "georgian",
+                            "hiragana",
+                            "katakana",
+                            "lower-alpha",
+                            "lower-greek",
+                            "lower-latin",
+                            "lower-roman",
+                            "none",
+                            "upper-alpha",
+                            "upper-latin",
+                            "upper-roman",
+                        ],
+                        Literal["circle", "disc", "none", "square"],
+                    ]
+                ],
+            ]
+        ] = None,
         items: Optional[Union[Iterable, Var[Iterable]]] = None,
-        list_style_type: Optional[LiteralListStyleTypeOrdered] = "decimal",
         reversed: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         start: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         type: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
@@ -276,8 +358,8 @@ class OrderedList(BaseList, Ol):
 
         Args:
             *children: The children of the component.
+            list_style_type: The style of the list. Default to "none".
             items: A list of items to add to the list.
-            list_style_type: The style of the list.
             reversed: Reverses the order of the list.
             start: Specifies the start value of the first list item in an ordered list.
             type: Specifies the kind of marker to use in the list (letters or numbers).
@@ -406,7 +488,6 @@ class List(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        items: Optional[Union[Iterable, Var[Iterable]]] = None,
         list_style_type: Optional[
             Union[
                 Literal[
@@ -449,6 +530,7 @@ class List(ComponentNamespace):
                 ],
             ]
         ] = None,
+        items: Optional[Union[Iterable, Var[Iterable]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -476,8 +558,8 @@ class List(ComponentNamespace):
 
         Args:
             *children: The children of the component.
-            items: A list of items to add to the list.
             list_style_type: The style of the list. Default to "none".
+            items: A list of items to add to the list.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
