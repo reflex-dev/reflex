@@ -1,7 +1,8 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+
 from typing import Union
 
-from reflex.vars import Var as Var
+from reflex.vars.base import Var
 
 from .base import BaseHTML
 
@@ -59,3 +60,12 @@ class Html(BaseHTML):
 
     # Specifies the URL of the document's cache manifest (obsolete in HTML5)
     manifest: Var[Union[str, int, bool]]
+
+
+details = Details.create
+dialog = Dialog.create
+summary = Summary.create
+slot = Slot.create
+template = Template.create
+math = Math.create
+html = Html.create

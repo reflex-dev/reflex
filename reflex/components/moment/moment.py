@@ -1,25 +1,27 @@
 """Moment component for humanized date rendering."""
 
-from typing import Any, Dict, List, Optional
+import dataclasses
+from typing import List, Optional
 
-from reflex.base import Base
-from reflex.components.component import Component, NoSSRComponent
-from reflex.utils import imports
-from reflex.vars import Var
+from reflex.components.component import NoSSRComponent
+from reflex.event import EventHandler, identity_event
+from reflex.utils.imports import ImportDict
+from reflex.vars.base import LiteralVar, Var
 
 
-class MomentDelta(Base):
+@dataclasses.dataclass(frozen=True)
+class MomentDelta:
     """A delta used for add/subtract prop in Moment."""
 
-    years: Optional[int]
-    quarters: Optional[int]
-    months: Optional[int]
-    weeks: Optional[int]
-    days: Optional[int]
-    hours: Optional[int]
-    minutess: Optional[int]
-    seconds: Optional[int]
-    milliseconds: Optional[int]
+    years: Optional[int] = dataclasses.field(default=None)
+    quarters: Optional[int] = dataclasses.field(default=None)
+    months: Optional[int] = dataclasses.field(default=None)
+    weeks: Optional[int] = dataclasses.field(default=None)
+    days: Optional[int] = dataclasses.field(default=None)
+    hours: Optional[int] = dataclasses.field(default=None)
+    minutess: Optional[int] = dataclasses.field(default=None)
+    seconds: Optional[int] = dataclasses.field(default=None)
+    milliseconds: Optional[int] = dataclasses.field(default=None)
 
 
 class Moment(NoSSRComponent):
@@ -90,38 +92,27 @@ class Moment(NoSSRComponent):
     # Display the date in the given timezone.
     tz: Var[str]
 
-    def _get_imports(self) -> imports.ImportDict:
-        merged_imports = super()._get_imports()
+    # The locale to use when rendering.
+    locale: Var[str]
+
+    # Fires when the date changes.
+    on_change: EventHandler[identity_event(str)]
+
+    def add_imports(self) -> ImportDict:
+        """Add the imports for the Moment component.
+
+        Returns:
+            The import dict for the component.
+        """
+        imports = {}
+
+        if isinstance(self.locale, LiteralVar):
+            imports[""] = f"moment/locale/{self.locale._var_value}"
+        elif self.locale is not None:
+            # If the user is using a variable for the locale, we can't know the
+            # value at compile time so import all locales available.
+            imports[""] = "moment/min/locales"
         if self.tz is not None:
-            merged_imports = imports.merge_imports(
-                merged_imports,
-                {"moment-timezone": {imports.ImportVar(tag="")}},
-            )
-        return merged_imports
+            imports["moment-timezone"] = ""
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
-
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            "on_change": lambda date: [date],
-        }
-
-    @classmethod
-    def create(cls, *children, **props) -> Component:
-        """Create a Moment component.
-
-        Args:
-            *children: The children of the component.
-            **props: The properties of the component.
-
-        Returns:
-            The Moment Component.
-        """
-        comp = super().create(*children, **props)
-        if "tz" in props:
-            comp.lib_dependencies.append("moment-timezone")
-        return comp
+        return imports

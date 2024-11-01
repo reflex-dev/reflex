@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-import os
 import platform
 from enum import Enum
 from importlib import metadata
+from pathlib import Path
 from types import SimpleNamespace
 
 from platformdirs import PlatformDirs
+
+from .utils import classproperty
 
 IS_WINDOWS = platform.system() == "Windows"
 
@@ -19,32 +21,36 @@ class Dirs(SimpleNamespace):
     # The frontend directories in a project.
     # The web folder where the NextJS app is compiled to.
     WEB = ".web"
+    # The directory where uploaded files are stored.
+    UPLOADED_FILES = "uploaded_files"
     # The name of the assets directory.
     APP_ASSETS = "assets"
+    # The name of the assets directory for external ressource (a subfolder of APP_ASSETS).
+    EXTERNAL_APP_ASSETS = "external"
     # The name of the utils file.
     UTILS = "utils"
-    # The name of the output static directory.
-    STATIC = "_static"
     # The name of the state file.
     STATE_PATH = "/".join([UTILS, "state"])
     # The name of the components file.
     COMPONENTS_PATH = "/".join([UTILS, "components"])
     # The name of the contexts file.
     CONTEXTS_PATH = "/".join([UTILS, "context"])
-    # The directory where the app pages are compiled to.
-    WEB_PAGES = os.path.join(WEB, "pages")
-    # The directory where the static build is located.
-    WEB_STATIC = os.path.join(WEB, STATIC)
-    # The directory where the utils file is located.
-    WEB_UTILS = os.path.join(WEB, UTILS)
-    # The directory where the assets are located.
-    WEB_ASSETS = os.path.join(WEB, "public")
-    # The env json file.
-    ENV_JSON = os.path.join(WEB, "env.json")
-    # The reflex json file.
-    REFLEX_JSON = os.path.join(WEB, "reflex.json")
-    # The path to postcss.config.js
-    POSTCSS_JS = os.path.join(WEB, "postcss.config.js")
+    # The name of the output static directory.
+    STATIC = "_static"
+    # The name of the public html directory served at "/"
+    PUBLIC = "public"
+    # The directory where styles are located.
+    STYLES = "styles"
+    # The name of the pages directory.
+    PAGES = "pages"
+    # The name of the env json file.
+    ENV_JSON = "env.json"
+    # The name of the reflex json file.
+    REFLEX_JSON = "reflex.json"
+    # The name of the postcss config file.
+    POSTCSS_JS = "postcss.config.js"
+    # The name of the states directory.
+    STATES = "states"
 
 
 class Reflex(SimpleNamespace):
@@ -57,25 +63,20 @@ class Reflex(SimpleNamespace):
     VERSION = metadata.version(MODULE_NAME)
 
     # The reflex json file.
-    JSON = os.path.join(Dirs.WEB, "reflex.json")
+    JSON = "reflex.json"
 
     # Files and directories used to init a new project.
     # The directory to store reflex dependencies.
-    # Get directory value from enviroment variables if it exists.
-    _dir = os.environ.get("REFLEX_DIR", "")
+    # on windows, we use C:/Users/<username>/AppData/Local/reflex.
+    # on macOS, we use ~/Library/Application Support/reflex.
+    # on linux, we use ~/.local/share/reflex.
+    # If user sets REFLEX_DIR envroment variable use that instead.
+    DIR = PlatformDirs(MODULE_NAME, False).user_data_path
 
-    DIR = _dir or (
-        # on windows, we use C:/Users/<username>/AppData/Local/reflex.
-        # on macOS, we use ~/Library/Application Support/reflex.
-        # on linux, we use ~/.local/share/reflex.
-        # If user sets REFLEX_DIR envroment variable use that instead.
-        PlatformDirs(MODULE_NAME, False).user_data_dir
-    )
     # The root directory of the reflex library.
+    ROOT_DIR = Path(__file__).parents[2]
 
-    ROOT_DIR = os.path.dirname(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    )
+    RELEASES_URL = f"https://api.github.com/repos/reflex-dev/templates/releases"
 
 
 class ReflexHostingCLI(SimpleNamespace):
@@ -94,15 +95,62 @@ class Templates(SimpleNamespace):
     # The default template
     DEFAULT = "blank"
 
+    # The reflex.build frontend host
+    REFLEX_BUILD_FRONTEND = "https://flexgen.reflex.run"
+
+    # The reflex.build backend host
+    REFLEX_BUILD_BACKEND = "https://flexgen-prod-flexgen.fly.dev"
+
+    @classproperty
+    @classmethod
+    def REFLEX_BUILD_URL(cls):
+        """The URL to redirect to reflex.build.
+
+        Returns:
+            The URL to redirect to reflex.build.
+        """
+        from reflex.config import environment
+
+        return (
+            environment.REFLEX_BUILD_FRONTEND
+            + "/gen?reflex_init_token={reflex_init_token}"
+        )
+
+    @classproperty
+    @classmethod
+    def REFLEX_BUILD_POLL_URL(cls):
+        """The URL to poll waiting for the user to select a generation.
+
+        Returns:
+            The URL to poll waiting for the user to select a generation.
+        """
+        from reflex.config import environment
+
+        return environment.REFLEX_BUILD_BACKEND + "/api/init/{reflex_init_token}"
+
+    @classproperty
+    @classmethod
+    def REFLEX_BUILD_CODE_URL(cls):
+        """The URL to fetch the generation's reflex code.
+
+        Returns:
+            The URL to fetch the generation's reflex code.
+        """
+        from reflex.config import environment
+
+        return (
+            environment.REFLEX_BUILD_BACKEND + "/api/gen/{generation_hash}/refactored"
+        )
+
     class Dirs(SimpleNamespace):
         """Folders used by the template system of Reflex."""
 
         # The template directory used during reflex init.
-        BASE = os.path.join(Reflex.ROOT_DIR, Reflex.MODULE_NAME, ".templates")
+        BASE = Reflex.ROOT_DIR / Reflex.MODULE_NAME / ".templates"
         # The web subdirectory of the template directory.
-        WEB_TEMPLATE = os.path.join(BASE, "web")
+        WEB_TEMPLATE = BASE / "web"
         # The jinja template directory.
-        JINJA_TEMPLATE = os.path.join(BASE, "jinja")
+        JINJA_TEMPLATE = BASE / "jinja"
         # Where the code for the templates is stored.
         CODE = "code"
 
@@ -113,7 +161,7 @@ class Next(SimpleNamespace):
     # The NextJS config file
     CONFIG_FILE = "next.config.js"
     # The sitemap config file.
-    SITEMAP_CONFIG_FILE = os.path.join(Dirs.WEB, "next-sitemap.config.js")
+    SITEMAP_CONFIG_FILE = "next-sitemap.config.js"
     # The node modules directory.
     NODE_MODULES = "node_modules"
     # The package lock file.
@@ -126,9 +174,11 @@ class Next(SimpleNamespace):
 class ColorMode(SimpleNamespace):
     """Constants related to ColorMode."""
 
-    NAME = "colorMode"
+    NAME = "rawColorMode"
+    RESOLVED_NAME = "resolvedColorMode"
     USE = "useColorMode"
     TOGGLE = "toggleColorMode"
+    SET = "setColorMode"
 
 
 # Env modes
@@ -144,6 +194,7 @@ class LogLevel(str, Enum):
     """The log levels."""
 
     DEBUG = "debug"
+    DEFAULT = "default"
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -160,6 +211,14 @@ class LogLevel(str, Enum):
         """
         levels = list(LogLevel)
         return levels.index(self) <= levels.index(other)
+
+    def subprocess_level(self):
+        """Return the log level for the subprocess.
+
+        Returns:
+            The log level for the subprocess
+        """
+        return self if self != LogLevel.DEFAULT else LogLevel.WARNING
 
 
 # Server socket configuration variables
@@ -178,12 +237,16 @@ class Ping(SimpleNamespace):
 # Keys in the client_side_storage dict
 COOKIES = "cookies"
 LOCAL_STORAGE = "local_storage"
+SESSION_STORAGE = "session_storage"
 
 # If this env var is set to "yes", App.compile will be a no-op
 SKIP_COMPILE_ENV_VAR = "__REFLEX_SKIP_COMPILE"
 
 # This env var stores the execution mode of the app
 ENV_MODE_ENV_VAR = "REFLEX_ENV_MODE"
+
+ENV_BACKEND_ONLY_ENV_VAR = "REFLEX_BACKEND_ONLY"
+ENV_FRONTEND_ONLY_ENV_VAR = "REFLEX_FRONTEND_ONLY"
 
 # Testing variables.
 # Testing os env set by pytest when running a test case.

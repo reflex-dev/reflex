@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import collections
 import contextlib
+import importlib.metadata
 import os
 import signal
 import subprocess
@@ -58,8 +59,12 @@ def get_process_on_port(port) -> Optional[psutil.Process]:
     """
     for proc in psutil.process_iter(["pid", "name", "cmdline"]):
         try:
-            for conns in proc.connections(kind="inet"):
-                if conns.laddr.port == int(port):
+            if importlib.metadata.version("psutil") >= "6.0.0":
+                conns = proc.net_connections(kind="inet")  # type: ignore
+            else:
+                conns = proc.connections(kind="inet")
+            for conn in conns:
+                if conn.laddr.port == int(port):
                     return proc
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
@@ -109,6 +114,33 @@ def change_port(port: str, _type: str) -> str:
     return new_port
 
 
+def handle_port(service_name: str, port: str, default_port: str) -> str:
+    """Change port if the specified port is in use and is not explicitly specified as a CLI arg or config arg.
+    otherwise tell the user the port is in use and exit the app.
+
+    We make an assumption that when port is the default port,then it hasnt been explicitly set since its not straightforward
+    to know whether a port was explicitly provided by the user unless its any other than the default.
+
+    Args:
+        service_name: The frontend or backend.
+        port: The provided port.
+        default_port: The default port number associated with the specified service.
+
+    Returns:
+        The port to run the service on.
+
+    Raises:
+        Exit:when the port is in use.
+    """
+    if is_process_on_port(port):
+        if int(port) == int(default_port):
+            return change_port(port, service_name)
+        else:
+            console.error(f"{service_name.capitalize()} port: {port} is already in use")
+            raise typer.Exit()
+    return port
+
+
 def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     """Wrapper over subprocess.Popen to unify the launch of child processes.
 
@@ -124,7 +156,7 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     Raises:
         Exit: When attempting to run a command with a None value.
     """
-    node_bin_path = path_ops.get_node_bin_path()
+    node_bin_path = str(path_ops.get_node_bin_path())
     if not node_bin_path and not prerequisites.CURRENTLY_INSTALLING_NODE:
         console.warn(
             "The path to the Node binary could not be found. Please ensure that Node is properly "
@@ -135,7 +167,7 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
         console.error(f"Invalid command: {args}")
         raise typer.Exit(1)
     # Add the node bin path to the PATH environment variable.
-    env = {
+    env: dict[str, str] = {
         **os.environ,
         "PATH": os.pathsep.join(
             [node_bin_path if node_bin_path else "", os.environ["PATH"]]
@@ -158,7 +190,7 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
 
 @contextlib.contextmanager
 def run_concurrently_context(
-    *fns: Union[Callable, Tuple]
+    *fns: Union[Callable, Tuple],
 ) -> Generator[list[futures.Future], None, None]:
     """Run functions concurrently in a thread pool.
 

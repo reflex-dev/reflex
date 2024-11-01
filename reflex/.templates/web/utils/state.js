@@ -2,18 +2,19 @@
 import axios from "axios";
 import io from "socket.io-client";
 import JSON5 from "json5";
-import env from "/env.json";
+import env from "$/env.json";
 import Cookies from "universal-cookie";
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Router, { useRouter } from "next/router";
 import {
   initialEvents,
   initialState,
   onLoadInternalEvent,
   state_name,
-} from "utils/context.js";
-import debounce from "/utils/helpers/debounce";
-import throttle from "/utils/helpers/throttle";
+  exception_state_name,
+} from "$/utils/context.js";
+import debounce from "$/utils/helpers/debounce";
+import throttle from "$/utils/helpers/throttle";
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
@@ -108,12 +109,53 @@ export const getBackendURL = (url_str) => {
 };
 
 /**
+ * Determine if any event in the event queue is stateful.
+ *
+ * @returns True if there's any event that requires state and False if none of them do.
+ */
+export const isStateful = () => {
+  if (event_queue.length === 0) {
+    return false;
+  }
+  return event_queue.some((event) => event.name.startsWith("reflex___state"));
+};
+
+/**
  * Apply a delta to the state.
  * @param state The state to apply the delta to.
  * @param delta The delta to apply.
  */
 export const applyDelta = (state, delta) => {
   return { ...state, ...delta };
+};
+
+/**
+ * Evaluate a dynamic component.
+ * @param component The component to evaluate.
+ * @returns The evaluated component.
+ */
+export const evalReactComponent = async (component) => {
+  if (!window.React && window.__reflex) {
+    window.React = window.__reflex.react;
+  }
+  const encodedJs = encodeURIComponent(component);
+  const dataUri = "data:text/javascript;charset=utf-8," + encodedJs;
+  const module = await eval(`import(dataUri)`);
+  return module.default;
+};
+
+/**
+ * Only Queue and process events when websocket connection exists.
+ * @param event The event to queue.
+ * @param socket The socket object to send the event on.
+ *
+ * @returns Adds event to queue and processes it if websocket exits, does nothing otherwise.
+ */
+export const queueEventIfSocketExists = async (events, socket) => {
+  if (!socket) {
+    return;
+  }
+  await queueEvents(events, socket);
 };
 
 /**
@@ -126,8 +168,13 @@ export const applyDelta = (state, delta) => {
 export const applyEvent = async (event, socket) => {
   // Handle special events
   if (event.name == "_redirect") {
-    if (event.payload.external) window.open(event.payload.path, "_blank");
-    else Router.push(event.payload.path);
+    if (event.payload.external) {
+      window.open(event.payload.path, "_blank");
+    } else if (event.payload.replace) {
+      Router.replace(event.payload.path);
+    } else {
+      Router.push(event.payload.path);
+    }
     return false;
   }
 
@@ -138,18 +185,30 @@ export const applyEvent = async (event, socket) => {
 
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
-    queueEvents(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket);
     return false;
   }
 
   if (event.name == "_clear_local_storage") {
     localStorage.clear();
-    queueEvents(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket);
     return false;
   }
 
   if (event.name == "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
+    queueEventIfSocketExists(initialEvents(), socket);
+    return false;
+  }
+
+  if (event.name == "_clear_session_storage") {
+    sessionStorage.clear();
+    queueEvents(initialEvents(), socket);
+    return false;
+  }
+
+  if (event.name == "_remove_session_storage") {
+    sessionStorage.removeItem(event.payload.key);
     queueEvents(initialEvents(), socket);
     return false;
   }
@@ -164,7 +223,10 @@ export const applyEvent = async (event, socket) => {
     const a = document.createElement("a");
     a.hidden = true;
     // Special case when linking to uploaded files
-    a.href = event.payload.url.replace("${getBackendURL(env.UPLOAD)}", getBackendURL(env.UPLOAD))
+    a.href = event.payload.url.replace(
+      "${getBackendURL(env.UPLOAD)}",
+      getBackendURL(env.UPLOAD)
+    );
     a.download = event.payload.filename;
     a.click();
     a.remove();
@@ -204,6 +266,9 @@ export const applyEvent = async (event, socket) => {
       }
     } catch (e) {
       console.log("_call_script", e);
+      if (window && window?.onerror) {
+        window.onerror(e.message, null, null, null, e);
+      }
     }
     return false;
   }
@@ -243,10 +308,9 @@ export const applyEvent = async (event, socket) => {
 export const applyRestEvent = async (event, socket) => {
   let eventSent = false;
   if (event.handler === "uploadFiles") {
-
-    if (event.payload.files === undefined || event.payload.files.length === 0){
+    if (event.payload.files === undefined || event.payload.files.length === 0) {
       // Submit the event over the websocket to trigger the event handler.
-      return await applyEvent(Event(event.name), socket)
+      return await applyEvent(Event(event.name), socket);
     }
 
     // Start upload, but do not wait for it, which would block other events.
@@ -277,8 +341,8 @@ export const queueEvents = async (events, socket) => {
  * @param socket The socket object to send the event on.
  */
 export const processEvent = async (socket) => {
-  // Only proceed if the socket is up, otherwise we throw the event into the void
-  if (!socket) {
+  // Only proceed if the socket is up and no event in the queue uses state, otherwise we throw the event into the void
+  if (!socket && isStateful()) {
     return;
   }
 
@@ -345,16 +409,31 @@ export const connect = async (
     }
   }
 
+  const pagehideHandler = (event) => {
+    if (event.persisted && socket.current?.connected) {
+      console.log("Disconnect backend before bfcache on navigation");
+      socket.current.disconnect();
+    }
+  };
+
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
     setConnectErrors([]);
+    window.addEventListener("pagehide", pagehideHandler);
   });
 
   socket.current.on("connect_error", (error) => {
     setConnectErrors((connectErrors) => [connectErrors.slice(-9), error]);
   });
+
+  // When the socket disconnects reset the event_processing flag
+  socket.current.on("disconnect", () => {
+    event_processing = false;
+    window.removeEventListener("pagehide", pagehideHandler);
+  });
+
   // On each received message, queue the updates and events.
-  socket.current.on("event", (message) => {
+  socket.current.on("event", async (message) => {
     const update = JSON5.parse(message);
     for (const substate in update.delta) {
       dispatch[substate](update.delta[substate]);
@@ -463,13 +542,19 @@ export const uploadFiles = async (
 
 /**
  * Create an event object.
- * @param name The name of the event.
- * @param payload The payload of the event.
- * @param handler The client handler to process event.
+ * @param {string} name The name of the event.
+ * @param {Object.<string, Any>} payload The payload of the event.
+ * @param {Object.<string, (number|boolean)>} event_actions The actions to take on the event.
+ * @param {string} handler The client handler to process event.
  * @returns The event object.
  */
-export const Event = (name, payload = {}, handler = null) => {
-  return { name, payload, handler };
+export const Event = (
+  name,
+  payload = {},
+  event_actions = {},
+  handler = null
+) => {
+  return { name, payload, handler, event_actions };
 };
 
 /**
@@ -501,7 +586,22 @@ export const hydrateClientStorage = (client_storage) => {
       }
     }
   }
-  if (client_storage.cookies || client_storage.local_storage) {
+  if (client_storage.session_storage && typeof window != "undefined") {
+    for (const state_key in client_storage.session_storage) {
+      const session_options = client_storage.session_storage[state_key];
+      const session_storage_value = sessionStorage.getItem(
+        session_options.name || state_key
+      );
+      if (session_storage_value != null) {
+        client_storage_values[state_key] = session_storage_value;
+      }
+    }
+  }
+  if (
+    client_storage.cookies ||
+    client_storage.local_storage ||
+    client_storage.session_storage
+  ) {
     return client_storage_values;
   }
   return {};
@@ -541,6 +641,16 @@ const applyClientStorageDelta = (client_storage, delta) => {
       ) {
         const options = client_storage.local_storage[state_key];
         localStorage.setItem(options.name || state_key, delta[substate][key]);
+      } else if (
+        client_storage.session_storage &&
+        state_key in client_storage.session_storage &&
+        typeof window !== "undefined"
+      ) {
+        const session_options = client_storage.session_storage[state_key];
+        sessionStorage.setItem(
+          session_options.name || state_key,
+          delta[substate][key]
+        );
       }
     }
   }
@@ -566,7 +676,18 @@ export const useEventLoop = (
   const [connectErrors, setConnectErrors] = useState([]);
 
   // Function to add new events to the event queue.
-  const addEvents = (events, _e, event_actions) => {
+  const addEvents = (events, args, event_actions) => {
+    if (!(args instanceof Array)) {
+      args = [args];
+    }
+
+    event_actions = events.reduce(
+      (acc, e) => ({ ...acc, ...e.event_actions }),
+      event_actions ?? {}
+    );
+
+    const _e = args.filter((o) => o?.preventDefault !== undefined)[0];
+
     if (event_actions?.preventDefault && _e?.preventDefault) {
       _e.preventDefault();
     }
@@ -585,7 +706,7 @@ export const useEventLoop = (
       debounce(
         combined_name,
         () => queueEvents(events, socket),
-        event_actions.debounce,
+        event_actions.debounce
       );
     } else {
       queueEvents(events, socket);
@@ -609,6 +730,35 @@ export const useEventLoop = (
       sentHydrate.current = true;
     }
   }, [router.isReady]);
+
+  // Handle frontend errors and send them to the backend via websocket.
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.onerror = function (msg, url, lineNo, columnNo, error) {
+      addEvents([
+        Event(`${exception_state_name}.handle_frontend_exception`, {
+          stack: error.stack,
+          component_stack: "",
+        }),
+      ]);
+      return false;
+    };
+
+    //NOTE: Only works in Chrome v49+
+    //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
+    window.onunhandledrejection = function (event) {
+      addEvents([
+        Event(`${exception_state_name}.handle_frontend_exception`, {
+          stack: event.reason.stack,
+          component_stack: "",
+        }),
+      ]);
+      return false;
+    };
+  }, []);
 
   // Main event loop.
   useEffect(() => {
@@ -657,7 +807,7 @@ export const useEventLoop = (
         const vars = {};
         vars[storage_to_state_map[e.key]] = e.newValue;
         const event = Event(
-          `${state_name}.update_vars_internal_state.update_vars_internal`,
+          `${state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
           { vars: vars }
         );
         addEvents([event], e);
@@ -671,11 +821,11 @@ export const useEventLoop = (
   // Route after the initial page hydration.
   useEffect(() => {
     const change_start = () => {
-      const main_state_dispatch = dispatch["state"]
+      const main_state_dispatch = dispatch["reflex___state____state"];
       if (main_state_dispatch !== undefined) {
-        main_state_dispatch({is_hydrated: false})
+        main_state_dispatch({ is_hydrated: false });
       }
-    }
+    };
     const change_complete = () => addEvents(onLoadInternalEvent());
     router.events.on("routeChangeStart", change_start);
     router.events.on("routeChangeComplete", change_complete);
@@ -694,7 +844,9 @@ export const useEventLoop = (
  * @returns True if the value is truthy, false otherwise.
  */
 export const isTrue = (val) => {
-  return Array.isArray(val) ? val.length > 0 : !!val;
+  if (Array.isArray(val)) return val.length > 0;
+  if (val === Object(val)) return Object.keys(val).length > 0;
+  return Boolean(val);
 };
 
 /**

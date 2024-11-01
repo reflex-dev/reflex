@@ -1,8 +1,9 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+
 from typing import Union
 
 from reflex.components.el.element import Element
-from reflex.vars import Var as Var
+from reflex.vars.base import Var
 
 
 class BaseHTML(Element):

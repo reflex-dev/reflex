@@ -1,13 +1,23 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, List, Literal, Optional, Union
+
+from __future__ import annotations
+
+from typing import List, Literal, Optional, Union
 
 from reflex.components.component import Component
-from reflex.constants import EventTriggers
-from reflex.vars import Var
+from reflex.components.core.breakpoints import Responsive
+from reflex.event import EventHandler, identity_event
+from reflex.vars.base import Var
 
 from ..base import (
     LiteralAccentColor,
     RadixThemesComponent,
+)
+
+on_value_event_spec = (
+    identity_event(list[Union[int, float]]),
+    identity_event(list[int]),
+    identity_event(list[float]),
 )
 
 
@@ -20,7 +30,7 @@ class Slider(RadixThemesComponent):
     as_child: Var[bool]
 
     # Button size "1" - "3"
-    size: Var[Literal["1", "2", "3"]]
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
     # Variant of button
     variant: Var[Literal["classic", "surface", "soft"]]
@@ -43,6 +53,9 @@ class Slider(RadixThemesComponent):
     # The name of the slider. Submitted with its owning form as part of a name/value pair.
     name: Var[str]
 
+    # The width of the slider.
+    width: Var[Optional[str]] = Var.create("100%")
+
     # The minimum value of the slider.
     min: Var[Union[float, int]]
 
@@ -61,36 +74,29 @@ class Slider(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
+    # Fired when the value of the slider changes.
+    on_change: EventHandler[on_value_event_spec]
 
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0],
-            EventTriggers.ON_VALUE_COMMIT: lambda e0: [e0],
-        }
+    # Fired when a thumb is released after being dragged.
+    on_value_commit: EventHandler[on_value_event_spec]
 
     @classmethod
     def create(
         cls,
         *children,
-        width: Optional[str] = "100%",
         **props,
     ) -> Component:
         """Create a Slider component.
 
         Args:
             *children: The children of the component.
-            width: The width of the slider.
             **props: The properties of the component.
 
         Returns:
             The component.
         """
         default_value = props.pop("default_value", [50])
+        width = props.pop("width", "100%")
 
         if isinstance(default_value, Var):
             if issubclass(default_value._var_type, (int, float)):

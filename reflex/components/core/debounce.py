@@ -6,7 +6,9 @@ from typing import Any, Type, Union
 
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
-from reflex.vars import Var, VarData
+from reflex.event import EventHandler, empty_event
+from reflex.vars import VarData
+from reflex.vars.base import Var
 
 DEFAULT_DEBOUNCE_TIMEOUT = 300
 
@@ -42,6 +44,9 @@ class DebounceInput(Component):
 
     # The element to wrap
     element: Var[Type[Component]]
+
+    # Fired when the input value changes
+    on_change: EventHandler[empty_event]
 
     @classmethod
     def create(cls, *children: Component, **props: Any) -> Component:
@@ -97,23 +102,23 @@ class DebounceInput(Component):
         props.setdefault("style", {}).update(child.style)
         if child.class_name is not None:
             props["class_name"] = f"{props.get('class_name', '')} {child.class_name}"
+        for field in ("key", "special_props"):
+            if getattr(child, field) is not None:
+                props[field] = getattr(child, field)
         child_ref = child.get_ref()
         if props.get("input_ref") is None and child_ref:
-            props["input_ref"] = Var.create_safe(child_ref, _var_is_local=False)
+            props["input_ref"] = Var(_js_expr=child_ref, _var_type=str)
             props["id"] = child.id
 
         # Set the child element to wrap, including any imports/hooks from the child.
         props.setdefault(
             "element",
-            Var.create_safe(
-                "{%s}" % (child.alias or child.tag),
-                _var_is_local=False,
-                _var_is_string=False,
-            )._replace(
+            Var(
+                _js_expr=str(child.alias or child.tag),
                 _var_type=Type[Component],
-                merge_var_data=VarData(  # type: ignore
+                _var_data=VarData(
                     imports=child._get_imports(),
-                    hooks=child._get_hooks_internal(),
+                    hooks=child._get_all_hooks(),
                 ),
             ),
         )
@@ -123,18 +128,14 @@ class DebounceInput(Component):
         component.event_triggers.update(child.event_triggers)
         component.children = child.children
         component._rename_props = child._rename_props
+        outer_get_all_custom_code = component._get_all_custom_code
+        component._get_all_custom_code = lambda: outer_get_all_custom_code().union(
+            child._get_all_custom_code()
+        )
         return component
-
-    def get_event_triggers(self) -> dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0.value],
-        }
 
     def _render(self):
         return super()._render().remove_props("ref")
+
+
+debounce_input = DebounceInput.create

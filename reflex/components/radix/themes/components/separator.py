@@ -1,7 +1,9 @@
 """Interactive components provided by @radix-ui/themes."""
+
 from typing import Literal
 
-from reflex.vars import Var
+from reflex.components.core.breakpoints import Responsive
+from reflex.vars.base import LiteralVar, Var
 
 from ..base import (
     LiteralAccentColor,
@@ -17,13 +19,13 @@ class Separator(RadixThemesComponent):
     tag = "Separator"
 
     # The size of the select: "1" | "2" | "3" | "4"
-    size: Var[LiteralSeperatorSize] = Var.create_safe("4")
+    size: Var[Responsive[LiteralSeperatorSize]] = LiteralVar.create("4")
 
     # The color of the select
     color_scheme: Var[LiteralAccentColor]
 
     # The orientation of the separator.
-    orientation: Var[Literal["horizontal", "vertical"]]
+    orientation: Var[Responsive[Literal["horizontal", "vertical"]]]
 
     # When true, signifies that it is purely visual, carries no semantic meaning, and ensures it is not present in the accessibility tree.
     decorative: Var[bool]

@@ -1,18 +1,20 @@
 """Middleware to hydrate the state."""
+
 from __future__ import annotations
 
+import dataclasses
 from typing import TYPE_CHECKING, Optional
 
 from reflex import constants
 from reflex.event import Event, get_hydrate_event
 from reflex.middleware.middleware import Middleware
 from reflex.state import BaseState, StateUpdate
-from reflex.utils import format
 
 if TYPE_CHECKING:
     from reflex.app import App
 
 
+@dataclasses.dataclass(init=True)
 class HydrateMiddleware(Middleware):
     """Middleware to handle initial app hydration."""
 
@@ -40,7 +42,7 @@ class HydrateMiddleware(Middleware):
         setattr(state, constants.CompileVars.IS_HYDRATED, False)
 
         # Get the initial state.
-        delta = format.format_state(state.dict())
+        delta = state.dict()
         # since a full dict was captured, clean any dirtiness
         state._clean()
 

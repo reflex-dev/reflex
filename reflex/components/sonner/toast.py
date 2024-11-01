@@ -2,17 +2,22 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, ClassVar, Literal, Optional, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
-from reflex.event import EventSpec, call_script
-from reflex.style import Style, color_mode
+from reflex.components.props import NoExtrasAllowedProps, PropsBase
+from reflex.event import (
+    EventSpec,
+    call_script,
+)
+from reflex.style import Style, resolved_color_mode
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
-from reflex.utils.serializers import serialize
-from reflex.vars import Var, VarData
+from reflex.utils.serializers import serializer
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
 
 LiteralPosition = Literal[
     "top-left",
@@ -23,50 +28,74 @@ LiteralPosition = Literal[
     "bottom-right",
 ]
 
+toast_ref = Var(_js_expr="refs['__toast']")
 
-toast_ref = Var.create_safe("refs['__toast']")
+
+class ToastAction(Base):
+    """A toast action that render a button in the toast."""
+
+    label: str
+    on_click: Any
 
 
-class PropsBase(Base):
-    """Base class for all props classes."""
+@serializer
+def serialize_action(action: ToastAction) -> dict:
+    """Serialize a toast action.
 
-    def json(self) -> str:
-        """Convert the object to a json string.
+    Args:
+        action: The toast action to serialize.
 
-        Returns:
-            The object as a json string.
-        """
-        from reflex.utils.serializers import serialize
+    Returns:
+        The serialized toast action with on_click formatted to queue the given event.
+    """
+    return {
+        "label": action.label,
+        "onClick": format.format_queue_events(action.on_click),
+    }
 
-        return self.__config__.json_dumps(
-            {format.to_camel_case(key): value for key, value in self.dict().items()},
-            default=serialize,
+
+def _toast_callback_signature(toast: Var) -> list[Var]:
+    """The signature for the toast callback, stripping out unserializable keys.
+
+    Args:
+        toast: The toast variable.
+
+    Returns:
+        A function call stripping non-serializable members of the toast object.
+    """
+    return [
+        Var(
+            _js_expr=f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {str(toast)}; return rest}})()"
         )
+    ]
 
 
-class ToastProps(PropsBase):
+class ToastProps(PropsBase, NoExtrasAllowedProps):
     """Props for the toast component."""
 
+    # Toast's title, renders above the description.
+    title: Optional[Union[str, Var]]
+
     # Toast's description, renders underneath the title.
-    description: str = ""
+    description: Optional[Union[str, Var]]
 
     # Whether to show the close button.
-    close_button: bool = False
+    close_button: Optional[bool]
 
     # Dark toast in light mode and vice versa.
-    invert: bool = False
+    invert: Optional[bool]
 
     # Control the sensitivity of the toast for screen readers
-    important: bool = False
+    important: Optional[bool]
 
     # Time in milliseconds that should elapse before automatically closing the toast.
-    duration: int = 4000
+    duration: Optional[int]
 
     # Position of the toast.
-    position: LiteralPosition = "bottom-right"
+    position: Optional[LiteralPosition]
 
     # If false, it'll prevent the user from dismissing the toast.
-    dismissible: bool = True
+    dismissible: Optional[bool]
 
     # TODO: fix serialization of icons for toast? (might not be possible yet)
     # Icon displayed in front of toast's text, aligned vertically.
@@ -74,51 +103,89 @@ class ToastProps(PropsBase):
 
     # TODO: fix implementation for action / cancel buttons
     # Renders a primary button, clicking it will close the toast.
-    # action: str = ""
+    action: Optional[ToastAction]
 
     # Renders a secondary button, clicking it will close the toast.
-    # cancel: str = ""
+    cancel: Optional[ToastAction]
 
     # Custom id for the toast.
-    id: str = ""
+    id: Optional[Union[str, Var]]
 
     # Removes the default styling, which allows for easier customization.
-    unstyled: bool = False
+    unstyled: Optional[bool]
 
     # Custom style for the toast.
-    style: Style = Style()
+    style: Optional[Style]
 
+    # XXX: These still do not seem to work
     # Custom style for the toast primary button.
-    # action_button_styles: Style = Style()
+    action_button_styles: Optional[Style]
 
     # Custom style for the toast secondary button.
-    # cancel_button_styles: Style = Style()
+    cancel_button_styles: Optional[Style]
+
+    # The function gets called when either the close button is clicked, or the toast is swiped.
+    on_dismiss: Optional[Any]
+
+    # Function that gets called when the toast disappears automatically after it's timeout (duration` prop).
+    on_auto_close: Optional[Any]
+
+    def dict(self, *args, **kwargs) -> dict[str, Any]:
+        """Convert the object to a dictionary.
+
+        Args:
+            *args: The arguments to pass to the base class.
+            **kwargs: The keyword arguments to pass to the base
+
+        Returns:
+            The object as a dictionary with ToastAction fields intact.
+        """
+        kwargs.setdefault("exclude_none", True)  # type: ignore
+        d = super().dict(*args, **kwargs)
+        # Keep these fields as ToastAction so they can be serialized specially
+        if "action" in d:
+            d["action"] = self.action
+            if isinstance(self.action, dict):
+                d["action"] = ToastAction(**self.action)
+        if "cancel" in d:
+            d["cancel"] = self.cancel
+            if isinstance(self.cancel, dict):
+                d["cancel"] = ToastAction(**self.cancel)
+        if "onDismiss" in d:
+            d["onDismiss"] = format.format_queue_events(
+                self.on_dismiss, _toast_callback_signature
+            )
+        if "onAutoClose" in d:
+            d["onAutoClose"] = format.format_queue_events(
+                self.on_auto_close, _toast_callback_signature
+            )
+        return d
 
 
 class Toaster(Component):
     """A Toaster Component for displaying toast notifications."""
 
-    library = "sonner@1.4.41"
+    library: str = "sonner@1.5.0"
 
     tag = "Toaster"
 
     # the theme of the toast
-    theme: Var[str] = color_mode
+    theme: Var[str] = resolved_color_mode
 
     # whether to show rich colors
-    rich_colors: Var[bool] = Var.create_safe(True)
+    rich_colors: Var[bool] = LiteralVar.create(True)
 
     # whether to expand the toast
-    expand: Var[bool] = Var.create_safe(True)
+    expand: Var[bool] = LiteralVar.create(True)
 
     # the number of toasts that are currently visible
     visible_toasts: Var[int]
 
     # the position of the toast
-    position: Var[LiteralPosition] = Var.create_safe("bottom-right")
+    position: Var[LiteralPosition] = LiteralVar.create("bottom-right")
 
     # whether to show the close button
-    close_button: Var[bool] = Var.create_safe(False)
+    close_button: Var[bool] = LiteralVar.create(False)
 
     # offset of the toast
     offset: Var[str]
@@ -144,18 +211,28 @@ class Toaster(Component):
     # Pauses toast timers when the page is hidden, e.g., when the tab is backgrounded, the browser is minimized, or the OS is locked.
     pause_when_page_is_hidden: Var[bool]
 
-    def _get_hooks(self) -> Var[str]:
-        hook = Var.create_safe(f"{toast_ref} = toast", _var_is_local=True)
-        hook._var_data = VarData(  # type: ignore
-            imports={
-                "/utils/state": [ImportVar(tag="refs")],
-                self.library: [ImportVar(tag="toast", install=False)],
-            }
+    # Marked True when any Toast component is created.
+    is_used: ClassVar[bool] = False
+
+    def add_hooks(self) -> list[Var | str]:
+        """Add hooks for the toaster component.
+
+        Returns:
+            The hooks for the toaster component.
+        """
+        hook = Var(
+            _js_expr=f"{toast_ref} = toast",
+            _var_data=VarData(
+                imports={
+                    "$/utils/state": [ImportVar(tag="refs")],
+                    self.library: [ImportVar(tag="toast", install=False)],
+                }
+            ),
         )
-        return hook
+        return [hook]
 
     @staticmethod
-    def send_toast(message: str, level: str | None = None, **props) -> EventSpec:
+    def send_toast(message: str = "", level: str | None = None, **props) -> EventSpec:
         """Send a toast message.
 
         Args:
@@ -163,21 +240,30 @@ class Toaster(Component):
             level: The level of the toast.
             **props: The options for the toast.
 
+        Raises:
+            ValueError: If the Toaster component is not created.
+
         Returns:
             The toast event.
         """
+        if not Toaster.is_used:
+            raise ValueError(
+                "Toaster component must be created before sending a toast. (use `rx.toast.provider()`)"
+            )
         toast_command = f"{toast_ref}.{level}" if level is not None else toast_ref
+        if message == "" and ("title" not in props or "description" not in props):
+            raise ValueError("Toast message or title or description must be provided.")
         if props:
-            args = serialize(ToastProps(**props))
-            toast = f"{toast_command}(`{message}`, {args})"
+            args = LiteralVar.create(ToastProps(component_name="rx.toast", **props))  # type: ignore
+            toast = f"{toast_command}(`{message}`, {str(args)})"
         else:
             toast = f"{toast_command}(`{message}`)"
 
-        toast_action = Var.create(toast, _var_is_string=False, _var_is_local=True)
-        return call_script(toast_action)  # type: ignore
+        toast_action = Var(_js_expr=toast)
+        return call_script(toast_action)
 
     @staticmethod
-    def toast_info(message: str, **kwargs):
+    def toast_info(message: str = "", **kwargs):
         """Display an info toast message.
 
         Args:
@@ -190,7 +276,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="info", **kwargs)
 
     @staticmethod
-    def toast_warning(message: str, **kwargs):
+    def toast_warning(message: str = "", **kwargs):
         """Display a warning toast message.
 
         Args:
@@ -203,7 +289,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="warning", **kwargs)
 
     @staticmethod
-    def toast_error(message: str, **kwargs):
+    def toast_error(message: str = "", **kwargs):
         """Display an error toast message.
 
         Args:
@@ -216,7 +302,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="error", **kwargs)
 
     @staticmethod
-    def toast_success(message: str, **kwargs):
+    def toast_success(message: str = "", **kwargs):
         """Display a success toast message.
 
         Args:
@@ -228,7 +314,8 @@ class Toaster(Component):
         """
         return Toaster.send_toast(message, level="success", **kwargs)
 
-    def toast_dismiss(self, id: str | None):
+    @staticmethod
+    def toast_dismiss(id: Var | str | None = None):
         """Dismiss a toast.
 
         Args:
@@ -237,12 +324,33 @@ class Toaster(Component):
         Returns:
             The toast dismiss event.
         """
-        if id is None:
-            dismiss = f"{toast_ref}.dismiss()"
+        dismiss_var_data = None
+
+        if isinstance(id, Var):
+            dismiss = f"{toast_ref}.dismiss({str(id)})"
+            dismiss_var_data = id._get_all_var_data()
+        elif isinstance(id, str):
+            dismiss = f"{toast_ref}.dismiss('{id}')"
         else:
-            dismiss = f"{toast_ref}.dismiss({id})"
-        dismiss_action = Var.create(dismiss, _var_is_string=False, _var_is_local=True)
-        return call_script(dismiss_action)  # type: ignore
+            dismiss = f"{toast_ref}.dismiss()"
+        dismiss_action = Var(
+            _js_expr=dismiss, _var_data=VarData.merge(dismiss_var_data)
+        )
+        return call_script(dismiss_action)
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a toaster component.
+
+        Args:
+            *children: The children of the toaster.
+            **props: The properties of the toaster.
+
+        Returns:
+            The toaster component.
+        """
+        cls.is_used = True
+        return super().create(*children, **props)
 
 
 # TODO: figure out why loading toast stay open forever

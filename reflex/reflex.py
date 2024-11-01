@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import atexit
 import os
-import webbrowser
 from pathlib import Path
 from typing import List, Optional
 
@@ -14,9 +13,10 @@ from reflex_cli.deployments import deployments_cli
 from reflex_cli.utils import dependency
 
 from reflex import constants
-from reflex.config import get_config
+from reflex.config import environment, get_config
 from reflex.custom_components.custom_components import custom_components_cli
-from reflex.utils import console, telemetry
+from reflex.state import reset_disk_state_manager
+from reflex.utils import console, redir, telemetry
 
 # Disable typer+rich integration for help panels
 typer.core.rich = False  # type: ignore
@@ -65,6 +65,7 @@ def _init(
     name: str,
     template: str | None = None,
     loglevel: constants.LogLevel = config.loglevel,
+    ai: bool = False,
 ):
     """Initialize a new Reflex app in the given directory."""
     from reflex.utils import exec, prerequisites
@@ -84,18 +85,33 @@ def _init(
     prerequisites.initialize_reflex_user_directory()
     prerequisites.ensure_reflex_installation_id()
 
-    # When upgrading to 0.4, show migration instructions.
-    if prerequisites.should_show_rx_chakra_migration_instructions():
-        prerequisites.show_rx_chakra_migration_instructions()
-
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
+
+    # Integrate with reflex.build.
+    generation_hash = None
+    if ai:
+        if template is None:
+            # If AI is requested and no template specified, redirect the user to reflex.build.
+            generation_hash = redir.reflex_build_redirect()
+        elif prerequisites.is_generation_hash(template):
+            # Otherwise treat the template as a generation hash.
+            generation_hash = template
+        else:
+            console.error(
+                "Cannot use `--template` option with `--ai` option. Please remove `--template` option."
+            )
+            raise typer.Exit(2)
+        template = constants.Templates.DEFAULT
 
     # Initialize the app.
     prerequisites.initialize_app(app_name, template)
 
-    # Migrate Pynecone projects to Reflex.
-    prerequisites.migrate_to_reflex()
+    # If a reflex.build generation hash is available, download the code and apply it to the main module.
+    if generation_hash:
+        prerequisites.initialize_main_module_index_from_generation(
+            app_name, generation_hash=generation_hash
+        )
 
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()
@@ -119,9 +135,13 @@ def init(
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
+    ai: bool = typer.Option(
+        False,
+        help="Use AI to create the initial template. Cannot be used with existing app or `--template` option.",
+    ),
 ):
     """Initialize a new Reflex app in the current directory."""
-    _init(name, template, loglevel)
+    _init(name, template, loglevel, ai)
 
 
 def _run(
@@ -157,12 +177,19 @@ def _run(
     if prerequisites.needs_reinit(frontend=frontend):
         _init(name=config.app_name, loglevel=loglevel)
 
-    # Find the next available open port.
-    if frontend and processes.is_process_on_port(frontend_port):
-        frontend_port = processes.change_port(frontend_port, "frontend")
+    # Delete the states folder if it exists.
+    reset_disk_state_manager()
 
-    if backend and processes.is_process_on_port(backend_port):
-        backend_port = processes.change_port(backend_port, "backend")
+    # Find the next available open port if applicable.
+    if frontend:
+        frontend_port = processes.handle_port(
+            "frontend", frontend_port, str(constants.DefaultPorts.FRONTEND_PORT)
+        )
+
+    if backend:
+        backend_port = processes.handle_port(
+            "backend", backend_port, str(constants.DefaultPorts.BACKEND_PORT)
+        )
 
     # Apply the new ports to the config.
     if frontend_port != str(config.frontend_port):
@@ -198,7 +225,8 @@ def _run(
             exec.run_frontend_prod,
             exec.run_backend_prod,
         )
-    assert setup_frontend and frontend_cmd and backend_cmd, "Invalid env"
+    if not setup_frontend or not frontend_cmd or not backend_cmd:
+        raise ValueError("Invalid env")
 
     # Post a telemetry event.
     telemetry.send(f"run-{env.value}")
@@ -216,13 +244,23 @@ def _run(
 
     # In prod mode, run the backend on a separate thread.
     if backend and env == constants.Env.PROD:
-        commands.append((backend_cmd, backend_host, backend_port))
+        commands.append(
+            (
+                backend_cmd,
+                backend_host,
+                backend_port,
+                loglevel.subprocess_level(),
+                frontend,
+            )
+        )
 
     # Start the frontend and backend.
     with processes.run_concurrently_context(*commands):
         # In dev mode, run the backend on the main thread.
         if backend and env == constants.Env.DEV:
-            backend_cmd(backend_host, int(backend_port))
+            backend_cmd(
+                backend_host, int(backend_port), loglevel.subprocess_level(), frontend
+            )
             # The windows uvicorn bug workaround
             # https://github.com/reflex-dev/reflex/issues/2335
             if constants.IS_WINDOWS and exec.frontend_process:
@@ -236,9 +274,17 @@ def run(
         constants.Env.DEV, help="The environment to run the app in."
     ),
     frontend: bool = typer.Option(
-        False, "--frontend-only", help="Execute only frontend."
+        False,
+        "--frontend-only",
+        help="Execute only frontend.",
+        envvar=constants.ENV_FRONTEND_ONLY_ENV_VAR,
     ),
-    backend: bool = typer.Option(False, "--backend-only", help="Execute only backend."),
+    backend: bool = typer.Option(
+        False,
+        "--backend-only",
+        help="Execute only backend.",
+        envvar=constants.ENV_BACKEND_ONLY_ENV_VAR,
+    ),
     frontend_port: str = typer.Option(
         config.frontend_port, help="Specify a different frontend port."
     ),
@@ -253,6 +299,12 @@ def run(
     ),
 ):
     """Run the app in the current directory."""
+    if frontend and backend:
+        console.error("Cannot use both --frontend-only and --backend-only options.")
+        raise typer.Exit(1)
+    os.environ[constants.ENV_BACKEND_ONLY_ENV_VAR] = str(backend).lower()
+    os.environ[constants.ENV_FRONTEND_ONLY_ENV_VAR] = str(frontend).lower()
+
     _run(env, frontend, backend, frontend_port, backend_port, backend_host, loglevel)
 
 
@@ -294,7 +346,7 @@ def export(
         backend=backend,
         zip_dest_dir=zip_dest_dir,
         upload_db_file=upload_db_file,
-        loglevel=loglevel,
+        loglevel=loglevel.subprocess_level(),
     )
 
 
@@ -368,7 +420,7 @@ def db_init():
         return
 
     # Check the alembic config.
-    if Path(constants.ALEMBIC_CONFIG).exists():
+    if environment.ALEMBIC_CONFIG.exists():
         console.error(
             "Database is already initialized. Use "
             "[bold]reflex db makemigrations[/bold] to create schema change "
@@ -425,17 +477,6 @@ def makemigrations(
             console.error(
                 f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
             )
-
-
-@script_cli.command(
-    name="keep-chakra",
-    help="Change all rx.<component> references to rx.chakra.<component>, to preserve Chakra UI usage.",
-)
-def keep_chakra():
-    """Change all rx.<component> references to rx.chakra.<component>, to preserve Chakra UI usage."""
-    from reflex.utils import prerequisites
-
-    prerequisites.migrate_to_rx_chakra()
 
 
 @cli.command()
@@ -540,7 +581,7 @@ def deploy(
             frontend=frontend,
             backend=backend,
             zipping=zipping,
-            loglevel=loglevel,
+            loglevel=loglevel.subprocess_level(),
             upload_db_file=upload_db_file,
         ),
         key=key,
@@ -554,20 +595,8 @@ def deploy(
         interactive=interactive,
         with_metrics=with_metrics,
         with_tracing=with_tracing,
-        loglevel=loglevel.value,
+        loglevel=loglevel.subprocess_level(),
     )
-
-
-@cli.command()
-def demo(
-    frontend_port: str = typer.Option(
-        "3001", help="Specify a different frontend port."
-    ),
-    backend_port: str = typer.Option("8001", help="Specify a different backend port."),
-):
-    """Run the demo app."""
-    # Open the demo app in a terminal.
-    webbrowser.open("https://demo.reflex.run")
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")

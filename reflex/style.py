@@ -2,43 +2,94 @@
 
 from __future__ import annotations
 
-from typing import Any, Tuple
+from typing import Any, Literal, Tuple, Type
 
 from reflex import constants
-from reflex.event import EventChain
+from reflex.components.core.breakpoints import Breakpoints, breakpoints_values
+from reflex.event import EventChain, EventHandler
 from reflex.utils import format
+from reflex.utils.exceptions import ReflexError
 from reflex.utils.imports import ImportVar
-from reflex.vars import BaseVar, Var, VarData
+from reflex.utils.types import get_origin
+from reflex.vars import VarData
+from reflex.vars.base import CallableVar, LiteralVar, Var
+from reflex.vars.function import FunctionVar
+from reflex.vars.object import ObjectVar
 
-VarData.update_forward_refs()  # Ensure all type definitions are resolved
-
+SYSTEM_COLOR_MODE: str = "system"
 LIGHT_COLOR_MODE: str = "light"
 DARK_COLOR_MODE: str = "dark"
+LiteralColorMode = Literal["system", "light", "dark"]
 
 # Reference the global ColorModeContext
-color_mode_var_data = VarData(  # type: ignore
-    imports={
-        f"/{constants.Dirs.CONTEXTS_PATH}": {ImportVar(tag="ColorModeContext")},
-        "react": {ImportVar(tag="useContext")},
-    },
-    hooks={
-        f"const [ {constants.ColorMode.NAME}, {constants.ColorMode.TOGGLE} ] = useContext(ColorModeContext)": None,
-    },
-)
-# Var resolves to the current color mode for the app ("light" or "dark")
-color_mode = BaseVar(
-    _var_name=constants.ColorMode.NAME,
-    _var_type="str",
-    _var_data=color_mode_var_data,
-)
-# Var resolves to a function invocation that toggles the color mode
-toggle_color_mode = BaseVar(
-    _var_name=constants.ColorMode.TOGGLE,
-    _var_type=EventChain,
-    _var_data=color_mode_var_data,
-)
+color_mode_imports = {
+    f"$/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="ColorModeContext")],
+    "react": [ImportVar(tag="useContext")],
+}
 
-breakpoints = ["0", "30em", "48em", "62em", "80em", "96em"]
+
+def _color_mode_var(_js_expr: str, _var_type: Type = str) -> Var:
+    """Create a Var that destructs the _js_expr from ColorModeContext.
+
+    Args:
+        _js_expr: The name of the variable to get from ColorModeContext.
+        _var_type: The type of the Var.
+
+    Returns:
+        The Var that resolves to the color mode.
+    """
+    return Var(
+        _js_expr=_js_expr,
+        _var_type=_var_type,
+        _var_data=VarData(
+            imports=color_mode_imports,
+            hooks={f"const {{ {_js_expr} }} = useContext(ColorModeContext)": None},
+        ),
+    ).guess_type()
+
+
+@CallableVar
+def set_color_mode(
+    new_color_mode: LiteralColorMode | Var[LiteralColorMode] | None = None,
+) -> Var[EventChain]:
+    """Create an EventChain Var that sets the color mode to a specific value.
+
+    Note: `set_color_mode` is not a real event and cannot be triggered from a
+    backend event handler.
+
+    Args:
+        new_color_mode: The color mode to set.
+
+    Returns:
+        The EventChain Var that can be passed to an event trigger.
+    """
+    base_setter = _color_mode_var(
+        _js_expr=constants.ColorMode.SET,
+        _var_type=EventChain,
+    )
+    if new_color_mode is None:
+        return base_setter
+
+    if not isinstance(new_color_mode, Var):
+        new_color_mode = LiteralVar.create(new_color_mode)
+
+    return Var(
+        f"() => {str(base_setter)}({str(new_color_mode)})",
+        _var_data=VarData.merge(
+            base_setter._get_all_var_data(), new_color_mode._get_all_var_data()
+        ),
+    ).to(FunctionVar, EventChain)  # type: ignore
+
+
+# Var resolves to the current color mode for the app ("light", "dark" or "system")
+color_mode = _color_mode_var(_js_expr=constants.ColorMode.NAME)
+# Var resolves to the resolved color mode for the app ("light" or "dark")
+resolved_color_mode = _color_mode_var(_js_expr=constants.ColorMode.RESOLVED_NAME)
+# Var resolves to a function invocation that toggles the color mode
+toggle_color_mode = _color_mode_var(
+    _js_expr=constants.ColorMode.TOGGLE,
+    _var_type=EventChain,
+)
 
 STYLE_PROP_SHORTHAND_MAPPING = {
     "paddingX": ("paddingInlineStart", "paddingInlineEnd"),
@@ -47,22 +98,26 @@ STYLE_PROP_SHORTHAND_MAPPING = {
     "marginY": ("marginTop", "marginBottom"),
     "bg": ("background",),
     "bgColor": ("backgroundColor",),
+    # Radix components derive their font from this CSS var, not inherited from body or class.
+    "fontFamily": ("fontFamily", "--default-font-family"),
 }
 
 
-def media_query(breakpoint_index: int):
+def media_query(breakpoint_expr: str):
     """Create a media query selector.
 
     Args:
-        breakpoint_index: The index of the breakpoint to use.
+        breakpoint_expr: The CSS expression representing the breakpoint.
 
     Returns:
         The media query selector used as a key in emotion css dict.
     """
-    return f"@media screen and (min-width: {breakpoints[breakpoint_index]})"
+    return f"@media screen and (min-width: {breakpoint_expr})"
 
 
-def convert_item(style_item: str | Var) -> tuple[str, VarData | None]:
+def convert_item(
+    style_item: int | str | Var,
+) -> tuple[str | Var, VarData | None]:
     """Format a single value in a style dictionary.
 
     Args:
@@ -70,23 +125,31 @@ def convert_item(style_item: str | Var) -> tuple[str, VarData | None]:
 
     Returns:
         The formatted style item and any associated VarData.
+
+    Raises:
+        ReflexError: If an EventHandler is used as a style value
     """
+    if isinstance(style_item, EventHandler):
+        raise ReflexError(
+            "EventHandlers cannot be used as style values. "
+            "Please use a Var or a literal value."
+        )
+
     if isinstance(style_item, Var):
-        # If the value is a Var, extract the var_data and cast as str.
-        return str(style_item), style_item._var_data
+        return style_item, style_item._get_all_var_data()
+
+    # if isinstance(style_item, str) and REFLEX_VAR_OPENING_TAG not in style_item:
+    #     return style_item, None
 
     # Otherwise, convert to Var to collapse VarData encoded in f-string.
-    new_var = Var.create(style_item)
-    if new_var is not None and new_var._var_data:
-        # The wrapped backtick is used to identify the Var for interpolation.
-        return f"`{str(new_var)}`", new_var._var_data
-
-    return style_item, None
+    new_var = LiteralVar.create(style_item)
+    var_data = new_var._get_all_var_data() if new_var is not None else None
+    return new_var, var_data
 
 
 def convert_list(
     responsive_list: list[str | dict | Var],
-) -> tuple[list[str | dict], VarData | None]:
+) -> tuple[list[str | dict[str, Var | list | dict]], VarData | None]:
     """Format a responsive value list.
 
     Args:
@@ -108,7 +171,9 @@ def convert_list(
     return converted_value, VarData.merge(*item_var_datas)
 
 
-def convert(style_dict):
+def convert(
+    style_dict: dict[str, Var | dict | list | str],
+) -> tuple[dict[str, str | list | dict], VarData | None]:
     """Format a style dictionary.
 
     Args:
@@ -125,8 +190,25 @@ def convert(style_dict):
             out[k] = return_value
 
     for key, value in style_dict.items():
-        keys = format_style_key(key)
-        if isinstance(value, dict):
+        keys = (
+            format_style_key(key)
+            if not isinstance(value, (dict, ObjectVar))
+            or (
+                isinstance(value, Breakpoints)
+                and all(not isinstance(v, dict) for v in value.values())
+            )
+            or (
+                isinstance(value, ObjectVar)
+                and not issubclass(get_origin(value._var_type) or value._var_type, dict)
+            )
+            else (key,)
+        )
+
+        if isinstance(value, Var):
+            return_val = value
+            new_var_data = value._get_all_var_data()
+            update_out_dict(return_val, keys)
+        elif isinstance(value, dict):
             # Recursively format nested style dictionaries.
             return_val, new_var_data = convert(value)
             update_out_dict(return_val, keys)
@@ -139,6 +221,10 @@ def convert(style_dict):
             update_out_dict(return_val, keys)
         # Combine all the collected VarData instances.
         var_data = VarData.merge(var_data, new_var_data)
+
+    if isinstance(style_dict, Breakpoints):
+        out = Breakpoints(out).factorize()
+
     return out, var_data
 
 
@@ -201,10 +287,10 @@ class Style(dict):
             value: The value to set.
         """
         # Create a Var to collapse VarData encoded in f-string.
-        _var = Var.create(value)
+        _var = LiteralVar.create(value)
         if _var is not None:
             # Carry the imports/hooks when setting a Var as a value.
-            self._var_data = VarData.merge(self._var_data, _var._var_data)
+            self._var_data = VarData.merge(self._var_data, _var._get_all_var_data())
         super().__setitem__(key, value)
 
 
@@ -212,14 +298,13 @@ def _format_emotion_style_pseudo_selector(key: str) -> str:
     """Format a pseudo selector for emotion CSS-in-JS.
 
     Args:
-        key: Underscore-prefixed or colon-prefixed pseudo selector key (_hover).
+        key: Underscore-prefixed or colon-prefixed pseudo selector key (_hover/:hover).
 
     Returns:
         A self-referential pseudo selector key (&:hover).
     """
     prefix = None
     if key.startswith("_"):
-        # Handle pseudo selectors in chakra style format.
         prefix = "&:"
         key = key[1:]
     if key.startswith(":"):
@@ -245,14 +330,22 @@ def format_as_emotion(style_dict: dict[str, Any]) -> Style | None:
 
     for orig_key, value in style_dict.items():
         key = _format_emotion_style_pseudo_selector(orig_key)
-        if isinstance(value, list):
-            # Apply media queries from responsive value list.
-            mbps = {
-                media_query(bp): (
-                    bp_value if isinstance(bp_value, dict) else {key: bp_value}
-                )
-                for bp, bp_value in enumerate(value)
-            }
+        if isinstance(value, (Breakpoints, list)):
+            if isinstance(value, Breakpoints):
+                mbps = {
+                    media_query(bp): (
+                        bp_value if isinstance(bp_value, dict) else {key: bp_value}
+                    )
+                    for bp, bp_value in value.items()
+                }
+            else:
+                # Apply media queries from responsive value list.
+                mbps = {
+                    media_query([0, *breakpoints_values][bp]): (
+                        bp_value if isinstance(bp_value, dict) else {key: bp_value}
+                    )
+                    for bp, bp_value in enumerate(value)
+                }
             if key.startswith("&:"):
                 emotion_style[key] = mbps
             else:
@@ -270,7 +363,7 @@ def format_as_emotion(style_dict: dict[str, Any]) -> Style | None:
 
 
 def convert_dict_to_style_and_format_emotion(
-    raw_dict: dict[str, Any]
+    raw_dict: dict[str, Any],
 ) -> dict[str, Any] | None:
     """Convert a dict to a style dict and then format as emotion.
 

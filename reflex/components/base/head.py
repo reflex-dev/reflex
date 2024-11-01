@@ -15,3 +15,6 @@ class Head(NextHeadLib, MemoizationLeaf):
     tag = "NextHead"
 
     is_default = True
+
+
+head = Head.create

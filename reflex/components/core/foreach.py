@@ -1,4 +1,5 @@
 """Create a list of components from an iterable."""
+
 from __future__ import annotations
 
 import inspect
@@ -8,8 +9,8 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.tags import IterTag
 from reflex.constants import MemoizationMode
-from reflex.utils import console
-from reflex.vars import Var
+from reflex.state import ComponentState
+from reflex.vars.base import LiteralVar, Var
 
 
 class ForeachVarError(TypeError):
@@ -36,35 +37,36 @@ class Foreach(Component):
         cls,
         iterable: Var[Iterable] | Iterable,
         render_fn: Callable,
-        **props,
     ) -> Foreach:
         """Create a foreach component.
 
         Args:
             iterable: The iterable to create components from.
             render_fn: A function from the render args to the component.
-            **props: The attributes to pass to each child component (deprecated).
 
         Returns:
             The foreach component.
 
         Raises:
             ForeachVarError: If the iterable is of type Any.
+            TypeError: If the render function is a ComponentState.
         """
-        if props:
-            console.deprecate(
-                feature_name="Passing props to rx.foreach",
-                reason="it does not have the intended effect and may be confusing",
-                deprecation_version="0.5.0",
-                removal_version="0.6.0",
-            )
-        iterable = Var.create_safe(iterable)
+        iterable = LiteralVar.create(iterable)
         if iterable._var_type == Any:
             raise ForeachVarError(
-                f"Could not foreach over var `{iterable._var_full_name}` of type Any. "
+                f"Could not foreach over var `{str(iterable)}` of type Any. "
                 "(If you are trying to foreach over a state var, add a type annotation to the var). "
-                "See https://reflex.dev/docs/library/layout/foreach/"
+                "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
             )
+
+        if (
+            hasattr(render_fn, "__qualname__")
+            and render_fn.__qualname__ == ComponentState.create.__qualname__
+        ):
+            raise TypeError(
+                "Using a ComponentState as `render_fn` inside `rx.foreach` is not supported yet."
+            )
+
         component = cls(
             iterable=iterable,
             render_fn=render_fn,
@@ -83,7 +85,8 @@ class Foreach(Component):
         if len(params) == 0 or len(params) > 2:
             raise ForeachRenderError(
                 "Expected 1 or 2 parameters in foreach render function, got "
-                f"{[p.name for p in params]}. See https://reflex.dev/docs/library/layout/foreach/"
+                f"{[p.name for p in params]}. See "
+                "https://reflex.dev/docs/library/dynamic-rendering/foreach/"
             )
 
         if len(params) >= 1:
@@ -123,8 +126,11 @@ class Foreach(Component):
 
         return dict(
             tag,
-            iterable_state=tag.iterable._var_full_name,
+            iterable_state=str(tag.iterable),
             arg_name=tag.arg_var_name,
             arg_index=tag.get_index_var_arg(),
             iterable_type=tag.iterable._var_type.mro()[0].__name__,
         )
+
+
+foreach = Foreach.create

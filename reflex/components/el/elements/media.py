@@ -1,7 +1,10 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+
 from typing import Any, Union
 
-from reflex.vars import Var as Var
+from reflex import Component, ComponentNamespace
+from reflex.constants.colors import Color
+from reflex.vars.base import Var
 
 from .base import BaseHTML
 
@@ -115,6 +118,24 @@ class Img(BaseHTML):
 
     # The name of the map to use with the image
     use_map: Var[Union[str, int, bool]]
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Override create method to apply source attribute to value if user fails to pass in attribute.
+
+        Args:
+            *children: The children of the component.
+            **props: The props of the component.
+
+        Returns:
+            The component.
+
+        """
+        return (
+            super().create(src=children[0], **props)
+            if children
+            else super().create(*children, **props)
+        )
 
 
 class Map(BaseHTML):
@@ -288,6 +309,189 @@ class Svg(BaseHTML):
     """Display the svg element."""
 
     tag = "svg"
+    # The width of the svg.
+    width: Var[Union[str, int]]
+    # The height of the svg.
+    height: Var[Union[str, int]]
+    # The XML namespace declaration.
+    xmlns: Var[str]
+
+
+class Text(BaseHTML):
+    """The SVG text component."""
+
+    tag = "text"
+    # The x coordinate of the starting point of the text baseline.
+    x: Var[Union[str, int]]
+    # The y coordinate of the starting point of the text baseline.
+    y: Var[Union[str, int]]
+    # Shifts the text position horizontally from a previous text element.
+    dx: Var[Union[str, int]]
+    # Shifts the text position vertically from a previous text element.
+    dy: Var[Union[str, int]]
+    # Rotates orientation of each individual glyph.
+    rotate: Var[Union[str, int]]
+    # How the text is stretched or compressed to fit the width defined by the text_length attribute.
+    length_adjust: Var[str]
+    # A width that the text should be scaled to fit.
+    text_length: Var[Union[str, int]]
+
+
+class Line(BaseHTML):
+    """The SVG line component."""
+
+    tag = "line"
+    # The x-axis coordinate of the line starting point.
+    x1: Var[Union[str, int]]
+    # The x-axis coordinate of the the line ending point.
+    x2: Var[Union[str, int]]
+    # The y-axis coordinate of the line starting point.
+    y1: Var[Union[str, int]]
+    # The y-axis coordinate of the the line ending point.
+    y2: Var[Union[str, int]]
+    # The total path length, in user units.
+    path_length: Var[int]
+
+
+class Circle(BaseHTML):
+    """The SVG circle component."""
+
+    tag = "circle"
+    # The x-axis coordinate of the center of the circle.
+    cx: Var[Union[str, int]]
+    # The y-axis coordinate of the center of the circle.
+    cy: Var[Union[str, int]]
+    # The radius of the circle.
+    r: Var[Union[str, int]]
+    # The total length for the circle's circumference, in user units.
+    path_length: Var[int]
+
+
+class Ellipse(BaseHTML):
+    """The SVG ellipse component."""
+
+    tag = "ellipse"
+    # The x position of the center of the ellipse.
+    cx: Var[Union[str, int]]
+    # The y position of the center of the ellipse.
+    cy: Var[Union[str, int]]
+    # The radius of the ellipse on the x axis.
+    rx: Var[Union[str, int]]
+    # The radius of the ellipse on the y axis.
+    ry: Var[Union[str, int]]
+    # The total length for the ellipse's circumference, in user units.
+    path_length: Var[int]
+
+
+class Rect(BaseHTML):
+    """The SVG rect component."""
+
+    tag = "rect"
+    # The x coordinate of the rect.
+    x: Var[Union[str, int]]
+    # The y coordinate of the rect.
+    y: Var[Union[str, int]]
+    # The width of the rect
+    width: Var[Union[str, int]]
+    # The height of the rect.
+    height: Var[Union[str, int]]
+    # The horizontal corner radius of the rect. Defaults to ry if it is specified.
+    rx: Var[Union[str, int]]
+    # The vertical corner radius of the rect. Defaults to rx if it is specified.
+    ry: Var[Union[str, int]]
+    # The total length of the rectangle's perimeter, in user units.
+    path_length: Var[int]
+
+
+class Polygon(BaseHTML):
+    """The SVG polygon component."""
+
+    tag = "polygon"
+    # defines the list of points (pairs of x,y absolute coordinates) required to draw the polygon.
+    points: Var[str]
+    # This prop lets specify the total length for the path, in user units.
+    path_length: Var[int]
+
+
+class Defs(BaseHTML):
+    """Display the defs element."""
+
+    tag = "defs"
+
+
+class LinearGradient(BaseHTML):
+    """Display the linearGradient element."""
+
+    tag = "linearGradient"
+
+    # Units for the gradient.
+    gradient_units: Var[Union[str, bool]]
+
+    # Transform applied to the gradient.
+    gradient_transform: Var[Union[str, bool]]
+
+    # Method used to spread the gradient.
+    spread_method: Var[Union[str, bool]]
+
+    # X coordinate of the starting point of the gradient.
+    x1: Var[Union[str, int, bool]]
+
+    # X coordinate of the ending point of the gradient.
+    x2: Var[Union[str, int, bool]]
+
+    # Y coordinate of the starting point of the gradient.
+    y1: Var[Union[str, int, bool]]
+
+    # Y coordinate of the ending point of the gradient.
+    y2: Var[Union[str, int, bool]]
+
+
+class RadialGradient(BaseHTML):
+    """Display the radialGradient element."""
+
+    tag = "radialGradient"
+
+    # The x coordinate of the end circle of the radial gradient.
+    cx: Var[Union[str, int, bool]]
+
+    # The y coordinate of the end circle of the radial gradient.
+    cy: Var[Union[str, int, bool]]
+
+    # The radius of the start circle of the radial gradient.
+    fr: Var[Union[str, int, bool]]
+
+    # The x coordinate of the start circle of the radial gradient.
+    fx: Var[Union[str, int, bool]]
+
+    # The y coordinate of the start circle of the radial gradient.
+    fy: Var[Union[str, int, bool]]
+
+    # Units for the gradient.
+    gradient_units: Var[Union[str, bool]]
+
+    # Transform applied to the gradient.
+    gradient_transform: Var[Union[str, bool]]
+
+    # The radius of the end circle of the radial gradient.
+    r: Var[Union[str, int, bool]]
+
+    # Method used to spread the gradient.
+    spread_method: Var[Union[str, bool]]
+
+
+class Stop(BaseHTML):
+    """Display the stop element."""
+
+    tag = "stop"
+
+    # Offset of the gradient stop.
+    offset: Var[Union[str, float, int]]
+
+    # Color of the gradient stop.
+    stop_color: Var[Union[str, Color, bool]]
+
+    # Opacity of the gradient stop.
+    stop_opacity: Var[Union[str, float, int, bool]]
 
 
 class Path(BaseHTML):
@@ -295,5 +499,37 @@ class Path(BaseHTML):
 
     tag = "path"
 
-    # Defines the shape of the path
+    # Defines the shape of the path.
     d: Var[Union[str, int, bool]]
+
+
+class SVG(ComponentNamespace):
+    """SVG component namespace."""
+
+    text = staticmethod(Text.create)
+    line = staticmethod(Line.create)
+    circle = staticmethod(Circle.create)
+    ellipse = staticmethod(Ellipse.create)
+    rect = staticmethod(Rect.create)
+    polygon = staticmethod(Polygon.create)
+    path = staticmethod(Path.create)
+    stop = staticmethod(Stop.create)
+    linear_gradient = staticmethod(LinearGradient.create)
+    radial_gradient = staticmethod(RadialGradient.create)
+    defs = staticmethod(Defs.create)
+    __call__ = staticmethod(Svg.create)
+
+
+area = Area.create
+audio = Audio.create
+image = img = Img.create
+map = Map.create
+track = Track.create
+video = Video.create
+embed = Embed.create
+iframe = Iframe.create
+object = Object.create
+picture = Picture.create
+portal = Portal.create
+source = Source.create
+svg = SVG()

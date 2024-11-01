@@ -9,32 +9,25 @@ import inspect
 import logging
 import re
 import subprocess
-import textwrap
 import typing
+from fileinput import FileInput
 from inspect import getfullargspec
+from itertools import chain
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
-from typing import Any, Callable, Iterable, Type, get_args
-
-try:
-    import black
-    import black.mode
-except ImportError:
-    black = None
+from typing import Any, Callable, Iterable, Type, get_args, get_origin
 
 from reflex.components.component import Component
 from reflex.utils import types as rx_types
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 logger = logging.getLogger("pyi_generator")
 
-INIT_FILE = Path("reflex/__init__.pyi").resolve()
 PWD = Path(".").resolve()
 
 EXCLUDED_FILES = [
-    "__init__.py",
-    # "app.py",
+    "app.py",
     "component.py",
     "bare.py",
     "foreach.py",
@@ -65,11 +58,21 @@ EXCLUDED_PROPS = [
 DEFAULT_TYPING_IMPORTS = {
     "overload",
     "Any",
+    "Callable",
     "Dict",
     # "List",
     "Literal",
     "Optional",
     "Union",
+}
+
+# TODO: fix import ordering and unused imports with ruff later
+DEFAULT_IMPORTS = {
+    "typing": sorted(DEFAULT_TYPING_IMPORTS),
+    "reflex.components.core.breakpoints": ["Breakpoints"],
+    "reflex.event": ["EventChain", "EventHandler", "EventSpec", "EventType"],
+    "reflex.style": ["Style"],
+    "reflex.vars.base": ["Var"],
 }
 
 
@@ -114,6 +117,9 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
 
     Returns:
         The resolved type hint as a str.
+
+    Raises:
+        TypeError: If the value name is not visible in the type hint globals.
     """
     res = ""
     args = get_args(value)
@@ -128,6 +134,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 for arg in value.__args__
                 if arg is not type(None)
             ]
+            res_args.sort()
             if len(res_args) == 1:
                 return f"Optional[{res_args[0]}]"
             else:
@@ -138,11 +145,12 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
             _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
             for arg in value.__args__
         ]
+        res_args.sort()
         return f"Union[{', '.join(res_args)}]"
 
     if args:
         inner_container_type_args = (
-            [repr(arg) for arg in args]
+            sorted((repr(arg) for arg in args))
             if rx_types.is_literal(value)
             else [
                 _get_type_hint(arg, type_hint_globals, is_optional=False)
@@ -150,9 +158,25 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 if arg is not type(None)
             ]
         )
+
+        if (
+            value.__module__ not in ["builtins", "__builtins__"]
+            and value.__name__ not in type_hint_globals
+        ):
+            raise TypeError(
+                f"{value.__module__ + '.' + value.__name__} is not a default import, "
+                "add it to DEFAULT_IMPORTS in pyi_generator.py"
+            )
+
         res = f"{value.__name__}[{', '.join(inner_container_type_args)}]"
 
         if value.__name__ == "Var":
+            args = list(
+                chain.from_iterable(
+                    [get_args(arg) if rx_types.is_union(arg) else [arg] for arg in args]
+                )
+            )
+
             # For Var types, Union with the inner args so they can be passed directly.
             types = [res] + [
                 _get_type_hint(arg, type_hint_globals, is_optional=False)
@@ -160,7 +184,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 if arg is not type(None)
             ]
             if len(types) > 1:
-                res = ", ".join(types)
+                res = ", ".join(sorted(types))
                 res = f"Union[{res}]"
     elif isinstance(value, str):
         ev = eval(value, type_hint_globals)
@@ -190,7 +214,9 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
     return res
 
 
-def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
+def _generate_imports(
+    typing_imports: Iterable[str],
+) -> list[ast.ImportFrom | ast.Import]:
     """Generate the import statements for the stub file.
 
     Args:
@@ -200,22 +226,11 @@ def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
         The list of import statements.
     """
     return [
-        ast.ImportFrom(
-            module="typing",
-            names=[ast.alias(name=imp) for imp in sorted(typing_imports)],
-        ),
-        *ast.parse(  # type: ignore
-            textwrap.dedent(
-                """
-                from reflex.vars import Var, BaseVar, ComputedVar
-                from reflex.event import EventChain, EventHandler, EventSpec
-                from reflex.style import Style"""
-            )
-        ).body,
-        # *[
-        #     ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])
-        #     for name, values in EXTRA_IMPORTS.items()
-        # ],
+        *[
+            ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])
+            for name, values in DEFAULT_IMPORTS.items()
+        ],
+        ast.Import([ast.alias("reflex")]),
     ]
 
 
@@ -322,6 +337,7 @@ def _extract_class_props_as_ast_nodes(
     all_props = []
     kwargs = []
     for target_class in clzs:
+        event_triggers = target_class().get_event_triggers()
         # Import from the target class to ensure type hints are resolvable.
         exec(f"from {target_class.__module__} import *", type_hint_globals)
         for name, value in target_class.__annotations__.items():
@@ -329,6 +345,7 @@ def _extract_class_props_as_ast_nodes(
                 name in spec.kwonlyargs
                 or name in EXCLUDED_PROPS
                 or name in all_props
+                or name in event_triggers
                 or (isinstance(value, str) and "ClassVar" in value)
             ):
                 continue
@@ -356,6 +373,64 @@ def _extract_class_props_as_ast_nodes(
                 )
             )
     return kwargs
+
+
+def type_to_ast(typ, cls: type) -> ast.AST:
+    """Converts any type annotation into its AST representation.
+    Handles nested generic types, unions, etc.
+
+    Args:
+        typ: The type annotation to convert.
+        cls: The class where the type annotation is used.
+
+    Returns:
+        The AST representation of the type annotation.
+    """
+    if typ is type(None):
+        return ast.Name(id="None")
+
+    origin = get_origin(typ)
+
+    # Handle plain types (int, str, custom classes, etc.)
+    if origin is None:
+        if hasattr(typ, "__name__"):
+            if typ.__module__.startswith("reflex."):
+                typ_parts = typ.__module__.split(".")
+                cls_parts = cls.__module__.split(".")
+
+                zipped = list(zip(typ_parts, cls_parts, strict=False))
+
+                if all(a == b for a, b in zipped) and len(typ_parts) == len(cls_parts):
+                    return ast.Name(id=typ.__name__)
+
+                return ast.Name(id=typ.__module__ + "." + typ.__name__)
+            return ast.Name(id=typ.__name__)
+        elif hasattr(typ, "_name"):
+            return ast.Name(id=typ._name)
+        return ast.Name(id=str(typ))
+
+    # Get the base type name (List, Dict, Optional, etc.)
+    base_name = origin._name if hasattr(origin, "_name") else origin.__name__
+
+    # Get type arguments
+    args = get_args(typ)
+
+    # Handle empty type arguments
+    if not args:
+        return ast.Name(id=base_name)
+
+    # Convert all type arguments recursively
+    arg_nodes = [type_to_ast(arg, cls) for arg in args]
+
+    # Special case for single-argument types (like List[T] or Optional[T])
+    if len(arg_nodes) == 1:
+        slice_value = arg_nodes[0]
+    else:
+        slice_value = ast.Tuple(elts=arg_nodes, ctx=ast.Load())
+
+    return ast.Subscript(
+        value=ast.Name(id=base_name), slice=ast.Index(value=slice_value), ctx=ast.Load()
+    )
 
 
 def _get_parent_imports(func):
@@ -413,19 +488,103 @@ def _generate_component_create_functiondef(
     all_props = [arg[0].arg for arg in prop_kwargs]
     kwargs.extend(prop_kwargs)
 
+    def figure_out_return_type(annotation: Any):
+        if inspect.isclass(annotation) and issubclass(annotation, inspect._empty):
+            return ast.Name(id="EventType")
+
+        if not isinstance(annotation, str) and get_origin(annotation) is tuple:
+            arguments = get_args(annotation)
+
+            arguments_without_var = [
+                get_args(argument)[0] if get_origin(argument) == Var else argument
+                for argument in arguments
+            ]
+
+            # Convert each argument type to its AST representation
+            type_args = [type_to_ast(arg, cls=clz) for arg in arguments_without_var]
+
+            # Join the type arguments with commas for EventType
+            args_str = ", ".join(ast.unparse(arg) for arg in type_args)
+
+            # Create EventType using the joined string
+            event_type = ast.Name(id=f"EventType[{args_str}]")
+
+            return event_type
+
+        if isinstance(annotation, str) and annotation.startswith("Tuple["):
+            inside_of_tuple = annotation.removeprefix("Tuple[").removesuffix("]")
+
+            if inside_of_tuple == "()":
+                return ast.Name(id="EventType[[]]")
+
+            arguments = [""]
+
+            bracket_count = 0
+
+            for char in inside_of_tuple:
+                if char == "[":
+                    bracket_count += 1
+                elif char == "]":
+                    bracket_count -= 1
+
+                if char == "," and bracket_count == 0:
+                    arguments.append("")
+                else:
+                    arguments[-1] += char
+
+            arguments = [argument.strip() for argument in arguments]
+
+            arguments_without_var = [
+                argument.removeprefix("Var[").removesuffix("]")
+                if argument.startswith("Var[")
+                else argument
+                for argument in arguments
+            ]
+
+            return ast.Name(id=f"EventType[{', '.join(arguments_without_var)}]")
+        return ast.Name(id="EventType")
+
+    event_triggers = clz().get_event_triggers()
+
     # event handler kwargs
     kwargs.extend(
         (
             ast.arg(
                 arg=trigger,
-                annotation=ast.Name(
-                    id="Optional[Union[EventHandler, EventSpec, list, function, BaseVar]]"
+                annotation=ast.Subscript(
+                    ast.Name("Optional"),
+                    ast.Index(  # type: ignore
+                        value=ast.Name(
+                            id=ast.unparse(
+                                figure_out_return_type(
+                                    inspect.signature(event_specs).return_annotation
+                                )
+                                if not isinstance(
+                                    event_specs := event_triggers[trigger], tuple
+                                )
+                                else ast.Subscript(
+                                    ast.Name("Union"),
+                                    ast.Tuple(
+                                        [
+                                            figure_out_return_type(
+                                                inspect.signature(
+                                                    event_spec
+                                                ).return_annotation
+                                            )
+                                            for event_spec in event_specs
+                                        ]
+                                    ),
+                                )
+                            )
+                        )
+                    ),
                 ),
             ),
             ast.Constant(value=None),
         )
-        for trigger in sorted(clz().get_event_triggers().keys())
+        for trigger in sorted(event_triggers)
     )
+
     logger.debug(f"Generated {clz.__name__}.create method with {len(kwargs)} kwargs")
     create_args = ast.arguments(
         args=[ast.arg(arg="cls")],
@@ -436,12 +595,17 @@ def _generate_component_create_functiondef(
         kwarg=ast.arg(arg="props"),
         defaults=[],
     )
+
     definition = ast.FunctionDef(
         name="create",
         args=create_args,
         body=[
             ast.Expr(
-                value=ast.Constant(value=_generate_docstrings(all_classes, all_props))
+                value=ast.Constant(
+                    value=_generate_docstrings(
+                        all_classes, [*all_props, *event_triggers]
+                    )
+                ),
             ),
             ast.Expr(
                 value=ast.Ellipsis(),
@@ -488,7 +652,11 @@ def _generate_staticmethod_call_functiondef(
         kwonlyargs=[],
         kw_defaults=[],
         kwarg=ast.arg(arg="props"),
-        defaults=[],
+        defaults=(
+            [ast.Constant(value=default) for default in fullspec.defaults]
+            if fullspec.defaults
+            else []
+        ),
     )
     definition = ast.FunctionDef(
         name="__call__",
@@ -576,7 +744,7 @@ class StubGenerator(ast.NodeTransformer):
         # Track the last class node that was visited.
         self.current_class = None
         # These imports will be included in the AST of stub files.
-        self.typing_imports = DEFAULT_TYPING_IMPORTS
+        self.typing_imports = DEFAULT_TYPING_IMPORTS.copy()
         # Whether those typing imports have been inserted yet.
         self.inserted_imports = False
         # Collected import statements from the module.
@@ -644,7 +812,9 @@ class StubGenerator(ast.NodeTransformer):
         self.import_statements.append(ast.unparse(node))
         if not self.inserted_imports:
             self.inserted_imports = True
-            return _generate_imports(self.typing_imports) + [node]
+            default_imports = _generate_imports(self.typing_imports)
+            self.import_statements.extend(ast.unparse(i) for i in default_imports)
+            return default_imports + [node]
         return node
 
     def visit_ImportFrom(
@@ -775,6 +945,13 @@ class StubGenerator(ast.NodeTransformer):
             # Remove annotated assignments in Component classes (props)
             return None
 
+        # remove dunder method assignments for lazy_loader.attach
+        for target in node.targets:
+            if isinstance(target, ast.Tuple):
+                for name in target.elts:
+                    if isinstance(name, ast.Name) and name.id.startswith("_"):
+                        return
+
         return node
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AnnAssign | None:
@@ -805,6 +982,23 @@ class StubGenerator(ast.NodeTransformer):
         return node
 
 
+class InitStubGenerator(StubGenerator):
+    """A node transformer that will generate the stubs for a given init file."""
+
+    def visit_Import(
+        self, node: ast.Import | ast.ImportFrom
+    ) -> ast.Import | ast.ImportFrom | list[ast.Import | ast.ImportFrom]:
+        """Collect import statements from the init module.
+
+        Args:
+            node: The import node to visit.
+
+        Returns:
+                The modified import node(s).
+        """
+        return [node]
+
+
 class PyiGenerator:
     """A .pyi file generator that will scan all defined Component in Reflex and
     generate the approriate stub.
@@ -813,36 +1007,67 @@ class PyiGenerator:
     modules: list = []
     root: str = ""
     current_module: Any = {}
+    written_files: list[str] = []
 
     def _write_pyi_file(self, module_path: Path, source: str):
         relpath = str(_relative_to_pwd(module_path)).replace("\\", "/")
-        pyi_content = [
-            f'"""Stub file for {relpath}"""',
-            "# ------------------- DO NOT EDIT ----------------------",
-            "# This file was generated by `reflex/utils/pyi_generator.py`!",
-            "# ------------------------------------------------------",
-            "",
-        ]
-        if black is not None:
-            for formatted_line in black.format_file_contents(
-                src_contents=source,
-                fast=True,
-                mode=black.mode.Mode(is_pyi=True),
-            ).splitlines():
-                # Bit of a hack here, since the AST cannot represent comments.
-                if "def create(" in formatted_line or "Figure" in formatted_line:
-                    pyi_content.append(formatted_line + "  # type: ignore")
-                else:
-                    pyi_content.append(formatted_line)
-            pyi_content.append("")  # add empty line at the end for formatting
-        else:
-            pyi_content = source.splitlines()
+        pyi_content = (
+            "\n".join(
+                [
+                    f'"""Stub file for {relpath}"""',
+                    "# ------------------- DO NOT EDIT ----------------------",
+                    "# This file was generated by `reflex/utils/pyi_generator.py`!",
+                    "# ------------------------------------------------------",
+                    "",
+                ]
+            )
+            + source
+        )
 
         pyi_path = module_path.with_suffix(".pyi")
-        pyi_path.write_text("\n".join(pyi_content))
+        pyi_path.write_text(pyi_content)
         logger.info(f"Wrote {relpath}")
 
-    def _scan_file(self, module_path: Path):
+    def _get_init_lazy_imports(self, mod, new_tree):
+        # retrieve the _SUBMODULES and _SUBMOD_ATTRS from an init file if present.
+        sub_mods = getattr(mod, "_SUBMODULES", None)
+        sub_mod_attrs = getattr(mod, "_SUBMOD_ATTRS", None)
+        pyright_ignore_imports = getattr(mod, "_PYRIGHT_IGNORE_IMPORTS", [])
+
+        if not sub_mods and not sub_mod_attrs:
+            return
+        sub_mods_imports = []
+        sub_mod_attrs_imports = []
+
+        if sub_mods:
+            sub_mods_imports = [
+                f"from . import {mod} as {mod}" for mod in sorted(sub_mods)
+            ]
+            sub_mods_imports.append("")
+
+        if sub_mod_attrs:
+            sub_mod_attrs = {
+                attr: mod for mod, attrs in sub_mod_attrs.items() for attr in attrs
+            }
+            # construct the import statement and handle special cases for aliases
+            sub_mod_attrs_imports = [
+                f"from .{path} import {mod if not isinstance(mod, tuple) else mod[0]} as {mod if not isinstance(mod, tuple) else mod[1]}"
+                + (
+                    "  # type: ignore"
+                    if mod in pyright_ignore_imports
+                    else "  # noqa"  # ignore ruff formatting here for cases like rx.list.
+                    if isinstance(mod, tuple)
+                    else ""
+                )
+                for mod, path in sub_mod_attrs.items()
+            ]
+            sub_mod_attrs_imports.append("")
+
+        text = "\n" + "\n".join([*sub_mods_imports, *sub_mod_attrs_imports])
+        text += ast.unparse(new_tree) + "\n"
+        return text
+
+    def _scan_file(self, module_path: Path) -> str | None:
         module_import = (
             _relative_to_pwd(module_path)
             .with_suffix("")
@@ -860,21 +1085,34 @@ class PyiGenerator:
             and obj != Component
             and inspect.getmodule(obj) == module
         }
-        if not class_names:
+        is_init_file = _relative_to_pwd(module_path).name == "__init__.py"
+        if not class_names and not is_init_file:
             return
 
-        new_tree = StubGenerator(module, class_names).visit(
-            ast.parse(inspect.getsource(module))
-        )
-        self._write_pyi_file(module_path, ast.unparse(new_tree))
+        if is_init_file:
+            new_tree = InitStubGenerator(module, class_names).visit(
+                ast.parse(inspect.getsource(module))
+            )
+            init_imports = self._get_init_lazy_imports(module, new_tree)
+            if not init_imports:
+                return
+            self._write_pyi_file(module_path, init_imports)
+        else:
+            new_tree = StubGenerator(module, class_names).visit(
+                ast.parse(inspect.getsource(module))
+            )
+            self._write_pyi_file(module_path, ast.unparse(new_tree))
+        return str(module_path.with_suffix(".pyi").resolve())
 
     def _scan_files_multiprocess(self, files: list[Path]):
         with Pool(processes=cpu_count()) as pool:
-            pool.map(self._scan_file, files)
+            self.written_files.extend(f for f in pool.map(self._scan_file, files) if f)
 
     def _scan_files(self, files: list[Path]):
         for file in files:
-            self._scan_file(file)
+            pyi_path = self._scan_file(file)
+            if pyi_path:
+                self.written_files.append(pyi_path)
 
     def scan_all(self, targets, changed_files: list[Path] | None = None):
         """Scan all targets for class inheriting Component and generate the .pyi files.
@@ -923,15 +1161,23 @@ class PyiGenerator:
         else:
             self._scan_files_multiprocess(file_targets)
 
+        # Fix generated pyi files with ruff.
+        subprocess.run(["ruff", "format", *self.written_files])
+        subprocess.run(["ruff", "check", "--fix", *self.written_files])
 
-def generate_init():
-    """Generate a pyi file for the main __init__.py."""
-    from reflex import _MAPPING  # type: ignore
+        # For some reason, we need to format the __init__.pyi files again after fixing...
+        init_files = [f for f in self.written_files if "/__init__.pyi" in f]
+        subprocess.run(["ruff", "format", *init_files])
 
-    imports = [
-        f"from {path if mod != path.rsplit('.')[-1] or mod == 'page' else '.'.join(path.rsplit('.')[:-1])} import {mod} as {mod}"
-        for mod, path in _MAPPING.items()
-    ]
-    imports.append("")
-    with contextlib.suppress(Exception):
-        INIT_FILE.write_text("\n".join(imports))
+        # Post-process the generated pyi files to add hacky type: ignore comments
+        for file_path in self.written_files:
+            with FileInput(file_path, inplace=True) as f:
+                for line in f:
+                    # Hack due to ast not supporting comments in the tree.
+                    if (
+                        "def create(" in line
+                        or "Var[Figure]" in line
+                        or "Var[Template]" in line
+                    ):
+                        line = line.rstrip() + "  # type: ignore\n"
+                    print(line, end="")

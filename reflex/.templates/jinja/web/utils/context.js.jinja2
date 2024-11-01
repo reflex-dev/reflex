@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useReducer, useState } from "react"
-import { applyDelta, Event, hydrateClientStorage, useEventLoop, refs } from "/utils/state.js"
+import { applyDelta, Event, hydrateClientStorage, useEventLoop, refs } from "$/utils/state.js"
 
 {% if initial_state %}
 export const initialState = {{ initial_state|json_dumps }}
@@ -7,7 +7,7 @@ export const initialState = {{ initial_state|json_dumps }}
 export const initialState = {}
 {% endif %}
 
-export const defaultColorMode = "{{ default_color_mode }}"
+export const defaultColorMode = {{ default_color_mode }}
 export const ColorModeContext = createContext(null);
 export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
@@ -25,6 +25,8 @@ export const clientStorage = {}
 
 {% if state_name %}
 export const state_name = "{{state_name}}"
+
+export const exception_state_name = "{{const.frontend_exception_state}}"
 
 // Theses events are triggered on initial load and each page navigation.
 export const onLoadInternalEvent = () => {
@@ -57,12 +59,16 @@ export const initialEvents = () => [
 {% else %}
 export const state_name = undefined
 
+export const exception_state_name = undefined
+
 export const onLoadInternalEvent = () => []
 
 export const initialEvents = () => []
 {% endif %}
 
 export const isDevMode = {{ is_dev_mode|json_dumps }}
+
+export const lastCompiledTimeStamp = {{ last_compiled_time|json_dumps }}
 
 export function UploadFilesProvider({ children }) {
   const [filesById, setFilesById] = useState({})

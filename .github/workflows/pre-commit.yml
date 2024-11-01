@@ -28,7 +28,7 @@ jobs:
           create-venv-at-path: .venv
       # TODO pre-commit related stuff can be cached too (not a bottleneck yet)
       - run: |
-          poetry run pip install pre-commit
+          poetry run uv pip install pre-commit
           poetry run pre-commit run --all-files
         env:
           SKIP: update-pyi-files

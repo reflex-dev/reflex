@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Literal
+from typing import Any, Literal
 
 from reflex.components.component import ComponentNamespace
+from reflex.components.core.debounce import DebounceInput
 from reflex.components.el.elements.forms import Form as HTMLForm
 from reflex.components.radix.themes.components.text_field import TextFieldRoot
-from reflex.constants.event import EventTriggers
-from reflex.style import Style
-from reflex.vars import Var
+from reflex.event import EventHandler, empty_event
+from reflex.vars.base import Var
 
 from .base import RadixPrimitiveComponentWithClassName
 
@@ -17,7 +17,7 @@ from .base import RadixPrimitiveComponentWithClassName
 class FormComponent(RadixPrimitiveComponentWithClassName):
     """Base class for all @radix-ui/react-form components."""
 
-    library = "@radix-ui/react-form@^0.0.3"
+    library = "@radix-ui/react-form@^0.1.0"
 
 
 class FormRoot(FormComponent, HTMLForm):
@@ -27,24 +27,16 @@ class FormRoot(FormComponent, HTMLForm):
 
     alias = "RadixFormRoot"
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Event triggers for radix form root.
+    # Fired when the errors are cleared.
+    on_clear_server_errors: EventHandler[empty_event]
 
-        Returns:
-            The triggers for event supported by Root.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CLEAR_SERVER_ERRORS: lambda: [],
-        }
-
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        return Style({"width": "100%"})
+        return {"width": "100%"}
 
 
 class FormField(FormComponent):
@@ -60,13 +52,13 @@ class FormField(FormComponent):
     # Flag to mark the form field as invalid, for server side validation.
     server_invalid: Var[bool]
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        return Style({"display": "grid", "margin_bottom": "10px"})
+        return {"display": "grid", "margin_bottom": "10px"}
 
 
 class FormLabel(FormComponent):
@@ -76,13 +68,13 @@ class FormLabel(FormComponent):
 
     alias = "RadixFormLabel"
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        return Style({"font_size": "15px", "font_weight": "500", "line_height": "35px"})
+        return {"font_size": "15px", "font_weight": "500", "line_height": "35px"}
 
 
 class FormControl(FormComponent):
@@ -112,9 +104,9 @@ class FormControl(FormComponent):
                 f"FormControl can only have at most one child, got {len(children)} children"
             )
         for child in children:
-            if not isinstance(child, TextFieldRoot):
+            if not isinstance(child, (TextFieldRoot, DebounceInput)):
                 raise TypeError(
-                    "Only Radix TextFieldRoot is allowed as child of FormControl"
+                    "Only Radix TextFieldRoot and DebounceInput are allowed as children of FormControl"
                 )
         return super().create(*children, **props)
 
@@ -149,13 +141,13 @@ class FormMessage(FormComponent):
     # Forces the message to be shown. This is useful when using server-side validation.
     force_match: Var[bool]
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        return Style({"font_size": "13px", "opacity": "0.8", "color": "white"})
+        return {"font_size": "13px", "opacity": "0.8", "color": "white"}
 
 
 class FormValidityState(FormComponent):

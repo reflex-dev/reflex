@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
+
+from reflex.utils.prerequisites import get_web_dir
+from reflex.vars.base import Var
 
 try:
     from pydantic.v1.fields import ModelField
@@ -25,20 +28,24 @@ from reflex.components.base import (
     Title,
 )
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.state import BaseState, Cookie, LocalStorage
+from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
+from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
-from reflex.vars import Var
+from reflex.utils.imports import ImportVar, ParsedImportDict
 
 # To re-export this function.
 merge_imports = imports.merge_imports
 
 
-def compile_import_statement(fields: list[imports.ImportVar]) -> tuple[str, list[str]]:
+def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
     """Compile an import statement.
 
     Args:
         fields: The set of fields to import from the library.
+
+    Raises:
+        ValueError: If there is more than one default import.
 
     Returns:
         The libraries for default and rest.
@@ -50,7 +57,8 @@ def compile_import_statement(fields: list[imports.ImportVar]) -> tuple[str, list
 
     # Check for default imports.
     defaults = {field for field in fields_set if field.is_default}
-    assert len(defaults) < 2
+    if len(defaults) >= 2:
+        raise ValueError("Only one default import is allowed.")
 
     # Get the default import, and the specific imports.
     default = next(iter({field.name for field in defaults}), "")
@@ -59,7 +67,7 @@ def compile_import_statement(fields: list[imports.ImportVar]) -> tuple[str, list
     return default, list(rest)
 
 
-def validate_imports(import_dict: imports.ImportDict):
+def validate_imports(import_dict: ParsedImportDict):
     """Verify that the same Tag is not used in multiple import.
 
     Args:
@@ -75,6 +83,12 @@ def validate_imports(import_dict: imports.ImportDict):
                 f"{_import.tag}/{_import.alias}" if _import.alias else _import.tag
             )
             if import_name in used_tags:
+                already_imported = used_tags[import_name]
+                if (already_imported[0] == "$" and already_imported[1:] == lib) or (
+                    lib[0] == "$" and lib[1:] == already_imported
+                ):
+                    used_tags[import_name] = lib if lib[0] == "$" else already_imported
+                    continue
                 raise ValueError(
                     f"Can not compile, the tag {import_name} is used multiple time from {lib} and {used_tags[import_name]}"
                 )
@@ -82,16 +96,19 @@ def validate_imports(import_dict: imports.ImportDict):
                 used_tags[import_name] = lib
 
 
-def compile_imports(import_dict: imports.ImportDict) -> list[dict]:
+def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
     """Compile an import dict.
 
     Args:
         import_dict: The import dict to compile.
 
+    Raises:
+        ValueError: If an import in the dict is invalid.
+
     Returns:
         The list of import dict.
     """
-    collapsed_import_dict = imports.collapse_imports(import_dict)
+    collapsed_import_dict: ParsedImportDict = imports.collapse_imports(import_dict)
     validate_imports(collapsed_import_dict)
     import_dicts = []
     for lib, fields in collapsed_import_dict.items():
@@ -102,8 +119,10 @@ def compile_imports(import_dict: imports.ImportDict) -> list[dict]:
             continue
 
         if not lib:
-            assert not default, "No default field allowed for empty library."
-            assert rest is not None and len(rest) > 0, "No fields to import."
+            if default:
+                raise ValueError("No default field allowed for empty library.")
+            if rest is None or len(rest) == 0:
+                raise ValueError("No fields to import.")
             for module in sorted(rest):
                 import_dicts.append(get_import_dict(module))
             continue
@@ -148,14 +167,19 @@ def compile_state(state: Type[BaseState]) -> dict:
         console.warn(
             f"Failed to compile initial state with computed vars, excluding them: {e}"
         )
-        initial_state = state(_reflex_internal_init=True).dict(include_computed=False)
-    return format.format_state(initial_state)
+        initial_state = state(_reflex_internal_init=True).dict(
+            initial=True, include_computed=False
+        )
+    return initial_state
 
 
 def _compile_client_storage_field(
     field: ModelField,
-) -> tuple[Type[Cookie] | Type[LocalStorage] | None, dict[str, Any] | None]:
-    """Compile the given cookie or local_storage field.
+) -> tuple[
+    Type[Cookie] | Type[LocalStorage] | Type[SessionStorage] | None,
+    dict[str, Any] | None,
+]:
+    """Compile the given cookie, local_storage or session_storage field.
 
     Args:
         field: The possible cookie field to compile.
@@ -163,7 +187,7 @@ def _compile_client_storage_field(
     Returns:
         A dictionary of the compiled cookie or None if the field is not cookie-like.
     """
-    for field_type in (Cookie, LocalStorage):
+    for field_type in (Cookie, LocalStorage, SessionStorage):
         if isinstance(field.default, field_type):
             cs_obj = field.default
         elif isinstance(field.type_, type) and issubclass(field.type_, field_type):
@@ -176,7 +200,7 @@ def _compile_client_storage_field(
 
 def _compile_client_storage_recursive(
     state: Type[BaseState],
-) -> tuple[dict[str, dict], dict[str, dict[str, str]]]:
+) -> tuple[dict[str, dict], dict[str, dict], dict[str, dict]]:
     """Compile the client-side storage for the given state recursively.
 
     Args:
@@ -187,10 +211,12 @@ def _compile_client_storage_recursive(
             (
                 cookies: dict[str, dict],
                 local_storage: dict[str, dict[str, str]]
-            )
+                session_storage: dict[str, dict[str, str]]
+            ).
     """
     cookies = {}
     local_storage = {}
+    session_storage = {}
     state_name = state.get_full_name()
     for name, field in state.__fields__.items():
         if name in state.inherited_vars:
@@ -202,15 +228,20 @@ def _compile_client_storage_recursive(
             cookies[state_key] = options
         elif field_type is LocalStorage:
             local_storage[state_key] = options
+        elif field_type is SessionStorage:
+            session_storage[state_key] = options
         else:
             continue
     for substate in state.get_substates():
-        substate_cookies, substate_local_storage = _compile_client_storage_recursive(
-            substate
-        )
+        (
+            substate_cookies,
+            substate_local_storage,
+            substate_session_storage,
+        ) = _compile_client_storage_recursive(substate)
         cookies.update(substate_cookies)
         local_storage.update(substate_local_storage)
-    return cookies, local_storage
+        session_storage.update(substate_session_storage)
+    return cookies, local_storage, session_storage
 
 
 def compile_client_storage(state: Type[BaseState]) -> dict[str, dict]:
@@ -222,16 +253,17 @@ def compile_client_storage(state: Type[BaseState]) -> dict[str, dict]:
     Returns:
         A dictionary of the compiled client-side storage info.
     """
-    cookies, local_storage = _compile_client_storage_recursive(state)
+    cookies, local_storage, session_storage = _compile_client_storage_recursive(state)
     return {
         constants.COOKIES: cookies,
         constants.LOCAL_STORAGE: local_storage,
+        constants.SESSION_STORAGE: session_storage,
     }
 
 
 def compile_custom_component(
     component: CustomComponent,
-) -> tuple[dict, imports.ImportDict]:
+) -> tuple[dict, ParsedImportDict]:
     """Compile a custom component.
 
     Args:
@@ -244,14 +276,14 @@ def compile_custom_component(
     render = component.get_component(component)
 
     # Get the imports.
-    imports = {
+    imports: ParsedImportDict = {
         lib: fields
         for lib, fields in render._get_all_imports().items()
         if lib != component.library
     }
 
     # Concatenate the props.
-    props = [prop._var_name for prop in component.get_prop_vars()]
+    props = [prop._js_expr for prop in component.get_prop_vars()]
 
     # Compile the component.
     return (
@@ -329,7 +361,7 @@ def get_page_path(path: str) -> str:
     Returns:
         The path of the compiled JS file.
     """
-    return os.path.join(constants.Dirs.WEB_PAGES, path + constants.Ext.JS)
+    return str(get_web_dir() / constants.Dirs.PAGES / (path + constants.Ext.JS))
 
 
 def get_theme_path() -> str:
@@ -338,8 +370,10 @@ def get_theme_path() -> str:
     Returns:
         The path of the theme style.
     """
-    return os.path.join(
-        constants.Dirs.WEB_UTILS, constants.PageNames.THEME + constants.Ext.JS
+    return str(
+        get_web_dir()
+        / constants.Dirs.UTILS
+        / (constants.PageNames.THEME + constants.Ext.JS)
     )
 
 
@@ -349,8 +383,10 @@ def get_root_stylesheet_path() -> str:
     Returns:
         The path of the app root file.
     """
-    return os.path.join(
-        constants.STYLES_DIR, constants.PageNames.STYLESHEET_ROOT + constants.Ext.CSS
+    return str(
+        get_web_dir()
+        / constants.Dirs.STYLES
+        / (constants.PageNames.STYLESHEET_ROOT + constants.Ext.CSS)
     )
 
 
@@ -360,9 +396,7 @@ def get_context_path() -> str:
     Returns:
         The path of the context module.
     """
-    return os.path.join(
-        constants.Dirs.WEB, constants.Dirs.CONTEXTS_PATH + constants.Ext.JS
-    )
+    return str(get_web_dir() / (constants.Dirs.CONTEXTS_PATH + constants.Ext.JS))
 
 
 def get_components_path() -> str:
@@ -371,7 +405,11 @@ def get_components_path() -> str:
     Returns:
         The path of the compiled components.
     """
-    return os.path.join(constants.Dirs.WEB_UTILS, "components" + constants.Ext.JS)
+    return str(
+        get_web_dir()
+        / constants.Dirs.UTILS
+        / (constants.PageNames.COMPONENTS + constants.Ext.JS),
+    )
 
 
 def get_stateful_components_path() -> str:
@@ -380,9 +418,10 @@ def get_stateful_components_path() -> str:
     Returns:
         The path of the compiled stateful components.
     """
-    return os.path.join(
-        constants.Dirs.WEB_UTILS,
-        constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JS,
+    return str(
+        get_web_dir()
+        / constants.Dirs.UTILS
+        / (constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JS)
     )
 
 
@@ -405,11 +444,11 @@ def add_meta(
     Returns:
         The component with the metadata added.
     """
-    meta_tags = [Meta.create(**item) for item in meta]
-
-    children: list[Any] = [
-        Title.create(title),
+    meta_tags = [
+        item if isinstance(item, Component) else Meta.create(**item) for item in meta
     ]
+
+    children: list[Any] = [Title.create(title)]
     if description:
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))
@@ -424,35 +463,36 @@ def add_meta(
     return page
 
 
-def write_page(path: str, code: str):
+def write_page(path: str | Path, code: str):
     """Write the given code to the given path.
 
     Args:
         path: The path to write the code to.
         code: The code to write.
     """
-    path_ops.mkdir(os.path.dirname(path))
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(code)
+    path = Path(path)
+    path_ops.mkdir(path.parent)
+    path.write_text(code, encoding="utf-8")
 
 
-def empty_dir(path: str, keep_files: list[str] | None = None):
+def empty_dir(path: str | Path, keep_files: list[str] | None = None):
     """Remove all files and folders in a directory except for the keep_files.
 
     Args:
         path: The path to the directory that will be emptied
         keep_files: List of filenames or foldernames that will not be deleted.
     """
+    path = Path(path)
+
     # If the directory does not exist, return.
-    if not os.path.exists(path):
+    if not path.exists():
         return
 
     # Remove all files and folders in the directory.
     keep_files = keep_files or []
-    directory_contents = os.listdir(path)
-    for element in directory_contents:
-        if element not in keep_files:
-            path_ops.rm(os.path.join(path, element))
+    for element in path.iterdir():
+        if element.name not in keep_files:
+            path_ops.rm(element)
 
 
 def is_valid_url(url) -> bool:

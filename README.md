@@ -10,7 +10,6 @@
 
 ### **✨ Performant, customizable web apps in pure Python. Deploy in seconds. ✨**
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
-![tests](https://github.com/pynecone-io/pynecone/actions/workflows/integration.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentation](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
@@ -18,7 +17,7 @@
 
 ---
 
-[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [Español](https://github.com/reflex-dev/reflex/blob/main/docs/es/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md)
+[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [Español](https://github.com/reflex-dev/reflex/blob/main/docs/es/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md) | [Deutsch](https://github.com/reflex-dev/reflex/blob/main/docs/de/README.md) | [Persian (پارسی)](https://github.com/reflex-dev/reflex/blob/main/docs/pe/README.md) | [Tiếng Việt](https://github.com/reflex-dev/reflex/blob/main/docs/vi/README.md)
 
 ---
 
@@ -35,7 +34,7 @@ See our [architecture page](https://reflex.dev/blog/2024-03-21-reflex-architectu
 
 ## ⚙️ Installation
 
-Open a terminal and run (Requires Python 3.8+):
+Open a terminal and run (Requires Python 3.9+):
 
 ```bash
 pip install reflex
@@ -120,14 +119,15 @@ def index():
                 on_blur=State.set_prompt,
                 width="25em",
             ),
-            rx.button("Generate Image", on_click=State.get_image, width="25em"),
+            rx.button(
+                "Generate Image", 
+                on_click=State.get_image,
+                width="25em",
+                loading=State.processing
+            ),
             rx.cond(
-                State.processing,
-                rx.chakra.circular_progress(is_indeterminate=True),
-                rx.cond(
-                    State.complete,
-                    rx.image(src=State.image_url, width="20em"),
-                ),
+                State.complete,
+                rx.image(src=State.image_url, width="20em"),
             ),
             align="center",
         ),
@@ -185,7 +185,7 @@ class State(rx.State):
 
 The state defines all the variables (called vars) in an app that can change and the functions that change them.
 
-Here the state is comprised of a `prompt` and `image_url`. There are also the booleans `processing` and `complete` to indicate when to show the circular progress and image.
+Here the state is comprised of a `prompt` and `image_url`. There are also the booleans `processing` and `complete` to indicate when to disable the button (during image generation) and when to show the resulting image.
 
 ### **Event Handlers**
 
@@ -228,7 +228,7 @@ You can create a multi-page app by adding more pages.
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start)  &nbsp;   
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Templates](https://reflex.dev/templates/) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start)  &nbsp;   
 
 </div>
 

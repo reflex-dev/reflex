@@ -1,5 +1,6 @@
 """Config constants."""
-import os
+
+from pathlib import Path
 from types import SimpleNamespace
 
 from reflex.constants.base import Dirs, Reflex
@@ -7,7 +8,7 @@ from reflex.constants.base import Dirs, Reflex
 from .compiler import Ext
 
 # Alembic migrations
-ALEMBIC_CONFIG = os.environ.get("ALEMBIC_CONFIG", "alembic.ini")
+ALEMBIC_CONFIG = "alembic.ini"
 
 
 class Config(SimpleNamespace):
@@ -16,9 +17,7 @@ class Config(SimpleNamespace):
     # The name of the reflex config module.
     MODULE = "rxconfig"
     # The python config file.
-    FILE = f"{MODULE}{Ext.PY}"
-    # The previous config file.
-    PREVIOUS_FILE = f"pcconfig{Ext.PY}"
+    FILE = Path(f"{MODULE}{Ext.PY}")
 
 
 class Expiration(SimpleNamespace):
@@ -36,9 +35,9 @@ class GitIgnore(SimpleNamespace):
     """Gitignore constants."""
 
     # The gitignore file.
-    FILE = ".gitignore"
+    FILE = Path(".gitignore")
     # Files to gitignore.
-    DEFAULTS = {Dirs.WEB, "*.db", "__pycache__/", "*.py[cod]"}
+    DEFAULTS = {Dirs.WEB, "*.db", "__pycache__/", "*.py[cod]", "assets/external/"}
 
 
 class RequirementsTxt(SimpleNamespace):
@@ -48,6 +47,13 @@ class RequirementsTxt(SimpleNamespace):
     FILE = "requirements.txt"
     # The partial text used to form requirement that pins a reflex version
     DEFAULTS_STUB = f"{Reflex.MODULE_NAME}=="
+
+
+class DefaultPorts(SimpleNamespace):
+    """Default port constants."""
+
+    FRONTEND_PORT = 3000
+    BACKEND_PORT = 8000
 
 
 # The deployment URL.

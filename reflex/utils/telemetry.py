@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
+import dataclasses
 import multiprocessing
 import platform
+import warnings
 
 try:
     from datetime import UTC, datetime
@@ -91,9 +94,7 @@ def _raise_on_missing_project_hash() -> bool:
         False when compilation should be skipped (i.e. no .web directory is required).
         Otherwise return True.
     """
-    if should_skip_compile():
-        return False
-    return True
+    return not should_skip_compile()
 
 
 def _prepare_event(event: str, **kwargs) -> dict:
@@ -118,7 +119,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
         return {}
 
     if UTC is None:
-        # for python 3.8, 3.9 & 3.10
+        # for python 3.9 & 3.10
         stamp = datetime.utcnow().isoformat()
     else:
         # for python 3.11 & 3.12
@@ -142,7 +143,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
             "python_version": get_python_version(),
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
-            "cpu_info": dict(cpuinfo) if cpuinfo else {},
+            "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
             **additional_fields,
         },
         "timestamp": stamp,
@@ -157,17 +158,7 @@ def _send_event(event_data: dict) -> bool:
         return False
 
 
-def send(event: str, telemetry_enabled: bool | None = None, **kwargs) -> bool:
-    """Send anonymous telemetry for Reflex.
-
-    Args:
-        event: The event name.
-        telemetry_enabled: Whether to send the telemetry (If None, get from config).
-        kwargs: Additional data to send with the event.
-
-    Returns:
-        Whether the telemetry was sent successfully.
-    """
+def _send(event, telemetry_enabled, **kwargs):
     from reflex.config import get_config
 
     # Get the telemetry_enabled from the config if it is not specified.
@@ -182,3 +173,37 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs) -> bool:
     if not event_data:
         return False
     return _send_event(event_data)
+
+
+def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
+    """Send anonymous telemetry for Reflex.
+
+    Args:
+        event: The event name.
+        telemetry_enabled: Whether to send the telemetry (If None, get from config).
+        kwargs: Additional data to send with the event.
+    """
+
+    async def async_send(event, telemetry_enabled, **kwargs):
+        return _send(event, telemetry_enabled, **kwargs)
+
+    try:
+        # Within an event loop context, send the event asynchronously.
+        asyncio.create_task(async_send(event, telemetry_enabled, **kwargs))
+    except RuntimeError:
+        # If there is no event loop, send the event synchronously.
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        _send(event, telemetry_enabled, **kwargs)
+
+
+def send_error(error: Exception, context: str):
+    """Send an error event.
+
+    Args:
+        error: The error to send.
+        context: The context of the error (e.g. "frontend" or "backend")
+
+    Returns:
+        Whether the telemetry was sent successfully.
+    """
+    return send("error", detail=type(error).__name__, context=context)

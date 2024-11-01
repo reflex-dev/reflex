@@ -6,17 +6,18 @@ from typing import Any, Dict, List, Union
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
-from reflex.utils import imports, types
+from reflex.utils import types
+from reflex.utils.imports import ImportDict
 from reflex.utils.serializers import serialize
-from reflex.vars import BaseVar, ComputedVar, Var
+from reflex.vars.base import LiteralVar, Var, is_computed_var
 
 
 class Gridjs(Component):
     """A component that wraps a nivo bar component."""
 
-    library = "gridjs-react@6.0.1"
+    library = "gridjs-react@6.1.1"
 
-    lib_dependencies: List[str] = ["gridjs@6.0.6"]
+    lib_dependencies: List[str] = ["gridjs@6.2.0"]
 
 
 class DataTable(Gridjs):
@@ -64,14 +65,14 @@ class DataTable(Gridjs):
 
         # The annotation should be provided if data is a computed var. We need this to know how to
         # render pandas dataframes.
-        if isinstance(data, ComputedVar) and data._var_type == Any:
+        if is_computed_var(data) and data._var_type == Any:
             raise ValueError(
                 "Annotation of the computed var assigned to the data field should be provided."
             )
 
         if (
             columns is not None
-            and isinstance(columns, ComputedVar)
+            and is_computed_var(columns)
             and columns._var_type == Any
         ):
             raise ValueError(
@@ -102,30 +103,31 @@ class DataTable(Gridjs):
             **props,
         )
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {"": {imports.ImportVar(tag="gridjs/dist/theme/mermaid.css")}},
-        )
+    def add_imports(self) -> ImportDict:
+        """Add the imports for the datatable component.
+
+        Returns:
+            The import dict for the component.
+        """
+        return {"": "gridjs/dist/theme/mermaid.css"}
 
     def _render(self) -> Tag:
         if isinstance(self.data, Var) and types.is_dataframe(self.data._var_type):
-            self.columns = BaseVar(
-                _var_name=f"{self.data._var_name}.columns",
+            self.columns = self.data._replace(
+                _js_expr=f"{self.data._js_expr}.columns",
                 _var_type=List[Any],
-                _var_full_name_needs_state_prefix=True,
-            )._replace(merge_var_data=self.data._var_data)
-            self.data = BaseVar(
-                _var_name=f"{self.data._var_name}.data",
+            )
+            self.data = self.data._replace(
+                _js_expr=f"{self.data._js_expr}.data",
                 _var_type=List[List[Any]],
-                _var_full_name_needs_state_prefix=True,
-            )._replace(merge_var_data=self.data._var_data)
+            )
         if types.is_dataframe(type(self.data)):
             # If given a pandas df break up the data and columns
             data = serialize(self.data)
-            assert isinstance(data, dict), "Serialized dataframe should be a dict."
-            self.columns = Var.create_safe(data["columns"])
-            self.data = Var.create_safe(data["data"])
+            if not isinstance(data, dict):
+                raise ValueError("Serialized dataframe should be a dict.")
+            self.columns = LiteralVar.create(data["columns"])
+            self.data = LiteralVar.create(data["data"])
 
         # Render the table.
         return super()._render()

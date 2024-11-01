@@ -4,14 +4,15 @@
 # Style based on https://ui.shadcn.com/docs/components/drawer
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, List, Literal, Optional, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import Theme
 from reflex.components.radix.themes.layout.flex import Flex
-from reflex.constants import EventTriggers
-from reflex.vars import Var
+from reflex.event import EventHandler, empty_event, identity_event
+from reflex.utils import console
+from reflex.vars.base import Var
 
 
 class DrawerComponent(RadixPrimitiveComponent):
@@ -59,16 +60,8 @@ class DrawerRoot(DrawerComponent):
     # When `True`, it prevents scroll restoration. Defaults to `True`.
     preventScrollRestoration: Var[bool]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_OPEN_CHANGE: lambda e0: [e0],
-        }
+    # Fires when the drawer is opened or closed.
+    on_open_change: EventHandler[identity_event(bool)]
 
 
 class DrawerTrigger(DrawerComponent):
@@ -86,8 +79,8 @@ class DrawerTrigger(DrawerComponent):
         """Create a new DrawerTrigger instance.
 
         Args:
-            children: The children of the element.
-            props: The properties of the element.
+            *children: The children of the element.
+            **props: The properties of the element.
 
         Returns:
             The new DrawerTrigger instance.
@@ -135,22 +128,20 @@ class DrawerContent(DrawerComponent):
         base_style.update(style)
         return {"css": base_style}
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
+    # Fired when the drawer content is opened. Deprecated.
+    on_open_auto_focus: EventHandler[empty_event]
 
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            # DrawerContent is based on Radix DialogContent
-            # These are the same triggers as DialogContent
-            EventTriggers.ON_OPEN_AUTO_FOCUS: lambda e0: [e0.target.value],
-            EventTriggers.ON_CLOSE_AUTO_FOCUS: lambda e0: [e0.target.value],
-            EventTriggers.ON_ESCAPE_KEY_DOWN: lambda e0: [e0.target.value],
-            EventTriggers.ON_POINTER_DOWN_OUTSIDE: lambda e0: [e0.target.value],
-            EventTriggers.ON_INTERACT_OUTSIDE: lambda e0: [e0.target.value],
-        }
+    # Fired when the drawer content is closed. Deprecated.
+    on_close_auto_focus: EventHandler[empty_event]
+
+    # Fired when the escape key is pressed. Deprecated.
+    on_escape_key_down: EventHandler[empty_event]
+
+    # Fired when the pointer is down outside the drawer content. Deprecated.
+    on_pointer_down_outside: EventHandler[empty_event]
+
+    # Fired when interacting outside the drawer content. Deprecated.
+    on_interact_outside: EventHandler[empty_event]
 
     @classmethod
     def create(cls, *children, **props):
@@ -167,6 +158,23 @@ class DrawerContent(DrawerComponent):
         Returns:
                  The drawer content.
         """
+        deprecated_properties = [
+            "on_open_auto_focus",
+            "on_close_auto_focus",
+            "on_escape_key_down",
+            "on_pointer_down_outside",
+            "on_interact_outside",
+        ]
+
+        for prop in deprecated_properties:
+            if prop in props:
+                console.deprecate(
+                    feature_name="drawer content events",
+                    reason=f"The `{prop}` event is deprecated and will be removed in 0.7.0.",
+                    deprecation_version="0.6.3",
+                    removal_version="0.7.0",
+                )
+
         comp = super().create(*children, **props)
 
         return Theme.create(comp)

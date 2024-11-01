@@ -1,4 +1,5 @@
 """Export utilities."""
+
 import os
 from pathlib import Path
 from typing import Optional
@@ -55,15 +56,18 @@ def export(
         # Set up .web directory and install frontend dependencies.
         build.setup_frontend(Path.cwd())
 
-    # Export the app.
-    build.export(
-        backend=backend,
-        frontend=frontend,
-        zip=zipping,
-        zip_dest_dir=zip_dest_dir,
-        deploy_url=config.deploy_url,
-        upload_db_file=upload_db_file,
-    )
+    # Build the static app.
+    if frontend:
+        build.build(deploy_url=config.deploy_url, for_export=True)
+
+    # Zip up the app.
+    if zipping:
+        build.zip_app(
+            frontend=frontend,
+            backend=backend,
+            zip_dest_dir=zip_dest_dir,
+            upload_db_file=upload_db_file,
+        )
 
     # Post a telemetry event.
     telemetry.send("export")

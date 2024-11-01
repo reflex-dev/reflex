@@ -1,4 +1,5 @@
 """A audio component."""
+
 from reflex.components.react_player.react_player import ReactPlayer
 
 

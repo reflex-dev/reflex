@@ -13,6 +13,9 @@ from reflex import constants
 from reflex.compiler import utils
 from reflex.testing import AppHarness, chdir
 from reflex.utils import build
+from reflex.utils.prerequisites import get_web_dir
+
+web_pages = get_web_dir() / constants.Dirs.PAGES
 
 
 def render_component(num: int):
@@ -231,7 +234,7 @@ def test_app_10_compile_time_cold(benchmark, app_with_10_components):
 
     def setup():
         with chdir(app_with_10_components.app_path):
-            utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+            utils.empty_dir(web_pages, ["_app.js"])
             app_with_10_components._initialize_app()
             build.setup_frontend(app_with_10_components.app_path)
 
@@ -284,7 +287,7 @@ def test_app_100_compile_time_cold(benchmark, app_with_100_components):
 
     def setup():
         with chdir(app_with_100_components.app_path):
-            utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+            utils.empty_dir(web_pages, ["_app.js"])
             app_with_100_components._initialize_app()
             build.setup_frontend(app_with_100_components.app_path)
 
@@ -337,7 +340,7 @@ def test_app_1000_compile_time_cold(benchmark, app_with_1000_components):
 
     def setup():
         with chdir(app_with_1000_components.app_path):
-            utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+            utils.empty_dir(web_pages, keep_files=["_app.js"])
             app_with_1000_components._initialize_app()
             build.setup_frontend(app_with_1000_components.app_path)
 

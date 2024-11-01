@@ -1,15 +1,16 @@
 """A Rich Text Editor based on SunEditor."""
+
 from __future__ import annotations
 
 import enum
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Dict, List, Literal, Optional, Tuple, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
-from reflex.constants import EventTriggers
+from reflex.event import EventHandler, empty_event, identity_event
 from reflex.utils.format import to_camel_case
-from reflex.utils.imports import ImportVar
-from reflex.vars import Var
+from reflex.utils.imports import ImportDict, ImportVar
+from reflex.vars.base import Var
 
 
 class EditorButtonList(list, enum.Enum):
@@ -65,6 +66,35 @@ class EditorOptions(Base):
 
     # List of buttons to use in the toolbar.
     button_list: Optional[List[Union[List[str], str]]]
+
+
+def on_blur_spec(e: Var, content: Var[str]) -> Tuple[Var[str]]:
+    """A helper function to specify the on_blur event handler.
+
+    Args:
+        e: The event.
+        content: The content of the editor.
+
+    Returns:
+        A tuple containing the content of the editor.
+    """
+    return (content,)
+
+
+def on_paste_spec(
+    e: Var, clean_data: Var[str], max_char_count: Var[bool]
+) -> Tuple[Var[str], Var[bool]]:
+    """A helper function to specify the on_paste event handler.
+
+    Args:
+        e: The event.
+        clean_data: The clean data.
+        max_char_count: The maximum character count.
+
+    Returns:
+        A tuple containing the clean data and the maximum character count.
+    """
+    return (clean_data, max_char_count)
 
 
 class Editor(NoSSRComponent):
@@ -176,34 +206,41 @@ class Editor(NoSSRComponent):
     # default: False
     disable_toolbar: Var[bool]
 
-    def _get_imports(self):
-        imports = super()._get_imports()
-        imports[""] = [
-            ImportVar(tag="suneditor/dist/css/suneditor.min.css", install=False)
-        ]
-        return imports
+    # Fired when the editor content changes.
+    on_change: EventHandler[identity_event(str)]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
+    # Fired when the something is inputted in the editor.
+    on_input: EventHandler[empty_event]
+
+    # Fired when the editor loses focus.
+    on_blur: EventHandler[on_blur_spec]
+
+    # Fired when the editor is loaded.
+    on_load: EventHandler[identity_event(bool)]
+
+    # Fired when the editor content is copied.
+    on_copy: EventHandler[empty_event]
+
+    # Fired when the editor content is cut.
+    on_cut: EventHandler[empty_event]
+
+    # Fired when the editor content is pasted.
+    on_paste: EventHandler[on_paste_spec]
+
+    # Fired when the code view is toggled.
+    toggle_code_view: EventHandler[identity_event(bool)]
+
+    # Fired when the full screen mode is toggled.
+    toggle_full_screen: EventHandler[identity_event(bool)]
+
+    def add_imports(self) -> ImportDict:
+        """Add imports for the Editor component.
 
         Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
+            The import dict.
         """
         return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda content: [content],
-            "on_input": lambda _e: [_e],
-            EventTriggers.ON_BLUR: lambda _e, content: [content],
-            "on_load": lambda reload: [reload],
-            "on_resize_editor": lambda height, prev_height: [height, prev_height],
-            "on_copy": lambda _e, clipboard_data: [clipboard_data],
-            "on_cut": lambda _e, clipboard_data: [clipboard_data],
-            "on_paste": lambda _e, clean_data, max_char_count: [
-                clean_data,
-                max_char_count,
-            ],
-            "toggle_code_view": lambda is_code_view: [is_code_view],
-            "toggle_full_screen": lambda is_full_screen: [is_full_screen],
+            "": ImportVar(tag="suneditor/dist/css/suneditor.min.css", install=False)
         }
 
     @classmethod

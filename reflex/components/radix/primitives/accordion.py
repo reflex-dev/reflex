@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, List, Literal, Tuple, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
@@ -10,9 +10,10 @@ from reflex.components.core.cond import cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
+from reflex.event import EventHandler
 from reflex.style import Style
-from reflex.utils import imports
-from reflex.vars import Var, get_uuid_string_var
+from reflex.vars import get_uuid_string_var
+from reflex.vars.base import LiteralVar, Var
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
@@ -59,7 +60,7 @@ class AccordionComponent(RadixPrimitiveComponent):
     # The variant of the component.
     variant: Var[LiteralAccordionVariant]
 
-    def add_style(self) -> Style | None:
+    def add_style(self):
         """Add style to the component."""
         if self.color_scheme is not None:
             self.custom_attrs["data-accent-color"] = self.color_scheme
@@ -68,6 +69,18 @@ class AccordionComponent(RadixPrimitiveComponent):
 
     def _exclude_props(self) -> list[str]:
         return ["color_scheme", "variant"]
+
+
+def on_value_change(value: Var[str | List[str]]) -> Tuple[Var[str | List[str]]]:
+    """Handle the on_value_change event.
+
+    Args:
+        value: The value of the event.
+
+    Returns:
+        The value of the event.
+    """
+    return (value,)
 
 
 class AccordionRoot(AccordionComponent):
@@ -102,15 +115,18 @@ class AccordionRoot(AccordionComponent):
     radius: Var[LiteralRadius]
 
     # The time in milliseconds to animate open and close
-    duration: Var[int] = Var.create_safe(DEFAULT_ANIMATION_DURATION)
+    duration: Var[int] = LiteralVar.create(DEFAULT_ANIMATION_DURATION)
 
     # The easing function to use for the animation.
-    easing: Var[str] = Var.create_safe(DEFAULT_ANIMATION_EASING)
+    easing: Var[str] = LiteralVar.create(DEFAULT_ANIMATION_EASING)
 
     # Whether to show divider lines between items.
     show_dividers: Var[bool]
 
     _valid_children: List[str] = ["AccordionItem"]
+
+    # Fired when the opened the accordions changes.
+    on_value_change: EventHandler[on_value_change]
 
     def _exclude_props(self) -> list[str]:
         return super()._exclude_props() + [
@@ -119,17 +135,6 @@ class AccordionRoot(AccordionComponent):
             "easing",
             "show_dividers",
         ]
-
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
-
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            "on_value_change": lambda e0: [e0],
-        }
 
     def add_style(self):
         """Add style to the component.
@@ -188,6 +193,11 @@ class AccordionItem(AccordionComponent):
     # When true, prevents the user from interacting with the item.
     disabled: Var[bool]
 
+    # The header of the accordion item.
+    header: Var[Union[Component, str]]
+    # The content of the accordion item.
+    content: Var[Union[Component, str]] = Var.create(None)
+
     _valid_children: List[str] = [
         "AccordionHeader",
         "AccordionTrigger",
@@ -200,21 +210,20 @@ class AccordionItem(AccordionComponent):
     def create(
         cls,
         *children,
-        header: Optional[Component | Var] = None,
-        content: Optional[Component | Var] = None,
         **props,
     ) -> Component:
         """Create an accordion item.
 
         Args:
             *children: The list of children to use if header and content are not provided.
-            header: The header of the accordion item.
-            content: The content of the accordion item.
             **props: Additional properties to apply to the accordion item.
 
         Returns:
             The accordion item.
         """
+        header = props.pop("header", None)
+        content = props.pop("content", None)
+
         # The item requires a value to toggle (use a random unique name if not provided).
         value = props.pop("value", get_uuid_string_var())
 
@@ -250,43 +259,44 @@ class AccordionItem(AccordionComponent):
 
         return super().create(*children, value=value, **props, class_name=cls_name)
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
         divider_style = f"var(--divider-px) solid {color('gray', 6, alpha=True)}"
-        return Style(
-            {
-                "overflow": "hidden",
-                "width": "100%",
-                "margin_top": "1px",
+        return {
+            "overflow": "hidden",
+            "width": "100%",
+            "margin_top": "1px",
+            "border_top": divider_style,
+            "&:first-child": {
+                "margin_top": 0,
+                "border_top": 0,
+                "border_top_left_radius": "var(--radius-4)",
+                "border_top_right_radius": "var(--radius-4)",
+            },
+            "&:last-child": {
+                "border_bottom_left_radius": "var(--radius-4)",
+                "border_bottom_right_radius": "var(--radius-4)",
+            },
+            "&:focus-within": {
+                "position": "relative",
+                "z_index": 1,
+            },
+            _inherited_variant_selector("ghost", "&:first-child"): {
+                "border_radius": 0,
                 "border_top": divider_style,
-                "&:first-child": {
-                    "margin_top": 0,
-                    "border_top": 0,
-                    "border_top_left_radius": "var(--radius-4)",
-                    "border_top_right_radius": "var(--radius-4)",
-                },
-                "&:last-child": {
-                    "border_bottom_left_radius": "var(--radius-4)",
-                    "border_bottom_right_radius": "var(--radius-4)",
-                },
-                "&:focus-within": {
-                    "position": "relative",
-                    "z_index": 1,
-                },
-                _inherited_variant_selector("ghost", "&:first-child"): {
-                    "border_radius": 0,
-                    "border_top": divider_style,
-                },
-                _inherited_variant_selector("ghost", "&:last-child"): {
-                    "border_radius": 0,
-                    "border_bottom": divider_style,
-                },
-            }
-        )
+            },
+            _inherited_variant_selector("ghost", "&:last-child"): {
+                "border_radius": 0,
+                "border_bottom": divider_style,
+            },
+        }
+
+    def _exclude_props(self) -> list[str]:
+        return ["header", "content"]
 
 
 class AccordionHeader(AccordionComponent):
@@ -314,13 +324,13 @@ class AccordionHeader(AccordionComponent):
 
         return super().create(*children, class_name=cls_name, **props)
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        return Style({"display": "flex"})
+        return {"display": "flex"}
 
 
 class AccordionTrigger(AccordionComponent):
@@ -348,44 +358,42 @@ class AccordionTrigger(AccordionComponent):
 
         return super().create(*children, class_name=cls_name, **props)
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        return Style(
-            {
-                "color": color("accent", 11),
-                "font_size": "1.1em",
-                "line_height": 1,
-                "justify_content": "space-between",
-                "align_items": "center",
-                "flex": 1,
-                "display": "flex",
-                "padding": "var(--space-3) var(--space-4)",
-                "width": "100%",
-                "box_shadow": f"0 var(--divider-px) 0 {color('gray', 6, alpha=True)}",
-                "&[data-state='open'] > .AccordionChevron": {
-                    "transform": "rotate(180deg)",
-                },
+        return {
+            "color": color("accent", 11),
+            "font_size": "1.1em",
+            "line_height": 1,
+            "justify_content": "space-between",
+            "align_items": "center",
+            "flex": 1,
+            "display": "flex",
+            "padding": "var(--space-3) var(--space-4)",
+            "width": "100%",
+            "box_shadow": f"0 var(--divider-px) 0 {color('gray', 6, alpha=True)}",
+            "&[data-state='open'] > .AccordionChevron": {
+                "transform": "rotate(180deg)",
+            },
+            "&:hover": {
+                "background_color": color("accent", 4),
+            },
+            "& > .AccordionChevron": {
+                "transition": f"transform var(--animation-duration) var(--animation-easing)",
+            },
+            _inherited_variant_selector("classic"): {
+                "color": "var(--accent-contrast)",
                 "&:hover": {
-                    "background_color": color("accent", 4),
+                    "background_color": color("accent", 10),
                 },
                 "& > .AccordionChevron": {
-                    "transition": f"transform var(--animation-duration) var(--animation-easing)",
-                },
-                _inherited_variant_selector("classic"): {
                     "color": "var(--accent-contrast)",
-                    "&:hover": {
-                        "background_color": color("accent", 10),
-                    },
-                    "& > .AccordionChevron": {
-                        "color": "var(--accent-contrast)",
-                    },
                 },
-            }
-        )
+            },
+        }
 
 
 class AccordionIcon(Icon):
@@ -417,13 +425,13 @@ class AccordionContent(AccordionComponent):
 
     alias = "RadixAccordionContent"
 
-    def add_imports(self) -> imports.ImportDict:
+    def add_imports(self) -> dict:
         """Add imports to the component.
 
         Returns:
             The imports of the component.
         """
-        return {"@emotion/react": [imports.ImportVar(tag="keyframes")]}
+        return {"@emotion/react": "keyframes"}
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -470,40 +478,36 @@ to {
 """
         ]
 
-    def add_style(self) -> Style | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        slideDown = Var.create(
+        slideDown = LiteralVar.create(
             f"${{slideDown}} var(--animation-duration) var(--animation-easing)",
-            _var_is_string=True,
         )
 
-        slideUp = Var.create(
+        slideUp = LiteralVar.create(
             f"${{slideUp}} var(--animation-duration) var(--animation-easing)",
-            _var_is_string=True,
         )
 
-        return Style(
-            {
-                "overflow": "hidden",
-                "color": color("accent", 11),
-                "padding_x": "var(--space-4)",
-                # Apply before and after content to avoid height animation jank.
-                "&:before, &:after": {
-                    "content": "' '",
-                    "display": "block",
-                    "height": "var(--space-3)",
-                },
-                "&[data-state='open']": {"animation": slideDown},
-                "&[data-state='closed']": {"animation": slideUp},
-                _inherited_variant_selector("classic"): {
-                    "color": "var(--accent-contrast)",
-                },
-            }
-        )
+        return {
+            "overflow": "hidden",
+            "color": color("accent", 11),
+            "padding_x": "var(--space-4)",
+            # Apply before and after content to avoid height animation jank.
+            "&:before, &:after": {
+                "content": "' '",
+                "display": "block",
+                "height": "var(--space-3)",
+            },
+            "&[data-state='open']": {"animation": slideDown},
+            "&[data-state='closed']": {"animation": slideUp},
+            _inherited_variant_selector("classic"): {
+                "color": "var(--accent-contrast)",
+            },
+        }
 
 
 class Accordion(ComponentNamespace):

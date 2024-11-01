@@ -1,7 +1,9 @@
 **/.DS_Store
 **/*.pyc
+assets/external/*
 dist/*
 examples/
+.web
 .idea
 .vscode
 .coverage
@@ -11,3 +13,4 @@ venv
 requirements.txt
 .pyi_generator_last_run
 .pyi_generator_diff
+reflex.db

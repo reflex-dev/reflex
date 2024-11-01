@@ -3,29 +3,35 @@
 from __future__ import annotations
 
 from hashlib import md5
-from typing import Any, Dict, Iterator, Set, Union
+from typing import Any, Dict, Iterator, Set, Tuple, Union
 
 from jinja2 import Environment
 
 from reflex.components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
-from reflex.event import EventChain
-from reflex.utils import imports
-from reflex.utils.format import format_event_chain
-from reflex.vars import BaseVar, Var
+from reflex.event import (
+    EventChain,
+    EventHandler,
+    input_event,
+    key_event,
+    prevent_default,
+)
+from reflex.utils.imports import ImportDict
+from reflex.vars import VarData
+from reflex.vars.base import LiteralVar, Var
 
 from .base import BaseHTML
 
-FORM_DATA = Var.create("form_data")
+FORM_DATA = Var(_js_expr="form_data")
 HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     """
     const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {
         const $form = ev.target
         ev.preventDefault()
-        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}}
+        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}};
 
-        {{ on_submit_event_chain }}
+        ({{ on_submit_event_chain }}());
 
         if ({{ reset_on_submit }}) {
             $form.reset()
@@ -96,6 +102,24 @@ class Fieldset(Element):
     name: Var[Union[str, int, bool]]
 
 
+def on_submit_event_spec() -> Tuple[Var[Dict[str, Any]]]:
+    """Event handler spec for the on_submit event.
+
+    Returns:
+        The event handler spec.
+    """
+    return (FORM_DATA,)
+
+
+def on_submit_string_event_spec() -> Tuple[Var[Dict[str, str]]]:
+    """Event handler spec for the on_submit event.
+
+    Returns:
+        The event handler spec.
+    """
+    return (FORM_DATA,)
+
+
 class Form(BaseHTML):
     """Display the form element."""
 
@@ -134,16 +158,8 @@ class Form(BaseHTML):
     # The name used to make this form's submit handler function unique.
     handle_submit_unique_name: Var[str]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Event triggers for radix form root.
-
-        Returns:
-            The triggers for event supported by Root.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_SUBMIT: lambda e0: [FORM_DATA],
-        }
+    # Fired when the form is submitted
+    on_submit: EventHandler[on_submit_event_spec, on_submit_string_event_spec]
 
     @classmethod
     def create(cls, *children, **props):
@@ -156,6 +172,9 @@ class Form(BaseHTML):
         Returns:
             The form component.
         """
+        if "on_submit" not in props:
+            props["on_submit"] = prevent_default
+
         if "handle_submit_unique_name" in props:
             return super().create(*children, **props)
 
@@ -169,38 +188,44 @@ class Form(BaseHTML):
         ).hexdigest()
         return form
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {
-                "react": {imports.ImportVar(tag="useCallback")},
-                f"/{Dirs.STATE_PATH}": {
-                    imports.ImportVar(tag="getRefValue"),
-                    imports.ImportVar(tag="getRefValues"),
-                },
-            },
-        )
+    def add_imports(self) -> ImportDict:
+        """Add imports needed by the form component.
 
-    def _get_hooks(self) -> str | None:
+        Returns:
+            The imports for the form component.
+        """
+        return {
+            "react": "useCallback",
+            f"$/{Dirs.STATE_PATH}": ["getRefValue", "getRefValues"],
+        }
+
+    def add_hooks(self) -> list[str]:
+        """Add hooks for the form.
+
+        Returns:
+            The hooks for the form.
+        """
         if EventTriggers.ON_SUBMIT not in self.event_triggers:
-            return
-        return HANDLE_SUBMIT_JS_JINJA2.render(
-            handle_submit_unique_name=self.handle_submit_unique_name,
-            form_data=FORM_DATA,
-            field_ref_mapping=str(Var.create_safe(self._get_form_refs())),
-            on_submit_event_chain=format_event_chain(
-                self.event_triggers[EventTriggers.ON_SUBMIT]
-            ),
-            reset_on_submit=self.reset_on_submit,
-        )
+            return []
+        return [
+            HANDLE_SUBMIT_JS_JINJA2.render(
+                handle_submit_unique_name=self.handle_submit_unique_name,
+                form_data=FORM_DATA,
+                field_ref_mapping=str(LiteralVar.create(self._get_form_refs())),
+                on_submit_event_chain=str(
+                    LiteralVar.create(self.event_triggers[EventTriggers.ON_SUBMIT])
+                ),
+                reset_on_submit=self.reset_on_submit,
+            )
+        ]
 
     def _render(self) -> Tag:
         render_tag = super()._render()
         if EventTriggers.ON_SUBMIT in self.event_triggers:
             render_tag.add_props(
                 **{
-                    EventTriggers.ON_SUBMIT: BaseVar(
-                        _var_name=f"handleSubmit_{self.handle_submit_unique_name}",
+                    EventTriggers.ON_SUBMIT: Var(
+                        _js_expr=f"handleSubmit_{self.handle_submit_unique_name}",
                         _var_type=EventChain,
                     )
                 }
@@ -214,15 +239,18 @@ class Form(BaseHTML):
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):
-                ref_var = Var.create_safe(ref[:-3]).as_ref()
-                form_refs[ref[5:-3]] = Var.create_safe(
-                    f"getRefValues({str(ref_var)})", _var_is_local=False
-                )._replace(merge_var_data=ref_var._var_data)
+                ref_var = Var(_js_expr=ref[:-3]).as_ref()
+                form_refs[ref[len("refs_") : -3]] = Var(
+                    _js_expr=f"getRefValues({str(ref_var)})",
+                    _var_data=VarData.merge(ref_var._get_all_var_data()),
+                )
             else:
-                ref_var = Var.create_safe(ref).as_ref()
-                form_refs[ref[4:]] = Var.create_safe(
-                    f"getRefValue({str(ref_var)})", _var_is_local=False
-                )._replace(merge_var_data=ref_var._var_data)
+                ref_var = Var(_js_expr=ref).as_ref()
+                form_refs[ref[4:]] = Var(
+                    _js_expr=f"getRefValue({str(ref_var)})",
+                    _var_data=VarData.merge(ref_var._get_all_var_data()),
+                )
+        # print(repr(form_refs))
         return form_refs
 
     def _get_vars(self, include_children: bool = True) -> Iterator[Var]:
@@ -340,20 +368,20 @@ class Input(BaseHTML):
     # Value of the input
     value: Var[Union[str, int, float]]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
+    # Fired when the input value changes
+    on_change: EventHandler[input_event]
 
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0.target.value],
-            EventTriggers.ON_FOCUS: lambda e0: [e0.target.value],
-            EventTriggers.ON_BLUR: lambda e0: [e0.target.value],
-            EventTriggers.ON_KEY_DOWN: lambda e0: [e0.key],
-            EventTriggers.ON_KEY_UP: lambda e0: [e0.key],
-        }
+    # Fired when the input gains focus
+    on_focus: EventHandler[input_event]
+
+    # Fired when the input loses focus
+    on_blur: EventHandler[input_event]
+
+    # Fired when a key is pressed down
+    on_key_down: EventHandler[key_event]
+
+    # Fired when a key is released
+    on_key_up: EventHandler[key_event]
 
 
 class Label(BaseHTML):
@@ -491,23 +519,15 @@ class Select(BaseHTML):
     # Number of visible options in a drop-down list
     size: Var[Union[str, int, bool]]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0.target.value],
-        }
+    # Fired when the select value changes
+    on_change: EventHandler[input_event]
 
 
 AUTO_HEIGHT_JS = """
 const autoHeightOnInput = (e, is_enabled) => {
     if (is_enabled) {
         const el = e.target;
-        el.style.overflowY = "hidden";
+        el.style.overflowY = "scroll";
         el.style.height = "auto";
         el.style.height = (e.target.scrollHeight) + "px";
         if (el.form && !el.form.data_resize_on_reset) {
@@ -589,6 +609,57 @@ class Textarea(BaseHTML):
     # How the text in the textarea is to be wrapped when submitting the form
     wrap: Var[Union[str, int, bool]]
 
+    # Fired when the input value changes
+    on_change: EventHandler[input_event]
+
+    # Fired when the input gains focus
+    on_focus: EventHandler[input_event]
+
+    # Fired when the input loses focus
+    on_blur: EventHandler[input_event]
+
+    # Fired when a key is pressed down
+    on_key_down: EventHandler[key_event]
+
+    # Fired when a key is released
+    on_key_up: EventHandler[key_event]
+
+    @classmethod
+    def create(cls, *children, **props):
+        """Create a textarea component.
+
+        Args:
+            *children: The children of the textarea.
+            **props: The properties of the textarea.
+
+        Returns:
+            The textarea component.
+
+        Raises:
+            ValueError: when `enter_key_submit` is combined with `on_key_down`.
+        """
+        enter_key_submit = props.get("enter_key_submit")
+        auto_height = props.get("auto_height")
+        custom_attrs = props.setdefault("custom_attrs", {})
+
+        if enter_key_submit is not None:
+            enter_key_submit = Var.create(enter_key_submit)
+            if "on_key_down" in props:
+                raise ValueError(
+                    "Cannot combine `enter_key_submit` with `on_key_down`.",
+                )
+            custom_attrs["on_key_down"] = Var(
+                _js_expr=f"(e) => enterKeySubmitOnKeyDown(e, {str(enter_key_submit)})",
+                _var_data=VarData.merge(enter_key_submit._get_all_var_data()),
+            )
+        if auto_height is not None:
+            auto_height = Var.create(auto_height)
+            custom_attrs["on_input"] = Var(
+                _js_expr=f"(e) => autoHeightOnInput(e, {str(auto_height)})",
+                _var_data=VarData.merge(auto_height._get_all_var_data()),
+            )
+        return super().create(*children, **props)
+
     def _exclude_props(self) -> list[str]:
         return super()._exclude_props() + [
             "auto_height",
@@ -608,39 +679,17 @@ class Textarea(BaseHTML):
             custom_code.add(ENTER_KEY_SUBMIT_JS)
         return custom_code
 
-    def _render(self) -> Tag:
-        tag = super()._render()
-        if self.enter_key_submit is not None:
-            if "on_key_down" in self.event_triggers:
-                raise ValueError(
-                    "Cannot combine `enter_key_submit` with `on_key_down`.",
-                )
-            tag.add_props(
-                on_key_down=Var.create_safe(
-                    f"(e) => enterKeySubmitOnKeyDown(e, {self.enter_key_submit._var_name_unwrapped})",
-                    _var_is_local=False,
-                )._replace(merge_var_data=self.enter_key_submit._var_data),
-            )
-        if self.auto_height is not None:
-            tag.add_props(
-                on_input=Var.create_safe(
-                    f"(e) => autoHeightOnInput(e, {self.auto_height._var_name_unwrapped})",
-                    _var_is_local=False,
-                )._replace(merge_var_data=self.auto_height._var_data),
-            )
-        return tag
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0.target.value],
-            EventTriggers.ON_FOCUS: lambda e0: [e0.target.value],
-            EventTriggers.ON_BLUR: lambda e0: [e0.target.value],
-            EventTriggers.ON_KEY_DOWN: lambda e0: [e0.key],
-            EventTriggers.ON_KEY_UP: lambda e0: [e0.key],
-        }
+button = Button.create
+fieldset = Fieldset.create
+form = Form.create
+input = Input.create
+label = Label.create
+legend = Legend.create
+meter = Meter.create
+optgroup = Optgroup.create
+option = Option.create
+output = Output.create
+progress = Progress.create
+select = Select.create
+textarea = Textarea.create

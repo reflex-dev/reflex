@@ -12,7 +12,7 @@ from reflex.utils.imports import ImportVar
 SETTER_PREFIX = "set_"
 
 # The file used to specify no compilation.
-NOCOMPILE_FILE = ".web/nocompile"
+NOCOMPILE_FILE = "nocompile"
 
 
 class Ext(SimpleNamespace):
@@ -62,9 +62,17 @@ class CompileVars(SimpleNamespace):
     # The name of the function for converting a dict to an event.
     TO_EVENT = "Event"
     # The name of the internal on_load event.
-    ON_LOAD_INTERNAL = "on_load_internal_state.on_load_internal"
+    ON_LOAD_INTERNAL = "reflex___state____on_load_internal_state.on_load_internal"
     # The name of the internal event to update generic state vars.
-    UPDATE_VARS_INTERNAL = "update_vars_internal_state.update_vars_internal"
+    UPDATE_VARS_INTERNAL = (
+        "reflex___state____update_vars_internal_state.update_vars_internal"
+    )
+    # The name of the frontend event exception state
+    FRONTEND_EXCEPTION_STATE = "reflex___state____frontend_event_exception_state"
+    # The full name of the frontend exception state
+    FRONTEND_EXCEPTION_STATE_FULL = (
+        f"reflex___state____state.{FRONTEND_EXCEPTION_STATE}"
+    )
 
 
 class PageNames(SimpleNamespace):
@@ -80,6 +88,8 @@ class PageNames(SimpleNamespace):
     DOCUMENT_ROOT = "_document"
     # The name of the theme page.
     THEME = "theme"
+    # The module containing components.
+    COMPONENTS = "components"
     # The module containing shared stateful components
     STATEFUL_COMPONENTS = "stateful_components"
 
@@ -103,9 +113,9 @@ class Imports(SimpleNamespace):
     """Common sets of import vars."""
 
     EVENTS = {
-        "react": {ImportVar(tag="useContext")},
-        f"/{Dirs.CONTEXTS_PATH}": {ImportVar(tag="EventLoopContext")},
-        f"/{Dirs.STATE_PATH}": {ImportVar(tag=CompileVars.TO_EVENT)},
+        "react": [ImportVar(tag="useContext")],
+        f"$/{Dirs.CONTEXTS_PATH}": [ImportVar(tag="EventLoopContext")],
+        f"$/{Dirs.STATE_PATH}": [ImportVar(tag=CompileVars.TO_EVENT)],
     }
 
 
@@ -140,3 +150,28 @@ class MemoizationMode(Base):
 
     # Whether children of this component should be memoized first.
     recursive: bool = True
+
+
+class SpecialAttributes(enum.Enum):
+    """Special attributes for components.
+
+    These are placed in custom_attrs and rendered as-is rather than converting
+    to a style prop.
+    """
+
+    DATA_UNDERSCORE = "data_"
+    DATA_DASH = "data-"
+    ARIA_UNDERSCORE = "aria_"
+    ARIA_DASH = "aria-"
+
+    @classmethod
+    def is_special(cls, attr: str) -> bool:
+        """Check if the attribute is special.
+
+        Args:
+            attr: the attribute to check
+
+        Returns:
+            True if the attribute is special.
+        """
+        return any(attr.startswith(value.value) for value in cls)

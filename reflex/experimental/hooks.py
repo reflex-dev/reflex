@@ -1,22 +1,17 @@
 """Add standard Hooks wrapper for React."""
 
+from __future__ import annotations
+
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, VarData
+from reflex.vars import VarData
+from reflex.vars.base import Var
 
 
-def _add_react_import(v: Var | None, tags: str | list):
-    if v is None:
-        return
-
-    if isinstance(tags, str):
-        tags = [tags]
-
-    v._var_data = VarData(  # type: ignore
-        imports={"react": [ImportVar(tag=tag, install=False) for tag in tags]},
-    )
+def _compose_react_imports(tags: list[str]) -> dict[str, list[ImportVar]]:
+    return {"react": [ImportVar(tag=tag) for tag in tags]}
 
 
-def const(name, value) -> Var | None:
+def const(name, value) -> Var:
     """Create a constant Var.
 
     Args:
@@ -27,11 +22,11 @@ def const(name, value) -> Var | None:
         The constant Var.
     """
     if isinstance(name, list):
-        return Var.create(f"const [{', '.join(name)}] = {value}")
-    return Var.create(f"const {name} = {value}")
+        return Var(_js_expr=f"const [{', '.join(name)}] = {value}")
+    return Var(_js_expr=f"const {name} = {value}")
 
 
-def useCallback(func, deps) -> Var | None:
+def useCallback(func, deps) -> Var:
     """Create a useCallback hook with a function and dependencies.
 
     Args:
@@ -41,15 +36,13 @@ def useCallback(func, deps) -> Var | None:
     Returns:
         The useCallback hook.
     """
-    if deps:
-        v = Var.create(f"useCallback({func}, {deps})")
-    else:
-        v = Var.create(f"useCallback({func})")
-    _add_react_import(v, "useCallback")
-    return v
+    return Var(
+        _js_expr=f"useCallback({func}, {deps})" if deps else f"useCallback({func})",
+        _var_data=VarData(imports=_compose_react_imports(["useCallback"])),
+    )
 
 
-def useContext(context) -> Var | None:
+def useContext(context) -> Var:
     """Create a useContext hook with a context.
 
     Args:
@@ -58,12 +51,13 @@ def useContext(context) -> Var | None:
     Returns:
         The useContext hook.
     """
-    v = Var.create(f"useContext({context})")
-    _add_react_import(v, "useContext")
-    return v
+    return Var(
+        _js_expr=f"useContext({context})",
+        _var_data=VarData(imports=_compose_react_imports(["useContext"])),
+    )
 
 
-def useRef(default) -> Var | None:
+def useRef(default) -> Var:
     """Create a useRef hook with a default value.
 
     Args:
@@ -72,12 +66,13 @@ def useRef(default) -> Var | None:
     Returns:
         The useRef hook.
     """
-    v = Var.create(f"useRef({default})")
-    _add_react_import(v, "useRef")
-    return v
+    return Var(
+        _js_expr=f"useRef({default})",
+        _var_data=VarData(imports=_compose_react_imports(["useRef"])),
+    )
 
 
-def useState(var_name, default=None) -> Var | None:
+def useState(var_name, default=None) -> Var:
     """Create a useState hook with a variable name and setter name.
 
     Args:
@@ -87,7 +82,10 @@ def useState(var_name, default=None) -> Var | None:
     Returns:
         A useState hook.
     """
-    setter_name = f"set{var_name.capitalize()}"
-    v = const([var_name, setter_name], f"useState({default})")
-    _add_react_import(v, "useState")
-    return v
+    return const(
+        [var_name, f"set{var_name.capitalize()}"],
+        Var(
+            _js_expr=f"useState({default})",
+            _var_data=VarData(imports=_compose_react_imports(["useState"])),
+        ),
+    )

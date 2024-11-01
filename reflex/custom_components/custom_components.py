@@ -17,7 +17,7 @@ import typer
 from tomlkit.exceptions import TOMLKitError
 
 from reflex import constants
-from reflex.config import get_config
+from reflex.config import environment, get_config
 from reflex.constants import CustomComponents
 from reflex.utils import console
 
@@ -36,7 +36,7 @@ POST_CUSTOM_COMPONENTS_GALLERY_TIMEOUT = 15
 
 
 @contextmanager
-def set_directory(working_directory: str):
+def set_directory(working_directory: str | Path):
     """Context manager that sets the working directory.
 
     Args:
@@ -45,7 +45,8 @@ def set_directory(working_directory: str):
     Yields:
         Yield to the caller to perform operations in the working directory.
     """
-    current_directory = os.getcwd()
+    current_directory = Path.cwd()
+    working_directory = Path(working_directory)
     try:
         os.chdir(working_directory)
         yield
@@ -62,12 +63,14 @@ def _create_package_config(module_name: str, package_name: str):
     """
     from reflex.compiler import templates
 
-    with open(CustomComponents.PYPROJECT_TOML, "w") as f:
-        f.write(
-            templates.CUSTOM_COMPONENTS_PYPROJECT_TOML.render(
-                module_name=module_name, package_name=package_name
-            )
+    pyproject = Path(CustomComponents.PYPROJECT_TOML)
+    pyproject.write_text(
+        templates.CUSTOM_COMPONENTS_PYPROJECT_TOML.render(
+            module_name=module_name,
+            package_name=package_name,
+            reflex_version=constants.Reflex.VERSION,
         )
+    )
 
 
 def _get_package_config(exit_on_fail: bool = True) -> dict:
@@ -82,11 +85,11 @@ def _get_package_config(exit_on_fail: bool = True) -> dict:
     Raises:
         Exit: If the pyproject.toml file is not found.
     """
+    pyproject = Path(CustomComponents.PYPROJECT_TOML)
     try:
-        with open(CustomComponents.PYPROJECT_TOML, "rb") as f:
-            return dict(tomlkit.load(f))
+        return dict(tomlkit.loads(pyproject.read_bytes()))
     except (OSError, TOMLKitError) as ex:
-        console.error(f"Unable to read from pyproject.toml due to {ex}")
+        console.error(f"Unable to read from {pyproject} due to {ex}")
         if exit_on_fail:
             raise typer.Exit(code=1) from ex
         raise
@@ -101,17 +104,17 @@ def _create_readme(module_name: str, package_name: str):
     """
     from reflex.compiler import templates
 
-    with open(CustomComponents.PACKAGE_README, "w") as f:
-        f.write(
-            templates.CUSTOM_COMPONENTS_README.render(
-                module_name=module_name,
-                package_name=package_name,
-            )
+    readme = Path(CustomComponents.PACKAGE_README)
+    readme.write_text(
+        templates.CUSTOM_COMPONENTS_README.render(
+            module_name=module_name,
+            package_name=package_name,
         )
+    )
 
 
 def _write_source_and_init_py(
-    custom_component_src_dir: str,
+    custom_component_src_dir: Path,
     component_class_name: str,
     module_name: str,
 ):
@@ -124,27 +127,17 @@ def _write_source_and_init_py(
     """
     from reflex.compiler import templates
 
-    with open(
-        os.path.join(
-            custom_component_src_dir,
-            f"{module_name}.py",
-        ),
-        "w",
-    ) as f:
-        f.write(
-            templates.CUSTOM_COMPONENTS_SOURCE.render(
-                component_class_name=component_class_name, module_name=module_name
-            )
+    module_path = custom_component_src_dir / f"{module_name}.py"
+    module_path.write_text(
+        templates.CUSTOM_COMPONENTS_SOURCE.render(
+            component_class_name=component_class_name, module_name=module_name
         )
+    )
 
-    with open(
-        os.path.join(
-            custom_component_src_dir,
-            CustomComponents.INIT_FILE,
-        ),
-        "w",
-    ) as f:
-        f.write(templates.CUSTOM_COMPONENTS_INIT_FILE.render(module_name=module_name))
+    init_path = custom_component_src_dir / CustomComponents.INIT_FILE
+    init_path.write_text(
+        templates.CUSTOM_COMPONENTS_INIT_FILE.render(module_name=module_name)
+    )
 
 
 def _populate_demo_app(name_variants: NameVariants):
@@ -190,7 +183,7 @@ def _get_default_library_name_parts() -> list[str]:
     Returns:
         The parts of default library name.
     """
-    current_dir_name = os.getcwd().split(os.path.sep)[-1]
+    current_dir_name = Path.cwd().name
 
     cleaned_dir_name = re.sub("[^0-9a-zA-Z-_]+", "", current_dir_name).lower()
     parts = [part for part in re.split("-|_", cleaned_dir_name) if part]
@@ -267,7 +260,7 @@ def _validate_library_name(library_name: str | None) -> NameVariants:
     # Module name is the snake case.
     module_name = "_".join(name_parts)
 
-    custom_component_module_dir = f"reflex_{module_name}"
+    custom_component_module_dir = Path(f"reflex_{module_name}")
     console.debug(f"Custom component source directory: {custom_component_module_dir}")
 
     # Use the same name for the directory and the app.
@@ -343,7 +336,7 @@ def init(
 
     console.set_log_level(loglevel)
 
-    if os.path.exists(CustomComponents.PYPROJECT_TOML):
+    if CustomComponents.PYPROJECT_TOML.exists():
         console.error(f"A {CustomComponents.PYPROJECT_TOML} already exists. Aborting.")
         typer.Exit(code=1)
 
@@ -616,15 +609,17 @@ def publish(
         help="The API token to use for authentication on python package repository. If token is provided, no username/password should be provided at the same time",
     ),
     username: Optional[str] = typer.Option(
-        None,
+        environment.TWINE_USERNAME,
         "-u",
         "--username",
+        show_default="TWINE_USERNAME environment variable value if set",
         help="The username to use for authentication on python package repository. Username and password must both be provided.",
     ),
     password: Optional[str] = typer.Option(
-        None,
+        environment.TWINE_PASSWORD,
         "-p",
         "--password",
+        show_default="TWINE_PASSWORD environment variable value if set",
         help="The password to use for authentication on python package repository. Username and password must both be provided.",
     ),
     build: bool = typer.Option(
@@ -666,6 +661,9 @@ def publish(
 
     # Validate the credentials.
     username, password = _validate_credentials(username, password, token)
+
+    # Minimal Validation of the pyproject.toml.
+    _min_validate_project_info()
 
     # Get the version to publish from the pyproject.toml.
     version_to_publish = _get_version_to_publish()
@@ -735,6 +733,34 @@ def _process_entered_list(input: str | None) -> list | None:
     return [t.strip() for t in (input or "").split(",") if t if input] or None
 
 
+def _min_validate_project_info():
+    """Ensures minimal project information in the pyproject.toml file.
+
+    Raises:
+        Exit: If the pyproject.toml file is ill-formed.
+    """
+    pyproject_toml = _get_package_config()
+
+    project = pyproject_toml.get("project")
+    if project is None:
+        console.error(
+            f"The project section is not found in {CustomComponents.PYPROJECT_TOML}"
+        )
+        raise typer.Exit(code=1)
+
+    if not project.get("name"):
+        console.error(
+            f"The project name is not found in {CustomComponents.PYPROJECT_TOML}"
+        )
+        raise typer.Exit(code=1)
+
+    if not project.get("version"):
+        console.error(
+            f"The project version is not found in {CustomComponents.PYPROJECT_TOML}"
+        )
+        raise typer.Exit(code=1)
+
+
 def _validate_project_info():
     """Validate the project information in the pyproject.toml file.
 
@@ -742,18 +768,10 @@ def _validate_project_info():
         Exit: If the pyproject.toml file is ill-formed.
     """
     pyproject_toml = _get_package_config()
-
-    try:
-        project = pyproject_toml.get("project", {})
-        if not project:
-            console.error("The project section not found in pyproject.toml")
-            raise typer.Exit(code=1)
-        console.print(
-            f'Double check the information before publishing: {project["name"]} version {project["version"]}'
-        )
-    except KeyError as ke:
-        console.error(f"The pyproject.toml is possibly ill-formed due to {ke}")
-        raise typer.Exit(code=1) from ke
+    project = pyproject_toml["project"]
+    console.print(
+        f'Double check the information before publishing: {project["name"]} version {project["version"]}'
+    )
 
     console.print("Update or enter to keep the current information.")
     project["description"] = console.ask(

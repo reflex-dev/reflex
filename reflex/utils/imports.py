@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import dataclasses
 from collections import defaultdict
-from typing import Dict, List, Optional
-
-from reflex.base import Base
+from typing import DefaultDict, Dict, List, Optional, Tuple, Union
 
 
-def merge_imports(*imports) -> ImportDict:
+def merge_imports(
+    *imports: ImportDict | ParsedImportDict | ImmutableParsedImportDict,
+) -> ParsedImportDict:
     """Merge multiple import dicts together.
 
     Args:
@@ -17,14 +18,58 @@ def merge_imports(*imports) -> ImportDict:
     Returns:
         The merged import dicts.
     """
-    all_imports = defaultdict(list)
+    all_imports: DefaultDict[str, List[ImportVar]] = defaultdict(list)
     for import_dict in imports:
-        for lib, fields in import_dict.items():
-            all_imports[lib].extend(fields)
+        for lib, fields in (
+            import_dict if isinstance(import_dict, tuple) else import_dict.items()
+        ):
+            # If the lib is an absolute path, we need to prefix it with a $
+            lib = (
+                "$" + lib
+                if lib.startswith(("/utils/", "/components/", "/styles/", "/public/"))
+                else lib
+            )
+            if isinstance(fields, (list, tuple, set)):
+                all_imports[lib].extend(
+                    (
+                        ImportVar(field) if isinstance(field, str) else field
+                        for field in fields
+                    )
+                )
+            else:
+                all_imports[lib].append(
+                    ImportVar(fields) if isinstance(fields, str) else fields
+                )
     return all_imports
 
 
-def collapse_imports(imports: ImportDict) -> ImportDict:
+def parse_imports(imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
+    """Parse the import dict into a standard format.
+
+    Args:
+        imports: The import dict to parse.
+
+    Returns:
+        The parsed import dict.
+    """
+
+    def _make_list(value: ImportTypes) -> list[str | ImportVar] | list[ImportVar]:
+        if isinstance(value, (str, ImportVar)):
+            return [value]
+        return value
+
+    return {
+        package: [
+            ImportVar(tag=tag) if isinstance(tag, str) else tag
+            for tag in _make_list(maybe_tags)
+        ]
+        for package, maybe_tags in imports.items()
+    }
+
+
+def collapse_imports(
+    imports: ParsedImportDict | ImmutableParsedImportDict,
+) -> ParsedImportDict:
     """Remove all duplicate ImportVar within an ImportDict.
 
     Args:
@@ -33,10 +78,20 @@ def collapse_imports(imports: ImportDict) -> ImportDict:
     Returns:
         The collapsed import dict.
     """
-    return {lib: list(set(import_vars)) for lib, import_vars in imports.items()}
+    return {
+        lib: (
+            list(set(import_vars))
+            if isinstance(import_vars, list)
+            else list(import_vars)
+        )
+        for lib, import_vars in (
+            imports if isinstance(imports, tuple) else imports.items()
+        )
+    }
 
 
-class ImportVar(Base):
+@dataclasses.dataclass(order=True, frozen=True)
+class ImportVar:
     """An import var."""
 
     # The name of the import tag.
@@ -72,22 +127,8 @@ class ImportVar(Base):
         else:
             return self.tag or ""
 
-    def __hash__(self) -> int:
-        """Define a hash function for the import var.
 
-        Returns:
-            The hash of the var.
-        """
-        return hash(
-            (
-                self.tag,
-                self.is_default,
-                self.alias,
-                self.install,
-                self.render,
-                self.transpile,
-            )
-        )
-
-
-ImportDict = Dict[str, List[ImportVar]]
+ImportTypes = Union[str, ImportVar, List[Union[str, ImportVar]], List[ImportVar]]
+ImportDict = Dict[str, ImportTypes]
+ParsedImportDict = Dict[str, List[ImportVar]]
+ImmutableParsedImportDict = Tuple[Tuple[str, Tuple[ImportVar, ...]], ...]

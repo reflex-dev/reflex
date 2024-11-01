@@ -1,9 +1,10 @@
 """Image component from next/image."""
 
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
+from reflex.event import EventHandler, empty_event
 from reflex.utils import types
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from .base import NextComponent
 
@@ -54,17 +55,11 @@ class Image(NextComponent):
     # A Data URL to be used as a placeholder image before the src image successfully loads. Only takes effect when combined with placeholder="blur".
     blurDataURL: Var[str]
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """The event triggers of the component.
+    # Fires when the image has loaded.
+    on_load: EventHandler[empty_event]
 
-        Returns:
-            The dict describing the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            "on_load": lambda: [],
-            "on_error": lambda: [],
-        }
+    # Fires when the image has an error.
+    on_error: EventHandler[empty_event]
 
     @classmethod
     def create(
@@ -106,9 +101,5 @@ class Image(NextComponent):
 
         # mysteriously, following `sizes` prop is needed to avoid blury images.
         props["sizes"] = "100vw"
-
-        src = props.get("src", None)
-        if src is not None and not isinstance(src, (Var)):
-            props["src"] = Var.create(value=src, _var_is_string=True)
 
         return super().create(*children, **props)

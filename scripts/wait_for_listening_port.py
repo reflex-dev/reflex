@@ -3,6 +3,7 @@
 Replaces logic previously implemented in a shell script that needed
 tools that are not available on Windows.
 """
+
 import argparse
 import socket
 import time

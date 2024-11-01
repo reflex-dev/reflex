@@ -51,14 +51,14 @@ else:
 
     @asynccontextmanager
     async def proxy_middleware(  # pyright: ignore[reportGeneralTypeIssues]
-        api: FastAPI,
+        app: FastAPI,
     ) -> AsyncGenerator[None, None]:
         """A middleware to proxy requests to the separate frontend server.
 
         The proxy is installed on the / endpoint of the FastAPI instance.
 
         Args:
-            api: The FastAPI instance.
+            app: The FastAPI instance.
 
         Yields:
             None
@@ -67,7 +67,7 @@ else:
         backend_port = config.backend_port
         frontend_host = f"http://localhost:{config.frontend_port}"
         proxy_context, proxy_app = _get_proxy_app_with_context(frontend_host)
-        api.mount("/", proxy_app)
+        app.mount("/", proxy_app)
         console.debug(
             f"Proxying '/' requests on port {backend_port} to {frontend_host}"
         )

@@ -6,8 +6,9 @@ from typing import Any, Dict, Literal
 
 from reflex.components import Component
 from reflex.components.tags import Tag
-from reflex.utils import imports
-from reflex.vars import Var
+from reflex.config import get_config
+from reflex.utils.imports import ImportDict, ImportVar
+from reflex.vars.base import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]
@@ -112,6 +113,11 @@ class RadixThemesComponent(Component):
         component.alias = "RadixThemes" + (
             component.tag or component.__class__.__name__
         )
+        # value = props.get("value")
+        # if value is not None and component.alias == "RadixThemesSelect.Root":
+        #     lv = LiteralVar.create(value)
+        #     print(repr(lv))
+        #     print(f"Warning: Value {value} is not used in {component.alias}.")
         return component
 
     @staticmethod
@@ -208,25 +214,29 @@ class Theme(RadixThemesComponent):
             children = [ThemePanel.create(), *children]
         return super().create(*children, **props)
 
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {
-                "": [
-                    imports.ImportVar(tag="@radix-ui/themes/styles.css", install=False)
-                ],
-                "/utils/theme.js": [
-                    imports.ImportVar(tag="theme", is_default=True),
-                ],
-            },
-        )
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the Theme component.
+
+        Returns:
+            The import dict.
+        """
+        _imports: ImportDict = {
+            "$/utils/theme.js": [ImportVar(tag="theme", is_default=True)],
+        }
+        if get_config().tailwind is None:
+            # When tailwind is disabled, import the radix-ui styles directly because they will
+            # not be included in the tailwind.css file.
+            _imports[""] = ImportVar(
+                tag="@radix-ui/themes/styles.css",
+                install=False,
+            )
+        return _imports
 
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         tag = super()._render(props)
         tag.add_props(
-            css=Var.create(
-                "{{...theme.styles.global[':root'], ...theme.styles.global.body}}",
-                _var_is_local=False,
+            css=Var(
+                _js_expr=f"{{...theme.styles.global[':root'], ...theme.styles.global.body}}"
             ),
         )
         return tag
@@ -243,32 +253,19 @@ class ThemePanel(RadixThemesComponent):
     # Whether the panel is open. Defaults to False.
     default_open: Var[bool]
 
-    def _get_imports(self) -> dict[str, list[imports.ImportVar]]:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {
-                "react": [imports.ImportVar(tag="useEffect")],
-            },
-        )
+    def add_imports(self) -> dict[str, str]:
+        """Add imports for the ThemePanel component.
 
-    def _get_hooks(self) -> str | None:
-        # The panel freezes the tab if the user color preference differs from the
-        # theme "appearance", so clear it out when theme panel is used.
-        return """
-            useEffect(() => {
-                if (typeof window !== 'undefined') {
-                    window.onbeforeunload = () => {
-                        localStorage.removeItem('chakra-ui-color-mode');
-                    }
-                    window.onbeforeunload();
-                }
-            }, [])"""
+        Returns:
+            The import dict.
+        """
+        return {"react": "useEffect"}
 
 
 class RadixThemesColorModeProvider(Component):
     """Next-themes integration for radix themes components."""
 
-    library = "/components/reflex/radix_themes_color_mode_provider.js"
+    library = "$/components/reflex/radix_themes_color_mode_provider.js"
     tag = "RadixThemesColorModeProvider"
     is_default = True
 

@@ -1,12 +1,13 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Any, Dict, Literal
+from typing import Literal
 
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
-from reflex.constants import EventTriggers
-from reflex.vars import Var
+from reflex.event import EventHandler, identity_event
+from reflex.vars.base import LiteralVar, Var
 
 from ..base import (
     LiteralAccentColor,
@@ -27,7 +28,7 @@ class Checkbox(RadixThemesComponent):
     as_child: Var[bool]
 
     # Checkbox size "1" - "3"
-    size: Var[LiteralCheckboxSize]
+    size: Var[Responsive[LiteralCheckboxSize]]
 
     # Variant of checkbox: "classic" | "surface" | "soft"
     variant: Var[LiteralCheckboxVariant]
@@ -59,16 +60,8 @@ class Checkbox(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onCheckedChange"}
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
-
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0],
-        }
+    # Fired when the checkbox is checked or unchecked.
+    on_change: EventHandler[identity_event(bool)]
 
 
 class HighLevelCheckbox(RadixThemesComponent):
@@ -118,19 +111,11 @@ class HighLevelCheckbox(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onCheckedChange"}
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the events triggers signatures for the component.
-
-        Returns:
-            The signatures of the event triggers.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0],
-        }
+    # Fired when the checkbox is checked or unchecked.
+    on_change: EventHandler[identity_event(bool)]
 
     @classmethod
-    def create(cls, text: Var[str] = Var.create_safe(""), **props) -> Component:
+    def create(cls, text: Var[str] = LiteralVar.create(""), **props) -> Component:
         """Create a checkbox with a label.
 
         Args:
