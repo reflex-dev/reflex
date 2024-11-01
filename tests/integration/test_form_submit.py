@@ -121,7 +121,7 @@ def FormSubmitName(form_component):
                         on_change=rx.console_log,
                     ),
                     rx.button("Submit", type_="submit"),
-                    rx.icon_button(FormState.val, icon=rx.icon(tag="plus")),
+                    rx.icon_button(rx.icon(tag="plus")),
                 ),
                 on_submit=FormState.form_submit,
                 custom_attrs={"action": "/invalid"},

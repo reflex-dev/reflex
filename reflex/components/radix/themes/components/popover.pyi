@@ -57,6 +57,7 @@ class PopoverRoot(RadixThemesComponent):
             open: The controlled open state of the popover.
             modal: The modality of the popover. When set to true, interaction with outside elements will be disabled and only popover content will be visible to screen readers.
             default_open: The open state of the popover when it is initially rendered. Use when you do not need to control its open state.
+            on_open_change: Fired when the open state changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -224,6 +225,12 @@ class PopoverContent(elements.Div, RadixThemesComponent):
             collision_padding: The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
             sticky: The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
             hide_when_detached: Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
+            on_open_auto_focus: Fired when the dialog is opened.
+            on_close_auto_focus: Fired when the dialog is closed.
+            on_escape_key_down: Fired when the escape key is pressed.
+            on_pointer_down_outside: Fired when the pointer is down outside the dialog.
+            on_focus_outside: Fired when focus moves outside the dialog.
+            on_interact_outside: Fired when the pointer interacts outside the dialog.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.

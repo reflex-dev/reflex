@@ -75,6 +75,18 @@ class ColorModeIconButton(IconButton):
     def create(  # type: ignore
         cls,
         *children,
+        position: Optional[
+            Union[
+                Literal["bottom-left", "bottom-right", "top-left", "top-right"],
+                Union[
+                    Literal["bottom-left", "bottom-right", "top-left", "top-right"],
+                    Var[
+                        Literal["bottom-left", "bottom-right", "top-left", "top-right"]
+                    ],
+                ],
+            ]
+        ] = None,
+        allow_system: Optional[bool] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         size: Optional[
             Union[
@@ -226,7 +238,7 @@ class ColorModeIconButton(IconButton):
         on_unmount: Optional[EventType[[]]] = None,
         **props,
     ) -> "ColorModeIconButton":
-        """Create a icon button component that calls toggle_color_mode on click.
+        """Create an icon button component that calls toggle_color_mode on click.
 
         Args:
             position: The position of the icon button. Follow document flow if None.
@@ -416,6 +428,7 @@ class ColorModeSwitch(Switch):
             color_scheme: Override theme color for switch
             high_contrast: Whether to render the switch with higher contrast color against background
             radius: Override theme radius for switch: "none" | "small" | "full"
+            on_change: Props to rename  Fired when the value of the switch changes
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

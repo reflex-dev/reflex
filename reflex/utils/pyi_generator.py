@@ -490,7 +490,7 @@ def _generate_component_create_functiondef(
 
     def figure_out_return_type(annotation: Any):
         if inspect.isclass(annotation) and issubclass(annotation, inspect._empty):
-            return ast.Name(id="Optional[EventType]")
+            return ast.Name(id="EventType")
 
         if not isinstance(annotation, str) and get_origin(annotation) is tuple:
             arguments = get_args(annotation)
@@ -509,20 +509,13 @@ def _generate_component_create_functiondef(
             # Create EventType using the joined string
             event_type = ast.Name(id=f"EventType[{args_str}]")
 
-            # Wrap in Optional
-            optional_type = ast.Subscript(
-                value=ast.Name(id="Optional"),
-                slice=ast.Index(value=event_type),
-                ctx=ast.Load(),
-            )
-
-            return ast.Name(id=ast.unparse(optional_type))
+            return event_type
 
         if isinstance(annotation, str) and annotation.startswith("Tuple["):
             inside_of_tuple = annotation.removeprefix("Tuple[").removesuffix("]")
 
             if inside_of_tuple == "()":
-                return ast.Name(id="Optional[EventType[[]]]")
+                return ast.Name(id="EventType[[]]")
 
             arguments = [""]
 
@@ -548,10 +541,8 @@ def _generate_component_create_functiondef(
                 for argument in arguments
             ]
 
-            return ast.Name(
-                id=f"Optional[EventType[{', '.join(arguments_without_var)}]]"
-            )
-        return ast.Name(id="Optional[EventType]")
+            return ast.Name(id=f"EventType[{', '.join(arguments_without_var)}]")
+        return ast.Name(id="EventType")
 
     event_triggers = clz().get_event_triggers()
 
@@ -560,14 +551,40 @@ def _generate_component_create_functiondef(
         (
             ast.arg(
                 arg=trigger,
-                annotation=figure_out_return_type(
-                    inspect.signature(event_triggers[trigger]).return_annotation
+                annotation=ast.Subscript(
+                    ast.Name("Optional"),
+                    ast.Index(  # type: ignore
+                        value=ast.Name(
+                            id=ast.unparse(
+                                figure_out_return_type(
+                                    inspect.signature(event_specs).return_annotation
+                                )
+                                if not isinstance(
+                                    event_specs := event_triggers[trigger], tuple
+                                )
+                                else ast.Subscript(
+                                    ast.Name("Union"),
+                                    ast.Tuple(
+                                        [
+                                            figure_out_return_type(
+                                                inspect.signature(
+                                                    event_spec
+                                                ).return_annotation
+                                            )
+                                            for event_spec in event_specs
+                                        ]
+                                    ),
+                                )
+                            )
+                        )
+                    ),
                 ),
             ),
             ast.Constant(value=None),
         )
         for trigger in sorted(event_triggers)
     )
+
     logger.debug(f"Generated {clz.__name__}.create method with {len(kwargs)} kwargs")
     create_args = ast.arguments(
         args=[ast.arg(arg="cls")],
@@ -578,12 +595,17 @@ def _generate_component_create_functiondef(
         kwarg=ast.arg(arg="props"),
         defaults=[],
     )
+
     definition = ast.FunctionDef(
         name="create",
         args=create_args,
         body=[
             ast.Expr(
-                value=ast.Constant(value=_generate_docstrings(all_classes, all_props))
+                value=ast.Constant(
+                    value=_generate_docstrings(
+                        all_classes, [*all_props, *event_triggers]
+                    )
+                ),
             ),
             ast.Expr(
                 value=ast.Ellipsis(),

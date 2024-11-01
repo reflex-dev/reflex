@@ -65,6 +65,7 @@ class DropdownMenuRoot(RadixThemesComponent):
             open: The controlled open state of the dropdown menu. Must be used in conjunction with onOpenChange.
             modal: The modality of the dropdown menu. When set to true, interaction with outside elements will be disabled and only menu content will be visible to screen readers. Defaults to True.
             dir: The reading direction of submenus when applicable. If omitted, inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode.
+            on_open_change: Fired when the open state changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -278,6 +279,11 @@ class DropdownMenuContent(RadixThemesComponent):
             collision_padding: The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
             sticky: The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
             hide_when_detached: Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
+            on_close_auto_focus: Fired when the dialog is closed.
+            on_escape_key_down: Fired when the escape key is pressed.
+            on_pointer_down_outside: Fired when the pointer is down outside the dialog.
+            on_focus_outside: Fired when focus moves outside the dialog.
+            on_interact_outside: Fired when the pointer interacts outside the dialog.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -375,6 +381,7 @@ class DropdownMenuSub(RadixThemesComponent):
             *children: Child components.
             open: The controlled open state of the submenu. Must be used in conjunction with `on_open_change`.
             default_open: The open state of the submenu when it is initially rendered. Use when you do not need to control its open state.
+            on_open_change: Fired when the open state changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -455,6 +462,10 @@ class DropdownMenuSubContent(RadixThemesComponent):
             collision_padding: The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
             sticky: The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
             hide_when_detached: Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
+            on_escape_key_down: Fired when the escape key is pressed.
+            on_pointer_down_outside: Fired when the pointer is down outside the dialog.
+            on_focus_outside: Fired when focus moves outside the dialog.
+            on_interact_outside: Fired when the pointer interacts outside the dialog.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -576,6 +587,7 @@ class DropdownMenuItem(RadixThemesComponent):
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
             disabled: When true, prevents the user from interacting with the item.
             text_value: Optional text used for typeahead purposes. By default the typeahead behavior will use the .textContent of the item. Use this when the content is complex, or you have non-textual content inside.
+            on_select: Fired when the item is selected.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

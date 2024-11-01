@@ -61,6 +61,7 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
             min_width: The minimum width of chart container. Number
             min_height: The minimum height of chart container. Number
             debounce: If specified a positive number, debounced function will be used to handle the resize event. Default: 0
+            on_resize: If specified provides a callback providing the updated chart width and height values.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -175,6 +176,14 @@ class Legend(Recharts):
             chart_width: The width of chart container, usually calculated internally.
             chart_height: The height of chart container, usually calculated internally.
             margin: The margin of chart container, usually calculated internally.
+            on_click: The customized event handler of click on the items in this group
+            on_mouse_down: The customized event handler of mousedown on the items in this group
+            on_mouse_up: The customized event handler of mouseup on the items in this group
+            on_mouse_move: The customized event handler of mousemove on the items in this group
+            on_mouse_over: The customized event handler of mouseover on the items in this group
+            on_mouse_out: The customized event handler of mouseout on the items in this group
+            on_mouse_enter: The customized event handler of mouseenter on the items in this group
+            on_mouse_leave: The customized event handler of mouseleave on the items in this group
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

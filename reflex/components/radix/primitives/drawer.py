@@ -91,8 +91,8 @@ class DrawerTrigger(DrawerComponent):
         """Create a new DrawerTrigger instance.
 
         Args:
-            children: The children of the element.
-            props: The properties of the element.
+            *children: The children of the element.
+            **props: The properties of the element.
 
         Returns:
             The new DrawerTrigger instance.

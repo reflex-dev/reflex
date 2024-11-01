@@ -172,6 +172,15 @@ class Editor(NoSSRComponent):
             hide: Hide the editor  default: False
             hide_toolbar: Hide the editor toolbar  default: False
             disable_toolbar: Disable the editor toolbar  default: False
+            on_change: Fired when the editor content changes.
+            on_input: Fired when the something is inputted in the editor.
+            on_blur: Fired when the editor loses focus.
+            on_load: Fired when the editor is loaded.
+            on_copy: Fired when the editor content is copied.
+            on_cut: Fired when the editor content is cut.
+            on_paste: Fired when the editor content is pasted.
+            toggle_code_view: Fired when the code view is toggled.
+            toggle_full_screen: Fired when the full screen mode is toggled.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

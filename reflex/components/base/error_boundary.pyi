@@ -50,6 +50,7 @@ class ErrorBoundary(Component):
 
         Args:
             *children: The children of the component.
+            on_error: Fired when the boundary catches an error.
             Fallback_component: Rendered instead of the children when an error is caught.
             style: The style of the component.
             key: A unique key for the component.

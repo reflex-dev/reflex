@@ -61,6 +61,7 @@ class ContextMenuRoot(RadixThemesComponent):
             *children: Child components.
             modal: The modality of the context menu. When set to true, interaction with outside elements will be disabled and only menu content will be visible to screen readers.
             dir: The reading direction of submenus when applicable. If omitted, inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode.
+            on_open_change: Fired when the open state changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -284,6 +285,11 @@ class ContextMenuContent(RadixThemesComponent):
             collision_padding: The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
             sticky: The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
             hide_when_detached: Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
+            on_close_auto_focus: Fired when the context menu is closed.
+            on_escape_key_down: Fired when the escape key is pressed.
+            on_pointer_down_outside: Fired when a pointer down event happens outside the context menu.
+            on_focus_outside: Fired when focus moves outside the context menu.
+            on_interact_outside: Fired when interacting outside the context menu.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -473,6 +479,10 @@ class ContextMenuSubContent(RadixThemesComponent):
             collision_padding: The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
             sticky: The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
             hide_when_detached: Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
+            on_escape_key_down: Fired when the escape key is pressed.
+            on_pointer_down_outside: Fired when a pointer down event happens outside the context menu.
+            on_focus_outside: Fired when focus moves outside the context menu.
+            on_interact_outside: Fired when interacting outside the context menu.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

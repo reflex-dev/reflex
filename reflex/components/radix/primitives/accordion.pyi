@@ -280,6 +280,7 @@ class AccordionRoot(AccordionComponent):
             duration: The time in milliseconds to animate open and close
             easing: The easing function to use for the animation.
             show_dividers: Whether to show divider lines between items.
+            on_value_change: Fired when the opened the accordions changes.
             color_scheme: The color scheme of the component.
             variant: The variant of the component.
             as_child: Change the default rendered element for the one passed as a child.
@@ -302,10 +303,10 @@ class AccordionItem(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
-        header: Optional[Union[Component, Var]] = None,
-        content: Optional[Union[Component, Var]] = None,
         value: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
+        header: Optional[Union[Component, Var[Union[Component, str]], str]] = None,
+        content: Optional[Union[Component, Var[Union[Component, str]], str]] = None,
         color_scheme: Optional[
             Union[
                 Literal[
@@ -402,10 +403,10 @@ class AccordionItem(AccordionComponent):
 
         Args:
             *children: The list of children to use if header and content are not provided.
-            header: The header of the accordion item.
-            content: The content of the accordion item.
             value: A unique identifier for the item.
             disabled: When true, prevents the user from interacting with the item.
+            header: The header of the accordion item.
+            content: The content of the accordion item.
             color_scheme: The color scheme of the component.
             variant: The variant of the component.
             as_child: Change the default rendered element for the one passed as a child.

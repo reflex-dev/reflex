@@ -55,6 +55,7 @@ class DialogRoot(RadixThemesComponent):
             *children: Child components.
             open: The controlled open state of the dialog.
             default_open: The open state of the dialog when it is initially rendered. Use when you do not need to control its open state.
+            on_open_change: Fired when the open state changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -235,6 +236,11 @@ class DialogContent(elements.Div, RadixThemesComponent):
         Args:
             *children: Child components.
             size: DialogContent size "1" - "4"
+            on_open_auto_focus: Fired when the dialog is opened.
+            on_close_auto_focus: Fired when the dialog is closed.
+            on_escape_key_down: Fired when the escape key is pressed.
+            on_pointer_down_outside: Fired when the pointer is down outside the dialog.
+            on_interact_outside: Fired when the pointer interacts outside the dialog.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -399,6 +405,7 @@ class Dialog(ComponentNamespace):
             *children: Child components.
             open: The controlled open state of the dialog.
             default_open: The open state of the dialog when it is initially rendered. Use when you do not need to control its open state.
+            on_open_change: Fired when the open state changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

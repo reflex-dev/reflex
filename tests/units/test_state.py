@@ -8,6 +8,7 @@ import functools
 import json
 import os
 import sys
+import threading
 from textwrap import dedent
 from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Union
 from unittest.mock import AsyncMock, Mock
@@ -1965,7 +1966,7 @@ class BackgroundTaskState(BaseState):
         """
         return self.order
 
-    @rx.background
+    @rx.event(background=True)
     async def background_task(self):
         """A background task that updates the state."""
         async with self:
@@ -2002,7 +2003,7 @@ class BackgroundTaskState(BaseState):
             self.other()  # direct calling event handlers works in context
             self._private_method()
 
-    @rx.background
+    @rx.event(background=True)
     async def background_task_reset(self):
         """A background task that resets the state."""
         with pytest.raises(ImmutableStateError):
@@ -2016,7 +2017,7 @@ class BackgroundTaskState(BaseState):
         async with self:
             self.order.append("reset")
 
-    @rx.background
+    @rx.event(background=True)
     async def background_task_generator(self):
         """A background task generator that does nothing.
 
@@ -2724,6 +2725,7 @@ class OnLoadState(State):
 
     num: int = 0
 
+    @rx.event
     def test_handler(self):
         """Test handler."""
         self.num += 1
@@ -3390,9 +3392,15 @@ def test_fallback_pickle():
     assert unpickled_state._f() == 420
     assert unpickled_state._o._f() == 42
 
+    # Threading locks are unpicklable normally, and raise TypeError instead of PicklingError.
+    state2 = DillState(_reflex_internal_init=True)  # type: ignore
+    state2._g = threading.Lock()
+    pk2 = state2._serialize()
+    unpickled_state2 = BaseState._deserialize(pk2)
+    assert isinstance(unpickled_state2._g, type(threading.Lock()))
+
     # Some object, like generator, are still unpicklable with dill.
-    state._g = (i for i in range(10))
-    pk = state._serialize()
-    assert len(pk) == 0
-    with pytest.raises(EOFError):
-        BaseState._deserialize(pk)
+    state3 = DillState(_reflex_internal_init=True)  # type: ignore
+    state3._g = (i for i in range(10))
+    pk3 = state3._serialize()
+    assert len(pk3) == 0
