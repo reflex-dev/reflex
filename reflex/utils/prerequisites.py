@@ -204,7 +204,7 @@ def get_bun_version() -> version.Version | None:
         return None
 
 
-def get_install_package_manager() -> str | None:
+def get_install_package_manager() -> str:
     """Get the package manager executable for installation.
       Currently, bun is used for installation only.
 
@@ -221,17 +221,20 @@ def get_install_package_manager() -> str | None:
     return str(get_config().bun_path)
 
 
-def get_package_manager() -> str | None:
+def get_package_manager() -> str:
     """Get the package manager executable for running app.
       Currently on unix systems, npm is used for running the app only.
 
     Returns:
         The path to the package manager.
+
+    Raises:
+        FileNotFoundError: If the package manager is not found.
     """
     npm_path = path_ops.get_npm_path()
     if npm_path is not None:
         npm_path = str(Path(npm_path).resolve())
-    return npm_path
+    raise FileNotFoundError("NPM not found. You may need to run `reflex init`.")
 
 
 def windows_check_onedrive_in_path() -> bool:
