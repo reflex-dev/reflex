@@ -220,6 +220,9 @@ def setup_frontend(
     path_ops.cp(
         src=str(root / constants.Dirs.APP_ASSETS),
         dest=str(root / prerequisites.get_web_dir() / constants.Dirs.PUBLIC),
+        ignore=tuple(
+            f"*.{ext}" for ext in constants.Reflex.STYLESHEETS_SUPPORTED
+        ),  # ignore stylesheet files precompiled in the compiler
     )
 
     # Set the environment variables in client (env.json).
