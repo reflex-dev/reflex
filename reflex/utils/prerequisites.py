@@ -446,7 +446,7 @@ def initialize_gitignore(
     if files_to_ignore == current_ignore:
         console.debug(f"{gitignore_file} already up to date.")
         return
-    files_to_ignore = [f for f in files_to_ignore if f not in current_ignore]
+    files_to_ignore = [ln for ln in files_to_ignore if ln not in current_ignore]
     files_to_ignore += current_ignore
 
     # Write files to the .gitignore file.
