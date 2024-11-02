@@ -136,7 +136,7 @@ class ContextMenuSub(RadixThemesComponent):
     default_open: Var[bool]
 
     # Fired when the open state changes.
-    on_open_change: EventHandler[identity_event(bool)]
+    on_open_change: EventHandler[passthrough_event_spec(bool)]
 
 
 class ContextMenuSubTrigger(RadixThemesComponent):
@@ -226,7 +226,7 @@ class ContextMenuItem(RadixThemesComponent):
     _valid_parents: List[str] = ["ContextMenuContent", "ContextMenuSubContent"]
 
     # Fired when the item is selected.
-    on_select: EventHandler[empty_event]
+    on_select: EventHandler[no_args_event_spec]
 
 
 class ContextMenuSeparator(RadixThemesComponent):
