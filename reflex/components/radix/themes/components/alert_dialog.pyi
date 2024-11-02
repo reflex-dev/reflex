@@ -23,6 +23,7 @@ class AlertDialogRoot(RadixThemesComponent):
         cls,
         *children,
         open: Optional[Union[Var[bool], bool]] = None,
+        default_open: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -56,6 +57,7 @@ class AlertDialogRoot(RadixThemesComponent):
             *children: Child components.
             open: The controlled open state of the dialog.
             on_open_change: Fired when the open state changes.
+            default_open: The open state of the dialog when it is initially rendered. Use when you do not need to control its open state.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
