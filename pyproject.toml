@@ -59,6 +59,7 @@ twine = ">=4.0.0,<6.0"
 tomlkit = ">=0.12.4,<1.0"
 lazy_loader = ">=0.4"
 reflex-chakra = ">=0.6.0"
+libsass = "0.23.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.1.2,<9.0"

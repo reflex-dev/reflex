@@ -106,7 +106,7 @@ def test_compile_imports(import_dict: ParsedImportDict, test_dicts: List[dict]):
         assert sorted(import_dict["rest"]) == test_dict["rest"]  # type: ignore
 
 
-def test_compile_stylesheets(tmp_path, mocker):
+def test_compile_stylesheets(tmp_path: Path, mocker):
     """Test that stylesheets compile correctly.
 
     Args:
@@ -119,24 +119,49 @@ def test_compile_stylesheets(tmp_path, mocker):
     assets_dir = project / "assets"
     assets_dir.mkdir()
 
-    (assets_dir / "styles.css").touch()
+    assets_preprocess_dir = project / "assets" / "preprocess"
+    assets_preprocess_dir.mkdir()
+
+    (assets_dir / "styles.css").write_text(
+        "button.rt-Button {\n\tborder-radius:unset !important;\n}"
+    )
+    (assets_preprocess_dir / "styles_a.sass").write_text(
+        "button.rt-Button\n\tborder-radius:unset !important"
+    )
+    (assets_preprocess_dir / "styles_b.scss").write_text(
+        "button.rt-Button {\n\tborder-radius:unset !important;\n}"
+    )
     mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
 
     stylesheets = [
         "https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple",
         "https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css",
         "/styles.css",
+        "/preprocess/styles_a.sass",
+        "/preprocess/styles_b.scss",
         "https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css",
     ]
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
         str(Path(".web") / "styles" / "styles.css"),
-        "@import url('./tailwind.css'); \n"
-        "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
-        "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
-        "@import url('../public/styles.css'); \n"
-        "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
+        f"@import url('./tailwind.css'); \n"
+        f"@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
+        f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
+        f"@import url('./styles.css'); \n"
+        f"@import url('./preprocess/styles_a.css'); \n"
+        f"@import url('./preprocess/styles_b.css'); \n"
+        f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
     )
+
+    # NOTE: the css file is also inserted into the s(a|c)ss preprocessor, which compressed the result, which means we don't have the tab, return,... characters.
+    expected_result = "button.rt-Button{border-radius:unset !important}\n"
+    assert (project / ".web" / "styles" / "styles.css").read_text() == expected_result
+    assert (
+        project / ".web" / "styles" / "preprocess" / "styles_a.css"
+    ).read_text() == expected_result
+    assert (
+        project / ".web" / "styles" / "preprocess" / "styles_b.css"
+    ).read_text() == expected_result
 
 
 def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
@@ -165,7 +190,7 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
         str(Path(".web") / "styles" / "styles.css"),
-        "@import url('../public/styles.css'); \n",
+        "@import url('./styles.css'); \n",
     )
 
 
