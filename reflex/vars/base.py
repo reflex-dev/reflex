@@ -75,7 +75,6 @@ from reflex.utils.types import (
 if TYPE_CHECKING:
     from reflex.state import BaseState
 
-    from .function import FunctionVar
     from .number import (
         BooleanVar,
         NumberVar,
@@ -584,35 +583,32 @@ class Var(Generic[VAR_TYPE]):
         return f"{constants.REFLEX_VAR_OPENING_TAG}{hashed_var}{constants.REFLEX_VAR_CLOSING_TAG}{self._js_expr}"
 
     @overload
-    def to(self, output: Type[StringVar]) -> StringVar: ...
-
-    @overload
     def to(self, output: Type[str]) -> StringVar: ...
 
     @overload
-    def to(self, output: Type[BooleanVar]) -> BooleanVar: ...
+    def to(self, output: Type[bool]) -> BooleanVar: ...
 
     @overload
-    def to(
-        self, output: Type[NumberVar], var_type: type[int] | type[float] = float
-    ) -> NumberVar: ...
+    def to(self, output: type[int] | type[float] = float) -> NumberVar: ...
 
     @overload
     def to(
         self,
-        output: Type[ArrayVar],
-        var_type: type[list] | type[tuple] | type[set] = list,
+        output: type[list] | type[tuple] | type[set],
     ) -> ArrayVar: ...
 
     @overload
     def to(
-        self, output: Type[ObjectVar], var_type: types.GenericType = dict
-    ) -> ObjectVar: ...
+        self, output: Type[ObjectVar], var_type: Type[VAR_INSIDE]
+    ) -> ObjectVar[VAR_INSIDE]: ...
 
     @overload
     def to(
-        self, output: Type[FunctionVar], var_type: Type[Callable] = Callable
-    ) -> FunctionVar: ...
+        self, output: Type[ObjectVar], var_type: None = None
+    ) -> ObjectVar[VAR_TYPE]: ...
+
+    @overload
+    def to(self, output: VAR_SUBCLASS, var_type: None = None) -> VAR_SUBCLASS: ...
 
     @overload
     def to(
@@ -1188,6 +1184,9 @@ class Var(Generic[VAR_TYPE]):
 
 
 OUTPUT = TypeVar("OUTPUT", bound=Var)
+
+VAR_SUBCLASS = TypeVar("VAR_SUBCLASS", bound=Var)
+VAR_INSIDE = TypeVar("VAR_INSIDE")
 
 
 class ToOperation:

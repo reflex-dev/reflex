@@ -239,6 +239,12 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
         name: str,
     ) -> ObjectVar[dict[OTHER_KEY_TYPE, VALUE_TYPE]]: ...
 
+    @overload
+    def __getattr__(
+        self: ObjectVar,
+        name: str,
+    ) -> ObjectItemOperation: ...
+
     def __getattr__(self, name) -> Var:
         """Get an attribute of the var.
 
