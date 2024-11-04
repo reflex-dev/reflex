@@ -280,6 +280,24 @@ def _decode_var_immutable(value: str) -> tuple[VarData | None, str]:
     return VarData.merge(*var_datas) if var_datas else None, value
 
 
+def can_use_in_object_var(cls: GenericType) -> bool:
+    """Check if the class can be used in an ObjectVar.
+
+    Args:
+        cls: The class to check.
+
+    Returns:
+        Whether the class can be used in an ObjectVar.
+    """
+    if types.is_union(cls):
+        return all(can_use_in_object_var(t) for t in types.get_args(cls))
+    return (
+        inspect.isclass(cls)
+        and not issubclass(cls, Var)
+        and (can_access_properties(cls) or serializers.has_serializer(cls))
+    )
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
@@ -631,11 +649,7 @@ class Var(Generic[VAR_TYPE]):
             return get_to_operation(NoneVar).create(self)  # type: ignore
 
         # Handle fixed_output_type being Base or a dataclass.
-        if (
-            inspect.isclass(fixed_output_type)
-            and not issubclass(fixed_output_type, Var)
-            and can_access_properties(fixed_output_type)
-        ):
+        if can_use_in_object_var(fixed_output_type):
             return self.to(ObjectVar, output)
 
         if inspect.isclass(output):
@@ -705,7 +719,7 @@ class Var(Generic[VAR_TYPE]):
             ):
                 return self.to(NumberVar, self._var_type)
 
-            if all(can_access_properties(t) for t in inner_types):
+            if can_use_in_object_var(var_type):
                 return self.to(ObjectVar, self._var_type)
 
             return self
@@ -724,7 +738,7 @@ class Var(Generic[VAR_TYPE]):
             if issubclass(fixed_type, var_subclass.python_types):
                 return self.to(var_subclass.var_subclass, self._var_type)
 
-        if can_access_properties(fixed_type):
+        if can_use_in_object_var(fixed_type):
             return self.to(ObjectVar, self._var_type)
 
         return self
