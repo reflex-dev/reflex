@@ -6,13 +6,14 @@ import textwrap
 from functools import lru_cache
 from hashlib import md5
 from typing import Any, Callable, Dict, Union
+import dataclasses
 
 from reflex.components.component import Component, CustomComponent
 from reflex.components.tags.tag import Tag
 from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import LiteralVar, Var
-from reflex.vars.function import ARRAY_ISARRAY
+from reflex.vars.function import ARRAY_ISARRAY, ArgsFunctionOperation
 from reflex.vars.number import ternary_operation
 
 # Special vars used in the component map.
@@ -75,8 +76,10 @@ def get_base_component_map() -> dict[str, Callable]:
     }
 
 
+@dataclasses.dataclass(frozen=True)
 class MarkdownComponentMap:
     """Mixin class for handling custom component maps in Markdown components."""
+    _explicit_return: bool = dataclasses.field(default=False)
 
     @classmethod
     def get_component_map_custom_code(cls) -> str:
@@ -89,22 +92,23 @@ class MarkdownComponentMap:
 
     @classmethod
     def create_map_fn_var(
-        cls, fn_body: str | None = None, fn_args: list[str] | None = None
+        cls, fn_body: Var | None = None, fn_args: tuple[str, ...] | None = None, explicit_return: bool | None = None
     ) -> Var:
         """Create a function Var for the component map.
 
         Args:
             fn_body: The formatted component as a string.
             fn_args: The function arguments.
+            explicit_return: Whether to use explicit return syntax.
 
         Returns:
             The function Var for the component map.
         """
         fn_args = fn_args or cls.get_fn_args()
-        fn_body = fn_body or cls.get_fn_body()
-        fn_args_str = ", ".join(fn_args)
+        fn_body = fn_body if fn_body is not None else cls.get_fn_body()
+        explicit_return = explicit_return or cls._explicit_return
 
-        return Var(_js_expr=f"(({{{fn_args_str}}}) => {fn_body})")
+        return ArgsFunctionOperation.create(args_names=fn_args, return_expr=fn_body, destructure_args=True, explicit_return=explicit_return)
 
     @classmethod
     def get_fn_args(cls) -> list[str]:
@@ -116,13 +120,13 @@ class MarkdownComponentMap:
         return ["node", _CHILDREN._js_expr, _PROPS._js_expr]
 
     @classmethod
-    def get_fn_body(cls) -> str:
+    def get_fn_body(cls) -> Var:
         """Get the function body for the component map.
 
         Returns:
             The function body as a string.
         """
-        return "()"
+        return Var(_js_expr="", _var_type=str)
 
 
 class Markdown(Component):
@@ -269,23 +273,24 @@ class Markdown(Component):
         codeblock_custom_code = "\n".join(custom_code_list)
 
         # Format the code to handle inline and block code.
-        formatted_code = f"""{{{codeblock_custom_code};
+        formatted_code = f"""{codeblock_custom_code};
             return inline ? (
                 {self.format_component("code")}
             ) : (
                 {self.format_component("codeblock", language=_LANGUAGE)}
             );
-        }}""".replace("\n", " ")
+        """.replace("\n", " ")
 
         return MarkdownComponentMap.create_map_fn_var(
-            fn_args=[
+            fn_args=(
                 "node",
                 "inline",
                 "className",
                 _CHILDREN._js_expr,
                 _PROPS._js_expr,
-            ],
-            fn_body=formatted_code,
+            ),
+            fn_body=Var(_js_expr=formatted_code),
+            explicit_return=True
         )
 
     def get_component(self, tag: str, **props) -> Component:
@@ -354,11 +359,12 @@ class Markdown(Component):
         Returns:
             The function Var for the component map.
         """
+        formatted_component = Var(_js_expr=f"({self.format_component(tag)})", _var_type=str)
         if isinstance(component, MarkdownComponentMap):
-            return component.create_map_fn_var(f"({self.format_component(tag)})")
+            return component.create_map_fn_var(fn_body=formatted_component)
 
         # fallback to the default fn Var creation if the component is not a MarkdownComponentMap.
-        return MarkdownComponentMap.create_map_fn_var(f"({self.format_component(tag)})")
+        return MarkdownComponentMap.create_map_fn_var(fn_body=formatted_component)
 
     def _get_map_fn_custom_code_from_children(self, component) -> list[str]:
         """Recursively get markdown custom code from children components.

@@ -940,6 +940,18 @@ def test_function_var():
         == '(((name) => (("Hello, "+name+"!")))("Steven Universe"))'
     )
 
+    # Test with destructured arguments
+    destructured_func = ArgsFunctionOperation.create(
+        ("a","b"), Var(_js_expr="a + b"), destructure_args=True
+    )
+    assert str(destructured_func.call({"a": 1, "b": 2})) == '(({a, b}) => (a + b))({"a": 1, "b": 2})'
+
+    # Test with explicit return
+    explicit_return_func = ArgsFunctionOperation.create(
+        ("a", "b"), Var(_js_expr="return a + b"), explicit_return=True
+    )
+    assert str(explicit_return_func.call(1, 2)) == '((a, b) => {return a + b})(1, 2)'
+
 
 def test_var_operation():
     @var_operation

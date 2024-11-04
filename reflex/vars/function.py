@@ -7,6 +7,7 @@ import sys
 from typing import Any, Callable, Optional, Tuple, Type, Union
 
 from reflex.utils.types import GenericType
+from reflex.utils import format
 
 from .base import CachedVarOperation, LiteralVar, Var, VarData, cached_property_no_lock
 
@@ -136,6 +137,8 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
 
     _args_names: Tuple[str, ...] = dataclasses.field(default_factory=tuple)
     _return_expr: Union[Var, Any] = dataclasses.field(default=None)
+    _destructure_args: bool = dataclasses.field(default=False)
+    _explicit_return: bool = dataclasses.field(default=True)
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -144,21 +147,36 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
         Returns:
             The name of the var.
         """
-        return f"(({', '.join(self._args_names)}) => ({str(LiteralVar.create(self._return_expr))}))"
+        arg_names_str = ", ".join(self._args_names)
+        return_expr_str = str(LiteralVar.create(self._return_expr))
+
+        if self._destructure_args:
+            arg_names_str = format.wrap(arg_names_str, "{", "}")
+
+        # Wrap return expression in curly braces if explicit return syntax is used.
+        return_expr_str = format.wrap(return_expr_str, "{", "}") if self._explicit_return else format.wrap(return_expr_str, "(", ")")
+
+        return f"(({arg_names_str}) => {return_expr_str})"
+
 
     @classmethod
     def create(
         cls,
         args_names: Tuple[str, ...],
         return_expr: Var | Any,
+        destructure_args: bool = False,
+        explicit_return: bool = False,
         _var_type: GenericType = Callable,
         _var_data: VarData | None = None,
+
     ) -> ArgsFunctionOperation:
         """Create a new function var.
 
         Args:
             args_names: The names of the arguments.
             return_expr: The return expression of the function.
+            destructure_args: Whether to destructure the arguments.
+            explicit_return: Whether to use explicit return syntax.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -170,6 +188,8 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
             _var_data=_var_data,
             _args_names=args_names,
             _return_expr=return_expr,
+            _destructure_args=destructure_args,
+            _explicit_return=explicit_return
         )
 
 

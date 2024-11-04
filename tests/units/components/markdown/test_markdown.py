@@ -18,22 +18,22 @@ class CustomMarkdownComponent(Component, MarkdownComponentMap):
     library = "custom"
 
     @classmethod
-    def get_fn_args(cls) -> list[str]:
+    def get_fn_args(cls) -> tuple[str, ...]:
         """Return the function arguments.
 
         Returns:
             The function arguments.
         """
-        return ["custom_node", "custom_children", "custom_props"]
+        return ("custom_node", "custom_children", "custom_props")
 
     @classmethod
-    def get_fn_body(cls) -> str:
+    def get_fn_body(cls) -> Var:
         """Return the function body.
 
         Returns:
             The function body.
         """
-        return "{return custom_node + custom_children + custom_props;}"
+        return Var(_js_expr="{return custom_node + custom_children + custom_props}")
 
 
 def syntax_highlighter_memoized_component(codeblock: Type[Component]):
@@ -58,67 +58,74 @@ def syntax_highlighter_memoized_component(codeblock: Type[Component]):
 
 
 @pytest.mark.parametrize(
-    "fn_body, fn_args, expected",
+    "fn_body, fn_args, explicit_return, expected",
     [
-        (None, None, Var(_js_expr="(({node, children, ...props}) => ())")),
-        ("{return node;}", ["node"], Var(_js_expr="(({node}) => {return node;})")),
+        (None, None, False, Var(_js_expr="(({node, children, ...props}) => ())")),
+        ("return node", ("node", ), True, Var(_js_expr="(({node}) => {return node})")),
         (
-            "{return node + children;}",
-            ["node", "children"],
-            Var(_js_expr="(({node, children}) => {return node + children;})"),
+            "return node + children",
+            ("node", "children"),
+            True,
+            Var(_js_expr="(({node, children}) => {return node + children})"),
         ),
         (
-            "{return node + props;}",
-            ["node", "...props"],
-            Var(_js_expr="(({node, ...props}) => {return node + props;})"),
+            "return node + props",
+            ("node", "...props"),
+            True,
+            Var(_js_expr="(({node, ...props}) => {return node + props})"),
         ),
         (
-            "{return node + children + props;}",
-            ["node", "children", "...props"],
+            "return node + children + props",
+            ("node", "children", "...props"),
+            True,
             Var(
-                _js_expr="(({node, children, ...props}) => {return node + children + props;})"
+                _js_expr="(({node, children, ...props}) => {return node + children + props})"
             ),
         ),
     ],
 )
-def test_create_map_fn_var(fn_body, fn_args, expected):
-    result = MarkdownComponentMap.create_map_fn_var(fn_body, fn_args)
+def test_create_map_fn_var(fn_body, fn_args, explicit_return, expected):
+    result = MarkdownComponentMap.create_map_fn_var(fn_body= Var(_js_expr=fn_body,_var_type=str) if fn_body else None, fn_args=fn_args, explicit_return=explicit_return)
     assert result._js_expr == expected._js_expr
 
 
 @pytest.mark.parametrize(
-    "cls, fn_body, fn_args, expected",
+    "cls, fn_body, fn_args, explicit_return, expected",
     [
         (
             MarkdownComponentMap,
             None,
             None,
+            False,
             Var(_js_expr="(({node, children, ...props}) => ())"),
         ),
         (
             MarkdownComponentMap,
-            "{return node};",
-            ["node"],
-            Var(_js_expr="(({node}) => {return node};)"),
+            "return node",
+            ("node", ),
+            True,
+            Var(_js_expr="(({node}) => {return node})"),
         ),
         (
             CustomMarkdownComponent,
             None,
             None,
+            True,
             Var(
-                _js_expr="(({custom_node, custom_children, custom_props}) => {return custom_node + custom_children + custom_props;})"
+                _js_expr="(({custom_node, custom_children, custom_props}) => {return custom_node + custom_children + custom_props})"
             ),
         ),
         (
             CustomMarkdownComponent,
-            "{return custom_node;}",
-            ["custom_node"],
-            Var(_js_expr="(({custom_node}) => {return custom_node;})"),
+            "return custom_node",
+            ("custom_node",),
+            True,
+            Var(_js_expr="(({custom_node}) => {return custom_node})"),
         ),
     ],
 )
-def test_create_map_fn_var_subclass(cls, fn_body, fn_args, expected):
-    result = cls.create_map_fn_var(fn_body, fn_args)
+def test_create_map_fn_var_subclass(cls, fn_body, fn_args, explicit_return, expected):
+    result = cls.create_map_fn_var(fn_body= Var(_js_expr=fn_body, _var_type=int) if fn_body else None, fn_args=fn_args, explicit_return=explicit_return)
     assert result._js_expr == expected._js_expr
 
 
