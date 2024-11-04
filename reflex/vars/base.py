@@ -67,7 +67,6 @@ from reflex.utils.types import (
     GenericType,
     Self,
     _isinstance,
-    can_access_properties,
     get_origin,
     has_args,
     unionize,
@@ -294,7 +293,7 @@ def can_use_in_object_var(cls: GenericType) -> bool:
     return (
         inspect.isclass(cls)
         and not issubclass(cls, Var)
-        and (can_access_properties(cls) or serializers.has_serializer(cls))
+        and serializers.can_serialize(cls, dict)
     )
 
 
