@@ -1288,16 +1288,19 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         fields = self.get_fields()
 
-        if name in fields and not _isinstance(
-            value, (field_type := fields[name].outer_type_)
-        ):
-            console.deprecate(
-                "mismatched-type-assignment",
-                f"Tried to assign value {value} of type {type(value)} to field {type(self).__name__}.{name} of type {field_type}."
-                " This might lead to unexpected behavior.",
-                "0.6.5",
-                "0.7.0",
-            )
+        if name in fields:
+            field = fields[name]
+            field_type = field.outer_type_
+            if field.allow_none:
+                field_type = Union[field_type, None]
+            if not _isinstance(value, field_type):
+                console.deprecate(
+                    "mismatched-type-assignment",
+                    f"Tried to assign value {value} of type {type(value)} to field {type(self).__name__}.{name} of type {field_type}."
+                    " This might lead to unexpected behavior.",
+                    "0.6.5",
+                    "0.7.0",
+                )
 
         # Set the attribute.
         super().__setattr__(name, value)
