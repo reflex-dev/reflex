@@ -8,6 +8,7 @@ import copy
 import dataclasses
 import functools
 import inspect
+import json
 import pickle
 import sys
 import uuid
@@ -3711,6 +3712,29 @@ def serialize_mutable_proxy(mp: MutableProxy):
         The wrapped object.
     """
     return mp.__wrapped__
+
+
+_orig_json_JSONEncoder_default = json.JSONEncoder.default
+
+
+def _json_JSONEncoder_default_wrapper(self: json.JSONEncoder, o: Any) -> Any:
+    """Wrap JSONEncoder.default to handle MutableProxy objects.
+
+    Args:
+        self: the JSONEncoder instance.
+        o: the object to serialize.
+
+    Returns:
+        A JSON-able object.
+    """
+    try:
+        return o.__wrapped__
+    except AttributeError:
+        pass
+    return _orig_json_JSONEncoder_default(self, o)
+
+
+json.JSONEncoder.default = _json_JSONEncoder_default_wrapper
 
 
 class ImmutableMutableProxy(MutableProxy):
