@@ -621,19 +621,13 @@ def initialize_bun_config():
     bun_config_path = get_web_dir() / constants.Bun.CONFIG_PATH
 
     if (custom_bunfig := Path(constants.Bun.CONFIG_PATH)).exists():
-        custom_bunfig_content = custom_bunfig.read_text()
-        if "registry =" in custom_bunfig_content:
-            bun_config_path.write_text(custom_bunfig_content)
-            return
-        else:
-            console.error(
-                "The custom bunfig.toml file is invalid. Using default value."
-            )
+        bunfig_content = custom_bunfig.read_text()
+        console.info(f"Copying custom bunfig.toml inside {get_web_dir()} folder")
+    else:
+        best_registry = _get_npm_registry()
+        bunfig_content = constants.Bun.DEFAULT_CONFIG.format(registry=best_registry)
 
-    best_registry = _get_npm_registry()
-    bun_config_path.write_text(
-        constants.Bun.DEFAULT_CONFIG.format(registry=best_registry)
-    )
+    bun_config_path.write_text(bunfig_content)
 
 
 def init_reflex_json(project_hash: int | None):
