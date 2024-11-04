@@ -10,7 +10,7 @@ from typing_extensions import TypedDict
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
-from reflex.event import EventHandler, empty_event, identity_event
+from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.utils import console, format, types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
@@ -284,56 +284,58 @@ class DataEditor(NoSSRComponent):
     theme: Var[Union[DataEditorTheme, Dict]]
 
     # Fired when a cell is activated.
-    on_cell_activated: EventHandler[identity_event(Tuple[int, int])]
+    on_cell_activated: EventHandler[passthrough_event_spec(Tuple[int, int])]
 
     # Fired when a cell is clicked.
-    on_cell_clicked: EventHandler[identity_event(Tuple[int, int])]
+    on_cell_clicked: EventHandler[passthrough_event_spec(Tuple[int, int])]
 
     # Fired when a cell is right-clicked.
-    on_cell_context_menu: EventHandler[identity_event(Tuple[int, int])]
+    on_cell_context_menu: EventHandler[passthrough_event_spec(Tuple[int, int])]
 
     # Fired when a cell is edited.
-    on_cell_edited: EventHandler[identity_event(Tuple[int, int], GridCell)]
+    on_cell_edited: EventHandler[passthrough_event_spec(Tuple[int, int], GridCell)]
 
     # Fired when a group header is clicked.
-    on_group_header_clicked: EventHandler[identity_event(Tuple[int, int], GridCell)]
+    on_group_header_clicked: EventHandler[
+        passthrough_event_spec(Tuple[int, int], GridCell)
+    ]
 
     # Fired when a group header is right-clicked.
     on_group_header_context_menu: EventHandler[
-        identity_event(int, GroupHeaderClickedEventArgs)
+        passthrough_event_spec(int, GroupHeaderClickedEventArgs)
     ]
 
     # Fired when a group header is renamed.
-    on_group_header_renamed: EventHandler[identity_event(str, str)]
+    on_group_header_renamed: EventHandler[passthrough_event_spec(str, str)]
 
     # Fired when a header is clicked.
-    on_header_clicked: EventHandler[identity_event(Tuple[int, int])]
+    on_header_clicked: EventHandler[passthrough_event_spec(Tuple[int, int])]
 
     # Fired when a header is right-clicked.
-    on_header_context_menu: EventHandler[identity_event(Tuple[int, int])]
+    on_header_context_menu: EventHandler[passthrough_event_spec(Tuple[int, int])]
 
     # Fired when a header menu item is clicked.
-    on_header_menu_click: EventHandler[identity_event(int, Rectangle)]
+    on_header_menu_click: EventHandler[passthrough_event_spec(int, Rectangle)]
 
     # Fired when an item is hovered.
-    on_item_hovered: EventHandler[identity_event(Tuple[int, int])]
+    on_item_hovered: EventHandler[passthrough_event_spec(Tuple[int, int])]
 
     # Fired when a selection is deleted.
-    on_delete: EventHandler[identity_event(GridSelection)]
+    on_delete: EventHandler[passthrough_event_spec(GridSelection)]
 
     # Fired when editing is finished.
     on_finished_editing: EventHandler[
-        identity_event(Union[GridCell, None], tuple[int, int])
+        passthrough_event_spec(Union[GridCell, None], tuple[int, int])
     ]
 
     # Fired when a row is appended.
-    on_row_appended: EventHandler[empty_event]
+    on_row_appended: EventHandler[no_args_event_spec]
 
     # Fired when the selection is cleared.
-    on_selection_cleared: EventHandler[empty_event]
+    on_selection_cleared: EventHandler[no_args_event_spec]
 
     # Fired when a column is resized.
-    on_column_resize: EventHandler[identity_event(GridColumn, int)]
+    on_column_resize: EventHandler[passthrough_event_spec(GridColumn, int)]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the component.

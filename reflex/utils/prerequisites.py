@@ -204,9 +204,12 @@ def get_bun_version() -> version.Version | None:
         return None
 
 
-def get_install_package_manager() -> str | None:
+def get_install_package_manager(on_failure_return_none: bool = False) -> str | None:
     """Get the package manager executable for installation.
       Currently, bun is used for installation only.
+
+    Args:
+        on_failure_return_none: Whether to return None on failure.
 
     Returns:
         The path to the package manager.
@@ -217,21 +220,29 @@ def get_install_package_manager() -> str | None:
         or windows_check_onedrive_in_path()
         or windows_npm_escape_hatch()
     ):
-        return get_package_manager()
+        return get_package_manager(on_failure_return_none)
     return str(get_config().bun_path)
 
 
-def get_package_manager() -> str | None:
+def get_package_manager(on_failure_return_none: bool = False) -> str | None:
     """Get the package manager executable for running app.
       Currently on unix systems, npm is used for running the app only.
 
+    Args:
+        on_failure_return_none: Whether to return None on failure.
+
     Returns:
         The path to the package manager.
+
+    Raises:
+        FileNotFoundError: If the package manager is not found.
     """
     npm_path = path_ops.get_npm_path()
     if npm_path is not None:
-        npm_path = str(Path(npm_path).resolve())
-    return npm_path
+        return str(Path(npm_path).resolve())
+    if on_failure_return_none:
+        return None
+    raise FileNotFoundError("NPM not found. You may need to run `reflex init`.")
 
 
 def windows_check_onedrive_in_path() -> bool:
@@ -920,20 +931,39 @@ def install_frontend_packages(packages: set[str], config: Config):
         packages: A list of package names to be installed.
         config: The config object.
 
+    Raises:
+        FileNotFoundError: If the package manager is not found.
+
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
     # unsupported archs(arm and 32bit machines) will use npm anyway. so we dont have to run npm twice
     fallback_command = (
-        get_package_manager()
-        if not constants.IS_WINDOWS
-        or constants.IS_WINDOWS
-        and is_windows_bun_supported()
-        and not windows_check_onedrive_in_path()
+        get_package_manager(on_failure_return_none=True)
+        if (
+            not constants.IS_WINDOWS
+            or constants.IS_WINDOWS
+            and is_windows_bun_supported()
+            and not windows_check_onedrive_in_path()
+        )
         else None
     )
+
+    install_package_manager = (
+        get_install_package_manager(on_failure_return_none=True) or fallback_command
+    )
+
+    if install_package_manager is None:
+        raise FileNotFoundError(
+            "Could not find a package manager to install frontend packages. You may need to run `reflex init`."
+        )
+
+    fallback_command = (
+        fallback_command if fallback_command is not install_package_manager else None
+    )
+
     processes.run_process_with_fallback(
-        [get_install_package_manager(), "install"],  # type: ignore
+        [install_package_manager, "install"],  # type: ignore
         fallback=fallback_command,
         analytics_enabled=True,
         show_status_message="Installing base frontend packages",
@@ -944,7 +974,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     if config.tailwind is not None:
         processes.run_process_with_fallback(
             [
-                get_install_package_manager(),
+                install_package_manager,
                 "add",
                 "-d",
                 constants.Tailwind.VERSION,
@@ -960,7 +990,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
         processes.run_process_with_fallback(
-            [get_install_package_manager(), "add", *packages],
+            [install_package_manager, "add", *packages],
             fallback=fallback_command,
             analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",

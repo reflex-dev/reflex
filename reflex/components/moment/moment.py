@@ -4,7 +4,7 @@ import dataclasses
 from typing import List, Optional
 
 from reflex.components.component import NoSSRComponent
-from reflex.event import EventHandler, identity_event
+from reflex.event import EventHandler, passthrough_event_spec
 from reflex.utils.imports import ImportDict
 from reflex.vars.base import LiteralVar, Var
 
@@ -96,7 +96,7 @@ class Moment(NoSSRComponent):
     locale: Var[str]
 
     # Fires when the date changes.
-    on_change: EventHandler[identity_event(str)]
+    on_change: EventHandler[passthrough_event_spec(str)]
 
     def add_imports(self) -> ImportDict:
         """Add the imports for the Moment component.

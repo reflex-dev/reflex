@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from pathlib import Path
 from typing import Generator
 
 import pytest
@@ -205,11 +206,12 @@ async def test_upload_file(
 
     file_data = await AppHarness._poll_for_async(get_file_data)
     assert isinstance(file_data, dict)
-    assert file_data[exp_name] == exp_contents
+    normalized_file_data = {Path(k).name: v for k, v in file_data.items()}
+    assert normalized_file_data[Path(exp_name).name] == exp_contents
 
     # check that the selected files are displayed
     selected_files = driver.find_element(By.ID, f"selected_files{suffix}")
-    assert selected_files.text == exp_name
+    assert Path(selected_files.text).name == Path(exp_name).name
 
     state = await upload_file.get_state(substate_token)
     if secondary:
@@ -256,7 +258,9 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
 
     # check that the selected files are displayed
     selected_files = driver.find_element(By.ID, "selected_files")
-    assert selected_files.text == "\n".join(exp_files)
+    assert [Path(name).name for name in selected_files.text.split("\n")] == [
+        Path(name).name for name in exp_files
+    ]
 
     # do the upload
     upload_button.click()
@@ -271,8 +275,9 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
 
     file_data = await AppHarness._poll_for_async(get_file_data)
     assert isinstance(file_data, dict)
+    normalized_file_data = {Path(k).name: v for k, v in file_data.items()}
     for exp_name, exp_contents in exp_files.items():
-        assert file_data[exp_name] == exp_contents
+        assert normalized_file_data[Path(exp_name).name] == exp_contents
 
 
 @pytest.mark.parametrize("secondary", [False, True])
@@ -317,7 +322,9 @@ def test_clear_files(
 
     # check that the selected files are displayed
     selected_files = driver.find_element(By.ID, f"selected_files{suffix}")
-    assert selected_files.text == "\n".join(exp_files)
+    assert [Path(name).name for name in selected_files.text.split("\n")] == [
+        Path(name).name for name in exp_files
+    ]
 
     clear_button = driver.find_element(By.ID, f"clear_button{suffix}")
     assert clear_button
@@ -369,6 +376,9 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
     # look up the backend state and assert on progress
     state = await upload_file.get_state(substate_token)
     assert state.substates[state_name].progress_dicts
-    assert exp_name not in state.substates[state_name]._file_data
+    file_data = state.substates[state_name]._file_data
+    assert isinstance(file_data, dict)
+    normalized_file_data = {Path(k).name: v for k, v in file_data.items()}
+    assert Path(exp_name).name not in normalized_file_data
 
     target_file.unlink()

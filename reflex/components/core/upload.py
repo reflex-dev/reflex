@@ -22,8 +22,8 @@ from reflex.event import (
     EventHandler,
     EventSpec,
     call_event_fn,
-    call_script,
     parse_args_spec,
+    run_script,
 )
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
@@ -106,8 +106,8 @@ def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec:
     """
     # UploadFilesProvider assigns a special function to clear selected files
     # into the shared global refs object to make it accessible outside a React
-    # component via `call_script` (otherwise backend could never clear files).
-    return call_script(f"refs['__clear_selected_files']({id_!r})")
+    # component via `run_script` (otherwise backend could never clear files).
+    return run_script(f"refs['__clear_selected_files']({id_!r})")
 
 
 def cancel_upload(upload_id: str) -> EventSpec:
@@ -119,7 +119,7 @@ def cancel_upload(upload_id: str) -> EventSpec:
     Returns:
         An event spec that cancels the upload when triggered.
     """
-    return call_script(
+    return run_script(
         f"upload_controllers[{str(LiteralVar.create(upload_id))}]?.abort()"
     )
 
