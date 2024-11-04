@@ -654,8 +654,13 @@ class Var(Generic[VAR_TYPE]):
         if inspect.isclass(output):
             for var_subclass in _var_subclasses[::-1]:
                 if issubclass(output, var_subclass.var_subclass):
+                    current_var_type = self._var_type
+                    if current_var_type is Any:
+                        new_var_type = var_type
+                    else:
+                        new_var_type = var_type or current_var_type
                     to_operation_return = var_subclass.to_var_subclass.create(
-                        value=self, _var_type=var_type
+                        value=self, _var_type=new_var_type
                     )
                     return to_operation_return  # type: ignore
 

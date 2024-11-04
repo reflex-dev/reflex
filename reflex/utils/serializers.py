@@ -78,7 +78,7 @@ def serializer(
         )
 
     # Apply type transformation if requested
-    if to is not None:
+    if to is not None or ((to := type_hints.get("return")) is not None):
         SERIALIZER_TYPES[type_] = to
         get_serializer_type.cache_clear()
 
