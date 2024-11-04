@@ -15,7 +15,7 @@ from reflex.components.el.elements.forms import Input
 from reflex.components.radix.themes.layout.box import Box
 from reflex.config import environment
 from reflex.constants import Dirs
-from reflex.constants.compiler import Imports
+from reflex.constants.compiler import Hooks, Imports
 from reflex.event import (
     CallableEventSpec,
     EventChain,
@@ -296,9 +296,7 @@ class Upload(MemoizationLeaf):
         var_data = VarData.merge(
             VarData(
                 imports=Imports.EVENTS,
-                hooks={
-                    "const [addEvents, connectError] = useContext(EventLoopContext);": None
-                },
+                hooks={Hooks.EVENTS: None},
             ),
             event_var._get_all_var_data(),
             VarData(
