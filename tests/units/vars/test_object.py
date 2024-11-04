@@ -1,6 +1,5 @@
-import sys
-
 import pytest
+from typing_extensions import assert_type
 
 import reflex as rx
 from reflex.utils.types import GenericType
@@ -94,13 +93,10 @@ def test_state_to_operation(type_: GenericType) -> None:
 
 
 def test_typing() -> None:
-    if sys.version_info >= (3, 11):
-        from typing import assert_type
+    # Bare
+    var = ObjectState.bare.to(ObjectVar)
+    _ = assert_type(var, ObjectVar[Bare])
 
-        # Bare
-        var = ObjectState.bare.to(ObjectVar)
-        _ = assert_type(var, ObjectVar[Bare])
-
-        # Base
-        var = ObjectState.base
-        _ = assert_type(var, ObjectVar[Base])
+    # Base
+    var = ObjectState.base
+    _ = assert_type(var, ObjectVar[Base])
