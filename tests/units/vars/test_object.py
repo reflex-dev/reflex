@@ -101,12 +101,6 @@ def test_typing() -> None:
         var = ObjectState.bare.to(ObjectVar)
         _ = assert_type(var, ObjectVar[Bare])
 
-        var = ObjectState.base.to(ObjectVar, Base)
-        _ = assert_type(var, ObjectVar[Base])
-
         # Base
-        var = ObjectState.base.to(ObjectVar)
-        _ = assert_type(var, ObjectVar[Base])
-
-        var = ObjectState.base.to(LiteralObjectVar, Base)
+        var = ObjectState.base
         _ = assert_type(var, ObjectVar[Base])

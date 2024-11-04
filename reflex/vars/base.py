@@ -2895,6 +2895,8 @@ def dispatch(
 
 V = TypeVar("V")
 
+BASE_TYPE = TypeVar("BASE_TYPE", bound=Base)
+
 
 class Field(Generic[T]):
     """Shadow class for Var to allow for type hinting in the IDE."""
@@ -2930,6 +2932,11 @@ class Field(Generic[T]):
     def __get__(
         self: Field[Dict[str, V]], instance: None, owner
     ) -> ObjectVar[Dict[str, V]]: ...
+
+    @overload
+    def __get__(
+        self: Field[BASE_TYPE], instance: None, owner
+    ) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
     def __get__(self, instance: None, owner) -> Var[T]: ...
