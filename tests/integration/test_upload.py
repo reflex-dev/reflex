@@ -206,7 +206,8 @@ async def test_upload_file(
 
     file_data = await AppHarness._poll_for_async(get_file_data)
     assert isinstance(file_data, dict)
-    assert file_data[exp_name] == exp_contents
+    normalized_file_data = {Path(k).name: v for k, v in file_data.items()}
+    assert normalized_file_data[exp_name] == exp_contents
 
     # check that the selected files are displayed
     selected_files = driver.find_element(By.ID, f"selected_files{suffix}")
@@ -257,7 +258,9 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
 
     # check that the selected files are displayed
     selected_files = driver.find_element(By.ID, "selected_files")
-    assert selected_files.text == "\n".join(exp_files)
+    assert [Path(name).name for name in selected_files.text.split("\n")] == [
+        Path(name).name for name in exp_files
+    ]
 
     # do the upload
     upload_button.click()
