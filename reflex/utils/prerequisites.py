@@ -441,7 +441,7 @@ def create_config(app_name: str):
 
 def initialize_gitignore(
     gitignore_file: Path = constants.GitIgnore.FILE,
-    files_to_ignore: set[str] = constants.GitIgnore.DEFAULTS,
+    files_to_ignore: set[str] | list[str] = constants.GitIgnore.DEFAULTS,
 ):
     """Initialize the template .gitignore file.
 
@@ -450,23 +450,20 @@ def initialize_gitignore(
         files_to_ignore: The files to add to the .gitignore file.
     """
     # Combine with the current ignored files.
-    current_ignore: set[str] = set()
+    current_ignore: list[str] = []
     if gitignore_file.exists():
-        current_ignore |= set(
-            line.strip() for line in gitignore_file.read_text().splitlines()
-        )
+        current_ignore = [ln.strip() for ln in gitignore_file.read_text().splitlines()]
 
     if files_to_ignore == current_ignore:
         console.debug(f"{gitignore_file} already up to date.")
         return
-    files_to_ignore |= current_ignore
+    files_to_ignore = [ln for ln in files_to_ignore if ln not in current_ignore]
+    files_to_ignore += current_ignore
 
     # Write files to the .gitignore file.
     gitignore_file.touch(exist_ok=True)
     console.debug(f"Creating {gitignore_file}")
-    gitignore_file.write_text(
-        "\n".join(sorted(files_to_ignore)) + "\n",
-    )
+    gitignore_file.write_text("\n".join(files_to_ignore) + "\n")
 
 
 def initialize_requirements_txt():
