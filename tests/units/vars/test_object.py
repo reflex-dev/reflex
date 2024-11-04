@@ -1,4 +1,4 @@
-from typing import assert_type
+import sys
 
 import pytest
 
@@ -94,16 +94,19 @@ def test_state_to_operation(type_: GenericType) -> None:
 
 
 def test_typing() -> None:
-    # Bare
-    var = ObjectState.bare.to(ObjectVar)
-    _ = assert_type(var, ObjectVar[Bare])
+    if sys.version_info >= (3, 11):
+        from typing import assert_type
 
-    var = ObjectState.base.to(ObjectVar, Base)
-    _ = assert_type(var, ObjectVar[Base])
+        # Bare
+        var = ObjectState.bare.to(ObjectVar)
+        _ = assert_type(var, ObjectVar[Bare])
 
-    # Base
-    var = ObjectState.base.to(ObjectVar)
-    _ = assert_type(var, ObjectVar[Base])
+        var = ObjectState.base.to(ObjectVar, Base)
+        _ = assert_type(var, ObjectVar[Base])
 
-    var = ObjectState.base.to(LiteralObjectVar, Base)
-    _ = assert_type(var, ObjectVar[Base])
+        # Base
+        var = ObjectState.base.to(ObjectVar)
+        _ = assert_type(var, ObjectVar[Base])
+
+        var = ObjectState.base.to(LiteralObjectVar, Base)
+        _ = assert_type(var, ObjectVar[Base])
