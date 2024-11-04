@@ -12,7 +12,7 @@ from reflex.components.radix.themes.components.icon_button import IconButton
 from reflex.components.radix.themes.layout.box import Box
 from reflex.components.radix.themes.layout.container import Container
 from reflex.components.radix.themes.layout.stack import HStack
-from reflex.event import call_script
+from reflex.event import run_script
 from reflex.experimental import hooks
 from reflex.state import ComponentState
 from reflex.style import Style
@@ -173,7 +173,7 @@ class SidebarTrigger(Fragment):
         else:
             open, toggle = (
                 Var(_js_expr="open"),
-                call_script(Var(_js_expr="setOpen(!open)")),
+                run_script("setOpen(!open)"),
             )
 
         trigger_props["left"] = cond(open, f"calc({sidebar_width} - 32px)", "0")

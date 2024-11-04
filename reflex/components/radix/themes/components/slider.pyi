@@ -6,16 +6,16 @@
 from typing import Any, Dict, List, Literal, Optional, Union, overload
 
 from reflex.components.core.breakpoints import Breakpoints
-from reflex.event import EventType, identity_event
+from reflex.event import EventType, passthrough_event_spec
 from reflex.style import Style
 from reflex.vars.base import Var
 
 from ..base import RadixThemesComponent
 
 on_value_event_spec = (
-    identity_event(list[Union[int, float]]),
-    identity_event(list[int]),
-    identity_event(list[float]),
+    passthrough_event_spec(list[Union[int, float]]),
+    passthrough_event_spec(list[int]),
+    passthrough_event_spec(list[float]),
 )
 
 class Slider(RadixThemesComponent):
