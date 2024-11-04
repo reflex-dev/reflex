@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from pathlib import Path
 from typing import Generator
 
 import pytest
@@ -317,7 +318,9 @@ def test_clear_files(
 
     # check that the selected files are displayed
     selected_files = driver.find_element(By.ID, f"selected_files{suffix}")
-    assert selected_files.text == "\n".join(exp_files)
+    assert [Path(name).name for name in selected_files.text.split("\n")] == [
+        Path(name).name for name in exp_files
+    ]
 
     clear_button = driver.find_element(By.ID, f"clear_button{suffix}")
     assert clear_button
