@@ -47,8 +47,8 @@ from reflex.event import (
     EventVar,
     call_event_fn,
     call_event_handler,
-    empty_event,
     get_handler_args,
+    no_args_event_spec,
 )
 from reflex.style import Style, format_as_emotion
 from reflex.utils import format, imports, types
@@ -637,21 +637,21 @@ class Component(BaseComponent, ABC):
 
         """
         default_triggers = {
-            EventTriggers.ON_FOCUS: empty_event,
-            EventTriggers.ON_BLUR: empty_event,
-            EventTriggers.ON_CLICK: empty_event,
-            EventTriggers.ON_CONTEXT_MENU: empty_event,
-            EventTriggers.ON_DOUBLE_CLICK: empty_event,
-            EventTriggers.ON_MOUSE_DOWN: empty_event,
-            EventTriggers.ON_MOUSE_ENTER: empty_event,
-            EventTriggers.ON_MOUSE_LEAVE: empty_event,
-            EventTriggers.ON_MOUSE_MOVE: empty_event,
-            EventTriggers.ON_MOUSE_OUT: empty_event,
-            EventTriggers.ON_MOUSE_OVER: empty_event,
-            EventTriggers.ON_MOUSE_UP: empty_event,
-            EventTriggers.ON_SCROLL: empty_event,
-            EventTriggers.ON_MOUNT: empty_event,
-            EventTriggers.ON_UNMOUNT: empty_event,
+            EventTriggers.ON_FOCUS: no_args_event_spec,
+            EventTriggers.ON_BLUR: no_args_event_spec,
+            EventTriggers.ON_CLICK: no_args_event_spec,
+            EventTriggers.ON_CONTEXT_MENU: no_args_event_spec,
+            EventTriggers.ON_DOUBLE_CLICK: no_args_event_spec,
+            EventTriggers.ON_MOUSE_DOWN: no_args_event_spec,
+            EventTriggers.ON_MOUSE_ENTER: no_args_event_spec,
+            EventTriggers.ON_MOUSE_LEAVE: no_args_event_spec,
+            EventTriggers.ON_MOUSE_MOVE: no_args_event_spec,
+            EventTriggers.ON_MOUSE_OUT: no_args_event_spec,
+            EventTriggers.ON_MOUSE_OVER: no_args_event_spec,
+            EventTriggers.ON_MOUSE_UP: no_args_event_spec,
+            EventTriggers.ON_SCROLL: no_args_event_spec,
+            EventTriggers.ON_MOUNT: no_args_event_spec,
+            EventTriggers.ON_UNMOUNT: no_args_event_spec,
         }
 
         # Look for component specific triggers,
@@ -662,7 +662,7 @@ class Component(BaseComponent, ABC):
                 annotation = field.annotation
                 if (metadata := getattr(annotation, "__metadata__", None)) is not None:
                     args_spec = metadata[0]
-                default_triggers[field.name] = args_spec or (empty_event)  # type: ignore
+                default_triggers[field.name] = args_spec or (no_args_event_spec)  # type: ignore
         return default_triggers
 
     def __repr__(self) -> str:
@@ -1723,7 +1723,7 @@ class CustomComponent(Component):
                 value = self._create_event_chain(
                     value=value,
                     args_spec=event_triggers_in_component_declaration.get(
-                        key, empty_event
+                        key, no_args_event_spec
                     ),
                     key=key,
                 )

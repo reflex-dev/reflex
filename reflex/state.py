@@ -8,6 +8,7 @@ import copy
 import dataclasses
 import functools
 import inspect
+import json
 import pickle
 import sys
 import uuid
@@ -104,6 +105,8 @@ var = computed_var
 
 # If the state is this large, it's considered a performance issue.
 TOO_LARGE_SERIALIZED_STATE = 100 * 1024  # 100kb
+# Only warn about each state class size once.
+_WARNED_ABOUT_STATE_SIZE: Set[str] = set()
 
 # Errors caught during pickling of state
 HANDLED_PICKLE_ERRORS = (
@@ -353,7 +356,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
     def __init__(
         self,
-        *args,
         parent_state: BaseState | None = None,
         init_substates: bool = True,
         _reflex_internal_init: bool = False,
@@ -364,11 +366,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         DO NOT INSTANTIATE STATE CLASSES DIRECTLY! Use StateManager.get_state() instead.
 
         Args:
-            *args: The args to pass to the Pydantic init method.
             parent_state: The parent state.
             init_substates: Whether to initialize the substates in this instance.
             _reflex_internal_init: A flag to indicate that the state is being initialized by the framework.
-            **kwargs: The kwargs to pass to the Pydantic init method.
+            **kwargs: The kwargs to set as attributes on the state.
 
         Raises:
             ReflexRuntimeError: If the state is instantiated directly by end user.
@@ -381,7 +382,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 "See https://reflex.dev/docs/state/ for further information."
             )
         kwargs["parent_state"] = parent_state
-        super().__init__(*args, **kwargs)
+        super().__init__()
+        for name, value in kwargs.items():
+            setattr(self, name, value)
 
         # Setup the substates (for memory state manager only).
         if init_substates:
@@ -1285,16 +1288,19 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         fields = self.get_fields()
 
-        if name in fields and not _isinstance(
-            value, (field_type := fields[name].outer_type_)
-        ):
-            console.deprecate(
-                "mismatched-type-assignment",
-                f"Tried to assign value {value} of type {type(value)} to field {type(self).__name__}.{name} of type {field_type}."
-                " This might lead to unexpected behavior.",
-                "0.6.5",
-                "0.7.0",
-            )
+        if name in fields:
+            field = fields[name]
+            field_type = field.outer_type_
+            if field.allow_none:
+                field_type = Union[field_type, None]
+            if not _isinstance(value, field_type):
+                console.deprecate(
+                    "mismatched-type-assignment",
+                    f"Tried to assign value {value} of type {type(value)} to field {type(self).__name__}.{name} of type {field_type}."
+                    " This might lead to unexpected behavior.",
+                    "0.6.5",
+                    "0.7.0",
+                )
 
         # Set the attribute.
         super().__setattr__(name, value)
@@ -2046,6 +2052,27 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             state["__dict__"].pop(inherited_var_name, None)
         return state
 
+    def _warn_if_too_large(
+        self,
+        pickle_state_size: int,
+    ):
+        """Print a warning when the state is too large.
+
+        Args:
+            pickle_state_size: The size of the pickled state.
+        """
+        state_full_name = self.get_full_name()
+        if (
+            state_full_name not in _WARNED_ABOUT_STATE_SIZE
+            and pickle_state_size > TOO_LARGE_SERIALIZED_STATE
+            and self.substates
+        ):
+            console.warn(
+                f"State {state_full_name} serializes to {pickle_state_size} bytes "
+                "which may present performance issues. Consider reducing the size of this state."
+            )
+            _WARNED_ABOUT_STATE_SIZE.add(state_full_name)
+
     @classmethod
     @functools.lru_cache()
     def _to_schema(cls) -> str:
@@ -2084,7 +2111,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             The serialized state.
         """
         try:
-            return pickle.dumps((self._to_schema(), self))
+            pickle_state = pickle.dumps((self._to_schema(), self))
+            self._warn_if_too_large(len(pickle_state))
+            return pickle_state
         except HANDLED_PICKLE_ERRORS as og_pickle_error:
             error = (
                 f"Failed to serialize state {self.get_full_name()} due to unpicklable object. "
@@ -3075,9 +3104,6 @@ class StateManagerRedis(StateManager):
         b"evicted",
     }
 
-    # Only warn about each state class size once.
-    _warned_about_state_size: ClassVar[Set[str]] = set()
-
     async def _get_parent_state(
         self, token: str, state: BaseState | None = None
     ) -> BaseState | None:
@@ -3221,29 +3247,6 @@ class StateManagerRedis(StateManager):
             return state._get_root_state()
         return state
 
-    def _warn_if_too_large(
-        self,
-        state: BaseState,
-        pickle_state_size: int,
-    ):
-        """Print a warning when the state is too large.
-
-        Args:
-            state: The state to check.
-            pickle_state_size: The size of the pickled state.
-        """
-        state_full_name = state.get_full_name()
-        if (
-            state_full_name not in self._warned_about_state_size
-            and pickle_state_size > TOO_LARGE_SERIALIZED_STATE
-            and state.substates
-        ):
-            console.warn(
-                f"State {state_full_name} serializes to {pickle_state_size} bytes "
-                "which may present performance issues. Consider reducing the size of this state."
-            )
-            self._warned_about_state_size.add(state_full_name)
-
     @override
     async def set_state(
         self,
@@ -3294,7 +3297,6 @@ class StateManagerRedis(StateManager):
         # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
         if state._get_was_touched():
             pickle_state = state._serialize()
-            self._warn_if_too_large(state, len(pickle_state))
             if pickle_state:
                 await self.redis.set(
                     _substate_key(client_token, state),
@@ -3713,6 +3715,29 @@ def serialize_mutable_proxy(mp: MutableProxy):
         The wrapped object.
     """
     return mp.__wrapped__
+
+
+_orig_json_JSONEncoder_default = json.JSONEncoder.default
+
+
+def _json_JSONEncoder_default_wrapper(self: json.JSONEncoder, o: Any) -> Any:
+    """Wrap JSONEncoder.default to handle MutableProxy objects.
+
+    Args:
+        self: the JSONEncoder instance.
+        o: the object to serialize.
+
+    Returns:
+        A JSON-able object.
+    """
+    try:
+        return o.__wrapped__
+    except AttributeError:
+        pass
+    return _orig_json_JSONEncoder_default(self, o)
+
+
+json.JSONEncoder.default = _json_JSONEncoder_default_wrapper
 
 
 class ImmutableMutableProxy(MutableProxy):

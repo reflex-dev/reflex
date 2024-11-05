@@ -3404,3 +3404,10 @@ def test_fallback_pickle():
     state3._g = (i for i in range(10))
     pk3 = state3._serialize()
     assert len(pk3) == 0
+
+
+def test_typed_state() -> None:
+    class TypedState(rx.State):
+        field: rx.Field[str] = rx.field("")
+
+    _ = TypedState(field="str")

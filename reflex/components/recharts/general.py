@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Union
 
 from reflex.components.component import MemoizationLeaf
 from reflex.constants.colors import Color
-from reflex.event import EventHandler, empty_event
+from reflex.event import EventHandler, no_args_event_spec
 from reflex.vars.base import LiteralVar, Var
 
 from .recharts import (
@@ -46,7 +46,7 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
     debounce: Var[int]
 
     # If specified provides a callback providing the updated chart width and height values.
-    on_resize: EventHandler[empty_event]
+    on_resize: EventHandler[no_args_event_spec]
 
     # Valid children components
     _valid_children: List[str] = [
@@ -104,28 +104,28 @@ class Legend(Recharts):
     margin: Var[Dict[str, Any]]
 
     # The customized event handler of click on the items in this group
-    on_click: EventHandler[empty_event]
+    on_click: EventHandler[no_args_event_spec]
 
     # The customized event handler of mousedown on the items in this group
-    on_mouse_down: EventHandler[empty_event]
+    on_mouse_down: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseup on the items in this group
-    on_mouse_up: EventHandler[empty_event]
+    on_mouse_up: EventHandler[no_args_event_spec]
 
     # The customized event handler of mousemove on the items in this group
-    on_mouse_move: EventHandler[empty_event]
+    on_mouse_move: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseover on the items in this group
-    on_mouse_over: EventHandler[empty_event]
+    on_mouse_over: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseout on the items in this group
-    on_mouse_out: EventHandler[empty_event]
+    on_mouse_out: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseenter on the items in this group
-    on_mouse_enter: EventHandler[empty_event]
+    on_mouse_enter: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseleave on the items in this group
-    on_mouse_leave: EventHandler[empty_event]
+    on_mouse_leave: EventHandler[no_args_event_spec]
 
 
 class GraphingTooltip(Recharts):

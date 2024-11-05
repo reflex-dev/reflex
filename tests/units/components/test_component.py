@@ -19,10 +19,10 @@ from reflex.constants import EventTriggers
 from reflex.event import (
     EventChain,
     EventHandler,
-    empty_event,
-    identity_event,
     input_event,
+    no_args_event_spec,
     parse_args_spec,
+    passthrough_event_spec,
 )
 from reflex.state import BaseState
 from reflex.style import Style
@@ -111,10 +111,10 @@ def component2() -> Type[Component]:
             """
             return {
                 **super().get_event_triggers(),
-                "on_open": identity_event(bool),
-                "on_close": identity_event(bool),
-                "on_user_visited_count_changed": identity_event(int),
-                "on_user_list_changed": identity_event(List[str]),
+                "on_open": passthrough_event_spec(bool),
+                "on_close": passthrough_event_spec(bool),
+                "on_user_visited_count_changed": passthrough_event_spec(int),
+                "on_user_list_changed": passthrough_event_spec(List[str]),
             }
 
         def _get_imports(self) -> ParsedImportDict:
@@ -1821,8 +1821,8 @@ def test_custom_component_declare_event_handlers_in_fields():
     class TestComponent(Component):
         on_a: EventHandler[lambda e0: [e0]]
         on_b: EventHandler[input_event]
-        on_c: EventHandler[empty_event]
-        on_d: EventHandler[empty_event]
+        on_c: EventHandler[no_args_event_spec]
+        on_d: EventHandler[no_args_event_spec]
         on_e: EventHandler
         on_f: EventHandler[lambda a, b, c: [c, b, a]]
 
