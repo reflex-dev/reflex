@@ -132,7 +132,7 @@ def get_upload_dir() -> Path:
     """
     Upload.is_used = True
 
-    uploaded_files_dir = environment.REFLEX_UPLOADED_FILES_DIR
+    uploaded_files_dir = environment.REFLEX_UPLOADED_FILES_DIR.get()
     uploaded_files_dir.mkdir(parents=True, exist_ok=True)
     return uploaded_files_dir
 

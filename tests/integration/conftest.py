@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from reflex.config import environment
 from reflex.testing import AppHarness, AppHarnessProd
 
 DISPLAY = None
@@ -21,7 +22,7 @@ def xvfb():
     Yields:
         the pyvirtualdisplay object that the browser will be open on
     """
-    if os.environ.get("GITHUB_ACTIONS") and not os.environ.get("APP_HARNESS_HEADLESS"):
+    if os.environ.get("GITHUB_ACTIONS") and not environment.APP_HARNESS_HEADLESS.get():
         from pyvirtualdisplay.smartdisplay import (  # pyright: ignore [reportMissingImports]
             SmartDisplay,
         )
@@ -42,7 +43,7 @@ def pytest_exception_interact(node, call, report):
         call: The pytest call describing when/where the test was invoked.
         report: The pytest log report object.
     """
-    screenshot_dir = os.environ.get("SCREENSHOT_DIR")
+    screenshot_dir = environment.SCREENSHOT_DIR.get()
     if DISPLAY is None or screenshot_dir is None:
         return
 
