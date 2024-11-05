@@ -180,6 +180,7 @@ from .experimental import _x as _x
 from .istate.storage import Cookie as Cookie
 from .istate.storage import LocalStorage as LocalStorage
 from .istate.storage import SessionStorage as SessionStorage
+from .istate.wrappers import get_state as get_state
 from .middleware import Middleware as Middleware
 from .middleware import middleware as middleware
 from .model import Model as Model

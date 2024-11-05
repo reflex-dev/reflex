@@ -336,6 +336,7 @@ _MAPPING: dict = {
         "State",
         "dynamic",
     ],
+    "istate.wrappers": ["get_state"],
     "style": ["Style", "toggle_color_mode"],
     "utils.imports": ["ImportVar"],
     "utils.serializers": ["serializer"],
