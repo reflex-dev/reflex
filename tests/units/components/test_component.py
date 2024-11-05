@@ -19,14 +19,18 @@ from reflex.constants import EventTriggers
 from reflex.event import (
     EventChain,
     EventHandler,
-    empty_event,
     input_event,
+    no_args_event_spec,
     parse_args_spec,
+    passthrough_event_spec,
 )
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
-from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
+from reflex.utils.exceptions import (
+    EventFnArgMismatch,
+    EventHandlerArgMismatch,
+)
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -41,6 +45,18 @@ def test_state():
             pass
 
         def do_something_arg(self, arg):
+            pass
+
+        def do_something_with_bool(self, arg: bool):
+            pass
+
+        def do_something_with_int(self, arg: int):
+            pass
+
+        def do_something_with_list_int(self, arg: list[int]):
+            pass
+
+        def do_something_with_list_str(self, arg: list[str]):
             pass
 
     return TestState
@@ -95,8 +111,10 @@ def component2() -> Type[Component]:
             """
             return {
                 **super().get_event_triggers(),
-                "on_open": lambda e0: [e0],
-                "on_close": lambda e0: [e0],
+                "on_open": passthrough_event_spec(bool),
+                "on_close": passthrough_event_spec(bool),
+                "on_user_visited_count_changed": passthrough_event_spec(int),
+                "on_user_list_changed": passthrough_event_spec(List[str]),
             }
 
         def _get_imports(self) -> ParsedImportDict:
@@ -582,7 +600,14 @@ def test_get_event_triggers(component1, component2):
     assert component1().get_event_triggers().keys() == default_triggers
     assert (
         component2().get_event_triggers().keys()
-        == {"on_open", "on_close", "on_prop_event"} | default_triggers
+        == {
+            "on_open",
+            "on_close",
+            "on_prop_event",
+            "on_user_visited_count_changed",
+            "on_user_list_changed",
+        }
+        | default_triggers
     )
 
 
@@ -642,21 +667,18 @@ def test_component_create_unallowed_types(children, test_component):
                 "name": "Fragment",
                 "props": [],
                 "contents": "",
-                "args": None,
                 "special_props": [],
                 "children": [
                     {
                         "name": "RadixThemesText",
                         "props": ['as={"p"}'],
                         "contents": "",
-                        "args": None,
                         "special_props": [],
                         "children": [
                             {
                                 "name": "",
                                 "props": [],
                                 "contents": '{"first_text"}',
-                                "args": None,
                                 "special_props": [],
                                 "children": [],
                                 "autofocus": False,
@@ -671,15 +693,12 @@ def test_component_create_unallowed_types(children, test_component):
         (
             (rx.text("first_text"), rx.text("second_text")),
             {
-                "args": None,
                 "autofocus": False,
                 "children": [
                     {
-                        "args": None,
                         "autofocus": False,
                         "children": [
                             {
-                                "args": None,
                                 "autofocus": False,
                                 "children": [],
                                 "contents": '{"first_text"}',
@@ -694,11 +713,9 @@ def test_component_create_unallowed_types(children, test_component):
                         "special_props": [],
                     },
                     {
-                        "args": None,
                         "autofocus": False,
                         "children": [
                             {
-                                "args": None,
                                 "autofocus": False,
                                 "children": [],
                                 "contents": '{"second_text"}',
@@ -722,15 +739,12 @@ def test_component_create_unallowed_types(children, test_component):
         (
             (rx.text("first_text"), rx.box((rx.text("second_text"),))),
             {
-                "args": None,
                 "autofocus": False,
                 "children": [
                     {
-                        "args": None,
                         "autofocus": False,
                         "children": [
                             {
-                                "args": None,
                                 "autofocus": False,
                                 "children": [],
                                 "contents": '{"first_text"}',
@@ -745,19 +759,15 @@ def test_component_create_unallowed_types(children, test_component):
                         "special_props": [],
                     },
                     {
-                        "args": None,
                         "autofocus": False,
                         "children": [
                             {
-                                "args": None,
                                 "autofocus": False,
                                 "children": [
                                     {
-                                        "args": None,
                                         "autofocus": False,
                                         "children": [
                                             {
-                                                "args": None,
                                                 "autofocus": False,
                                                 "children": [],
                                                 "contents": '{"second_text"}',
@@ -917,6 +927,22 @@ def test_invalid_event_handler_args(component2, test_state):
         component2.create(
             on_prop_event=[test_state.do_something_arg, test_state.do_something]
         )
+
+    # Enable when 0.7.0 happens
+    # # Event Handler types must match
+    # with pytest.raises(EventHandlerArgTypeMismatch):
+    #     component2.create(
+    #         on_user_visited_count_changed=test_state.do_something_with_bool
+    #     )
+    # with pytest.raises(EventHandlerArgTypeMismatch):
+    #     component2.create(on_user_list_changed=test_state.do_something_with_int)
+    # with pytest.raises(EventHandlerArgTypeMismatch):
+    #     component2.create(on_user_list_changed=test_state.do_something_with_list_int)
+
+    # component2.create(on_open=test_state.do_something_with_int)
+    # component2.create(on_open=test_state.do_something_with_bool)
+    # component2.create(on_user_visited_count_changed=test_state.do_something_with_int)
+    # component2.create(on_user_list_changed=test_state.do_something_with_list_str)
 
     # lambda cannot return weird values.
     with pytest.raises(ValueError):
@@ -1117,10 +1143,10 @@ def test_component_with_only_valid_children(fixture, request):
 @pytest.mark.parametrize(
     "component,rendered",
     [
-        (rx.text("hi"), '<RadixThemesText as={"p"}>\n  {"hi"}\n</RadixThemesText>'),
+        (rx.text("hi"), '<RadixThemesText as={"p"}>\n\n{"hi"}\n</RadixThemesText>'),
         (
             rx.box(rx.heading("test", size="3")),
-            '<RadixThemesBox>\n  <RadixThemesHeading size={"3"}>\n  {"test"}\n</RadixThemesHeading>\n</RadixThemesBox>',
+            '<RadixThemesBox>\n\n<RadixThemesHeading size={"3"}>\n\n{"test"}\n</RadixThemesHeading>\n</RadixThemesBox>',
         ),
     ],
 )
@@ -1795,8 +1821,8 @@ def test_custom_component_declare_event_handlers_in_fields():
     class TestComponent(Component):
         on_a: EventHandler[lambda e0: [e0]]
         on_b: EventHandler[input_event]
-        on_c: EventHandler[empty_event]
-        on_d: EventHandler[empty_event]
+        on_c: EventHandler[no_args_event_spec]
+        on_d: EventHandler[no_args_event_spec]
         on_e: EventHandler
         on_f: EventHandler[lambda a, b, c: [c, b, a]]
 

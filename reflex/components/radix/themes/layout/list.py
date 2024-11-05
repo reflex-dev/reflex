@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Literal, Optional, Union
+from typing import Any, Iterable, Literal, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.foreach import Foreach
@@ -44,27 +44,30 @@ class BaseList(Component):
     # The style of the list. Default to "none".
     list_style_type: Var[
         Union[LiteralListStyleTypeUnordered, LiteralListStyleTypeOrdered]
-    ]
+    ] = Var.create("none")
+
+    # A list of items to add to the list.
+    items: Var[Iterable] = Var.create([])
 
     @classmethod
     def create(
         cls,
         *children,
-        items: Optional[Var[Iterable]] = None,
         **props,
     ):
         """Create a list component.
 
         Args:
             *children: The children of the component.
-            items: A list of items to add to the list.
             **props: The properties of the component.
 
         Returns:
             The list component.
 
         """
+        items = props.pop("items", None)
         list_style_type = props.pop("list_style_type", "none")
+
         if not children and items is not None:
             if isinstance(items, Var):
                 children = [Foreach.create(items, ListItem.create)]
@@ -87,6 +90,9 @@ class BaseList(Component):
             "direction": "column",
         }
 
+    def _exclude_props(self) -> list[str]:
+        return ["items", "list_style_type"]
+
 
 class UnorderedList(BaseList, Ul):
     """Display an unordered list."""
@@ -97,22 +103,21 @@ class UnorderedList(BaseList, Ul):
     def create(
         cls,
         *children,
-        items: Optional[Var[Iterable]] = None,
-        list_style_type: LiteralListStyleTypeUnordered = "disc",
         **props,
     ):
-        """Create a unordered list component.
+        """Create an unordered list component.
 
         Args:
             *children: The children of the component.
-            items: A list of items to add to the list.
-            list_style_type: The style of the list.
             **props: The properties of the component.
 
         Returns:
             The list component.
 
         """
+        items = props.pop("items", None)
+        list_style_type = props.pop("list_style_type", "disc")
+
         props["margin_left"] = props.get("margin_left", "1.5rem")
         return super().create(
             *children, items=items, list_style_type=list_style_type, **props
@@ -128,22 +133,21 @@ class OrderedList(BaseList, Ol):
     def create(
         cls,
         *children,
-        items: Optional[Var[Iterable]] = None,
-        list_style_type: LiteralListStyleTypeOrdered = "decimal",
         **props,
     ):
         """Create an ordered list component.
 
         Args:
             *children: The children of the component.
-            items: A list of items to add to the list.
-            list_style_type: The style of the list.
             **props: The properties of the component.
 
         Returns:
             The list component.
 
         """
+        items = props.pop("items", None)
+        list_style_type = props.pop("list_style_type", "decimal")
+
         props["margin_left"] = props.get("margin_left", "1.5rem")
         return super().create(
             *children, items=items, list_style_type=list_style_type, **props

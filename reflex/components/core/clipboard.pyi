@@ -6,7 +6,9 @@
 from typing import Any, Dict, List, Optional, Union, overload
 
 from reflex.components.base.fragment import Fragment
-from reflex.event import EventType
+from reflex.event import (
+    EventType,
+)
 from reflex.style import Style
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import Var
@@ -50,6 +52,7 @@ class Clipboard(Fragment):
         Args:
             *children: The children of the component.
             targets: The element ids to attach the event listener to. Defaults to all child components or the document.
+            on_paste: Called when the user pastes data into the document. Data is a list of tuples of (mime_type, data). Binary types will be base64 encoded as a data uri.
             on_paste_event_actions: Save the original event actions for the on_paste event.
             style: The style of the component.
             key: A unique key for the component.

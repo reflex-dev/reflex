@@ -59,6 +59,7 @@ class HoverCardRoot(RadixThemesComponent):
             open: The controlled open state of the hover card. Must be used in conjunction with onOpenChange.
             open_delay: The duration from when the mouse enters the trigger until the hover card opens.
             close_delay: The duration from when the mouse leaves the trigger until the hover card closes.
+            on_open_change: Fired when the open state changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -137,7 +138,31 @@ class HoverCardContent(elements.Div, RadixThemesComponent):
                 Var[Literal["center", "end", "start"]],
             ]
         ] = None,
+        align_offset: Optional[Union[Var[int], int]] = None,
         avoid_collisions: Optional[Union[Var[bool], bool]] = None,
+        collision_padding: Optional[
+            Union[
+                Dict[str, Union[float, int]],
+                Var[Union[Dict[str, Union[float, int]], float, int]],
+                float,
+                int,
+            ]
+        ] = None,
+        sticky: Optional[
+            Union[Literal["always", "partial"], Var[Literal["always", "partial"]]]
+        ] = None,
+        hide_when_detached: Optional[Union[Var[bool], bool]] = None,
+        size: Optional[
+            Union[
+                Breakpoints[str, Literal["1", "2", "3"]],
+                Literal["1", "2", "3"],
+                Var[
+                    Union[
+                        Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
+                    ]
+                ],
+            ]
+        ] = None,
         access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_capitalize: Optional[
             Union[Var[Union[bool, int, str]], bool, int, str]
@@ -195,7 +220,12 @@ class HoverCardContent(elements.Div, RadixThemesComponent):
             side: The preferred side of the trigger to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
             side_offset: The distance in pixels from the trigger.
             align: The preferred alignment against the trigger. May change when collisions occur.
+            align_offset: An offset in pixels from the "start" or "end" alignment options.
             avoid_collisions: Whether or not the hover card should avoid collisions with its trigger.
+            collision_padding: The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { top: 20, left: 20 }.
+            sticky: The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless
+            hide_when_detached: Whether to hide the content when the trigger becomes fully occluded.
+            size: Hovercard size "1" - "3"
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -272,6 +302,7 @@ class HoverCard(ComponentNamespace):
             open: The controlled open state of the hover card. Must be used in conjunction with onOpenChange.
             open_delay: The duration from when the mouse enters the trigger until the hover card opens.
             close_delay: The duration from when the mouse leaves the trigger until the hover card closes.
+            on_open_change: Fired when the open state changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

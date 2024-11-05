@@ -65,6 +65,9 @@ class Script(Component):
             *children: The children of the component.
             src: Required unless inline script is used
             strategy: When the script will execute: afterInteractive (defer-like behavior) | beforeInteractive | lazyOnload (async-like behavior)
+            on_load: Triggered when the script is loading
+            on_ready: Triggered when the script has loaded
+            on_error: Triggered when the script has errored
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

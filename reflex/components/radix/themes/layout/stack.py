@@ -12,20 +12,22 @@ from .flex import Flex, LiteralFlexDirection
 class Stack(Flex):
     """A stack component."""
 
+    # The spacing between each stack item.
+    spacing: Var[LiteralSpacing] = Var.create("3")
+
+    # The alignment of the stack items.
+    align: Var[LiteralAlign] = Var.create("start")
+
     @classmethod
     def create(
         cls,
         *children,
-        spacing: LiteralSpacing = "3",
-        align: LiteralAlign = "start",
         **props,
     ) -> Component:
         """Create a new instance of the component.
 
         Args:
             *children: The children of the stack.
-            spacing: The spacing between each stack item.
-            align: The alignment of the stack items.
             **props: The properties of the stack.
 
         Returns:
@@ -39,8 +41,6 @@ class Stack(Flex):
 
         return super().create(
             *children,
-            spacing=spacing,
-            align=align,
             **props,
         )
 

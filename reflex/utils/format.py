@@ -6,7 +6,7 @@ import inspect
 import json
 import os
 import re
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from reflex import constants
 from reflex.utils import exceptions
@@ -14,7 +14,7 @@ from reflex.utils.console import deprecate
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
-    from reflex.event import ArgsSpec, EventChain, EventHandler, EventSpec
+    from reflex.event import ArgsSpec, EventChain, EventHandler, EventSpec, EventType
 
 WRAP_MAP = {
     "{": "}",
@@ -197,8 +197,16 @@ def make_default_page_title(app_name: str, route: str) -> str:
     Returns:
         The default page title.
     """
-    title = constants.DefaultPage.TITLE.format(app_name, route)
-    return to_title_case(title, " ")
+    route_parts = [
+        part
+        for part in route.split("/")
+        if part and not (part.startswith("[") and part.endswith("]"))
+    ]
+
+    title = constants.DefaultPage.TITLE.format(
+        app_name, route_parts[-1] if route_parts else constants.PageNames.INDEX_ROUTE
+    )
+    return to_title_case(title)
 
 
 def _escape_js_string(string: str) -> str:
@@ -525,13 +533,7 @@ def format_event_chain(
 
 
 def format_queue_events(
-    events: (
-        EventSpec
-        | EventHandler
-        | Callable
-        | List[EventSpec | EventHandler | Callable]
-        | None
-    ) = None,
+    events: EventType | None = None,
     args_spec: Optional[ArgsSpec] = None,
 ) -> Var[EventChain]:
     """Format a list of event handler / event spec as a javascript callback.

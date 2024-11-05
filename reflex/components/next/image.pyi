@@ -72,6 +72,8 @@ class Image(NextComponent):
             placeholder: A placeholder to use while the image is loading. Possible values are blur, empty, or data:image/.... Defaults to empty.
             loading: Allows passing CSS styles to the underlying image element.  style: Var[Any]  The loading behavior of the image. Defaults to lazy. Can hurt performance, recommended to use `priority` instead.
             blurDataURL: A Data URL to be used as a placeholder image before the src image successfully loads. Only takes effect when combined with placeholder="blur".
+            on_load: Fires when the image has loaded.
+            on_error: Fires when the image has an error.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
