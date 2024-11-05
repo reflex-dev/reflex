@@ -43,7 +43,6 @@ import reflex.utils.exec
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
-from reflex.components.component import StatefulComponent
 from reflex.config import EnvironmentVariables
 from reflex.state import (
     BaseState,
@@ -282,8 +281,6 @@ class AppHarness:
                 )
                 self.app_module_path.write_text(source_code)
         with chdir(self.app_path):
-            # Reset stateful component cache for new app
-            StatefulComponent.tag_to_stateful_component.clear()
             # ensure config and app are reloaded when testing different app
             reflex.config.get_config(reload=True)
             # Save decorated pages before importing the test app module
