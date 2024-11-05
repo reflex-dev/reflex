@@ -26,7 +26,6 @@ from reflex.vars.sequence import StringVar, string_replace_operation
 def copy_script() -> Any:
     """Copy script for the code block and modify the child SVG element.
 
-
     Returns:
         Any: The result of calling the script.
     """
