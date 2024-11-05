@@ -40,6 +40,7 @@ from reflex.state import (
     StateProxy,
     StateUpdate,
     _substate_key,
+    prefix_redis_token,
 )
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
@@ -1671,7 +1672,7 @@ async def test_state_manager_modify_state(
     """
     async with state_manager.modify_state(substate_token) as state:
         if isinstance(state_manager, StateManagerRedis):
-            assert await state_manager.redis.get(f"{token}_lock")
+            assert await state_manager.redis.get(prefix_redis_token(f"{token}_lock"))
         elif isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
             assert token in state_manager._states_locks
             assert state_manager._states_locks[token].locked()
@@ -1681,7 +1682,9 @@ async def test_state_manager_modify_state(
         state.complex[3] = complex_1
     # lock should be dropped after exiting the context
     if isinstance(state_manager, StateManagerRedis):
-        assert (await state_manager.redis.get(f"{token}_lock")) is None
+        assert (
+            await state_manager.redis.get(prefix_redis_token(f"{token}_lock"))
+        ) is None
     elif isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
         assert not state_manager._states_locks[token].locked()
 
@@ -1723,7 +1726,9 @@ async def test_state_manager_contend(
     assert (await state_manager.get_state(substate_token)).num1 == exp_num1
 
     if isinstance(state_manager, StateManagerRedis):
-        assert (await state_manager.redis.get(f"{token}_lock")) is None
+        assert (
+            await state_manager.redis.get(prefix_redis_token(f"{token}_lock"))
+        ) is None
     elif isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
         assert token in state_manager._states_locks
         assert not state_manager._states_locks[token].locked()
@@ -1783,7 +1788,7 @@ async def test_state_manager_lock_expire(
 
 @pytest.mark.asyncio
 async def test_state_manager_lock_expire_contend(
-    state_manager_redis: StateManager, token: str, substate_token_redis: str
+    state_manager_redis: StateManagerRedis, token: str, substate_token_redis: str
 ):
     """Test that the state manager lock expires and queued waiters proceed.
 
@@ -1823,6 +1828,28 @@ async def test_state_manager_lock_expire_contend(
 
     assert order == ["blocker", "waiter"]
     assert (await state_manager_redis.get_state(substate_token_redis)).num1 == exp_num1
+
+
+@pytest.mark.asyncio
+async def test_state_manager_redis_prefix(
+    state_manager_redis: StateManagerRedis, substate_token_redis: str
+):
+    """Test that the state manager redis prefix is applied correctly.
+
+    Args:
+        state_manager_redis: A state manager instance.
+        substate_token_redis: A token + substate name for looking up in state manager.
+    """
+    prefix = "test_prefix"
+    reflex.config.EnvironmentVariables.REFLEX_REDIS_PREFIX.set(prefix)
+
+    async with state_manager_redis.modify_state(substate_token_redis) as state:
+        state.num1 = 42
+
+    prefixed_token = prefix_redis_token(substate_token_redis)
+    assert prefixed_token == f"{prefix}{substate_token_redis}"
+
+    assert await state_manager_redis.redis.get(prefixed_token)
 
 
 @pytest.fixture(scope="function")

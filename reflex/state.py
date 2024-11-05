@@ -42,7 +42,7 @@ from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
 from reflex import event
-from reflex.config import get_config
+from reflex.config import EnvironmentVariables, get_config
 from reflex.istate.data import RouterData
 from reflex.istate.storage import (
     ClientStorageBase,
@@ -3076,6 +3076,26 @@ def _default_lock_expiration() -> int:
     return get_config().redis_lock_expiration
 
 
+TOKEN_TYPE = TypeVar("TOKEN_TYPE", str, bytes)
+
+
+def prefix_redis_token(token: TOKEN_TYPE) -> TOKEN_TYPE:
+    """Prefix the token with the redis prefix.
+
+    Args:
+        token: The token to prefix.
+
+    Returns:
+        The prefixed token.
+    """
+    prefix = EnvironmentVariables.REFLEX_REDIS_PREFIX.get()
+    if not prefix:
+        return token
+    if isinstance(token, bytes):
+        return prefix.encode() + token
+    return f"{prefix}{token}"
+
+
 class StateManagerRedis(StateManager):
     """A state manager that stores states in redis."""
 
@@ -3213,7 +3233,7 @@ class StateManagerRedis(StateManager):
         state = None
 
         # Fetch the serialized substate from redis.
-        redis_state = await self.redis.get(token)
+        redis_state = await self.redis.get(prefix_redis_token(token))
 
         if redis_state is not None:
             # Deserialize the substate.
@@ -3268,7 +3288,8 @@ class StateManagerRedis(StateManager):
         # Check that we're holding the lock.
         if (
             lock_id is not None
-            and await self.redis.get(self._lock_key(token)) != lock_id
+            and await self.redis.get(prefix_redis_token(self._lock_key(token)))
+            != lock_id
         ):
             raise LockExpiredError(
                 f"Lock expired for token {token} while processing. Consider increasing "
@@ -3299,7 +3320,7 @@ class StateManagerRedis(StateManager):
             pickle_state = state._serialize()
             if pickle_state:
                 await self.redis.set(
-                    _substate_key(client_token, state),
+                    prefix_redis_token(_substate_key(client_token, state)),
                     pickle_state,
                     ex=self.token_expiration,
                 )
@@ -3349,7 +3370,7 @@ class StateManagerRedis(StateManager):
             True if the lock was obtained.
         """
         return await self.redis.set(
-            lock_key,
+            prefix_redis_token(lock_key),
             lock_id,
             px=self.lock_expiration,
             nx=True,  # only set if it doesn't exist

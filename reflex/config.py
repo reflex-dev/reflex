@@ -545,6 +545,9 @@ class EnvironmentVariables:
     # Where to save screenshots when tests fail.
     SCREENSHOT_DIR: EnvVar[Optional[Path]] = env_var(None)
 
+    # Optional redis key prefix for the state manager.
+    REFLEX_REDIS_PREFIX: EnvVar[Optional[str]] = env_var(None)
+
 
 environment = EnvironmentVariables()
 
