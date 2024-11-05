@@ -8,8 +8,6 @@ from re import IGNORECASE as RE_IGNORECASE
 from re import compile as re_compile
 from typing import TYPE_CHECKING, Dict, Iterable, Optional, Tuple, Type, Union
 
-from sass import compile as sass_compile
-
 from reflex import constants
 from reflex.compiler import templates, utils
 from reflex.components.base.fragment import Fragment
@@ -23,6 +21,7 @@ from reflex.components.component import (
 from reflex.config import environment, get_config
 from reflex.state import BaseState
 from reflex.style import SYSTEM_COLOR_MODE
+from reflex.utils import console
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.imports import ImportVar
 from reflex.utils.prerequisites import get_web_dir
@@ -196,66 +195,87 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
         else []
     )
 
-    while len(stylesheets):
-        stylesheet = stylesheets.pop(0)
-        if not utils.is_valid_url(stylesheet):
-            # check if stylesheet provided exists.
-            assets_app_path = Path.cwd() / constants.Dirs.APP_ASSETS
-            stylesheet_full_path = assets_app_path / stylesheet.strip("/")
+    try:
+        sass_compile = None
+        while len(stylesheets):
+            stylesheet = stylesheets.pop(0)
+            if not utils.is_valid_url(stylesheet):
+                # check if stylesheet provided exists.
+                assets_app_path = Path.cwd() / constants.Dirs.APP_ASSETS
+                stylesheet_full_path = assets_app_path / stylesheet.strip("/")
 
-            if not stylesheet_full_path.exists():
-                raise FileNotFoundError(
-                    f"The stylesheet file {stylesheet_full_path} does not exist."
-                )
-            elif not stylesheet_full_path.is_file():
-                if stylesheet_full_path.is_dir():
-                    # NOTE: this can create an infinite loop, for example:
-                    # assets/
-                    #   | dir_a/
-                    #   |   | dir_c/ (symlink to "assets/dir_a")
-                    #   | dir_b/
-                    # so to avoid the infinite loop, we don't include symbolic links
-                    stylesheets += [
-                        str(p.relative_to(assets_app_path))
-                        for p in stylesheet_full_path.iterdir()
-                        if not (p.is_symlink() and p.is_dir())
-                    ]
-                    continue
-                else:
+                if not stylesheet_full_path.exists():
                     raise FileNotFoundError(
-                        f'The stylesheet path "{stylesheet_full_path}" is not a valid path.'
+                        f"The stylesheet file {stylesheet_full_path} does not exist."
                     )
-            elif (
-                stylesheet_full_path.suffix[1:]
-                not in constants.Reflex.STYLESHEETS_SUPPORTED
-            ):
-                raise FileNotFoundError(
-                    f'The stylesheet file "{stylesheet_full_path}" is not a valid file.'
+                elif not stylesheet_full_path.is_file():
+                    if stylesheet_full_path.is_dir():
+                        # NOTE: this can create an infinite loop, for example:
+                        # assets/
+                        #   | dir_a/
+                        #   |   | dir_c/ (symlink to "assets/dir_a")
+                        #   | dir_b/
+                        # so to avoid the infinite loop, we don't include symbolic links
+                        stylesheets += [
+                            str(p.relative_to(assets_app_path))
+                            for p in stylesheet_full_path.iterdir()
+                            if not (p.is_symlink() and p.is_dir())
+                        ]
+                        continue
+                    else:
+                        raise FileNotFoundError(
+                            f'The stylesheet path "{stylesheet_full_path}" is not a valid path.'
+                        )
+                elif (
+                    stylesheet_full_path.suffix[1:]
+                    not in constants.Reflex.STYLESHEETS_SUPPORTED
+                ):
+                    raise FileNotFoundError(
+                        f'The stylesheet file "{stylesheet_full_path}" is not a valid file.'
+                    )
+
+                if (
+                    stylesheet_full_path.suffix[1:]
+                    in constants.Reflex.STYLESHEETS_SUPPORTED
+                ):
+                    target = (
+                        Path.cwd()
+                        / constants.Dirs.WEB
+                        / constants.Dirs.STYLES
+                        / RE_SASS_SCSS_EXT.sub(".css", str(stylesheet)).strip("/")
+                    )
+                    target.parent.mkdir(parents=True, exist_ok=True)
+
+                    if stylesheet_full_path.suffix == ".css":
+                        target.write_text(
+                            data=stylesheet_full_path.read_text(),
+                            encoding="utf8",
+                        )
+                    else:
+                        if sass_compile is None:
+                            from sass import compile as sass_compile
+                        else:
+                            pass
+
+                        target.write_text(
+                            data=sass_compile(
+                                filename=str(stylesheet_full_path),
+                                output_style="compressed",
+                            ),
+                            encoding="utf8",
+                        )
+                else:
+                    pass
+
+                stylesheet = (
+                    f"./{RE_SASS_SCSS_EXT.sub('.css', str(stylesheet)).strip('/')}"
                 )
 
-            if (
-                stylesheet_full_path.suffix[1:]
-                in constants.Reflex.STYLESHEETS_SUPPORTED
-            ):
-                target = (
-                    Path.cwd()
-                    / constants.Dirs.WEB
-                    / constants.Dirs.STYLES
-                    / RE_SASS_SCSS_EXT.sub(".css", str(stylesheet)).strip("/")
-                )
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_text(
-                    data=sass_compile(
-                        filename=str(stylesheet_full_path), output_style="compressed"
-                    ),
-                    encoding="utf8",
-                )
-            else:
-                pass
-
-            stylesheet = f"./{RE_SASS_SCSS_EXT.sub('.css', str(stylesheet)).strip('/')}"
-
-        sheets.append(stylesheet) if stylesheet not in sheets else None
+            sheets.append(stylesheet) if stylesheet not in sheets else None
+    except ImportError:
+        console.error(
+            """The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`."""
+        )
 
     return templates.STYLE.render(stylesheets=sheets)
 
