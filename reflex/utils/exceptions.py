@@ -1,5 +1,7 @@
 """Custom Exceptions."""
 
+from typing import NoReturn
+
 
 class ReflexError(Exception):
     """Base exception for all Reflex exceptions."""
@@ -151,3 +153,25 @@ class DynamicComponentInvalidSignature(ReflexError, TypeError):
 
 class InvalidPropValueError(ReflexError):
     """Raised when a prop value is invalid."""
+
+
+class SystemPackageMissingError(ReflexError):
+    """Raised when a system package is missing."""
+
+
+def raise_system_package_missing_error(package: str) -> NoReturn:
+    """Raise a SystemPackageMissingError.
+
+    Args:
+        package: The name of the missing system package.
+
+    Raises:
+        SystemPackageMissingError: The raised exception.
+    """
+    from reflex.constants import IS_MACOS
+
+    raise SystemPackageMissingError(
+        f"System package '{package}' is missing."
+        " Please install it through your system package manager."
+        + (f" You can do so by running 'brew install {package}'." if IS_MACOS else "")
+    )

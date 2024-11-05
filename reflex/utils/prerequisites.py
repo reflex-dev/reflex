@@ -35,7 +35,10 @@ from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, environment, get_config
 from reflex.utils import console, net, path_ops, processes
-from reflex.utils.exceptions import GeneratedCodeHasNoFunctionDefs
+from reflex.utils.exceptions import (
+    GeneratedCodeHasNoFunctionDefs,
+    raise_system_package_missing_error,
+)
 from reflex.utils.format import format_library_name
 from reflex.utils.registry import _get_npm_registry
 
@@ -820,11 +823,7 @@ def install_node():
 
 
 def install_bun():
-    """Install bun onto the user's system.
-
-    Raises:
-        FileNotFoundError: If required packages are not found.
-    """
+    """Install bun onto the user's system."""
     win_supported = is_windows_bun_supported()
     one_drive_in_path = windows_check_onedrive_in_path()
     if constants.IS_WINDOWS and not win_supported or one_drive_in_path:
@@ -863,7 +862,7 @@ def install_bun():
     else:
         unzip_path = path_ops.which("unzip")
         if unzip_path is None:
-            raise FileNotFoundError("Reflex requires unzip to be installed.")
+            raise_system_package_missing_error("unzip")
 
         # Run the bun install script.
         download_and_run(
