@@ -8,6 +8,8 @@ import pytest
 import reflex as rx
 import reflex.config
 from reflex.config import (
+    EnvVar,
+    env_var,
     environment,
     interpret_boolean_env,
     interpret_enum_env,
@@ -214,7 +216,7 @@ def test_replace_defaults(
 
 
 def reflex_dir_constant() -> Path:
-    return environment.REFLEX_DIR
+    return environment.REFLEX_DIR.get()
 
 
 def test_reflex_dir_env_var(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -227,6 +229,7 @@ def test_reflex_dir_env_var(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
     monkeypatch.setenv("REFLEX_DIR", str(tmp_path))
 
     mp_ctx = multiprocessing.get_context(method="spawn")
+    assert reflex_dir_constant() == tmp_path
     with mp_ctx.Pool(processes=1) as pool:
         assert pool.apply(reflex_dir_constant) == tmp_path
 
@@ -242,3 +245,38 @@ def test_interpret_int_env() -> None:
 @pytest.mark.parametrize("value, expected", [("true", True), ("false", False)])
 def test_interpret_bool_env(value: str, expected: bool) -> None:
     assert interpret_boolean_env(value, "TELEMETRY_ENABLED") == expected
+
+
+def test_env_var():
+    class TestEnv:
+        BLUBB: EnvVar[str] = env_var("default")
+        INTERNAL: EnvVar[str] = env_var("default", internal=True)
+        BOOLEAN: EnvVar[bool] = env_var(False)
+
+    assert TestEnv.BLUBB.get() == "default"
+    assert TestEnv.BLUBB.name == "BLUBB"
+    TestEnv.BLUBB.set("new")
+    assert os.environ.get("BLUBB") == "new"
+    assert TestEnv.BLUBB.get() == "new"
+    TestEnv.BLUBB.set(None)
+    assert "BLUBB" not in os.environ
+
+    assert TestEnv.INTERNAL.get() == "default"
+    assert TestEnv.INTERNAL.name == "__INTERNAL"
+    TestEnv.INTERNAL.set("new")
+    assert os.environ.get("__INTERNAL") == "new"
+    assert TestEnv.INTERNAL.get() == "new"
+    assert TestEnv.INTERNAL.getenv() == "new"
+    TestEnv.INTERNAL.set(None)
+    assert "__INTERNAL" not in os.environ
+
+    assert TestEnv.BOOLEAN.get() is False
+    assert TestEnv.BOOLEAN.name == "BOOLEAN"
+    TestEnv.BOOLEAN.set(True)
+    assert os.environ.get("BOOLEAN") == "True"
+    assert TestEnv.BOOLEAN.get() is True
+    TestEnv.BOOLEAN.set(False)
+    assert os.environ.get("BOOLEAN") == "False"
+    assert TestEnv.BOOLEAN.get() is False
+    TestEnv.BOOLEAN.set(None)
+    assert "BOOLEAN" not in os.environ

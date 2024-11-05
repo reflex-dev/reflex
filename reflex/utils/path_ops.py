@@ -136,7 +136,7 @@ def use_system_node() -> bool:
     Returns:
         Whether the system node should be used.
     """
-    return environment.REFLEX_USE_SYSTEM_NODE
+    return environment.REFLEX_USE_SYSTEM_NODE.get()
 
 
 def use_system_bun() -> bool:
@@ -145,7 +145,7 @@ def use_system_bun() -> bool:
     Returns:
         Whether the system bun should be used.
     """
-    return environment.REFLEX_USE_SYSTEM_BUN
+    return environment.REFLEX_USE_SYSTEM_BUN.get()
 
 
 def get_node_bin_path() -> Path | None:
