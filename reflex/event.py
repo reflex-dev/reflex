@@ -10,6 +10,7 @@ import urllib.parse
 from base64 import b64encode
 from functools import partial
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -19,13 +20,20 @@ from typing import (
     Sequence,
     Tuple,
     Type,
-    TypeVar,
     Union,
     get_type_hints,
     overload,
 )
 
-from typing_extensions import ParamSpec, Protocol, get_args, get_origin
+from typing_extensions import (
+    Concatenate,
+    ParamSpec,
+    Protocol,
+    TypeAliasType,
+    TypeVar,
+    get_args,
+    get_origin,
+)
 
 from reflex import constants
 from reflex.utils import console, format
@@ -1629,122 +1637,132 @@ V5 = TypeVar("V5")
 
 background_event_decorator = background
 
-if sys.version_info >= (3, 10):
-    from typing import Concatenate
 
-    class EventCallback(Generic[P, T]):
-        """A descriptor that wraps a function to be used as an event."""
+class EventCallback(Generic[P, T]):
+    """A descriptor that wraps a function to be used as an event."""
 
-        def __init__(self, func: Callable[Concatenate[Any, P], T]):
-            """Initialize the descriptor with the function to be wrapped.
+    def __init__(self, func: Callable[Concatenate[Any, P], T]):
+        """Initialize the descriptor with the function to be wrapped.
 
-            Args:
-                func: The function to be wrapped.
-            """
-            self.func = func
+        Args:
+            func: The function to be wrapped.
+        """
+        self.func = func
 
-        @property
-        def prevent_default(self):
-            """Prevent default behavior.
+    @property
+    def prevent_default(self):
+        """Prevent default behavior.
 
-            Returns:
-                The event callback with prevent default behavior.
-            """
-            return self
+        Returns:
+            The event callback with prevent default behavior.
+        """
+        return self
 
-        @property
-        def stop_propagation(self):
-            """Stop event propagation.
+    @property
+    def stop_propagation(self):
+        """Stop event propagation.
 
-            Returns:
-                The event callback with stop propagation behavior.
-            """
-            return self
+        Returns:
+            The event callback with stop propagation behavior.
+        """
+        return self
 
-        @overload
-        def __call__(
-            self: EventCallback[Q, T],
-        ) -> EventCallback[Q, T]: ...
+    @overload
+    def __call__(
+        self: EventCallback[Q, T],
+    ) -> EventCallback[Q, T]: ...
 
-        @overload
-        def __call__(
-            self: EventCallback[Concatenate[V, Q], T], value: V | Var[V]
-        ) -> EventCallback[Q, T]: ...
+    @overload
+    def __call__(
+        self: EventCallback[Concatenate[V, Q], T], value: V | Var[V]
+    ) -> EventCallback[Q, T]: ...
 
-        @overload
-        def __call__(
-            self: EventCallback[Concatenate[V, V2, Q], T],
-            value: V | Var[V],
-            value2: V2 | Var[V2],
-        ) -> EventCallback[Q, T]: ...
+    @overload
+    def __call__(
+        self: EventCallback[Concatenate[V, V2, Q], T],
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+    ) -> EventCallback[Q, T]: ...
 
-        @overload
-        def __call__(
-            self: EventCallback[Concatenate[V, V2, V3, Q], T],
-            value: V | Var[V],
-            value2: V2 | Var[V2],
-            value3: V3 | Var[V3],
-        ) -> EventCallback[Q, T]: ...
+    @overload
+    def __call__(
+        self: EventCallback[Concatenate[V, V2, V3, Q], T],
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+    ) -> EventCallback[Q, T]: ...
 
-        @overload
-        def __call__(
-            self: EventCallback[Concatenate[V, V2, V3, V4, Q], T],
-            value: V | Var[V],
-            value2: V2 | Var[V2],
-            value3: V3 | Var[V3],
-            value4: V4 | Var[V4],
-        ) -> EventCallback[Q, T]: ...
+    @overload
+    def __call__(
+        self: EventCallback[Concatenate[V, V2, V3, V4, Q], T],
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+    ) -> EventCallback[Q, T]: ...
 
-        def __call__(self, *values) -> EventCallback:  # type: ignore
-            """Call the function with the values.
+    def __call__(self, *values) -> EventCallback:  # type: ignore
+        """Call the function with the values.
 
-            Args:
-                *values: The values to call the function with.
+        Args:
+            *values: The values to call the function with.
 
-            Returns:
-                The function with the values.
-            """
-            return self.func(*values)  # type: ignore
+        Returns:
+            The function with the values.
+        """
+        return self.func(*values)  # type: ignore
 
-        @overload
-        def __get__(
-            self: EventCallback[P, T], instance: None, owner
-        ) -> EventCallback[P, T]: ...
+    @overload
+    def __get__(
+        self: EventCallback[P, T], instance: None, owner
+    ) -> EventCallback[P, T]: ...
 
-        @overload
-        def __get__(self, instance, owner) -> Callable[P, T]: ...
+    @overload
+    def __get__(self, instance, owner) -> Callable[P, T]: ...
 
-        def __get__(self, instance, owner) -> Callable:  # type: ignore
-            """Get the function with the instance bound to it.
+    def __get__(self, instance, owner) -> Callable:  # type: ignore
+        """Get the function with the instance bound to it.
 
-            Args:
-                instance: The instance to bind to the function.
-                owner: The owner of the function.
+        Args:
+            instance: The instance to bind to the function.
+            owner: The owner of the function.
 
-            Returns:
-                The function with the instance bound to it
-            """
-            if instance is None:
-                return self.func  # type: ignore
+        Returns:
+            The function with the instance bound to it
+        """
+        if instance is None:
+            return self.func  # type: ignore
 
-            return partial(self.func, instance)  # type: ignore
-
-
-else:
-
-    class EventCallback(Generic[P, T]):
-        """A descriptor that wraps a function to be used as an event."""
+        return partial(self.func, instance)  # type: ignore
 
 
 G = ParamSpec("G")
 
+if TYPE_CHECKING:
+    from reflex.state import BaseState
+
+    BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
+else:
+    BASE_STATE = TypeVar("BASE_STATE")
+
+StateCallable = TypeAliasType(
+    "StateCallable",
+    Callable[Concatenate[BASE_STATE, G], Any],
+    type_params=(G, BASE_STATE),
+)
+
 IndividualEventType = Union[
-    EventSpec, EventHandler, Callable[G, Any], EventCallback[G, Any], Var[Any]
+    EventSpec,
+    EventHandler,
+    Callable[G, Any],
+    StateCallable[G, BASE_STATE],
+    EventCallback[G, Any],
+    Var[Any],
 ]
 
 ItemOrList = Union[V, List[V]]
 
-EventType = ItemOrList[IndividualEventType[G]]
+EventType = ItemOrList[IndividualEventType[G, BASE_STATE]]
 
 
 class EventNamespace(types.SimpleNamespace):
@@ -1762,90 +1780,49 @@ class EventNamespace(types.SimpleNamespace):
     EventType = EventType
     EventCallback = EventCallback
 
-    if sys.version_info >= (3, 10):
+    @overload
+    @staticmethod
+    def __call__(
+        func: None = None, *, background: bool | None = None
+    ) -> Callable[[Callable[Concatenate[BASE_STATE, P], T]], EventCallback[P, T]]: ...
 
-        @overload
-        @staticmethod
-        def __call__(
-            func: None = None, *, background: bool | None = None
-        ) -> Callable[[Callable[Concatenate[Any, P], T]], EventCallback[P, T]]: ...
+    @overload
+    @staticmethod
+    def __call__(
+        func: Callable[Concatenate[BASE_STATE, P], T],
+        *,
+        background: bool | None = None,
+    ) -> EventCallback[P, T]: ...
 
-        @overload
-        @staticmethod
-        def __call__(
-            func: Callable[Concatenate[Any, P], T],
-            *,
-            background: bool | None = None,
-        ) -> EventCallback[P, T]: ...
+    @staticmethod
+    def __call__(
+        func: Callable[Concatenate[BASE_STATE, P], T] | None = None,
+        *,
+        background: bool | None = None,
+    ) -> Union[
+        EventCallback[P, T],
+        Callable[[Callable[Concatenate[BASE_STATE, P], T]], EventCallback[P, T]],
+    ]:
+        """Wrap a function to be used as an event.
 
-        @staticmethod
-        def __call__(
-            func: Callable[Concatenate[Any, P], T] | None = None,
-            *,
-            background: bool | None = None,
-        ) -> Union[
-            EventCallback[P, T],
-            Callable[[Callable[Concatenate[Any, P], T]], EventCallback[P, T]],
-        ]:
-            """Wrap a function to be used as an event.
+        Args:
+            func: The function to wrap.
+            background: Whether the event should be run in the background. Defaults to False.
 
-            Args:
-                func: The function to wrap.
-                background: Whether the event should be run in the background. Defaults to False.
+        Returns:
+            The wrapped function.
+        """
 
-            Returns:
-                The wrapped function.
-            """
+        def wrapper(
+            func: Callable[Concatenate[BASE_STATE, P], T],
+        ) -> EventCallback[P, T]:
+            if background is True:
+                return background_event_decorator(func, __internal_reflex_call=True)  # type: ignore
+            return func  # type: ignore
 
-            def wrapper(func: Callable[Concatenate[Any, P], T]) -> EventCallback[P, T]:
-                if background is True:
-                    return background_event_decorator(func, __internal_reflex_call=True)  # type: ignore
-                return func  # type: ignore
-
-            if func is not None:
-                return wrapper(func)
-            return wrapper
-    else:
-
-        @overload
-        @staticmethod
-        def __call__(
-            func: None = None, *, background: bool | None = None
-        ) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
-
-        @overload
-        @staticmethod
-        def __call__(
-            func: Callable[P, T], *, background: bool | None = None
-        ) -> Callable[P, T]: ...
-
-        @staticmethod
-        def __call__(
-            func: Callable[P, T] | None = None,
-            *,
-            background: bool | None = None,
-        ) -> Union[
-            Callable[P, T],
-            Callable[[Callable[P, T]], Callable[P, T]],
-        ]:
-            """Wrap a function to be used as an event.
-
-            Args:
-                func: The function to wrap.
-                background: Whether the event should be run in the background. Defaults to False.
-
-            Returns:
-                The wrapped function.
-            """
-
-            def wrapper(func: Callable[P, T]) -> Callable[P, T]:
-                if background is True:
-                    return background_event_decorator(func, __internal_reflex_call=True)  # type: ignore
-                return func  # type: ignore
-
-            if func is not None:
-                return wrapper(func)
-            return wrapper
+        if func is not None:
+            return wrapper(func)
+        return wrapper
 
     get_event = staticmethod(get_event)
     get_hydrate_event = staticmethod(get_hydrate_event)

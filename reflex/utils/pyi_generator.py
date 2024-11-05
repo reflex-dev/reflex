@@ -70,7 +70,13 @@ DEFAULT_TYPING_IMPORTS = {
 DEFAULT_IMPORTS = {
     "typing": sorted(DEFAULT_TYPING_IMPORTS),
     "reflex.components.core.breakpoints": ["Breakpoints"],
-    "reflex.event": ["EventChain", "EventHandler", "EventSpec", "EventType"],
+    "reflex.event": [
+        "EventChain",
+        "EventHandler",
+        "EventSpec",
+        "EventType",
+        "BASE_STATE",
+    ],
     "reflex.style": ["Style"],
     "reflex.vars.base": ["Var"],
 }
@@ -490,7 +496,7 @@ def _generate_component_create_functiondef(
 
     def figure_out_return_type(annotation: Any):
         if inspect.isclass(annotation) and issubclass(annotation, inspect._empty):
-            return ast.Name(id="EventType")
+            return ast.Name(id="EventType[[Any], BASE_STATE]")
 
         if not isinstance(annotation, str) and get_origin(annotation) is tuple:
             arguments = get_args(annotation)
@@ -507,15 +513,13 @@ def _generate_component_create_functiondef(
             args_str = ", ".join(ast.unparse(arg) for arg in type_args)
 
             # Create EventType using the joined string
-            event_type = ast.Name(id=f"EventType[{args_str}]")
-
-            return event_type
+            return ast.Name(id=f"EventType[[{args_str}], BASE_STATE]")
 
         if isinstance(annotation, str) and annotation.startswith("Tuple["):
             inside_of_tuple = annotation.removeprefix("Tuple[").removesuffix("]")
 
             if inside_of_tuple == "()":
-                return ast.Name(id="EventType[[]]")
+                return ast.Name(id="EventType[[], BASE_STATE]")
 
             arguments = [""]
 
@@ -541,8 +545,10 @@ def _generate_component_create_functiondef(
                 for argument in arguments
             ]
 
-            return ast.Name(id=f"EventType[{', '.join(arguments_without_var)}]")
-        return ast.Name(id="EventType")
+            return ast.Name(
+                id=f"EventType[[{', '.join(arguments_without_var)}], BASE_STATE]"
+            )
+        return ast.Name(id="EventType[[Any], BASE_STATE]")
 
     event_triggers = clz().get_event_triggers()
 
