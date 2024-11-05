@@ -467,9 +467,11 @@ def output_system_info():
         console.debug(f"{dep}")
 
     console.debug(
-        f"Using package installer at: {prerequisites.get_install_package_manager()}"  # type: ignore
+        f"Using package installer at: {prerequisites.get_install_package_manager(on_failure_return_none=True)}"  # type: ignore
     )
-    console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")  # type: ignore
+    console.debug(
+        f"Using package executer at: {prerequisites.get_package_manager(on_failure_return_none=True)}"
+    )  # type: ignore
     if system != "Windows":
         console.debug(f"Unzip path: {path_ops.which('unzip')}")
 

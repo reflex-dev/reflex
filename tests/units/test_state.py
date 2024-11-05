@@ -45,7 +45,7 @@ from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.exceptions import SetUndefinedStateVarError
 from reflex.utils.format import json_dumps
-from reflex.vars.base import ComputedVar, Var
+from reflex.vars.base import Var, computed_var
 from tests.units.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState
@@ -109,7 +109,7 @@ class TestState(BaseState):
     _backend: int = 0
     asynctest: int = 0
 
-    @ComputedVar
+    @computed_var
     def sum(self) -> float:
         """Dynamically sum the numbers.
 
@@ -118,7 +118,7 @@ class TestState(BaseState):
         """
         return self.num1 + self.num2
 
-    @ComputedVar
+    @computed_var
     def upper(self) -> str:
         """Uppercase the key.
 
@@ -1124,7 +1124,7 @@ def test_child_state():
         v: int = 2
 
     class ChildState(MainState):
-        @ComputedVar
+        @computed_var
         def rendered_var(self):
             return self.v
 
@@ -1143,7 +1143,7 @@ def test_conditional_computed_vars():
         t1: str = "a"
         t2: str = "b"
 
-        @ComputedVar
+        @computed_var
         def rendered_var(self) -> str:
             if self.flag:
                 return self.t1
@@ -3095,12 +3095,12 @@ def test_potentially_dirty_substates():
     """
 
     class State(RxState):
-        @ComputedVar
+        @computed_var
         def foo(self) -> str:
             return ""
 
     class C1(State):
-        @ComputedVar
+        @computed_var
         def bar(self) -> str:
             return ""
 
@@ -3404,3 +3404,10 @@ def test_fallback_pickle():
     state3._g = (i for i in range(10))
     pk3 = state3._serialize()
     assert len(pk3) == 0
+
+
+def test_typed_state() -> None:
+    class TypedState(rx.State):
+        field: rx.Field[str] = rx.field("")
+
+    _ = TypedState(field="str")

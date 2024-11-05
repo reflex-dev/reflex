@@ -466,7 +466,7 @@ def key_event(e: Var[JavasciptKeyboardEvent]) -> Tuple[Var[str]]:
     return (e.key,)
 
 
-def empty_event() -> Tuple[()]:
+def no_args_event_spec() -> Tuple[()]:
     """Empty event handler.
 
     Returns:
@@ -476,41 +476,12 @@ def empty_event() -> Tuple[()]:
 
 
 # These chains can be used for their side effects when no other events are desired.
-stop_propagation = EventChain(events=[], args_spec=empty_event).stop_propagation
-prevent_default = EventChain(events=[], args_spec=empty_event).prevent_default
+stop_propagation = EventChain(events=[], args_spec=no_args_event_spec).stop_propagation
+prevent_default = EventChain(events=[], args_spec=no_args_event_spec).prevent_default
 
 
 T = TypeVar("T")
 U = TypeVar("U")
-
-
-# def identity_event(event_type: Type[T]) -> Callable[[Var[T]], Tuple[Var[T]]]:
-#     """A helper function that returns the input event as output.
-
-#     Args:
-#         event_type: The type of the event.
-
-#     Returns:
-#         A function that returns the input event as output.
-#     """
-
-#     def inner(ev: Var[T]) -> Tuple[Var[T]]:
-#         return (ev,)
-
-#     inner.__signature__ = inspect.signature(inner).replace(  # type: ignore
-#         parameters=[
-#             inspect.Parameter(
-#                 "ev",
-#                 kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
-#                 annotation=Var[event_type],
-#             )
-#         ],
-#         return_annotation=Tuple[Var[event_type]],
-#     )
-#     inner.__annotations__["ev"] = Var[event_type]
-#     inner.__annotations__["return"] = Tuple[Var[event_type]]
-
-#     return inner
 
 
 class IdentityEventReturn(Generic[T], Protocol):
@@ -529,20 +500,22 @@ class IdentityEventReturn(Generic[T], Protocol):
 
 
 @overload
-def identity_event(event_type: Type[T], /) -> Callable[[Var[T]], Tuple[Var[T]]]: ...  # type: ignore
+def passthrough_event_spec(
+    event_type: Type[T], /
+) -> Callable[[Var[T]], Tuple[Var[T]]]: ...  # type: ignore
 
 
 @overload
-def identity_event(
+def passthrough_event_spec(
     event_type_1: Type[T], event_type2: Type[U], /
 ) -> Callable[[Var[T], Var[U]], Tuple[Var[T], Var[U]]]: ...
 
 
 @overload
-def identity_event(*event_types: Type[T]) -> IdentityEventReturn[T]: ...
+def passthrough_event_spec(*event_types: Type[T]) -> IdentityEventReturn[T]: ...
 
 
-def identity_event(*event_types: Type[T]) -> IdentityEventReturn[T]:  # type: ignore
+def passthrough_event_spec(*event_types: Type[T]) -> IdentityEventReturn[T]:  # type: ignore
     """A helper function that returns the input event as output.
 
     Args:
@@ -733,7 +706,16 @@ def console_log(message: str | Var[str]) -> EventSpec:
     Returns:
         An event to log the message.
     """
-    return server_side("_console", get_fn_signature(console_log), message=message)
+    return run_script(Var("console").to(dict).log.to(FunctionVar).call(message))
+
+
+def noop() -> EventSpec:
+    """Do nothing.
+
+    Returns:
+        An event to do nothing.
+    """
+    return run_script(Var.create(None))
 
 
 def back() -> EventSpec:
@@ -742,7 +724,9 @@ def back() -> EventSpec:
     Returns:
         An event to go back one page.
     """
-    return call_script("window.history.back()")
+    return run_script(
+        Var("window").to(dict).history.to(dict).back.to(FunctionVar).call()
+    )
 
 
 def window_alert(message: str | Var[str]) -> EventSpec:
@@ -754,7 +738,7 @@ def window_alert(message: str | Var[str]) -> EventSpec:
     Returns:
         An event to alert the message.
     """
-    return server_side("_alert", get_fn_signature(window_alert), message=message)
+    return run_script(Var("window").to(dict).alert.to(FunctionVar).call(message))
 
 
 def set_focus(ref: str) -> EventSpec:
@@ -785,12 +769,12 @@ def scroll_to(elem_id: str, align_to_top: bool | Var[bool] = True) -> EventSpec:
     """
     get_element_by_id = FunctionStringVar.create("document.getElementById")
 
-    return call_script(
+    return run_script(
         get_element_by_id(elem_id)
         .call(elem_id)
         .to(ObjectVar)
         .scrollIntoView.to(FunctionVar)
-        .call(align_to_top)
+        .call(align_to_top),
     )
 
 
@@ -897,10 +881,12 @@ def set_clipboard(content: str) -> EventSpec:
     Returns:
         EventSpec: An event to set some content in the clipboard.
     """
-    return server_side(
-        "_set_clipboard",
-        get_fn_signature(set_clipboard),
-        content=content,
+    return run_script(
+        Var("navigator")
+        .to(dict)
+        .clipboard.to(dict)
+        .writeText.to(FunctionVar)
+        .call(content)
     )
 
 
@@ -987,13 +973,7 @@ def _callback_arg_spec(eval_result):
 
 def call_script(
     javascript_code: str | Var[str],
-    callback: (
-        EventSpec
-        | EventHandler
-        | Callable
-        | List[EventSpec | EventHandler | Callable]
-        | None
-    ) = None,
+    callback: EventType | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -1007,12 +987,10 @@ def call_script(
     callback_kwargs = {}
     if callback is not None:
         callback_kwargs = {
-            "callback": str(
-                format.format_queue_events(
-                    callback,
-                    args_spec=lambda result: [result],
-                ),
-            ),
+            "callback": format.format_queue_events(
+                callback,
+                args_spec=lambda result: [result],
+            )._js_expr,
         }
     if isinstance(javascript_code, str):
         # When there is VarData, include it and eval the JS code inline on the client.
@@ -1029,6 +1007,62 @@ def call_script(
         get_fn_signature(call_script),
         javascript_code=javascript_code,
         **callback_kwargs,
+    )
+
+
+def call_function(
+    javascript_code: str | Var,
+    callback: EventType | None = None,
+) -> EventSpec:
+    """Create an event handler that executes arbitrary javascript code.
+
+    Args:
+        javascript_code: The code to execute.
+        callback: EventHandler that will receive the result of evaluating the javascript code.
+
+    Returns:
+        EventSpec: An event that will execute the client side javascript.
+    """
+    callback_kwargs = {}
+    if callback is not None:
+        callback_kwargs = {
+            "callback": format.format_queue_events(
+                callback,
+                args_spec=lambda result: [result],
+            ),
+        }
+
+    javascript_code = (
+        Var(javascript_code) if isinstance(javascript_code, str) else javascript_code
+    )
+
+    return server_side(
+        "_call_function",
+        get_fn_signature(call_function),
+        function=javascript_code,
+        **callback_kwargs,
+    )
+
+
+def run_script(
+    javascript_code: str | Var,
+    callback: EventType | None = None,
+) -> EventSpec:
+    """Create an event handler that executes arbitrary javascript code.
+
+    Args:
+        javascript_code: The code to execute.
+        callback: EventHandler that will receive the result of evaluating the javascript code.
+
+    Returns:
+        EventSpec: An event that will execute the client side javascript.
+    """
+    javascript_code = (
+        Var(javascript_code) if isinstance(javascript_code, str) else javascript_code
+    )
+
+    return call_function(
+        ArgsFunctionOperation.create(tuple(), javascript_code), callback
     )
 
 
@@ -1831,13 +1865,14 @@ class EventNamespace(types.SimpleNamespace):
     check_fn_match_arg_spec = staticmethod(check_fn_match_arg_spec)
     resolve_annotation = staticmethod(resolve_annotation)
     parse_args_spec = staticmethod(parse_args_spec)
-    identity_event = staticmethod(identity_event)
+    passthrough_event_spec = staticmethod(passthrough_event_spec)
     input_event = staticmethod(input_event)
     key_event = staticmethod(key_event)
-    empty_event = staticmethod(empty_event)
+    no_args_event_spec = staticmethod(no_args_event_spec)
     server_side = staticmethod(server_side)
     redirect = staticmethod(redirect)
     console_log = staticmethod(console_log)
+    noop = staticmethod(noop)
     back = staticmethod(back)
     window_alert = staticmethod(window_alert)
     set_focus = staticmethod(set_focus)
@@ -1851,6 +1886,8 @@ class EventNamespace(types.SimpleNamespace):
     set_clipboard = staticmethod(set_clipboard)
     download = staticmethod(download)
     call_script = staticmethod(call_script)
+    call_function = staticmethod(call_function)
+    run_script = staticmethod(run_script)
 
 
 event = EventNamespace()

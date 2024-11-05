@@ -6,16 +6,16 @@
 from typing import Any, Dict, List, Literal, Optional, Union, overload
 
 from reflex.components.core.breakpoints import Breakpoints
-from reflex.event import EventType, identity_event
+from reflex.event import EventType, passthrough_event_spec
 from reflex.style import Style
 from reflex.vars.base import Var
 
 from ..base import RadixThemesComponent
 
 on_value_event_spec = (
-    identity_event(list[Union[int, float]]),
-    identity_event(list[int]),
-    identity_event(list[float]),
+    passthrough_event_spec(list[Union[int, float]]),
+    passthrough_event_spec(list[int]),
+    passthrough_event_spec(list[float]),
 )
 
 class Slider(RadixThemesComponent):
@@ -24,7 +24,6 @@ class Slider(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        width: Optional[str] = "100%",
         as_child: Optional[Union[Var[bool], bool]] = None,
         size: Optional[
             Union[
@@ -123,6 +122,7 @@ class Slider(RadixThemesComponent):
             Union[List[Union[float, int]], Var[List[Union[float, int]]]]
         ] = None,
         name: Optional[Union[Var[str], str]] = None,
+        width: Optional[Union[Var[Optional[str]], str]] = None,
         min: Optional[Union[Var[Union[float, int]], float, int]] = None,
         max: Optional[Union[Var[Union[float, int]], float, int]] = None,
         step: Optional[Union[Var[Union[float, int]], float, int]] = None,
@@ -174,7 +174,6 @@ class Slider(RadixThemesComponent):
 
         Args:
             *children: The children of the component.
-            width: The width of the slider.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             size: Button size "1" - "3"
             variant: Variant of button
@@ -184,6 +183,7 @@ class Slider(RadixThemesComponent):
             default_value: The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
             value: The controlled value of the slider. Must be used in conjunction with onValueChange.
             name: The name of the slider. Submitted with its owning form as part of a name/value pair.
+            width: The width of the slider.
             min: The minimum value of the slider.
             max: The maximum value of the slider.
             step: The step value of the slider.
