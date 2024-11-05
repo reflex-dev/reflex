@@ -496,7 +496,7 @@ def _generate_component_create_functiondef(
 
     def figure_out_return_type(annotation: Any):
         if inspect.isclass(annotation) and issubclass(annotation, inspect._empty):
-            return ast.Name(id="EventType[[Any], BASE_STATE]")
+            return ast.Name(id="EventType[..., BASE_STATE]")
 
         if not isinstance(annotation, str) and get_origin(annotation) is tuple:
             arguments = get_args(annotation)
@@ -548,7 +548,7 @@ def _generate_component_create_functiondef(
             return ast.Name(
                 id=f"EventType[[{', '.join(arguments_without_var)}], BASE_STATE]"
             )
-        return ast.Name(id="EventType[[Any], BASE_STATE]")
+        return ast.Name(id="EventType[..., BASE_STATE]")
 
     event_triggers = clz().get_event_triggers()
 
