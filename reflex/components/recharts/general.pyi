@@ -255,22 +255,22 @@ class GraphingTooltip(Recharts):
 
         Args:
             *children: The children of the component.
-            separator: The separator between name and value.
-            offset: The offset size of tooltip. Number
-            filter_null: When an item of the payload has value null or undefined, this item won't be displayed.
-            cursor: If set false, no cursor will be drawn when tooltip is active.
+            separator: The separator between name and value. Default: ":"
+            offset: The offset size of tooltip. Number. Default: 10
+            filter_null: When an item of the payload has value null or undefined, this item won't be displayed. Default: True
+            cursor: If set false, no cursor will be drawn when tooltip is active. Default: {"strokeWidth": 1, "fill": rx.color("gray", 3)}
             view_box: The box of viewing area, which has the shape of {x: someVal, y: someVal, width: someVal, height: someVal}, usually calculated internally.
-            item_style: The style of default tooltip content item which is a li element. DEFAULT: {}
-            wrapper_style: The style of tooltip wrapper which is a dom element. DEFAULT: {}
-            content_style: The style of tooltip content which is a dom element. DEFAULT: {}
-            label_style: The style of default tooltip label which is a p element. DEFAULT: {}
-            allow_escape_view_box: This option allows the tooltip to extend beyond the viewBox of the chart itself. DEFAULT: { x: false, y: false }
-            active: If set true, the tooltip is displayed. If set false, the tooltip is hidden, usually calculated internally.
+            item_style: The style of default tooltip content item which is a li element. Default: {"color": rx.color("gray", 12)}
+            wrapper_style: The style of tooltip wrapper which is a dom element. Default: {}
+            content_style: The style of tooltip content which is a dom element. Default: {"background": rx.color("gray", 1), "borderColor": rx.color("gray", 4), "borderRadius": "8px"}
+            label_style: The style of default tooltip label which is a p element. Default: {"color": rx.color("gray", 11)}
+            allow_escape_view_box: This option allows the tooltip to extend beyond the viewBox of the chart itself. Default: {"x": False, "y": False}
+            active: If set true, the tooltip is displayed. If set false, the tooltip is hidden, usually calculated internally. Default: False
             position: If this field is set, the tooltip position will be fixed and will not move anymore.
-            coordinate: The coordinate of tooltip which is usually calculated internally.
-            is_animation_active: If set false, animation of tooltip will be disabled. DEFAULT: true in CSR, and false in SSR
-            animation_duration: Specifies the duration of animation, the unit of this option is ms. DEFAULT: 1500
-            animation_easing: The type of easing function. DEFAULT: 'ease'
+            coordinate: The coordinate of tooltip which is usually calculated internally. Default: {"x": 0, "y": 0}
+            is_animation_active: If set false, animation of tooltip will be disabled. Default: True
+            animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
+            animation_easing: The type of easing function. Default: "ease"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
