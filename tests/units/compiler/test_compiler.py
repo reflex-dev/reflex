@@ -155,7 +155,9 @@ def test_compile_stylesheets(tmp_path: Path, mocker):
 
     # NOTE: the css file is also inserted into the s(a|c)ss preprocessor, which compressed the result, which means we don't have the tab, return,... characters.
     expected_result = "button.rt-Button{border-radius:unset !important}\n"
-    assert (project / ".web" / "styles" / "styles.css").read_text() == expected_result
+    assert (project / ".web" / "styles" / "styles.css").read_text() == (
+        assets_dir / "styles.css"
+    ).read_text()
     assert (
         project / ".web" / "styles" / "preprocess" / "styles_a.css"
     ).read_text() == expected_result
