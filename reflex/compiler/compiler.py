@@ -218,7 +218,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
                     stylesheets += [
                         str(p.relative_to(assets_app_path))
                         for p in stylesheet_full_path.iterdir()
-                        if not p.is_symlink()
+                        if not (p.is_symlink() and p.is_dir())
                     ]
                     continue
                 else:
@@ -239,7 +239,9 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
             ):
                 target = (
                     Path.cwd()
-                    / f"{constants.Dirs.WEB}/{constants.Dirs.STYLES}/{RE_SASS_SCSS_EXT.sub(".css", str(stylesheet)).strip('/')}"
+                    / constants.Dirs.WEB
+                    / constants.Dirs.STYLES
+                    / RE_SASS_SCSS_EXT.sub(".css", str(stylesheet)).strip("/")
                 )
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text(
@@ -251,7 +253,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
             else:
                 pass
 
-            stylesheet = f"./{RE_SASS_SCSS_EXT.sub(".css", str(stylesheet)).strip('/')}"
+            stylesheet = f"./{RE_SASS_SCSS_EXT.sub('.css', str(stylesheet)).strip('/')}"
 
         sheets.append(stylesheet) if stylesheet not in sheets else None
 
