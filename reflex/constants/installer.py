@@ -63,7 +63,7 @@ class Bun(SimpleNamespace):
         """
         from reflex.config import environment
 
-        return environment.REFLEX_DIR / "bun"
+        return environment.REFLEX_DIR.get() / "bun"
 
     @classproperty
     @classmethod
@@ -100,7 +100,7 @@ class Fnm(SimpleNamespace):
         """
         from reflex.config import environment
 
-        return environment.REFLEX_DIR / "fnm"
+        return environment.REFLEX_DIR.get() / "fnm"
 
     @classproperty
     @classmethod
