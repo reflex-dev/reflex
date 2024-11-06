@@ -75,6 +75,11 @@ class Bun(SimpleNamespace):
         """
         return cls.ROOT_PATH / "bin" / ("bun" if not IS_WINDOWS else "bun.exe")
 
+    DEFAULT_CONFIG = """
+[install]
+registry = "{registry}"
+"""
+
 
 # FNM config.
 class Fnm(SimpleNamespace):

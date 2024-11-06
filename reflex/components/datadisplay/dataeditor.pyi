@@ -10,7 +10,7 @@ from typing_extensions import TypedDict
 
 from reflex.base import Base
 from reflex.components.component import NoSSRComponent
-from reflex.event import EventType
+from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.utils.serializers import serializer
@@ -183,41 +183,47 @@ class DataEditor(NoSSRComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_cell_activated: Optional[EventType[tuple[int, int]]] = None,
-        on_cell_clicked: Optional[EventType[tuple[int, int]]] = None,
-        on_cell_context_menu: Optional[EventType[tuple[int, int]]] = None,
-        on_cell_edited: Optional[EventType[tuple[int, int], GridCell]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_column_resize: Optional[EventType[GridColumn, int]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_delete: Optional[EventType[GridSelection]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_cell_activated: Optional[EventType[[tuple[int, int]], BASE_STATE]] = None,
+        on_cell_clicked: Optional[EventType[[tuple[int, int]], BASE_STATE]] = None,
+        on_cell_context_menu: Optional[EventType[[tuple[int, int]], BASE_STATE]] = None,
+        on_cell_edited: Optional[
+            EventType[[tuple[int, int], GridCell], BASE_STATE]
+        ] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_column_resize: Optional[EventType[[GridColumn, int], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_delete: Optional[EventType[[GridSelection], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
         on_finished_editing: Optional[
-            EventType[Union[GridCell, None], tuple[int, int]]
+            EventType[[Union[GridCell, None], tuple[int, int]], BASE_STATE]
         ] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_group_header_clicked: Optional[EventType[tuple[int, int], GridCell]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_group_header_clicked: Optional[
+            EventType[[tuple[int, int], GridCell], BASE_STATE]
+        ] = None,
         on_group_header_context_menu: Optional[
-            EventType[int, GroupHeaderClickedEventArgs]
+            EventType[[int, GroupHeaderClickedEventArgs], BASE_STATE]
         ] = None,
-        on_group_header_renamed: Optional[EventType[str, str]] = None,
-        on_header_clicked: Optional[EventType[tuple[int, int]]] = None,
-        on_header_context_menu: Optional[EventType[tuple[int, int]]] = None,
-        on_header_menu_click: Optional[EventType[int, Rectangle]] = None,
-        on_item_hovered: Optional[EventType[tuple[int, int]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_row_appended: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_selection_cleared: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        on_group_header_renamed: Optional[EventType[[str, str], BASE_STATE]] = None,
+        on_header_clicked: Optional[EventType[[tuple[int, int]], BASE_STATE]] = None,
+        on_header_context_menu: Optional[
+            EventType[[tuple[int, int]], BASE_STATE]
+        ] = None,
+        on_header_menu_click: Optional[EventType[[int, Rectangle], BASE_STATE]] = None,
+        on_item_hovered: Optional[EventType[[tuple[int, int]], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_row_appended: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_selection_cleared: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "DataEditor":
         """Create the DataEditor component.
