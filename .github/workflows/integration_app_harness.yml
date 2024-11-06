@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         state_manager: ["redis", "memory"]
-        split_index: [0, 1]
+        split_index: [1, 2]
         python-version: ["3.11.5", "3.12.0"]
     runs-on: ubuntu-22.04
     services:
@@ -53,7 +53,7 @@ jobs:
           REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
         run: |
           poetry run playwright install --with-deps
-          poetry run pytest tests/integration --split-index=${{matrix.split_index}} --split-total=2
+          poetry run pytest tests/integration --splits 2 --group ${{matrix.split_index}}
       - uses: actions/upload-artifact@v4
         name: Upload failed test screenshots
         if: always()
