@@ -8,7 +8,7 @@ from typing_extensions import TypedDict, TypeVar
 
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond
-from reflex.event import EventHandler, empty_event
+from reflex.event import EventHandler, no_args_event_spec
 from reflex.utils import console
 from reflex.vars.base import LiteralVar, Var
 
@@ -117,49 +117,49 @@ class Plotly(NoSSRComponent):
     use_resize_handler: Var[bool] = LiteralVar.create(True)
 
     # Fired after the plot is redrawn.
-    on_after_plot: EventHandler[empty_event]
+    on_after_plot: EventHandler[no_args_event_spec]
 
     # Fired after the plot was animated.
-    on_animated: EventHandler[empty_event]
+    on_animated: EventHandler[no_args_event_spec]
 
     # Fired while animating a single frame (does not currently pass data through).
-    on_animating_frame: EventHandler[empty_event]
+    on_animating_frame: EventHandler[no_args_event_spec]
 
     # Fired when an animation is interrupted (to start a new animation for example).
-    on_animation_interrupted: EventHandler[empty_event]
+    on_animation_interrupted: EventHandler[no_args_event_spec]
 
     # Fired when the plot is responsively sized.
-    on_autosize: EventHandler[empty_event]
+    on_autosize: EventHandler[no_args_event_spec]
 
     # Fired whenever mouse moves over a plot.
-    on_before_hover: EventHandler[empty_event]
+    on_before_hover: EventHandler[no_args_event_spec]
 
     # Fired when a plotly UI button is clicked.
-    on_button_clicked: EventHandler[empty_event]
+    on_button_clicked: EventHandler[no_args_event_spec]
 
     # Fired when the plot is clicked.
     on_click: EventHandler[_event_points_data_signature]
 
     # Fired when a selection is cleared (via double click).
-    on_deselect: EventHandler[empty_event]
+    on_deselect: EventHandler[no_args_event_spec]
 
     # Fired when the plot is double clicked.
-    on_double_click: EventHandler[empty_event]
+    on_double_click: EventHandler[no_args_event_spec]
 
     # Fired when a plot element is hovered over.
     on_hover: EventHandler[_event_points_data_signature]
 
     # Fired after the plot is layed out (zoom, pan, etc).
-    on_relayout: EventHandler[empty_event]
+    on_relayout: EventHandler[no_args_event_spec]
 
     # Fired while the plot is being layed out.
-    on_relayouting: EventHandler[empty_event]
+    on_relayouting: EventHandler[no_args_event_spec]
 
     # Fired after the plot style is changed.
-    on_restyle: EventHandler[empty_event]
+    on_restyle: EventHandler[no_args_event_spec]
 
     # Fired after the plot is redrawn.
-    on_redraw: EventHandler[empty_event]
+    on_redraw: EventHandler[no_args_event_spec]
 
     # Fired after selecting plot elements.
     on_selected: EventHandler[_event_points_data_signature]
@@ -168,10 +168,10 @@ class Plotly(NoSSRComponent):
     on_selecting: EventHandler[_event_points_data_signature]
 
     # Fired while an animation is occuring.
-    on_transitioning: EventHandler[empty_event]
+    on_transitioning: EventHandler[no_args_event_spec]
 
     # Fired when a transition is stopped early.
-    on_transition_interrupted: EventHandler[empty_event]
+    on_transition_interrupted: EventHandler[no_args_event_spec]
 
     # Fired when a hovered element is no longer hovered.
     on_unhover: EventHandler[_event_points_data_signature]
