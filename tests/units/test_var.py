@@ -22,8 +22,16 @@ from reflex.vars.base import (
     var_operation,
     var_operation_return,
 )
-from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar
-from reflex.vars.number import LiteralBooleanVar, LiteralNumberVar, NumberVar
+from reflex.vars.function import (
+    ArgsFunctionOperation,
+    DestructuredArg,
+    FunctionStringVar,
+)
+from reflex.vars.number import (
+    LiteralBooleanVar,
+    LiteralNumberVar,
+    NumberVar,
+)
 from reflex.vars.object import LiteralObjectVar, ObjectVar
 from reflex.vars.sequence import (
     ArrayVar,
@@ -921,13 +929,13 @@ def test_function_var():
     )
     assert (
         str(manual_addition_func.call(1, 2))
-        == '(((a, b) => (({ ["args"] : [a, b], ["result"] : a + b })))(1, 2))'
+        == '(((a, b) => ({ ["args"] : [a, b], ["result"] : a + b }))(1, 2))'
     )
 
     increment_func = addition_func(1)
     assert (
         str(increment_func.call(2))
-        == "(((...args) => ((((a, b) => a + b)(1, ...args))))(2))"
+        == "(((...args) => (((a, b) => a + b)(1, ...args)))(2))"
     )
 
     create_hello_statement = ArgsFunctionOperation.create(
@@ -937,20 +945,24 @@ def test_function_var():
     last_name = LiteralStringVar.create("Universe")
     assert (
         str(create_hello_statement.call(f"{first_name} {last_name}"))
-        == '(((name) => (("Hello, "+name+"!")))("Steven Universe"))'
+        == '(((name) => ("Hello, "+name+"!"))("Steven Universe"))'
     )
 
     # Test with destructured arguments
     destructured_func = ArgsFunctionOperation.create(
-        ("a","b"), Var(_js_expr="a + b"), destructure_args=True
+        (DestructuredArg(fields=("a", "b")),),
+        Var(_js_expr="a + b"),
     )
-    assert str(destructured_func.call({"a": 1, "b": 2})) == '(({a, b}) => (a + b))({"a": 1, "b": 2})'
+    assert (
+        str(destructured_func.call({"a": 1, "b": 2}))
+        == '((({a, b}) => a + b)(({ ["a"] : 1, ["b"] : 2 })))'
+    )
 
     # Test with explicit return
     explicit_return_func = ArgsFunctionOperation.create(
         ("a", "b"), Var(_js_expr="return a + b"), explicit_return=True
     )
-    assert str(explicit_return_func.call(1, 2)) == '((a, b) => {return a + b})(1, 2)'
+    assert str(explicit_return_func.call(1, 2)) == "(((a, b) => {return a + b})(1, 2))"
 
 
 def test_var_operation():

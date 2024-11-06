@@ -60,8 +60,13 @@ def syntax_highlighter_memoized_component(codeblock: Type[Component]):
 @pytest.mark.parametrize(
     "fn_body, fn_args, explicit_return, expected",
     [
-        (None, None, False, Var(_js_expr="(({node, children, ...props}) => ())")),
-        ("return node", ("node", ), True, Var(_js_expr="(({node}) => {return node})")),
+        (
+            None,
+            None,
+            False,
+            Var(_js_expr="(({node, children, ...props}) => undefined)"),
+        ),
+        ("return node", ("node",), True, Var(_js_expr="(({node}) => {return node})")),
         (
             "return node + children",
             ("node", "children"),
@@ -85,24 +90,28 @@ def syntax_highlighter_memoized_component(codeblock: Type[Component]):
     ],
 )
 def test_create_map_fn_var(fn_body, fn_args, explicit_return, expected):
-    result = MarkdownComponentMap.create_map_fn_var(fn_body= Var(_js_expr=fn_body,_var_type=str) if fn_body else None, fn_args=fn_args, explicit_return=explicit_return)
+    result = MarkdownComponentMap.create_map_fn_var(
+        fn_body=Var(_js_expr=fn_body, _var_type=str) if fn_body else None,
+        fn_args=fn_args,
+        explicit_return=explicit_return,
+    )
     assert result._js_expr == expected._js_expr
 
 
 @pytest.mark.parametrize(
-    "cls, fn_body, fn_args, explicit_return, expected",
+    ("cls", "fn_body", "fn_args", "explicit_return", "expected"),
     [
         (
             MarkdownComponentMap,
             None,
             None,
             False,
-            Var(_js_expr="(({node, children, ...props}) => ())"),
+            Var(_js_expr="(({node, children, ...props}) => undefined)"),
         ),
         (
             MarkdownComponentMap,
             "return node",
-            ("node", ),
+            ("node",),
             True,
             Var(_js_expr="(({node}) => {return node})"),
         ),
@@ -125,7 +134,11 @@ def test_create_map_fn_var(fn_body, fn_args, explicit_return, expected):
     ],
 )
 def test_create_map_fn_var_subclass(cls, fn_body, fn_args, explicit_return, expected):
-    result = cls.create_map_fn_var(fn_body= Var(_js_expr=fn_body, _var_type=int) if fn_body else None, fn_args=fn_args, explicit_return=explicit_return)
+    result = cls.create_map_fn_var(
+        fn_body=Var(_js_expr=fn_body, _var_type=int) if fn_body else None,
+        fn_args=fn_args,
+        explicit_return=explicit_return,
+    )
     assert result._js_expr == expected._js_expr
 
 

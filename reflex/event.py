@@ -45,6 +45,7 @@ from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import (
     ArgsFunctionOperation,
+    FunctionArgs,
     FunctionStringVar,
     FunctionVar,
     VarOperationCall,
@@ -1643,7 +1644,7 @@ class LiteralEventChainVar(ArgsFunctionOperation, LiteralVar, EventChainVar):
             _js_expr="",
             _var_type=EventChain,
             _var_data=_var_data,
-            _args_names=arg_def,
+            _args=FunctionArgs(arg_def),
             _return_expr=invocation.call(
                 LiteralVar.create([LiteralVar.create(event) for event in value.events]),
                 arg_def_expr,

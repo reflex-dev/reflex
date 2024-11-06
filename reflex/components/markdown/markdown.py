@@ -2,18 +2,18 @@
 
 from __future__ import annotations
 
+import dataclasses
 import textwrap
 from functools import lru_cache
 from hashlib import md5
-from typing import Any, Callable, Dict, Union
-import dataclasses
+from typing import Any, Callable, Dict, Sequence, Union
 
 from reflex.components.component import Component, CustomComponent
 from reflex.components.tags.tag import Tag
 from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import LiteralVar, Var
-from reflex.vars.function import ARRAY_ISARRAY, ArgsFunctionOperation
+from reflex.vars.function import ARRAY_ISARRAY, ArgsFunctionOperation, DestructuredArg
 from reflex.vars.number import ternary_operation
 
 # Special vars used in the component map.
@@ -79,6 +79,7 @@ def get_base_component_map() -> dict[str, Callable]:
 @dataclasses.dataclass(frozen=True)
 class MarkdownComponentMap:
     """Mixin class for handling custom component maps in Markdown components."""
+
     _explicit_return: bool = dataclasses.field(default=False)
 
     @classmethod
@@ -92,7 +93,10 @@ class MarkdownComponentMap:
 
     @classmethod
     def create_map_fn_var(
-        cls, fn_body: Var | None = None, fn_args: tuple[str, ...] | None = None, explicit_return: bool | None = None
+        cls,
+        fn_body: Var | None = None,
+        fn_args: Sequence[str] | None = None,
+        explicit_return: bool | None = None,
     ) -> Var:
         """Create a function Var for the component map.
 
@@ -108,10 +112,14 @@ class MarkdownComponentMap:
         fn_body = fn_body if fn_body is not None else cls.get_fn_body()
         explicit_return = explicit_return or cls._explicit_return
 
-        return ArgsFunctionOperation.create(args_names=fn_args, return_expr=fn_body, destructure_args=True, explicit_return=explicit_return)
+        return ArgsFunctionOperation.create(
+            args_names=(DestructuredArg(fields=tuple(fn_args)),),
+            return_expr=fn_body,
+            explicit_return=explicit_return,
+        )
 
     @classmethod
-    def get_fn_args(cls) -> list[str]:
+    def get_fn_args(cls) -> Sequence[str]:
         """Get the function arguments for the component map.
 
         Returns:
@@ -126,7 +134,7 @@ class MarkdownComponentMap:
         Returns:
             The function body as a string.
         """
-        return Var(_js_expr="", _var_type=str)
+        return Var(_js_expr="undefined", _var_type=None)
 
 
 class Markdown(Component):
@@ -290,7 +298,7 @@ class Markdown(Component):
                 _PROPS._js_expr,
             ),
             fn_body=Var(_js_expr=formatted_code),
-            explicit_return=True
+            explicit_return=True,
         )
 
     def get_component(self, tag: str, **props) -> Component:
@@ -359,7 +367,9 @@ class Markdown(Component):
         Returns:
             The function Var for the component map.
         """
-        formatted_component = Var(_js_expr=f"({self.format_component(tag)})", _var_type=str)
+        formatted_component = Var(
+            _js_expr=f"({self.format_component(tag)})", _var_type=str
+        )
         if isinstance(component, MarkdownComponentMap):
             return component.create_map_fn_var(fn_body=formatted_component)
 
