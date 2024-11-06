@@ -6,13 +6,13 @@ concurrency:
 
 on:
   push:
-    branches: ['main']
+    branches: ["main"]
     paths-ignore:
-      - '**/*.md'
+      - "**/*.md"
   pull_request:
-    branches: ['main']
+    branches: ["main"]
     paths-ignore:
-      - '**/*.md'
+      - "**/*.md"
 
 permissions:
   contents: read
@@ -22,8 +22,9 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        state_manager: ['redis', 'memory']
-        python-version: ['3.11.5', '3.12.0']
+        state_manager: ["redis", "memory"]
+        split_index: [0, 1]
+        python-version: ["3.11.5", "3.12.0"]
     runs-on: ubuntu-22.04
     services:
       # Label used to access the service container
@@ -45,14 +46,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
-      - run: poetry run uv pip install pyvirtualdisplay pillow
+      - run: poetry run uv pip install pyvirtualdisplay pillow pytest-split
       - name: Run app harness tests
         env:
           SCREENSHOT_DIR: /tmp/screenshots
           REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
         run: |
           poetry run playwright install --with-deps
-          poetry run pytest tests/integration
+          poetry run pytest tests/integration --split-index=${{matrix.split_index}}--split-total=2
       - uses: actions/upload-artifact@v4
         name: Upload failed test screenshots
         if: always()
