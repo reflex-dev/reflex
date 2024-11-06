@@ -114,6 +114,9 @@ class ToastProps(PropsBase, NoExtrasAllowedProps):
     # Custom style for the toast.
     style: Optional[Style]
 
+    # Class name for the toast.
+    class_name: Optional[str]
+
     # XXX: These still do not seem to work
     # Custom style for the toast primary button.
     action_button_styles: Optional[Style]

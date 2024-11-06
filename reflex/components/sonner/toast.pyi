@@ -45,6 +45,7 @@ class ToastProps(PropsBase, NoExtrasAllowedProps):
     id: Optional[Union[str, Var]]
     unstyled: Optional[bool]
     style: Optional[Style]
+    class_name: Optional[str]
     action_button_styles: Optional[Style]
     cancel_button_styles: Optional[Style]
     on_dismiss: Optional[Any]
