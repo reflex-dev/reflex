@@ -20,7 +20,6 @@ from reflex.vars.base import LiteralVar
 def test_has_serializer(type_: Type, expected: bool):
     """Test that has_serializer returns the correct value.
 
-
     Args:
         type_: The type to check.
         expected: The expected result.
@@ -40,7 +39,6 @@ def test_has_serializer(type_: Type, expected: bool):
 )
 def test_get_serializer(type_: Type, expected: serializers.Serializer):
     """Test that get_serializer returns the correct value.
-
 
     Args:
         type_: The type to check.
@@ -194,7 +192,6 @@ class BaseSubclass(Base):
 )
 def test_serialize(value: Any, expected: str):
     """Test that serialize returns the correct value.
-
 
     Args:
         value: The value to serialize.

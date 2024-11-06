@@ -779,8 +779,8 @@ def _validate_project_info():
     )
     # PyPI only shows the first author.
     author = project.get("authors", [{}])[0]
-    author["name"] = console.ask(f"Author Name", default=author.get("name", ""))
-    author["email"] = console.ask(f"Author Email", default=author.get("email", ""))
+    author["name"] = console.ask("Author Name", default=author.get("name", ""))
+    author["email"] = console.ask("Author Email", default=author.get("email", ""))
 
     console.print(f'Current keywords are: {project.get("keywords") or []}')
     keyword_action = console.ask(
@@ -923,7 +923,7 @@ def _get_file_from_prompt_in_loop() -> Tuple[bytes, str] | None:
     image_file = file_extension = None
     while image_file is None:
         image_filepath = console.ask(
-            f"Upload a preview image of your demo app (enter to skip)"
+            "Upload a preview image of your demo app (enter to skip)"
         )
         if not image_filepath:
             break
@@ -973,6 +973,6 @@ def install(
     console.set_log_level(loglevel)
 
     if _pip_install_on_demand(package_name=".", install_args=["-e"]):
-        console.info(f"Package installed successfully!")
+        console.info("Package installed successfully!")
     else:
         raise typer.Exit(code=1)

@@ -158,7 +158,6 @@ class ComponentNamespace(SimpleNamespace):
     def __hash__(self) -> int:
         """Get the hash of the namespace.
 
-
         Returns:
             The hash of the namespace.
         """

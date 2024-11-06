@@ -153,7 +153,7 @@ def dynamic_route(
         running AppHarness instance
     """
     with app_harness_env.create(
-        root=tmp_path_factory.mktemp(f"dynamic_route"),
+        root=tmp_path_factory.mktemp("dynamic_route"),
         app_name=f"dynamicroute_{app_harness_env.__name__.lower()}",
         app_source=DynamicRoute,  # type: ignore
     ) as harness:
