@@ -10,7 +10,6 @@ from typing import List, Optional
 import typer
 import typer.core
 from reflex_cli.deployments import deployments_cli
-from reflex_cli.v2.deployments import hosting_cli
 from reflex_cli.utils import dependency
 
 from reflex import constants
@@ -385,13 +384,6 @@ def login(
 
 
 @cli.command()
-def loginv2(loglevel: constants.LogLevel = typer.Option(config.loglevel)):
-    from reflex_cli.v2 import cli as hosting_cli
-
-    hosting_cli.login()
-
-
-@cli.command()
 def logout(
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
@@ -706,11 +698,6 @@ cli.add_typer(script_cli, name="script", help="Subcommands running helper script
 cli.add_typer(
     deployments_cli,
     name="deployments",
-    help="Subcommands for managing the Deployments.",
-)
-cli.add_typer(
-    hosting_cli,
-    name="apps",
     help="Subcommands for managing the Deployments.",
 )
 cli.add_typer(
