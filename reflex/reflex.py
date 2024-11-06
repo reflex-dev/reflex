@@ -384,6 +384,13 @@ def login(
 
 
 @cli.command()
+def loginv2(loglevel: constants.LogLevel = typer.Option(config.loglevel)):
+    from reflex_cli.v2 import cli as hosting_cli
+
+    hosting_cli.login()
+
+
+@cli.command()
 def logout(
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
@@ -569,12 +576,7 @@ def deploy(
 
     hosting_cli.deploy(
         app_name=app_name,
-        export_fn=lambda zip_dest_dir,
-        api_url,
-        deploy_url,
-        frontend,
-        backend,
-        zipping: export_utils.export(
+        export_fn=lambda zip_dest_dir, api_url, deploy_url, frontend, backend, zipping: export_utils.export(
             zip_dest_dir=zip_dest_dir,
             api_url=api_url,
             deploy_url=deploy_url,
@@ -677,12 +679,7 @@ def deployv2(
 
     hosting_cli.deploy(
         app_name=app_name,
-        export_fn=lambda zip_dest_dir,
-        api_url,
-        deploy_url,
-        frontend,
-        backend,
-        zipping: export_utils.export(
+        export_fn=lambda zip_dest_dir, api_url, deploy_url, frontend, backend, zipping: export_utils.export(
             zip_dest_dir=zip_dest_dir,
             api_url=api_url,
             deploy_url=deploy_url,
