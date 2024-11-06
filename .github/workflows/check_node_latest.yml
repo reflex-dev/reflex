@@ -20,6 +20,8 @@ jobs:
                 python-version: ['3.12']
                 split_index: [1, 2]
                 node-version: ['node']
+            fail-fast: false
+
         steps:
             - uses: actions/checkout@v4
             - uses: ./.github/actions/setup_build_env
