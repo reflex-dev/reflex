@@ -668,7 +668,8 @@ def deployv2(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    # Only check requirements if interactive. There is user interaction for requirements update.
+    # Only check requirements if interactive.
+    # There is user interaction for requirements update.
     if interactive:
         dependency.check_requirements()
 
