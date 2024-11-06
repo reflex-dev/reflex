@@ -304,6 +304,7 @@ def run(
         raise typer.Exit(1)
     EnvironmentVariables.REFLEX_BACKEND_ONLY.set(backend)
     EnvironmentVariables.REFLEX_FRONTEND_ONLY.set(frontend)
+    EnvironmentVariables.REFLEX_ENV_MODE.set(env)
 
     _run(env, frontend, backend, frontend_port, backend_port, backend_host, loglevel)
 

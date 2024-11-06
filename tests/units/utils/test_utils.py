@@ -596,8 +596,22 @@ def test_style_prop_with_event_handler_value(callable):
         )
 
 
-def test_is_prod_mode() -> None:
-    """Test that the prod mode is correctly determined."""
+@pytest.fixture
+def cleanup_reflex_env_mode():
+    """Cleanup the reflex env mode.
+
+    Yields: None
+    """
+    yield
+    EnvironmentVariables.REFLEX_ENV_MODE.set(None)
+
+
+def test_is_prod_mode(cleanup_reflex_env_mode: None) -> None:
+    """Test that the prod mode is correctly determined.
+
+    Args:
+        cleanup_reflex_env_mode: Fixture to cleanup the reflex env mode.
+    """
     EnvironmentVariables.REFLEX_ENV_MODE.set(constants.Env.PROD)
     assert utils_exec.is_prod_mode()
     EnvironmentVariables.REFLEX_ENV_MODE.set(None)

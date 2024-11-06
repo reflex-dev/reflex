@@ -148,28 +148,6 @@ class DBConfig(Base):
         return f"{self.engine}://{path}/{self.database}"
 
 
-def get_default_value_for_field(field: dataclasses.Field) -> Any:
-    """Get the default value for a field.
-
-    Args:
-        field: The field.
-
-    Returns:
-        The default value.
-
-    Raises:
-        ValueError: If no default value is found.
-    """
-    if field.default != dataclasses.MISSING:
-        return field.default
-    elif field.default_factory != dataclasses.MISSING:
-        return field.default_factory()
-    else:
-        raise ValueError(
-            f"Missing value for environment variable {field.name} and no default value found"
-        )
-
-
 # TODO: Change all interpret_.* signatures to value: str, field: dataclasses.Field once we migrate rx.Config to dataclasses
 def interpret_boolean_env(value: str, field_name: str) -> bool:
     """Interpret a boolean environment variable value.
@@ -595,9 +573,8 @@ class EnvironmentVariables:
 
     # Whether to minify state names. Default to true in prod mode and false otherwise.
     REFLEX_MINIFY_STATES: EnvVar[Optional[bool]] = env_var(
-        default_factory=lambda: (
-            EnvironmentVariables.REFLEX_ENV_MODE.get() == constants.Env.PROD
-        )
+        default_factory=lambda: EnvironmentVariables.REFLEX_ENV_MODE.get()
+        == constants.Env.PROD
     )
 
 
