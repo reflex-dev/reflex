@@ -18,6 +18,7 @@ jobs:
         strategy:
             matrix:
                 python-version: ['3.12']
+                split_index: [1, 2]
                 node-version: ['node']
         steps:
             - uses: actions/checkout@v4
@@ -30,11 +31,11 @@ jobs:
               with:
                 node-version: ${{ matrix.node-version }}
             - run: |
-                poetry run uv pip install pyvirtualdisplay pillow
+                poetry run uv pip install pyvirtualdisplay pillow pytest-split
                 poetry run playwright install --with-deps
             - run: |
                 poetry run pytest tests/test_node_version.py
-                poetry run pytest tests/integration
+                poetry run pytest tests/integration --splits 2 --group ${{matrix.split_index}}
   
 
 
