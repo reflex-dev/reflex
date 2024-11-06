@@ -708,6 +708,11 @@ cli.add_typer(
     help="Subcommands for managing the Deployments.",
 )
 cli.add_typer(
+    hosting_cli,
+    name="apps",
+    help="Subcommands for managing the Deployments.",
+)
+cli.add_typer(
     custom_components_cli,
     name="component",
     help="Subcommands for creating and publishing Custom Components.",
