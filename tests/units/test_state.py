@@ -10,7 +10,7 @@ import os
 import sys
 import threading
 from textwrap import dedent
-from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Union
+from typing import Any, AsyncGenerator, Callable, Dict, Generator, List, Optional, Union
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -1830,24 +1830,37 @@ async def test_state_manager_lock_expire_contend(
     assert (await state_manager_redis.get_state(substate_token_redis)).num1 == exp_num1
 
 
+@pytest.fixture(scope="function")
+def redis_prefix() -> Generator[str, None, None]:
+    """Fixture for redis prefix.
+
+    Yields:
+        A redis prefix.
+    """
+    prefix = "test_prefix"
+    reflex.config.EnvironmentVariables.REFLEX_REDIS_PREFIX.set(prefix)
+    yield prefix
+    reflex.config.EnvironmentVariables.REFLEX_REDIS_PREFIX.set(None)
+
+
 @pytest.mark.asyncio
 async def test_state_manager_redis_prefix(
-    state_manager_redis: StateManagerRedis, substate_token_redis: str
+    state_manager_redis: StateManagerRedis,
+    substate_token_redis: str,
+    redis_prefix: str,
 ):
     """Test that the state manager redis prefix is applied correctly.
 
     Args:
         state_manager_redis: A state manager instance.
         substate_token_redis: A token + substate name for looking up in state manager.
+        redis_prefix: A redis prefix.
     """
-    prefix = "test_prefix"
-    reflex.config.EnvironmentVariables.REFLEX_REDIS_PREFIX.set(prefix)
-
     async with state_manager_redis.modify_state(substate_token_redis) as state:
         state.num1 = 42
 
     prefixed_token = prefix_redis_token(substate_token_redis)
-    assert prefixed_token == f"{prefix}{substate_token_redis}"
+    assert prefixed_token == f"{redis_prefix}{substate_token_redis}"
 
     assert await state_manager_redis.redis.get(prefixed_token)
 
