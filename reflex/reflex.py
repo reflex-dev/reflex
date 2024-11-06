@@ -598,6 +598,7 @@ def deploy(
         loglevel=loglevel.subprocess_level(),
     )
 
+
 @cli.command()
 def deployv2(
     app_name: str = typer.Option(
@@ -656,10 +657,10 @@ def deployv2(
 ):
     """Deploy the app to the Reflex hosting service."""
     from reflex_cli.v2 import cli as hosting_cli
-
-    from reflex.utils import prerequisites
-    from reflex.utils import export as export_utils
     from reflex_cli.v2.utils import dependency
+
+    from reflex.utils import export as export_utils
+    from reflex.utils import prerequisites
 
     # Set the log level.
     console.set_log_level(loglevel)
@@ -676,7 +677,12 @@ def deployv2(
 
     hosting_cli.deploy(
         app_name=app_name,
-        export_fn=lambda zip_dest_dir, api_url, deploy_url, frontend, backend, zipping: export_utils.export(
+        export_fn=lambda zip_dest_dir,
+        api_url,
+        deploy_url,
+        frontend,
+        backend,
+        zipping: export_utils.export(
             zip_dest_dir=zip_dest_dir,
             api_url=api_url,
             deploy_url=deploy_url,
@@ -695,6 +701,7 @@ def deployv2(
         token=token,
         project=project,
     )
+
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
 cli.add_typer(script_cli, name="script", help="Subcommands running helper scripts.")
