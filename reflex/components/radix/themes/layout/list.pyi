@@ -7,6 +7,7 @@ from typing import Any, Dict, Iterable, Literal, Optional, Union, overload
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.el.elements.typography import Li, Ol, Ul
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
@@ -29,7 +30,7 @@ LiteralListStyleTypeOrdered = Literal[
     "katakana",
 ]
 
-class BaseList(Component):
+class BaseList(Component, MarkdownComponentMap):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -393,7 +394,7 @@ class OrderedList(BaseList, Ol):
         """
         ...
 
-class ListItem(Li):
+class ListItem(Li, MarkdownComponentMap):
     @overload
     @classmethod
     def create(  # type: ignore
