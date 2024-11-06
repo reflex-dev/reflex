@@ -78,7 +78,7 @@ def serializer(
         )
 
     # Apply type transformation if requested
-    if to is not None:
+    if to is not None or ((to := type_hints.get("return")) is not None):
         SERIALIZER_TYPES[type_] = to
         get_serializer_type.cache_clear()
 
@@ -189,16 +189,37 @@ def get_serializer_type(type_: Type) -> Optional[Type]:
     return None
 
 
-def has_serializer(type_: Type) -> bool:
+def has_serializer(type_: Type, into_type: Type | None = None) -> bool:
     """Check if there is a serializer for the type.
 
     Args:
         type_: The type to check.
+        into_type: The type to serialize into.
 
     Returns:
         Whether there is a serializer for the type.
     """
-    return get_serializer(type_) is not None
+    serializer_for_type = get_serializer(type_)
+    return serializer_for_type is not None and (
+        into_type is None or get_serializer_type(type_) == into_type
+    )
+
+
+def can_serialize(type_: Type, into_type: Type | None = None) -> bool:
+    """Check if there is a serializer for the type.
+
+    Args:
+        type_: The type to check.
+        into_type: The type to serialize into.
+
+    Returns:
+        Whether there is a serializer for the type.
+    """
+    return has_serializer(type_, into_type) or (
+        isinstance(type_, type)
+        and dataclasses.is_dataclass(type_)
+        and (into_type is None or into_type is dict)
+    )
 
 
 @serializer(to=str)
@@ -214,7 +235,7 @@ def serialize_type(value: type) -> str:
     return value.__name__
 
 
-@serializer
+@serializer(to=dict)
 def serialize_base(value: Base) -> dict:
     """Serialize a Base instance.
 

@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
-from reflex.event import EventHandler, empty_event
+from reflex.event import EventHandler, no_args_event_spec
 from reflex.vars.base import LiteralVar, Var
 
 from .recharts import (
@@ -109,25 +109,25 @@ class Axis(Recharts):
     text_anchor: Var[LiteralTextAnchor]
 
     # The customized event handler of click on the ticks of this axis
-    on_click: EventHandler[empty_event]
+    on_click: EventHandler[no_args_event_spec]
 
     # The customized event handler of mousedown on the ticks of this axis
-    on_mouse_down: EventHandler[empty_event]
+    on_mouse_down: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseup on the ticks of this axis
-    on_mouse_up: EventHandler[empty_event]
+    on_mouse_up: EventHandler[no_args_event_spec]
 
     # The customized event handler of mousemove on the ticks of this axis
-    on_mouse_move: EventHandler[empty_event]
+    on_mouse_move: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseout on the ticks of this axis
-    on_mouse_out: EventHandler[empty_event]
+    on_mouse_out: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseenter on the ticks of this axis
-    on_mouse_enter: EventHandler[empty_event]
+    on_mouse_enter: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseleave on the ticks of this axis
-    on_mouse_leave: EventHandler[empty_event]
+    on_mouse_leave: EventHandler[no_args_event_spec]
 
 
 class XAxis(Axis):
@@ -252,7 +252,7 @@ class Brush(Recharts):
             A dict mapping the event trigger to the var that is passed to the handler.
         """
         return {
-            EventTriggers.ON_CHANGE: empty_event,
+            EventTriggers.ON_CHANGE: no_args_event_spec,
         }
 
 
@@ -293,34 +293,34 @@ class Cartesian(Recharts):
     name: Var[Union[str, int]]
 
     # The customized event handler of animation start
-    on_animation_start: EventHandler[empty_event]
+    on_animation_start: EventHandler[no_args_event_spec]
 
     # The customized event handler of animation end
-    on_animation_end: EventHandler[empty_event]
+    on_animation_end: EventHandler[no_args_event_spec]
 
     # The customized event handler of click on the component in this group
-    on_click: EventHandler[empty_event]
+    on_click: EventHandler[no_args_event_spec]
 
     # The customized event handler of mousedown on the component in this group
-    on_mouse_down: EventHandler[empty_event]
+    on_mouse_down: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseup on the component in this group
-    on_mouse_up: EventHandler[empty_event]
+    on_mouse_up: EventHandler[no_args_event_spec]
 
     # The customized event handler of mousemove on the component in this group
-    on_mouse_move: EventHandler[empty_event]
+    on_mouse_move: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseover on the component in this group
-    on_mouse_over: EventHandler[empty_event]
+    on_mouse_over: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseout on the component in this group
-    on_mouse_out: EventHandler[empty_event]
+    on_mouse_out: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseenter on the component in this group
-    on_mouse_enter: EventHandler[empty_event]
+    on_mouse_enter: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseleave on the component in this group
-    on_mouse_leave: EventHandler[empty_event]
+    on_mouse_leave: EventHandler[no_args_event_spec]
 
 
 class Area(Cartesian):
@@ -526,28 +526,28 @@ class Scatter(Recharts):
     animation_easing: Var[LiteralAnimationEasing]
 
     # The customized event handler of click on the component in this group
-    on_click: EventHandler[empty_event]
+    on_click: EventHandler[no_args_event_spec]
 
     # The customized event handler of mousedown on the component in this group
-    on_mouse_down: EventHandler[empty_event]
+    on_mouse_down: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseup on the component in this group
-    on_mouse_up: EventHandler[empty_event]
+    on_mouse_up: EventHandler[no_args_event_spec]
 
     # The customized event handler of mousemove on the component in this group
-    on_mouse_move: EventHandler[empty_event]
+    on_mouse_move: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseover on the component in this group
-    on_mouse_over: EventHandler[empty_event]
+    on_mouse_over: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseout on the component in this group
-    on_mouse_out: EventHandler[empty_event]
+    on_mouse_out: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseenter on the component in this group
-    on_mouse_enter: EventHandler[empty_event]
+    on_mouse_enter: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseleave on the component in this group
-    on_mouse_leave: EventHandler[empty_event]
+    on_mouse_leave: EventHandler[no_args_event_spec]
 
 
 class Funnel(Recharts):
@@ -591,34 +591,34 @@ class Funnel(Recharts):
     _valid_children: List[str] = ["LabelList", "Cell"]
 
     # The customized event handler of animation start
-    on_animation_start: EventHandler[empty_event]
+    on_animation_start: EventHandler[no_args_event_spec]
 
     # The customized event handler of animation end
-    on_animation_end: EventHandler[empty_event]
+    on_animation_end: EventHandler[no_args_event_spec]
 
     # The customized event handler of click on the component in this group
-    on_click: EventHandler[empty_event]
+    on_click: EventHandler[no_args_event_spec]
 
     # The customized event handler of mousedown on the component in this group
-    on_mouse_down: EventHandler[empty_event]
+    on_mouse_down: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseup on the component in this group
-    on_mouse_up: EventHandler[empty_event]
+    on_mouse_up: EventHandler[no_args_event_spec]
 
     # The customized event handler of mousemove on the component in this group
-    on_mouse_move: EventHandler[empty_event]
+    on_mouse_move: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseover on the component in this group
-    on_mouse_over: EventHandler[empty_event]
+    on_mouse_over: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseout on the component in this group
-    on_mouse_out: EventHandler[empty_event]
+    on_mouse_out: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseenter on the component in this group
-    on_mouse_enter: EventHandler[empty_event]
+    on_mouse_enter: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseleave on the component in this group
-    on_mouse_leave: EventHandler[empty_event]
+    on_mouse_leave: EventHandler[no_args_event_spec]
 
 
 class ErrorBar(Recharts):
@@ -715,28 +715,28 @@ class ReferenceDot(Reference):
     _valid_children: List[str] = ["Label"]
 
     # The customized event handler of click on the component in this chart
-    on_click: EventHandler[empty_event]
+    on_click: EventHandler[no_args_event_spec]
 
     # The customized event handler of mousedown on the component in this chart
-    on_mouse_down: EventHandler[empty_event]
+    on_mouse_down: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseup on the component in this chart
-    on_mouse_up: EventHandler[empty_event]
+    on_mouse_up: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseover on the component in this chart
-    on_mouse_over: EventHandler[empty_event]
+    on_mouse_over: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseout on the component in this chart
-    on_mouse_out: EventHandler[empty_event]
+    on_mouse_out: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseenter on the component in this chart
-    on_mouse_enter: EventHandler[empty_event]
+    on_mouse_enter: EventHandler[no_args_event_spec]
 
     # The customized event handler of mousemove on the component in this chart
-    on_mouse_move: EventHandler[empty_event]
+    on_mouse_move: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseleave on the component in this chart
-    on_mouse_leave: EventHandler[empty_event]
+    on_mouse_leave: EventHandler[no_args_event_spec]
 
 
 class ReferenceArea(Recharts):

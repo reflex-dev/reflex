@@ -853,31 +853,31 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
     @overload
     def __getitem__(
         self: (
-            ArrayVar[Tuple[OTHER_TUPLE, int]]
-            | ArrayVar[Tuple[OTHER_TUPLE, float]]
-            | ArrayVar[Tuple[OTHER_TUPLE, int | float]]
+            ArrayVar[Tuple[Any, int]]
+            | ArrayVar[Tuple[Any, float]]
+            | ArrayVar[Tuple[Any, int | float]]
         ),
         i: Literal[1, -1],
     ) -> NumberVar: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Tuple[str, OTHER_TUPLE]], i: Literal[0, -2]
+        self: ArrayVar[Tuple[str, Any]], i: Literal[0, -2]
     ) -> StringVar: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Tuple[OTHER_TUPLE, str]], i: Literal[1, -1]
+        self: ArrayVar[Tuple[Any, str]], i: Literal[1, -1]
     ) -> StringVar: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Tuple[bool, OTHER_TUPLE]], i: Literal[0, -2]
+        self: ArrayVar[Tuple[bool, Any]], i: Literal[0, -2]
     ) -> BooleanVar: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Tuple[OTHER_TUPLE, bool]], i: Literal[1, -1]
+        self: ArrayVar[Tuple[Any, bool]], i: Literal[1, -1]
     ) -> BooleanVar: ...
 
     @overload

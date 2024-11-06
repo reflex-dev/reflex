@@ -16,9 +16,6 @@ except ModuleNotFoundError:
         from pydantic.fields import ModelField  # type: ignore
 
 
-from reflex import constants
-
-
 def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None:
     """Ensure that the field's name does not shadow an existing attribute of the model.
 
@@ -31,7 +28,8 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
     """
     from reflex.utils.exceptions import VarNameError
 
-    reload = os.getenv(constants.RELOAD_CONFIG) == "True"
+    # can't use reflex.config.environment here cause of circular import
+    reload = os.getenv("__RELOAD_CONFIG", "").lower() == "true"
     for base in bases:
         try:
             if not reload and getattr(base, field_name, None):

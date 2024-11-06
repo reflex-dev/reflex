@@ -1116,7 +1116,9 @@ U = TypeVar("U")
 
 
 @var_operation
-def ternary_operation(condition: BooleanVar, if_true: Var[T], if_false: Var[U]):
+def ternary_operation(
+    condition: BooleanVar, if_true: Var[T], if_false: Var[U]
+) -> CustomVarOperationReturn[Union[T, U]]:
     """Create a ternary operation.
 
     Args:

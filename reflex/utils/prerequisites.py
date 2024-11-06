@@ -69,7 +69,7 @@ def get_web_dir() -> Path:
     Returns:
         The working directory.
     """
-    return environment.REFLEX_WEB_WORKDIR
+    return environment.REFLEX_WEB_WORKDIR.get()
 
 
 def _python_version_check():
@@ -204,9 +204,12 @@ def get_bun_version() -> version.Version | None:
         return None
 
 
-def get_install_package_manager() -> str | None:
+def get_install_package_manager(on_failure_return_none: bool = False) -> str | None:
     """Get the package manager executable for installation.
       Currently, bun is used for installation only.
+
+    Args:
+        on_failure_return_none: Whether to return None on failure.
 
     Returns:
         The path to the package manager.
@@ -217,21 +220,29 @@ def get_install_package_manager() -> str | None:
         or windows_check_onedrive_in_path()
         or windows_npm_escape_hatch()
     ):
-        return get_package_manager()
+        return get_package_manager(on_failure_return_none)
     return str(get_config().bun_path)
 
 
-def get_package_manager() -> str | None:
+def get_package_manager(on_failure_return_none: bool = False) -> str | None:
     """Get the package manager executable for running app.
       Currently on unix systems, npm is used for running the app only.
 
+    Args:
+        on_failure_return_none: Whether to return None on failure.
+
     Returns:
         The path to the package manager.
+
+    Raises:
+        FileNotFoundError: If the package manager is not found.
     """
     npm_path = path_ops.get_npm_path()
     if npm_path is not None:
-        npm_path = str(Path(npm_path).resolve())
-    return npm_path
+        return str(Path(npm_path).resolve())
+    if on_failure_return_none:
+        return None
+    raise FileNotFoundError("NPM not found. You may need to run `reflex init`.")
 
 
 def windows_check_onedrive_in_path() -> bool:
@@ -249,7 +260,7 @@ def windows_npm_escape_hatch() -> bool:
     Returns:
         If the user has set REFLEX_USE_NPM.
     """
-    return environment.REFLEX_USE_NPM
+    return environment.REFLEX_USE_NPM.get()
 
 
 def get_app(reload: bool = False) -> ModuleType:
@@ -267,7 +278,7 @@ def get_app(reload: bool = False) -> ModuleType:
     from reflex.utils import telemetry
 
     try:
-        os.environ[constants.RELOAD_CONFIG] = str(reload)
+        environment.RELOAD_CONFIG.set(reload)
         config = get_config()
         if not config.app_name:
             raise RuntimeError(
@@ -430,7 +441,7 @@ def create_config(app_name: str):
 
 def initialize_gitignore(
     gitignore_file: Path = constants.GitIgnore.FILE,
-    files_to_ignore: set[str] = constants.GitIgnore.DEFAULTS,
+    files_to_ignore: set[str] | list[str] = constants.GitIgnore.DEFAULTS,
 ):
     """Initialize the template .gitignore file.
 
@@ -439,23 +450,20 @@ def initialize_gitignore(
         files_to_ignore: The files to add to the .gitignore file.
     """
     # Combine with the current ignored files.
-    current_ignore: set[str] = set()
+    current_ignore: list[str] = []
     if gitignore_file.exists():
-        current_ignore |= set(
-            line.strip() for line in gitignore_file.read_text().splitlines()
-        )
+        current_ignore = [ln.strip() for ln in gitignore_file.read_text().splitlines()]
 
     if files_to_ignore == current_ignore:
         console.debug(f"{gitignore_file} already up to date.")
         return
-    files_to_ignore |= current_ignore
+    files_to_ignore = [ln for ln in files_to_ignore if ln not in current_ignore]
+    files_to_ignore += current_ignore
 
     # Write files to the .gitignore file.
     gitignore_file.touch(exist_ok=True)
     console.debug(f"Creating {gitignore_file}")
-    gitignore_file.write_text(
-        "\n".join(sorted(files_to_ignore)) + "\n",
-    )
+    gitignore_file.write_text("\n".join(files_to_ignore) + "\n")
 
 
 def initialize_requirements_txt():
@@ -920,20 +928,39 @@ def install_frontend_packages(packages: set[str], config: Config):
         packages: A list of package names to be installed.
         config: The config object.
 
+    Raises:
+        FileNotFoundError: If the package manager is not found.
+
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
     # unsupported archs(arm and 32bit machines) will use npm anyway. so we dont have to run npm twice
     fallback_command = (
-        get_package_manager()
-        if not constants.IS_WINDOWS
-        or constants.IS_WINDOWS
-        and is_windows_bun_supported()
-        and not windows_check_onedrive_in_path()
+        get_package_manager(on_failure_return_none=True)
+        if (
+            not constants.IS_WINDOWS
+            or constants.IS_WINDOWS
+            and is_windows_bun_supported()
+            and not windows_check_onedrive_in_path()
+        )
         else None
     )
+
+    install_package_manager = (
+        get_install_package_manager(on_failure_return_none=True) or fallback_command
+    )
+
+    if install_package_manager is None:
+        raise FileNotFoundError(
+            "Could not find a package manager to install frontend packages. You may need to run `reflex init`."
+        )
+
+    fallback_command = (
+        fallback_command if fallback_command is not install_package_manager else None
+    )
+
     processes.run_process_with_fallback(
-        [get_install_package_manager(), "install"],  # type: ignore
+        [install_package_manager, "install"],  # type: ignore
         fallback=fallback_command,
         analytics_enabled=True,
         show_status_message="Installing base frontend packages",
@@ -944,7 +971,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     if config.tailwind is not None:
         processes.run_process_with_fallback(
             [
-                get_install_package_manager(),
+                install_package_manager,
                 "add",
                 "-d",
                 constants.Tailwind.VERSION,
@@ -960,7 +987,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
         processes.run_process_with_fallback(
-            [get_install_package_manager(), "add", *packages],
+            [install_package_manager, "add", *packages],
             fallback=fallback_command,
             analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",
@@ -992,7 +1019,7 @@ def needs_reinit(frontend: bool = True) -> bool:
         return False
 
     # Make sure the .reflex directory exists.
-    if not environment.REFLEX_DIR.exists():
+    if not environment.REFLEX_DIR.get().exists():
         return True
 
     # Make sure the .web directory exists in frontend mode.
@@ -1097,7 +1124,7 @@ def ensure_reflex_installation_id() -> Optional[int]:
     """
     try:
         initialize_reflex_user_directory()
-        installation_id_file = environment.REFLEX_DIR / "installation_id"
+        installation_id_file = environment.REFLEX_DIR.get() / "installation_id"
 
         installation_id = None
         if installation_id_file.exists():
@@ -1122,7 +1149,7 @@ def ensure_reflex_installation_id() -> Optional[int]:
 def initialize_reflex_user_directory():
     """Initialize the reflex user directory."""
     # Create the reflex directory.
-    path_ops.mkdir(environment.REFLEX_DIR)
+    path_ops.mkdir(environment.REFLEX_DIR.get())
 
 
 def initialize_frontend_dependencies():
@@ -1145,7 +1172,10 @@ def check_db_initialized() -> bool:
     Returns:
         True if alembic is initialized (or if database is not used).
     """
-    if get_config().db_url is not None and not environment.ALEMBIC_CONFIG.exists():
+    if (
+        get_config().db_url is not None
+        and not environment.ALEMBIC_CONFIG.get().exists()
+    ):
         console.error(
             "Database is not initialized. Run [bold]reflex db init[/bold] first."
         )
@@ -1155,7 +1185,7 @@ def check_db_initialized() -> bool:
 
 def check_schema_up_to_date():
     """Check if the sqlmodel metadata matches the current database schema."""
-    if get_config().db_url is None or not environment.ALEMBIC_CONFIG.exists():
+    if get_config().db_url is None or not environment.ALEMBIC_CONFIG.get().exists():
         return
     with model.Model.get_db_engine().connect() as connection:
         try:
