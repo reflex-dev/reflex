@@ -172,14 +172,32 @@ class TextArea(RadixThemesComponent, elements.Textarea):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[str], BASE_STATE]] = None,
-        on_change: Optional[EventType[[str], BASE_STATE]] = None,
+        on_blur: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
+        ] = None,
+        on_change: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
+        ] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
         on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_focus: Optional[EventType[[str], BASE_STATE]] = None,
-        on_key_down: Optional[EventType[[str, KeyInputInfo], BASE_STATE]] = None,
-        on_key_up: Optional[EventType[[str, KeyInputInfo], BASE_STATE]] = None,
+        on_focus: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
+        ] = None,
+        on_key_down: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[str], BASE_STATE],
+                EventType[[str, KeyInputInfo], BASE_STATE],
+            ]
+        ] = None,
+        on_key_up: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[str], BASE_STATE],
+                EventType[[str, KeyInputInfo], BASE_STATE],
+            ]
+        ] = None,
         on_mount: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,

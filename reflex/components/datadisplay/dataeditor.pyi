@@ -187,34 +187,80 @@ class DataEditor(NoSSRComponent):
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
-        on_cell_activated: Optional[EventType[[tuple[int, int]], BASE_STATE]] = None,
-        on_cell_clicked: Optional[EventType[[tuple[int, int]], BASE_STATE]] = None,
-        on_cell_context_menu: Optional[EventType[[tuple[int, int]], BASE_STATE]] = None,
+        on_cell_activated: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[tuple[int, int]], BASE_STATE]]
+        ] = None,
+        on_cell_clicked: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[tuple[int, int]], BASE_STATE]]
+        ] = None,
+        on_cell_context_menu: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[tuple[int, int]], BASE_STATE]]
+        ] = None,
         on_cell_edited: Optional[
-            EventType[[tuple[int, int], GridCell], BASE_STATE]
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[tuple[int, int]], BASE_STATE],
+                EventType[[tuple[int, int], GridCell], BASE_STATE],
+            ]
         ] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_column_resize: Optional[EventType[[GridColumn, int], BASE_STATE]] = None,
+        on_column_resize: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[GridColumn], BASE_STATE],
+                EventType[[GridColumn, int], BASE_STATE],
+            ]
+        ] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
-        on_delete: Optional[EventType[[GridSelection], BASE_STATE]] = None,
+        on_delete: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[GridSelection], BASE_STATE]]
+        ] = None,
         on_double_click: Optional[EventType[[], BASE_STATE]] = None,
         on_finished_editing: Optional[
-            EventType[[Union[GridCell, None], tuple[int, int]], BASE_STATE]
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[Union[GridCell, None]], BASE_STATE],
+                EventType[[Union[GridCell, None], tuple[int, int]], BASE_STATE],
+            ]
         ] = None,
         on_focus: Optional[EventType[[], BASE_STATE]] = None,
         on_group_header_clicked: Optional[
-            EventType[[tuple[int, int], GridCell], BASE_STATE]
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[tuple[int, int]], BASE_STATE],
+                EventType[[tuple[int, int], GridCell], BASE_STATE],
+            ]
         ] = None,
         on_group_header_context_menu: Optional[
-            EventType[[int, GroupHeaderClickedEventArgs], BASE_STATE]
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[int], BASE_STATE],
+                EventType[[int, GroupHeaderClickedEventArgs], BASE_STATE],
+            ]
         ] = None,
-        on_group_header_renamed: Optional[EventType[[str, str], BASE_STATE]] = None,
-        on_header_clicked: Optional[EventType[[tuple[int, int]], BASE_STATE]] = None,
+        on_group_header_renamed: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[str], BASE_STATE],
+                EventType[[str, str], BASE_STATE],
+            ]
+        ] = None,
+        on_header_clicked: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[tuple[int, int]], BASE_STATE]]
+        ] = None,
         on_header_context_menu: Optional[
-            EventType[[tuple[int, int]], BASE_STATE]
+            Union[EventType[[], BASE_STATE], EventType[[tuple[int, int]], BASE_STATE]]
         ] = None,
-        on_header_menu_click: Optional[EventType[[int, Rectangle], BASE_STATE]] = None,
-        on_item_hovered: Optional[EventType[[tuple[int, int]], BASE_STATE]] = None,
+        on_header_menu_click: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[int], BASE_STATE],
+                EventType[[int, Rectangle], BASE_STATE],
+            ]
+        ] = None,
+        on_item_hovered: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[tuple[int, int]], BASE_STATE]]
+        ] = None,
         on_mount: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,

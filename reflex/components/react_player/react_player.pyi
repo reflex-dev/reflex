@@ -50,7 +50,9 @@ class ReactPlayer(NoSSRComponent):
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
         on_disable_pip: Optional[EventType[[], BASE_STATE]] = None,
         on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_duration: Optional[EventType[[float], BASE_STATE]] = None,
+        on_duration: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[float], BASE_STATE]]
+        ] = None,
         on_enable_pip: Optional[EventType[[], BASE_STATE]] = None,
         on_ended: Optional[EventType[[], BASE_STATE]] = None,
         on_error: Optional[EventType[[], BASE_STATE]] = None,
@@ -67,10 +69,14 @@ class ReactPlayer(NoSSRComponent):
         on_play: Optional[EventType[[], BASE_STATE]] = None,
         on_playback_quality_change: Optional[EventType[[], BASE_STATE]] = None,
         on_playback_rate_change: Optional[EventType[[], BASE_STATE]] = None,
-        on_progress: Optional[EventType[[Progress], BASE_STATE]] = None,
+        on_progress: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[Progress], BASE_STATE]]
+        ] = None,
         on_ready: Optional[EventType[[], BASE_STATE]] = None,
         on_scroll: Optional[EventType[[], BASE_STATE]] = None,
-        on_seek: Optional[EventType[[float], BASE_STATE]] = None,
+        on_seek: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[float], BASE_STATE]]
+        ] = None,
         on_start: Optional[EventType[[], BASE_STATE]] = None,
         on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,

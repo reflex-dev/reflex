@@ -120,7 +120,9 @@ class Upload(MemoizationLeaf):
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
         on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_drop: Optional[EventType[[Any], BASE_STATE]] = None,
+        on_drop: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[Any], BASE_STATE]]
+        ] = None,
         on_focus: Optional[EventType[[], BASE_STATE]] = None,
         on_mount: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
@@ -186,7 +188,9 @@ class StyledUpload(Upload):
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
         on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_drop: Optional[EventType[[Any], BASE_STATE]] = None,
+        on_drop: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[Any], BASE_STATE]]
+        ] = None,
         on_focus: Optional[EventType[[], BASE_STATE]] = None,
         on_mount: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
@@ -252,7 +256,9 @@ class UploadNamespace(ComponentNamespace):
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
         on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_drop: Optional[EventType[[Any], BASE_STATE]] = None,
+        on_drop: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[Any], BASE_STATE]]
+        ] = None,
         on_focus: Optional[EventType[[], BASE_STATE]] = None,
         on_mount: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,

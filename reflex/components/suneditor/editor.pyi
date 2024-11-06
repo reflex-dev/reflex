@@ -130,8 +130,12 @@ class Editor(NoSSRComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[str], BASE_STATE]] = None,
-        on_change: Optional[EventType[[str], BASE_STATE]] = None,
+        on_blur: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
+        ] = None,
+        on_change: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
+        ] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
         on_copy: Optional[EventType[[], BASE_STATE]] = None,
@@ -139,7 +143,9 @@ class Editor(NoSSRComponent):
         on_double_click: Optional[EventType[[], BASE_STATE]] = None,
         on_focus: Optional[EventType[[], BASE_STATE]] = None,
         on_input: Optional[EventType[[], BASE_STATE]] = None,
-        on_load: Optional[EventType[[bool], BASE_STATE]] = None,
+        on_load: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[bool], BASE_STATE]]
+        ] = None,
         on_mount: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
@@ -148,11 +154,21 @@ class Editor(NoSSRComponent):
         on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
-        on_paste: Optional[EventType[[str, bool], BASE_STATE]] = None,
+        on_paste: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[str], BASE_STATE],
+                EventType[[str, bool], BASE_STATE],
+            ]
+        ] = None,
         on_scroll: Optional[EventType[[], BASE_STATE]] = None,
         on_unmount: Optional[EventType[[], BASE_STATE]] = None,
-        toggle_code_view: Optional[EventType[[bool], BASE_STATE]] = None,
-        toggle_full_screen: Optional[EventType[[bool], BASE_STATE]] = None,
+        toggle_code_view: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[bool], BASE_STATE]]
+        ] = None,
+        toggle_full_screen: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[bool], BASE_STATE]]
+        ] = None,
         **props,
     ) -> "Editor":
         """Create an instance of Editor. No children allowed.

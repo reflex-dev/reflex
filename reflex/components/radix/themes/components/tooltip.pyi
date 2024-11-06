@@ -79,7 +79,9 @@ class Tooltip(RadixThemesComponent):
         on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
-        on_open_change: Optional[EventType[[bool], BASE_STATE]] = None,
+        on_open_change: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[bool], BASE_STATE]]
+        ] = None,
         on_pointer_down_outside: Optional[EventType[[], BASE_STATE]] = None,
         on_scroll: Optional[EventType[[], BASE_STATE]] = None,
         on_unmount: Optional[EventType[[], BASE_STATE]] = None,
