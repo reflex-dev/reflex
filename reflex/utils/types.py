@@ -570,6 +570,12 @@ def _isinstance(obj: Any, cls: GenericType, nested: bool = False) -> bool:
                 _isinstance(item, args[0]) for item in obj
             )
 
+    if args:
+        from reflex.vars import Field
+
+        if origin is Field:
+            return _isinstance(obj, args[0])
+
     return isinstance(obj, get_base_class(cls))
 
 

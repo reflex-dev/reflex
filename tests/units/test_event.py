@@ -1,4 +1,4 @@
-from typing import List
+from typing import Callable, List
 
 import pytest
 
@@ -219,24 +219,40 @@ def test_event_console_log():
     """Test the event console log function."""
     spec = event.console_log("message")
     assert isinstance(spec, EventSpec)
-    assert spec.handler.fn.__qualname__ == "_console"
-    assert spec.args[0][0].equals(Var(_js_expr="message"))
-    assert spec.args[0][1].equals(LiteralVar.create("message"))
-    assert format.format_event(spec) == 'Event("_console", {message:"message"})'
+    assert spec.handler.fn.__qualname__ == "_call_function"
+    assert spec.args[0][0].equals(Var(_js_expr="function"))
+    assert spec.args[0][1].equals(
+        Var('(() => ((console["log"]("message"))))', _var_type=Callable)
+    )
+    assert (
+        format.format_event(spec)
+        == 'Event("_call_function", {function:(() => ((console["log"]("message"))))})'
+    )
     spec = event.console_log(Var(_js_expr="message"))
-    assert format.format_event(spec) == 'Event("_console", {message:message})'
+    assert (
+        format.format_event(spec)
+        == 'Event("_call_function", {function:(() => ((console["log"](message))))})'
+    )
 
 
 def test_event_window_alert():
     """Test the event window alert function."""
     spec = event.window_alert("message")
     assert isinstance(spec, EventSpec)
-    assert spec.handler.fn.__qualname__ == "_alert"
-    assert spec.args[0][0].equals(Var(_js_expr="message"))
-    assert spec.args[0][1].equals(LiteralVar.create("message"))
-    assert format.format_event(spec) == 'Event("_alert", {message:"message"})'
+    assert spec.handler.fn.__qualname__ == "_call_function"
+    assert spec.args[0][0].equals(Var(_js_expr="function"))
+    assert spec.args[0][1].equals(
+        Var('(() => ((window["alert"]("message"))))', _var_type=Callable)
+    )
+    assert (
+        format.format_event(spec)
+        == 'Event("_call_function", {function:(() => ((window["alert"]("message"))))})'
+    )
     spec = event.window_alert(Var(_js_expr="message"))
-    assert format.format_event(spec) == 'Event("_alert", {message:message})'
+    assert (
+        format.format_event(spec)
+        == 'Event("_call_function", {function:(() => ((window["alert"](message))))})'
+    )
 
 
 def test_set_focus():
