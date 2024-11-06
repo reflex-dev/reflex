@@ -189,7 +189,7 @@ def background_task(
         running AppHarness instance
     """
     with AppHarness.create(
-        root=tmp_path_factory.mktemp(f"background_task"),
+        root=tmp_path_factory.mktemp("background_task"),
         app_source=BackgroundTask,  # type: ignore
     ) as harness:
         yield harness

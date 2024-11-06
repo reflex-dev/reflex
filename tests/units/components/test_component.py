@@ -1217,7 +1217,7 @@ TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "test"}})._replace(
     merge_var_data=TEST_VAR._var_data
 )
 FORMATTED_TEST_VAR_DICT_OF_DICT = LiteralVar.create(
-    {"a": {"b": f"footestbar"}}
+    {"a": {"b": "footestbar"}}
 )._replace(merge_var_data=TEST_VAR._var_data)
 
 TEST_VAR_LIST_OF_LIST = LiteralVar.create([["test"]])._replace(

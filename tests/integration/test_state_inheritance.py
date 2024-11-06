@@ -216,7 +216,7 @@ def state_inheritance(
         running AppHarness instance
     """
     with AppHarness.create(
-        root=tmp_path_factory.mktemp(f"state_inheritance"),
+        root=tmp_path_factory.mktemp("state_inheritance"),
         app_source=StateInheritance,  # type: ignore
     ) as harness:
         yield harness

@@ -74,7 +74,7 @@ async def test_navigation_app(navigation_app: AppHarness):
 
     with poll_for_navigation(driver):
         internal_link.click()
-    assert urlsplit(driver.current_url).path == f"/internal/"
+    assert urlsplit(driver.current_url).path == "/internal/"
     with poll_for_navigation(driver):
         driver.back()
 

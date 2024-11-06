@@ -30,44 +30,44 @@ def copy_script() -> Any:
         Any: The result of calling the script.
     """
     return run_script(
-        f"""
+        """
 // Event listener for the parent click
-document.addEventListener('click', function(event) {{
+document.addEventListener('click', function(event) {
     // Find the closest button (parent element)
     const parent = event.target.closest('button');
     // If the parent is found
-    if (parent) {{
+    if (parent) {
         // Find the SVG element within the parent
         const svgIcon = parent.querySelector('svg');
         // If the SVG exists, proceed with the script
-        if (svgIcon) {{
+        if (svgIcon) {
             const originalPath = svgIcon.innerHTML;
             const checkmarkPath = '<polyline points="20 6 9 17 4 12"></polyline>';  // Checkmark SVG path
-            function transition(element, scale, opacity) {{
-                element.style.transform = `scale(${{scale}})`;
+            function transition(element, scale, opacity) {
+                element.style.transform = `scale(${scale})`;
                 element.style.opacity = opacity;
-            }}
+            }
             // Animate the SVG
             transition(svgIcon, 0, '0');
-            setTimeout(() => {{
+            setTimeout(() => {
                 svgIcon.innerHTML = checkmarkPath;  // Replace content with checkmark
                 svgIcon.setAttribute('viewBox', '0 0 24 24');  // Adjust viewBox if necessary
                 transition(svgIcon, 1, '1');
-                setTimeout(() => {{
+                setTimeout(() => {
                     transition(svgIcon, 0, '0');
-                    setTimeout(() => {{
+                    setTimeout(() => {
                         svgIcon.innerHTML = originalPath;  // Restore original SVG content
                         transition(svgIcon, 1, '1');
-                    }}, 125);
-                }}, 600);
-            }}, 125);
-        }} else {{
+                    }, 125);
+                }, 600);
+            }, 125);
+        } else {
             // console.error('SVG element not found within the parent.');
-        }}
-    }} else {{
+        }
+    } else {
         // console.error('Parent element not found.');
-    }}
-}})
+    }
+})
 """
     )
 
