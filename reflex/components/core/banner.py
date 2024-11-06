@@ -110,7 +110,7 @@ class ConnectionToaster(Toaster):
 
         individual_hooks = [
             f"const toast_props = {str(LiteralVar.create(props))};",
-            f"const [userDismissed, setUserDismissed] = useState(false);",
+            "const [userDismissed, setUserDismissed] = useState(false);",
             FunctionStringVar(
                 "useEffect",
                 _var_data=VarData(

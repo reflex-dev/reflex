@@ -102,7 +102,6 @@ def server_side_event(tmp_path_factory) -> Generator[AppHarness, None, None]:
 def driver(server_side_event: AppHarness):
     """Get an instance of the browser open to the server_side_event app.
 
-
     Args:
         server_side_event: harness for ServerSideEvent app
 

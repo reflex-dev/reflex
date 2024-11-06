@@ -236,7 +236,7 @@ class Theme(RadixThemesComponent):
         tag = super()._render(props)
         tag.add_props(
             css=Var(
-                _js_expr=f"{{...theme.styles.global[':root'], ...theme.styles.global.body}}"
+                _js_expr="{...theme.styles.global[':root'], ...theme.styles.global.body}"
             ),
         )
         return tag

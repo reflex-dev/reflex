@@ -171,7 +171,7 @@ def event_action(tmp_path_factory) -> Generator[AppHarness, None, None]:
         running AppHarness instance
     """
     with AppHarness.create(
-        root=tmp_path_factory.mktemp(f"event_action"),
+        root=tmp_path_factory.mktemp("event_action"),
         app_source=TestEventAction,  # type: ignore
     ) as harness:
         yield harness
