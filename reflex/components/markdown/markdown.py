@@ -76,7 +76,7 @@ def get_base_component_map() -> dict[str, Callable]:
     }
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass()
 class MarkdownComponentMap:
     """Mixin class for handling custom component maps in Markdown components."""
 

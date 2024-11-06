@@ -5,7 +5,7 @@
 # ------------------------------------------------------
 import dataclasses
 from functools import lru_cache
-from typing import Any, Callable, Dict, Optional, Union, overload
+from typing import Any, Callable, Dict, Optional, Sequence, Union, overload
 
 from reflex.components.component import Component
 from reflex.event import BASE_STATE, EventType
@@ -29,7 +29,7 @@ NO_PROPS_TAGS = ("ul", "ol", "li")
 
 @lru_cache
 def get_base_component_map() -> dict[str, Callable]: ...
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass()
 class MarkdownComponentMap:
     @classmethod
     def get_component_map_custom_code(cls) -> str: ...
@@ -37,11 +37,11 @@ class MarkdownComponentMap:
     def create_map_fn_var(
         cls,
         fn_body: Var | None = None,
-        fn_args: tuple[str, ...] | None = None,
+        fn_args: Sequence[str] | None = None,
         explicit_return: bool | None = None,
     ) -> Var: ...
     @classmethod
-    def get_fn_args(cls) -> list[str]: ...
+    def get_fn_args(cls) -> Sequence[str]: ...
     @classmethod
     def get_fn_body(cls) -> Var: ...
 
