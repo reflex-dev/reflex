@@ -17,6 +17,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Sequence,
     Set,
     Type,
     Union,
@@ -38,6 +39,7 @@ from reflex.constants import (
     PageNames,
 )
 from reflex.constants.compiler import SpecialAttributes
+from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.event import (
     EventCallback,
     EventChain,
@@ -533,7 +535,7 @@ class Component(BaseComponent, ABC):
 
     def _create_event_chain(
         self,
-        args_spec: Any,
+        args_spec: types.ArgsSpec | Sequence[types.ArgsSpec],
         value: Union[
             Var,
             EventHandler,
@@ -599,7 +601,7 @@ class Component(BaseComponent, ABC):
 
         # If the input is a callable, create an event chain.
         elif isinstance(value, Callable):
-            result = call_event_fn(value, args_spec)
+            result = call_event_fn(value, args_spec, key=key)
             if isinstance(result, Var):
                 # Recursively call this function if the lambda returned an EventChain Var.
                 return self._create_event_chain(args_spec, result, key=key)
@@ -629,14 +631,16 @@ class Component(BaseComponent, ABC):
                 event_actions={},
             )
 
-    def get_event_triggers(self) -> Dict[str, Any]:
+    def get_event_triggers(
+        self,
+    ) -> Dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]]:
         """Get the event triggers for the component.
 
         Returns:
             The event triggers.
 
         """
-        default_triggers = {
+        default_triggers: Dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
             EventTriggers.ON_FOCUS: no_args_event_spec,
             EventTriggers.ON_BLUR: no_args_event_spec,
             EventTriggers.ON_CLICK: no_args_event_spec,
@@ -1142,7 +1146,10 @@ class Component(BaseComponent, ABC):
                     if isinstance(event, EventCallback):
                         continue
                     if isinstance(event, EventSpec):
-                        if event.handler.state_full_name:
+                        if (
+                            event.handler.state_full_name
+                            and event.handler.state_full_name != FRONTEND_EVENT_STATE
+                        ):
                             return True
                     else:
                         if event._var_state:

@@ -89,16 +89,12 @@ class MatchTypeError(ReflexError, TypeError):
     """Raised when the return types of match cases are different."""
 
 
-class EventHandlerArgMismatch(ReflexError, TypeError):
-    """Raised when the number of args accepted by an EventHandler differs from that provided by the event trigger."""
-
-
 class EventHandlerArgTypeMismatch(ReflexError, TypeError):
     """Raised when the annotations of args accepted by an EventHandler differs from the spec of the event trigger."""
 
 
 class EventFnArgMismatch(ReflexError, TypeError):
-    """Raised when the number of args accepted by a lambda differs from that provided by the event trigger."""
+    """Raised when the number of args required by an event handler is more than provided by the event trigger."""
 
 
 class DynamicRouteArgShadowsStateVar(ReflexError, NameError):
