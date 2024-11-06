@@ -28,8 +28,9 @@ from typing import (
 from typing_extensions import (
     Concatenate,
     ParamSpec,
-    Protocol, TypedDict,
+    Protocol,
     TypeAliasType,
+    TypedDict,
     TypeVar,
     get_args,
     get_origin,
