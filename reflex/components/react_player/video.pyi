@@ -7,10 +7,7 @@ from typing import Any, Dict, Optional, Union, overload
 
 import reflex
 from reflex.components.react_player.react_player import ReactPlayer
-from reflex.event import (
-    BASE_STATE,
-    EventType,
-)
+from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 

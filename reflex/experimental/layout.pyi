@@ -10,10 +10,7 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
 from reflex.components.radix.primitives.drawer import DrawerRoot
 from reflex.components.radix.themes.layout.box import Box
-from reflex.event import (
-    BASE_STATE,
-    EventType,
-)
+from reflex.event import BASE_STATE, EventType
 from reflex.state import ComponentState
 from reflex.style import Style
 from reflex.vars.base import Var

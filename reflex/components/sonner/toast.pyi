@@ -9,11 +9,7 @@ from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
 from reflex.components.props import NoExtrasAllowedProps, PropsBase
-from reflex.event import (
-    BASE_STATE,
-    EventSpec,
-    EventType,
-)
+from reflex.event import BASE_STATE, EventSpec, EventType
 from reflex.style import Style
 from reflex.utils.serializers import serializer
 from reflex.vars.base import Var

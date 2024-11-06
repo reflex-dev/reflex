@@ -27,9 +27,7 @@ from reflex.event import (
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
-from reflex.utils.exceptions import (
-    EventFnArgMismatch,
-)
+from reflex.utils.exceptions import EventFnArgMismatch
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var

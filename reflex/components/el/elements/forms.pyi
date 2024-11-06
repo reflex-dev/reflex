@@ -8,11 +8,7 @@ from typing import Any, Dict, Optional, Tuple, Union, overload
 from jinja2 import Environment
 
 from reflex.components.el.element import Element
-from reflex.event import (
-    BASE_STATE,
-    EventType,
-    KeyInputInfo,
-)
+from reflex.event import BASE_STATE, EventType, KeyInputInfo
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var

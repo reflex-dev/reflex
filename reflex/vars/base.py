@@ -38,13 +38,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import (
-    ParamSpec,
-    TypeGuard,
-    deprecated,
-    get_type_hints,
-    override,
-)
+from typing_extensions import ParamSpec, TypeGuard, deprecated, get_type_hints, override
 
 from reflex import constants
 from reflex.base import Base
@@ -75,10 +69,7 @@ from reflex.utils.types import (
 if TYPE_CHECKING:
     from reflex.state import BaseState
 
-    from .number import (
-        BooleanVar,
-        NumberVar,
-    )
+    from .number import BooleanVar, NumberVar
     from .object import ObjectVar
     from .sequence import ArrayVar, StringVar
 

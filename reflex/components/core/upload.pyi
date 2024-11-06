@@ -6,18 +6,9 @@
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional, Union, overload
 
-from reflex.components.component import (
-    Component,
-    ComponentNamespace,
-    MemoizationLeaf,
-)
+from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
 from reflex.constants import Dirs
-from reflex.event import (
-    BASE_STATE,
-    CallableEventSpec,
-    EventSpec,
-    EventType,
-)
+from reflex.event import BASE_STATE, CallableEventSpec, EventSpec, EventType
 from reflex.style import Style
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData

@@ -8,10 +8,7 @@ from typing import Any, ClassVar, Dict, Literal, Optional, Union, overload
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.constants.colors import Color
-from reflex.event import (
-    BASE_STATE,
-    EventType,
-)
+from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var

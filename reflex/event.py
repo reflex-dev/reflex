@@ -39,16 +39,10 @@ from typing_extensions import (
 from reflex import constants
 from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import console, format
-from reflex.utils.exceptions import (
-    EventFnArgMismatch,
-    EventHandlerArgTypeMismatch,
-)
+from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgTypeMismatch
 from reflex.utils.types import ArgsSpec, GenericType, typehint_issubclass
 from reflex.vars import VarData
-from reflex.vars.base import (
-    LiteralVar,
-    Var,
-)
+from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import (
     ArgsFunctionOperation,
     FunctionStringVar,

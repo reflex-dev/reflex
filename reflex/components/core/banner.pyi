@@ -10,10 +10,7 @@ from reflex.components.el.elements.typography import Div
 from reflex.components.lucide.icon import Icon
 from reflex.components.sonner.toast import Toaster, ToastProps
 from reflex.constants.compiler import CompileVars
-from reflex.event import (
-    BASE_STATE,
-    EventType,
-)
+from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData

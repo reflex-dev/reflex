@@ -8,10 +8,7 @@ from typing import Any, Dict, Optional, Union, overload
 from typing_extensions import TypedDict
 
 from reflex.components.component import NoSSRComponent
-from reflex.event import (
-    BASE_STATE,
-    EventType,
-)
+from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
