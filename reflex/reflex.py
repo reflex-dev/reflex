@@ -569,7 +569,12 @@ def deploy(
 
     hosting_cli.deploy(
         app_name=app_name,
-        export_fn=lambda zip_dest_dir, api_url, deploy_url, frontend, backend, zipping: export_utils.export(
+        export_fn=lambda zip_dest_dir,
+        api_url,
+        deploy_url,
+        frontend,
+        backend,
+        zipping: export_utils.export(
             zip_dest_dir=zip_dest_dir,
             api_url=api_url,
             deploy_url=deploy_url,
@@ -592,7 +597,6 @@ def deploy(
         with_tracing=with_tracing,
         loglevel=loglevel.subprocess_level(),
     )
-
 
 @cli.command()
 def deployv2(
@@ -691,7 +695,6 @@ def deployv2(
         token=token,
         project=project,
     )
-
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
 cli.add_typer(script_cli, name="script", help="Subcommands running helper scripts.")
