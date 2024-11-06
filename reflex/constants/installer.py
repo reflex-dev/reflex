@@ -77,7 +77,7 @@ class Bun(SimpleNamespace):
 
     DEFAULT_CONFIG = """
 [install]
-registry = {registry}
+registry = "{registry}"
 """
 
 
