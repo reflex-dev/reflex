@@ -19,14 +19,17 @@ from reflex.constants import EventTriggers
 from reflex.event import (
     EventChain,
     EventHandler,
-    empty_event,
     input_event,
+    no_args_event_spec,
     parse_args_spec,
+    passthrough_event_spec,
 )
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
-from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgMismatch
+from reflex.utils.exceptions import (
+    EventFnArgMismatch,
+)
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -41,6 +44,18 @@ def test_state():
             pass
 
         def do_something_arg(self, arg):
+            pass
+
+        def do_something_with_bool(self, arg: bool):
+            pass
+
+        def do_something_with_int(self, arg: int):
+            pass
+
+        def do_something_with_list_int(self, arg: list[int]):
+            pass
+
+        def do_something_with_list_str(self, arg: list[str]):
             pass
 
     return TestState
@@ -95,8 +110,10 @@ def component2() -> Type[Component]:
             """
             return {
                 **super().get_event_triggers(),
-                "on_open": lambda e0: [e0],
-                "on_close": lambda e0: [e0],
+                "on_open": passthrough_event_spec(bool),
+                "on_close": passthrough_event_spec(bool),
+                "on_user_visited_count_changed": passthrough_event_spec(int),
+                "on_user_list_changed": passthrough_event_spec(List[str]),
             }
 
         def _get_imports(self) -> ParsedImportDict:
@@ -582,7 +599,14 @@ def test_get_event_triggers(component1, component2):
     assert component1().get_event_triggers().keys() == default_triggers
     assert (
         component2().get_event_triggers().keys()
-        == {"on_open", "on_close", "on_prop_event"} | default_triggers
+        == {
+            "on_open",
+            "on_close",
+            "on_prop_event",
+            "on_user_visited_count_changed",
+            "on_user_list_changed",
+        }
+        | default_triggers
     )
 
 
@@ -882,26 +906,30 @@ def test_invalid_event_handler_args(component2, test_state):
         test_state: A test state.
     """
     # EventHandler args must match
-    with pytest.raises(EventHandlerArgMismatch):
+    with pytest.raises(EventFnArgMismatch):
         component2.create(on_click=test_state.do_something_arg)
-    with pytest.raises(EventHandlerArgMismatch):
-        component2.create(on_open=test_state.do_something)
-    with pytest.raises(EventHandlerArgMismatch):
-        component2.create(on_prop_event=test_state.do_something)
 
     # Multiple EventHandler args: all must match
-    with pytest.raises(EventHandlerArgMismatch):
+    with pytest.raises(EventFnArgMismatch):
         component2.create(
             on_click=[test_state.do_something_arg, test_state.do_something]
         )
-    with pytest.raises(EventHandlerArgMismatch):
-        component2.create(
-            on_open=[test_state.do_something_arg, test_state.do_something]
-        )
-    with pytest.raises(EventHandlerArgMismatch):
-        component2.create(
-            on_prop_event=[test_state.do_something_arg, test_state.do_something]
-        )
+
+    # Enable when 0.7.0 happens
+    # # Event Handler types must match
+    # with pytest.raises(EventHandlerArgTypeMismatch):
+    #     component2.create(
+    #         on_user_visited_count_changed=test_state.do_something_with_bool
+    #     )
+    # with pytest.raises(EventHandlerArgTypeMismatch):
+    #     component2.create(on_user_list_changed=test_state.do_something_with_int)
+    # with pytest.raises(EventHandlerArgTypeMismatch):
+    #     component2.create(on_user_list_changed=test_state.do_something_with_list_int)
+
+    # component2.create(on_open=test_state.do_something_with_int)
+    # component2.create(on_open=test_state.do_something_with_bool)
+    # component2.create(on_user_visited_count_changed=test_state.do_something_with_int)
+    # component2.create(on_user_list_changed=test_state.do_something_with_list_str)
 
     # lambda cannot return weird values.
     with pytest.raises(ValueError):
@@ -916,36 +944,17 @@ def test_invalid_event_handler_args(component2, test_state):
     # lambda signature must match event trigger.
     with pytest.raises(EventFnArgMismatch):
         component2.create(on_click=lambda _: test_state.do_something_arg(1))
-    with pytest.raises(EventFnArgMismatch):
-        component2.create(on_open=lambda: test_state.do_something)
-    with pytest.raises(EventFnArgMismatch):
-        component2.create(on_prop_event=lambda: test_state.do_something)
 
     # lambda returning EventHandler must match spec
-    with pytest.raises(EventHandlerArgMismatch):
+    with pytest.raises(EventFnArgMismatch):
         component2.create(on_click=lambda: test_state.do_something_arg)
-    with pytest.raises(EventHandlerArgMismatch):
-        component2.create(on_open=lambda _: test_state.do_something)
-    with pytest.raises(EventHandlerArgMismatch):
-        component2.create(on_prop_event=lambda _: test_state.do_something)
 
     # Mixed EventSpec and EventHandler must match spec.
-    with pytest.raises(EventHandlerArgMismatch):
+    with pytest.raises(EventFnArgMismatch):
         component2.create(
             on_click=lambda: [
                 test_state.do_something_arg(1),
                 test_state.do_something_arg,
-            ]
-        )
-    with pytest.raises(EventHandlerArgMismatch):
-        component2.create(
-            on_open=lambda _: [test_state.do_something_arg(1), test_state.do_something]
-        )
-    with pytest.raises(EventHandlerArgMismatch):
-        component2.create(
-            on_prop_event=lambda _: [
-                test_state.do_something_arg(1),
-                test_state.do_something,
             ]
         )
 
@@ -961,6 +970,10 @@ def test_valid_event_handler_args(component2, test_state):
     component2.create(on_click=test_state.do_something)
     component2.create(on_click=test_state.do_something_arg(1))
 
+    # Does not raise because event handlers are allowed to have less args than the spec.
+    component2.create(on_open=test_state.do_something)
+    component2.create(on_prop_event=test_state.do_something)
+
     # Controlled event handlers should take args.
     component2.create(on_open=test_state.do_something_arg)
     component2.create(on_prop_event=test_state.do_something_arg)
@@ -969,10 +982,20 @@ def test_valid_event_handler_args(component2, test_state):
     component2.create(on_open=test_state.do_something())
     component2.create(on_prop_event=test_state.do_something())
 
+    # Multiple EventHandler args: all must match
+    component2.create(on_open=[test_state.do_something_arg, test_state.do_something])
+    component2.create(
+        on_prop_event=[test_state.do_something_arg, test_state.do_something]
+    )
+
     # lambda returning EventHandler is okay if the spec matches.
     component2.create(on_click=lambda: test_state.do_something)
     component2.create(on_open=lambda _: test_state.do_something_arg)
     component2.create(on_prop_event=lambda _: test_state.do_something_arg)
+    component2.create(on_open=lambda: test_state.do_something)
+    component2.create(on_prop_event=lambda: test_state.do_something)
+    component2.create(on_open=lambda _: test_state.do_something)
+    component2.create(on_prop_event=lambda _: test_state.do_something)
 
     # lambda can always return an EventSpec.
     component2.create(on_click=lambda: test_state.do_something_arg(1))
@@ -1004,6 +1027,15 @@ def test_valid_event_handler_args(component2, test_state):
     )
     component2.create(
         on_prop_event=lambda _: [test_state.do_something_arg, test_state.do_something()]
+    )
+    component2.create(
+        on_open=lambda _: [test_state.do_something_arg(1), test_state.do_something]
+    )
+    component2.create(
+        on_prop_event=lambda _: [
+            test_state.do_something_arg(1),
+            test_state.do_something,
+        ]
     )
 
 
@@ -1176,7 +1208,7 @@ TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "test"}})._replace(
     merge_var_data=TEST_VAR._var_data
 )
 FORMATTED_TEST_VAR_DICT_OF_DICT = LiteralVar.create(
-    {"a": {"b": f"footestbar"}}
+    {"a": {"b": "footestbar"}}
 )._replace(merge_var_data=TEST_VAR._var_data)
 
 TEST_VAR_LIST_OF_LIST = LiteralVar.create([["test"]])._replace(
@@ -1780,8 +1812,8 @@ def test_custom_component_declare_event_handlers_in_fields():
     class TestComponent(Component):
         on_a: EventHandler[lambda e0: [e0]]
         on_b: EventHandler[input_event]
-        on_c: EventHandler[empty_event]
-        on_d: EventHandler[empty_event]
+        on_c: EventHandler[no_args_event_spec]
+        on_d: EventHandler[no_args_event_spec]
         on_e: EventHandler
         on_f: EventHandler[lambda a, b, c: [c, b, a]]
 

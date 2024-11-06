@@ -12,7 +12,6 @@ import inspect
 import io
 import json
 import multiprocessing
-import os
 import platform
 import sys
 import traceback
@@ -25,6 +24,7 @@ from typing import (
     Callable,
     Coroutine,
     Dict,
+    Generic,
     List,
     Optional,
     Set,
@@ -70,6 +70,7 @@ from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
 from reflex.config import environment, get_config
 from reflex.event import (
+    BASE_STATE,
     Event,
     EventHandler,
     EventSpec,
@@ -96,7 +97,7 @@ from reflex.state import (
     code_uses_state_contexts,
 )
 from reflex.utils import codespaces, console, exceptions, format, prerequisites, types
-from reflex.utils.exec import is_prod_mode, is_testing_env, should_skip_compile
+from reflex.utils.exec import is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
 
 if TYPE_CHECKING:
@@ -187,7 +188,7 @@ class OverlayFragment(Fragment):
 @dataclasses.dataclass(
     frozen=True,
 )
-class UnevaluatedPage:
+class UnevaluatedPage(Generic[BASE_STATE]):
     """An uncompiled page."""
 
     component: Union[Component, ComponentCallable]
@@ -195,7 +196,7 @@ class UnevaluatedPage:
     title: Union[Var, str, None]
     description: Union[Var, str, None]
     image: str
-    on_load: Union[EventType[[]], None]
+    on_load: Union[EventType[[], BASE_STATE], None]
     meta: List[Dict[str, str]]
 
 
@@ -270,7 +271,7 @@ class App(MiddlewareMixin, LifespanMixin):
     _state_manager: Optional[StateManager] = None
 
     # Mapping from a route to event handlers to trigger when the page loads. PRIVATE.
-    load_events: Dict[str, List[IndividualEventType[[]]]] = dataclasses.field(
+    load_events: Dict[str, List[IndividualEventType[[], Any]]] = dataclasses.field(
         default_factory=dict
     )
 
@@ -475,7 +476,7 @@ class App(MiddlewareMixin, LifespanMixin):
         title: str | Var | None = None,
         description: str | Var | None = None,
         image: str = constants.DefaultPage.IMAGE,
-        on_load: EventType[[]] | None = None,
+        on_load: EventType[[], BASE_STATE] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
     ):
         """Add a page to the app.
@@ -507,7 +508,7 @@ class App(MiddlewareMixin, LifespanMixin):
         # Check if the route given is valid
         verify_route_validity(route)
 
-        if route in self.unevaluated_pages and os.getenv(constants.RELOAD_CONFIG):
+        if route in self.unevaluated_pages and environment.RELOAD_CONFIG.is_set():
             # when the app is reloaded(typically for app harness tests), we should maintain
             # the latest render function of a route.This applies typically to decorated pages
             # since they are only added when app._compile is called.
@@ -561,7 +562,7 @@ class App(MiddlewareMixin, LifespanMixin):
         self._check_routes_conflict(route)
         self.pages[route] = component
 
-    def get_load_events(self, route: str) -> list[IndividualEventType[[]]]:
+    def get_load_events(self, route: str) -> list[IndividualEventType[[], Any]]:
         """Get the load events for a route.
 
         Args:
@@ -620,7 +621,7 @@ class App(MiddlewareMixin, LifespanMixin):
         title: str = constants.Page404.TITLE,
         image: str = constants.Page404.IMAGE,
         description: str = constants.Page404.DESCRIPTION,
-        on_load: EventType[[]] | None = None,
+        on_load: EventType[[], BASE_STATE] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
     ):
         """Define a custom 404 page for any url having no match.
@@ -724,7 +725,7 @@ class App(MiddlewareMixin, LifespanMixin):
             Whether the app should be compiled.
         """
         # Check the environment variable.
-        if should_skip_compile():
+        if environment.REFLEX_SKIP_COMPILE.get():
             return False
 
         nocompile = prerequisites.get_web_dir() / constants.NOCOMPILE_FILE
@@ -947,7 +948,7 @@ class App(MiddlewareMixin, LifespanMixin):
         executor = None
         if (
             platform.system() in ("Linux", "Darwin")
-            and (number_of_processes := environment.REFLEX_COMPILE_PROCESSES)
+            and (number_of_processes := environment.REFLEX_COMPILE_PROCESSES.get())
             is not None
         ):
             executor = concurrent.futures.ProcessPoolExecutor(
@@ -956,7 +957,7 @@ class App(MiddlewareMixin, LifespanMixin):
             )
         else:
             executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=environment.REFLEX_COMPILE_THREADS
+                max_workers=environment.REFLEX_COMPILE_THREADS.get()
             )
 
         for route, component in zip(self.pages, page_components):

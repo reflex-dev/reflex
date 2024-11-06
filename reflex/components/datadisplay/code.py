@@ -391,7 +391,7 @@ class CodeBlock(Component):
     theme: Var[Union[Theme, str]] = Theme.one_light
 
     # The language to use.
-    language: Var[LiteralCodeLanguage] = "python"  # type: ignore
+    language: Var[LiteralCodeLanguage] = Var.create("python")
 
     # The code to display.
     code: Var[str]
@@ -410,6 +410,12 @@ class CodeBlock(Component):
 
     # Props passed down to the code tag.
     code_tag_props: Var[Dict[str, str]]
+
+    # Whether a copy button should appear.
+    can_copy: Optional[bool] = False
+
+    # A custom copy button to override the default one.
+    copy_button: Optional[Union[bool, Component]] = None
 
     def add_imports(self) -> ImportDict:
         """Add imports for the CodeBlock component.
@@ -448,16 +454,12 @@ class CodeBlock(Component):
     def create(
         cls,
         *children,
-        can_copy: Optional[bool] = False,
-        copy_button: Optional[Union[bool, Component]] = None,
         **props,
     ):
         """Create a text component.
 
         Args:
             *children: The children of the component.
-            can_copy: Whether a copy button should appears.
-            copy_button: A custom copy button to override the default one.
             **props: The props to pass to the component.
 
         Returns:
@@ -465,6 +467,8 @@ class CodeBlock(Component):
         """
         # This component handles style in a special prop.
         custom_style = props.pop("custom_style", {})
+        can_copy = props.pop("can_copy", False)
+        copy_button = props.pop("copy_button", None)
 
         if "theme" not in props:
             # Default color scheme responds to global color mode.
@@ -535,6 +539,9 @@ class CodeBlock(Component):
         )
 
         return out
+
+    def _exclude_props(self) -> list[str]:
+        return ["can_copy", "copy_button"]
 
 
 class CodeblockNamespace(ComponentNamespace):

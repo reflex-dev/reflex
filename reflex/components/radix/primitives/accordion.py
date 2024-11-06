@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Literal, Optional, Tuple, Union
+from typing import Any, List, Literal, Tuple, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
@@ -193,6 +193,11 @@ class AccordionItem(AccordionComponent):
     # When true, prevents the user from interacting with the item.
     disabled: Var[bool]
 
+    # The header of the accordion item.
+    header: Var[Union[Component, str]]
+    # The content of the accordion item.
+    content: Var[Union[Component, str]] = Var.create(None)
+
     _valid_children: List[str] = [
         "AccordionHeader",
         "AccordionTrigger",
@@ -205,21 +210,20 @@ class AccordionItem(AccordionComponent):
     def create(
         cls,
         *children,
-        header: Optional[Component | Var] = None,
-        content: Optional[Component | Var] = None,
         **props,
     ) -> Component:
         """Create an accordion item.
 
         Args:
             *children: The list of children to use if header and content are not provided.
-            header: The header of the accordion item.
-            content: The content of the accordion item.
             **props: Additional properties to apply to the accordion item.
 
         Returns:
             The accordion item.
         """
+        header = props.pop("header", None)
+        content = props.pop("content", None)
+
         # The item requires a value to toggle (use a random unique name if not provided).
         value = props.pop("value", get_uuid_string_var())
 
@@ -290,6 +294,9 @@ class AccordionItem(AccordionComponent):
                 "border_bottom": divider_style,
             },
         }
+
+    def _exclude_props(self) -> list[str]:
+        return ["header", "content"]
 
 
 class AccordionHeader(AccordionComponent):
@@ -375,7 +382,7 @@ class AccordionTrigger(AccordionComponent):
                 "background_color": color("accent", 4),
             },
             "& > .AccordionChevron": {
-                "transition": f"transform var(--animation-duration) var(--animation-easing)",
+                "transition": "transform var(--animation-duration) var(--animation-easing)",
             },
             _inherited_variant_selector("classic"): {
                 "color": "var(--accent-contrast)",
@@ -478,11 +485,11 @@ to {
             The style of the component.
         """
         slideDown = LiteralVar.create(
-            f"${{slideDown}} var(--animation-duration) var(--animation-easing)",
+            "${slideDown} var(--animation-duration) var(--animation-easing)",
         )
 
         slideUp = LiteralVar.create(
-            f"${{slideUp}} var(--animation-duration) var(--animation-easing)",
+            "${slideUp} var(--animation-duration) var(--animation-easing)",
         )
 
         return {

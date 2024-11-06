@@ -1,4 +1,4 @@
-from typing import List
+from typing import Callable, List
 
 import pytest
 
@@ -107,7 +107,7 @@ def test_call_event_handler_partial():
     def spec(a2: Var[str]) -> List[Var[str]]:
         return [a2]
 
-    handler = EventHandler(fn=test_fn_with_args)
+    handler = EventHandler(fn=test_fn_with_args, state_full_name="BigState")
     event_spec = handler(make_var("first"))
     event_spec2 = call_event_handler(event_spec, spec)
 
@@ -115,7 +115,10 @@ def test_call_event_handler_partial():
     assert len(event_spec.args) == 1
     assert event_spec.args[0][0].equals(Var(_js_expr="arg1"))
     assert event_spec.args[0][1].equals(Var(_js_expr="first"))
-    assert format.format_event(event_spec) == 'Event("test_fn_with_args", {arg1:first})'
+    assert (
+        format.format_event(event_spec)
+        == 'Event("BigState.test_fn_with_args", {arg1:first})'
+    )
 
     assert event_spec2 is not event_spec
     assert event_spec2.handler == handler
@@ -126,7 +129,7 @@ def test_call_event_handler_partial():
     assert event_spec2.args[1][1].equals(Var(_js_expr="_a2", _var_type=str))
     assert (
         format.format_event(event_spec2)
-        == 'Event("test_fn_with_args", {arg1:first,arg2:_a2})'
+        == 'Event("BigState.test_fn_with_args", {arg1:first,arg2:_a2})'
     )
 
 
@@ -216,24 +219,40 @@ def test_event_console_log():
     """Test the event console log function."""
     spec = event.console_log("message")
     assert isinstance(spec, EventSpec)
-    assert spec.handler.fn.__qualname__ == "_console"
-    assert spec.args[0][0].equals(Var(_js_expr="message"))
-    assert spec.args[0][1].equals(LiteralVar.create("message"))
-    assert format.format_event(spec) == 'Event("_console", {message:"message"})'
+    assert spec.handler.fn.__qualname__ == "_call_function"
+    assert spec.args[0][0].equals(Var(_js_expr="function"))
+    assert spec.args[0][1].equals(
+        Var('(() => ((console["log"]("message"))))', _var_type=Callable)
+    )
+    assert (
+        format.format_event(spec)
+        == 'Event("_call_function", {function:(() => ((console["log"]("message"))))})'
+    )
     spec = event.console_log(Var(_js_expr="message"))
-    assert format.format_event(spec) == 'Event("_console", {message:message})'
+    assert (
+        format.format_event(spec)
+        == 'Event("_call_function", {function:(() => ((console["log"](message))))})'
+    )
 
 
 def test_event_window_alert():
     """Test the event window alert function."""
     spec = event.window_alert("message")
     assert isinstance(spec, EventSpec)
-    assert spec.handler.fn.__qualname__ == "_alert"
-    assert spec.args[0][0].equals(Var(_js_expr="message"))
-    assert spec.args[0][1].equals(LiteralVar.create("message"))
-    assert format.format_event(spec) == 'Event("_alert", {message:"message"})'
+    assert spec.handler.fn.__qualname__ == "_call_function"
+    assert spec.args[0][0].equals(Var(_js_expr="function"))
+    assert spec.args[0][1].equals(
+        Var('(() => ((window["alert"]("message"))))', _var_type=Callable)
+    )
+    assert (
+        format.format_event(spec)
+        == 'Event("_call_function", {function:(() => ((window["alert"]("message"))))})'
+    )
     spec = event.window_alert(Var(_js_expr="message"))
-    assert format.format_event(spec) == 'Event("_alert", {message:message})'
+    assert (
+        format.format_event(spec)
+        == 'Event("_call_function", {function:(() => ((window["alert"](message))))})'
+    )
 
 
 def test_set_focus():

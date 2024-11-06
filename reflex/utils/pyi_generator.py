@@ -16,7 +16,7 @@ from itertools import chain
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
-from typing import Any, Callable, Iterable, Type, get_args, get_origin
+from typing import Any, Callable, Iterable, Sequence, Type, get_args, get_origin
 
 from reflex.components.component import Component
 from reflex.utils import types as rx_types
@@ -70,7 +70,13 @@ DEFAULT_TYPING_IMPORTS = {
 DEFAULT_IMPORTS = {
     "typing": sorted(DEFAULT_TYPING_IMPORTS),
     "reflex.components.core.breakpoints": ["Breakpoints"],
-    "reflex.event": ["EventChain", "EventHandler", "EventSpec", "EventType"],
+    "reflex.event": [
+        "EventChain",
+        "EventHandler",
+        "EventSpec",
+        "EventType",
+        "BASE_STATE",
+    ],
     "reflex.style": ["Style"],
     "reflex.vars.base": ["Var"],
 }
@@ -490,7 +496,7 @@ def _generate_component_create_functiondef(
 
     def figure_out_return_type(annotation: Any):
         if inspect.isclass(annotation) and issubclass(annotation, inspect._empty):
-            return ast.Name(id="Optional[EventType]")
+            return ast.Name(id="EventType[..., BASE_STATE]")
 
         if not isinstance(annotation, str) and get_origin(annotation) is tuple:
             arguments = get_args(annotation)
@@ -507,22 +513,13 @@ def _generate_component_create_functiondef(
             args_str = ", ".join(ast.unparse(arg) for arg in type_args)
 
             # Create EventType using the joined string
-            event_type = ast.Name(id=f"EventType[{args_str}]")
-
-            # Wrap in Optional
-            optional_type = ast.Subscript(
-                value=ast.Name(id="Optional"),
-                slice=ast.Index(value=event_type),
-                ctx=ast.Load(),
-            )
-
-            return ast.Name(id=ast.unparse(optional_type))
+            return ast.Name(id=f"EventType[[{args_str}], BASE_STATE]")
 
         if isinstance(annotation, str) and annotation.startswith("Tuple["):
             inside_of_tuple = annotation.removeprefix("Tuple[").removesuffix("]")
 
             if inside_of_tuple == "()":
-                return ast.Name(id="Optional[EventType[[]]]")
+                return ast.Name(id="EventType[[], BASE_STATE]")
 
             arguments = [""]
 
@@ -549,9 +546,9 @@ def _generate_component_create_functiondef(
             ]
 
             return ast.Name(
-                id=f"Optional[EventType[{', '.join(arguments_without_var)}]]"
+                id=f"EventType[[{', '.join(arguments_without_var)}], BASE_STATE]"
             )
-        return ast.Name(id="Optional[EventType]")
+        return ast.Name(id="EventType[..., BASE_STATE]")
 
     event_triggers = clz().get_event_triggers()
 
@@ -560,8 +557,33 @@ def _generate_component_create_functiondef(
         (
             ast.arg(
                 arg=trigger,
-                annotation=figure_out_return_type(
-                    inspect.signature(event_triggers[trigger]).return_annotation
+                annotation=ast.Subscript(
+                    ast.Name("Optional"),
+                    ast.Index(  # type: ignore
+                        value=ast.Name(
+                            id=ast.unparse(
+                                figure_out_return_type(
+                                    inspect.signature(event_specs).return_annotation
+                                )
+                                if not isinstance(
+                                    event_specs := event_triggers[trigger], Sequence
+                                )
+                                else ast.Subscript(
+                                    ast.Name("Union"),
+                                    ast.Tuple(
+                                        [
+                                            figure_out_return_type(
+                                                inspect.signature(
+                                                    event_spec
+                                                ).return_annotation
+                                            )
+                                            for event_spec in event_specs
+                                        ]
+                                    ),
+                                )
+                            )
+                        )
+                    ),
                 ),
             ),
             ast.Constant(value=None),

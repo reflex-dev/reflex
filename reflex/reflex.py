@@ -160,7 +160,7 @@ def _run(
     console.set_log_level(loglevel)
 
     # Set env mode in the environment
-    os.environ[constants.ENV_MODE_ENV_VAR] = env.value
+    environment.REFLEX_ENV_MODE.set(env)
 
     # Show system info
     exec.output_system_info()
@@ -277,13 +277,13 @@ def run(
         False,
         "--frontend-only",
         help="Execute only frontend.",
-        envvar=constants.ENV_FRONTEND_ONLY_ENV_VAR,
+        envvar=environment.REFLEX_FRONTEND_ONLY.name,
     ),
     backend: bool = typer.Option(
         False,
         "--backend-only",
         help="Execute only backend.",
-        envvar=constants.ENV_BACKEND_ONLY_ENV_VAR,
+        envvar=environment.REFLEX_BACKEND_ONLY.name,
     ),
     frontend_port: str = typer.Option(
         config.frontend_port, help="Specify a different frontend port."
@@ -302,8 +302,8 @@ def run(
     if frontend and backend:
         console.error("Cannot use both --frontend-only and --backend-only options.")
         raise typer.Exit(1)
-    os.environ[constants.ENV_BACKEND_ONLY_ENV_VAR] = str(backend).lower()
-    os.environ[constants.ENV_FRONTEND_ONLY_ENV_VAR] = str(frontend).lower()
+    environment.REFLEX_BACKEND_ONLY.set(backend)
+    environment.REFLEX_FRONTEND_ONLY.set(frontend)
 
     _run(env, frontend, backend, frontend_port, backend_port, backend_host, loglevel)
 
@@ -363,7 +363,7 @@ def _login() -> str:
     access_token = hosting.authenticate_on_browser(invitation_code)
 
     if not access_token:
-        console.error(f"Unable to authenticate. Please try again or contact support.")
+        console.error("Unable to authenticate. Please try again or contact support.")
         raise typer.Exit(1)
 
     console.print("Successfully logged in.")
@@ -405,7 +405,7 @@ script_cli = typer.Typer()
 
 def _skip_compile():
     """Skip the compile step."""
-    os.environ[constants.SKIP_COMPILE_ENV_VAR] = "yes"
+    environment.REFLEX_SKIP_COMPILE.set(True)
 
 
 @db_cli.command(name="init")
@@ -420,7 +420,7 @@ def db_init():
         return
 
     # Check the alembic config.
-    if environment.ALEMBIC_CONFIG.exists():
+    if environment.ALEMBIC_CONFIG.get().exists():
         console.error(
             "Database is already initialized. Use "
             "[bold]reflex db makemigrations[/bold] to create schema change "

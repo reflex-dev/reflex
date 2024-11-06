@@ -184,7 +184,7 @@ def should_use_granian():
     Returns:
         True if Granian should be used.
     """
-    return environment.REFLEX_USE_GRANIAN
+    return environment.REFLEX_USE_GRANIAN.get()
 
 
 def get_app_module():
@@ -369,7 +369,9 @@ def run_uvicorn_backend_prod(host, port, loglevel):
         command,
         run=True,
         show_logs=True,
-        env={constants.SKIP_COMPILE_ENV_VAR: "yes"},  # skip compile for prod backend
+        env={
+            environment.REFLEX_SKIP_COMPILE.name: "true"
+        },  # skip compile for prod backend
     )
 
 
@@ -405,7 +407,7 @@ def run_granian_backend_prod(host, port, loglevel):
             run=True,
             show_logs=True,
             env={
-                constants.SKIP_COMPILE_ENV_VAR: "yes"
+                environment.REFLEX_SKIP_COMPILE.name: "true"
             },  # skip compile for prod backend
         )
     except ImportError:
@@ -427,7 +429,7 @@ def output_system_info():
     except Exception:
         config_file = None
 
-    console.rule(f"System Info")
+    console.rule("System Info")
     console.debug(f"Config file: {config_file!r}")
     console.debug(f"Config: {config}")
 
@@ -467,9 +469,11 @@ def output_system_info():
         console.debug(f"{dep}")
 
     console.debug(
-        f"Using package installer at: {prerequisites.get_install_package_manager()}"  # type: ignore
+        f"Using package installer at: {prerequisites.get_install_package_manager(on_failure_return_none=True)}"  # type: ignore
     )
-    console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")  # type: ignore
+    console.debug(
+        f"Using package executer at: {prerequisites.get_package_manager(on_failure_return_none=True)}"
+    )  # type: ignore
     if system != "Windows":
         console.debug(f"Unzip path: {path_ops.which('unzip')}")
 
@@ -489,11 +493,8 @@ def is_prod_mode() -> bool:
     Returns:
         True if the app is running in production mode or False if running in dev mode.
     """
-    current_mode = os.environ.get(
-        constants.ENV_MODE_ENV_VAR,
-        constants.Env.DEV.value,
-    )
-    return current_mode == constants.Env.PROD.value
+    current_mode = environment.REFLEX_ENV_MODE.get()
+    return current_mode == constants.Env.PROD
 
 
 def is_frontend_only() -> bool:
@@ -502,7 +503,13 @@ def is_frontend_only() -> bool:
     Returns:
         True if the app is running in frontend-only mode.
     """
-    return os.environ.get(constants.ENV_FRONTEND_ONLY_ENV_VAR, "").lower() == "true"
+    console.deprecate(
+        "is_frontend_only() is deprecated and will be removed in a future release.",
+        reason="Use `environment.REFLEX_FRONTEND_ONLY.get()` instead.",
+        deprecation_version="0.6.5",
+        removal_version="0.7.0",
+    )
+    return environment.REFLEX_FRONTEND_ONLY.get()
 
 
 def is_backend_only() -> bool:
@@ -511,7 +518,13 @@ def is_backend_only() -> bool:
     Returns:
         True if the app is running in backend-only mode.
     """
-    return os.environ.get(constants.ENV_BACKEND_ONLY_ENV_VAR, "").lower() == "true"
+    console.deprecate(
+        "is_backend_only() is deprecated and will be removed in a future release.",
+        reason="Use `environment.REFLEX_BACKEND_ONLY.get()` instead.",
+        deprecation_version="0.6.5",
+        removal_version="0.7.0",
+    )
+    return environment.REFLEX_BACKEND_ONLY.get()
 
 
 def should_skip_compile() -> bool:
@@ -520,4 +533,10 @@ def should_skip_compile() -> bool:
     Returns:
         True if the app should skip compile.
     """
-    return os.environ.get(constants.SKIP_COMPILE_ENV_VAR) == "yes"
+    console.deprecate(
+        "should_skip_compile() is deprecated and will be removed in a future release.",
+        reason="Use `environment.REFLEX_SKIP_COMPILE.get()` instead.",
+        deprecation_version="0.6.5",
+        removal_version="0.7.0",
+    )
+    return environment.REFLEX_SKIP_COMPILE.get()
