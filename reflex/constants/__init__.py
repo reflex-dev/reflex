@@ -2,6 +2,8 @@
 
 from .base import (
     COOKIES,
+    IS_LINUX,
+    IS_MACOS,
     IS_WINDOWS,
     LOCAL_STORAGE,
     POLLING_MAX_HTTP_BUFFER_SIZE,

@@ -13,6 +13,8 @@ from platformdirs import PlatformDirs
 from .utils import classproperty
 
 IS_WINDOWS = platform.system() == "Windows"
+IS_MACOS = platform.system() == "Darwin"
+IS_LINUX = platform.system() == "Linux"
 
 
 class Dirs(SimpleNamespace):

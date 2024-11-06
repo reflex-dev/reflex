@@ -35,7 +35,10 @@ from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, environment, get_config
 from reflex.utils import console, net, path_ops, processes
-from reflex.utils.exceptions import GeneratedCodeHasNoFunctionDefs
+from reflex.utils.exceptions import (
+    GeneratedCodeHasNoFunctionDefs,
+    raise_system_package_missing_error,
+)
 from reflex.utils.format import format_library_name
 from reflex.utils.registry import _get_npm_registry
 
@@ -595,6 +598,8 @@ def initialize_web_directory():
 
     initialize_package_json()
 
+    initialize_bun_config()
+
     path_ops.mkdir(get_web_dir() / constants.Dirs.PUBLIC)
 
     update_next_config()
@@ -619,17 +624,21 @@ def _compile_package_json():
 def initialize_package_json():
     """Render and write in .web the package.json file."""
     output_path = get_web_dir() / constants.PackageJson.PATH
-    code = _compile_package_json()
-    output_path.write_text(code)
+    output_path.write_text(_compile_package_json())
 
-    best_registry = _get_npm_registry()
+
+def initialize_bun_config():
+    """Initialize the bun config file."""
     bun_config_path = get_web_dir() / constants.Bun.CONFIG_PATH
-    bun_config_path.write_text(
-        f"""
-[install]
-registry = "{best_registry}"
-"""
-    )
+
+    if (custom_bunfig := Path(constants.Bun.CONFIG_PATH)).exists():
+        bunfig_content = custom_bunfig.read_text()
+        console.info(f"Copying custom bunfig.toml inside {get_web_dir()} folder")
+    else:
+        best_registry = _get_npm_registry()
+        bunfig_content = constants.Bun.DEFAULT_CONFIG.format(registry=best_registry)
+
+    bun_config_path.write_text(bunfig_content)
 
 
 def init_reflex_json(project_hash: int | None):
@@ -820,11 +829,7 @@ def install_node():
 
 
 def install_bun():
-    """Install bun onto the user's system.
-
-    Raises:
-        FileNotFoundError: If required packages are not found.
-    """
+    """Install bun onto the user's system."""
     win_supported = is_windows_bun_supported()
     one_drive_in_path = windows_check_onedrive_in_path()
     if constants.IS_WINDOWS and not win_supported or one_drive_in_path:
@@ -863,7 +868,7 @@ def install_bun():
     else:
         unzip_path = path_ops.which("unzip")
         if unzip_path is None:
-            raise FileNotFoundError("Reflex requires unzip to be installed.")
+            raise_system_package_missing_error("unzip")
 
         # Run the bun install script.
         download_and_run(

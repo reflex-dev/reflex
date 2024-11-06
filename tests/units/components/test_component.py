@@ -29,7 +29,6 @@ from reflex.style import Style
 from reflex.utils import imports
 from reflex.utils.exceptions import (
     EventFnArgMismatch,
-    EventHandlerArgMismatch,
 )
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import VarData
@@ -907,25 +906,13 @@ def test_invalid_event_handler_args(component2, test_state):
         test_state: A test state.
     """
     # EventHandler args must match
-    with pytest.raises(EventHandlerArgMismatch):
+    with pytest.raises(EventFnArgMismatch):
         component2.create(on_click=test_state.do_something_arg)
-    with pytest.raises(EventHandlerArgMismatch):
-        component2.create(on_open=test_state.do_something)
-    with pytest.raises(EventHandlerArgMismatch):
-        component2.create(on_prop_event=test_state.do_something)
 
     # Multiple EventHandler args: all must match
-    with pytest.raises(EventHandlerArgMismatch):
+    with pytest.raises(EventFnArgMismatch):
         component2.create(
             on_click=[test_state.do_something_arg, test_state.do_something]
-        )
-    with pytest.raises(EventHandlerArgMismatch):
-        component2.create(
-            on_open=[test_state.do_something_arg, test_state.do_something]
-        )
-    with pytest.raises(EventHandlerArgMismatch):
-        component2.create(
-            on_prop_event=[test_state.do_something_arg, test_state.do_something]
         )
 
     # Enable when 0.7.0 happens
@@ -957,36 +944,17 @@ def test_invalid_event_handler_args(component2, test_state):
     # lambda signature must match event trigger.
     with pytest.raises(EventFnArgMismatch):
         component2.create(on_click=lambda _: test_state.do_something_arg(1))
-    with pytest.raises(EventFnArgMismatch):
-        component2.create(on_open=lambda: test_state.do_something)
-    with pytest.raises(EventFnArgMismatch):
-        component2.create(on_prop_event=lambda: test_state.do_something)
 
     # lambda returning EventHandler must match spec
-    with pytest.raises(EventHandlerArgMismatch):
+    with pytest.raises(EventFnArgMismatch):
         component2.create(on_click=lambda: test_state.do_something_arg)
-    with pytest.raises(EventHandlerArgMismatch):
-        component2.create(on_open=lambda _: test_state.do_something)
-    with pytest.raises(EventHandlerArgMismatch):
-        component2.create(on_prop_event=lambda _: test_state.do_something)
 
     # Mixed EventSpec and EventHandler must match spec.
-    with pytest.raises(EventHandlerArgMismatch):
+    with pytest.raises(EventFnArgMismatch):
         component2.create(
             on_click=lambda: [
                 test_state.do_something_arg(1),
                 test_state.do_something_arg,
-            ]
-        )
-    with pytest.raises(EventHandlerArgMismatch):
-        component2.create(
-            on_open=lambda _: [test_state.do_something_arg(1), test_state.do_something]
-        )
-    with pytest.raises(EventHandlerArgMismatch):
-        component2.create(
-            on_prop_event=lambda _: [
-                test_state.do_something_arg(1),
-                test_state.do_something,
             ]
         )
 
@@ -1002,6 +970,10 @@ def test_valid_event_handler_args(component2, test_state):
     component2.create(on_click=test_state.do_something)
     component2.create(on_click=test_state.do_something_arg(1))
 
+    # Does not raise because event handlers are allowed to have less args than the spec.
+    component2.create(on_open=test_state.do_something)
+    component2.create(on_prop_event=test_state.do_something)
+
     # Controlled event handlers should take args.
     component2.create(on_open=test_state.do_something_arg)
     component2.create(on_prop_event=test_state.do_something_arg)
@@ -1010,10 +982,20 @@ def test_valid_event_handler_args(component2, test_state):
     component2.create(on_open=test_state.do_something())
     component2.create(on_prop_event=test_state.do_something())
 
+    # Multiple EventHandler args: all must match
+    component2.create(on_open=[test_state.do_something_arg, test_state.do_something])
+    component2.create(
+        on_prop_event=[test_state.do_something_arg, test_state.do_something]
+    )
+
     # lambda returning EventHandler is okay if the spec matches.
     component2.create(on_click=lambda: test_state.do_something)
     component2.create(on_open=lambda _: test_state.do_something_arg)
     component2.create(on_prop_event=lambda _: test_state.do_something_arg)
+    component2.create(on_open=lambda: test_state.do_something)
+    component2.create(on_prop_event=lambda: test_state.do_something)
+    component2.create(on_open=lambda _: test_state.do_something)
+    component2.create(on_prop_event=lambda _: test_state.do_something)
 
     # lambda can always return an EventSpec.
     component2.create(on_click=lambda: test_state.do_something_arg(1))
@@ -1045,6 +1027,15 @@ def test_valid_event_handler_args(component2, test_state):
     )
     component2.create(
         on_prop_event=lambda _: [test_state.do_something_arg, test_state.do_something()]
+    )
+    component2.create(
+        on_open=lambda _: [test_state.do_something_arg(1), test_state.do_something]
+    )
+    component2.create(
+        on_prop_event=lambda _: [
+            test_state.do_something_arg(1),
+            test_state.do_something,
+        ]
     )
 
 

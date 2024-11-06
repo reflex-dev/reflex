@@ -107,7 +107,7 @@ def test_call_event_handler_partial():
     def spec(a2: Var[str]) -> List[Var[str]]:
         return [a2]
 
-    handler = EventHandler(fn=test_fn_with_args)
+    handler = EventHandler(fn=test_fn_with_args, state_full_name="BigState")
     event_spec = handler(make_var("first"))
     event_spec2 = call_event_handler(event_spec, spec)
 
@@ -115,7 +115,10 @@ def test_call_event_handler_partial():
     assert len(event_spec.args) == 1
     assert event_spec.args[0][0].equals(Var(_js_expr="arg1"))
     assert event_spec.args[0][1].equals(Var(_js_expr="first"))
-    assert format.format_event(event_spec) == 'Event("test_fn_with_args", {arg1:first})'
+    assert (
+        format.format_event(event_spec)
+        == 'Event("BigState.test_fn_with_args", {arg1:first})'
+    )
 
     assert event_spec2 is not event_spec
     assert event_spec2.handler == handler
@@ -126,7 +129,7 @@ def test_call_event_handler_partial():
     assert event_spec2.args[1][1].equals(Var(_js_expr="_a2", _var_type=str))
     assert (
         format.format_event(event_spec2)
-        == 'Event("test_fn_with_args", {arg1:first,arg2:_a2})'
+        == 'Event("BigState.test_fn_with_args", {arg1:first,arg2:_a2})'
     )
 
 
