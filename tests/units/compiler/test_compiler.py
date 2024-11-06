@@ -119,7 +119,47 @@ def test_compile_stylesheets(tmp_path: Path, mocker):
     assets_dir = project / "assets"
     assets_dir.mkdir()
 
-    assets_preprocess_dir = project / "assets" / "preprocess"
+    (assets_dir / "styles.css").write_text(
+        "button.rt-Button {\n\tborder-radius:unset !important;\n}"
+    )
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+
+    stylesheets = [
+        "https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple",
+        "https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css",
+        "/styles.css",
+        "https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css",
+    ]
+
+    assert compiler.compile_root_stylesheet(stylesheets) == (
+        str(Path(".web") / "styles" / "styles.css"),
+        f"@import url('./tailwind.css'); \n"
+        f"@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
+        f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
+        f"@import url('./styles.css'); \n"
+        f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
+    )
+
+    assert (project / ".web" / "styles" / "styles.css").read_text() == (
+        assets_dir / "styles.css"
+    ).read_text()
+
+
+def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
+    try:
+        import sass  # noqa: F401
+    except ImportError:
+        pytest.skip(
+            """The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`."""
+        )
+
+    project = tmp_path / "test_project"
+    project.mkdir()
+
+    assets_dir = project / "assets"
+    assets_dir.mkdir()
+
+    assets_preprocess_dir = assets_dir / "preprocess"
     assets_preprocess_dir.mkdir()
 
     (assets_dir / "styles.css").write_text(
@@ -134,30 +174,24 @@ def test_compile_stylesheets(tmp_path: Path, mocker):
     mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
 
     stylesheets = [
-        "https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple",
-        "https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css",
         "/styles.css",
         "/preprocess/styles_a.sass",
         "/preprocess/styles_b.scss",
-        "https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css",
     ]
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
         str(Path(".web") / "styles" / "styles.css"),
         f"@import url('./tailwind.css'); \n"
-        f"@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
-        f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
         f"@import url('./styles.css'); \n"
         f"@import url('./preprocess/styles_a.css'); \n"
-        f"@import url('./preprocess/styles_b.css'); \n"
-        f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
+        f"@import url('./preprocess/styles_b.css'); \n",
     )
 
-    # NOTE: the css file is also inserted into the s(a|c)ss preprocessor, which compressed the result, which means we don't have the tab, return,... characters.
-    expected_result = "button.rt-Button{border-radius:unset !important}\n"
     assert (project / ".web" / "styles" / "styles.css").read_text() == (
         assets_dir / "styles.css"
     ).read_text()
+
+    expected_result = "button.rt-Button{border-radius:unset !important}\n"
     assert (
         project / ".web" / "styles" / "preprocess" / "styles_a.css"
     ).read_text() == expected_result
