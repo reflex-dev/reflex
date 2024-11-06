@@ -598,7 +598,6 @@ class EnvironmentVariables:
         default_factory=lambda: (
             EnvironmentVariables.REFLEX_ENV_MODE.get() == constants.Env.PROD
         )
-        or False
     )
 
 
