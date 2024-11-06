@@ -8,7 +8,10 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union, overload
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
-from reflex.event import BASE_STATE, EventType
+from reflex.event import (
+    BASE_STATE,
+    EventType,
+)
 from reflex.style import Style
 from reflex.vars.base import Var
 

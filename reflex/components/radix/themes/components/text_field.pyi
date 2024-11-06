@@ -8,7 +8,11 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.el import elements
-from reflex.event import BASE_STATE, EventType
+from reflex.event import (
+    BASE_STATE,
+    EventType,
+    KeyInputInfo,
+)
 from reflex.style import Style
 from reflex.vars.base import Var
 
@@ -155,8 +159,8 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
         on_double_click: Optional[EventType[[], BASE_STATE]] = None,
         on_focus: Optional[EventType[[str], BASE_STATE]] = None,
-        on_key_down: Optional[EventType[[str], BASE_STATE]] = None,
-        on_key_up: Optional[EventType[[str], BASE_STATE]] = None,
+        on_key_down: Optional[EventType[[str, KeyInputInfo], BASE_STATE]] = None,
+        on_key_up: Optional[EventType[[str, KeyInputInfo], BASE_STATE]] = None,
         on_mount: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
@@ -472,8 +476,8 @@ class TextField(ComponentNamespace):
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
         on_double_click: Optional[EventType[[], BASE_STATE]] = None,
         on_focus: Optional[EventType[[str], BASE_STATE]] = None,
-        on_key_down: Optional[EventType[[str], BASE_STATE]] = None,
-        on_key_up: Optional[EventType[[str], BASE_STATE]] = None,
+        on_key_down: Optional[EventType[[str, KeyInputInfo], BASE_STATE]] = None,
+        on_key_up: Optional[EventType[[str, KeyInputInfo], BASE_STATE]] = None,
         on_mount: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,

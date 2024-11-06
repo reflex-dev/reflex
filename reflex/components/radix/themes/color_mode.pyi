@@ -10,7 +10,10 @@ from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.core.cond import Cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.switch import Switch
-from reflex.event import BASE_STATE, EventType
+from reflex.event import (
+    BASE_STATE,
+    EventType,
+)
 from reflex.style import (
     Style,
     color_mode,

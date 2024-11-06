@@ -8,7 +8,11 @@ from typing import Any, Dict, Optional, Tuple, Union, overload
 from jinja2 import Environment
 
 from reflex.components.el.element import Element
-from reflex.event import BASE_STATE, EventType
+from reflex.event import (
+    BASE_STATE,
+    EventType,
+    KeyInputInfo,
+)
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var
@@ -476,8 +480,8 @@ class Input(BaseHTML):
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
         on_double_click: Optional[EventType[[], BASE_STATE]] = None,
         on_focus: Optional[EventType[[str], BASE_STATE]] = None,
-        on_key_down: Optional[EventType[[str], BASE_STATE]] = None,
-        on_key_up: Optional[EventType[[str], BASE_STATE]] = None,
+        on_key_down: Optional[EventType[[str, KeyInputInfo], BASE_STATE]] = None,
+        on_key_up: Optional[EventType[[str, KeyInputInfo], BASE_STATE]] = None,
         on_mount: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
@@ -1375,8 +1379,8 @@ class Textarea(BaseHTML):
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
         on_double_click: Optional[EventType[[], BASE_STATE]] = None,
         on_focus: Optional[EventType[[str], BASE_STATE]] = None,
-        on_key_down: Optional[EventType[[str], BASE_STATE]] = None,
-        on_key_up: Optional[EventType[[str], BASE_STATE]] = None,
+        on_key_down: Optional[EventType[[str, KeyInputInfo], BASE_STATE]] = None,
+        on_key_up: Optional[EventType[[str, KeyInputInfo], BASE_STATE]] = None,
         on_mount: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,

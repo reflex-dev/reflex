@@ -7,7 +7,10 @@ from functools import lru_cache
 from typing import Any, Callable, Dict, Optional, Union, overload
 
 from reflex.components.component import Component
-from reflex.event import BASE_STATE, EventType
+from reflex.event import (
+    BASE_STATE,
+    EventType,
+)
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.vars.base import LiteralVar, Var

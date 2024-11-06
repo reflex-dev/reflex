@@ -7,7 +7,10 @@ from types import SimpleNamespace
 from typing import Any, Dict, List, Literal, Optional, Union, overload
 
 from reflex.components.core.breakpoints import Breakpoints
-from reflex.event import BASE_STATE, EventType
+from reflex.event import (
+    BASE_STATE,
+    EventType,
+)
 from reflex.style import Style
 from reflex.vars.base import Var
 

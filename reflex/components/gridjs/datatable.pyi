@@ -6,7 +6,10 @@
 from typing import Any, Dict, List, Optional, Union, overload
 
 from reflex.components.component import Component
-from reflex.event import BASE_STATE, EventType
+from reflex.event import (
+    BASE_STATE,
+    EventType,
+)
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var

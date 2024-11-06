@@ -10,7 +10,10 @@ from typing_extensions import TypedDict
 
 from reflex.base import Base
 from reflex.components.component import NoSSRComponent
-from reflex.event import BASE_STATE, EventType
+from reflex.event import (
+    BASE_STATE,
+    EventType,
+)
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.utils.serializers import serializer

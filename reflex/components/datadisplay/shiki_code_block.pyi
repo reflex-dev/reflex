@@ -8,7 +8,10 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.props import NoExtrasAllowedProps
-from reflex.event import BASE_STATE, EventType
+from reflex.event import (
+    BASE_STATE,
+    EventType,
+)
 from reflex.style import Style
 from reflex.vars.base import Var
 from reflex.vars.function import FunctionStringVar

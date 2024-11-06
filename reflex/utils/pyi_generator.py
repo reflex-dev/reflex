@@ -76,6 +76,7 @@ DEFAULT_IMPORTS = {
         "EventSpec",
         "EventType",
         "BASE_STATE",
+        "KeyInputInfo",
     ],
     "reflex.style": ["Style"],
     "reflex.vars.base": ["Var"],

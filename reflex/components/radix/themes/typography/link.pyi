@@ -9,7 +9,10 @@ from reflex.components.component import MemoizationLeaf
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.el.elements.inline import A
 from reflex.components.next.link import NextLink
-from reflex.event import BASE_STATE, EventType
+from reflex.event import (
+    BASE_STATE,
+    EventType,
+)
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var
