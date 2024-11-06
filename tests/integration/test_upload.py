@@ -359,8 +359,8 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
     substate_token = f"{token}_{state_full_name}"
 
     upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[1]
-    upload_button = driver.find_element(By.ID, f"upload_button_secondary")
-    cancel_button = driver.find_element(By.ID, f"cancel_button_secondary")
+    upload_button = driver.find_element(By.ID, "upload_button_secondary")
+    cancel_button = driver.find_element(By.ID, "cancel_button_secondary")
 
     exp_name = "large.txt"
     target_file = tmp_path / exp_name

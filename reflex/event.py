@@ -10,6 +10,7 @@ import urllib.parse
 from base64 import b64encode
 from functools import partial
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -19,19 +20,26 @@ from typing import (
     Sequence,
     Tuple,
     Type,
-    TypeVar,
     Union,
     get_type_hints,
     overload,
 )
 
-from typing_extensions import ParamSpec, Protocol, get_args, get_origin
+from typing_extensions import (
+    Concatenate,
+    ParamSpec,
+    Protocol,
+    TypeAliasType,
+    TypeVar,
+    get_args,
+    get_origin,
+)
 
 from reflex import constants
+from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import console, format
 from reflex.utils.exceptions import (
     EventFnArgMismatch,
-    EventHandlerArgMismatch,
     EventHandlerArgTypeMismatch,
 )
 from reflex.utils.types import ArgsSpec, GenericType, typehint_issubclass
@@ -662,7 +670,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     fn.__qualname__ = name
     fn.__signature__ = sig
     return EventSpec(
-        handler=EventHandler(fn=fn),
+        handler=EventHandler(fn=fn, state_full_name=FRONTEND_EVENT_STATE),
         args=tuple(
             (
                 Var(_js_expr=k),
@@ -1092,8 +1100,8 @@ def get_hydrate_event(state) -> str:
 
 
 def call_event_handler(
-    event_handler: EventHandler | EventSpec,
-    arg_spec: ArgsSpec | Sequence[ArgsSpec],
+    event_callback: EventHandler | EventSpec,
+    event_spec: ArgsSpec | Sequence[ArgsSpec],
     key: Optional[str] = None,
 ) -> EventSpec:
     """Call an event handler to get the event spec.
@@ -1103,12 +1111,9 @@ def call_event_handler(
     Otherwise, the event handler will be called with no args.
 
     Args:
-        event_handler: The event handler.
-        arg_spec: The lambda that define the argument(s) to pass to the event handler.
+        event_callback: The event handler.
+        event_spec: The lambda that define the argument(s) to pass to the event handler.
         key: The key to pass to the event handler.
-
-    Raises:
-        EventHandlerArgMismatch: if number of arguments expected by event_handler doesn't match the spec.
 
     Returns:
         The event spec from calling the event handler.
@@ -1116,39 +1121,46 @@ def call_event_handler(
     # noqa: DAR401 failure
 
     """
-    parsed_args = parse_args_spec(arg_spec)  # type: ignore
+    event_spec_args = parse_args_spec(event_spec)  # type: ignore
 
-    if isinstance(event_handler, EventSpec):
-        # Handle partial application of EventSpec args
-        return event_handler.add_args(*parsed_args)
-
-    provided_callback_fullspec = inspect.getfullargspec(event_handler.fn)
-
-    provided_callback_n_args = (
-        len(provided_callback_fullspec.args) - 1
-    )  # subtract 1 for bound self arg
-
-    if provided_callback_n_args != len(parsed_args):
-        raise EventHandlerArgMismatch(
-            "The number of arguments accepted by "
-            f"{event_handler.fn.__qualname__} ({provided_callback_n_args}) "
-            "does not match the arguments passed by the event trigger: "
-            f"{[str(v) for v in parsed_args]}\n"
-            "See https://reflex.dev/docs/events/event-arguments/"
+    if isinstance(event_callback, EventSpec):
+        check_fn_match_arg_spec(
+            event_callback.handler.fn,
+            event_spec,
+            key,
+            bool(event_callback.handler.state_full_name) + len(event_callback.args),
+            event_callback.handler.fn.__qualname__,
         )
+        # Handle partial application of EventSpec args
+        return event_callback.add_args(*event_spec_args)
 
-    all_arg_spec = [arg_spec] if not isinstance(arg_spec, Sequence) else arg_spec
+    check_fn_match_arg_spec(
+        event_callback.fn,
+        event_spec,
+        key,
+        bool(event_callback.state_full_name),
+        event_callback.fn.__qualname__,
+    )
+
+    all_acceptable_specs = (
+        [event_spec] if not isinstance(event_spec, Sequence) else event_spec
+    )
 
     event_spec_return_types = list(
         filter(
             lambda event_spec_return_type: event_spec_return_type is not None
             and get_origin(event_spec_return_type) is tuple,
-            (get_type_hints(arg_spec).get("return", None) for arg_spec in all_arg_spec),
+            (
+                get_type_hints(arg_spec).get("return", None)
+                for arg_spec in all_acceptable_specs
+            ),
         )
     )
 
     if event_spec_return_types:
         failures = []
+
+        event_callback_spec = inspect.getfullargspec(event_callback.fn)
 
         for event_spec_index, event_spec_return_type in enumerate(
             event_spec_return_types
@@ -1160,14 +1172,14 @@ def call_event_handler(
             ]
 
             try:
-                type_hints_of_provided_callback = get_type_hints(event_handler.fn)
+                type_hints_of_provided_callback = get_type_hints(event_callback.fn)
             except NameError:
                 type_hints_of_provided_callback = {}
 
             failed_type_check = False
 
             # check that args of event handler are matching the spec if type hints are provided
-            for i, arg in enumerate(provided_callback_fullspec.args[1:]):
+            for i, arg in enumerate(event_callback_spec.args[1:]):
                 if arg not in type_hints_of_provided_callback:
                     continue
 
@@ -1181,7 +1193,7 @@ def call_event_handler(
                     #     f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_handler.fn.__qualname__} provided for {key}."
                     # ) from e
                     console.warn(
-                        f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_handler.fn.__qualname__} provided for {key}."
+                        f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_callback.fn.__qualname__} provided for {key}."
                     )
                     compare_result = False
 
@@ -1189,7 +1201,7 @@ def call_event_handler(
                     continue
                 else:
                     failure = EventHandlerArgTypeMismatch(
-                        f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {type_hints_of_provided_callback[arg]} as annotated in {event_handler.fn.__qualname__} instead."
+                        f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {type_hints_of_provided_callback[arg]} as annotated in {event_callback.fn.__qualname__} instead."
                     )
                     failures.append(failure)
                     failed_type_check = True
@@ -1210,14 +1222,14 @@ def call_event_handler(
 
                     given_string = ", ".join(
                         repr(type_hints_of_provided_callback.get(arg, Any))
-                        for arg in provided_callback_fullspec.args[1:]
+                        for arg in event_callback_spec.args[1:]
                     ).replace("[", "\\[")
 
                     console.warn(
-                        f"Event handler {key} expects ({expect_string}) -> () but got ({given_string}) -> () as annotated in {event_handler.fn.__qualname__} instead. "
+                        f"Event handler {key} expects ({expect_string}) -> () but got ({given_string}) -> () as annotated in {event_callback.fn.__qualname__} instead. "
                         f"This may lead to unexpected behavior but is intentionally ignored for {key}."
                     )
-                return event_handler(*parsed_args)
+                return event_callback(*event_spec_args)
 
         if failures:
             console.deprecate(
@@ -1227,7 +1239,7 @@ def call_event_handler(
                 "0.7.0",
             )
 
-    return event_handler(*parsed_args)  # type: ignore
+    return event_callback(*event_spec_args)  # type: ignore
 
 
 def unwrap_var_annotation(annotation: GenericType):
@@ -1294,45 +1306,46 @@ def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
 
 
 def check_fn_match_arg_spec(
-    fn: Callable,
-    arg_spec: ArgsSpec,
-    key: Optional[str] = None,
-) -> List[Var]:
+    user_func: Callable,
+    arg_spec: ArgsSpec | Sequence[ArgsSpec],
+    key: str | None = None,
+    number_of_bound_args: int = 0,
+    func_name: str | None = None,
+):
     """Ensures that the function signature matches the passed argument specification
     or raises an EventFnArgMismatch if they do not.
 
     Args:
-        fn: The function to be validated.
+        user_func: The function to be validated.
         arg_spec: The argument specification for the event trigger.
-        key: The key to pass to the event handler.
-
-    Returns:
-        The parsed arguments from the argument specification.
+        key: The key of the event trigger.
+        number_of_bound_args: The number of bound arguments to the function.
+        func_name: The name of the function to be validated.
 
     Raises:
         EventFnArgMismatch: Raised if the number of mandatory arguments do not match
     """
-    fn_args = inspect.getfullargspec(fn).args
-    fn_defaults_args = inspect.getfullargspec(fn).defaults
-    n_fn_args = len(fn_args)
-    n_fn_defaults_args = len(fn_defaults_args) if fn_defaults_args else 0
-    if isinstance(fn, types.MethodType):
-        n_fn_args -= 1  # subtract 1 for bound self arg
-    parsed_args = parse_args_spec(arg_spec)
-    if not (n_fn_args - n_fn_defaults_args <= len(parsed_args) <= n_fn_args):
+    user_args = inspect.getfullargspec(user_func).args
+    user_default_args = inspect.getfullargspec(user_func).defaults
+    number_of_user_args = len(user_args) - number_of_bound_args
+    number_of_user_default_args = len(user_default_args) if user_default_args else 0
+
+    parsed_event_args = parse_args_spec(arg_spec)
+
+    number_of_event_args = len(parsed_event_args)
+
+    if number_of_user_args - number_of_user_default_args > number_of_event_args:
         raise EventFnArgMismatch(
-            "The number of mandatory arguments accepted by "
-            f"{fn} ({n_fn_args - n_fn_defaults_args}) "
-            "does not match the arguments passed by the event trigger: "
-            f"{[str(v) for v in parsed_args]}\n"
+            f"Event {key} only provides {number_of_event_args} arguments, but "
+            f"{func_name or user_func} requires at least {number_of_user_args - number_of_user_default_args} "
+            "arguments to be passed to the event handler.\n"
             "See https://reflex.dev/docs/events/event-arguments/"
         )
-    return parsed_args
 
 
 def call_event_fn(
     fn: Callable,
-    arg_spec: ArgsSpec,
+    arg_spec: ArgsSpec | Sequence[ArgsSpec],
     key: Optional[str] = None,
 ) -> list[EventSpec] | Var:
     """Call a function to a list of event specs.
@@ -1356,10 +1369,14 @@ def call_event_fn(
     from reflex.utils.exceptions import EventHandlerValueError
 
     # Check that fn signature matches arg_spec
-    parsed_args = check_fn_match_arg_spec(fn, arg_spec, key=key)
+    check_fn_match_arg_spec(fn, arg_spec, key=key)
+
+    parsed_args = parse_args_spec(arg_spec)
+
+    number_of_fn_args = len(inspect.getfullargspec(fn).args)
 
     # Call the function with the parsed args.
-    out = fn(*parsed_args)
+    out = fn(*[*parsed_args][:number_of_fn_args])
 
     # If the function returns a Var, assume it's an EventChain and render it directly.
     if isinstance(out, Var):
@@ -1478,7 +1495,7 @@ def get_fn_signature(fn: Callable) -> inspect.Signature:
     """
     signature = inspect.signature(fn)
     new_param = inspect.Parameter(
-        "state", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Any
+        FRONTEND_EVENT_STATE, inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Any
     )
     return signature.replace(parameters=(new_param, *signature.parameters.values()))
 
@@ -1629,122 +1646,132 @@ V5 = TypeVar("V5")
 
 background_event_decorator = background
 
-if sys.version_info >= (3, 10):
-    from typing import Concatenate
 
-    class EventCallback(Generic[P, T]):
-        """A descriptor that wraps a function to be used as an event."""
+class EventCallback(Generic[P, T]):
+    """A descriptor that wraps a function to be used as an event."""
 
-        def __init__(self, func: Callable[Concatenate[Any, P], T]):
-            """Initialize the descriptor with the function to be wrapped.
+    def __init__(self, func: Callable[Concatenate[Any, P], T]):
+        """Initialize the descriptor with the function to be wrapped.
 
-            Args:
-                func: The function to be wrapped.
-            """
-            self.func = func
+        Args:
+            func: The function to be wrapped.
+        """
+        self.func = func
 
-        @property
-        def prevent_default(self):
-            """Prevent default behavior.
+    @property
+    def prevent_default(self):
+        """Prevent default behavior.
 
-            Returns:
-                The event callback with prevent default behavior.
-            """
-            return self
+        Returns:
+            The event callback with prevent default behavior.
+        """
+        return self
 
-        @property
-        def stop_propagation(self):
-            """Stop event propagation.
+    @property
+    def stop_propagation(self):
+        """Stop event propagation.
 
-            Returns:
-                The event callback with stop propagation behavior.
-            """
-            return self
+        Returns:
+            The event callback with stop propagation behavior.
+        """
+        return self
 
-        @overload
-        def __call__(
-            self: EventCallback[Q, T],
-        ) -> EventCallback[Q, T]: ...
+    @overload
+    def __call__(
+        self: EventCallback[Q, T],
+    ) -> EventCallback[Q, T]: ...
 
-        @overload
-        def __call__(
-            self: EventCallback[Concatenate[V, Q], T], value: V | Var[V]
-        ) -> EventCallback[Q, T]: ...
+    @overload
+    def __call__(
+        self: EventCallback[Concatenate[V, Q], T], value: V | Var[V]
+    ) -> EventCallback[Q, T]: ...
 
-        @overload
-        def __call__(
-            self: EventCallback[Concatenate[V, V2, Q], T],
-            value: V | Var[V],
-            value2: V2 | Var[V2],
-        ) -> EventCallback[Q, T]: ...
+    @overload
+    def __call__(
+        self: EventCallback[Concatenate[V, V2, Q], T],
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+    ) -> EventCallback[Q, T]: ...
 
-        @overload
-        def __call__(
-            self: EventCallback[Concatenate[V, V2, V3, Q], T],
-            value: V | Var[V],
-            value2: V2 | Var[V2],
-            value3: V3 | Var[V3],
-        ) -> EventCallback[Q, T]: ...
+    @overload
+    def __call__(
+        self: EventCallback[Concatenate[V, V2, V3, Q], T],
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+    ) -> EventCallback[Q, T]: ...
 
-        @overload
-        def __call__(
-            self: EventCallback[Concatenate[V, V2, V3, V4, Q], T],
-            value: V | Var[V],
-            value2: V2 | Var[V2],
-            value3: V3 | Var[V3],
-            value4: V4 | Var[V4],
-        ) -> EventCallback[Q, T]: ...
+    @overload
+    def __call__(
+        self: EventCallback[Concatenate[V, V2, V3, V4, Q], T],
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+    ) -> EventCallback[Q, T]: ...
 
-        def __call__(self, *values) -> EventCallback:  # type: ignore
-            """Call the function with the values.
+    def __call__(self, *values) -> EventCallback:  # type: ignore
+        """Call the function with the values.
 
-            Args:
-                *values: The values to call the function with.
+        Args:
+            *values: The values to call the function with.
 
-            Returns:
-                The function with the values.
-            """
-            return self.func(*values)  # type: ignore
+        Returns:
+            The function with the values.
+        """
+        return self.func(*values)  # type: ignore
 
-        @overload
-        def __get__(
-            self: EventCallback[P, T], instance: None, owner
-        ) -> EventCallback[P, T]: ...
+    @overload
+    def __get__(
+        self: EventCallback[P, T], instance: None, owner
+    ) -> EventCallback[P, T]: ...
 
-        @overload
-        def __get__(self, instance, owner) -> Callable[P, T]: ...
+    @overload
+    def __get__(self, instance, owner) -> Callable[P, T]: ...
 
-        def __get__(self, instance, owner) -> Callable:  # type: ignore
-            """Get the function with the instance bound to it.
+    def __get__(self, instance, owner) -> Callable:  # type: ignore
+        """Get the function with the instance bound to it.
 
-            Args:
-                instance: The instance to bind to the function.
-                owner: The owner of the function.
+        Args:
+            instance: The instance to bind to the function.
+            owner: The owner of the function.
 
-            Returns:
-                The function with the instance bound to it
-            """
-            if instance is None:
-                return self.func  # type: ignore
+        Returns:
+            The function with the instance bound to it
+        """
+        if instance is None:
+            return self.func  # type: ignore
 
-            return partial(self.func, instance)  # type: ignore
-
-
-else:
-
-    class EventCallback(Generic[P, T]):
-        """A descriptor that wraps a function to be used as an event."""
+        return partial(self.func, instance)  # type: ignore
 
 
 G = ParamSpec("G")
 
+if TYPE_CHECKING:
+    from reflex.state import BaseState
+
+    BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
+else:
+    BASE_STATE = TypeVar("BASE_STATE")
+
+StateCallable = TypeAliasType(
+    "StateCallable",
+    Callable[Concatenate[BASE_STATE, G], Any],
+    type_params=(G, BASE_STATE),
+)
+
 IndividualEventType = Union[
-    EventSpec, EventHandler, Callable[G, Any], EventCallback[G, Any], Var[Any]
+    EventSpec,
+    EventHandler,
+    Callable[G, Any],
+    StateCallable[G, BASE_STATE],
+    EventCallback[G, Any],
+    Var[Any],
 ]
 
 ItemOrList = Union[V, List[V]]
 
-EventType = ItemOrList[IndividualEventType[G]]
+EventType = ItemOrList[IndividualEventType[G, BASE_STATE]]
 
 
 class EventNamespace(types.SimpleNamespace):
@@ -1762,90 +1789,49 @@ class EventNamespace(types.SimpleNamespace):
     EventType = EventType
     EventCallback = EventCallback
 
-    if sys.version_info >= (3, 10):
+    @overload
+    @staticmethod
+    def __call__(
+        func: None = None, *, background: bool | None = None
+    ) -> Callable[[Callable[Concatenate[BASE_STATE, P], T]], EventCallback[P, T]]: ...
 
-        @overload
-        @staticmethod
-        def __call__(
-            func: None = None, *, background: bool | None = None
-        ) -> Callable[[Callable[Concatenate[Any, P], T]], EventCallback[P, T]]: ...
+    @overload
+    @staticmethod
+    def __call__(
+        func: Callable[Concatenate[BASE_STATE, P], T],
+        *,
+        background: bool | None = None,
+    ) -> EventCallback[P, T]: ...
 
-        @overload
-        @staticmethod
-        def __call__(
-            func: Callable[Concatenate[Any, P], T],
-            *,
-            background: bool | None = None,
-        ) -> EventCallback[P, T]: ...
+    @staticmethod
+    def __call__(
+        func: Callable[Concatenate[BASE_STATE, P], T] | None = None,
+        *,
+        background: bool | None = None,
+    ) -> Union[
+        EventCallback[P, T],
+        Callable[[Callable[Concatenate[BASE_STATE, P], T]], EventCallback[P, T]],
+    ]:
+        """Wrap a function to be used as an event.
 
-        @staticmethod
-        def __call__(
-            func: Callable[Concatenate[Any, P], T] | None = None,
-            *,
-            background: bool | None = None,
-        ) -> Union[
-            EventCallback[P, T],
-            Callable[[Callable[Concatenate[Any, P], T]], EventCallback[P, T]],
-        ]:
-            """Wrap a function to be used as an event.
+        Args:
+            func: The function to wrap.
+            background: Whether the event should be run in the background. Defaults to False.
 
-            Args:
-                func: The function to wrap.
-                background: Whether the event should be run in the background. Defaults to False.
+        Returns:
+            The wrapped function.
+        """
 
-            Returns:
-                The wrapped function.
-            """
+        def wrapper(
+            func: Callable[Concatenate[BASE_STATE, P], T],
+        ) -> EventCallback[P, T]:
+            if background is True:
+                return background_event_decorator(func, __internal_reflex_call=True)  # type: ignore
+            return func  # type: ignore
 
-            def wrapper(func: Callable[Concatenate[Any, P], T]) -> EventCallback[P, T]:
-                if background is True:
-                    return background_event_decorator(func, __internal_reflex_call=True)  # type: ignore
-                return func  # type: ignore
-
-            if func is not None:
-                return wrapper(func)
-            return wrapper
-    else:
-
-        @overload
-        @staticmethod
-        def __call__(
-            func: None = None, *, background: bool | None = None
-        ) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
-
-        @overload
-        @staticmethod
-        def __call__(
-            func: Callable[P, T], *, background: bool | None = None
-        ) -> Callable[P, T]: ...
-
-        @staticmethod
-        def __call__(
-            func: Callable[P, T] | None = None,
-            *,
-            background: bool | None = None,
-        ) -> Union[
-            Callable[P, T],
-            Callable[[Callable[P, T]], Callable[P, T]],
-        ]:
-            """Wrap a function to be used as an event.
-
-            Args:
-                func: The function to wrap.
-                background: Whether the event should be run in the background. Defaults to False.
-
-            Returns:
-                The wrapped function.
-            """
-
-            def wrapper(func: Callable[P, T]) -> Callable[P, T]:
-                if background is True:
-                    return background_event_decorator(func, __internal_reflex_call=True)  # type: ignore
-                return func  # type: ignore
-
-            if func is not None:
-                return wrapper(func)
-            return wrapper
+        if func is not None:
+            return wrapper(func)
+        return wrapper
 
     get_event = staticmethod(get_event)
     get_hydrate_event = staticmethod(get_hydrate_event)

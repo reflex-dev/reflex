@@ -429,7 +429,7 @@ def output_system_info():
     except Exception:
         config_file = None
 
-    console.rule(f"System Info")
+    console.rule("System Info")
     console.debug(f"Config file: {config_file!r}")
     console.debug(f"Config: {config}")
 

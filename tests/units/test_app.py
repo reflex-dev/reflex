@@ -787,11 +787,11 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
     }
 
     file1 = UploadFile(
-        filename=f"image1.jpg",
+        filename="image1.jpg",
         file=bio,
     )
     file2 = UploadFile(
-        filename=f"image2.jpg",
+        filename="image2.jpg",
         file=bio,
     )
     upload_fn = upload(app)

@@ -1559,7 +1559,7 @@ def test_error_on_state_method_shadow():
 
     assert (
         err.value.args[0]
-        == f"The event handler name `reset` shadows a builtin State method; use a different name instead"
+        == "The event handler name `reset` shadows a builtin State method; use a different name instead"
     )
 
 

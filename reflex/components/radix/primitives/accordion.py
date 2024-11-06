@@ -382,7 +382,7 @@ class AccordionTrigger(AccordionComponent):
                 "background_color": color("accent", 4),
             },
             "& > .AccordionChevron": {
-                "transition": f"transform var(--animation-duration) var(--animation-easing)",
+                "transition": "transform var(--animation-duration) var(--animation-easing)",
             },
             _inherited_variant_selector("classic"): {
                 "color": "var(--accent-contrast)",
@@ -485,11 +485,11 @@ to {
             The style of the component.
         """
         slideDown = LiteralVar.create(
-            f"${{slideDown}} var(--animation-duration) var(--animation-easing)",
+            "${slideDown} var(--animation-duration) var(--animation-easing)",
         )
 
         slideUp = LiteralVar.create(
-            f"${{slideUp}} var(--animation-duration) var(--animation-easing)",
+            "${slideUp} var(--animation-duration) var(--animation-easing)",
         )
 
         return {
