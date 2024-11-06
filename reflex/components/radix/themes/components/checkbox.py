@@ -9,11 +9,7 @@ from reflex.components.radix.themes.typography.text import Text
 from reflex.event import EventHandler, passthrough_event_spec
 from reflex.vars.base import LiteralVar, Var
 
-from ..base import (
-    LiteralAccentColor,
-    LiteralSpacing,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, LiteralSpacing, RadixThemesComponent
 
 LiteralCheckboxSize = Literal["1", "2", "3"]
 LiteralCheckboxVariant = Literal["classic", "surface", "soft"]

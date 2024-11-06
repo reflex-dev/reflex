@@ -23,11 +23,7 @@ from reflex.vars.base import (
     var_operation_return,
 )
 from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar
-from reflex.vars.number import (
-    LiteralBooleanVar,
-    LiteralNumberVar,
-    NumberVar,
-)
+from reflex.vars.number import LiteralBooleanVar, LiteralNumberVar, NumberVar
 from reflex.vars.object import LiteralObjectVar, ObjectVar
 from reflex.vars.sequence import (
     ArrayVar,

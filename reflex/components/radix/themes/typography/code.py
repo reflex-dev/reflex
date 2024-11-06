@@ -9,15 +9,8 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    LiteralVariant,
-    RadixThemesComponent,
-)
-from .base import (
-    LiteralTextSize,
-    LiteralTextWeight,
-)
+from ..base import LiteralAccentColor, LiteralVariant, RadixThemesComponent
+from .base import LiteralTextSize, LiteralTextWeight
 
 
 class Code(elements.Code, RadixThemesComponent):

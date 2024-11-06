@@ -10,9 +10,7 @@ from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
-from .recharts import (
-    RechartsCharts,
-)
+from .recharts import RechartsCharts
 
 class ChartBase(RechartsCharts):
     @overload

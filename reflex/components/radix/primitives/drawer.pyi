@@ -91,7 +91,9 @@ class DrawerRoot(DrawerComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_animation_end: Optional[EventType[[bool], BASE_STATE]] = None,
+        on_animation_end: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[bool], BASE_STATE]]
+        ] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
@@ -105,7 +107,9 @@ class DrawerRoot(DrawerComponent):
         on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
-        on_open_change: Optional[EventType[[bool], BASE_STATE]] = None,
+        on_open_change: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[bool], BASE_STATE]]
+        ] = None,
         on_scroll: Optional[EventType[[], BASE_STATE]] = None,
         on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
@@ -573,7 +577,9 @@ class Drawer(ComponentNamespace):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_animation_end: Optional[EventType[[bool], BASE_STATE]] = None,
+        on_animation_end: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[bool], BASE_STATE]]
+        ] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
@@ -587,7 +593,9 @@ class Drawer(ComponentNamespace):
         on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
-        on_open_change: Optional[EventType[[bool], BASE_STATE]] = None,
+        on_open_change: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[bool], BASE_STATE]]
+        ] = None,
         on_scroll: Optional[EventType[[], BASE_STATE]] = None,
         on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,

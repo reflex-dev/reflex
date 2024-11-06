@@ -6,18 +6,9 @@
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional, Union, overload
 
-from reflex.components.component import (
-    Component,
-    ComponentNamespace,
-    MemoizationLeaf,
-)
+from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
 from reflex.constants import Dirs
-from reflex.event import (
-    BASE_STATE,
-    CallableEventSpec,
-    EventSpec,
-    EventType,
-)
+from reflex.event import BASE_STATE, CallableEventSpec, EventSpec, EventType
 from reflex.style import Style
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
@@ -120,7 +111,9 @@ class Upload(MemoizationLeaf):
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
         on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_drop: Optional[EventType[[Any], BASE_STATE]] = None,
+        on_drop: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[Any], BASE_STATE]]
+        ] = None,
         on_focus: Optional[EventType[[], BASE_STATE]] = None,
         on_mount: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
@@ -186,7 +179,9 @@ class StyledUpload(Upload):
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
         on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_drop: Optional[EventType[[Any], BASE_STATE]] = None,
+        on_drop: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[Any], BASE_STATE]]
+        ] = None,
         on_focus: Optional[EventType[[], BASE_STATE]] = None,
         on_mount: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
@@ -252,7 +247,9 @@ class UploadNamespace(ComponentNamespace):
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
         on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_drop: Optional[EventType[[Any], BASE_STATE]] = None,
+        on_drop: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[Any], BASE_STATE]]
+        ] = None,
         on_focus: Optional[EventType[[], BASE_STATE]] = None,
         on_mount: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
