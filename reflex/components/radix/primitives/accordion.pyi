@@ -262,7 +262,9 @@ class AccordionRoot(AccordionComponent):
         on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
         on_scroll: Optional[EventType[[], BASE_STATE]] = None,
         on_unmount: Optional[EventType[[], BASE_STATE]] = None,
-        on_value_change: Optional[EventType[[str | List[str]], BASE_STATE]] = None,
+        on_value_change: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[str | List[str]], BASE_STATE]]
+        ] = None,
         **props,
     ) -> "AccordionRoot":
         """Create the component.

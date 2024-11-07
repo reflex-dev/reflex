@@ -11,10 +11,7 @@ from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
-from ..base import (
-    RadixLoadingProp,
-    RadixThemesComponent,
-)
+from ..base import RadixLoadingProp, RadixThemesComponent
 
 LiteralButtonSize = Literal["1", "2", "3", "4"]
 

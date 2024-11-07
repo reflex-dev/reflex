@@ -131,8 +131,12 @@ class FormRoot(FormComponent, HTMLForm):
         on_scroll: Optional[EventType[[], BASE_STATE]] = None,
         on_submit: Optional[
             Union[
-                EventType[[Dict[str, Any]], BASE_STATE],
-                EventType[[Dict[str, str]], BASE_STATE],
+                Union[
+                    EventType[[], BASE_STATE], EventType[[Dict[str, Any]], BASE_STATE]
+                ],
+                Union[
+                    EventType[[], BASE_STATE], EventType[[Dict[str, str]], BASE_STATE]
+                ],
             ]
         ] = None,
         on_unmount: Optional[EventType[[], BASE_STATE]] = None,
@@ -603,8 +607,12 @@ class Form(FormRoot):
         on_scroll: Optional[EventType[[], BASE_STATE]] = None,
         on_submit: Optional[
             Union[
-                EventType[[Dict[str, Any]], BASE_STATE],
-                EventType[[Dict[str, str]], BASE_STATE],
+                Union[
+                    EventType[[], BASE_STATE], EventType[[Dict[str, Any]], BASE_STATE]
+                ],
+                Union[
+                    EventType[[], BASE_STATE], EventType[[Dict[str, str]], BASE_STATE]
+                ],
             ]
         ] = None,
         on_unmount: Optional[EventType[[], BASE_STATE]] = None,
@@ -732,8 +740,12 @@ class FormNamespace(ComponentNamespace):
         on_scroll: Optional[EventType[[], BASE_STATE]] = None,
         on_submit: Optional[
             Union[
-                EventType[[Dict[str, Any]], BASE_STATE],
-                EventType[[Dict[str, str]], BASE_STATE],
+                Union[
+                    EventType[[], BASE_STATE], EventType[[Dict[str, Any]], BASE_STATE]
+                ],
+                Union[
+                    EventType[[], BASE_STATE], EventType[[Dict[str, str]], BASE_STATE]
+                ],
             ]
         ] = None,
         on_unmount: Optional[EventType[[], BASE_STATE]] = None,

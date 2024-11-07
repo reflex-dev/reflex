@@ -44,9 +44,7 @@ from typing_extensions import Self
 from reflex import event
 from reflex.config import EnvironmentVariables, get_config
 from reflex.istate.data import RouterData
-from reflex.istate.storage import (
-    ClientStorageBase,
-)
+from reflex.istate.storage import ClientStorageBase
 from reflex.vars.base import (
     ComputedVar,
     DynamicRouteVar,

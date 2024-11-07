@@ -238,7 +238,10 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
-  if (event.name == "_call_function") {
+  if (
+    event.name == "_call_function" &&
+    typeof event.payload.function !== "string"
+  ) {
     try {
       const eval_result = event.payload.function();
       if (event.payload.callback) {
@@ -257,9 +260,13 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
-  if (event.name == "_call_script") {
+  if (event.name == "_call_script" || event.name == "_call_function") {
     try {
-      const eval_result = eval(event.payload.javascript_code);
+      const eval_result =
+        event.name == "_call_script"
+          ? eval(event.payload.javascript_code)
+          : eval(event.payload.function)();
+
       if (event.payload.callback) {
         if (!!eval_result && typeof eval_result.then === "function") {
           eval(event.payload.callback)(await eval_result);

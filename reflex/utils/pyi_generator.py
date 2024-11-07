@@ -76,6 +76,7 @@ DEFAULT_IMPORTS = {
         "EventSpec",
         "EventType",
         "BASE_STATE",
+        "KeyInputInfo",
     ],
     "reflex.style": ["Style"],
     "reflex.vars.base": ["Var"],
@@ -509,11 +510,18 @@ def _generate_component_create_functiondef(
             # Convert each argument type to its AST representation
             type_args = [type_to_ast(arg, cls=clz) for arg in arguments_without_var]
 
-            # Join the type arguments with commas for EventType
-            args_str = ", ".join(ast.unparse(arg) for arg in type_args)
+            # Get all prefixes of the type arguments
+            all_count_args_type = [
+                ast.Name(
+                    f"EventType[[{', '.join([ast.unparse(arg) for arg in type_args[:i]])}], BASE_STATE]"
+                )
+                for i in range(len(type_args) + 1)
+            ]
 
             # Create EventType using the joined string
-            return ast.Name(id=f"EventType[[{args_str}], BASE_STATE]")
+            return ast.Name(
+                id=f"Union[{', '.join(map(ast.unparse, all_count_args_type))}]"
+            )
 
         if isinstance(annotation, str) and annotation.startswith("Tuple["):
             inside_of_tuple = annotation.removeprefix("Tuple[").removesuffix("]")
@@ -545,8 +553,15 @@ def _generate_component_create_functiondef(
                 for argument in arguments
             ]
 
+            all_count_args_type = [
+                ast.Name(
+                    f"EventType[[{', '.join(arguments_without_var[:i])}], BASE_STATE]"
+                )
+                for i in range(len(arguments) + 1)
+            ]
+
             return ast.Name(
-                id=f"EventType[[{', '.join(arguments_without_var)}], BASE_STATE]"
+                id=f"Union[{', '.join(map(ast.unparse, all_count_args_type))}]"
             )
         return ast.Name(id="EventType[..., BASE_STATE]")
 

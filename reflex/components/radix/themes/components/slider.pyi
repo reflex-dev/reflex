@@ -142,9 +142,12 @@ class Slider(RadixThemesComponent):
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_change: Optional[
             Union[
-                EventType[[list[Union[int, float]]], BASE_STATE],
-                EventType[[list[int]], BASE_STATE],
-                EventType[[list[float]], BASE_STATE],
+                Union[
+                    EventType[[], BASE_STATE],
+                    EventType[[list[Union[int, float]]], BASE_STATE],
+                ],
+                Union[EventType[[], BASE_STATE], EventType[[list[int]], BASE_STATE]],
+                Union[EventType[[], BASE_STATE], EventType[[list[float]], BASE_STATE]],
             ]
         ] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
@@ -163,9 +166,12 @@ class Slider(RadixThemesComponent):
         on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         on_value_commit: Optional[
             Union[
-                EventType[[list[Union[int, float]]], BASE_STATE],
-                EventType[[list[int]], BASE_STATE],
-                EventType[[list[float]], BASE_STATE],
+                Union[
+                    EventType[[], BASE_STATE],
+                    EventType[[list[Union[int, float]]], BASE_STATE],
+                ],
+                Union[EventType[[], BASE_STATE], EventType[[list[int]], BASE_STATE]],
+                Union[EventType[[], BASE_STATE], EventType[[list[float]], BASE_STATE]],
             ]
         ] = None,
         **props,

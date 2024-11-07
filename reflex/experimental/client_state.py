@@ -10,10 +10,7 @@ from typing import Any, Callable, Union
 from reflex import constants
 from reflex.event import EventChain, EventHandler, EventSpec, run_script
 from reflex.utils.imports import ImportVar
-from reflex.vars import (
-    VarData,
-    get_unique_variable_name,
-)
+from reflex.vars import VarData, get_unique_variable_name
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import FunctionVar
 

@@ -7,11 +7,7 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    RadixThemesComponent,
-    RadixThemesTriggerComponent,
-)
+from ..base import LiteralAccentColor, RadixThemesComponent, RadixThemesTriggerComponent
 
 LiteralDirType = Literal["ltr", "rtl"]
 

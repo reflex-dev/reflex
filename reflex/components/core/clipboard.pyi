@@ -6,10 +6,7 @@
 from typing import Any, Dict, List, Optional, Union, overload
 
 from reflex.components.base.fragment import Fragment
-from reflex.event import (
-    BASE_STATE,
-    EventType,
-)
+from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import Var
@@ -43,7 +40,12 @@ class Clipboard(Fragment):
         on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
-        on_paste: Optional[EventType[[list[tuple[str, str]]], BASE_STATE]] = None,
+        on_paste: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[list[tuple[str, str]]], BASE_STATE],
+            ]
+        ] = None,
         on_scroll: Optional[EventType[[], BASE_STATE]] = None,
         on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,

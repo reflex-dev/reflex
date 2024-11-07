@@ -11,9 +11,7 @@ from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
-from .recharts import (
-    Recharts,
-)
+from .recharts import Recharts
 
 class ResponsiveContainer(Recharts, MemoizationLeaf):
     @overload

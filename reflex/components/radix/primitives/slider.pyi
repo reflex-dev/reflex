@@ -109,8 +109,12 @@ class SliderRoot(SliderComponent):
         on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
         on_scroll: Optional[EventType[[], BASE_STATE]] = None,
         on_unmount: Optional[EventType[[], BASE_STATE]] = None,
-        on_value_change: Optional[EventType[[List[int]], BASE_STATE]] = None,
-        on_value_commit: Optional[EventType[[List[int]], BASE_STATE]] = None,
+        on_value_change: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[List[int]], BASE_STATE]]
+        ] = None,
+        on_value_commit: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[List[int]], BASE_STATE]]
+        ] = None,
         **props,
     ) -> "SliderRoot":
         """Create the component.

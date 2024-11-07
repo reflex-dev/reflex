@@ -30,6 +30,7 @@ from typing_extensions import (
     ParamSpec,
     Protocol,
     TypeAliasType,
+    TypedDict,
     TypeVar,
     get_args,
     get_origin,
@@ -38,16 +39,10 @@ from typing_extensions import (
 from reflex import constants
 from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import console, format
-from reflex.utils.exceptions import (
-    EventFnArgMismatch,
-    EventHandlerArgTypeMismatch,
-)
+from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgTypeMismatch
 from reflex.utils.types import ArgsSpec, GenericType, typehint_issubclass
 from reflex.vars import VarData
-from reflex.vars.base import (
-    LiteralVar,
-    Var,
-)
+from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import (
     ArgsFunctionOperation,
     FunctionStringVar,
@@ -448,6 +443,10 @@ class JavasciptKeyboardEvent:
     """Interface for a Javascript KeyboardEvent https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent."""
 
     key: str = ""
+    altKey: bool = False
+    ctrlKey: bool = False
+    metaKey: bool = False
+    shiftKey: bool = False
 
 
 def input_event(e: Var[JavascriptInputEvent]) -> Tuple[Var[str]]:
@@ -462,7 +461,16 @@ def input_event(e: Var[JavascriptInputEvent]) -> Tuple[Var[str]]:
     return (e.target.value,)
 
 
-def key_event(e: Var[JavasciptKeyboardEvent]) -> Tuple[Var[str]]:
+class KeyInputInfo(TypedDict):
+    """Information about a key input event."""
+
+    alt_key: bool
+    ctrl_key: bool
+    meta_key: bool
+    shift_key: bool
+
+
+def key_event(e: Var[JavasciptKeyboardEvent]) -> Tuple[Var[str], Var[KeyInputInfo]]:
     """Get the key from a keyboard event.
 
     Args:
@@ -471,7 +479,17 @@ def key_event(e: Var[JavasciptKeyboardEvent]) -> Tuple[Var[str]]:
     Returns:
         The key from the keyboard event.
     """
-    return (e.key,)
+    return (
+        e.key,
+        Var.create(
+            {
+                "alt_key": e.altKey,
+                "ctrl_key": e.ctrlKey,
+                "meta_key": e.metaKey,
+                "shift_key": e.shiftKey,
+            },
+        ),
+    )
 
 
 def no_args_event_spec() -> Tuple[()]:
