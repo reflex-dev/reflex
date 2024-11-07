@@ -6,6 +6,9 @@ import reflex as rx
 def svg_logo(color: str | rx.Var[str] = rx.color_mode_cond("#110F1F", "white")):
     """A Reflex logo SVG.
 
+    Args:
+        color: The color of the logo.
+
     Returns:
         The Reflex logo SVG.
     """
