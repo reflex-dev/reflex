@@ -5,11 +5,11 @@ from __future__ import annotations
 from typing import Any, Dict, Literal
 
 from reflex.components import Component
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.tags import Tag
 from reflex.config import get_config
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import Var
-from reflex.components.core.breakpoints import Responsive
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]

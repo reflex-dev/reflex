@@ -7,7 +7,7 @@ from typing import Literal
 from reflex.components.core.breakpoints import Responsive
 from reflex.vars.base import Var
 
-from ..base import CommonMarginProps, LiteralSpacing, RadixThemesComponent, CommonPaddingProps
+from ..base import CommonMarginProps, CommonPaddingProps, RadixThemesComponent
 
 LiteralBoolNumber = Literal["0", "1"]
 

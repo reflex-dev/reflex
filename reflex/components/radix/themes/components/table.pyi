@@ -322,6 +322,12 @@ class TableColumnHeaderCell(elements.Th, RadixThemesComponent):
                 Var[Literal["center", "end", "start"]],
             ]
         ] = None,
+        min_width: Optional[
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
+        ] = None,
+        max_width: Optional[
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
+        ] = None,
         align: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         col_span: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         headers: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
@@ -382,6 +388,8 @@ class TableColumnHeaderCell(elements.Th, RadixThemesComponent):
         Args:
             *children: Child components.
             justify: The justification of the column
+            min_width: The minimum width of the cell
+            max_width: The maximum width of the cell
             align: Alignment of the content within the table header cell
             col_span: Number of columns a header cell should span
             headers: IDs of the headers associated with this header cell
@@ -757,6 +765,12 @@ class TableRowHeaderCell(elements.Th, CommonPaddingProps, RadixThemesComponent):
                 Var[Literal["center", "end", "start"]],
             ]
         ] = None,
+        min_width: Optional[
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
+        ] = None,
+        max_width: Optional[
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
+        ] = None,
         align: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         col_span: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         headers: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
@@ -936,6 +950,8 @@ class TableRowHeaderCell(elements.Th, CommonPaddingProps, RadixThemesComponent):
         Args:
             *children: Child components.
             justify: The justification of the column
+            min_width: The minimum width of the cell
+            max_width: The maximum width of the cell
             align: Alignment of the content within the table header cell
             col_span: Number of columns a header cell should span
             headers: IDs of the headers associated with this header cell
