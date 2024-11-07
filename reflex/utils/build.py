@@ -221,7 +221,11 @@ def setup_frontend(
         src=str(root / constants.Dirs.APP_ASSETS),
         dest=str(root / prerequisites.get_web_dir() / constants.Dirs.PUBLIC),
         ignore=tuple(
-            f"*.{ext}" for ext in constants.Reflex.STYLESHEETS_SUPPORTED
+            f"*{p.suffix}"
+            for ext in constants.Reflex.STYLESHEETS_SUPPORTED
+            for p in (root / constants.Dirs.APP_ASSETS).glob(
+                f"**/*.{ext}", case_sensitive=False
+            )
         ),  # ignore stylesheet files precompiled in the compiler
     )
 
