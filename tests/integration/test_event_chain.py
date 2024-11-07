@@ -277,7 +277,7 @@ def event_chain(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("event_chain"),
-        app_source=EventChain,  # type: ignore
+        app_source=EventChain,
     ) as harness:
         yield harness
 
