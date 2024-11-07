@@ -54,13 +54,13 @@ trio = ["trio (>=0.26.1)"]
 
 [[package]]
 name = "async-timeout"
-version = "5.0.0"
+version = "5.0.1"
 description = "Timeout context manager for asyncio programs"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "async_timeout-5.0.0-py3-none-any.whl", hash = "sha256:904719a4bd6e0520047d0ddae220aabee67b877f7ca17bf8cea20f67f6247ae0"},
-    {file = "async_timeout-5.0.0.tar.gz", hash = "sha256:49675ec889daacfe65ff66d2dde7dd1447a6f4b2f23721022e4ba121f8772a85"},
+    {file = "async_timeout-5.0.1-py3-none-any.whl", hash = "sha256:39e3809566ff85354557ec2398b55e096c8364bacac9405a7a1fa429e77fe76c"},
+    {file = "async_timeout-5.0.1.tar.gz", hash = "sha256:d9321a7a3d5a6a5e187e824d2fa0793ce379a202935782d555d6e9d2735677d3"},
 ]
 
 [[package]]
@@ -2198,13 +2198,13 @@ reflex = ">=0.6.0a"
 
 [[package]]
 name = "reflex-hosting-cli"
-version = "0.1.13"
+version = "0.1.14"
 description = "Reflex Hosting CLI"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "reflex_hosting_cli-0.1.13-py3-none-any.whl", hash = "sha256:5bfec7f3d7ce4bbd703989f086494e586a641ef37c9e60e60fb82bdfb07ff227"},
-    {file = "reflex_hosting_cli-0.1.13.tar.gz", hash = "sha256:c5d6afdcfeb74cee046a374ddbd59116ab8ed797dae688fcc744dabae24dc571"},
+    {file = "reflex_hosting_cli-0.1.14-py3-none-any.whl", hash = "sha256:b38676a39708511801bd666e5a9788d8eb4aeb6f9196bea77a8c4c6a6c06492f"},
+    {file = "reflex_hosting_cli-0.1.14.tar.gz", hash = "sha256:8c7721b87dd2ce22db110d905ee01e78e5185f0e6dd521752f70aef6cf17b39f"},
 ]
 
 [package.dependencies]
@@ -3050,4 +3050,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "664c8d3c78923d39d1d59227cb43416228ac396a7004344c058377886421c086"
+content-hash = "fe91a9b22081a48be519ed3789e40904bd358a05fd6da912566592aa8d382f31"

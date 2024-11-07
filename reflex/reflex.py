@@ -407,6 +407,22 @@ def logout(
     hosting.delete_token_from_config(include_invitation_code=True)
 
 
+@cli.command()
+def logoutv2(
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Log out of access to Reflex hosting service."""
+    from reflex_cli.v2.utils import hosting
+
+    console.set_log_level(loglevel)
+
+    hosting.log_out_on_browser()
+    console.debug("Deleting access token from config locally")
+    hosting.delete_token_from_config(include_invitation_code=True)
+
+
 db_cli = typer.Typer()
 script_cli = typer.Typer()
 
