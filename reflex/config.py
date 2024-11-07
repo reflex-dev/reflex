@@ -319,18 +319,21 @@ class EnvVar(Generic[T]):
     name: str
     default: Any
     type_: T
+    noprefix: bool
 
-    def __init__(self, name: str, default: Any, type_: T) -> None:
+    def __init__(self, name: str, default: Any, type_: T, noprefix: bool) -> None:
         """Initialize the environment variable.
 
         Args:
             name: The environment variable name.
             default: The default value.
             type_: The type of the value.
+            noprefix: Whether to allow non-prefixed environment variables (deprecated).
         """
         self.name = name
         self.default = default
         self.type_ = type_
+        self.noprefix = noprefix
 
     def interpret(self, value: str) -> T:
         """Interpret the environment variable value.
@@ -350,6 +353,21 @@ class EnvVar(Generic[T]):
             The environment variable value.
         """
         env_value = os.getenv(self.name, None)
+        if self.noprefix:
+            deprecated_env = self.name.removeprefix("REFLEX_")
+            deprecated_env_value = os.getenv(deprecated_env, None)
+            if deprecated_env_value is not None:
+                if env_value is None:
+                    env_value = deprecated_env_value
+                    reason = f"{deprecated_env} is set. Use the REFLEX_ prefix for environment variables."
+                else:
+                    reason = f"Both {self.name} and {deprecated_env} (deprecated) are set. Please use {self.name} only. Using {self.name}."
+                console.deprecate(
+                    "Environment variables without REFLEX_ prefix are deprecated.",
+                    reason=reason,
+                    deprecation_version="0.0.0",
+                    removal_version="0.0.0",
+                )
         if env_value is not None:
             return self.interpret(env_value)
         return None
@@ -392,17 +410,22 @@ class env_var:  # type: ignore
 
     name: str
     default: Any
-    internal: bool = False
+    internal: bool
+    noprefix: bool
 
-    def __init__(self, default: Any, internal: bool = False) -> None:
+    def __init__(
+        self, default: Any, internal: bool = False, noprefix: bool = False
+    ) -> None:
         """Initialize the descriptor.
 
         Args:
             default: The default value.
             internal: Whether the environment variable is reflex internal.
+            noprefix: Whether to allow non-prefixed environment variables (deprecated).
         """
         self.default = default
         self.internal = internal
+        self.noprefix = noprefix
 
     def __set_name__(self, owner, name):
         """Set the name of the descriptor.
@@ -427,17 +450,20 @@ class env_var:  # type: ignore
         env_name = self.name
         if self.internal:
             env_name = f"__{env_name}"
-        return EnvVar(name=env_name, default=self.default, type_=type_)
+        return EnvVar(
+            name=env_name, default=self.default, type_=type_, noprefix=self.noprefix
+        )
 
 
 if TYPE_CHECKING:
 
-    def env_var(default, internal=False) -> EnvVar:
+    def env_var(default, internal: bool = False, noprefix: bool = False) -> EnvVar:
         """Typing helper for the env_var descriptor.
 
         Args:
             default: The default value.
             internal: Whether the environment variable is reflex internal.
+            noprefix: Whether to allow non-prefixed environment variables (deprecated).
 
         Returns:
             The EnvVar instance.
@@ -459,16 +485,16 @@ class EnvironmentVariables:
     REFLEX_USE_NPM: EnvVar[bool] = env_var(False)
 
     # The npm registry to use.
-    NPM_CONFIG_REGISTRY: EnvVar[Optional[str]] = env_var(None)
+    REFLEX_NPM_CONFIG_REGISTRY: EnvVar[Optional[str]] = env_var(None, noprefix=True)
 
     # Whether to use Granian for the backend. Otherwise, use Uvicorn.
     REFLEX_USE_GRANIAN: EnvVar[bool] = env_var(False)
 
     # The username to use for authentication on python package repository. Username and password must both be provided.
-    TWINE_USERNAME: EnvVar[Optional[str]] = env_var(None)
+    REFLEX_TWINE_USERNAME: EnvVar[Optional[str]] = env_var(None, noprefix=True)
 
     # The password to use for authentication on python package repository. Username and password must both be provided.
-    TWINE_PASSWORD: EnvVar[Optional[str]] = env_var(None)
+    REFLEX_TWINE_PASSWORD: EnvVar[Optional[str]] = env_var(None, noprefix=True)
 
     # Whether to use the system installed bun. If set to false, bun will be bundled with the app.
     REFLEX_USE_SYSTEM_BUN: EnvVar[bool] = env_var(False)
@@ -480,10 +506,12 @@ class EnvironmentVariables:
     REFLEX_WEB_WORKDIR: EnvVar[Path] = env_var(Path(constants.Dirs.WEB))
 
     # Path to the alembic config file
-    ALEMBIC_CONFIG: EnvVar[ExistingPath] = env_var(Path(constants.ALEMBIC_CONFIG))
+    REFLEX_ALEMBIC_CONFIG: EnvVar[ExistingPath] = env_var(
+        Path(constants.ALEMBIC_CONFIG), noprefix=True
+    )
 
     # Disable SSL verification for HTTPX requests.
-    SSL_NO_VERIFY: EnvVar[bool] = env_var(False)
+    REFLEX_SSL_NO_VERIFY: EnvVar[bool] = env_var(False, noprefix=True)
 
     # The directory to store uploaded files.
     REFLEX_UPLOADED_FILES_DIR: EnvVar[Path] = env_var(
@@ -500,7 +528,7 @@ class EnvironmentVariables:
     REFLEX_DIR: EnvVar[Path] = env_var(Path(constants.Reflex.DIR))
 
     # Whether to print the SQL queries if the log level is INFO or lower.
-    SQLALCHEMY_ECHO: EnvVar[bool] = env_var(False)
+    REFLEX_SQLALCHEMY_ECHO: EnvVar[bool] = env_var(False, noprefix=True)
 
     # Whether to ignore the redis config error. Some redis servers only allow out-of-band configuration.
     REFLEX_IGNORE_REDIS_CONFIG_ERROR: EnvVar[bool] = env_var(False)
@@ -528,22 +556,22 @@ class EnvironmentVariables:
     REFLEX_FRONTEND_ONLY: EnvVar[bool] = env_var(False)
 
     # Reflex internal env to reload the config.
-    RELOAD_CONFIG: EnvVar[bool] = env_var(False, internal=True)
+    REFLEX_RELOAD_CONFIG: EnvVar[bool] = env_var(False, internal=True)
 
     # If this env var is set to "yes", App.compile will be a no-op
     REFLEX_SKIP_COMPILE: EnvVar[bool] = env_var(False, internal=True)
 
     # Whether to run app harness tests in headless mode.
-    APP_HARNESS_HEADLESS: EnvVar[bool] = env_var(False)
+    REFLEX_APP_HARNESS_HEADLESS: EnvVar[bool] = env_var(False, noprefix=True)
 
     # Which app harness driver to use.
-    APP_HARNESS_DRIVER: EnvVar[str] = env_var("Chrome")
+    REFLEX_APP_HARNESS_DRIVER: EnvVar[str] = env_var("Chrome", noprefix=True)
 
     # Arguments to pass to the app harness driver.
-    APP_HARNESS_DRIVER_ARGS: EnvVar[str] = env_var("")
+    REFLEX_APP_HARNESS_DRIVER_ARGS: EnvVar[str] = env_var("", noprefix=True)
 
     # Where to save screenshots when tests fail.
-    SCREENSHOT_DIR: EnvVar[Optional[Path]] = env_var(None)
+    REFLEX_SCREENSHOT_DIR: EnvVar[Optional[Path]] = env_var(None, noprefix=True)
 
 
 environment = EnvironmentVariables()

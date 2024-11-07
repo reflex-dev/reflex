@@ -55,4 +55,4 @@ def _get_npm_registry() -> str:
     Returns:
         str:
     """
-    return environment.NPM_CONFIG_REGISTRY.get() or get_best_registry()
+    return environment.REFLEX_NPM_CONFIG_REGISTRY.get() or get_best_registry()

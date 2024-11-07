@@ -445,7 +445,7 @@ def db_init():
         return
 
     # Check the alembic config.
-    if environment.ALEMBIC_CONFIG.get().exists():
+    if environment.REFLEX_ALEMBIC_CONFIG.get().exists():
         console.error(
             "Database is already initialized. Use "
             "[bold]reflex db makemigrations[/bold] to create schema change "

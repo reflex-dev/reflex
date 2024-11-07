@@ -38,12 +38,12 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     url = url or conf.db_url
     if url is None:
         raise ValueError("No database url configured")
-    if not environment.ALEMBIC_CONFIG.get().exists():
+    if not environment.REFLEX_ALEMBIC_CONFIG.get().exists():
         console.warn(
             "Database is not initialized, run [bold]reflex db init[/bold] first."
         )
     # Print the SQL queries if the log level is INFO or lower.
-    echo_db_query = environment.SQLALCHEMY_ECHO.get()
+    echo_db_query = environment.REFLEX_SQLALCHEMY_ECHO.get()
     # Needed for the admin dash on sqlite.
     connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
     return sqlmodel.create_engine(url, echo=echo_db_query, connect_args=connect_args)
@@ -231,7 +231,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         Returns:
             tuple of (config, script_directory)
         """
-        config = alembic.config.Config(environment.ALEMBIC_CONFIG.get())
+        config = alembic.config.Config(environment.REFLEX_ALEMBIC_CONFIG.get())
         return config, alembic.script.ScriptDirectory(
             config.get_main_option("script_location", default="version"),
         )
@@ -266,8 +266,8 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
     def alembic_init(cls):
         """Initialize alembic for the project."""
         alembic.command.init(
-            config=alembic.config.Config(environment.ALEMBIC_CONFIG.get()),
-            directory=str(environment.ALEMBIC_CONFIG.get().parent / "alembic"),
+            config=alembic.config.Config(environment.REFLEX_ALEMBIC_CONFIG.get()),
+            directory=str(environment.REFLEX_ALEMBIC_CONFIG.get().parent / "alembic"),
         )
 
     @classmethod
@@ -287,7 +287,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         Returns:
             True when changes have been detected.
         """
-        if not environment.ALEMBIC_CONFIG.get().exists():
+        if not environment.REFLEX_ALEMBIC_CONFIG.get().exists():
             return False
 
         config, script_directory = cls._alembic_config()
@@ -388,7 +388,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
             True - indicating the process was successful.
             None - indicating the process was skipped.
         """
-        if not environment.ALEMBIC_CONFIG.get().exists():
+        if not environment.REFLEX_ALEMBIC_CONFIG.get().exists():
             return
 
         with cls.get_db_engine().connect() as connection:

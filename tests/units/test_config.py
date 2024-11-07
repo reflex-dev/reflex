@@ -8,6 +8,7 @@ import pytest
 import reflex as rx
 import reflex.config
 from reflex.config import (
+    EnvironmentVariables,
     EnvVar,
     env_var,
     environment,
@@ -280,3 +281,13 @@ def test_env_var():
     assert TestEnv.BOOLEAN.get() is False
     TestEnv.BOOLEAN.set(None)
     assert "BOOLEAN" not in os.environ
+
+
+def test_deprecated_env_prefix() -> None:
+    deprecated_env = "ALEMBIC_CONFIG"
+    os.environ[deprecated_env] = "alembic.ini"
+    assert EnvironmentVariables.REFLEX_ALEMBIC_CONFIG.get() == Path("alembic.ini")
+
+    # New env vars takes precedence
+    EnvironmentVariables.REFLEX_ALEMBIC_CONFIG.set(Path("alembic2.ini"))
+    assert EnvironmentVariables.REFLEX_ALEMBIC_CONFIG.get() == Path("alembic2.ini")

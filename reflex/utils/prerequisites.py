@@ -281,7 +281,7 @@ def get_app(reload: bool = False) -> ModuleType:
     from reflex.utils import telemetry
 
     try:
-        environment.RELOAD_CONFIG.set(reload)
+        environment.REFLEX_RELOAD_CONFIG.set(reload)
         config = get_config()
         if not config.app_name:
             raise RuntimeError(
@@ -1179,7 +1179,7 @@ def check_db_initialized() -> bool:
     """
     if (
         get_config().db_url is not None
-        and not environment.ALEMBIC_CONFIG.get().exists()
+        and not environment.REFLEX_ALEMBIC_CONFIG.get().exists()
     ):
         console.error(
             "Database is not initialized. Run [bold]reflex db init[/bold] first."
@@ -1190,7 +1190,10 @@ def check_db_initialized() -> bool:
 
 def check_schema_up_to_date():
     """Check if the sqlmodel metadata matches the current database schema."""
-    if get_config().db_url is None or not environment.ALEMBIC_CONFIG.get().exists():
+    if (
+        get_config().db_url is None
+        or not environment.REFLEX_ALEMBIC_CONFIG.get().exists()
+    ):
         return
     with model.Model.get_db_engine().connect() as connection:
         try:

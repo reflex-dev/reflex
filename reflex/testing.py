@@ -617,10 +617,10 @@ class AppHarness:
         if self.frontend_url is None:
             raise RuntimeError("Frontend is not running.")
         want_headless = False
-        if environment.APP_HARNESS_HEADLESS.get():
+        if environment.REFLEX_APP_HARNESS_HEADLESS.get():
             want_headless = True
         if driver_clz is None:
-            requested_driver = environment.APP_HARNESS_DRIVER.get()
+            requested_driver = environment.REFLEX_APP_HARNESS_DRIVER.get()
             driver_clz = getattr(webdriver, requested_driver)
             if driver_options is None:
                 driver_options = getattr(webdriver, f"{requested_driver}Options")()
@@ -642,7 +642,7 @@ class AppHarness:
                 driver_options.add_argument("headless")
         if driver_options is None:
             raise RuntimeError(f"Could not determine options for {driver_clz}")
-        if args := environment.APP_HARNESS_DRIVER_ARGS.get():
+        if args := environment.REFLEX_APP_HARNESS_DRIVER_ARGS.get():
             for arg in args.split(","):
                 driver_options.add_argument(arg)
         if driver_option_args is not None:

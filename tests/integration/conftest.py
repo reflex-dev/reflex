@@ -22,7 +22,10 @@ def xvfb():
     Yields:
         the pyvirtualdisplay object that the browser will be open on
     """
-    if os.environ.get("GITHUB_ACTIONS") and not environment.APP_HARNESS_HEADLESS.get():
+    if (
+        os.environ.get("GITHUB_ACTIONS")
+        and not environment.REFLEX_APP_HARNESS_HEADLESS.get()
+    ):
         from pyvirtualdisplay.smartdisplay import (  # pyright: ignore [reportMissingImports]
             SmartDisplay,
         )
@@ -43,7 +46,7 @@ def pytest_exception_interact(node, call, report):
         call: The pytest call describing when/where the test was invoked.
         report: The pytest log report object.
     """
-    screenshot_dir = environment.SCREENSHOT_DIR.get()
+    screenshot_dir = environment.REFLEX_SCREENSHOT_DIR.get()
     if DISPLAY is None or screenshot_dir is None:
         return
 
