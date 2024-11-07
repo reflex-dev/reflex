@@ -463,7 +463,7 @@ K = TypeVar("K")
 V = TypeVar("V")
 
 
-@serializer
+@serializer(to=list)
 def serialize_Sequence(s: Sequence[T] | MutableSet[T]) -> list[T]:
     """Serialize a sequence or mutable set as a regular list.
 
@@ -476,7 +476,7 @@ def serialize_Sequence(s: Sequence[T] | MutableSet[T]) -> list[T]:
     return list(s)
 
 
-@serializer
+@serializer(to=dict)
 def serialize_Mapping(m: Mapping[K, V]) -> dict[K, V]:
     """Serialize a mapping as a regular dictionary.
 
@@ -489,7 +489,7 @@ def serialize_Mapping(m: Mapping[K, V]) -> dict[K, V]:
     return dict(m)
 
 
-@serializer
+@serializer(to=dict)
 def serialize_DeclarativeBase(obj: DeclarativeBase) -> dict[str, str]:
     """Serialize a SQLAlchemy DeclarativeBase object as a dictionary.
 
