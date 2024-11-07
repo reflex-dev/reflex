@@ -973,8 +973,6 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
     def create_transformer(
         cls, library: str, fns: list[str]
     ) -> ShikiBaseTransformers: ...
-    @classmethod
-    def get_component_map_custom_code(cls) -> str: ...
 
 class ShikiHighLevelCodeBlock(ShikiCodeBlock):
     @overload

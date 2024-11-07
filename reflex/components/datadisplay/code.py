@@ -541,11 +541,7 @@ class CodeBlock(Component, MarkdownComponentMap):
         Returns:
             The custom code for the component.
         """
-        return f"""
-const match = (className || '').match(/language-(?<lang>.*)/);
-const {str(_LANGUAGE)} = match ? match[1] : '';
-{cls._get_language_registration_hook()}
-"""
+        return cls._get_language_registration_hook()
 
     def add_hooks(self) -> list[str | Var]:
         """Add hooks for the component.

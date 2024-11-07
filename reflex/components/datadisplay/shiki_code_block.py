@@ -13,7 +13,6 @@ from reflex.components.core.cond import color_mode_cond
 from reflex.components.el.elements.forms import Button
 from reflex.components.lucide.icon import Icon
 from reflex.components.markdown.markdown import (
-    _LANGUAGE,
     MarkdownComponentMap,
 )
 from reflex.components.props import NoExtrasAllowedProps
@@ -700,18 +699,6 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
                 processed.append(transformer)
 
         return processed
-
-    @classmethod
-    def get_component_map_custom_code(cls) -> str:
-        """Get the custom code for the component.
-
-        Returns:
-            The custom code for the component.
-        """
-        return f"""
-    const match = (className || '').match(/language-(?<lang>.*)/);
-    const {str(_LANGUAGE)} = match ? match[1] : '';
-    """
 
 
 class ShikiHighLevelCodeBlock(ShikiCodeBlock):

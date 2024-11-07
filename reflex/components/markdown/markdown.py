@@ -281,7 +281,10 @@ class Markdown(Component):
         codeblock_custom_code = "\n".join(custom_code_list)
 
         # Format the code to handle inline and block code.
-        formatted_code = f"""{codeblock_custom_code};
+        formatted_code = f"""
+const match = (className || '').match(/language-(?<lang>.*)/);
+const {str(_LANGUAGE)} = match ? match[1] : '';
+{codeblock_custom_code};
             return inline ? (
                 {self.format_component("code")}
             ) : (
