@@ -68,9 +68,6 @@ def serializer(
 
     Returns:
         The decorated function.
-
-    Raises:
-        ValueError: If the function does not take a single argument.
     """
 
     def wrapper(fn: SERIALIZED_FUNCTION) -> SERIALIZED_FUNCTION:
