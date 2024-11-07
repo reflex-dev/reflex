@@ -364,7 +364,7 @@ def _login() -> str:
     access_token = hosting.authenticate_on_browser(invitation_code)
 
     if not access_token:
-        console.error(f"Unable to authenticate. Please try again or contact support.")
+        console.error("Unable to authenticate. Please try again or contact support.")
         raise typer.Exit(1)
 
     console.print("Successfully logged in.")

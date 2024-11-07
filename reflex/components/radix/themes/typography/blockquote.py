@@ -9,14 +9,8 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    RadixThemesComponent,
-)
-from .base import (
-    LiteralTextSize,
-    LiteralTextWeight,
-)
+from ..base import LiteralAccentColor, RadixThemesComponent
+from .base import LiteralTextSize, LiteralTextWeight
 
 
 class Blockquote(elements.Blockquote, RadixThemesComponent):

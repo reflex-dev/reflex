@@ -2,6 +2,8 @@
 
 from .base import (
     COOKIES,
+    IS_LINUX,
+    IS_MACOS,
     IS_WINDOWS,
     LOCAL_STORAGE,
     POLLING_MAX_HTTP_BUFFER_SIZE,
@@ -39,16 +41,9 @@ from .config import (
     GitIgnore,
     RequirementsTxt,
 )
-from .custom_components import (
-    CustomComponents,
-)
+from .custom_components import CustomComponents
 from .event import Endpoint, EventTriggers, SocketEvent
-from .installer import (
-    Bun,
-    Fnm,
-    Node,
-    PackageJson,
-)
+from .installer import Bun, Fnm, Node, PackageJson
 from .route import (
     ROUTE_NOT_FOUND,
     ROUTER,

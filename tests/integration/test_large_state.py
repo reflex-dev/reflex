@@ -58,7 +58,7 @@ def test_large_state(var_count: int, tmp_path_factory, benchmark):
     large_state_rendered = template.render(var_count=var_count)
 
     with AppHarness.create(
-        root=tmp_path_factory.mktemp(f"large_state"),
+        root=tmp_path_factory.mktemp("large_state"),
         app_source=large_state_rendered,
         app_name="large_state",
     ) as large_state:

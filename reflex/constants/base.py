@@ -13,6 +13,8 @@ from platformdirs import PlatformDirs
 from .utils import classproperty
 
 IS_WINDOWS = platform.system() == "Windows"
+IS_MACOS = platform.system() == "Darwin"
+IS_LINUX = platform.system() == "Linux"
 
 
 class Dirs(SimpleNamespace):
@@ -76,7 +78,7 @@ class Reflex(SimpleNamespace):
     # The root directory of the reflex library.
     ROOT_DIR = Path(__file__).parents[2]
 
-    RELEASES_URL = f"https://api.github.com/repos/reflex-dev/templates/releases"
+    RELEASES_URL = "https://api.github.com/repos/reflex-dev/templates/releases"
 
 
 class ReflexHostingCLI(SimpleNamespace):

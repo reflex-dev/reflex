@@ -13,13 +13,9 @@ from reflex.base import Base
 from reflex.config import environment
 from reflex.event import EventHandler
 from reflex.state import BaseState
-from reflex.utils import (
-    build,
-    prerequisites,
-    types,
-)
+from reflex.utils import build, prerequisites, types
 from reflex.utils import exec as utils_exec
-from reflex.utils.exceptions import ReflexError
+from reflex.utils.exceptions import ReflexError, SystemPackageMissingError
 from reflex.vars.base import Var
 
 
@@ -503,7 +499,7 @@ def test_bun_install_without_unzip(mocker):
     mocker.patch("pathlib.Path.exists", return_value=False)
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
 
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(SystemPackageMissingError):
         prerequisites.install_bun()
 
 
