@@ -6,7 +6,7 @@ import dataclasses
 import sys
 from collections import defaultdict
 from collections.abc import Mapping, MutableSet, Sequence
-from typing import Any, ClassVar, Optional, Type, TypeVar, Union
+from typing import Any, ClassVar, Dict, List, Optional, Type, TypeVar, Union
 
 import alembic.autogenerate
 import alembic.command
@@ -464,7 +464,7 @@ V = TypeVar("V")
 
 
 @serializer(to=list)
-def serialize_Sequence(s: Sequence[T] | MutableSet[T]) -> list[T]:
+def serialize_Sequence(s: Union[Sequence[T], MutableSet[T]]) -> List[T]:
     """Serialize a sequence or mutable set as a regular list.
 
     Args:
@@ -477,7 +477,7 @@ def serialize_Sequence(s: Sequence[T] | MutableSet[T]) -> list[T]:
 
 
 @serializer(to=dict)
-def serialize_Mapping(m: Mapping[K, V]) -> dict[K, V]:
+def serialize_Mapping(m: Mapping[K, V]) -> Dict[K, V]:
     """Serialize a mapping as a regular dictionary.
 
     Args:
@@ -490,7 +490,7 @@ def serialize_Mapping(m: Mapping[K, V]) -> dict[K, V]:
 
 
 @serializer(to=dict)
-def serialize_DeclarativeBase(obj: DeclarativeBase) -> dict[str, str]:
+def serialize_DeclarativeBase(obj: DeclarativeBase) -> Dict[str, str]:
     """Serialize a SQLAlchemy DeclarativeBase object as a dictionary.
 
     Args:
