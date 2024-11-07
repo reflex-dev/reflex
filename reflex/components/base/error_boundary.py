@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Tuple
+from typing import Dict, Tuple
 
 from reflex.components.component import Component
 from reflex.components.datadisplay.logo import svg_logo
@@ -41,7 +41,7 @@ class ErrorBoundary(Component):
     on_error: EventHandler[on_error_spec]
 
     # Rendered instead of the children when an error is caught.
-    fallback_render: Var[Callable[[Any], Component]]
+    fallback_render: Var[Component]
 
     @classmethod
     def create(cls, *children, **props):
@@ -141,7 +141,13 @@ class ErrorBoundary(Component):
                         justify_content="center",
                     )
                 ),
-                _var_type=Callable[[Any], Component],
+                _var_type=Component,
+            )
+        else:
+            props["fallback_render"] = ArgsFunctionOperation.create(
+                ("event_args",),
+                props["fallback_render"],
+                _var_type=Component,
             )
         return super().create(*children, **props)
 
