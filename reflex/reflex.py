@@ -10,8 +10,8 @@ from typing import List, Optional
 import typer
 import typer.core
 from reflex_cli.deployments import deployments_cli
-from reflex_cli.v2.deployments import hosting_cli
 from reflex_cli.utils import dependency
+from reflex_cli.v2.deployments import hosting_cli
 
 from reflex import constants
 from reflex.config import environment, get_config
@@ -386,6 +386,7 @@ def login(
 
 @cli.command()
 def loginv2(loglevel: constants.LogLevel = typer.Option(config.loglevel)):
+    """Authenicate with experimental Reflex hosting service."""
     from reflex_cli.v2 import cli as hosting_cli
 
     hosting_cli.login()
@@ -593,7 +594,12 @@ def deploy(
 
     hosting_cli.deploy(
         app_name=app_name,
-        export_fn=lambda zip_dest_dir, api_url, deploy_url, frontend, backend, zipping: export_utils.export(
+        export_fn=lambda zip_dest_dir,
+        api_url,
+        deploy_url,
+        frontend,
+        backend,
+        zipping: export_utils.export(
             zip_dest_dir=zip_dest_dir,
             api_url=api_url,
             deploy_url=deploy_url,
@@ -696,7 +702,12 @@ def deployv2(
 
     hosting_cli.deploy(
         app_name=app_name,
-        export_fn=lambda zip_dest_dir, api_url, deploy_url, frontend, backend, zipping: export_utils.export(
+        export_fn=lambda zip_dest_dir,
+        api_url,
+        deploy_url,
+        frontend,
+        backend,
+        zipping: export_utils.export(
             zip_dest_dir=zip_dest_dir,
             api_url=api_url,
             deploy_url=deploy_url,
