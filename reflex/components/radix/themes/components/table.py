@@ -7,7 +7,7 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.vars.base import Var
 
-from ..base import RadixThemesComponent
+from ..base import RadixThemesComponent, CommonPaddingProps
 
 
 class TableRoot(elements.Table, RadixThemesComponent):
@@ -76,13 +76,19 @@ class TableBody(elements.Tbody, RadixThemesComponent):
     _valid_parents: List[str] = ["TableRoot"]
 
 
-class TableCell(elements.Td, RadixThemesComponent):
+class TableCell(elements.Td, CommonPaddingProps, RadixThemesComponent):
     """A cell containing data."""
 
     tag = "Table.Cell"
 
     # The justification of the column
     justify: Var[Literal["start", "center", "end"]]
+
+    # The minimum width of the cell
+    min_width: Var[Responsive[str]]
+
+    # The maximum width of the cell
+    max_width: Var[Responsive[str]]
 
     _invalid_children: List[str] = [
         "TableBody",
@@ -93,7 +99,7 @@ class TableCell(elements.Td, RadixThemesComponent):
     ]
 
 
-class TableRowHeaderCell(elements.Th, RadixThemesComponent):
+class TableRowHeaderCell(elements.Th, CommonPaddingProps, RadixThemesComponent):
     """A table cell that is semantically treated as a row header."""
 
     tag = "Table.RowHeaderCell"

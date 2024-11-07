@@ -9,6 +9,7 @@ from reflex.components.tags import Tag
 from reflex.config import get_config
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import Var
+from reflex.components.core.breakpoints import Responsive
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]
@@ -72,6 +73,31 @@ class CommonMarginProps(Component):
 
     # Margin left: "0" - "9"
     ml: Var[LiteralSpacing]
+
+
+class CommonPaddingProps(Component):
+    """Many radix-themes elements accept shorthand padding props."""
+
+    # Padding: "0" - "9"
+    p: Var[Responsive[LiteralSpacing]]
+
+    # Padding horizontal: "0" - "9"
+    px: Var[Responsive[LiteralSpacing]]
+
+    # Padding vertical: "0" - "9"
+    py: Var[Responsive[LiteralSpacing]]
+
+    # Padding top: "0" - "9"
+    pt: Var[Responsive[LiteralSpacing]]
+
+    # Padding right: "0" - "9"
+    pr: Var[Responsive[LiteralSpacing]]
+
+    # Padding bottom: "0" - "9"
+    pb: Var[Responsive[LiteralSpacing]]
+
+    # Padding left: "0" - "9"
+    pl: Var[Responsive[LiteralSpacing]]
 
 
 class RadixLoadingProp(Component):

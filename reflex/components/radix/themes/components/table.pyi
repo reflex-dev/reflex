@@ -12,7 +12,7 @@ from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
-from ..base import RadixThemesComponent
+from ..base import CommonPaddingProps, RadixThemesComponent
 
 class TableRoot(elements.Table, RadixThemesComponent):
     @overload
@@ -507,7 +507,7 @@ class TableBody(elements.Tbody, RadixThemesComponent):
         """
         ...
 
-class TableCell(elements.Td, RadixThemesComponent):
+class TableCell(elements.Td, CommonPaddingProps, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -518,6 +518,12 @@ class TableCell(elements.Td, RadixThemesComponent):
                 Literal["center", "end", "start"],
                 Var[Literal["center", "end", "start"]],
             ]
+        ] = None,
+        min_width: Optional[
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
+        ] = None,
+        max_width: Optional[
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         align: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         col_span: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
@@ -547,6 +553,125 @@ class TableCell(elements.Td, RadixThemesComponent):
         spell_check: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         tab_index: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         title: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        p: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        px: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        py: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pt: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pr: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pb: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pl: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -578,6 +703,8 @@ class TableCell(elements.Td, RadixThemesComponent):
         Args:
             *children: Child components.
             justify: The justification of the column
+            min_width: The minimum width of the cell
+            max_width: The maximum width of the cell
             align: Alignment of the content within the table cell
             col_span: Number of columns a cell should span
             headers: IDs of the headers associated with this cell
@@ -598,6 +725,13 @@ class TableCell(elements.Td, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
+            p: Padding: "0" - "9"
+            px: Padding horizontal: "0" - "9"
+            py: Padding vertical: "0" - "9"
+            pt: Padding top: "0" - "9"
+            pr: Padding right: "0" - "9"
+            pb: Padding bottom: "0" - "9"
+            pl: Padding left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -611,7 +745,7 @@ class TableCell(elements.Td, RadixThemesComponent):
         """
         ...
 
-class TableRowHeaderCell(elements.Th, RadixThemesComponent):
+class TableRowHeaderCell(elements.Th, CommonPaddingProps, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -652,6 +786,125 @@ class TableRowHeaderCell(elements.Th, RadixThemesComponent):
         spell_check: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         tab_index: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         title: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        p: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        px: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        py: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pt: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pr: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pb: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pl: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -704,6 +957,13 @@ class TableRowHeaderCell(elements.Th, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
+            p: Padding: "0" - "9"
+            px: Padding horizontal: "0" - "9"
+            py: Padding vertical: "0" - "9"
+            pt: Padding top: "0" - "9"
+            pr: Padding right: "0" - "9"
+            pb: Padding bottom: "0" - "9"
+            pl: Padding left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
