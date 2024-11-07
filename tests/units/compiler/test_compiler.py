@@ -187,6 +187,19 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
         f"@import url('./preprocess/styles_b.css'); \n",
     )
 
+    stylesheets = [
+        "/styles.css",
+        "/preprocess",  # this is a folder containing "styles_a.sass" and "styles_b.scss"
+    ]
+
+    assert compiler.compile_root_stylesheet(stylesheets) == (
+        str(Path(".web") / "styles" / "styles.css"),
+        f"@import url('./tailwind.css'); \n"
+        f"@import url('./styles.css'); \n"
+        f"@import url('./preprocess/styles_b.css'); \n"
+        f"@import url('./preprocess/styles_a.css'); \n",
+    )
+
     assert (project / ".web" / "styles" / "styles.css").read_text() == (
         assets_dir / "styles.css"
     ).read_text()
