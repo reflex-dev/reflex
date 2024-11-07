@@ -73,12 +73,16 @@ class Plotly(NoSSRComponent):
         on_before_hover: Optional[EventType[[], BASE_STATE]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_button_clicked: Optional[EventType[[], BASE_STATE]] = None,
-        on_click: Optional[EventType[[List[Point]], BASE_STATE]] = None,
+        on_click: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[List[Point]], BASE_STATE]]
+        ] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
         on_deselect: Optional[EventType[[], BASE_STATE]] = None,
         on_double_click: Optional[EventType[[], BASE_STATE]] = None,
         on_focus: Optional[EventType[[], BASE_STATE]] = None,
-        on_hover: Optional[EventType[[List[Point]], BASE_STATE]] = None,
+        on_hover: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[List[Point]], BASE_STATE]]
+        ] = None,
         on_mount: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
         on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
@@ -92,11 +96,17 @@ class Plotly(NoSSRComponent):
         on_relayouting: Optional[EventType[[], BASE_STATE]] = None,
         on_restyle: Optional[EventType[[], BASE_STATE]] = None,
         on_scroll: Optional[EventType[[], BASE_STATE]] = None,
-        on_selected: Optional[EventType[[List[Point]], BASE_STATE]] = None,
-        on_selecting: Optional[EventType[[List[Point]], BASE_STATE]] = None,
+        on_selected: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[List[Point]], BASE_STATE]]
+        ] = None,
+        on_selecting: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[List[Point]], BASE_STATE]]
+        ] = None,
         on_transition_interrupted: Optional[EventType[[], BASE_STATE]] = None,
         on_transitioning: Optional[EventType[[], BASE_STATE]] = None,
-        on_unhover: Optional[EventType[[List[Point]], BASE_STATE]] = None,
+        on_unhover: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[List[Point]], BASE_STATE]]
+        ] = None,
         on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "Plotly":
