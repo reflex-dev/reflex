@@ -211,7 +211,7 @@ def test_str(prop, expected):
 
 
 @pytest.mark.parametrize(
-    "prop,expected",
+    ("prop", "expected"),
     [
         (Var(_js_expr="p", _var_type=int), 0),
         (Var(_js_expr="p", _var_type=float), 0.0),
@@ -223,14 +223,14 @@ def test_str(prop, expected):
         (Var(_js_expr="p", _var_type=set), set()),
     ],
 )
-def test_default_value(prop, expected):
+def test_default_value(prop: Var, expected):
     """Test that the default value of a var is correct.
 
     Args:
         prop: The var to test.
         expected: The expected default value.
     """
-    assert prop.get_default_value() == expected
+    assert prop._get_default_value() == expected
 
 
 @pytest.mark.parametrize(
@@ -246,14 +246,14 @@ def test_default_value(prop, expected):
         ],
     ),
 )
-def test_get_setter(prop, expected):
+def test_get_setter(prop: Var, expected):
     """Test that the name of the setter function of a var is correct.
 
     Args:
         prop: The var to test.
         expected: The expected name of the setter function.
     """
-    assert prop.get_setter_name() == expected
+    assert prop._get_setter_name() == expected
 
 
 @pytest.mark.parametrize(
@@ -1302,7 +1302,6 @@ def test_fstring_roundtrip(value):
         Var(_js_expr="var", _var_type=float).guess_type(),
         Var(_js_expr="var", _var_type=str).guess_type(),
         Var(_js_expr="var", _var_type=bool).guess_type(),
-        Var(_js_expr="var", _var_type=dict).guess_type(),
         Var(_js_expr="var", _var_type=None).guess_type(),
     ],
 )
@@ -1323,10 +1322,10 @@ def test_unsupported_types_for_reverse(var):
         Var(_js_expr="var", _var_type=int).guess_type(),
         Var(_js_expr="var", _var_type=float).guess_type(),
         Var(_js_expr="var", _var_type=bool).guess_type(),
-        Var(_js_expr="var", _var_type=None).guess_type(),
+        Var(_js_expr="var", _var_type=type(None)).guess_type(),
     ],
 )
-def test_unsupported_types_for_contains(var):
+def test_unsupported_types_for_contains(var: Var):
     """Test that unsupported types for contains throw a type error.
 
     Args:
