@@ -171,6 +171,14 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
     )
 
 
+@overload
+def color_mode_cond(light: Component, dark: Component | None = None) -> Component: ...  # type: ignore
+
+
+@overload
+def color_mode_cond(light: Any, dark: Any = None) -> Var: ...
+
+
 def color_mode_cond(light: Any, dark: Any = None) -> Var | Component:
     """Create a component or Prop based on color_mode.
 
