@@ -70,7 +70,7 @@ def test_app(
     with app_harness_env.create(
         root=tmp_path_factory.mktemp("test_app"),
         app_name=f"testapp_{app_harness_env.__name__.lower()}",
-        app_source=TestApp,  # type: ignore
+        app_source=TestApp,
     ) as harness:
         yield harness
 
