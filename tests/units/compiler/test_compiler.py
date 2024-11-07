@@ -133,11 +133,11 @@ def test_compile_stylesheets(tmp_path: Path, mocker):
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
         str(Path(".web") / "styles" / "styles.css"),
-        f"@import url('./tailwind.css'); \n"
-        f"@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
-        f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
-        f"@import url('./styles.css'); \n"
-        f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
+        "@import url('./tailwind.css'); \n"
+        "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
+        "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
+        "@import url('./styles.css'); \n"
+        "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
     )
 
     assert (project / ".web" / "styles" / "styles.css").read_text() == (
@@ -150,7 +150,7 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
         import sass  # noqa: F401
     except ImportError:
         pytest.skip(
-            """The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`."""
+            'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
         )
 
     project = tmp_path / "test_project"
@@ -181,10 +181,10 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
         str(Path(".web") / "styles" / "styles.css"),
-        f"@import url('./tailwind.css'); \n"
-        f"@import url('./styles.css'); \n"
-        f"@import url('./preprocess/styles_a.css'); \n"
-        f"@import url('./preprocess/styles_b.css'); \n",
+        "@import url('./tailwind.css'); \n"
+        "@import url('./styles.css'); \n"
+        "@import url('./preprocess/styles_a.css'); \n"
+        "@import url('./preprocess/styles_b.css'); \n",
     )
 
     stylesheets = [
@@ -194,10 +194,10 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
         str(Path(".web") / "styles" / "styles.css"),
-        f"@import url('./tailwind.css'); \n"
-        f"@import url('./styles.css'); \n"
-        f"@import url('./preprocess/styles_b.css'); \n"
-        f"@import url('./preprocess/styles_a.css'); \n",
+        "@import url('./tailwind.css'); \n"
+        "@import url('./styles.css'); \n"
+        "@import url('./preprocess/styles_b.css'); \n"
+        "@import url('./preprocess/styles_a.css'); \n",
     )
 
     assert (project / ".web" / "styles" / "styles.css").read_text() == (

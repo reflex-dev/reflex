@@ -259,7 +259,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
 
     if sass_compile is None:
         console.error(
-            """The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`."""
+            'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
         )
 
     return templates.STYLE.render(stylesheets=sheets)
