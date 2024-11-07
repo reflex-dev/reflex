@@ -64,7 +64,7 @@ class Plotly(NoSSRComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_after_plot: Optional[EventType[[], BASE_STATE]] = None,
         on_animated: Optional[EventType[[], BASE_STATE]] = None,
         on_animating_frame: Optional[EventType[[], BASE_STATE]] = None,
