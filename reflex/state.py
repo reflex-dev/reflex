@@ -3403,7 +3403,7 @@ class StateManagerRedis(StateManager):
             while not state_is_locked:
                 # wait for the lock to be released
                 while True:
-                    if not await self.redis.exists(lock_key):
+                    if not await self.redis.exists(prefix_redis_token(lock_key)):
                         break  # key was removed, try to get the lock again
                     message = await pubsub.get_message(
                         ignore_subscribe_messages=True,
@@ -3444,7 +3444,7 @@ class StateManagerRedis(StateManager):
         finally:
             if state_is_locked:
                 # only delete our lock
-                await self.redis.delete(lock_key)
+                await self.redis.delete(prefix_redis_token(lock_key))
 
     async def close(self):
         """Explicitly close the redis connection and connection_pool.
