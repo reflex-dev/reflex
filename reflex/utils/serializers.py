@@ -39,10 +39,24 @@ SERIALIZERS: dict[Type, Serializer] = {}
 SERIALIZER_TYPES: dict[Type, Type] = {}
 
 
+@overload
+def serializer(
+    fn: None = None,
+    to: Any = None,
+) -> Serializer: ...
+
+
+@overload
+def serializer(
+    fn: Serializer,
+    to: None = None,
+) -> functools.partial[Serializer]: ...
+
+
 def serializer(
     fn: Serializer | None = None,
-    to: Type | None = None,
-) -> Serializer:
+    to: Any = None,
+) -> Serializer | functools.partial[Serializer]:
     """Decorator to add a serializer for a given type.
 
     Args:
