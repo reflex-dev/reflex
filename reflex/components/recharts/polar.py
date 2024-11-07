@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
-from reflex.event import EventHandler, empty_event
+from reflex.event import EventHandler, no_args_event_spec
 from reflex.vars.base import LiteralVar, Var
 
 from .recharts import (
@@ -103,14 +103,14 @@ class Pie(Recharts):
             A dict mapping the event trigger to the var that is passed to the handler.
         """
         return {
-            EventTriggers.ON_ANIMATION_START: empty_event,
-            EventTriggers.ON_ANIMATION_END: empty_event,
-            EventTriggers.ON_CLICK: empty_event,
-            EventTriggers.ON_MOUSE_MOVE: empty_event,
-            EventTriggers.ON_MOUSE_OVER: empty_event,
-            EventTriggers.ON_MOUSE_OUT: empty_event,
-            EventTriggers.ON_MOUSE_ENTER: empty_event,
-            EventTriggers.ON_MOUSE_LEAVE: empty_event,
+            EventTriggers.ON_ANIMATION_START: no_args_event_spec,
+            EventTriggers.ON_ANIMATION_END: no_args_event_spec,
+            EventTriggers.ON_CLICK: no_args_event_spec,
+            EventTriggers.ON_MOUSE_MOVE: no_args_event_spec,
+            EventTriggers.ON_MOUSE_OVER: no_args_event_spec,
+            EventTriggers.ON_MOUSE_OUT: no_args_event_spec,
+            EventTriggers.ON_MOUSE_ENTER: no_args_event_spec,
+            EventTriggers.ON_MOUSE_LEAVE: no_args_event_spec,
         }
 
 
@@ -167,8 +167,8 @@ class Radar(Recharts):
             A dict mapping the event trigger to the var that is passed to the handler.
         """
         return {
-            EventTriggers.ON_ANIMATION_START: empty_event,
-            EventTriggers.ON_ANIMATION_END: empty_event,
+            EventTriggers.ON_ANIMATION_START: no_args_event_spec,
+            EventTriggers.ON_ANIMATION_END: no_args_event_spec,
         }
 
 
@@ -219,14 +219,14 @@ class RadialBar(Recharts):
             A dict mapping the event trigger to the var that is passed to the handler.
         """
         return {
-            EventTriggers.ON_CLICK: empty_event,
-            EventTriggers.ON_MOUSE_MOVE: empty_event,
-            EventTriggers.ON_MOUSE_OVER: empty_event,
-            EventTriggers.ON_MOUSE_OUT: empty_event,
-            EventTriggers.ON_MOUSE_ENTER: empty_event,
-            EventTriggers.ON_MOUSE_LEAVE: empty_event,
-            EventTriggers.ON_ANIMATION_START: empty_event,
-            EventTriggers.ON_ANIMATION_END: empty_event,
+            EventTriggers.ON_CLICK: no_args_event_spec,
+            EventTriggers.ON_MOUSE_MOVE: no_args_event_spec,
+            EventTriggers.ON_MOUSE_OVER: no_args_event_spec,
+            EventTriggers.ON_MOUSE_OUT: no_args_event_spec,
+            EventTriggers.ON_MOUSE_ENTER: no_args_event_spec,
+            EventTriggers.ON_MOUSE_LEAVE: no_args_event_spec,
+            EventTriggers.ON_ANIMATION_START: no_args_event_spec,
+            EventTriggers.ON_ANIMATION_END: no_args_event_spec,
         }
 
 
@@ -277,28 +277,28 @@ class PolarAngleAxis(Recharts):
     _valid_children: List[str] = ["Label"]
 
     # The customized event handler of click on the ticks of this axis.
-    on_click: EventHandler[empty_event]
+    on_click: EventHandler[no_args_event_spec]
 
     # The customized event handler of mousedown on the the ticks of this axis.
-    on_mouse_down: EventHandler[empty_event]
+    on_mouse_down: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseup on the ticks of this axis.
-    on_mouse_up: EventHandler[empty_event]
+    on_mouse_up: EventHandler[no_args_event_spec]
 
     # The customized event handler of mousemove on the ticks of this axis.
-    on_mouse_move: EventHandler[empty_event]
+    on_mouse_move: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseover on the ticks of this axis.
-    on_mouse_over: EventHandler[empty_event]
+    on_mouse_over: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseout on the ticks of this axis.
-    on_mouse_out: EventHandler[empty_event]
+    on_mouse_out: EventHandler[no_args_event_spec]
 
     # The customized event handler of moustenter on the ticks of this axis.
-    on_mouse_enter: EventHandler[empty_event]
+    on_mouse_enter: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseleave on the ticks of this axis.
-    on_mouse_leave: EventHandler[empty_event]
+    on_mouse_leave: EventHandler[no_args_event_spec]
 
 
 class PolarGrid(Recharts):
@@ -392,12 +392,12 @@ class PolarRadiusAxis(Recharts):
             A dict mapping the event trigger to the var that is passed to the handler.
         """
         return {
-            EventTriggers.ON_CLICK: empty_event,
-            EventTriggers.ON_MOUSE_MOVE: empty_event,
-            EventTriggers.ON_MOUSE_OVER: empty_event,
-            EventTriggers.ON_MOUSE_OUT: empty_event,
-            EventTriggers.ON_MOUSE_ENTER: empty_event,
-            EventTriggers.ON_MOUSE_LEAVE: empty_event,
+            EventTriggers.ON_CLICK: no_args_event_spec,
+            EventTriggers.ON_MOUSE_MOVE: no_args_event_spec,
+            EventTriggers.ON_MOUSE_OVER: no_args_event_spec,
+            EventTriggers.ON_MOUSE_OUT: no_args_event_spec,
+            EventTriggers.ON_MOUSE_ENTER: no_args_event_spec,
+            EventTriggers.ON_MOUSE_LEAVE: no_args_event_spec,
         }
 
 

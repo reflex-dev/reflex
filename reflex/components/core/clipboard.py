@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple, Union
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.tags.tag import Tag
-from reflex.event import EventChain, EventHandler, identity_event
+from reflex.event import EventChain, EventHandler, passthrough_event_spec
 from reflex.utils.format import format_prop, wrap
 from reflex.utils.imports import ImportVar
 from reflex.vars import get_unique_variable_name
@@ -20,7 +20,7 @@ class Clipboard(Fragment):
     targets: Var[List[str]]
 
     # Called when the user pastes data into the document. Data is a list of tuples of (mime_type, data). Binary types will be base64 encoded as a data uri.
-    on_paste: EventHandler[identity_event(List[Tuple[str, str]])]
+    on_paste: EventHandler[passthrough_event_spec(List[Tuple[str, str]])]
 
     # Save the original event actions for the on_paste event.
     on_paste_event_actions: Var[Dict[str, Union[bool, int]]]

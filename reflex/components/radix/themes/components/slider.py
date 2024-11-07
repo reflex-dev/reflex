@@ -6,18 +6,15 @@ from typing import List, Literal, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
-from reflex.event import EventHandler, identity_event
+from reflex.event import EventHandler, passthrough_event_spec
 from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, RadixThemesComponent
 
 on_value_event_spec = (
-    identity_event(list[Union[int, float]]),
-    identity_event(list[int]),
-    identity_event(list[float]),
+    passthrough_event_spec(list[Union[int, float]]),
+    passthrough_event_spec(list[int]),
+    passthrough_event_spec(list[float]),
 )
 
 

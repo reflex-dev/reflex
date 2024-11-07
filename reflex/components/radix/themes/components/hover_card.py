@@ -5,13 +5,10 @@ from typing import Dict, Literal, Union
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
-from reflex.event import EventHandler, identity_event
+from reflex.event import EventHandler, passthrough_event_spec
 from reflex.vars.base import Var
 
-from ..base import (
-    RadixThemesComponent,
-    RadixThemesTriggerComponent,
-)
+from ..base import RadixThemesComponent, RadixThemesTriggerComponent
 
 
 class HoverCardRoot(RadixThemesComponent):
@@ -32,7 +29,7 @@ class HoverCardRoot(RadixThemesComponent):
     close_delay: Var[int]
 
     # Fired when the open state changes.
-    on_open_change: EventHandler[identity_event(bool)]
+    on_open_change: EventHandler[passthrough_event_spec(bool)]
 
 
 class HoverCardTrigger(RadixThemesTriggerComponent):

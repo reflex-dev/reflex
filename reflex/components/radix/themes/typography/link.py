@@ -16,15 +16,8 @@ from reflex.components.next.link import NextLink
 from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    RadixThemesComponent,
-)
-from .base import (
-    LiteralTextSize,
-    LiteralTextTrim,
-    LiteralTextWeight,
-)
+from ..base import LiteralAccentColor, RadixThemesComponent
+from .base import LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 
 LiteralLinkUnderline = Literal["auto", "hover", "always", "none"]
 

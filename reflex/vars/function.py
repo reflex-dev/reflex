@@ -8,13 +8,7 @@ from typing import Any, Callable, Optional, Tuple, Type, Union
 
 from reflex.utils.types import GenericType
 
-from .base import (
-    CachedVarOperation,
-    LiteralVar,
-    Var,
-    VarData,
-    cached_property_no_lock,
-)
+from .base import CachedVarOperation, LiteralVar, Var, VarData, cached_property_no_lock
 
 
 class FunctionVar(Var[Callable], python_types=Callable):

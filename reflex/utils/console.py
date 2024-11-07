@@ -191,7 +191,6 @@ def ask(
 def progress():
     """Create a new progress bar.
 
-
     Returns:
         A new progress bar.
     """
