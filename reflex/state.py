@@ -1036,9 +1036,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             prop: The var to create a setter for.
         """
-        setter_name = prop.get_setter_name(include_state=False)
+        setter_name = prop._get_setter_name(include_state=False)
         if setter_name not in cls.__dict__:
-            event_handler = cls._create_event_handler(prop.get_setter())
+            event_handler = cls._create_event_handler(prop._get_setter())
             cls.event_handlers[setter_name] = event_handler
             setattr(cls, setter_name, event_handler)
 
@@ -1052,7 +1052,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Get the pydantic field for the var.
         field = cls.get_fields()[prop._var_field_name]
         if field.required:
-            default_value = prop.get_default_value()
+            default_value = prop._get_default_value()
             if default_value is not None:
                 field.required = False
                 field.default = default_value
@@ -1079,7 +1079,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return getattr(cls, name)
         except AttributeError:
             try:
-                return Var("", _var_type=annotation_value).get_default_value()
+                return Var("", _var_type=annotation_value)._get_default_value()
             except TypeError:
                 pass
         return None

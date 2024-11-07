@@ -1450,7 +1450,7 @@ class Component(BaseComponent, ABC):
         """
         ref = self.get_ref()
         if ref is not None:
-            return f"const {ref} = useRef(null); {str(Var(_js_expr=ref).as_ref())} = {ref};"
+            return f"const {ref} = useRef(null); {str(Var(_js_expr=ref)._as_ref())} = {ref};"
 
     def _get_vars_hooks(self) -> dict[str, None]:
         """Get the hooks required by vars referenced in this component.
