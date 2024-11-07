@@ -1,9 +1,11 @@
 """A Reflex logo component."""
 
+from typing import Union
+
 import reflex as rx
 
 
-def svg_logo(color: str | rx.Var[str] = rx.color_mode_cond("#110F1F", "white")):
+def svg_logo(color: Union[str, rx.Var[str]] = rx.color_mode_cond("#110F1F", "white")):
     """A Reflex logo SVG.
 
     Args:
