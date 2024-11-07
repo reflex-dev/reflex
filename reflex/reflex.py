@@ -154,7 +154,6 @@ def _run(
     loglevel: constants.LogLevel = config.loglevel,
 ):
     """Run the app in the given directory."""
-
     # Set env mode in the environment
     # This must be set before importing modules that contain rx.State subclasses
     EnvironmentVariables.REFLEX_ENV_MODE.set(env)
