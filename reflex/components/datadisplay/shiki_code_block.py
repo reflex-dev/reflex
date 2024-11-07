@@ -12,9 +12,7 @@ from reflex.components.core.colors import color
 from reflex.components.core.cond import color_mode_cond
 from reflex.components.el.elements.forms import Button
 from reflex.components.lucide.icon import Icon
-from reflex.components.markdown.markdown import (
-    MarkdownComponentMap,
-)
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.components.props import NoExtrasAllowedProps
 from reflex.components.radix.themes.layout.box import Box
 from reflex.event import run_script, set_clipboard

@@ -27,11 +27,7 @@ from reflex.vars.function import (
     DestructuredArg,
     FunctionStringVar,
 )
-from reflex.vars.number import (
-    LiteralBooleanVar,
-    LiteralNumberVar,
-    NumberVar,
-)
+from reflex.vars.number import LiteralBooleanVar, LiteralNumberVar, NumberVar
 from reflex.vars.object import LiteralObjectVar, ObjectVar
 from reflex.vars.sequence import (
     ArrayVar,

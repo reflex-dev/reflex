@@ -8,10 +8,7 @@ from typing import ClassVar, Dict, Literal, Optional, Union
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.cond import color_mode_cond
 from reflex.components.lucide.icon import Icon
-from reflex.components.markdown.markdown import (
-    _LANGUAGE,
-    MarkdownComponentMap,
-)
+from reflex.components.markdown.markdown import _LANGUAGE, MarkdownComponentMap
 from reflex.components.radix.themes.components.button import Button
 from reflex.components.radix.themes.layout.box import Box
 from reflex.constants.colors import Color
