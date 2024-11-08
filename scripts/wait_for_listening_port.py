@@ -10,6 +10,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Tuple
 
+import httpx
+
 # psutil is already a dependency of Reflex itself - so it's OK to use
 import psutil
 
@@ -61,6 +63,12 @@ def main():
         else:
             print(f"FAIL: {msg}")
             exit(1)
+    # Make sure the HTTP response for both ports is the same (proxy frontend to backend).
+    responses = [(port, httpx.get(f"http://localhost:{port}")) for port in args.port]
+    n_port, n_resp = responses[0]
+    for port, resp in responses[1:]:
+        assert resp.content == n_resp.content, f"HTTP response on {port} is not equal."
+        print(f"OK: HTTP responses for :{n_port}/ and :{port}/ are equal.")
 
 
 if __name__ == "__main__":
