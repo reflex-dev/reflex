@@ -1,34 +1,15 @@
-from typing import Any, Literal, Callable
+"""The GunicornBackendServer."""
+
+from __future__ import annotations
 
 import os
-import sys
 import ssl
-from pydantic import Field
+import sys
+from typing import Any, Callable, Literal
 
-from gunicorn.app.base import BaseApplication
-
-import psutil
-
-from reflex import constants
+from reflex.constants.base import Env, LogLevel
 from reflex.server.base import CustomBackendServer
-
-
-class StandaloneApplication(BaseApplication):
-
-    def __init__(self, app, options=None):
-        self.options = options or {}
-        self.application = app
-        super().__init__()
-
-    def load_config(self):
-        config = {key: value for key, value in self.options.items()
-                  if key in self.cfg.settings and value is not None} # type: ignore
-        for key, value in config.items():
-            self.cfg.set(key.lower(), value) # type: ignore
-
-    def load(self):
-        return self.application
-
+from reflex.utils import console
 
 _mapping_attr_to_cli: dict[str, str] = {
     "config": "--config",
@@ -105,10 +86,13 @@ _mapping_attr_to_cli: dict[str, str] = {
     "header_map": "--header-map",
 }
 
+
 class GunicornBackendServer(CustomBackendServer):
+    """Gunicorn backendServer."""
+
     # https://github.com/benoitc/gunicorn/blob/bacbf8aa5152b94e44aa5d2a94aeaf0318a85248/gunicorn/config.py
 
-    app: str
+    app_uri: str | None
 
     config: str = "./gunicorn.conf.py"
     """\
@@ -128,7 +112,7 @@ class GunicornBackendServer(CustomBackendServer):
         A WSGI application path in pattern ``$(MODULE_NAME):$(VARIABLE_NAME)``.
     """
 
-    bind: list[str] = ['127.0.0.1:8000']
+    bind: list[str] = ["127.0.0.1:8000"]
     """\
         The socket to bind.
 
@@ -162,7 +146,7 @@ class GunicornBackendServer(CustomBackendServer):
         Must be a positive integer. Generally set in the 64-2048 range.
     """
 
-    workers: int = 1
+    workers: int = 0
     """\
         The number of worker processes for handling requests.
 
@@ -175,7 +159,14 @@ class GunicornBackendServer(CustomBackendServer):
         it is not defined, the default is ``1``.
     """
 
-    worker_class: Literal["sync", "eventlet", "gevent", "tornado", "gthread", "uvicorn.workers.UvicornH11Worker"] = "sync"
+    worker_class: Literal[
+        "sync",
+        "eventlet",
+        "gevent",
+        "tornado",
+        "gthread",
+        "uvicorn.workers.UvicornH11Worker",
+    ] = "sync"
     """\
         The type of workers to use.
 
@@ -202,7 +193,7 @@ class GunicornBackendServer(CustomBackendServer):
         ``gunicorn.workers.ggevent.GeventWorker``.
     """
 
-    threads: int = 1
+    threads: int = 0
     """\
         The number of worker threads for handling requests.
 
@@ -493,7 +484,11 @@ class GunicornBackendServer(CustomBackendServer):
         temporary directory.
     """
 
-    secure_scheme_headers: dict[str, Any] = {'X-FORWARDED-PROTOCOL': 'ssl', 'X-FORWARDED-PROTO': 'https', 'X-FORWARDED-SSL': 'on'}
+    secure_scheme_headers: dict[str, Any] = {
+        "X-FORWARDED-PROTOCOL": "ssl",
+        "X-FORWARDED-PROTO": "https",
+        "X-FORWARDED-SSL": "on",
+    }
     """\
         A dictionary containing headers and values that the front-end proxy
         uses to indicate HTTPS requests. If the source IP is permitted by
@@ -588,7 +583,9 @@ class GunicornBackendServer(CustomBackendServer):
     Disable redirect access logs to syslog.
     """
 
-    access_log_format: str = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'
+    access_log_format: str = (
+        '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'
+    )
     """\
         The access log format.
 
@@ -686,7 +683,11 @@ class GunicornBackendServer(CustomBackendServer):
         if sys.platform == "darwin"
         else (
             "unix:///var/run/log"
-            if sys.platform in ('freebsd', 'dragonfly', )
+            if sys.platform
+            in (
+                "freebsd",
+                "dragonfly",
+            )
             else (
                 "unix:///dev/log"
                 if sys.platform == "openbsd"
@@ -858,7 +859,9 @@ class GunicornBackendServer(CustomBackendServer):
         The callable needs to accept a single instance variable for the Arbiter.
     """
 
-    pre_request: Callable = lambda worker, req: worker.log.debug("%s %s", req.method, req.path)
+    pre_request: Callable = lambda worker, req: worker.log.debug(
+        "%s %s", req.method, req.path
+    )
     """\
         Called just before a worker processes the request.
 
@@ -908,7 +911,9 @@ class GunicornBackendServer(CustomBackendServer):
         The callable needs to accept a single instance variable for the Arbiter.
     """
 
-    ssl_context: Callable = lambda config, default_ssl_context_factory: default_ssl_context_factory()
+    ssl_context: Callable = (
+        lambda config, default_ssl_context_factory: default_ssl_context_factory()
+    )
     """\
         Called when SSLContext is needed.
 
@@ -975,7 +980,9 @@ class GunicornBackendServer(CustomBackendServer):
         SSL certificate file
     """
 
-    ssl_version: int = ssl.PROTOCOL_TLS if hasattr(ssl, "PROTOCOL_TLS") else ssl.PROTOCOL_SSLv23
+    ssl_version: int = (
+        ssl.PROTOCOL_TLS if hasattr(ssl, "PROTOCOL_TLS") else ssl.PROTOCOL_SSLv23
+    )
     """\
         SSL version to use (see stdlib ssl module's).
 
@@ -1163,33 +1170,96 @@ class GunicornBackendServer(CustomBackendServer):
         on a proxy in front of Gunicorn.
     """
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
+    def check_import(self, extra: bool = False):
+        """Check package importation."""
+        from importlib.util import find_spec
+
+        errors: list[str] = []
+
+        if find_spec("gunicorn") is None:
+            errors.append(
+                'The `gunicorn` package is required to run `GunicornBackendServer`. Run `pip install "gunicorn>=20.1.0"`.'
+            )
+
+        if errors:
+            console.error("\n".join(errors))
+            sys.exit()
+
+    def setup(self, host: str, port: int, loglevel: LogLevel, env: Env):
+        """Setup."""
+        self.app_uri = f"{self.get_app_module()}()"
+        self.loglevel = loglevel.value  # type: ignore
+        self.bind = [f"{host}:{port}"]
+
+        if env == Env.PROD:
+            if self.workers == self.get_fields()["workers"].default:
+                self.workers = self.get_recommended_workers()
+            else:
+                if self.workers > (max_threads := self.get_max_workers()):
+                    self.workers = max_threads
+
+            if self.threads == self.get_fields()["threads"].default:
+                self.threads = self.get_recommended_threads()
+            else:
+                if self.threads > (max_threads := self.get_max_threads()):
+                    self.threads = max_threads
+            self.preload_app = True
+
+        if env == Env.DEV:
+            self.reload = True
 
     def run_prod(self) -> list[str]:
-        print("[reflex.server.gunicorn::GunicornBackendServer] start")
+        """Run in production mode."""
+        self.check_import()
+
         command = ["gunicorn"]
 
-        for key,field in self.get_fields().items():
+        for key, field in self.get_fields().items():
             if key != "app":
-                value = self.__getattribute__(key)
-                if key == "preload":
-                    print(_mapping_attr_to_cli.get(key, None), value, field.default)
-                if _mapping_attr_to_cli.get(key, None):
-                    if value != field.default:
-                        if isinstance(value, list):
-                            for v in value:
-                                command += [_mapping_attr_to_cli[key], str(v)]
-                        elif isinstance(value, bool):
+                value = getattr(self, key)
+                if _mapping_attr_to_cli.get(key) and value != field.default:
+                    if isinstance(value, list):
+                        for v in value:
+                            command += [_mapping_attr_to_cli[key], str(v)]
+                    elif isinstance(value, bool):
+                        if (key == "sendfile" and value is False) or (
+                            key != "sendfile" and value
+                        ):
                             command.append(_mapping_attr_to_cli[key])
-                        else:
-                            command += [_mapping_attr_to_cli[key], str(value)]
+                    else:
+                        command += [_mapping_attr_to_cli[key], str(value)]
 
-        print("[reflex.server.gunicorn::GunicornBackendServer] done")
-        return command + [f"reflex.app_module_for_backend:{constants.CompileVars.APP}()"]
+        return command + [f"{self.get_app_module()}()"]
 
     def run_dev(self):
-        StandaloneApplication(
-            app=self.app,
-            options=self.dict().items()
-        ).run()
+        """Run in development mode."""
+        self.check_import()
+        console.info(
+            "For development mode, we recommand to use `UvicornBackendServer` than `GunicornBackendServer`"
+        )
+
+        from gunicorn.app.base import BaseApplication
+        from gunicorn.util import import_app as gunicorn_import_app
+
+        options_ = self.dict()
+        options_.pop("app", None)
+
+        class StandaloneApplication(BaseApplication):
+            def __init__(self, app_uri, options=None):
+                self.options = options or {}
+                self.app_uri = app_uri
+                super().__init__()
+
+            def load_config(self):
+                config = {
+                    key: value
+                    for key, value in self.options.items()
+                    if key in self.cfg.settings and value is not None
+                }  # type: ignore
+                for key, value in config.items():
+                    self.cfg.set(key.lower(), value)  # type: ignore
+
+            def load(self):
+                return gunicorn_import_app(self.app_uri)
+
+        StandaloneApplication(app_uri=self.app_uri, options=options_).run()

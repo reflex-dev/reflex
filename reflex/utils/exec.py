@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-from abc import abstractmethod, ABCMeta
-from typing import IO, Any, Literal, Sequence, Type
-
 import hashlib
 import json
 import os
@@ -12,20 +9,14 @@ import platform
 import re
 import subprocess
 import sys
-import asyncio
-import ssl
-from configparser import RawConfigParser
 from pathlib import Path
 from urllib.parse import urljoin
-from pydantic import Field
-from dataclasses import dataclass
 
 import psutil
 
-from reflex import constants, server
-from reflex.base import Base
+from reflex import constants
 from reflex.config import environment, get_config
-from reflex.constants.base import LogLevel
+from reflex.constants.base import Env, LogLevel
 from reflex.utils import console, path_ops
 from reflex.utils.prerequisites import get_web_dir
 
@@ -187,44 +178,11 @@ def run_frontend_prod(root: Path, port: str, backend_present=True):
     )
 
 
-def should_use_granian():
-    """Whether to use Granian for backend.
-
-    Returns:
-        True if Granian should be used.
-    """
-    return environment.REFLEX_USE_GRANIAN.get()
-
-
-def get_app_module():
-    """Get the app module for the backend.
-
-    Returns:
-        The app module for the backend.
-    """
-    return f"reflex.app_module_for_backend:{constants.CompileVars.APP}"
 ### REWORK <--
-
-
-def get_granian_target():
-    """Get the Granian target for the backend.
-
-    Returns:
-        The Granian target for the backend.
-    """
-    import reflex
-
-    app_module_path = Path(reflex.__file__).parent / "app_module_for_backend.py"
-
-    return (
-        f"{app_module_path!s}:{constants.CompileVars.APP}.{constants.CompileVars.API}"
-    )
-
-
 def run_backend(
     host: str,
     port: int,
-    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
+    loglevel: LogLevel = LogLevel.ERROR,
     frontend_present: bool = False,
 ):
     """Run the backend.
@@ -236,6 +194,7 @@ def run_backend(
         frontend_present: Whether the frontend is present.
     """
     web_dir = get_web_dir()
+    config = get_config()
     # Create a .nocompile file to skip compile for backend.
     if web_dir.exists():
         (web_dir / constants.NOCOMPILE_FILE).touch()
@@ -244,78 +203,15 @@ def run_backend(
         notify_backend()
 
     # Run the backend in development mode.
-    if should_use_granian():
-        run_granian_backend(host, port, loglevel)
-    else:
-        run_uvicorn_backend(host, port, loglevel)
-
-
-def run_uvicorn_backend(host, port, loglevel: LogLevel):
-    """Run the backend in development mode using Uvicorn.
-
-    Args:
-        host: The app host
-        port: The app port
-        loglevel: The log level.
-    """
-    import uvicorn
-
-    uvicorn.run(
-        app=f"{get_app_module()}.{constants.CompileVars.API}",
-        host=host,
-        port=port,
-        log_level=loglevel.value,
-        reload=True,
-        reload_dirs=[get_config().app_name],
-    )
-
-
-def run_granian_backend(host, port, loglevel: LogLevel):
-    """Run the backend in development mode using Granian.
-
-    Args:
-        host: The app host
-        port: The app port
-        loglevel: The log level.
-    """
-    console.debug("Using Granian for backend")
-    try:
-        from granian import Granian  # type: ignore
-        from granian.constants import Interfaces  # type: ignore
-        from granian.log import LogLevels  # type: ignore
-
-        Granian(
-            target=get_granian_target(),
-            address=host,
-            port=port,
-            interface=Interfaces.ASGI,
-            log_level=LogLevels(loglevel.value),
-            reload=True,
-            reload_paths=[Path(get_config().app_name)],
-            reload_ignore_dirs=[".web"],
-        ).serve()
-    except ImportError:
-        console.error(
-            'InstallError: REFLEX_USE_GRANIAN is set but `granian` is not installed. (run `pip install "granian[reload]>=1.6.0"`)'
-        )
-        os._exit(1)
-
-
-def _get_backend_workers():
-    from reflex.utils import processes
-
-    config = get_config()
-    return (
-        processes.get_num_workers()
-        if not config.gunicorn_workers
-        else config.gunicorn_workers
-    )
+    backend_server_prod = config.backend_server_prod
+    backend_server_prod.setup(host, port, loglevel, Env.DEV)
+    backend_server_prod.run_dev()
 
 
 def run_backend_prod(
     host: str,
     port: int,
-    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
+    loglevel: LogLevel = LogLevel.ERROR,
     frontend_present: bool = False,
 ):
     """Run the backend.
@@ -326,77 +222,24 @@ def run_backend_prod(
         loglevel: The log level.
         frontend_present: Whether the frontend is present.
     """
-    print("[reflex.utils.exec::run_backend_prod] start")
-    if not frontend_present:
-        notify_backend()
+    from reflex.utils import processes
 
     config = get_config()
 
-    if should_use_granian():
-        run_granian_backend_prod(host, port, loglevel)
-    else:
-        from reflex.utils import processes
+    if not frontend_present:
+        notify_backend()
 
-        backend_server_prod = config.backend_server_prod
-        if isinstance(backend_server_prod, server.GunicornBackendServer):
-            backend_server_prod.app = f"{get_app_module()}()"
-            backend_server_prod.preload_app = True
-            backend_server_prod.loglevel = loglevel.value  # type: ignore
-            backend_server_prod.bind = [f"{host}:{port}"]
-            backend_server_prod.threads = _get_backend_workers()
-            backend_server_prod.workers = _get_backend_workers()
-
-        print(backend_server_prod.run_prod())
-        processes.new_process(
-            backend_server_prod.run_prod(),
-            run=True,
-            show_logs=True,
-            env={
-                environment.REFLEX_SKIP_COMPILE.name: "true"
-            },  # skip compile for prod backend
-        )
-        print("[reflex.utils.exec::run_backend_prod] done")
-
-
-def run_granian_backend_prod(host, port, loglevel):
-    """Run the backend in production mode using Granian.
-
-    Args:
-        host: The app host
-        port: The app port
-        loglevel: The log level.
-    """
-    from reflex.utils import processes
-
-    try:
-        from granian.constants import Interfaces  # type: ignore
-
-        command = [
-            "granian",
-            "--workers",
-            str(_get_backend_workers()),
-            "--log-level",
-            "critical",
-            "--host",
-            host,
-            "--port",
-            str(port),
-            "--interface",
-            str(Interfaces.ASGI),
-            get_granian_target(),
-        ]
-        processes.new_process(
-            command,
-            run=True,
-            show_logs=True,
-            env={
-                environment.REFLEX_SKIP_COMPILE.name: "true"
-            },  # skip compile for prod backend
-        )
-    except ImportError:
-        console.error(
-            'InstallError: REFLEX_USE_GRANIAN is set but `granian` is not installed. (run `pip install "granian[reload]>=1.6.0"`)'
-        )
+    # Run the backend in production mode.
+    backend_server_prod = config.backend_server_prod
+    backend_server_prod.setup(host, port, loglevel, Env.PROD)
+    processes.new_process(
+        backend_server_prod.run_prod(),
+        run=True,
+        show_logs=True,
+        env={
+            environment.REFLEX_SKIP_COMPILE.name: "true"
+        },  # skip compile for prod backend
+    )
 
 
 ### REWORK-->
@@ -522,6 +365,3 @@ def should_skip_compile() -> bool:
         removal_version="0.7.0",
     )
     return environment.REFLEX_SKIP_COMPILE.get()
-
-
-### REWORK <--
