@@ -92,7 +92,7 @@ class GunicornBackendServer(CustomBackendServer):
 
     # https://github.com/benoitc/gunicorn/blob/bacbf8aa5152b94e44aa5d2a94aeaf0318a85248/gunicorn/config.py
 
-    app_uri: str | None
+    app_uri: str | None = None
 
     config: str = "./gunicorn.conf.py"
     """\
