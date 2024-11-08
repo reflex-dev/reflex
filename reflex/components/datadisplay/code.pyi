@@ -7,10 +7,10 @@ import dataclasses
 from typing import Any, ClassVar, Dict, Literal, Optional, Union, overload
 
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.constants.colors import Color
 from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
-from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var
 
 LiteralCodeLanguage = Literal[
@@ -349,8 +349,7 @@ for theme_name in dir(Theme):
         continue
     setattr(Theme, theme_name, getattr(Theme, theme_name)._replace(_var_type=Theme))
 
-class CodeBlock(Component):
-    def add_imports(self) -> ImportDict: ...
+class CodeBlock(Component, MarkdownComponentMap):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -984,6 +983,9 @@ class CodeBlock(Component):
         ...
 
     def add_style(self): ...
+    @classmethod
+    def get_component_map_custom_code(cls) -> str: ...
+    def add_hooks(self) -> list[str | Var]: ...
 
 class CodeblockNamespace(ComponentNamespace):
     themes = Theme

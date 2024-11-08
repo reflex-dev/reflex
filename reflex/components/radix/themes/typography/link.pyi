@@ -8,6 +8,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.components.component import MemoizationLeaf
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.el.elements.inline import A
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.components.next.link import NextLink
 from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
@@ -19,7 +20,7 @@ from ..base import RadixThemesComponent
 LiteralLinkUnderline = Literal["auto", "hover", "always", "none"]
 next_link = NextLink.create()
 
-class Link(RadixThemesComponent, A, MemoizationLeaf):
+class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
     def add_imports(self) -> ImportDict: ...
     @overload
     @classmethod

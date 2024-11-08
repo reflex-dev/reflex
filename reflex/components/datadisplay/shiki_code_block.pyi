@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.components.props import NoExtrasAllowedProps
 from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
@@ -350,7 +351,7 @@ class ShikiJsTransformer(ShikiBaseTransformers):
     fns: list[FunctionStringVar]
     style: Optional[Style]
 
-class ShikiCodeBlock(Component):
+class ShikiCodeBlock(Component, MarkdownComponentMap):
     @overload
     @classmethod
     def create(  # type: ignore
