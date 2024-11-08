@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from abc import abstractmethod, ABCMeta
+from typing import IO, Any, Literal, Sequence, Type
+
 import hashlib
 import json
 import os
@@ -9,12 +12,18 @@ import platform
 import re
 import subprocess
 import sys
+import asyncio
+import ssl
+from configparser import RawConfigParser
 from pathlib import Path
 from urllib.parse import urljoin
+from pydantic import Field
+from dataclasses import dataclass
 
 import psutil
 
-from reflex import constants
+from reflex import constants, server
+from reflex.base import Base
 from reflex.config import environment, get_config
 from reflex.constants.base import LogLevel
 from reflex.utils import console, path_ops
@@ -194,6 +203,7 @@ def get_app_module():
         The app module for the backend.
     """
     return f"reflex.app_module_for_backend:{constants.CompileVars.APP}"
+### REWORK <--
 
 
 def get_granian_target():
@@ -316,65 +326,36 @@ def run_backend_prod(
         loglevel: The log level.
         frontend_present: Whether the frontend is present.
     """
+    print("[reflex.utils.exec::run_backend_prod] start")
     if not frontend_present:
         notify_backend()
+
+    config = get_config()
 
     if should_use_granian():
         run_granian_backend_prod(host, port, loglevel)
     else:
-        run_uvicorn_backend_prod(host, port, loglevel)
+        from reflex.utils import processes
 
+        backend_server_prod = config.backend_server_prod
+        if isinstance(backend_server_prod, server.GunicornBackendServer):
+            backend_server_prod.app = f"{get_app_module()}()"
+            backend_server_prod.preload_app = True
+            backend_server_prod.loglevel = loglevel.value  # type: ignore
+            backend_server_prod.bind = [f"{host}:{port}"]
+            backend_server_prod.threads = _get_backend_workers()
+            backend_server_prod.workers = _get_backend_workers()
 
-def run_uvicorn_backend_prod(host, port, loglevel):
-    """Run the backend in production mode using Uvicorn.
-
-    Args:
-        host: The app host
-        port: The app port
-        loglevel: The log level.
-    """
-    from reflex.utils import processes
-
-    config = get_config()
-
-    app_module = get_app_module()
-
-    RUN_BACKEND_PROD = f"gunicorn --worker-class {config.gunicorn_worker_class} --max-requests {config.gunicorn_max_requests} --max-requests-jitter {config.gunicorn_max_requests_jitter} --preload --timeout {config.timeout} --log-level critical".split()
-    RUN_BACKEND_PROD_WINDOWS = f"uvicorn --limit-max-requests {config.gunicorn_max_requests} --timeout-keep-alive {config.timeout}".split()
-    command = (
-        [
-            *RUN_BACKEND_PROD_WINDOWS,
-            "--host",
-            host,
-            "--port",
-            str(port),
-            app_module,
-        ]
-        if constants.IS_WINDOWS
-        else [
-            *RUN_BACKEND_PROD,
-            "--bind",
-            f"{host}:{port}",
-            "--threads",
-            str(_get_backend_workers()),
-            f"{app_module}()",
-        ]
-    )
-
-    command += [
-        "--log-level",
-        loglevel.value,
-        "--workers",
-        str(_get_backend_workers()),
-    ]
-    processes.new_process(
-        command,
-        run=True,
-        show_logs=True,
-        env={
-            environment.REFLEX_SKIP_COMPILE.name: "true"
-        },  # skip compile for prod backend
-    )
+        print(backend_server_prod.run_prod())
+        processes.new_process(
+            backend_server_prod.run_prod(),
+            run=True,
+            show_logs=True,
+            env={
+                environment.REFLEX_SKIP_COMPILE.name: "true"
+            },  # skip compile for prod backend
+        )
+        print("[reflex.utils.exec::run_backend_prod] done")
 
 
 def run_granian_backend_prod(host, port, loglevel):
@@ -418,6 +399,7 @@ def run_granian_backend_prod(host, port, loglevel):
         )
 
 
+### REWORK-->
 def output_system_info():
     """Show system information if the loglevel is in DEBUG."""
     if console._LOG_LEVEL > constants.LogLevel.DEBUG:
@@ -540,3 +522,6 @@ def should_skip_compile() -> bool:
         removal_version="0.7.0",
     )
     return environment.REFLEX_SKIP_COMPILE.get()
+
+
+### REWORK <--
