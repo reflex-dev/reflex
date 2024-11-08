@@ -39,6 +39,8 @@ from typing import (
     get_type_hints,
 )
 
+from pydantic import BaseModel as BaseModelV2
+from pydantic.v1 import BaseModel as BaseModelV1
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
@@ -3520,7 +3522,15 @@ class MutableProxy(wrapt.ObjectProxy):
         pydantic.BaseModel.__dict__
     )
 
-    __mutable_types__ = (list, dict, set, Base, DeclarativeBase)
+    __mutable_types__ = (
+        list,
+        dict,
+        set,
+        Base,
+        DeclarativeBase,
+        BaseModelV2,
+        BaseModelV1,
+    )
 
     def __init__(self, wrapped: Any, state: BaseState, field_name: str):
         """Create a proxy for a mutable object that tracks changes.
