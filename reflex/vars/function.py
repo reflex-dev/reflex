@@ -4,17 +4,12 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Any, Callable, Optional, Tuple, Type, Union
+from typing import Any, Callable, Optional, Sequence, Tuple, Type, Union
 
+from reflex.utils import format
 from reflex.utils.types import GenericType
 
-from .base import (
-    CachedVarOperation,
-    LiteralVar,
-    Var,
-    VarData,
-    cached_property_no_lock,
-)
+from .base import CachedVarOperation, LiteralVar, Var, VarData, cached_property_no_lock
 
 
 class FunctionVar(Var[Callable], python_types=Callable):
@@ -132,6 +127,36 @@ class VarOperationCall(CachedVarOperation, Var):
         )
 
 
+@dataclasses.dataclass(frozen=True)
+class DestructuredArg:
+    """Class for destructured arguments."""
+
+    fields: Tuple[str, ...] = tuple()
+    rest: Optional[str] = None
+
+    def to_javascript(self) -> str:
+        """Convert the destructured argument to JavaScript.
+
+        Returns:
+            The destructured argument in JavaScript.
+        """
+        return format.wrap(
+            ", ".join(self.fields) + (f", ...{self.rest}" if self.rest else ""),
+            "{",
+            "}",
+        )
+
+
+@dataclasses.dataclass(
+    frozen=True,
+)
+class FunctionArgs:
+    """Class for function arguments."""
+
+    args: Tuple[Union[str, DestructuredArg], ...] = tuple()
+    rest: Optional[str] = None
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
@@ -140,8 +165,9 @@ class VarOperationCall(CachedVarOperation, Var):
 class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
     """Base class for immutable function defined via arguments and return expression."""
 
-    _args_names: Tuple[str, ...] = dataclasses.field(default_factory=tuple)
+    _args: FunctionArgs = dataclasses.field(default_factory=FunctionArgs)
     _return_expr: Union[Var, Any] = dataclasses.field(default=None)
+    _explicit_return: bool = dataclasses.field(default=False)
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -150,13 +176,31 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
         Returns:
             The name of the var.
         """
-        return f"(({', '.join(self._args_names)}) => ({str(LiteralVar.create(self._return_expr))}))"
+        arg_names_str = ", ".join(
+            [
+                arg if isinstance(arg, str) else arg.to_javascript()
+                for arg in self._args.args
+            ]
+        ) + (f", ...{self._args.rest}" if self._args.rest else "")
+
+        return_expr_str = str(LiteralVar.create(self._return_expr))
+
+        # Wrap return expression in curly braces if explicit return syntax is used.
+        return_expr_str_wrapped = (
+            format.wrap(return_expr_str, "{", "}")
+            if self._explicit_return
+            else return_expr_str
+        )
+
+        return f"(({arg_names_str}) => {return_expr_str_wrapped})"
 
     @classmethod
     def create(
         cls,
-        args_names: Tuple[str, ...],
+        args_names: Sequence[Union[str, DestructuredArg]],
         return_expr: Var | Any,
+        rest: str | None = None,
+        explicit_return: bool = False,
         _var_type: GenericType = Callable,
         _var_data: VarData | None = None,
     ) -> ArgsFunctionOperation:
@@ -165,6 +209,8 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
         Args:
             args_names: The names of the arguments.
             return_expr: The return expression of the function.
+            rest: The name of the rest argument.
+            explicit_return: Whether to use explicit return syntax.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -174,8 +220,9 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
             _js_expr="",
             _var_type=_var_type,
             _var_data=_var_data,
-            _args_names=args_names,
+            _args=FunctionArgs(args=tuple(args_names), rest=rest),
             _return_expr=return_expr,
+            _explicit_return=explicit_return,
         )
 
 

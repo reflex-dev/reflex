@@ -11,6 +11,7 @@ import inspect
 import json
 import pickle
 import sys
+import typing
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -44,9 +45,7 @@ from typing_extensions import Self
 from reflex import event
 from reflex.config import get_config
 from reflex.istate.data import RouterData
-from reflex.istate.storage import (
-    ClientStorageBase,
-)
+from reflex.istate.storage import ClientStorageBase
 from reflex.vars.base import (
     ComputedVar,
     DynamicRouteVar,
@@ -92,7 +91,13 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import serializer
-from reflex.utils.types import _isinstance, get_origin, override
+from reflex.utils.types import (
+    _isinstance,
+    get_origin,
+    is_union,
+    override,
+    value_inside_optional,
+)
 from reflex.vars import VarData
 
 if TYPE_CHECKING:
@@ -1096,9 +1101,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             prop: The var to create a setter for.
         """
-        setter_name = prop.get_setter_name(include_state=False)
+        setter_name = prop._get_setter_name(include_state=False)
         if setter_name not in cls.__dict__:
-            event_handler = cls._create_event_handler(prop.get_setter())
+            event_handler = cls._create_event_handler(prop._get_setter())
             cls.event_handlers[setter_name] = event_handler
             setattr(cls, setter_name, event_handler)
 
@@ -1112,7 +1117,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Get the pydantic field for the var.
         field = cls.get_fields()[prop._var_field_name]
         if field.required:
-            default_value = prop.get_default_value()
+            default_value = prop._get_default_value()
             if default_value is not None:
                 field.required = False
                 field.default = default_value
@@ -1139,7 +1144,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return getattr(cls, name)
         except AttributeError:
             try:
-                return Var("", _var_type=annotation_value).get_default_value()
+                return Var("", _var_type=annotation_value)._get_default_value()
             except TypeError:
                 pass
         return None
@@ -1772,6 +1777,35 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Get the function to process the event.
         fn = functools.partial(handler.fn, state)
+
+        try:
+            type_hints = typing.get_type_hints(handler.fn)
+        except Exception:
+            type_hints = {}
+
+        for arg, value in list(payload.items()):
+            hinted_args = type_hints.get(arg, Any)
+            if hinted_args is Any:
+                continue
+            if is_union(hinted_args):
+                if value is None:
+                    continue
+                hinted_args = value_inside_optional(hinted_args)
+            if (
+                isinstance(value, dict)
+                and inspect.isclass(hinted_args)
+                and (
+                    dataclasses.is_dataclass(hinted_args)
+                    or issubclass(hinted_args, Base)
+                )
+            ):
+                payload[arg] = hinted_args(**value)
+            if isinstance(value, list) and (hinted_args is set or hinted_args is Set):
+                payload[arg] = set(value)
+            if isinstance(value, list) and (
+                hinted_args is tuple or hinted_args is Tuple
+            ):
+                payload[arg] = tuple(value)
 
         # Wrap the function in a try/except block.
         try:

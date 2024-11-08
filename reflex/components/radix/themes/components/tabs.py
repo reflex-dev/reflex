@@ -10,10 +10,7 @@ from reflex.components.core.colors import color
 from reflex.event import EventHandler, passthrough_event_spec
 from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, RadixThemesComponent
 
 vertical_orientation_css = "&[data-orientation='vertical']"
 

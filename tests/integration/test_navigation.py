@@ -52,7 +52,7 @@ def navigation_app(tmp_path) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path,
-        app_source=NavigationApp,  # type: ignore
+        app_source=NavigationApp,
     ) as harness:
         yield harness
 

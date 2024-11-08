@@ -137,7 +137,7 @@ def client_side(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("client_side"),
-        app_source=ClientSide,  # type: ignore
+        app_source=ClientSide,
     ) as harness:
         yield harness
 

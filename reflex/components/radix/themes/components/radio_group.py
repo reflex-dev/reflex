@@ -14,11 +14,7 @@ from reflex.utils import types
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.sequence import StringVar
 
-from ..base import (
-    LiteralAccentColor,
-    LiteralSpacing,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, LiteralSpacing, RadixThemesComponent
 
 LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 

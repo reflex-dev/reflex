@@ -11,10 +11,7 @@ from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
-from ..base import (
-    RadixLoadingProp,
-    RadixThemesComponent,
-)
+from ..base import RadixLoadingProp, RadixThemesComponent
 
 LiteralButtonSize = Literal["1", "2", "3", "4"]
 
@@ -157,7 +154,7 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,

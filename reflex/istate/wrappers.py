@@ -3,11 +3,7 @@
 from typing import Any
 
 from reflex.istate.proxy import ReadOnlyStateProxy
-from reflex.state import (
-    _split_substate_key,
-    _substate_key,
-    get_state_manager,
-)
+from reflex.state import _split_substate_key, _substate_key, get_state_manager
 
 
 async def get_state(token, state_cls: Any | None = None) -> ReadOnlyStateProxy:

@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple, Union
 
-from reflex.base import Base
+from typing_extensions import TypedDict, TypeVar
+
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond
-from reflex.event import EventHandler
+from reflex.event import EventHandler, no_args_event_spec
 from reflex.utils import console
 from reflex.vars.base import LiteralVar, Var
 
@@ -21,19 +22,7 @@ except ImportError:
     Template = Any  # type: ignore
 
 
-def _event_data_signature(e0: Var) -> List[Any]:
-    """For plotly events with event data and no points.
-
-    Args:
-        e0: The event data.
-
-    Returns:
-        The event key extracted from the event data (if defined).
-    """
-    return [Var(_js_expr=f"{e0}?.event")]
-
-
-def _event_points_data_signature(e0: Var) -> List[Any]:
+def _event_points_data_signature(e0: Var) -> Tuple[Var[List[Point]]]:
     """For plotly events with event data containing a point array.
 
     Args:
@@ -42,51 +31,63 @@ def _event_points_data_signature(e0: Var) -> List[Any]:
     Returns:
         The event data and the extracted points.
     """
-    return [
-        Var(_js_expr=f"{e0}?.event"),
-        Var(_js_expr=f"extractPoints({e0}?.points)"),
+    return (Var(_js_expr=f"extractPoints({e0}?.points)"),)
+
+
+T = TypeVar("T")
+
+ItemOrList = Union[T, List[T]]
+
+
+class BBox(TypedDict):
+    """Bounding box for a point in a plotly graph."""
+
+    x0: Union[float, int, None]
+    x1: Union[float, int, None]
+    y0: Union[float, int, None]
+    y1: Union[float, int, None]
+    z0: Union[float, int, None]
+    z1: Union[float, int, None]
+
+
+class Point(TypedDict):
+    """A point in a plotly graph."""
+
+    x: Union[float, int, None]
+    y: Union[float, int, None]
+    z: Union[float, int, None]
+    lat: Union[float, int, None]
+    lon: Union[float, int, None]
+    curveNumber: Union[int, None]
+    pointNumber: Union[int, None]
+    pointNumbers: Union[List[int], None]
+    pointIndex: Union[int, None]
+    markerColor: Union[
+        ItemOrList[
+            ItemOrList[
+                Union[
+                    float,
+                    int,
+                    str,
+                    None,
+                ]
+            ]
+        ],
+        None,
     ]
-
-
-class _ButtonClickData(Base):
-    """Event data structure for plotly UI buttons."""
-
-    menu: Any
-    button: Any
-    active: Any
-
-
-def _button_click_signature(e0: _ButtonClickData) -> List[Any]:
-    """For plotly button click events.
-
-    Args:
-        e0: The button click data.
-
-    Returns:
-        The menu, button, and active state.
-    """
-    return [e0.menu, e0.button, e0.active]
-
-
-def _passthrough_signature(e0: Var) -> List[Any]:
-    """For plotly events with arbitrary serializable data, passed through directly.
-
-    Args:
-        e0: The event data.
-
-    Returns:
-        The event data.
-    """
-    return [e0]
-
-
-def _null_signature() -> List[Any]:
-    """For plotly events with no data or non-serializable data. Nothing passed through.
-
-    Returns:
-        An empty list (nothing passed through).
-    """
-    return []
+    markerSize: Union[
+        ItemOrList[
+            ItemOrList[
+                Union[
+                    float,
+                    int,
+                    None,
+                ]
+            ]
+        ],
+        None,
+    ]
+    bbox: Union[BBox, None]
 
 
 class Plotly(NoSSRComponent):
@@ -116,49 +117,49 @@ class Plotly(NoSSRComponent):
     use_resize_handler: Var[bool] = LiteralVar.create(True)
 
     # Fired after the plot is redrawn.
-    on_after_plot: EventHandler[_passthrough_signature]
+    on_after_plot: EventHandler[no_args_event_spec]
 
     # Fired after the plot was animated.
-    on_animated: EventHandler[_null_signature]
+    on_animated: EventHandler[no_args_event_spec]
 
     # Fired while animating a single frame (does not currently pass data through).
-    on_animating_frame: EventHandler[_null_signature]
+    on_animating_frame: EventHandler[no_args_event_spec]
 
     # Fired when an animation is interrupted (to start a new animation for example).
-    on_animation_interrupted: EventHandler[_null_signature]
+    on_animation_interrupted: EventHandler[no_args_event_spec]
 
     # Fired when the plot is responsively sized.
-    on_autosize: EventHandler[_event_data_signature]
+    on_autosize: EventHandler[no_args_event_spec]
 
     # Fired whenever mouse moves over a plot.
-    on_before_hover: EventHandler[_event_data_signature]
+    on_before_hover: EventHandler[no_args_event_spec]
 
     # Fired when a plotly UI button is clicked.
-    on_button_clicked: EventHandler[_button_click_signature]
+    on_button_clicked: EventHandler[no_args_event_spec]
 
     # Fired when the plot is clicked.
     on_click: EventHandler[_event_points_data_signature]
 
     # Fired when a selection is cleared (via double click).
-    on_deselect: EventHandler[_null_signature]
+    on_deselect: EventHandler[no_args_event_spec]
 
     # Fired when the plot is double clicked.
-    on_double_click: EventHandler[_passthrough_signature]
+    on_double_click: EventHandler[no_args_event_spec]
 
     # Fired when a plot element is hovered over.
     on_hover: EventHandler[_event_points_data_signature]
 
     # Fired after the plot is layed out (zoom, pan, etc).
-    on_relayout: EventHandler[_passthrough_signature]
+    on_relayout: EventHandler[no_args_event_spec]
 
     # Fired while the plot is being layed out.
-    on_relayouting: EventHandler[_passthrough_signature]
+    on_relayouting: EventHandler[no_args_event_spec]
 
     # Fired after the plot style is changed.
-    on_restyle: EventHandler[_passthrough_signature]
+    on_restyle: EventHandler[no_args_event_spec]
 
     # Fired after the plot is redrawn.
-    on_redraw: EventHandler[_event_data_signature]
+    on_redraw: EventHandler[no_args_event_spec]
 
     # Fired after selecting plot elements.
     on_selected: EventHandler[_event_points_data_signature]
@@ -167,10 +168,10 @@ class Plotly(NoSSRComponent):
     on_selecting: EventHandler[_event_points_data_signature]
 
     # Fired while an animation is occuring.
-    on_transitioning: EventHandler[_event_data_signature]
+    on_transitioning: EventHandler[no_args_event_spec]
 
     # Fired when a transition is stopped early.
-    on_transition_interrupted: EventHandler[_event_data_signature]
+    on_transition_interrupted: EventHandler[no_args_event_spec]
 
     # Fired when a hovered element is no longer hovered.
     on_unhover: EventHandler[_event_points_data_signature]
@@ -216,8 +217,8 @@ const extractPoints = (points) => {
             pointNumber: point.pointNumber,
             pointNumbers: point.pointNumbers,
             pointIndex: point.pointIndex,
-            'marker.color': point['marker.color'],
-            'marker.size': point['marker.size'],
+            markerColor: point['marker.color'],
+            markerSize: point['marker.size'],
             bbox: bbox,
         })
     })
@@ -264,7 +265,7 @@ const extractPoints = (points) => {
             merge_dicts.append(layout_dict)
         if self.template is not None:
             template_dict = LiteralVar.create({"layout": {"template": self.template}})
-            merge_dicts.append(template_dict.without_data())
+            merge_dicts.append(template_dict._without_data())
         if merge_dicts:
             tag.special_props.append(
                 # Merge all dictionaries and spread the result over props.

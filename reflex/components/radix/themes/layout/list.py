@@ -8,6 +8,7 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.foreach import Foreach
 from reflex.components.el.elements.typography import Li, Ol, Ul
 from reflex.components.lucide.icon import Icon
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.components.radix.themes.typography.text import Text
 from reflex.vars.base import Var
 
@@ -36,7 +37,7 @@ LiteralListStyleTypeOrdered = Literal[
 ]
 
 
-class BaseList(Component):
+class BaseList(Component, MarkdownComponentMap):
     """Base class for ordered and unordered lists."""
 
     tag = "ul"
@@ -154,7 +155,7 @@ class OrderedList(BaseList, Ol):
         )
 
 
-class ListItem(Li):
+class ListItem(Li, MarkdownComponentMap):
     """Display an item of an ordered or unordered list."""
 
     @classmethod

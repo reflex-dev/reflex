@@ -48,10 +48,7 @@ from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
-from reflex.compiler.compiler import (
-    ExecutorSafeFunctions,
-    compile_theme,
-)
+from reflex.compiler.compiler import ExecutorSafeFunctions, compile_theme
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.error_boundary import ErrorBoundary
 from reflex.components.base.fragment import Fragment
@@ -79,9 +76,7 @@ from reflex.event import (
     window_alert,
 )
 from reflex.model import Model, get_db_status
-from reflex.page import (
-    DECORATED_PAGES,
-)
+from reflex.page import DECORATED_PAGES
 from reflex.route import (
     get_route_args,
     replace_brackets_with_keywords,

@@ -8,10 +8,7 @@ from reflex.components.el import elements
 from reflex.event import EventHandler, passthrough_event_spec
 from reflex.vars.base import Var
 
-from ..base import (
-    RadixThemesComponent,
-    RadixThemesTriggerComponent,
-)
+from ..base import RadixThemesComponent, RadixThemesTriggerComponent
 
 
 class HoverCardRoot(RadixThemesComponent):

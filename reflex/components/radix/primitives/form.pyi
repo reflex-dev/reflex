@@ -25,7 +25,7 @@ class FormComponent(RadixPrimitiveComponentWithClassName):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
@@ -113,7 +113,7 @@ class FormRoot(FormComponent, HTMLForm):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_clear_server_errors: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
@@ -131,8 +131,12 @@ class FormRoot(FormComponent, HTMLForm):
         on_scroll: Optional[EventType[[], BASE_STATE]] = None,
         on_submit: Optional[
             Union[
-                EventType[[Dict[str, Any]], BASE_STATE],
-                EventType[[Dict[str, str]], BASE_STATE],
+                Union[
+                    EventType[[], BASE_STATE], EventType[[Dict[str, Any]], BASE_STATE]
+                ],
+                Union[
+                    EventType[[], BASE_STATE], EventType[[Dict[str, str]], BASE_STATE]
+                ],
             ]
         ] = None,
         on_unmount: Optional[EventType[[], BASE_STATE]] = None,
@@ -200,7 +204,7 @@ class FormField(FormComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
@@ -251,7 +255,7 @@ class FormLabel(FormComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
@@ -299,7 +303,7 @@ class FormControl(FormComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
@@ -397,7 +401,7 @@ class FormMessage(FormComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
@@ -448,7 +452,7 @@ class FormValidityState(FormComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
@@ -496,7 +500,7 @@ class FormSubmit(FormComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
@@ -585,7 +589,7 @@ class Form(FormRoot):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_clear_server_errors: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
@@ -603,8 +607,12 @@ class Form(FormRoot):
         on_scroll: Optional[EventType[[], BASE_STATE]] = None,
         on_submit: Optional[
             Union[
-                EventType[[Dict[str, Any]], BASE_STATE],
-                EventType[[Dict[str, str]], BASE_STATE],
+                Union[
+                    EventType[[], BASE_STATE], EventType[[Dict[str, Any]], BASE_STATE]
+                ],
+                Union[
+                    EventType[[], BASE_STATE], EventType[[Dict[str, str]], BASE_STATE]
+                ],
             ]
         ] = None,
         on_unmount: Optional[EventType[[], BASE_STATE]] = None,
@@ -714,7 +722,7 @@ class FormNamespace(ComponentNamespace):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_clear_server_errors: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
@@ -732,8 +740,12 @@ class FormNamespace(ComponentNamespace):
         on_scroll: Optional[EventType[[], BASE_STATE]] = None,
         on_submit: Optional[
             Union[
-                EventType[[Dict[str, Any]], BASE_STATE],
-                EventType[[Dict[str, str]], BASE_STATE],
+                Union[
+                    EventType[[], BASE_STATE], EventType[[Dict[str, Any]], BASE_STATE]
+                ],
+                Union[
+                    EventType[[], BASE_STATE], EventType[[Dict[str, str]], BASE_STATE]
+                ],
             ]
         ] = None,
         on_unmount: Optional[EventType[[], BASE_STATE]] = None,
