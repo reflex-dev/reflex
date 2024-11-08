@@ -11,7 +11,7 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from reflex.testing import AppHarness
+from reflex.testing import AppHarness, AppHarnessProd
 
 
 def TestApp():
@@ -25,6 +25,8 @@ def TestApp():
 
     class TestAppState(rx.State):
         """State for the TestApp app."""
+
+        react_error: bool = False
 
         def divide_by_number(self, number: int):
             """Divide by number and print the result.
@@ -49,6 +51,18 @@ def TestApp():
                 "induce_backend_error",
                 on_click=lambda: TestAppState.divide_by_number(0),  # type: ignore
                 id="induce-backend-error-btn",
+            ),
+            rx.button(
+                "induce_react_error",
+                on_click=TestAppState.set_react_error(True),  # type: ignore
+                id="induce-react-error-btn",
+            ),
+            rx.box(
+                rx.cond(
+                    TestAppState.react_error,
+                    rx.Var.create({"invalid": "cannot have object as child"}),
+                    "",
+                ),
             ),
         )
 
@@ -152,3 +166,37 @@ def test_backend_exception_handler_during_runtime(
         "divide_by_number" in captured_default_handler_output.out
         and "ZeroDivisionError" in captured_default_handler_output.out
     )
+
+
+def test_frontend_exception_handler_with_react(
+    test_app: AppHarness,
+    driver: WebDriver,
+    capsys,
+):
+    """Test calling frontend exception handler during runtime.
+
+    Render an object as a react child, which is invalid.
+
+    Args:
+        test_app: harness for TestApp app
+        driver: WebDriver instance.
+        capsys: pytest fixture for capturing stdout and stderr.
+
+    """
+    reset_button = WebDriverWait(driver, 20).until(
+        EC.element_to_be_clickable((By.ID, "induce-react-error-btn"))
+    )
+
+    reset_button.click()
+
+    # Wait for the error to be logged
+    time.sleep(2)
+
+    captured_default_handler_output = capsys.readouterr()
+    if isinstance(test_app, AppHarnessProd):
+        assert "Error: Minified React error #31" in captured_default_handler_output.out
+    else:
+        assert (
+            "Error: Objects are not valid as a React child (found: object with keys \n{invalid})"
+            in captured_default_handler_output.out
+        )
