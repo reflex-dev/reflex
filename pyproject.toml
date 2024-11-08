@@ -49,7 +49,7 @@ wrapt = [
     {version = ">=1.11.0,<2.0", python = "<3.11"},
 ]
 packaging = ">=23.1,<25.0"
-reflex-hosting-cli = ">=0.1.4,<2.0"
+reflex-hosting-cli = ">=0.1.5,<2.0"
 charset-normalizer = ">=3.3.2,<4.0"
 wheel = ">=0.42.0,<1.0"
 build = ">=1.0.3,<2.0"
