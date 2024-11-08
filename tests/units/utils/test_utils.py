@@ -600,7 +600,8 @@ def test_style_prop_with_event_handler_value(callable):
 def cleanup_reflex_env_mode():
     """Cleanup the reflex env mode.
 
-    Yields: None
+    Yields:
+        None
     """
     yield
     EnvironmentVariables.REFLEX_ENV_MODE.set(None)
