@@ -50,7 +50,7 @@ jobs:
       - run: poetry run uv pip install pyvirtualdisplay pillow pytest-split
       - name: Run app harness tests
         env:
-          SCREENSHOT_DIR: /tmp/screenshots
+          SCREENSHOT_DIR: /tmp/screenshots/${{ matrix.state_manager }}/${{ matrix.python-version }}/${{ matrix.split_index }}
           REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
         run: |
           poetry run playwright install --with-deps
