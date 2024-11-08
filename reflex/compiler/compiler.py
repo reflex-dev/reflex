@@ -195,7 +195,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
         else []
     )
 
-    sass_compile = None
+    failed_to_import_sass = False
     for stylesheet in stylesheets:
         if not utils.is_valid_url(stylesheet):
             # check if stylesheet provided exists.
@@ -229,7 +229,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
                     Path.cwd()
                     / constants.Dirs.WEB
                     / constants.Dirs.STYLES
-                    / RE_SASS_SCSS_EXT.sub(".css", str(stylesheet)).strip("/")
+                    / (stylesheet.rsplit(".", 1)[0].strip("/") + ".css")
                 )
                 target.parent.mkdir(parents=True, exist_ok=True)
 
@@ -247,17 +247,17 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
                             encoding="utf8",
                         )
                     except ImportError:
-                        sass_compile = None
+                        failed_to_import_sass = True
             else:
                 raise FileNotFoundError(
                     f'The stylesheet file "{stylesheet_full_path}" is not a valid file.'
                 )
 
-            stylesheet = f"./{str(stylesheet).replace(stylesheet_full_path.suffix, ".css").strip('/')}"
+            stylesheet = f"./{stylesheet.rsplit(".", 1)[0].strip("/")}.css"
 
         sheets.append(stylesheet) if stylesheet not in sheets else None
 
-    if sass_compile is None:
+    if failed_to_import_sass:
         console.error(
             'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
         )
