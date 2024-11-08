@@ -684,15 +684,28 @@ class Config(Base):
     env_file: Optional[str] = None
 
     # Custom Backend Server
-    backend_server_prod: server.CustomBackendServer = server.GunicornBackendServer(
-            app=f"reflex.app_module_for_backend:{constants.CompileVars.APP}.{constants.CompileVars.API}",
-            worker_class="uvicorn.workers.UvicornH11Worker",  # type: ignore
-            max_requests=100,
-            max_requests_jitter=25,
-            preload_app=True,
-            timeout=120,
+    # backend_server_prod: server.CustomBackendServer = server.GunicornBackendServer(
+    #         worker_class="uvicorn.workers.UvicornH11Worker",  # type: ignore
+    #         max_requests=100,
+    #         max_requests_jitter=25,
+    #         timeout=120,
+    # )
+    backend_server_prod: server.CustomBackendServer = server.GranianBackendServer(
+        threads=2,
+        workers=4,
     )
-    backend_server_dev: server.CustomBackendServer = server.UvicornBackendServer()
+    backend_server_dev: server.CustomBackendServer = server.GranianBackendServer(
+        threads=1,
+        workers=1,
+    )
+    # backend_server_dev: server.CustomBackendServer = server.GunicornBackendServer(
+    #     worker_class="uvicorn.workers.UvicornH11Worker",  # type: ignore
+    #     max_requests=100,
+    #     max_requests_jitter=25,
+    #     timeout=120,
+    #     threads=1,
+    #     workers=1,
+    # )
 
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
@@ -724,14 +737,26 @@ class Config(Base):
             raise ConfigError(
                 "REDIS_URL is required when using the redis state manager."
             )
-        
-        print("[reflex.config::Config] --")
-        for key in ("timeout", "gunicorn_worker_class", "gunicorn_workers", "gunicorn_max_requests", "gunicorn_max_requests_jitter"):
+
+        for key in (
+            "timeout",
+            "gunicorn_worker_class",
+            "gunicorn_workers",
+            "gunicorn_max_requests",
+            "gunicorn_max_requests_jitter",
+        ):
             if isinstance(self.backend_server_prod, server.GunicornBackendServer):
                 value = self.get_value(key)
-                if value != self.backend_server_prod.get_fields()[key.replace("gunicorn_", "")].default and value is not None:
-                    setattr(self.backend_server_prod, key.replace("gunicorn_", ""), value)
-        print("[reflex.config::Config] done")
+                if (
+                    value
+                    != self.backend_server_prod.get_fields()[
+                        key.replace("gunicorn_", "")
+                    ].default
+                    and value is not None
+                ):
+                    setattr(
+                        self.backend_server_prod, key.replace("gunicorn_", ""), value
+                    )
 
     @property
     def module(self) -> str:
