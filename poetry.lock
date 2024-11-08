@@ -2198,13 +2198,13 @@ reflex = ">=0.6.0a"
 
 [[package]]
 name = "reflex-hosting-cli"
-version = "0.1.14"
+version = "0.1.15"
 description = "Reflex Hosting CLI"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "reflex_hosting_cli-0.1.14-py3-none-any.whl", hash = "sha256:b38676a39708511801bd666e5a9788d8eb4aeb6f9196bea77a8c4c6a6c06492f"},
-    {file = "reflex_hosting_cli-0.1.14.tar.gz", hash = "sha256:8c7721b87dd2ce22db110d905ee01e78e5185f0e6dd521752f70aef6cf17b39f"},
+    {file = "reflex_hosting_cli-0.1.15-py3-none-any.whl", hash = "sha256:c471f5570b8797e290844edcc079241aa27457112c01188dc0f8a5ccc2364003"},
+    {file = "reflex_hosting_cli-0.1.15.tar.gz", hash = "sha256:42a2a030b8bfba728cbd2c5cc37df0fcc8c2966efc649c57806c6616efb994c4"},
 ]
 
 [package.dependencies]
@@ -2714,13 +2714,13 @@ urllib3 = ">=1.26.0"
 
 [[package]]
 name = "typer"
-version = "0.12.5"
+version = "0.13.0"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "typer-0.12.5-py3-none-any.whl", hash = "sha256:62fe4e471711b147e3365034133904df3e235698399bc4de2b36c8579298d52b"},
-    {file = "typer-0.12.5.tar.gz", hash = "sha256:f592f089bedcc8ec1b974125d64851029c3b1af145f04aca64d69410f0c9b722"},
+    {file = "typer-0.13.0-py3-none-any.whl", hash = "sha256:d85fe0b777b2517cc99c8055ed735452f2659cd45e451507c76f48ce5c1d00e2"},
+    {file = "typer-0.13.0.tar.gz", hash = "sha256:f1c7198347939361eec90139ffa0fd8b3df3a2259d5852a0f7400e476d95985c"},
 ]
 
 [package.dependencies]
@@ -3050,4 +3050,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "fe91a9b22081a48be519ed3789e40904bd358a05fd6da912566592aa8d382f31"
+content-hash = "593a52e9f54e95b50074f1bc4b7cdbabe4fab325051c72b23219268c0c9aa3ba"
