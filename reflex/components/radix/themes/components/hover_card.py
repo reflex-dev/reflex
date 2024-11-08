@@ -1,17 +1,14 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Literal
+from typing import Dict, Literal, Union
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
-from reflex.event import EventHandler, identity_event
+from reflex.event import EventHandler, passthrough_event_spec
 from reflex.vars.base import Var
 
-from ..base import (
-    RadixThemesComponent,
-    RadixThemesTriggerComponent,
-)
+from ..base import RadixThemesComponent, RadixThemesTriggerComponent
 
 
 class HoverCardRoot(RadixThemesComponent):
@@ -32,7 +29,7 @@ class HoverCardRoot(RadixThemesComponent):
     close_delay: Var[int]
 
     # Fired when the open state changes.
-    on_open_change: EventHandler[identity_event(bool)]
+    on_open_change: EventHandler[passthrough_event_spec(bool)]
 
 
 class HoverCardTrigger(RadixThemesTriggerComponent):
@@ -55,8 +52,23 @@ class HoverCardContent(elements.Div, RadixThemesComponent):
     # The preferred alignment against the trigger. May change when collisions occur.
     align: Var[Literal["start", "center", "end"]]
 
+    # An offset in pixels from the "start" or "end" alignment options.
+    align_offset: Var[int]
+
     # Whether or not the hover card should avoid collisions with its trigger.
     avoid_collisions: Var[bool]
+
+    # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { top: 20, left: 20 }.
+    collision_padding: Var[Union[float, int, Dict[str, Union[float, int]]]]
+
+    # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless
+    sticky: Var[Literal["partial", "always"]]
+
+    # Whether to hide the content when the trigger becomes fully occluded.
+    hide_when_detached: Var[bool]
+
+    # Hovercard size "1" - "3"
+    size: Var[Responsive[Literal["1", "2", "3"]]]
 
 
 class HoverCard(ComponentNamespace):

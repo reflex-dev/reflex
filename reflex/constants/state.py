@@ -9,3 +9,7 @@ class StateManagerMode(str, Enum):
     DISK = "disk"
     MEMORY = "memory"
     REDIS = "redis"
+
+
+# Used for things like console_log, etc.
+FRONTEND_EVENT_STATE = "__reflex_internal_frontend_event_state"

@@ -355,7 +355,7 @@ def call_script(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("call_script"),
-        app_source=CallScript,  # type: ignore
+        app_source=CallScript,
     ) as harness:
         yield harness
 

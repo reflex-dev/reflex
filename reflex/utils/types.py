@@ -26,9 +26,7 @@ from typing import (
     get_args,
     get_type_hints,
 )
-from typing import (
-    get_origin as get_origin_og,
-)
+from typing import get_origin as get_origin_og
 
 import sqlalchemy
 
@@ -42,12 +40,7 @@ except ModuleNotFoundError:
 
 from sqlalchemy.ext.associationproxy import AssociationProxyInstance
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Mapped,
-    QueryableAttribute,
-    Relationship,
-)
+from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
 
 from reflex import constants
 from reflex.base import Base
@@ -569,6 +562,12 @@ def _isinstance(obj: Any, cls: GenericType, nested: bool = False) -> bool:
             return isinstance(obj, set) and all(
                 _isinstance(item, args[0]) for item in obj
             )
+
+    if args:
+        from reflex.vars import Field
+
+        if origin is Field:
+            return _isinstance(obj, args[0])
 
     return isinstance(obj, get_base_class(cls))
 

@@ -93,7 +93,7 @@ def server_side_event(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("server_side_event"),
-        app_source=ServerSideEvent,  # type: ignore
+        app_source=ServerSideEvent,
     ) as harness:
         yield harness
 
@@ -101,7 +101,6 @@ def server_side_event(tmp_path_factory) -> Generator[AppHarness, None, None]:
 @pytest.fixture
 def driver(server_side_event: AppHarness):
     """Get an instance of the browser open to the server_side_event app.
-
 
     Args:
         server_side_event: harness for ServerSideEvent app

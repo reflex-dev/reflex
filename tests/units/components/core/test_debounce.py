@@ -41,7 +41,6 @@ class S(BaseState):
     def on_change(self, v: str):
         """Dummy on_change handler.
 
-
         Args:
             v: The changed value.
         """

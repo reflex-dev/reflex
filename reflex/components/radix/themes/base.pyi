@@ -6,7 +6,8 @@
 from typing import Any, Dict, Literal, Optional, Union, overload
 
 from reflex.components import Component
-from reflex.event import EventType
+from reflex.components.core.breakpoints import Breakpoints
+from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var
@@ -102,22 +103,22 @@ class CommonMarginProps(Component):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "CommonMarginProps":
         """Create the component.
@@ -144,6 +145,178 @@ class CommonMarginProps(Component):
         """
         ...
 
+class CommonPaddingProps(Component):
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        p: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        px: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        py: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pt: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pr: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pb: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pl: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
+        **props,
+    ) -> "CommonPaddingProps":
+        """Create the component.
+
+        Args:
+            *children: The children of the component.
+            p: Padding: "0" - "9"
+            px: Padding horizontal: "0" - "9"
+            py: Padding vertical: "0" - "9"
+            pt: Padding top: "0" - "9"
+            pr: Padding right: "0" - "9"
+            pb: Padding bottom: "0" - "9"
+            pl: Padding left: "0" - "9"
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The props of the component.
+
+        Returns:
+            The component.
+        """
+        ...
+
 class RadixLoadingProp(Component):
     @overload
     @classmethod
@@ -156,22 +329,22 @@ class RadixLoadingProp(Component):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "RadixLoadingProp":
         """Create the component.
@@ -203,22 +376,22 @@ class RadixThemesComponent(Component):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "RadixThemesComponent":
         """Create a new component instance.
@@ -252,22 +425,22 @@ class RadixThemesTriggerComponent(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "RadixThemesTriggerComponent":
         """Create a new RadixThemesTriggerComponent instance.
@@ -384,22 +557,22 @@ class Theme(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "Theme":
         """Create a new Radix Theme specification.
@@ -443,22 +616,22 @@ class ThemePanel(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "ThemePanel":
         """Create a new component instance.
@@ -493,22 +666,22 @@ class RadixThemesColorModeProvider(Component):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "RadixThemesColorModeProvider":
         """Create the component.
