@@ -697,28 +697,13 @@ class Config(Base):
     env_file: Optional[str] = None
 
     # Custom Backend Server
-    # backend_server_prod: server.CustomBackendServer = server.GunicornBackendServer(
-    #         worker_class="uvicorn.workers.UvicornH11Worker",  # type: ignore
-    #         max_requests=100,
-    #         max_requests_jitter=25,
-    #         timeout=120,
-    # )
-    backend_server_prod: server.CustomBackendServer = server.GranianBackendServer(
+    backend_server_prod: server.CustomBackendServer = server.GunicornBackendServer(
         threads=2,
         workers=4,
     )
-    backend_server_dev: server.CustomBackendServer = server.GranianBackendServer(
-        threads=1,
+    backend_server_dev: server.CustomBackendServer = server.UvicornBackendServer(
         workers=1,
     )
-    # backend_server_dev: server.CustomBackendServer = server.GunicornBackendServer(
-    #     worker_class="uvicorn.workers.UvicornH11Worker",  # type: ignore
-    #     max_requests=100,
-    #     max_requests_jitter=25,
-    #     timeout=120,
-    #     threads=1,
-    #     workers=1,
-    # )
 
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
@@ -730,7 +715,6 @@ class Config(Base):
         Raises:
             ConfigError: If some values in the config are invalid.
         """
-        print("[reflex.config::Config] start")
         super().__init__(*args, **kwargs)
 
         # Update the config from environment variables.
