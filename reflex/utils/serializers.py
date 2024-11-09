@@ -283,13 +283,14 @@ def serialize_base_model_v1(model: BaseModelV1) -> dict:
 
 
 if BaseModelV2 is not BaseModelV1:
+
     @serializer(to=dict)
     def serialize_base_model_v2(model: BaseModelV2) -> dict:
         """Serialize a pydantic v2 BaseModel instance.
-    
+
         Args:
             model: The BaseModel to serialize.
-    
+
         Returns:
             The serialized BaseModel.
         """

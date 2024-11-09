@@ -3427,20 +3427,36 @@ class ModelV2(BaseModelV2):
     foo: str = "bar"
 
 
+@dataclasses.dataclass
+class ModelDC:
+    """A dataclass."""
+
+    foo: str = "bar"
+
+
 class PydanticState(rx.State):
     """A state with pydantic BaseModel vars."""
 
     v1: ModelV1 = ModelV1()
     v2: ModelV2 = ModelV2()
+    dc: ModelDC = ModelDC()
 
 
-def test_pydantic_base_models():
-    """Test that pydantic BaseModel v1 and v2 can be used as state vars with dep tracking."""
+def test_mutable_models():
+    """Test that dataclass and pydantic BaseModel v1 and v2 use dep tracking."""
     state = PydanticState()
     assert isinstance(state.v1, MutableProxy)
     state.v1.foo = "baz"
-    assert "v1" in state.dirty_vars
+    assert state.dirty_vars == {"v1"}
+    state.dirty_vars.clear()
 
     assert isinstance(state.v2, MutableProxy)
     state.v2.foo = "baz"
-    assert "v2" in state.dirty_vars
+    assert state.dirty_vars == {"v2"}
+    state.dirty_vars.clear()
+
+    # Not yet supported ENG-4083
+    # assert isinstance(state.dc, MutableProxy)
+    # state.dc.foo = "baz"
+    # assert state.dirty_vars == {"dc"}
+    # state.dirty_vars.clear()

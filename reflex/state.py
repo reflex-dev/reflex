@@ -1244,7 +1244,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if parent_state is not None:
                 return getattr(parent_state, name)
 
-        if isinstance(value, MutableProxy.__mutable_types__) and (
+        if MutableProxy._is_mutable_type(value) and (
             name in super().__getattribute__("base_vars") or name in backend_vars
         ):
             # track changes in mutable containers (list, dict, set, etc)
@@ -3522,6 +3522,7 @@ class MutableProxy(wrapt.ObjectProxy):
         pydantic.BaseModel.__dict__
     )
 
+    # These types will be wrapped in MutableProxy
     __mutable_types__ = (
         list,
         dict,
@@ -3570,6 +3571,18 @@ class MutableProxy(wrapt.ObjectProxy):
         if wrapped is not None:
             return wrapped(*args, **(kwargs or {}))
 
+    @classmethod
+    def _is_mutable_type(cls, value: Any) -> bool:
+        """Check if a value is of a mutable type and should be wrapped.
+
+        Args:
+            value: The value to check.
+
+        Returns:
+            Whether the value is of a mutable type.
+        """
+        return isinstance(value, cls.__mutable_types__)
+
     def _wrap_recursive(self, value: Any) -> Any:
         """Wrap a value recursively if it is mutable.
 
@@ -3580,9 +3593,7 @@ class MutableProxy(wrapt.ObjectProxy):
             The wrapped value.
         """
         # Recursively wrap mutable types, but do not re-wrap MutableProxy instances.
-        if isinstance(value, self.__mutable_types__) and not isinstance(
-            value, MutableProxy
-        ):
+        if self._is_mutable_type(value) and not isinstance(value, MutableProxy):
             return type(self)(
                 wrapped=value,
                 state=self._self_state,
@@ -3640,7 +3651,7 @@ class MutableProxy(wrapt.ObjectProxy):
                     self._wrap_recursive_decorator,
                 )
 
-        if isinstance(value, self.__mutable_types__) and __name not in (
+        if self._is_mutable_type(value) and __name not in (
             "__wrapped__",
             "_self_state",
         ):
