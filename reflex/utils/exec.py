@@ -203,9 +203,9 @@ def run_backend(
         notify_backend()
 
     # Run the backend in development mode.
-    backend_server_prod = config.backend_server_prod
-    backend_server_prod.setup(host, port, loglevel, Env.DEV)
-    backend_server_prod.run_dev()
+    backend_server_dev = config.backend_server_dev
+    backend_server_dev.setup(host, port, loglevel, Env.DEV)
+    backend_server_dev.run_dev()
 
 
 def run_backend_prod(
