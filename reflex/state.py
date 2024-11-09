@@ -39,8 +39,6 @@ from typing import (
     get_type_hints,
 )
 
-from pydantic import BaseModel as BaseModelV2
-from pydantic.v1 import BaseModel as BaseModelV1
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
@@ -62,6 +60,13 @@ try:
     import pydantic.v1 as pydantic
 except ModuleNotFoundError:
     import pydantic
+
+from pydantic import BaseModel as BaseModelV2
+
+try:
+    from pydantic.v1 import BaseModel as BaseModelV1
+except ModuleNotFoundError:
+    BaseModelV1 = BaseModelV2
 
 import wrapt
 from redis.asyncio import Redis
