@@ -1345,6 +1345,10 @@ def check_fn_match_arg_spec(
         EventFnArgMismatch: Raised if the number of mandatory arguments do not match
     """
     user_args = inspect.getfullargspec(user_func).args
+    # Drop the first argument if it's a method
+    if inspect.ismethod(user_func):
+        user_args = user_args[1:]
+
     user_default_args = inspect.getfullargspec(user_func).defaults
     number_of_user_args = len(user_args) - number_of_bound_args
     number_of_user_default_args = len(user_default_args) if user_default_args else 0
@@ -1352,10 +1356,6 @@ def check_fn_match_arg_spec(
     parsed_event_args = parse_args_spec(arg_spec)
 
     number_of_event_args = len(parsed_event_args)
-
-    # Subtract 1 if the method is a bound method
-    if inspect.ismethod(user_func):
-        number_of_user_args -= 1
 
     if number_of_user_args - number_of_user_default_args > number_of_event_args:
         raise EventFnArgMismatch(
