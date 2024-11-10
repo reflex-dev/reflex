@@ -1353,6 +1353,10 @@ def check_fn_match_arg_spec(
 
     number_of_event_args = len(parsed_event_args)
 
+    # Subtract 1 if the method is a bound method
+    if inspect.ismethod(user_func):
+        number_of_user_args -= 1
+
     if number_of_user_args - number_of_user_default_args > number_of_event_args:
         raise EventFnArgMismatch(
             f"Event {key} only provides {number_of_event_args} arguments, but "
