@@ -386,6 +386,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 "State classes should not be instantiated directly in a Reflex app. "
                 "See https://reflex.dev/docs/state/ for further information."
             )
+        if type(self)._mixin:
+            raise ReflexRuntimeError(
+                f"{type(self).__name__} is a state mixin and cannot be instantiated directly."
+            )
         kwargs["parent_state"] = parent_state
         super().__init__()
         for name, value in kwargs.items():
