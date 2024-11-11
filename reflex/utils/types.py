@@ -18,6 +18,7 @@ from typing import (
     Iterable,
     List,
     Literal,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -523,7 +524,7 @@ def does_obj_satisfy_typed_dict(obj: Any, cls: GenericType) -> bool:
     Returns:
         Whether the object satisfies the typed dict.
     """
-    if not isinstance(obj, dict):
+    if not isinstance(obj, Mapping):
         return False
 
     key_names_to_values = get_type_hints(cls)
