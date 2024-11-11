@@ -253,7 +253,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
                     f'The stylesheet file "{stylesheet_full_path}" is not a valid file.'
                 )
 
-            stylesheet = f"./{stylesheet.rsplit(".", 1)[0].strip("/")}.css"
+            stylesheet = f"./{stylesheet.rsplit('.', 1)[0].strip('/')}.css"
 
         sheets.append(stylesheet) if stylesheet not in sheets else None
 
