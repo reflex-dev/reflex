@@ -120,8 +120,9 @@ def _init(
     # Initialize the requirements.txt.
     prerequisites.initialize_requirements_txt()
 
+    template_msg = "" if template else f" using the {template} template"
     # Finish initializing the app.
-    console.success(f"Initialized {app_name} using the {template} template")
+    console.success(f"Initialized {app_name}{template_msg}")
 
 
 @cli.command()
