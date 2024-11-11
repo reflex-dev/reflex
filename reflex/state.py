@@ -2379,7 +2379,7 @@ class ComponentState(State, mixin=True):
         if type(self)._mixin:
             raise ReflexRuntimeError(
                 f"{ComponentState.__name__} {type(self).__name__} is not meant to be initialized directly. "
-                + "Use the `create` method to create a new instance and access the statte via the `State` attribute."
+                + "Use the `create` method to create a new instance and access the state via the `State` attribute."
             )
         super().__init__(*args, **kwargs)
 
