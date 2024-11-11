@@ -215,18 +215,10 @@ def setup_frontend(
     """
     # Create the assets dir if it doesn't exist.
     path_ops.mkdir(constants.Dirs.APP_ASSETS)
-
-    # Copy asset files to public folder.
     path_ops.cp(
         src=str(root / constants.Dirs.APP_ASSETS),
         dest=str(root / prerequisites.get_web_dir() / constants.Dirs.PUBLIC),
-        ignore=tuple(
-            f"*{p.suffix}"
-            for ext in constants.Reflex.STYLESHEETS_SUPPORTED
-            for p in (root / constants.Dirs.APP_ASSETS).glob(
-                f"**/*.{ext}", case_sensitive=False
-            )
-        ),  # ignore stylesheet files precompiled in the compiler
+        ignore=tuple(f"*.{ext}" for ext in constants.Reflex.STYLESHEETS_SUPPORTED),
     )
 
     # Set the environment variables in client (env.json).
