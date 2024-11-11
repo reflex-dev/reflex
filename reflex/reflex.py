@@ -106,7 +106,7 @@ def _init(
         template = constants.Templates.DEFAULT
 
     # Initialize the app.
-    prerequisites.initialize_app(app_name, template)
+    template = prerequisites.initialize_app(app_name, template)
 
     # If a reflex.build generation hash is available, download the code and apply it to the main module.
     if generation_hash:
@@ -121,7 +121,7 @@ def _init(
     prerequisites.initialize_requirements_txt()
 
     # Finish initializing the app.
-    console.success(f"Initialized {app_name}")
+    console.success(f"Initialized {app_name} using the {template} template")
 
 
 @cli.command()
