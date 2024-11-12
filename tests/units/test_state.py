@@ -3413,6 +3413,36 @@ def test_typed_state() -> None:
     _ = TypedState(field="str")
 
 
+def test_get_value():
+    class GetValueState(rx.State):
+        foo: str = "FOO"
+        bar: str = "BAR"
+
+    state = GetValueState()
+
+    assert state.dict() == {
+        state.get_full_name(): {
+            "foo": "FOO",
+            "bar": "BAR",
+        }
+    }
+    assert state.get_delta() == {}
+
+    state.bar = "foo"
+
+    assert state.dict() == {
+        state.get_full_name(): {
+            "foo": "FOO",
+            "bar": "foo",
+        }
+    }
+    assert state.get_delta() == {
+        state.get_full_name(): {
+            "bar": "foo",
+        }
+    }
+
+
 def test_init_mixin() -> None:
     """Ensure that State mixins can not be instantiated directly."""
 
