@@ -46,6 +46,7 @@ from reflex import event
 from reflex.config import get_config
 from reflex.istate.data import RouterData
 from reflex.istate.storage import ClientStorageBase
+from reflex.model import Model
 from reflex.vars.base import (
     ComputedVar,
     DynamicRouteVar,
@@ -1733,15 +1734,20 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 if value is None:
                     continue
                 hinted_args = value_inside_optional(hinted_args)
-            if (
-                isinstance(value, dict)
-                and inspect.isclass(hinted_args)
-                and (
-                    dataclasses.is_dataclass(hinted_args)
-                    or issubclass(hinted_args, Base)
-                )
-            ):
-                payload[arg] = hinted_args(**value)
+            if isinstance(value, dict) and inspect.isclass(hinted_args):
+                if issubclass(hinted_args, Model):
+                    # Remove non-fields from the payload
+                    payload[arg] = hinted_args(
+                        **{
+                            key: value
+                            for key, value in value.items()
+                            if key in hinted_args.__fields__
+                        }
+                    )
+                elif dataclasses.is_dataclass(hinted_args) or issubclass(
+                    hinted_args, Base
+                ):
+                    payload[arg] = hinted_args(**value)
             if isinstance(value, list) and (hinted_args is set or hinted_args is Set):
                 payload[arg] = set(value)
             if isinstance(value, list) and (
