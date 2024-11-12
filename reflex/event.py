@@ -899,7 +899,7 @@ def remove_session_storage(key: str) -> EventSpec:
     )
 
 
-def set_clipboard(content: str) -> EventSpec:
+def set_clipboard(content: Union[str, Var[str]]) -> EventSpec:
     """Set the text in content in the clipboard.
 
     Args:
