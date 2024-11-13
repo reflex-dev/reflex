@@ -35,7 +35,7 @@ OTHER_CALLABLE_TYPE = TypeVar(
 )
 
 
-class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[..., Any]):
+class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
     """Base class for immutable function vars."""
 
     @overload
@@ -94,8 +94,8 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[..., Any]):
 
     @overload
     def partial(
-        self: FunctionVar[ReflexCallable[..., R]], *args: Var | Any
-    ) -> FunctionVar[ReflexCallable[..., R]]: ...
+        self: FunctionVar[ReflexCallable[P, R]], *args: Var | Any
+    ) -> FunctionVar[ReflexCallable[P, R]]: ...
 
     @overload
     def partial(self, *args: Var | Any) -> FunctionVar: ...
@@ -168,8 +168,11 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[..., Any]):
 
     @overload
     def call(
-        self: FunctionVar[ReflexCallable[..., R]], *args: Var | Any
-    ) -> VarOperationCall[..., R]: ...
+        self: FunctionVar[ReflexCallable[P, R]], *args: Var | Any
+    ) -> VarOperationCall[P, R]: ...
+
+    @overload
+    def call(self, *args: Var | Any) -> Var: ...
 
     def call(self, *args: Var | Any) -> Var:  # type: ignore
         """Call the function with the given arguments.
@@ -186,7 +189,7 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[..., Any]):
 
 
 class BuilderFunctionVar(
-    FunctionVar[CALLABLE_TYPE], default_type=ReflexCallable[..., Any]
+    FunctionVar[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]
 ):
     """Base class for immutable function vars with the builder pattern."""
 
@@ -200,7 +203,7 @@ class FunctionStringVar(FunctionVar[CALLABLE_TYPE]):
     def create(
         cls,
         func: str,
-        _var_type: Type[OTHER_CALLABLE_TYPE] = ReflexCallable[..., Any],
+        _var_type: Type[OTHER_CALLABLE_TYPE] = ReflexCallable[Any, Any],
         _var_data: VarData | None = None,
     ) -> FunctionStringVar[OTHER_CALLABLE_TYPE]:
         """Create a new function var from a string.
