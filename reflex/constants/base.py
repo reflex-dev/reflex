@@ -101,7 +101,7 @@ class Templates(SimpleNamespace):
     AI = "ai"
 
     # The option for the user to choose a remote template.
-    CHOOSE_TEMPLATES = "choose templates"
+    CHOOSE_TEMPLATES = "choose-templates"
 
     # The reflex.build frontend host
     REFLEX_BUILD_FRONTEND = "https://flexgen.reflex.run"

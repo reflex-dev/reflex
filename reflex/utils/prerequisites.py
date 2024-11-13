@@ -1223,7 +1223,9 @@ def prompt_for_template_options(templates: list[Template]) -> str:
 
     # Prompt the user to select a template.
     id_to_name = {
-        str(idx): f"{template.name} ({template.demo_url}) - {template.description}"
+        str(
+            idx
+        ): f"{template.name.replace('_', ' ').replace('-', ' ')} ({template.demo_url}) - {template.description}"
         for idx, template in enumerate(templates)
     }
     for id in range(len(id_to_name)):
@@ -1489,8 +1491,8 @@ def fetch_and_prompt_with_remote_templates(
         if not show_prompt and template in available_templates:
             return template, available_templates
 
-        if not show_prompt and (template not in templates):
-            console.error(f"{template} is not a valid template name.")
+        if not show_prompt and (template not in available_templates):
+            console.error(f"{template!r} is not a valid template name.")
 
         template = (
             prompt_for_remote_template_selection(available_templates)
