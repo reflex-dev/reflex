@@ -26,10 +26,17 @@ def serialize_bare(obj: Bare) -> dict:
     return {"quantity": obj.quantity}
 
 
+class Tag(rx.Base):
+    """A Tag for testing."""
+
+    pass
+
+
 class Base(rx.Base):
     """A reflex base class with a single attribute."""
 
     quantity: int = 0
+    collection: list[Tag] = []
 
 
 class ObjectState(rx.State):
@@ -100,3 +107,6 @@ def test_typing() -> None:
     # Base
     var = ObjectState.base
     _ = assert_type(var, ObjectVar[Base])
+
+    # Collection
+    ObjectState.base.collection[0]
