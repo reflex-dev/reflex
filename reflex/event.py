@@ -45,6 +45,9 @@ from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import (
     ArgsFunctionOperation,
+    ArgsFunctionOperationBuilder,
+    BuilderFunctionVar,
+    FunctionArgs,
     FunctionStringVar,
     FunctionVar,
     VarOperationCall,
@@ -796,8 +799,7 @@ def scroll_to(elem_id: str, align_to_top: bool | Var[bool] = True) -> EventSpec:
     get_element_by_id = FunctionStringVar.create("document.getElementById")
 
     return run_script(
-        get_element_by_id(elem_id)
-        .call(elem_id)
+        get_element_by_id.call(elem_id)
         .to(ObjectVar)
         .scrollIntoView.to(FunctionVar)
         .call(align_to_top),
@@ -898,7 +900,7 @@ def remove_session_storage(key: str) -> EventSpec:
     )
 
 
-def set_clipboard(content: str) -> EventSpec:
+def set_clipboard(content: Union[str, Var[str]]) -> EventSpec:
     """Set the text in content in the clipboard.
 
     Args:
@@ -1579,7 +1581,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
         )
 
 
-class EventChainVar(FunctionVar, python_types=EventChain):
+class EventChainVar(BuilderFunctionVar, python_types=EventChain):
     """Base class for event chain vars."""
 
 
@@ -1591,7 +1593,7 @@ class EventChainVar(FunctionVar, python_types=EventChain):
 # Note: LiteralVar is second in the inheritance list allowing it act like a
 # CachedVarOperation (ArgsFunctionOperation) and get the _js_expr from the
 # _cached_var_name property.
-class LiteralEventChainVar(ArgsFunctionOperation, LiteralVar, EventChainVar):
+class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainVar):
     """A literal event chain var."""
 
     _var_value: EventChain = dataclasses.field(default=None)  # type: ignore
@@ -1643,7 +1645,7 @@ class LiteralEventChainVar(ArgsFunctionOperation, LiteralVar, EventChainVar):
             _js_expr="",
             _var_type=EventChain,
             _var_data=_var_data,
-            _args_names=arg_def,
+            _args=FunctionArgs(arg_def),
             _return_expr=invocation.call(
                 LiteralVar.create([LiteralVar.create(event) for event in value.events]),
                 arg_def_expr,

@@ -10,16 +10,72 @@ from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
-from ..base import CommonMarginProps, RadixThemesComponent
+from ..base import CommonMarginProps, CommonPaddingProps, RadixThemesComponent
 
 LiteralBoolNumber = Literal["0", "1"]
 
-class LayoutComponent(CommonMarginProps, RadixThemesComponent):
+class LayoutComponent(CommonMarginProps, CommonPaddingProps, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
+        flex_shrink: Optional[
+            Union[
+                Breakpoints[str, Literal["0", "1"]],
+                Literal["0", "1"],
+                Var[Union[Breakpoints[str, Literal["0", "1"]], Literal["0", "1"]]],
+            ]
+        ] = None,
+        flex_grow: Optional[
+            Union[
+                Breakpoints[str, Literal["0", "1"]],
+                Literal["0", "1"],
+                Var[Union[Breakpoints[str, Literal["0", "1"]], Literal["0", "1"]]],
+            ]
+        ] = None,
+        m: Optional[
+            Union[
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+            ]
+        ] = None,
+        mx: Optional[
+            Union[
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+            ]
+        ] = None,
+        my: Optional[
+            Union[
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+            ]
+        ] = None,
+        mt: Optional[
+            Union[
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+            ]
+        ] = None,
+        mr: Optional[
+            Union[
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+            ]
+        ] = None,
+        mb: Optional[
+            Union[
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+            ]
+        ] = None,
+        ml: Optional[
+            Union[
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+            ]
+        ] = None,
         p: Optional[
             Union[
                 Breakpoints[
@@ -139,68 +195,12 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
                 ],
             ]
         ] = None,
-        flex_shrink: Optional[
-            Union[
-                Breakpoints[str, Literal["0", "1"]],
-                Literal["0", "1"],
-                Var[Union[Breakpoints[str, Literal["0", "1"]], Literal["0", "1"]]],
-            ]
-        ] = None,
-        flex_grow: Optional[
-            Union[
-                Breakpoints[str, Literal["0", "1"]],
-                Literal["0", "1"],
-                Var[Union[Breakpoints[str, Literal["0", "1"]], Literal["0", "1"]]],
-            ]
-        ] = None,
-        m: Optional[
-            Union[
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-            ]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
@@ -225,13 +225,6 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
-            p: Padding: "0" - "9"
-            px: Padding horizontal: "0" - "9"
-            py: Padding vertical: "0" - "9"
-            pt: Padding top: "0" - "9"
-            pr: Padding right: "0" - "9"
-            pb: Padding bottom: "0" - "9"
-            pl: Padding left: "0" - "9"
             flex_shrink: Whether the element will take up the smallest possible space: "0" | "1"
             flex_grow: Whether the element will take up the largest possible space: "0" | "1"
             m: Margin: "0" - "9"
@@ -241,6 +234,13 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
             mr: Margin right: "0" - "9"
             mb: Margin bottom: "0" - "9"
             ml: Margin left: "0" - "9"
+            p: Padding: "0" - "9"
+            px: Padding horizontal: "0" - "9"
+            py: Padding vertical: "0" - "9"
+            pt: Padding top: "0" - "9"
+            pr: Padding right: "0" - "9"
+            pb: Padding bottom: "0" - "9"
+            pl: Padding left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

@@ -159,7 +159,7 @@ def form_submit(request, tmp_path_factory) -> Generator[AppHarness, None, None]:
     param_id = request._pyfuncitem.callspec.id.replace("-", "_")
     with AppHarness.create(
         root=tmp_path_factory.mktemp("form_submit"),
-        app_source=request.param,  # type: ignore
+        app_source=request.param,
         app_name=request.param.func.__name__ + f"_{param_id}",
     ) as harness:
         assert harness.app_instance is not None, "app is not running"

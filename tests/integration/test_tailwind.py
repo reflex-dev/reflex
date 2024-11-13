@@ -78,7 +78,7 @@ def tailwind_app(tmp_path, tailwind_disabled) -> Generator[AppHarness, None, Non
     """
     with AppHarness.create(
         root=tmp_path,
-        app_source=functools.partial(TailwindApp, tailwind_disabled=tailwind_disabled),  # type: ignore
+        app_source=functools.partial(TailwindApp, tailwind_disabled=tailwind_disabled),
         app_name="tailwind_disabled_app" if tailwind_disabled else "tailwind_app",
     ) as harness:
         yield harness

@@ -7,6 +7,7 @@ from typing import Any, Dict, Iterable, Literal, Optional, Union, overload
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.el.elements.typography import Li, Ol, Ul
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
@@ -29,7 +30,7 @@ LiteralListStyleTypeOrdered = Literal[
     "katakana",
 ]
 
-class BaseList(Component):
+class BaseList(Component, MarkdownComponentMap):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -83,7 +84,7 @@ class BaseList(Component):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
@@ -201,7 +202,7 @@ class UnorderedList(BaseList, Ul):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
@@ -336,7 +337,7 @@ class OrderedList(BaseList, Ol):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
@@ -393,7 +394,7 @@ class OrderedList(BaseList, Ol):
         """
         ...
 
-class ListItem(Li):
+class ListItem(Li, MarkdownComponentMap):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -428,7 +429,7 @@ class ListItem(Li):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
@@ -536,7 +537,7 @@ class List(ComponentNamespace):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,

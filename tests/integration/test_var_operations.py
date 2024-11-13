@@ -613,7 +613,7 @@ def var_operations(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("var_operations"),
-        app_source=VarOperations,  # type: ignore
+        app_source=VarOperations,
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
         yield harness

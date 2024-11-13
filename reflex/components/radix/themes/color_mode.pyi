@@ -33,7 +33,7 @@ class ColorModeIcon(Cond):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
@@ -217,7 +217,7 @@ class ColorModeIconButton(IconButton):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
@@ -390,7 +390,7 @@ class ColorModeSwitch(Switch):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_change: Optional[
             Union[EventType[[], BASE_STATE], EventType[[bool], BASE_STATE]]
@@ -449,5 +449,5 @@ class ColorModeNamespace(Var):
 color_mode = color_mode_var_and_namespace = ColorModeNamespace(
     _js_expr=color_mode._js_expr,
     _var_type=color_mode._var_type,
-    _var_data=color_mode.get_default_value(),
+    _var_data=color_mode._get_default_value(),
 )

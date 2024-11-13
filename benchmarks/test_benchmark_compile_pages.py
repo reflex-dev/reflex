@@ -212,7 +212,7 @@ def app_with_one_page(
     """
     root = tmp_path_factory.mktemp("app1")
 
-    yield AppHarness.create(root=root, app_source=AppWithOnePage)  # type: ignore
+    yield AppHarness.create(root=root, app_source=AppWithOnePage)
 
 
 @pytest.fixture(scope="session")
@@ -276,7 +276,7 @@ def app_with_thousand_pages(
 
     yield AppHarness.create(
         root=root,
-        app_source=functools.partial(  # type: ignore
+        app_source=functools.partial(
             AppWithThousandPages,
             render_comp=render_multiple_pages,  # type: ignore
         ),

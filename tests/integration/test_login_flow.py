@@ -62,7 +62,7 @@ def login_sample(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("login_sample"),
-        app_source=LoginSample,  # type: ignore
+        app_source=LoginSample,
     ) as harness:
         yield harness
 

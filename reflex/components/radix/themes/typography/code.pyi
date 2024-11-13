@@ -7,13 +7,14 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.el import elements
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
 from ..base import RadixThemesComponent
 
-class Code(elements.Code, RadixThemesComponent):
+class Code(elements.Code, RadixThemesComponent, MarkdownComponentMap):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -143,7 +144,7 @@ class Code(elements.Code, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[[], BASE_STATE]] = None,
         on_click: Optional[EventType[[], BASE_STATE]] = None,
         on_context_menu: Optional[EventType[[], BASE_STATE]] = None,

@@ -11,6 +11,7 @@ import inspect
 import json
 import pickle
 import sys
+import typing
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -45,6 +46,7 @@ from reflex import event
 from reflex.config import get_config
 from reflex.istate.data import RouterData
 from reflex.istate.storage import ClientStorageBase
+from reflex.model import Model
 from reflex.vars.base import (
     ComputedVar,
     DynamicRouteVar,
@@ -90,7 +92,13 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import serializer
-from reflex.utils.types import _isinstance, get_origin, override
+from reflex.utils.types import (
+    _isinstance,
+    get_origin,
+    is_union,
+    override,
+    value_inside_optional,
+)
 from reflex.vars import VarData
 
 if TYPE_CHECKING:
@@ -1036,9 +1044,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             prop: The var to create a setter for.
         """
-        setter_name = prop.get_setter_name(include_state=False)
+        setter_name = prop._get_setter_name(include_state=False)
         if setter_name not in cls.__dict__:
-            event_handler = cls._create_event_handler(prop.get_setter())
+            event_handler = cls._create_event_handler(prop._get_setter())
             cls.event_handlers[setter_name] = event_handler
             setattr(cls, setter_name, event_handler)
 
@@ -1052,7 +1060,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Get the pydantic field for the var.
         field = cls.get_fields()[prop._var_field_name]
         if field.required:
-            default_value = prop.get_default_value()
+            default_value = prop._get_default_value()
             if default_value is not None:
                 field.required = False
                 field.default = default_value
@@ -1079,7 +1087,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return getattr(cls, name)
         except AttributeError:
             try:
-                return Var("", _var_type=annotation_value).get_default_value()
+                return Var("", _var_type=annotation_value)._get_default_value()
             except TypeError:
                 pass
         return None
@@ -1713,6 +1721,40 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Get the function to process the event.
         fn = functools.partial(handler.fn, state)
 
+        try:
+            type_hints = typing.get_type_hints(handler.fn)
+        except Exception:
+            type_hints = {}
+
+        for arg, value in list(payload.items()):
+            hinted_args = type_hints.get(arg, Any)
+            if hinted_args is Any:
+                continue
+            if is_union(hinted_args):
+                if value is None:
+                    continue
+                hinted_args = value_inside_optional(hinted_args)
+            if isinstance(value, dict) and inspect.isclass(hinted_args):
+                if issubclass(hinted_args, Model):
+                    # Remove non-fields from the payload
+                    payload[arg] = hinted_args(
+                        **{
+                            key: value
+                            for key, value in value.items()
+                            if key in hinted_args.__fields__
+                        }
+                    )
+                elif dataclasses.is_dataclass(hinted_args) or issubclass(
+                    hinted_args, Base
+                ):
+                    payload[arg] = hinted_args(**value)
+            if isinstance(value, list) and (hinted_args is set or hinted_args is Set):
+                payload[arg] = set(value)
+            if isinstance(value, list) and (
+                hinted_args is tuple or hinted_args is Tuple
+            ):
+                payload[arg] = tuple(value)
+
         # Wrap the function in a try/except block.
         try:
             # Handle async functions.
@@ -1848,7 +1890,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         )
 
         subdelta: Dict[str, Any] = {
-            prop: self.get_value(getattr(self, prop))
+            prop: self.get_value(prop)
             for prop in delta_vars
             if not types.is_backend_base_variable(prop, type(self))
         }
@@ -1940,9 +1982,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The value of the field.
         """
-        if isinstance(key, MutableProxy):
-            return super().get_value(key.__wrapped__)
-        return super().get_value(key)
+        value = super().get_value(key)
+        if isinstance(value, MutableProxy):
+            return value.__wrapped__
+        return value
 
     def dict(
         self, include_computed: bool = True, initial: bool = False, **kwargs
@@ -1964,8 +2007,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self._mark_dirty()
 
         base_vars = {
-            prop_name: self.get_value(getattr(self, prop_name))
-            for prop_name in self.base_vars
+            prop_name: self.get_value(prop_name) for prop_name in self.base_vars
         }
         if initial and include_computed:
             computed_vars = {
@@ -1974,7 +2016,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     cv._initial_value
                     if is_computed_var(cv)
                     and not isinstance(cv._initial_value, types.Unset)
-                    else self.get_value(getattr(self, prop_name))
+                    else self.get_value(prop_name)
                 )
                 for prop_name, cv in self.computed_vars.items()
                 if not cv._backend
@@ -1982,7 +2024,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         elif include_computed:
             computed_vars = {
                 # Include the computed vars.
-                prop_name: self.get_value(getattr(self, prop_name))
+                prop_name: self.get_value(prop_name)
                 for prop_name, cv in self.computed_vars.items()
                 if not cv._backend
             }
