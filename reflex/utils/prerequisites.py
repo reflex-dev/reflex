@@ -1209,7 +1209,7 @@ def check_schema_up_to_date():
                 )
 
 
-def prompt_for_template(templates: list[Template]) -> str:
+def prompt_for_template_options(templates: list[Template]) -> str:
     """Prompt the user to specify a template.
 
     Args:
@@ -1378,19 +1378,83 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
     shutil.rmtree(unzip_dir)
 
 
-def prompt_templates(templates: dict[str, Template]) -> str:
+def prompt_for_remote_template_selection(templates: dict[str, Template]) -> str:
+    """Prompt the user to input a remote template.
+
+    Args:
+        templates: The available templates.
+
+    Returns:
+        The selected template.
+
+    Raises:
+        Exit: If the user does not input a valid template.
+    """
     while True:
         console.print(
-            "visit https://reflex.dev/templates for the complete list of templates."
+            "Visit https://reflex.dev/templates for the complete list of templates."
         )
-        answer = console.ask("Enter a valid template name", show_choices=False)
-        if not answer in templates:
+        selected_template = console.ask(
+            "Enter a valid template name", show_choices=False
+        )
+        if selected_template not in templates:
             console.error("Invalid template name. Please try again.")
         else:
-            return answer
+            return selected_template
 
 
-def use_ai_generation(template: str | None = None) -> str:
+def initialize_default_app(app_name: str):
+    """Initialize the default app.
+
+    Args:
+        app_name: The name of the app.
+    """
+    create_config(app_name)
+    initialize_app_directory(app_name)
+
+
+def validate_and_create_app_using_remote_template(app_name, template, templates):
+    """Validate and create an app using a remote template.
+
+    Args:
+        app_name: The name of the app.
+        template: The name of the template.
+        templates: The available templates.
+
+    Raises:
+        Exit: If the template is not found.
+    """
+    # If user selects a template, it needs to exist.
+    if template in templates:
+        template_url = templates[template].code_url
+    else:
+        # Check if the template is a github repo.
+        if template.startswith("https://github.com"):
+            template_url = f"{template.strip('/').replace('.git', '')}/archive/main.zip"
+        else:
+            console.error(f"Template `{template}` not found.")
+            raise typer.Exit(1)
+
+    if template_url is None:
+        return
+
+    create_config_init_app_from_remote_template(
+        app_name=app_name, template_url=template_url
+    )
+
+
+def generate_template_using_ai(template: str | None = None) -> str:
+    """Generate a template using AI(Flexgen).
+
+    Args:
+        template: The name of the template.
+
+    Returns:
+        The generation hash.
+
+    Raises:
+        Exit: If the template and ai flags are used.
+    """
     if template is None:
         # If AI is requested and no template specified, redirect the user to reflex.build.
         return redir.reflex_build_redirect()
@@ -1404,6 +1468,42 @@ def use_ai_generation(template: str | None = None) -> str:
         raise typer.Exit(2)
 
 
+def fetch_and_prompt_with_remote_templates(
+    template: str, show_prompt: bool = True
+) -> tuple[str, dict[str, Template]]:
+    """Fetch the available remote templates and prompt the user for an input.
+
+    Args:
+        template: The name of the template.
+        show_prompt: Whether to show the prompt.
+
+    Returns:
+        The selected template and the available templates.
+    """
+    available_templates = {}
+
+    try:
+        # Get the available templates
+        available_templates = fetch_app_templates(constants.Reflex.VERSION)
+
+        if not show_prompt and template in available_templates:
+            return template, available_templates
+
+        if not show_prompt and (template not in templates):
+            console.error(f"{template} is not a valid template name.")
+
+        template = (
+            prompt_for_remote_template_selection(available_templates)
+            if available_templates
+            else constants.Templates.DEFAULT
+        )
+    except Exception as e:
+        console.warn("Failed to fetch templates. Falling back to default template.")
+        console.debug(f"Error while fetching templates: {e}")
+
+    return (template or constants.Templates.DEFAULT), available_templates
+
+
 def initialize_app(
     app_name: str, template: str | None = None, ai: bool = False
 ) -> str | None:
@@ -1412,6 +1512,7 @@ def initialize_app(
     Args:
         app_name: The name of the app.
         template: The name of the template to use.
+        ai: Whether to use AI to generate the template.
 
     Raises:
         Exit: If template is directly provided in the command flag and is invalid.
@@ -1429,102 +1530,51 @@ def initialize_app(
 
     generation_hash = None
     if ai:
-        generation_hash = use_ai_generation(template)
-        template = constants.Templates.AI
+        generation_hash = generate_template_using_ai(template)
+        template = constants.Templates.DEFAULT
 
     templates: dict[str, Template] = {}
 
     # Don't fetch app templates if the user directly asked for DEFAULT.
-    if template is not None and (
-        template != constants.Templates.DEFAULT or template != constants.Templates.AI
-    ):
-        try:
-            # Get the available templates
-            templates = fetch_app_templates(constants.Reflex.VERSION)
-            if template is None and len(templates) > 0:
-                template = prompt_for_template(list(templates.values()))
-        except Exception as e:
-            console.warn("Failed to fetch templates. Falling back to default template.")
-            console.debug(f"Error while fetching templates: {e}")
-        finally:
-            template = template or constants.Templates.DEFAULT
-
-    if template is None:
-        template = prompt_for_template(get_init_cli_options())
-        if template == constants.Templates.AI:
-            generation_hash = use_ai_generation()
-        elif template == constants.Templates.CHOOSE_TEMPLATES:
-            try:
-                # Get the available templates
-                templates = fetch_app_templates(constants.Reflex.VERSION)
-                # default to the blank template if no templates are available
-                template = (
-                    prompt_templates(templates)
-                    if len(templates) > 0
-                    else constants.Templates.DEFAULT
-                )
-            except Exception as e:
-                console.warn(
-                    "Failed to fetch templates. Falling back to default template."
-                )
-                console.debug(f"Error while fetching templates: {e}")
-                template = constants.Templates.DEFAULT
-
-        else:
-            console.error("Invalid option selected.")
-            raise typer.Exit(2)
-
-    # If the blank template is selected, create a blank app.
-    if template == constants.Templates.DEFAULT or template == constants.Templates.AI:
-        # Default app creation behavior: a blank app.
-        create_config(app_name)
-        initialize_app_directory(app_name)
-    else:
-        # If user selects a template, it needs to exist.
-        if template in templates:
-            template_url = templates[template].code_url
-        else:
-            # Check if the template is a github repo.
-            if template.startswith("https://github.com"):
-                template_url = (
-                    f"{template.strip('/').replace('.git', '')}/archive/main.zip"
-                )
-            else:
-                console.error(f"Template `{template}` not found.")
-                raise typer.Exit(1)
-
-        if template_url is None:
-            return
-
-        create_config_init_app_from_remote_template(
-            app_name=app_name, template_url=template_url
+    if template is not None and (template not in (constants.Templates.DEFAULT,)):
+        template, templates = fetch_and_prompt_with_remote_templates(
+            template, show_prompt=False
         )
 
-    telemetry.send("init", template=template)
+    if template is None:
+        template = prompt_for_template_options(get_init_cli_prompt_options())
+        if template == constants.Templates.AI:
+            generation_hash = generate_template_using_ai()
+            # change to the default to allow creation of default app
+            template = constants.Templates.DEFAULT
+        elif template == constants.Templates.CHOOSE_TEMPLATES:
+            template, templates = fetch_and_prompt_with_remote_templates(template)
+
+    # If the blank template is selected, create a blank app.
+    if template in (constants.Templates.DEFAULT,):
+        # Default app creation behavior: a blank app.
+        initialize_default_app(app_name)
+    else:
+        validate_and_create_app_using_remote_template(
+            app_name=app_name, template=template, templates=templates
+        )
+
     # If a reflex.build generation hash is available, download the code and apply it to the main module.
     if generation_hash:
         initialize_main_module_index_from_generation(
             app_name, generation_hash=generation_hash
         )
+    telemetry.send("init", template=template)
 
     return template
 
 
-def fetch_and_prompt_for_templates(
-    template: str | None, templates: dict[str, Template]
-) -> str:
-    """Fetches available templates and prompts the user if template is not specified."""
-    try:
-        templates = fetch_app_templates(constants.Reflex.VERSION)
-        if not template and templates:
-            template = prompt_for_template(list(templates.values()))
-    except Exception as e:
-        console.warn("Failed to fetch templates. Falling back to default template.")
-        console.debug(f"Error while fetching templates: {e}")
-    return template or constants.Templates.DEFAULT
+def get_init_cli_prompt_options() -> list[Template]:
+    """Get the CLI options for initializing a Reflex app.
 
-
-def get_init_cli_options() -> list[Template]:
+    Returns:
+        The CLI options.
+    """
     return [
         Template(
             name=constants.Templates.DEFAULT,
@@ -1534,7 +1584,7 @@ def get_init_cli_options() -> list[Template]:
         ),
         Template(
             name=constants.Templates.AI,
-            description="Generate a template using AI(Flexgen)",
+            description="Generate a template using AI (Flexgen)",
             demo_url="https://flexgen.reflex.run",
             code_url="",
         ),

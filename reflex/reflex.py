@@ -17,7 +17,7 @@ from reflex import constants
 from reflex.config import environment, get_config
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.state import reset_disk_state_manager
-from reflex.utils import console, redir, telemetry
+from reflex.utils import console, telemetry
 
 # Disable typer+rich integration for help panels
 typer.core.rich = False  # type: ignore
@@ -98,7 +98,7 @@ def _init(
     # Initialize the requirements.txt.
     prerequisites.initialize_requirements_txt()
 
-    template_msg = "" if template else f" using the {template} template"
+    template_msg = f" using the {template} template" if template else ""
     # Finish initializing the app.
     console.success(f"Initialized {app_name}{template_msg}")
 
