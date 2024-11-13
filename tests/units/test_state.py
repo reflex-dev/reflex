@@ -3460,3 +3460,34 @@ def test_mutable_models():
     # state.dc.foo = "baz"
     # assert state.dirty_vars == {"dc"}
     # state.dirty_vars.clear()
+
+
+def test_get_value():
+    class GetValueState(rx.State):
+        foo: str = "FOO"
+        bar: str = "BAR"
+
+    state = GetValueState()
+
+    assert state.dict() == {
+        state.get_full_name(): {
+            "foo": "FOO",
+            "bar": "BAR",
+        }
+    }
+    assert state.get_delta() == {}
+
+    state.bar = "foo"
+
+    assert state.dict() == {
+        state.get_full_name(): {
+            "foo": "FOO",
+            "bar": "foo",
+        }
+    }
+    assert state.get_delta() == {
+        state.get_full_name(): {
+            "bar": "foo",
+        }
+    }
+

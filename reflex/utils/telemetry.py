@@ -51,7 +51,8 @@ def get_python_version() -> str:
     Returns:
         The Python version.
     """
-    return platform.python_version()
+    # Remove the "+" from the version string in case user is using a pre-release version.
+    return platform.python_version().rstrip("+")
 
 
 def get_reflex_version() -> str:

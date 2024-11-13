@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple
 
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
     Component,
     ComponentNamespace,
@@ -181,6 +182,13 @@ class UploadFilesProvider(Component):
     tag = "UploadFilesProvider"
 
 
+class GhostUpload(Fragment):
+    """A ghost upload component."""
+
+    # Fired when files are dropped.
+    on_drop: EventHandler[_on_drop_spec]
+
+
 class Upload(MemoizationLeaf):
     """A file upload component."""
 
@@ -276,8 +284,8 @@ class Upload(MemoizationLeaf):
         root_props_unique_name = get_unique_variable_name()
 
         event_var, callback_str = StatefulComponent._get_memoized_event_triggers(
-            Box.create(on_click=upload_props["on_drop"])  # type: ignore
-        )["on_click"]
+            GhostUpload.create(on_drop=upload_props["on_drop"])
+        )["on_drop"]
 
         upload_props["on_drop"] = event_var
 

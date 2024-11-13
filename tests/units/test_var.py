@@ -928,7 +928,7 @@ def test_function_var():
         == '(((a, b) => ({ ["args"] : [a, b], ["result"] : a + b }))(1, 2))'
     )
 
-    increment_func = addition_func(1)
+    increment_func = addition_func.partial(1)
     assert (
         str(increment_func.call(2))
         == "(((...args) => (((a, b) => a + b)(1, ...args)))(2))"
