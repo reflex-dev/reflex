@@ -361,20 +361,28 @@ class Var(Generic[VAR_TYPE]):
         return False
 
     def __init_subclass__(
-        cls, python_types: Tuple[GenericType, ...] | GenericType = types.Unset, **kwargs
+        cls,
+        python_types: Tuple[GenericType, ...] | GenericType = types.Unset(),
+        default_type: GenericType = types.Unset(),
+        **kwargs,
     ):
         """Initialize the subclass.
 
         Args:
             python_types: The python types that the var represents.
+            default_type: The default type of the var. Defaults to the first python type.
             **kwargs: Additional keyword arguments.
         """
         super().__init_subclass__(**kwargs)
 
-        if python_types is not types.Unset:
+        if python_types or default_type:
             python_types = (
-                python_types if isinstance(python_types, tuple) else (python_types,)
+                (python_types if isinstance(python_types, tuple) else (python_types,))
+                if python_types
+                else ()
             )
+
+            default_type = default_type or (python_types[0] if python_types else Any)
 
             @dataclasses.dataclass(
                 eq=False,
@@ -388,7 +396,7 @@ class Var(Generic[VAR_TYPE]):
                     default=Var(_js_expr="null", _var_type=None),
                 )
 
-                _default_var_type: ClassVar[GenericType] = python_types[0]
+                _default_var_type: ClassVar[GenericType] = default_type
 
             ToVarOperation.__name__ = f'To{cls.__name__.removesuffix("Var")}Operation'
 
@@ -587,6 +595,12 @@ class Var(Generic[VAR_TYPE]):
         self,
         output: type[list] | type[tuple] | type[set],
     ) -> ArrayVar: ...
+
+    @overload
+    def to(
+        self,
+        output: type[dict],
+    ) -> ObjectVar[dict]: ...
 
     @overload
     def to(
