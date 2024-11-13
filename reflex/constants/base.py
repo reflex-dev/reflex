@@ -97,6 +97,10 @@ class Templates(SimpleNamespace):
     # The default template
     DEFAULT = "blank"
 
+    AI = "ai"
+
+    CHOOSE_TEMPLATES = "choose templates"
+
     # The reflex.build frontend host
     REFLEX_BUILD_FRONTEND = "https://flexgen.reflex.run"
 

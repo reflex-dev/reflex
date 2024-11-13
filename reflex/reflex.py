@@ -89,30 +89,8 @@ def _init(
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
 
-    # Integrate with reflex.build.
-    generation_hash = None
-    if ai:
-        if template is None:
-            # If AI is requested and no template specified, redirect the user to reflex.build.
-            generation_hash = redir.reflex_build_redirect()
-        elif prerequisites.is_generation_hash(template):
-            # Otherwise treat the template as a generation hash.
-            generation_hash = template
-        else:
-            console.error(
-                "Cannot use `--template` option with `--ai` option. Please remove `--template` option."
-            )
-            raise typer.Exit(2)
-        template = constants.Templates.DEFAULT
-
     # Initialize the app.
-    template = prerequisites.initialize_app(app_name, template)
-
-    # If a reflex.build generation hash is available, download the code and apply it to the main module.
-    if generation_hash:
-        prerequisites.initialize_main_module_index_from_generation(
-            app_name, generation_hash=generation_hash
-        )
+    template = prerequisites.initialize_app(app_name, template, ai)
 
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()

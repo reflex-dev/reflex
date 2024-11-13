@@ -34,7 +34,7 @@ from redis.asyncio import Redis
 from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, environment, get_config
-from reflex.utils import console, net, path_ops, processes
+from reflex.utils import console, net, path_ops, processes, redir
 from reflex.utils.exceptions import (
     GeneratedCodeHasNoFunctionDefs,
     raise_system_package_missing_error,
@@ -218,10 +218,10 @@ def get_install_package_manager(on_failure_return_none: bool = False) -> str | N
         The path to the package manager.
     """
     if (
-        constants.IS_WINDOWS
-        and not is_windows_bun_supported()
-        or windows_check_onedrive_in_path()
-        or windows_npm_escape_hatch()
+            constants.IS_WINDOWS
+            and not is_windows_bun_supported()
+            or windows_check_onedrive_in_path()
+            or windows_npm_escape_hatch()
     ):
         return get_package_manager(on_failure_return_none)
     return str(get_config().bun_path)
@@ -443,8 +443,8 @@ def create_config(app_name: str):
 
 
 def initialize_gitignore(
-    gitignore_file: Path = constants.GitIgnore.FILE,
-    files_to_ignore: set[str] | list[str] = constants.GitIgnore.DEFAULTS,
+        gitignore_file: Path = constants.GitIgnore.FILE,
+        files_to_ignore: set[str] | list[str] = constants.GitIgnore.DEFAULTS,
 ):
     """Initialize the template .gitignore file.
 
@@ -510,10 +510,10 @@ def initialize_requirements_txt():
 
 
 def initialize_app_directory(
-    app_name: str,
-    template_name: str = constants.Templates.DEFAULT,
-    template_code_dir_name: str | None = None,
-    template_dir: Path | None = None,
+        app_name: str,
+        template_name: str = constants.Templates.DEFAULT,
+        template_code_dir_name: str | None = None,
+        template_dir: Path | None = None,
 ):
     """Initialize the app directory on reflex init.
 
@@ -687,7 +687,7 @@ def update_next_config(export=False, transpile_packages: Optional[List[str]] = N
 
 
 def _update_next_config(
-    config: Config, export: bool = False, transpile_packages: Optional[List[str]] = None
+        config: Config, export: bool = False, transpile_packages: Optional[List[str]] = None
 ):
     next_config = {
         "basePath": config.frontend_path or "",
@@ -844,7 +844,7 @@ def install_bun():
 
     # Skip if bun is already installed.
     if Path(get_config().bun_path).exists() and get_bun_version() == version.parse(
-        constants.Bun.VERSION
+            constants.Bun.VERSION
     ):
         console.debug("Skipping bun installation as it is already installed.")
         return
@@ -943,16 +943,16 @@ def install_frontend_packages(packages: set[str], config: Config):
     fallback_command = (
         get_package_manager(on_failure_return_none=True)
         if (
-            not constants.IS_WINDOWS
-            or constants.IS_WINDOWS
-            and is_windows_bun_supported()
-            and not windows_check_onedrive_in_path()
+                not constants.IS_WINDOWS
+                or constants.IS_WINDOWS
+                and is_windows_bun_supported()
+                and not windows_check_onedrive_in_path()
         )
         else None
     )
 
     install_package_manager = (
-        get_install_package_manager(on_failure_return_none=True) or fallback_command
+            get_install_package_manager(on_failure_return_none=True) or fallback_command
     )
 
     if install_package_manager is None:
@@ -1178,8 +1178,8 @@ def check_db_initialized() -> bool:
         True if alembic is initialized (or if database is not used).
     """
     if (
-        get_config().db_url is not None
-        and not environment.ALEMBIC_CONFIG.get().exists()
+            get_config().db_url is not None
+            and not environment.ALEMBIC_CONFIG.get().exists()
     ):
         console.error(
             "Database is not initialized. Run [bold]reflex db init[/bold] first."
@@ -1195,8 +1195,8 @@ def check_schema_up_to_date():
     with model.Model.get_db_engine().connect() as connection:
         try:
             if model.Model.alembic_autogenerate(
-                connection=connection,
-                write_migration_scripts=False,
+                    connection=connection,
+                    write_migration_scripts=False,
             ):
                 console.error(
                     "Detected database schema changes. Run [bold]reflex db makemigrations[/bold] "
@@ -1378,7 +1378,31 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
     shutil.rmtree(unzip_dir)
 
 
-def initialize_app(app_name: str, template: str | None = None) -> str | None:
+def prompt_templates(templates: dict[str, Template]) -> str:
+    while True:
+        console.print("visit https://reflex.dev/templates for the complete list of templates.")
+        answer = console.ask("Enter a valid template name", show_choices=False)
+        if not answer in templates:
+            console.error("Invalid template name. Please try again.")
+        else:
+            return answer
+
+
+def use_ai_generation(template: str | None = None) -> str:
+    if template is None:
+        # If AI is requested and no template specified, redirect the user to reflex.build.
+        return redir.reflex_build_redirect()
+    elif is_generation_hash(template):
+        # Otherwise treat the template as a generation hash.
+        return template
+    else:
+        console.error(
+            "Cannot use `--template` option with `--ai` option. Please remove `--template` option."
+        )
+        raise typer.Exit(2)
+
+
+def initialize_app(app_name: str, template: str | None = None, ai: bool = False) -> str | None:
     """Initialize the app either from a remote template or a blank app. If the config file exists, it is considered as reinit.
 
     Args:
@@ -1399,10 +1423,15 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
         telemetry.send("reinit")
         return
 
+    generation_hash = None
+    if ai:
+        generation_hash = use_ai_generation(template)
+        template = constants.Templates.AI
+
     templates: dict[str, Template] = {}
 
     # Don't fetch app templates if the user directly asked for DEFAULT.
-    if template is None or (template != constants.Templates.DEFAULT):
+    if template is not None and (template != constants.Templates.DEFAULT or template != constants.Templates.AI):
         try:
             # Get the available templates
             templates = fetch_app_templates(constants.Reflex.VERSION)
@@ -1414,14 +1443,32 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
         finally:
             template = template or constants.Templates.DEFAULT
 
+    if template is None:
+
+        template = prompt_for_template(get_init_cli_options())
+        if template == constants.Templates.AI:
+            generation_hash = use_ai_generation()
+        elif template == constants.Templates.CHOOSE_TEMPLATES:
+            try:
+                # Get the available templates
+                templates = fetch_app_templates(constants.Reflex.VERSION)
+                # default to the blank template if no templates are available
+                template = prompt_templates(templates) if len(templates) > 0 else constants.Templates.DEFAULT
+            except Exception as e:
+                console.warn("Failed to fetch templates. Falling back to default template.")
+                console.debug(f"Error while fetching templates: {e}")
+                template = constants.Templates.DEFAULT
+
+        else:
+            console.error("Invalid option selected.")
+            raise typer.Exit(2)
+
     # If the blank template is selected, create a blank app.
-    if template == constants.Templates.DEFAULT:
+    if template == constants.Templates.DEFAULT or template == constants.Templates.AI:
         # Default app creation behavior: a blank app.
         create_config(app_name)
         initialize_app_directory(app_name)
     else:
-        # Fetch App templates from the backend server.
-        console.debug(f"Available templates: {templates}")
 
         # If user selects a template, it needs to exist.
         if template in templates:
@@ -1444,7 +1491,35 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
         )
 
     telemetry.send("init", template=template)
+    # If a reflex.build generation hash is available, download the code and apply it to the main module.
+    if generation_hash:
+        initialize_main_module_index_from_generation(
+            app_name, generation_hash=generation_hash
+        )
+
     return template
+
+
+def fetch_and_prompt_for_templates(template: str | None, templates: dict[str, Template]) -> str:
+    """Fetches available templates and prompts the user if template is not specified."""
+    try:
+        templates = fetch_app_templates(constants.Reflex.VERSION)
+        if not template and templates:
+            template = prompt_for_template(list(templates.values()))
+    except Exception as e:
+        console.warn("Failed to fetch templates. Falling back to default template.")
+        console.debug(f"Error while fetching templates: {e}")
+    return template or constants.Templates.DEFAULT
+
+
+def get_init_cli_options() -> list[Template]:
+    return [
+        Template(name=constants.Templates.DEFAULT, description="A blank Reflex app.", demo_url="", code_url=""),
+        Template(name=constants.Templates.AI, description="Generate a template using AI(Flexgen)", demo_url="https://flexgen.reflex.run",
+                 code_url=""),
+        Template(name=constants.Templates.CHOOSE_TEMPLATES, description="Choose an existing template.", demo_url="https://reflex.dev/templates",
+                 code_url=""),
+    ]
 
 
 def initialize_main_module_index_from_generation(app_name: str, generation_hash: str):
@@ -1588,11 +1663,11 @@ def is_windows_bun_supported() -> bool:
     """
     cpu_info = get_cpu_info()
     return (
-        constants.IS_WINDOWS
-        and cpu_info is not None
-        and cpu_info.address_width == 64
-        and cpu_info.model_name is not None
-        and "ARM" not in cpu_info.model_name
+            constants.IS_WINDOWS
+            and cpu_info is not None
+            and cpu_info.address_width == 64
+            and cpu_info.model_name is not None
+            and "ARM" not in cpu_info.model_name
     )
 
 
