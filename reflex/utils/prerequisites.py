@@ -1388,9 +1388,6 @@ def prompt_for_remote_template_selection(templates: dict[str, Template]) -> str:
 
     Returns:
         The selected template.
-
-    Raises:
-        Exit: If the user does not input a valid template.
     """
     while True:
         console.print(
@@ -1515,9 +1512,6 @@ def initialize_app(
         app_name: The name of the app.
         template: The name of the template to use.
         ai: Whether to use AI to generate the template.
-
-    Raises:
-        Exit: If template is directly provided in the command flag and is invalid.
 
     Returns:
         The name of the template.
