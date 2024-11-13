@@ -1581,7 +1581,7 @@ def get_init_cli_prompt_options() -> list[Template]:
         Template(
             name=constants.Templates.DEFAULT,
             description="A blank Reflex app.",
-            demo_url="",
+            demo_url="https://blank-template.reflex.run",
             code_url="",
         ),
         Template(
