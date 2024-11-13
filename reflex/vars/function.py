@@ -4,15 +4,10 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-
-from typing_extensions import (
+from typing import (
     Any,
     Callable,
-    Concatenate,
-    Generic,
     Optional,
-    ParamSpec,
-    Protocol,
     Sequence,
     Tuple,
     Type,
@@ -20,6 +15,8 @@ from typing_extensions import (
     Union,
     overload,
 )
+
+from typing_extensions import Concatenate, Generic, ParamSpec, Protocol
 
 from reflex.utils import format
 from reflex.utils.types import GenericType
