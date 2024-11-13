@@ -4,9 +4,22 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Any, Generic, Optional, Sequence, Tuple, Type, Union, overload
 
-from typing_extensions import Callable, Concatenate, ParamSpec, Protocol, TypeVar
+from typing_extensions import (
+    Any,
+    Callable,
+    Concatenate,
+    Generic,
+    Optional,
+    ParamSpec,
+    Protocol,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from reflex.utils import format
 from reflex.utils.types import GenericType
@@ -458,7 +471,10 @@ class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
 JSON_STRINGIFY = FunctionStringVar.create(
     "JSON.stringify", _var_type=ReflexCallable[[Any], str]
 )
-ARRAY_ISARRAY = FunctionStringVar.create("Array.isArray")
+ARRAY_ISARRAY = FunctionStringVar.create(
+    "Array.isArray", _var_type=ReflexCallable[[Any], bool]
+)
 PROTOTYPE_TO_STRING = FunctionStringVar.create(
-    "((__to_string) => __to_string.toString())"
+    "((__to_string) => __to_string.toString())",
+    _var_type=ReflexCallable[[Any], str],
 )
