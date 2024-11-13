@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from re import IGNORECASE as RE_IGNORECASE
-from re import compile as re_compile
 from typing import TYPE_CHECKING, Dict, Iterable, Optional, Tuple, Type, Union
 
 from reflex import constants
@@ -26,8 +24,6 @@ from reflex.utils.exec import is_prod_mode
 from reflex.utils.imports import ImportVar
 from reflex.utils.prerequisites import get_web_dir
 from reflex.vars.base import LiteralVar, Var
-
-RE_SASS_SCSS_EXT = re_compile(r"\.s(c|a)ss", flags=RE_IGNORECASE)
 
 
 def _compile_document_root(root: Component) -> str:
