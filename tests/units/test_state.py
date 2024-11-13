@@ -3490,4 +3490,3 @@ def test_get_value():
             "bar": "foo",
         }
     }
-
