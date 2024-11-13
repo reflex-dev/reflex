@@ -45,6 +45,8 @@ from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import (
     ArgsFunctionOperation,
+    ArgsFunctionOperationBuilder,
+    BuilderFunctionVar,
     FunctionArgs,
     FunctionStringVar,
     FunctionVar,
@@ -1580,7 +1582,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
         )
 
 
-class EventChainVar(FunctionVar, python_types=EventChain):
+class EventChainVar(BuilderFunctionVar, python_types=EventChain):
     """Base class for event chain vars."""
 
 
@@ -1592,7 +1594,7 @@ class EventChainVar(FunctionVar, python_types=EventChain):
 # Note: LiteralVar is second in the inheritance list allowing it act like a
 # CachedVarOperation (ArgsFunctionOperation) and get the _js_expr from the
 # _cached_var_name property.
-class LiteralEventChainVar(ArgsFunctionOperation, LiteralVar, EventChainVar):
+class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainVar):
     """A literal event chain var."""
 
     _var_value: EventChain = dataclasses.field(default=None)  # type: ignore
