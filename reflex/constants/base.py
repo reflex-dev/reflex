@@ -97,8 +97,10 @@ class Templates(SimpleNamespace):
     # The default template
     DEFAULT = "blank"
 
+    # The AI template
     AI = "ai"
 
+    # The option for the user to choose a remote template.
     CHOOSE_TEMPLATES = "choose templates"
 
     # The reflex.build frontend host
