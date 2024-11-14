@@ -262,6 +262,9 @@ class Cartesian(Recharts):
     # The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
     layout: Var[LiteralLayout]
 
+    # The source data, in which each element is an object.
+    data: Var[List[Dict[str, Any]]]
+
     # The key of a group of data which should be unique in an area chart.
     data_key: Var[Union[str, int]]
 
@@ -656,11 +659,35 @@ class Reference(Recharts):
     # Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas. Default: "discard"
     if_overflow: Var[LiteralIfOverflow]
 
+    # If set true, the line will be rendered in front of bars in BarChart, etc. Default: False
+    is_front: Var[bool]
+
     # If set a string or a number, default label will be drawn, and the option is content.
     label: Var[Union[str, int]]
 
-    # If set true, the line will be rendered in front of bars in BarChart, etc. Default: False
-    is_front: Var[bool]
+    # The customized event handler of click on the component in this chart
+    on_click: EventHandler[no_args_event_spec]
+
+    # The customized event handler of mousedown on the component in this chart
+    on_mouse_down: EventHandler[no_args_event_spec]
+
+    # The customized event handler of mouseup on the component in this chart
+    on_mouse_up: EventHandler[no_args_event_spec]
+
+    # The customized event handler of mouseover on the component in this chart
+    on_mouse_over: EventHandler[no_args_event_spec]
+
+    # The customized event handler of mouseout on the component in this chart
+    on_mouse_out: EventHandler[no_args_event_spec]
+
+    # The customized event handler of mouseenter on the component in this chart
+    on_mouse_enter: EventHandler[no_args_event_spec]
+
+    # The customized event handler of mousemove on the component in this chart
+    on_mouse_move: EventHandler[no_args_event_spec]
+
+    # The customized event handler of mouseleave on the component in this chart
+    on_mouse_leave: EventHandler[no_args_event_spec]
 
 
 class ReferenceLine(Reference):

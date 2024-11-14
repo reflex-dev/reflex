@@ -289,7 +289,14 @@ def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
     Returns:
         The serialized datetime.
     """
-    return str(dt)
+    if isinstance(dt, datetime):
+        return dt.isoformat()
+    elif isinstance(dt, date):
+        return dt.isoformat()
+    elif isinstance(dt, time):
+        return dt.isoformat()
+    else:  # timedelta
+        return str(dt)
 
 
 @serializer(to=str)
