@@ -39,7 +39,7 @@ from reflex.utils.exceptions import (
     GeneratedCodeHasNoFunctionDefs,
     raise_system_package_missing_error,
 )
-from reflex.utils.format import format_library_name
+from reflex.utils.format import format_library_name, format_template_name
 from reflex.utils.registry import _get_npm_registry
 
 CURRENTLY_INSTALLING_NODE = False
@@ -1242,6 +1242,30 @@ def prompt_for_template_options(templates: list[Template]) -> str:
     return templates[int(template)].name
 
 
+def get_other_templates() -> list[dict[str, str]]:
+    """Get other templates not included in the templates repo.
+
+    Returns:
+        List of other templates.
+    """
+    return [
+        {
+            "name": "llamaindex",
+            "description": "A minimal chat app using LLamaIndex.",
+            "demo_url": "https://frontend-gold-orca.dev.reflexcorp.run/",
+            "code_url": "https://github.com/reflex-dev/reflex-llamaindex-template/archive/refs/heads/main.zip",
+            "hidden": False,
+        },
+        {
+            "name": "chat",
+            "description": "A chat app with a dark theme.",
+            "demo_url": "https://chat.reflex.run",
+            "code_url": "https://github.com/reflex-dev/reflex-chat/archive/refs/heads/main.zip",
+            "hidden": False,
+        },
+    ]
+
+
 def fetch_app_templates(version: str) -> dict[str, Template]:
     """Fetch a dict of templates from the templates repo using github API.
 
@@ -1288,9 +1312,12 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
             ),
             None,
         )
+    # include other templates not in the templates repo.
+    templates_data.extend(get_other_templates())
 
     filtered_templates = {}
     for tp in templates_data:
+        tp["name"] = format_template_name(tp["name"])
         if tp["hidden"] or tp["code_url"] is None:
             continue
         known_fields = set(f.name for f in dataclasses.fields(Template))
@@ -1391,7 +1418,7 @@ def prompt_for_remote_template_selection(templates: dict[str, Template]) -> str:
     """
     while True:
         console.print(
-            "Visit https://reflex.dev/templates for the complete list of templates."
+            f"Visit {constants.Templates.REFLEX_TEMPLATES_URL} for the complete list of templates."
         )
         selected_template = console.ask(
             "Enter a valid template name", show_choices=False
@@ -1484,7 +1511,7 @@ def fetch_and_prompt_with_remote_templates(
     try:
         # Get the available templates
         available_templates = fetch_app_templates(constants.Reflex.VERSION)
-
+        console.info(available_templates)
         if not show_prompt and template in available_templates:
             return template, available_templates
 
@@ -1575,19 +1602,19 @@ def get_init_cli_prompt_options() -> list[Template]:
         Template(
             name=constants.Templates.DEFAULT,
             description="A blank Reflex app.",
-            demo_url="https://blank-template.reflex.run",
+            demo_url=constants.Templates.DEFAULT_TEMPLATE_URL,
             code_url="",
         ),
         Template(
             name=constants.Templates.AI,
             description="Generate a template using AI (Flexgen)",
-            demo_url="https://flexgen.reflex.run",
+            demo_url=constants.Templates.REFLEX_BUILD_FRONTEND,
             code_url="",
         ),
         Template(
             name=constants.Templates.CHOOSE_TEMPLATES,
             description="Choose an existing template.",
-            demo_url="https://reflex.dev/templates",
+            demo_url=constants.Templates.REFLEX_TEMPLATES_URL,
             code_url="",
         ),
     ]

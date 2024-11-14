@@ -103,6 +103,12 @@ class Templates(SimpleNamespace):
     # The option for the user to choose a remote template.
     CHOOSE_TEMPLATES = "choose-templates"
 
+    # The URL to find reflex templates.
+    REFLEX_TEMPLATES_URL = "https://reflex.dev/templates"
+
+    # Demo url for the default template.
+    DEFAULT_TEMPLATE_URL = "https://blank-template.reflex.run"
+
     # The reflex.build frontend host
     REFLEX_BUILD_FRONTEND = "https://flexgen.reflex.run"
 
