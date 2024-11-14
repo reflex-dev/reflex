@@ -168,7 +168,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
             isinstance(i, NumberVar) and i._is_strict_float()
         ):
             raise_unsupported_operand_types("[]", (type(self), type(i)))
-        return string_item_operation(self, i)
+        return string_item_operation(self, i).guess_type()
 
     def length(self) -> NumberVar:
         """Get the length of the string.
@@ -184,7 +184,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             The string lower operation.
         """
-        return string_lower_operation(self)
+        return string_lower_operation(self).guess_type()
 
     def upper(self) -> StringVar:
         """Convert the string to uppercase.
@@ -192,7 +192,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             The string upper operation.
         """
-        return string_upper_operation(self)
+        return string_upper_operation(self).guess_type()
 
     def strip(self) -> StringVar:
         """Strip the string.
@@ -200,7 +200,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             The string strip operation.
         """
-        return string_strip_operation(self)
+        return string_strip_operation(self).guess_type()
 
     def reversed(self) -> StringVar:
         """Reverse the string.
@@ -235,8 +235,8 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         if field is not None:
             if not isinstance(field, (StringVar, str)):
                 raise_unsupported_operand_types("contains", (type(self), type(field)))
-            return string_contains_field_operation(self, other, field)
-        return string_contains_operation(self, other)
+            return string_contains_field_operation(self, other, field).guess_type()
+        return string_contains_operation(self, other).guess_type()
 
     @overload
     def split(self, separator: StringVar | str = "") -> ArrayVar[List[str]]: ...
@@ -255,7 +255,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         """
         if not isinstance(separator, (StringVar, str)):
             raise_unsupported_operand_types("split", (type(self), type(separator)))
-        return string_split_operation(self, separator)
+        return string_split_operation(self, separator).guess_type()
 
     @overload
     def startswith(self, prefix: StringVar | str) -> BooleanVar: ...
@@ -274,7 +274,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         """
         if not isinstance(prefix, (StringVar, str)):
             raise_unsupported_operand_types("startswith", (type(self), type(prefix)))
-        return string_starts_with_operation(self, prefix)
+        return string_starts_with_operation(self, prefix).guess_type()
 
     @overload
     def __lt__(self, other: StringVar | str) -> BooleanVar: ...
@@ -294,7 +294,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         if not isinstance(other, (StringVar, str)):
             raise_unsupported_operand_types("<", (type(self), type(other)))
 
-        return string_lt_operation(self, other)
+        return string_lt_operation(self, other).guess_type()
 
     @overload
     def __gt__(self, other: StringVar | str) -> BooleanVar: ...
@@ -314,7 +314,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         if not isinstance(other, (StringVar, str)):
             raise_unsupported_operand_types(">", (type(self), type(other)))
 
-        return string_gt_operation(self, other)
+        return string_gt_operation(self, other).guess_type()
 
     @overload
     def __le__(self, other: StringVar | str) -> BooleanVar: ...
@@ -334,7 +334,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         if not isinstance(other, (StringVar, str)):
             raise_unsupported_operand_types("<=", (type(self), type(other)))
 
-        return string_le_operation(self, other)
+        return string_le_operation(self, other).guess_type()
 
     @overload
     def __ge__(self, other: StringVar | str) -> BooleanVar: ...
@@ -354,7 +354,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         if not isinstance(other, (StringVar, str)):
             raise_unsupported_operand_types(">=", (type(self), type(other)))
 
-        return string_ge_operation(self, other)
+        return string_ge_operation(self, other).guess_type()
 
 
 @var_operation
@@ -796,7 +796,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
                     i._var_value if isinstance(i, LiteralStringVar) else i for i in args
                 )
             )
-        return array_join_operation(self, sep)
+        return array_join_operation(self, sep).guess_type()
 
     def reverse(self) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Reverse the array.
@@ -804,7 +804,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         Returns:
             The reversed array.
         """
-        return array_reverse_operation(self)
+        return array_reverse_operation(self).to(ArrayVar, self._var_type)
 
     @overload
     def __add__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> ArrayVar[ARRAY_VAR_TYPE]: ...
@@ -824,7 +824,9 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         if not isinstance(other, ArrayVar):
             raise_unsupported_operand_types("+", (type(self), type(other)))
 
-        return array_concat_operation(self, other)
+        return array_concat_operation(self, other).to(
+            ArrayVar, unionize(self._var_type, other._var_type)
+        )
 
     @overload
     def __getitem__(self, i: slice) -> ArrayVar[ARRAY_VAR_TYPE]: ...
@@ -945,7 +947,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         Returns:
             The length of the array.
         """
-        return array_length_operation(self)
+        return array_length_operation(self).guess_type()
 
     @overload
     @classmethod
@@ -1002,7 +1004,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
             start = first_endpoint
             end = second_endpoint
 
-        return array_range_operation(start, end, step or 1)
+        return array_range_operation(start, end, step or 1).guess_type()
 
     @overload
     def contains(self, other: Any) -> BooleanVar: ...
@@ -1023,8 +1025,8 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         if field is not None:
             if not isinstance(field, (StringVar, str)):
                 raise_unsupported_operand_types("contains", (type(self), type(field)))
-            return array_contains_field_operation(self, other, field)
-        return array_contains_operation(self, other)
+            return array_contains_field_operation(self, other, field).guess_type()
+        return array_contains_operation(self, other).guess_type()
 
     def pluck(self, field: StringVar | str) -> ArrayVar:
         """Pluck a field from the array.
@@ -1057,7 +1059,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         ):
             raise_unsupported_operand_types("*", (type(self), type(other)))
 
-        return repeat_array_operation(self, other)
+        return repeat_array_operation(self, other).to(ArrayVar, self._var_type)
 
     __rmul__ = __mul__  # type: ignore
 
@@ -1079,7 +1081,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         if not isinstance(other, (ArrayVar, list, tuple)):
             raise_unsupported_operand_types("<", (type(self), type(other)))
 
-        return array_lt_operation(self, other)
+        return array_lt_operation(self, other).guess_type()
 
     @overload
     def __gt__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> BooleanVar: ...
@@ -1099,7 +1101,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         if not isinstance(other, (ArrayVar, list, tuple)):
             raise_unsupported_operand_types(">", (type(self), type(other)))
 
-        return array_gt_operation(self, other)
+        return array_gt_operation(self, other).guess_type()
 
     @overload
     def __le__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> BooleanVar: ...
@@ -1119,7 +1121,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         if not isinstance(other, (ArrayVar, list, tuple)):
             raise_unsupported_operand_types("<=", (type(self), type(other)))
 
-        return array_le_operation(self, other)
+        return array_le_operation(self, other).guess_type()
 
     @overload
     def __ge__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> BooleanVar: ...
@@ -1139,7 +1141,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         if not isinstance(other, (ArrayVar, list, tuple)):
             raise_unsupported_operand_types(">=", (type(self), type(other)))
 
-        return array_ge_operation(self, other)
+        return array_ge_operation(self, other).guess_type()
 
     def foreach(self, fn: Any):
         """Apply a function to each element of the array.
@@ -1692,7 +1694,7 @@ def map_array_operation(
         type_computer=nary_type_computer(
             ReflexCallable[[List[Any], ReflexCallable], List[Any]],
             ReflexCallable[[ReflexCallable], List[Any]],
-            computer=lambda args: List[unwrap_reflex_callalbe(args[1]._var_type)[1]],
+            computer=lambda args: List[unwrap_reflex_callalbe(args[1]._var_type)[1]],  # type: ignore
         ),
     )
 

@@ -70,7 +70,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("+", (type(self), type(other)))
-        return number_add_operation(self, +other)
+        return number_add_operation(self, +other).guess_type()
 
     @overload
     def __radd__(self, other: number_types) -> NumberVar: ...
@@ -89,7 +89,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("+", (type(other), type(self)))
-        return number_add_operation(+other, self)
+        return number_add_operation(+other, self).guess_type()
 
     @overload
     def __sub__(self, other: number_types) -> NumberVar: ...
@@ -109,7 +109,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("-", (type(self), type(other)))
 
-        return number_subtract_operation(self, +other)
+        return number_subtract_operation(self, +other).guess_type()
 
     @overload
     def __rsub__(self, other: number_types) -> NumberVar: ...
@@ -129,7 +129,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("-", (type(other), type(self)))
 
-        return number_subtract_operation(+other, self)
+        return number_subtract_operation(+other, self).guess_type()
 
     def __abs__(self):
         """Get the absolute value of the number.
@@ -164,7 +164,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("*", (type(self), type(other)))
 
-        return number_multiply_operation(self, +other)
+        return number_multiply_operation(self, +other).guess_type()
 
     @overload
     def __rmul__(self, other: number_types | boolean_types) -> NumberVar: ...
@@ -191,7 +191,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("*", (type(other), type(self)))
 
-        return number_multiply_operation(+other, self)
+        return number_multiply_operation(+other, self).guess_type()
 
     @overload
     def __truediv__(self, other: number_types) -> NumberVar: ...
@@ -211,7 +211,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("/", (type(self), type(other)))
 
-        return number_true_division_operation(self, +other)
+        return number_true_division_operation(self, +other).guess_type()
 
     @overload
     def __rtruediv__(self, other: number_types) -> NumberVar: ...
@@ -231,7 +231,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("/", (type(other), type(self)))
 
-        return number_true_division_operation(+other, self)
+        return number_true_division_operation(+other, self).guess_type()
 
     @overload
     def __floordiv__(self, other: number_types) -> NumberVar: ...
@@ -251,7 +251,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("//", (type(self), type(other)))
 
-        return number_floor_division_operation(self, +other)
+        return number_floor_division_operation(self, +other).guess_type()
 
     @overload
     def __rfloordiv__(self, other: number_types) -> NumberVar: ...
@@ -271,7 +271,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("//", (type(other), type(self)))
 
-        return number_floor_division_operation(+other, self)
+        return number_floor_division_operation(+other, self).guess_type()
 
     @overload
     def __mod__(self, other: number_types) -> NumberVar: ...
@@ -291,7 +291,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("%", (type(self), type(other)))
 
-        return number_modulo_operation(self, +other)
+        return number_modulo_operation(self, +other).guess_type()
 
     @overload
     def __rmod__(self, other: number_types) -> NumberVar: ...
@@ -311,7 +311,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("%", (type(other), type(self)))
 
-        return number_modulo_operation(+other, self)
+        return number_modulo_operation(+other, self).guess_type()
 
     @overload
     def __pow__(self, other: number_types) -> NumberVar: ...
@@ -331,7 +331,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("**", (type(self), type(other)))
 
-        return number_exponent_operation(self, +other)
+        return number_exponent_operation(self, +other).guess_type()
 
     @overload
     def __rpow__(self, other: number_types) -> NumberVar: ...
@@ -351,7 +351,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("**", (type(other), type(self)))
 
-        return number_exponent_operation(+other, self)
+        return number_exponent_operation(+other, self).guess_type()
 
     def __neg__(self):
         """Negate the number.
@@ -874,7 +874,7 @@ def comparison_operator(
     """
 
     @var_operation
-    def operation(lhs: Var, rhs: Var):
+    def operation(lhs: Var[Any], rhs: Var[Any]):
         return var_operation_return(
             js_expression=func(lhs, rhs),
             var_type=bool,
@@ -890,7 +890,7 @@ def comparison_operator(
         Returns:
             The comparison operation.
         """
-        return operation(lhs, rhs)
+        return operation(lhs, rhs).guess_type()
 
     return wrapper
 

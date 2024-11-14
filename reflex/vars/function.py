@@ -239,7 +239,7 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
         """
         args_types, return_type = unwrap_reflex_callalbe(self._var_type)
         if isinstance(args_types, tuple):
-            return ReflexCallable[[*args_types[len(args) :]], return_type], None
+            return ReflexCallable[[*args_types[len(args) :]], return_type], None  # type: ignore
         return ReflexCallable[..., return_type], None
 
     def _arg_len(self) -> int | None:
@@ -507,9 +507,9 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar[CALLABLE_TYPE]):
 
     _cached_var_name = cached_property_no_lock(format_args_function_operation)
 
-    _pre_check = pre_check_args
+    _pre_check = pre_check_args  # type: ignore
 
-    _partial_type = figure_partial_type
+    _partial_type = figure_partial_type  # type: ignore
 
     @classmethod
     def create(
@@ -574,9 +574,9 @@ class ArgsFunctionOperationBuilder(
 
     _cached_var_name = cached_property_no_lock(format_args_function_operation)
 
-    _pre_check = pre_check_args
+    _pre_check = pre_check_args  # type: ignore
 
-    _partial_type = figure_partial_type
+    _partial_type = figure_partial_type  # type: ignore
 
     @classmethod
     def create(

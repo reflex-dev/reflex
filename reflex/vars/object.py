@@ -91,7 +91,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
         Returns:
             The keys of the object.
         """
-        return object_keys_operation(self)
+        return object_keys_operation(self).guess_type()
 
     @overload
     def values(
@@ -107,7 +107,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
         Returns:
             The values of the object.
         """
-        return object_values_operation(self)
+        return object_values_operation(self).guess_type()
 
     @overload
     def entries(
@@ -123,7 +123,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
         Returns:
             The entries of the object.
         """
-        return object_entries_operation(self)
+        return object_entries_operation(self).guess_type()
 
     items = entries
 
@@ -296,7 +296,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
         Returns:
             The result of the check.
         """
-        return object_has_own_property_operation(self, key)
+        return object_has_own_property_operation(self, key).guess_type()
 
 
 @dataclasses.dataclass(
@@ -445,6 +445,7 @@ def object_values_operation(value: Var):
             ReflexCallable[[Any], List[Any]],
             lambda x: List[x.to(ObjectVar)._value_type()],
         ),
+        var_type=List[Any],
     )
 
 
@@ -465,6 +466,7 @@ def object_entries_operation(value: Var):
             ReflexCallable[[Any], List[Tuple[str, Any]]],
             lambda x: List[Tuple[str, x.to(ObjectVar)._value_type()]],
         ),
+        var_type=List[Tuple[str, Any]],
     )
 
 
@@ -489,6 +491,7 @@ def object_merge_operation(lhs: Var, rhs: Var):
                 unionize(*[arg.to(ObjectVar)._value_type() for arg in args]),
             ],
         ),
+        var_type=Dict[Any, Any],
     )
 
 

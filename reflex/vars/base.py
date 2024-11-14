@@ -75,7 +75,7 @@ from reflex.utils.types import (
 if TYPE_CHECKING:
     from reflex.state import BaseState
 
-    from .function import ArgsFunctionOperation, ReflexCallable
+    from .function import ArgsFunctionOperation
     from .number import BooleanVar, NumberVar
     from .object import ObjectVar
     from .sequence import ArrayVar, StringVar
@@ -930,7 +930,7 @@ class Var(Generic[VAR_TYPE]):
         """
         from .number import equal_operation
 
-        return ~equal_operation(self, other)
+        return (~equal_operation(self, other)).guess_type()
 
     def bool(self) -> BooleanVar:
         """Convert the var to a boolean.
@@ -940,7 +940,7 @@ class Var(Generic[VAR_TYPE]):
         """
         from .number import boolify
 
-        return boolify(self)
+        return boolify(self).guess_type()
 
     def __and__(self, other: Var | Any) -> Var:
         """Perform a logical AND operation on the current instance and another variable.
@@ -992,7 +992,7 @@ class Var(Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the logical NOT operation.
         """
-        return ~self.bool()
+        return (~self.bool()).guess_type()
 
     def to_string(self, use_json: bool = True) -> StringVar:
         """Convert the var to a string.
@@ -1539,7 +1539,7 @@ def var_operation(
 
 def var_operation(
     func: Callable[..., CustomVarOperationReturn[T]],
-) -> ArgsFunctionOperation:
+) -> ArgsFunctionOperation[ReflexCallable[..., T]]:
     """Decorator for creating a var operation.
 
     Example:
@@ -1604,7 +1604,7 @@ def var_operation(
         function_name=func_name,
         type_computer=custom_operation_return._type_computer,
         _var_type=ReflexCallable[
-            tuple(arg_python_type for _, arg_python_type in args_with_type_hints),
+            tuple(arg_python_type for _, arg_python_type in args_with_type_hints),  # type: ignore
             custom_operation_return._var_type,
         ],
     )
@@ -3143,7 +3143,7 @@ def nary_type_computer(
     def type_computer(*args: Var):
         if len(args) != len(types):
             return (
-                ReflexCallable[[], types[len(args)]],
+                ReflexCallable[[], types[len(args)]],  # type: ignore
                 functools.partial(type_computer, *args),
             )
         return (
