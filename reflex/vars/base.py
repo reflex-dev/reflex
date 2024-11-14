@@ -14,7 +14,7 @@ import re
 import string
 import sys
 import warnings
-from types import CodeType, FunctionType
+from types import CodeType, EllipsisType, FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -26,7 +26,6 @@ from typing import (
     Iterable,
     List,
     Literal,
-    NoReturn,
     Optional,
     Set,
     Tuple,
@@ -38,7 +37,14 @@ from typing import (
     overload,
 )
 
-from typing_extensions import ParamSpec, TypeGuard, deprecated, get_type_hints, override
+from typing_extensions import (
+    ParamSpec,
+    Protocol,
+    TypeGuard,
+    deprecated,
+    get_type_hints,
+    override,
+)
 
 from reflex import constants
 from reflex.base import Base
@@ -69,6 +75,7 @@ from reflex.utils.types import (
 if TYPE_CHECKING:
     from reflex.state import BaseState
 
+    from .function import ArgsFunctionOperation, ReflexCallable
     from .number import BooleanVar, NumberVar
     from .object import ObjectVar
     from .sequence import ArrayVar, StringVar
@@ -78,6 +85,36 @@ VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
 OTHER_VAR_TYPE = TypeVar("OTHER_VAR_TYPE")
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+class ReflexCallable(Protocol[P, R]):
+    """Protocol for a callable."""
+
+    __call__: Callable[P, R]
+
+
+def unwrap_reflex_callalbe(
+    callable_type: GenericType,
+) -> Tuple[Union[EllipsisType, Tuple[GenericType, ...]], GenericType]:
+    """Unwrap the ReflexCallable type.
+
+    Args:
+        callable_type: The ReflexCallable type to unwrap.
+
+    Returns:
+        The unwrapped ReflexCallable type.
+    """
+    if callable_type is ReflexCallable:
+        return Ellipsis, Any
+    if get_origin(callable_type) is not ReflexCallable:
+        return Ellipsis, Any
+    args = get_args(callable_type)
+    if not args or len(args) != 2:
+        return Ellipsis, Any
+    return args
 
 
 @dataclasses.dataclass(
@@ -409,9 +446,11 @@ class Var(Generic[VAR_TYPE]):
 
         if _var_data or _js_expr != self._js_expr:
             self.__init__(
-                _js_expr=_js_expr,
-                _var_type=self._var_type,
-                _var_data=VarData.merge(self._var_data, _var_data),
+                **{
+                    **dataclasses.asdict(self),
+                    "_js_expr": _js_expr,
+                    "_var_data": VarData.merge(self._var_data, _var_data),
+                }
             )
 
     def __hash__(self) -> int:
@@ -689,6 +728,12 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     def guess_type(self: Var[int] | Var[float] | Var[int | float]) -> NumberVar: ...
+
+    @overload
+    def guess_type(self: Var[list] | Var[tuple] | Var[set]) -> ArrayVar: ...
+
+    @overload
+    def guess_type(self: Var[dict]) -> ObjectVar[dict]: ...
 
     @overload
     def guess_type(self) -> Self: ...
@@ -1413,71 +1458,94 @@ def get_python_literal(value: Union[LiteralVar, Any]) -> Any | None:
     return value
 
 
+def validate_arg(type_hint: GenericType) -> Callable[[Any], bool]:
+    """Create a validator for an argument.
+
+    Args:
+        type_hint: The type hint of the argument.
+
+    Returns:
+        The validator.
+    """
+
+    def validate(value: Any):
+        return True
+
+    return validate
+
+
 P = ParamSpec("P")
 T = TypeVar("T")
+V1 = TypeVar("V1")
+V2 = TypeVar("V2")
+V3 = TypeVar("V3")
+V4 = TypeVar("V4")
+V5 = TypeVar("V5")
 
 
-# NoReturn is used to match CustomVarOperationReturn with no type hint.
-@overload
-def var_operation(
-    func: Callable[P, CustomVarOperationReturn[NoReturn]],
-) -> Callable[P, Var]: ...
+class TypeComputer(Protocol):
+    """A protocol for type computers."""
 
+    def __call__(self, *args: Var) -> Tuple[GenericType, Union[TypeComputer, None]]:
+        """Compute the type of the operation.
 
-@overload
-def var_operation(
-    func: Callable[P, CustomVarOperationReturn[bool]],
-) -> Callable[P, BooleanVar]: ...
+        Args:
+            *args: The arguments to compute the type of.
 
-
-NUMBER_T = TypeVar("NUMBER_T", int, float, Union[int, float])
-
-
-@overload
-def var_operation(
-    func: Callable[P, CustomVarOperationReturn[NUMBER_T]],
-) -> Callable[P, NumberVar[NUMBER_T]]: ...
-
-
-@overload
-def var_operation(
-    func: Callable[P, CustomVarOperationReturn[str]],
-) -> Callable[P, StringVar]: ...
-
-
-LIST_T = TypeVar("LIST_T", bound=Union[List[Any], Tuple, Set])
+        Returns:
+            The type of the operation.
+        """
+        ...
 
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[LIST_T]],
-) -> Callable[P, ArrayVar[LIST_T]]: ...
-
-
-OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Dict)
+    func: Callable[[], CustomVarOperationReturn[T]],
+) -> ArgsFunctionOperation[ReflexCallable[[], T]]: ...
 
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[OBJECT_TYPE]],
-) -> Callable[P, ObjectVar[OBJECT_TYPE]]: ...
+    func: Callable[[Var[V1]], CustomVarOperationReturn[T]],
+) -> ArgsFunctionOperation[ReflexCallable[[V1], T]]: ...
 
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[T]],
-) -> Callable[P, Var[T]]: ...
+    func: Callable[[Var[V1], Var[V2]], CustomVarOperationReturn[T]],
+) -> ArgsFunctionOperation[ReflexCallable[[V1, V2], T]]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[[Var[V1], Var[V2], Var[V3]], CustomVarOperationReturn[T]],
+) -> ArgsFunctionOperation[ReflexCallable[[V1, V2, V3], T]]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[[Var[V1], Var[V2], Var[V3], Var[V4]], CustomVarOperationReturn[T]],
+) -> ArgsFunctionOperation[ReflexCallable[[V1, V2, V3, V4], T]]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[
+        [Var[V1], Var[V2], Var[V3], Var[V4], Var[V5]],
+        CustomVarOperationReturn[T],
+    ],
+) -> ArgsFunctionOperation[ReflexCallable[[V1, V2, V3, V4, V5], T]]: ...
 
 
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[T]],
-) -> Callable[P, Var[T]]:
+    func: Callable[..., CustomVarOperationReturn[T]],
+) -> ArgsFunctionOperation:
     """Decorator for creating a var operation.
 
     Example:
     ```python
     @var_operation
-    def add(a: NumberVar, b: NumberVar):
+    def add(a: Var[int], b: Var[int]):
         return custom_var_operation(f"{a} + {b}")
     ```
 
@@ -1487,26 +1555,61 @@ def var_operation(
     Returns:
         The decorated function.
     """
+    from .function import ArgsFunctionOperation, ReflexCallable
 
-    @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Var[T]:
-        func_args = list(inspect.signature(func).parameters)
-        args_vars = {
-            func_args[i]: (LiteralVar.create(arg) if not isinstance(arg, Var) else arg)
-            for i, arg in enumerate(args)
-        }
-        kwargs_vars = {
-            key: LiteralVar.create(value) if not isinstance(value, Var) else value
-            for key, value in kwargs.items()
-        }
+    func_name = func.__name__
 
-        return CustomVarOperation.create(
-            name=func.__name__,
-            args=tuple(list(args_vars.items()) + list(kwargs_vars.items())),
-            return_var=func(*args_vars.values(), **kwargs_vars),  # type: ignore
-        ).guess_type()
+    func_arg_spec = inspect.getfullargspec(func)
 
-    return wrapper
+    if func_arg_spec.kwonlyargs:
+        raise TypeError(f"Function {func_name} cannot have keyword-only arguments.")
+    if func_arg_spec.varargs:
+        raise TypeError(f"Function {func_name} cannot have variable arguments.")
+
+    arg_names = func_arg_spec.args
+
+    type_hints = get_type_hints(func)
+
+    if not all(
+        (get_origin((type_hint := type_hints.get(arg_name, Any))) or type_hint) is Var
+        and len(get_args(type_hint)) <= 1
+        for arg_name in arg_names
+    ):
+        raise TypeError(
+            f"Function {func_name} must have type hints of the form `Var[Type]`."
+        )
+
+    args_with_type_hints = tuple(
+        (arg_name, (args[0] if (args := get_args(type_hints[arg_name])) else Any))
+        for arg_name in arg_names
+    )
+
+    arg_vars = tuple(
+        (
+            Var("_" + arg_name, _var_type=arg_python_type)
+            if not isinstance(arg_python_type, TypeVar)
+            else Var("_" + arg_name)
+        )
+        for arg_name, arg_python_type in args_with_type_hints
+    )
+
+    custom_operation_return = func(*arg_vars)
+
+    args_operation = ArgsFunctionOperation.create(
+        tuple(map(str, arg_vars)),
+        custom_operation_return,
+        validators=tuple(
+            validate_arg(type_hints.get(arg_name, Any)) for arg_name in arg_names
+        ),
+        function_name=func_name,
+        type_computer=custom_operation_return._type_computer,
+        _var_type=ReflexCallable[
+            tuple(arg_python_type for _, arg_python_type in args_with_type_hints),
+            custom_operation_return._var_type,
+        ],
+    )
+
+    return args_operation
 
 
 def figure_out_type(value: Any) -> types.GenericType:
@@ -1619,66 +1722,6 @@ class CachedVarOperation:
                 ],
             )
         )
-
-
-def and_operation(a: Var | Any, b: Var | Any) -> Var:
-    """Perform a logical AND operation on two variables.
-
-    Args:
-        a: The first variable.
-        b: The second variable.
-
-    Returns:
-        The result of the logical AND operation.
-    """
-    return _and_operation(a, b)  # type: ignore
-
-
-@var_operation
-def _and_operation(a: Var, b: Var):
-    """Perform a logical AND operation on two variables.
-
-    Args:
-        a: The first variable.
-        b: The second variable.
-
-    Returns:
-        The result of the logical AND operation.
-    """
-    return var_operation_return(
-        js_expression=f"({a} && {b})",
-        var_type=unionize(a._var_type, b._var_type),
-    )
-
-
-def or_operation(a: Var | Any, b: Var | Any) -> Var:
-    """Perform a logical OR operation on two variables.
-
-    Args:
-        a: The first variable.
-        b: The second variable.
-
-    Returns:
-        The result of the logical OR operation.
-    """
-    return _or_operation(a, b)  # type: ignore
-
-
-@var_operation
-def _or_operation(a: Var, b: Var):
-    """Perform a logical OR operation on two variables.
-
-    Args:
-        a: The first variable.
-        b: The second variable.
-
-    Returns:
-        The result of the logical OR operation.
-    """
-    return var_operation_return(
-        js_expression=f"({a} || {b})",
-        var_type=unionize(a._var_type, b._var_type),
-    )
 
 
 @dataclasses.dataclass(
@@ -2289,14 +2332,22 @@ def computed_var(
 RETURN = TypeVar("RETURN")
 
 
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
 class CustomVarOperationReturn(Var[RETURN]):
     """Base class for custom var operations."""
+
+    _type_computer: Optional[TypeComputer] = dataclasses.field(default=None)
 
     @classmethod
     def create(
         cls,
         js_expression: str,
         _var_type: Type[RETURN] | None = None,
+        _type_computer: Optional[TypeComputer] = None,
         _var_data: VarData | None = None,
     ) -> CustomVarOperationReturn[RETURN]:
         """Create a CustomVarOperation.
@@ -2304,6 +2355,7 @@ class CustomVarOperationReturn(Var[RETURN]):
         Args:
             js_expression: The JavaScript expression to evaluate.
             _var_type: The type of the var.
+            _type_computer: A function to compute the type of the var given the arguments.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -2312,6 +2364,7 @@ class CustomVarOperationReturn(Var[RETURN]):
         return CustomVarOperationReturn(
             _js_expr=js_expression,
             _var_type=_var_type or Any,
+            _type_computer=_type_computer,
             _var_data=_var_data,
         )
 
@@ -2319,6 +2372,7 @@ class CustomVarOperationReturn(Var[RETURN]):
 def var_operation_return(
     js_expression: str,
     var_type: Type[RETURN] | None = None,
+    type_computer: Optional[TypeComputer] = None,
     var_data: VarData | None = None,
 ) -> CustomVarOperationReturn[RETURN]:
     """Shortcut for creating a CustomVarOperationReturn.
@@ -2326,15 +2380,17 @@ def var_operation_return(
     Args:
         js_expression: The JavaScript expression to evaluate.
         var_type: The type of the var.
+        type_computer: A function to compute the type of the var given the arguments.
         var_data: Additional hooks and imports associated with the Var.
 
     Returns:
         The CustomVarOperationReturn.
     """
     return CustomVarOperationReturn.create(
-        js_expression,
-        var_type,
-        var_data,
+        js_expression=js_expression,
+        _var_type=var_type,
+        _type_computer=type_computer,
+        _var_data=var_data,
     )
 
 
@@ -2942,3 +2998,157 @@ def field(value: T) -> Field[T]:
         The Field.
     """
     return value  # type: ignore
+
+
+def and_operation(a: Var | Any, b: Var | Any) -> Var:
+    """Perform a logical AND operation on two variables.
+
+    Args:
+        a: The first variable.
+        b: The second variable.
+
+    Returns:
+        The result of the logical AND operation.
+    """
+    return _and_operation(a, b)  # type: ignore
+
+
+@var_operation
+def _and_operation(a: Var, b: Var):
+    """Perform a logical AND operation on two variables.
+
+    Args:
+        a: The first variable.
+        b: The second variable.
+
+    Returns:
+        The result of the logical AND operation.
+    """
+
+    def type_computer(*args: Var):
+        if not args:
+            return (ReflexCallable[[Any, Any], Any], type_computer)
+        if len(args) == 1:
+            return (
+                ReflexCallable[[Any], Any],
+                functools.partial(type_computer, args[0]),
+            )
+        return (
+            ReflexCallable[[], unionize(args[0]._var_type, args[1]._var_type)],
+            None,
+        )
+
+    return var_operation_return(
+        js_expression=f"({a} && {b})",
+        type_computer=type_computer,
+    )
+
+
+def or_operation(a: Var | Any, b: Var | Any) -> Var:
+    """Perform a logical OR operation on two variables.
+
+    Args:
+        a: The first variable.
+        b: The second variable.
+
+    Returns:
+        The result of the logical OR operation.
+    """
+    return _or_operation(a, b)  # type: ignore
+
+
+@var_operation
+def _or_operation(a: Var, b: Var):
+    """Perform a logical OR operation on two variables.
+
+    Args:
+        a: The first variable.
+        b: The second variable.
+
+    Returns:
+        The result of the logical OR operation.
+    """
+
+    def type_computer(*args: Var):
+        if not args:
+            return (ReflexCallable[[Any, Any], Any], type_computer)
+        if len(args) == 1:
+            return (
+                ReflexCallable[[Any], Any],
+                functools.partial(type_computer, args[0]),
+            )
+        return (
+            ReflexCallable[[], unionize(args[0]._var_type, args[1]._var_type)],
+            None,
+        )
+
+    return var_operation_return(
+        js_expression=f"({a} || {b})",
+        type_computer=type_computer,
+    )
+
+
+def passthrough_unary_type_computer(no_args: GenericType) -> TypeComputer:
+    """Create a type computer for unary operations.
+
+    Args:
+        no_args: The type to return when no arguments are provided.
+
+    Returns:
+        The type computer.
+    """
+
+    def type_computer(*args: Var):
+        if not args:
+            return (no_args, type_computer)
+        return (ReflexCallable[[], args[0]._var_type], None)
+
+    return type_computer
+
+
+def unary_type_computer(
+    no_args: GenericType, computer: Callable[[Var], GenericType]
+) -> TypeComputer:
+    """Create a type computer for unary operations.
+
+    Args:
+        no_args: The type to return when no arguments are provided.
+        computer: The function to compute the type.
+
+    Returns:
+        The type computer.
+    """
+
+    def type_computer(*args: Var):
+        if not args:
+            return (no_args, type_computer)
+        return (ReflexCallable[[], computer(args[0])], None)
+
+    return type_computer
+
+
+def nary_type_computer(
+    *types: GenericType, computer: Callable[..., GenericType]
+) -> TypeComputer:
+    """Create a type computer for n-ary operations.
+
+    Args:
+        types: The types to return when no arguments are provided.
+        computer: The function to compute the type.
+
+    Returns:
+        The type computer.
+    """
+
+    def type_computer(*args: Var):
+        if len(args) != len(types):
+            return (
+                ReflexCallable[[], types[len(args)]],
+                functools.partial(type_computer, *args),
+            )
+        return (
+            ReflexCallable[[], computer(args)],
+            None,
+        )
+
+    return type_computer

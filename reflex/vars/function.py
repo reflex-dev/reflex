@@ -6,28 +6,31 @@ import dataclasses
 import sys
 from typing import Any, Callable, Optional, Sequence, Tuple, Type, Union, overload
 
-from typing_extensions import Concatenate, Generic, ParamSpec, Protocol, TypeVar
+from typing_extensions import Concatenate, Generic, ParamSpec, TypeVar
 
 from reflex.utils import format
 from reflex.utils.exceptions import VarTypeError
 from reflex.utils.types import GenericType
 
-from .base import CachedVarOperation, LiteralVar, Var, VarData, cached_property_no_lock
+from .base import (
+    CachedVarOperation,
+    LiteralVar,
+    ReflexCallable,
+    TypeComputer,
+    Var,
+    VarData,
+    cached_property_no_lock,
+    unwrap_reflex_callalbe,
+)
 
 P = ParamSpec("P")
+R = TypeVar("R")
 V1 = TypeVar("V1")
 V2 = TypeVar("V2")
 V3 = TypeVar("V3")
 V4 = TypeVar("V4")
 V5 = TypeVar("V5")
 V6 = TypeVar("V6")
-R = TypeVar("R")
-
-
-class ReflexCallable(Protocol[P, R]):
-    """Protocol for a callable."""
-
-    __call__: Callable[P, R]
 
 
 CALLABLE_TYPE = TypeVar("CALLABLE_TYPE", bound=ReflexCallable, infer_variance=True)
@@ -112,20 +115,37 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
         """
         if not args:
             return self
+
+        args = tuple(map(LiteralVar.create, args))
+
         remaining_validators = self._pre_check(*args)
+
+        partial_types, type_computer = self._partial_type(*args)
+
         if self.__call__ is self.partial:
             # if the default behavior is partial, we should return a new partial function
             return ArgsFunctionOperationBuilder.create(
                 (),
-                VarOperationCall.create(self, *args, Var(_js_expr="...args")),
+                VarOperationCall.create(
+                    self,
+                    *args,
+                    Var(_js_expr="...args"),
+                    _var_type=self._return_type(*args),
+                ),
                 rest="args",
                 validators=remaining_validators,
+                type_computer=type_computer,
+                _var_type=partial_types,
             )
         return ArgsFunctionOperation.create(
             (),
-            VarOperationCall.create(self, *args, Var(_js_expr="...args")),
+            VarOperationCall.create(
+                self, *args, Var(_js_expr="...args"), _var_type=self._return_type(*args)
+            ),
             rest="args",
             validators=remaining_validators,
+            type_computer=type_computer,
+            _var_type=partial_types,
         )
 
     @overload
@@ -194,9 +214,56 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
 
         Returns:
             The function call operation.
+
+        Raises:
+            VarTypeError: If the number of arguments is invalid
         """
+        arg_len = self._arg_len()
+        if arg_len is not None and len(args) != arg_len:
+            raise VarTypeError(f"Invalid number of arguments provided to {str(self)}")
+        args = tuple(map(LiteralVar.create, args))
         self._pre_check(*args)
-        return VarOperationCall.create(self, *args).guess_type()
+        return_type = self._return_type(*args)
+        return VarOperationCall.create(self, *args, _var_type=return_type).guess_type()
+
+    def _partial_type(
+        self, *args: Var | Any
+    ) -> Tuple[GenericType, Optional[TypeComputer]]:
+        """Override the type of the function call with the given arguments.
+
+        Args:
+            *args: The arguments to call the function with.
+
+        Returns:
+            The overridden type of the function call.
+        """
+        args_types, return_type = unwrap_reflex_callalbe(self._var_type)
+        if isinstance(args_types, tuple):
+            return ReflexCallable[[*args_types[len(args) :]], return_type], None
+        return ReflexCallable[..., return_type], None
+
+    def _arg_len(self) -> int | None:
+        """Get the number of arguments the function takes.
+
+        Returns:
+            The number of arguments the function takes.
+        """
+        args_types, _ = unwrap_reflex_callalbe(self._var_type)
+        if isinstance(args_types, tuple):
+            return len(args_types)
+        return None
+
+    def _return_type(self, *args: Var | Any) -> GenericType:
+        """Override the type of the function call with the given arguments.
+
+        Args:
+            *args: The arguments to call the function with.
+
+        Returns:
+            The overridden type of the function call.
+        """
+        partial_types, _ = self._partial_type(*args)
+        return unwrap_reflex_callalbe(partial_types)[1]
 
     def _pre_check(self, *args: Var | Any) -> Tuple[Callable[[Any], bool], ...]:
         """Check if the function can be called with the given arguments.
@@ -343,11 +410,12 @@ class FunctionArgs:
 
 
 def format_args_function_operation(
-    args: FunctionArgs, return_expr: Var | Any, explicit_return: bool
+    self: ArgsFunctionOperation | ArgsFunctionOperationBuilder,
 ) -> str:
     """Format an args function operation.
 
     Args:
+        self: The function operation.
         args: The function arguments.
         return_expr: The return expression.
         explicit_return: Whether to use explicit return syntax.
@@ -356,18 +424,68 @@ def format_args_function_operation(
         The formatted args function operation.
     """
     arg_names_str = ", ".join(
-        [arg if isinstance(arg, str) else arg.to_javascript() for arg in args.args]
-        + ([f"...{args.rest}"] if args.rest else [])
+        [
+            arg if isinstance(arg, str) else arg.to_javascript()
+            for arg in self._args.args
+        ]
+        + ([f"...{self._args.rest}"] if self._args.rest else [])
     )
 
-    return_expr_str = str(LiteralVar.create(return_expr))
+    return_expr_str = str(LiteralVar.create(self._return_expr))
 
     # Wrap return expression in curly braces if explicit return syntax is used.
     return_expr_str_wrapped = (
-        format.wrap(return_expr_str, "{", "}") if explicit_return else return_expr_str
+        format.wrap(return_expr_str, "{", "}")
+        if self._explicit_return
+        else return_expr_str
     )
 
     return f"(({arg_names_str}) => {return_expr_str_wrapped})"
+
+
+def pre_check_args(
+    self: ArgsFunctionOperation | ArgsFunctionOperationBuilder, *args: Var | Any
+) -> Tuple[Callable[[Any], bool], ...]:
+    """Check if the function can be called with the given arguments.
+
+    Args:
+        self: The function operation.
+        *args: The arguments to call the function with.
+
+    Returns:
+        True if the function can be called with the given arguments.
+    """
+    for i, (validator, arg) in enumerate(zip(self._validators, args)):
+        if not validator(arg):
+            arg_name = self._args.args[i] if i < len(self._args.args) else None
+            if arg_name is not None:
+                raise VarTypeError(
+                    f"Invalid argument {str(arg)} provided to {arg_name} in {self._function_name or 'var operation'}"
+                )
+            raise VarTypeError(
+                f"Invalid argument {str(arg)} provided to argument {i} in {self._function_name or 'var operation'}"
+            )
+    return self._validators[len(args) :]
+
+
+def figure_partial_type(
+    self: ArgsFunctionOperation | ArgsFunctionOperationBuilder,
+    *args: Var | Any,
+) -> Tuple[GenericType, Optional[TypeComputer]]:
+    """Figure out the return type of the function.
+
+    Args:
+        self: The function operation.
+        *args: The arguments to call the function with.
+
+    Returns:
+        The return type of the function.
+    """
+    return (
+        self._type_computer(*args)
+        if self._type_computer is not None
+        else FunctionVar._partial_type(self, *args)
+    )
 
 
 @dataclasses.dataclass(
@@ -375,7 +493,7 @@ def format_args_function_operation(
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
+class ArgsFunctionOperation(CachedVarOperation, FunctionVar[CALLABLE_TYPE]):
     """Base class for immutable function defined via arguments and return expression."""
 
     _args: FunctionArgs = dataclasses.field(default_factory=FunctionArgs)
@@ -384,39 +502,14 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
     )
     _return_expr: Union[Var, Any] = dataclasses.field(default=None)
     _function_name: str = dataclasses.field(default="")
+    _type_computer: Optional[TypeComputer] = dataclasses.field(default=None)
     _explicit_return: bool = dataclasses.field(default=False)
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
+    _cached_var_name = cached_property_no_lock(format_args_function_operation)
 
-        Returns:
-            The name of the var.
-        """
-        return format_args_function_operation(
-            self._args, self._return_expr, self._explicit_return
-        )
+    _pre_check = pre_check_args
 
-    def _pre_check(self, *args: Var | Any) -> Tuple[Callable[[Any], bool], ...]:
-        """Check if the function can be called with the given arguments.
-
-        Args:
-            *args: The arguments to call the function with.
-
-        Returns:
-            True if the function can be called with the given arguments.
-        """
-        for i, (validator, arg) in enumerate(zip(self._validators, args)):
-            if not validator(arg):
-                arg_name = self._args.args[i] if i < len(self._args.args) else None
-                if arg_name is not None:
-                    raise VarTypeError(
-                        f"Invalid argument {str(arg)} provided to {arg_name} in {self._function_name or 'var operation'}"
-                    )
-                raise VarTypeError(
-                    f"Invalid argument {str(arg)} provided to argument {i} in {self._function_name or 'var operation'}"
-                )
-        return self._validators[len(args) :]
+    _partial_type = figure_partial_type
 
     @classmethod
     def create(
@@ -427,6 +520,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
         validators: Sequence[Callable[[Any], bool]] = (),
         function_name: str = "",
         explicit_return: bool = False,
+        type_computer: Optional[TypeComputer] = None,
         _var_type: GenericType = Callable,
         _var_data: VarData | None = None,
     ):
@@ -439,6 +533,8 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
             validators: The validators for the arguments.
             function_name: The name of the function.
             explicit_return: Whether to use explicit return syntax.
+            type_computer: A function to compute the return type.
+            _var_type: The type of the var.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -453,6 +549,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
             _validators=tuple(validators),
             _return_expr=return_expr,
             _explicit_return=explicit_return,
+            _type_computer=type_computer,
         )
 
 
@@ -461,7 +558,9 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
     frozen=True,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
 )
-class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
+class ArgsFunctionOperationBuilder(
+    CachedVarOperation, BuilderFunctionVar[CALLABLE_TYPE]
+):
     """Base class for immutable function defined via arguments and return expression with the builder pattern."""
 
     _args: FunctionArgs = dataclasses.field(default_factory=FunctionArgs)
@@ -470,39 +569,14 @@ class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
     )
     _return_expr: Union[Var, Any] = dataclasses.field(default=None)
     _function_name: str = dataclasses.field(default="")
+    _type_computer: Optional[TypeComputer] = dataclasses.field(default=None)
     _explicit_return: bool = dataclasses.field(default=False)
 
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
+    _cached_var_name = cached_property_no_lock(format_args_function_operation)
 
-        Returns:
-            The name of the var.
-        """
-        return format_args_function_operation(
-            self._args, self._return_expr, self._explicit_return
-        )
+    _pre_check = pre_check_args
 
-    def _pre_check(self, *args: Var | Any) -> Tuple[Callable[[Any], bool], ...]:
-        """Check if the function can be called with the given arguments.
-
-        Args:
-            *args: The arguments to call the function with.
-
-        Returns:
-            True if the function can be called with the given arguments.
-        """
-        for i, (validator, arg) in enumerate(zip(self._validators, args)):
-            if not validator(arg):
-                arg_name = self._args.args[i] if i < len(self._args.args) else None
-                if arg_name is not None:
-                    raise VarTypeError(
-                        f"Invalid argument {str(arg)} provided to {arg_name} in {self._function_name or 'var operation'}"
-                    )
-                raise VarTypeError(
-                    f"Invalid argument {str(arg)} provided to argument {i} in {self._function_name or 'var operation'}"
-                )
-        return self._validators[len(args) :]
+    _partial_type = figure_partial_type
 
     @classmethod
     def create(
@@ -513,6 +587,7 @@ class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
         validators: Sequence[Callable[[Any], bool]] = (),
         function_name: str = "",
         explicit_return: bool = False,
+        type_computer: Optional[TypeComputer] = None,
         _var_type: GenericType = Callable,
         _var_data: VarData | None = None,
     ):
@@ -525,6 +600,8 @@ class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
             validators: The validators for the arguments.
             function_name: The name of the function.
             explicit_return: Whether to use explicit return syntax.
+            type_computer: A function to compute the return type.
+            _var_type: The type of the var.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -539,6 +616,7 @@ class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
             _validators=tuple(validators),
             _return_expr=return_expr,
             _explicit_return=explicit_return,
+            _type_computer=type_computer,
         )
 
 

@@ -21,15 +21,23 @@ from typing import (
 
 from reflex.utils import types
 from reflex.utils.exceptions import VarAttributeError
-from reflex.utils.types import GenericType, get_attribute_access_type, get_origin
+from reflex.utils.types import (
+    GenericType,
+    get_attribute_access_type,
+    get_origin,
+    unionize,
+)
 
 from .base import (
     CachedVarOperation,
     LiteralVar,
+    ReflexCallable,
     Var,
     VarData,
     cached_property_no_lock,
     figure_out_type,
+    nary_type_computer,
+    unary_type_computer,
     var_operation,
     var_operation_return,
 )
@@ -406,7 +414,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
 
 
 @var_operation
-def object_keys_operation(value: ObjectVar):
+def object_keys_operation(value: Var):
     """Get the keys of an object.
 
     Args:
@@ -422,7 +430,7 @@ def object_keys_operation(value: ObjectVar):
 
 
 @var_operation
-def object_values_operation(value: ObjectVar):
+def object_values_operation(value: Var):
     """Get the values of an object.
 
     Args:
@@ -433,12 +441,15 @@ def object_values_operation(value: ObjectVar):
     """
     return var_operation_return(
         js_expression=f"Object.values({value})",
-        var_type=List[value._value_type()],
+        type_computer=unary_type_computer(
+            ReflexCallable[[Any], List[Any]],
+            lambda x: List[x.to(ObjectVar)._value_type()],
+        ),
     )
 
 
 @var_operation
-def object_entries_operation(value: ObjectVar):
+def object_entries_operation(value: Var):
     """Get the entries of an object.
 
     Args:
@@ -447,14 +458,18 @@ def object_entries_operation(value: ObjectVar):
     Returns:
         The entries of the object.
     """
+    value = value.to(ObjectVar)
     return var_operation_return(
         js_expression=f"Object.entries({value})",
-        var_type=List[Tuple[str, value._value_type()]],
+        type_computer=unary_type_computer(
+            ReflexCallable[[Any], List[Tuple[str, Any]]],
+            lambda x: List[Tuple[str, x.to(ObjectVar)._value_type()]],
+        ),
     )
 
 
 @var_operation
-def object_merge_operation(lhs: ObjectVar, rhs: ObjectVar):
+def object_merge_operation(lhs: Var, rhs: Var):
     """Merge two objects.
 
     Args:
@@ -466,10 +481,14 @@ def object_merge_operation(lhs: ObjectVar, rhs: ObjectVar):
     """
     return var_operation_return(
         js_expression=f"({{...{lhs}, ...{rhs}}})",
-        var_type=Dict[
-            Union[lhs._key_type(), rhs._key_type()],
-            Union[lhs._value_type(), rhs._value_type()],
-        ],
+        type_computer=nary_type_computer(
+            ReflexCallable[[Any, Any], Dict[Any, Any]],
+            ReflexCallable[[Any], Dict[Any, Any]],
+            computer=lambda args: Dict[
+                unionize(*[arg.to(ObjectVar)._key_type() for arg in args]),
+                unionize(*[arg.to(ObjectVar)._value_type() for arg in args]),
+            ],
+        ),
     )
 
 
@@ -526,7 +545,7 @@ class ObjectItemOperation(CachedVarOperation, Var):
 
 
 @var_operation
-def object_has_own_property_operation(object: ObjectVar, key: Var):
+def object_has_own_property_operation(object: Var, key: Var):
     """Check if an object has a key.
 
     Args:

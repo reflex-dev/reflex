@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import functools
 import inspect
 import json
 import re
@@ -34,6 +35,7 @@ from .base import (
     CachedVarOperation,
     CustomVarOperationReturn,
     LiteralVar,
+    ReflexCallable,
     Var,
     VarData,
     _global_vars,
@@ -41,7 +43,10 @@ from .base import (
     figure_out_type,
     get_python_literal,
     get_unique_variable_name,
+    nary_type_computer,
+    passthrough_unary_type_computer,
     unionize,
+    unwrap_reflex_callalbe,
     var_operation,
     var_operation_return,
 )
@@ -353,7 +358,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
 
 
 @var_operation
-def string_lt_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
+def string_lt_operation(lhs: Var[str], rhs: Var[str]):
     """Check if a string is less than another string.
 
     Args:
@@ -367,7 +372,7 @@ def string_lt_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
 
 
 @var_operation
-def string_gt_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
+def string_gt_operation(lhs: Var[str], rhs: Var[str]):
     """Check if a string is greater than another string.
 
     Args:
@@ -381,7 +386,7 @@ def string_gt_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
 
 
 @var_operation
-def string_le_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
+def string_le_operation(lhs: Var[str], rhs: Var[str]):
     """Check if a string is less than or equal to another string.
 
     Args:
@@ -395,7 +400,7 @@ def string_le_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
 
 
 @var_operation
-def string_ge_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
+def string_ge_operation(lhs: Var[str], rhs: Var[str]):
     """Check if a string is greater than or equal to another string.
 
     Args:
@@ -409,7 +414,7 @@ def string_ge_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
 
 
 @var_operation
-def string_lower_operation(string: StringVar[Any]):
+def string_lower_operation(string: Var[str]):
     """Convert a string to lowercase.
 
     Args:
@@ -422,7 +427,7 @@ def string_lower_operation(string: StringVar[Any]):
 
 
 @var_operation
-def string_upper_operation(string: StringVar[Any]):
+def string_upper_operation(string: Var[str]):
     """Convert a string to uppercase.
 
     Args:
@@ -435,7 +440,7 @@ def string_upper_operation(string: StringVar[Any]):
 
 
 @var_operation
-def string_strip_operation(string: StringVar[Any]):
+def string_strip_operation(string: Var[str]):
     """Strip a string.
 
     Args:
@@ -449,7 +454,7 @@ def string_strip_operation(string: StringVar[Any]):
 
 @var_operation
 def string_contains_field_operation(
-    haystack: StringVar[Any], needle: StringVar[Any] | str, field: StringVar[Any] | str
+    haystack: Var[str], needle: Var[str], field: Var[str]
 ):
     """Check if a string contains another string.
 
@@ -468,7 +473,7 @@ def string_contains_field_operation(
 
 
 @var_operation
-def string_contains_operation(haystack: StringVar[Any], needle: StringVar[Any] | str):
+def string_contains_operation(haystack: Var[str], needle: Var[str]):
     """Check if a string contains another string.
 
     Args:
@@ -484,9 +489,7 @@ def string_contains_operation(haystack: StringVar[Any], needle: StringVar[Any] |
 
 
 @var_operation
-def string_starts_with_operation(
-    full_string: StringVar[Any], prefix: StringVar[Any] | str
-):
+def string_starts_with_operation(full_string: Var[str], prefix: Var[str]):
     """Check if a string starts with a prefix.
 
     Args:
@@ -502,7 +505,7 @@ def string_starts_with_operation(
 
 
 @var_operation
-def string_item_operation(string: StringVar[Any], index: NumberVar | int):
+def string_item_operation(string: Var[str], index: Var[int]):
     """Get an item from a string.
 
     Args:
@@ -516,22 +519,8 @@ def string_item_operation(string: StringVar[Any], index: NumberVar | int):
 
 
 @var_operation
-def array_join_operation(array: ArrayVar, sep: StringVar[Any] | str = ""):
-    """Join the elements of an array.
-
-    Args:
-        array: The array.
-        sep: The separator.
-
-    Returns:
-        The joined elements.
-    """
-    return var_operation_return(js_expression=f"{array}.join({sep})", var_type=str)
-
-
-@var_operation
 def string_replace_operation(
-    string: StringVar, search_value: StringVar | str, new_value: StringVar | str
+    string: Var[str], search_value: Var[str], new_value: Var[str]
 ):
     """Replace a string with a value.
 
@@ -1046,7 +1035,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         Returns:
             The array pluck operation.
         """
-        return array_pluck_operation(self, field)
+        return array_pluck_operation(self, field).guess_type()
 
     @overload
     def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]: ...
@@ -1300,7 +1289,7 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
 
 
 @var_operation
-def string_split_operation(string: StringVar[Any], sep: StringVar | str = ""):
+def string_split_operation(string: Var[str], sep: Var[str]):
     """Split a string.
 
     Args:
@@ -1394,9 +1383,9 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
 
 @var_operation
 def array_pluck_operation(
-    array: ArrayVar[ARRAY_VAR_TYPE],
-    field: StringVar | str,
-) -> CustomVarOperationReturn[ARRAY_VAR_TYPE]:
+    array: Var[ARRAY_VAR_TYPE],
+    field: Var[str],
+) -> CustomVarOperationReturn[List]:
     """Pluck a field from an array of objects.
 
     Args:
@@ -1408,13 +1397,27 @@ def array_pluck_operation(
     """
     return var_operation_return(
         js_expression=f"{array}.map(e=>e?.[{field}])",
-        var_type=array._var_type,
+        var_type=List[Any],
     )
 
 
 @var_operation
+def array_join_operation(array: Var[ARRAY_VAR_TYPE], sep: Var[str]):
+    """Join the elements of an array.
+
+    Args:
+        array: The array.
+        sep: The separator.
+
+    Returns:
+        The joined elements.
+    """
+    return var_operation_return(js_expression=f"{array}.join({sep})", var_type=str)
+
+
+@var_operation
 def array_reverse_operation(
-    array: ArrayVar[ARRAY_VAR_TYPE],
+    array: Var[ARRAY_VAR_TYPE],
 ) -> CustomVarOperationReturn[ARRAY_VAR_TYPE]:
     """Reverse an array.
 
@@ -1426,12 +1429,12 @@ def array_reverse_operation(
     """
     return var_operation_return(
         js_expression=f"{array}.slice().reverse()",
-        var_type=array._var_type,
+        type_computer=passthrough_unary_type_computer(ReflexCallable[[List], List]),
     )
 
 
 @var_operation
-def array_lt_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tuple):
+def array_lt_operation(lhs: Var[ARRAY_VAR_TYPE], rhs: Var[ARRAY_VAR_TYPE]):
     """Check if an array is less than another array.
 
     Args:
@@ -1445,7 +1448,7 @@ def array_lt_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
 
 
 @var_operation
-def array_gt_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tuple):
+def array_gt_operation(lhs: Var[ARRAY_VAR_TYPE], rhs: Var[ARRAY_VAR_TYPE]):
     """Check if an array is greater than another array.
 
     Args:
@@ -1459,7 +1462,7 @@ def array_gt_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
 
 
 @var_operation
-def array_le_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tuple):
+def array_le_operation(lhs: Var[ARRAY_VAR_TYPE], rhs: Var[ARRAY_VAR_TYPE]):
     """Check if an array is less than or equal to another array.
 
     Args:
@@ -1473,7 +1476,7 @@ def array_le_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
 
 
 @var_operation
-def array_ge_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tuple):
+def array_ge_operation(lhs: Var[ARRAY_VAR_TYPE], rhs: Var[ARRAY_VAR_TYPE]):
     """Check if an array is greater than or equal to another array.
 
     Args:
@@ -1487,7 +1490,7 @@ def array_ge_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
 
 
 @var_operation
-def array_length_operation(array: ArrayVar):
+def array_length_operation(array: Var[ARRAY_VAR_TYPE]):
     """Get the length of an array.
 
     Args:
@@ -1517,7 +1520,7 @@ def is_tuple_type(t: GenericType) -> bool:
 
 
 @var_operation
-def array_item_operation(array: ArrayVar, index: NumberVar | int):
+def array_item_operation(array: Var[ARRAY_VAR_TYPE], index: Var[int]):
     """Get an item from an array.
 
     Args:
@@ -1527,23 +1530,45 @@ def array_item_operation(array: ArrayVar, index: NumberVar | int):
     Returns:
         The item from the array.
     """
-    args = typing.get_args(array._var_type)
-    if args and isinstance(index, LiteralNumberVar) and is_tuple_type(array._var_type):
-        index_value = int(index._var_value)
-        element_type = args[index_value % len(args)]
-    else:
-        element_type = unionize(*args)
+
+    def type_computer(*args):
+        if len(args) == 0:
+            return (
+                ReflexCallable[[List[Any], int], Any],
+                functools.partial(type_computer, *args),
+            )
+
+        array = args[0]
+        array_args = typing.get_args(array._var_type)
+
+        if len(args) == 1:
+            return (
+                ReflexCallable[[int], unionize(*array_args)],
+                functools.partial(type_computer, *args),
+            )
+
+        index = args[1]
+
+        if (
+            array_args
+            and isinstance(index, LiteralNumberVar)
+            and is_tuple_type(array._var_type)
+        ):
+            index_value = int(index._var_value)
+            element_type = array_args[index_value % len(array_args)]
+        else:
+            element_type = unionize(*array_args)
+
+        return (ReflexCallable[[], element_type], None)
 
     return var_operation_return(
         js_expression=f"{str(array)}.at({str(index)})",
-        var_type=element_type,
+        type_computer=type_computer,
     )
 
 
 @var_operation
-def array_range_operation(
-    start: NumberVar | int, stop: NumberVar | int, step: NumberVar | int
-):
+def array_range_operation(start: Var[int], stop: Var[int], step: Var[int]):
     """Create a range of numbers.
 
     Args:
@@ -1562,7 +1587,7 @@ def array_range_operation(
 
 @var_operation
 def array_contains_field_operation(
-    haystack: ArrayVar, needle: Any | Var, field: StringVar | str
+    haystack: Var[ARRAY_VAR_TYPE], needle: Var, field: Var[str]
 ):
     """Check if an array contains an element.
 
@@ -1581,7 +1606,7 @@ def array_contains_field_operation(
 
 
 @var_operation
-def array_contains_operation(haystack: ArrayVar, needle: Any | Var):
+def array_contains_operation(haystack: Var[ARRAY_VAR_TYPE], needle: Var):
     """Check if an array contains an element.
 
     Args:
@@ -1599,7 +1624,7 @@ def array_contains_operation(haystack: ArrayVar, needle: Any | Var):
 
 @var_operation
 def repeat_array_operation(
-    array: ArrayVar[ARRAY_VAR_TYPE], count: NumberVar | int
+    array: Var[ARRAY_VAR_TYPE], count: Var[int]
 ) -> CustomVarOperationReturn[ARRAY_VAR_TYPE]:
     """Repeat an array a number of times.
 
@@ -1610,20 +1635,34 @@ def repeat_array_operation(
     Returns:
         The repeated array.
     """
+
+    def type_computer(*args: Var):
+        if not args:
+            return (
+                ReflexCallable[[List[Any], int], List[Any]],
+                type_computer,
+            )
+        if len(args) == 1:
+            return (
+                ReflexCallable[[int], args[0]._var_type],
+                functools.partial(type_computer, *args),
+            )
+        return (ReflexCallable[[], args[0]._var_type], None)
+
     return var_operation_return(
         js_expression=f"Array.from({{ length: {count} }}).flatMap(() => {array})",
-        var_type=array._var_type,
+        type_computer=type_computer,
     )
 
 
 if TYPE_CHECKING:
-    from .function import FunctionVar
+    pass
 
 
 @var_operation
 def map_array_operation(
-    array: ArrayVar[ARRAY_VAR_TYPE],
-    function: FunctionVar,
+    array: Var[ARRAY_VAR_TYPE],
+    function: Var[ReflexCallable],
 ):
     """Map a function over an array.
 
@@ -1634,14 +1673,33 @@ def map_array_operation(
     Returns:
         The mapped array.
     """
+
+    def type_computer(*args: Var):
+        if not args:
+            return (
+                ReflexCallable[[List[Any], ReflexCallable], List[Any]],
+                type_computer,
+            )
+        if len(args) == 1:
+            return (
+                ReflexCallable[[ReflexCallable], List[Any]],
+                functools.partial(type_computer, *args),
+            )
+        return (ReflexCallable[[], List[args[0]._var_type]], None)
+
     return var_operation_return(
-        js_expression=f"{array}.map({function})", var_type=List[Any]
+        js_expression=f"{array}.map({function})",
+        type_computer=nary_type_computer(
+            ReflexCallable[[List[Any], ReflexCallable], List[Any]],
+            ReflexCallable[[ReflexCallable], List[Any]],
+            computer=lambda args: List[unwrap_reflex_callalbe(args[1]._var_type)[1]],
+        ),
     )
 
 
 @var_operation
 def array_concat_operation(
-    lhs: ArrayVar[ARRAY_VAR_TYPE], rhs: ArrayVar[ARRAY_VAR_TYPE]
+    lhs: Var[ARRAY_VAR_TYPE], rhs: Var[ARRAY_VAR_TYPE]
 ) -> CustomVarOperationReturn[ARRAY_VAR_TYPE]:
     """Concatenate two arrays.
 
@@ -1654,7 +1712,11 @@ def array_concat_operation(
     """
     return var_operation_return(
         js_expression=f"[...{lhs}, ...{rhs}]",
-        var_type=Union[lhs._var_type, rhs._var_type],
+        type_computer=nary_type_computer(
+            ReflexCallable[[List[Any], List[Any]], List[Any]],
+            ReflexCallable[[List[Any]], List[Any]],
+            computer=lambda args: unionize(args[0]._var_type, args[1]._var_type),
+        ),
     )
 
 

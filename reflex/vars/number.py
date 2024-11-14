@@ -3,19 +3,11 @@
 from __future__ import annotations
 
 import dataclasses
+import functools
 import json
 import math
 import sys
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    NoReturn,
-    Type,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, NoReturn, TypeVar, Union, overload
 
 from reflex.constants.base import Dirs
 from reflex.utils.exceptions import PrimitiveUnserializableToJSON, VarTypeError
@@ -25,8 +17,11 @@ from reflex.utils.types import is_optional
 from .base import (
     CustomVarOperationReturn,
     LiteralVar,
+    ReflexCallable,
     Var,
     VarData,
+    nary_type_computer,
+    passthrough_unary_type_computer,
     unionize,
     var_operation,
     var_operation_return,
@@ -544,8 +539,8 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
 
 def binary_number_operation(
-    func: Callable[[NumberVar, NumberVar], str],
-) -> Callable[[number_types, number_types], NumberVar]:
+    func: Callable[[Var[int | float], Var[int | float]], str],
+):
     """Decorator to create a binary number operation.
 
     Args:
@@ -555,30 +550,37 @@ def binary_number_operation(
         The binary number operation.
     """
 
-    @var_operation
-    def operation(lhs: NumberVar, rhs: NumberVar):
+    def operation(
+        lhs: Var[int | float], rhs: Var[int | float]
+    ) -> CustomVarOperationReturn[int | float]:
+        def type_computer(*args: Var):
+            if not args:
+                return (
+                    ReflexCallable[[int | float, int | float], int | float],
+                    type_computer,
+                )
+            if len(args) == 1:
+                return (
+                    ReflexCallable[[int | float], int | float],
+                    functools.partial(type_computer, args[0]),
+                )
+            return (
+                ReflexCallable[[], unionize(args[0]._var_type, args[1]._var_type)],
+                None,
+            )
+
         return var_operation_return(
             js_expression=func(lhs, rhs),
-            var_type=unionize(lhs._var_type, rhs._var_type),
+            type_computer=type_computer,
         )
 
-    def wrapper(lhs: number_types, rhs: number_types) -> NumberVar:
-        """Create the binary number operation.
+    operation.__name__ = func.__name__
 
-        Args:
-            lhs: The first number.
-            rhs: The second number.
-
-        Returns:
-            The binary number operation.
-        """
-        return operation(lhs, rhs)  # type: ignore
-
-    return wrapper
+    return var_operation(operation)
 
 
 @binary_number_operation
-def number_add_operation(lhs: NumberVar, rhs: NumberVar):
+def number_add_operation(lhs: Var[int | float], rhs: Var[int | float]):
     """Add two numbers.
 
     Args:
@@ -592,7 +594,7 @@ def number_add_operation(lhs: NumberVar, rhs: NumberVar):
 
 
 @binary_number_operation
-def number_subtract_operation(lhs: NumberVar, rhs: NumberVar):
+def number_subtract_operation(lhs: Var[int | float], rhs: Var[int | float]):
     """Subtract two numbers.
 
     Args:
@@ -605,8 +607,15 @@ def number_subtract_operation(lhs: NumberVar, rhs: NumberVar):
     return f"({lhs} - {rhs})"
 
 
+unary_operation_type_computer = passthrough_unary_type_computer(
+    ReflexCallable[[int | float], int | float]
+)
+
+
 @var_operation
-def number_abs_operation(value: NumberVar):
+def number_abs_operation(
+    value: Var[int | float],
+) -> CustomVarOperationReturn[int | float]:
     """Get the absolute value of the number.
 
     Args:
@@ -616,12 +625,12 @@ def number_abs_operation(value: NumberVar):
         The number absolute operation.
     """
     return var_operation_return(
-        js_expression=f"Math.abs({value})", var_type=value._var_type
+        js_expression=f"Math.abs({value})", type_computer=unary_operation_type_computer
     )
 
 
 @binary_number_operation
-def number_multiply_operation(lhs: NumberVar, rhs: NumberVar):
+def number_multiply_operation(lhs: Var[int | float], rhs: Var[int | float]):
     """Multiply two numbers.
 
     Args:
@@ -636,7 +645,7 @@ def number_multiply_operation(lhs: NumberVar, rhs: NumberVar):
 
 @var_operation
 def number_negate_operation(
-    value: NumberVar[NUMBER_T],
+    value: Var[NUMBER_T],
 ) -> CustomVarOperationReturn[NUMBER_T]:
     """Negate the number.
 
@@ -646,11 +655,13 @@ def number_negate_operation(
     Returns:
         The number negation operation.
     """
-    return var_operation_return(js_expression=f"-({value})", var_type=value._var_type)
+    return var_operation_return(
+        js_expression=f"-({value})", type_computer=unary_operation_type_computer
+    )
 
 
 @binary_number_operation
-def number_true_division_operation(lhs: NumberVar, rhs: NumberVar):
+def number_true_division_operation(lhs: Var[int | float], rhs: Var[int | float]):
     """Divide two numbers.
 
     Args:
@@ -664,7 +675,7 @@ def number_true_division_operation(lhs: NumberVar, rhs: NumberVar):
 
 
 @binary_number_operation
-def number_floor_division_operation(lhs: NumberVar, rhs: NumberVar):
+def number_floor_division_operation(lhs: Var[int | float], rhs: Var[int | float]):
     """Floor divide two numbers.
 
     Args:
@@ -678,7 +689,7 @@ def number_floor_division_operation(lhs: NumberVar, rhs: NumberVar):
 
 
 @binary_number_operation
-def number_modulo_operation(lhs: NumberVar, rhs: NumberVar):
+def number_modulo_operation(lhs: Var[int | float], rhs: Var[int | float]):
     """Modulo two numbers.
 
     Args:
@@ -692,7 +703,7 @@ def number_modulo_operation(lhs: NumberVar, rhs: NumberVar):
 
 
 @binary_number_operation
-def number_exponent_operation(lhs: NumberVar, rhs: NumberVar):
+def number_exponent_operation(lhs: Var[int | float], rhs: Var[int | float]):
     """Exponentiate two numbers.
 
     Args:
@@ -706,7 +717,7 @@ def number_exponent_operation(lhs: NumberVar, rhs: NumberVar):
 
 
 @var_operation
-def number_round_operation(value: NumberVar):
+def number_round_operation(value: Var[int | float]):
     """Round the number.
 
     Args:
@@ -719,7 +730,7 @@ def number_round_operation(value: NumberVar):
 
 
 @var_operation
-def number_ceil_operation(value: NumberVar):
+def number_ceil_operation(value: Var[int | float]):
     """Ceil the number.
 
     Args:
@@ -732,7 +743,7 @@ def number_ceil_operation(value: NumberVar):
 
 
 @var_operation
-def number_floor_operation(value: NumberVar):
+def number_floor_operation(value: Var[int | float]):
     """Floor the number.
 
     Args:
@@ -745,7 +756,7 @@ def number_floor_operation(value: NumberVar):
 
 
 @var_operation
-def number_trunc_operation(value: NumberVar):
+def number_trunc_operation(value: Var[int | float]):
     """Trunc the number.
 
     Args:
@@ -838,7 +849,7 @@ class BooleanVar(NumberVar[bool], python_types=bool):
 
 
 @var_operation
-def boolean_to_number_operation(value: BooleanVar):
+def boolean_to_number_operation(value: Var[bool]):
     """Convert the boolean to a number.
 
     Args:
@@ -969,7 +980,7 @@ def not_equal_operation(lhs: Var, rhs: Var):
 
 
 @var_operation
-def boolean_not_operation(value: BooleanVar):
+def boolean_not_operation(value: Var[bool]):
     """Boolean NOT the boolean.
 
     Args:
@@ -1117,7 +1128,7 @@ U = TypeVar("U")
 
 @var_operation
 def ternary_operation(
-    condition: BooleanVar, if_true: Var[T], if_false: Var[U]
+    condition: Var[bool], if_true: Var[T], if_false: Var[U]
 ) -> CustomVarOperationReturn[Union[T, U]]:
     """Create a ternary operation.
 
@@ -1129,12 +1140,14 @@ def ternary_operation(
     Returns:
         The ternary operation.
     """
-    type_value: Union[Type[T], Type[U]] = unionize(
-        if_true._var_type, if_false._var_type
-    )
     value: CustomVarOperationReturn[Union[T, U]] = var_operation_return(
         js_expression=f"({condition} ? {if_true} : {if_false})",
-        var_type=type_value,
+        type_computer=nary_type_computer(
+            ReflexCallable[[bool, Any, Any], Any],
+            ReflexCallable[[Any, Any], Any],
+            ReflexCallable[[Any], Any],
+            computer=lambda args: unionize(args[1]._var_type, args[2]._var_type),
+        ),
     )
     return value
 

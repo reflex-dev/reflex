@@ -963,11 +963,11 @@ def test_function_var():
 
 def test_var_operation():
     @var_operation
-    def add(a: Union[NumberVar, int], b: Union[NumberVar, int]):
+    def add(a: Var[int], b: Var[int]):
         return var_operation_return(js_expression=f"({a} + {b})", var_type=int)
 
     assert str(add(1, 2)) == "(1 + 2)"
-    assert str(add(a=4, b=-9)) == "(4 + -9)"
+    assert str(add(4, -9)) == "(4 + -9)"
 
     five = LiteralNumberVar.create(5)
     seven = add(2, five)
