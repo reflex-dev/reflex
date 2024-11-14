@@ -79,7 +79,9 @@ class Moment(NoSSRComponent):
     duration: Var[str]
 
     # The date to display (also work if passed as children).
-    date: Var[Union[str, datetime.datetime, datetime.date, datetime.time, datetime.timedelta]]
+    date: Var[
+        Union[str, datetime.datetime, datetime.date, datetime.time, datetime.timedelta]
+    ]
 
     # Shows the duration (elapsed time) between now and the provided datetime.
     duration_from_now: Var[bool]
