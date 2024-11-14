@@ -359,7 +359,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         Returns:
             The number negation operation.
         """
-        return number_negate_operation(self)
+        return number_negate_operation(self).guess_type()
 
     def __invert__(self):
         """Boolean NOT the number.
@@ -383,7 +383,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         Returns:
             The number round operation.
         """
-        return number_round_operation(self)
+        return number_round_operation(self).guess_type()
 
     def __ceil__(self):
         """Ceil the number.
@@ -391,7 +391,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         Returns:
             The number ceil operation.
         """
-        return number_ceil_operation(self)
+        return number_ceil_operation(self).guess_type()
 
     def __floor__(self):
         """Floor the number.
@@ -399,7 +399,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         Returns:
             The number floor operation.
         """
-        return number_floor_operation(self)
+        return number_floor_operation(self).guess_type()
 
     def __trunc__(self):
         """Trunc the number.
@@ -407,7 +407,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         Returns:
             The number trunc operation.
         """
-        return number_trunc_operation(self)
+        return number_trunc_operation(self).guess_type()
 
     @overload
     def __lt__(self, other: number_types) -> BooleanVar: ...
