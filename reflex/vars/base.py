@@ -1491,9 +1491,6 @@ class TypeComputer(Protocol):
 
         Args:
             *args: The arguments to compute the type of.
-
-        Returns:
-            The type of the operation.
         """
         ...
 
@@ -1554,6 +1551,9 @@ def var_operation(
 
     Returns:
         The decorated function.
+
+    Raises:
+        TypeError: If the function has keyword-only arguments or arguments without Var type hints.
     """
     from .function import ArgsFunctionOperation, ReflexCallable
 

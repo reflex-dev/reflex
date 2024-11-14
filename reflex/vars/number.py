@@ -367,7 +367,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         Returns:
             The boolean NOT operation.
         """
-        return boolean_not_operation(self.bool())
+        return boolean_not_operation(self.bool()).guess_type()
 
     def __pos__(self) -> NumberVar:
         """Positive the number.
@@ -518,7 +518,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             The boolean value of the number.
         """
         if is_optional(self._var_type):
-            return boolify((self != None) & (self != 0))  # noqa: E711
+            return boolify((self != None) & (self != 0)).guess_type()  # noqa: E711
         return self != 0
 
     def _is_strict_float(self) -> bool:
@@ -777,7 +777,7 @@ class BooleanVar(NumberVar[bool], python_types=bool):
         Returns:
             The boolean NOT operation.
         """
-        return boolean_not_operation(self)
+        return boolean_not_operation(self).guess_type()
 
     def __int__(self):
         """Convert the boolean to an int.
@@ -785,7 +785,7 @@ class BooleanVar(NumberVar[bool], python_types=bool):
         Returns:
             The boolean to int operation.
         """
-        return boolean_to_number_operation(self)
+        return boolean_to_number_operation(self).guess_type()
 
     def __pos__(self):
         """Convert the boolean to an int.
@@ -793,7 +793,7 @@ class BooleanVar(NumberVar[bool], python_types=bool):
         Returns:
             The boolean to int operation.
         """
-        return boolean_to_number_operation(self)
+        return boolean_to_number_operation(self).guess_type()
 
     def bool(self) -> BooleanVar:
         """Boolean conversion.

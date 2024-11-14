@@ -12,6 +12,7 @@ import typing
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     Literal,
@@ -20,10 +21,11 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
     overload,
 )
 
-from typing_extensions import TypeVar
+from typing_extensions import TypeAliasType, TypeVar
 
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
@@ -59,6 +61,7 @@ from .number import (
 )
 
 if TYPE_CHECKING:
+    from .function import FunctionVar
     from .object import ObjectVar
 
 STRING_TYPE = TypeVar("STRING_TYPE", default=str)
@@ -751,6 +754,7 @@ ARRAY_VAR_TYPE = TypeVar("ARRAY_VAR_TYPE", bound=Union[List, Tuple, Set])
 OTHER_TUPLE = TypeVar("OTHER_TUPLE")
 
 INNER_ARRAY_VAR = TypeVar("INNER_ARRAY_VAR")
+ANOTHER_ARRAY_VAR = TypeVar("ANOTHER_ARRAY_VAR")
 
 KEY_TYPE = TypeVar("KEY_TYPE")
 VALUE_TYPE = TypeVar("VALUE_TYPE")
@@ -939,7 +943,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
             isinstance(i, NumberVar) and i._is_strict_float()
         ):
             raise_unsupported_operand_types("[]", (type(self), type(i)))
-        return array_item_operation(self, i)
+        return array_item_operation(self, i).guess_type()
 
     def length(self) -> NumberVar:
         """Get the length of the array.
@@ -1143,7 +1147,11 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
         return array_ge_operation(self, other).guess_type()
 
-    def foreach(self, fn: Any):
+    def foreach(
+        self: ARRAY_VAR_OF_LIST_ELEMENT[INNER_ARRAY_VAR],
+        fn: Callable[[Var[INNER_ARRAY_VAR]], ANOTHER_ARRAY_VAR]
+        | Callable[[], ANOTHER_ARRAY_VAR],
+    ) -> ArrayVar[List[ANOTHER_ARRAY_VAR]]:
         """Apply a function to each element of the array.
 
         Args:
@@ -1167,37 +1175,49 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
             )
 
         if num_args == 0:
-            return_value = fn()
-            function_var = ArgsFunctionOperation.create(tuple(), return_value)
-        else:
-            # generic number var
-            number_var = Var("").to(NumberVar, int)
+            return_value = fn()  # type: ignore
+            simple_function_var: FunctionVar[ReflexCallable[[], ANOTHER_ARRAY_VAR]] = (
+                ArgsFunctionOperation.create(tuple(), return_value)
+            )
+            return map_array_operation(self, simple_function_var).guess_type()
 
-            first_arg_type = self[number_var]._var_type
+        # generic number var
+        number_var = Var("").to(NumberVar, int)
 
-            arg_name = get_unique_variable_name()
+        first_arg_type = self[number_var]._var_type
 
-            # get first argument type
-            first_arg = Var(
+        arg_name = get_unique_variable_name()
+
+        # get first argument type
+        first_arg = cast(
+            Var[Any],
+            Var(
                 _js_expr=arg_name,
                 _var_type=first_arg_type,
-            ).guess_type()
+            ).guess_type(),
+        )
 
-            function_var = ArgsFunctionOperation.create(
-                (arg_name,),
-                Var.create(fn(first_arg)),
-            )
+        function_var: FunctionVar[
+            ReflexCallable[[INNER_ARRAY_VAR], ANOTHER_ARRAY_VAR]
+        ] = ArgsFunctionOperation.create(
+            (arg_name,),
+            Var.create(fn(first_arg)),  # type: ignore
+        )
 
-        return map_array_operation(self, function_var)
+        return map_array_operation(self, function_var).guess_type()
 
 
 LIST_ELEMENT = TypeVar("LIST_ELEMENT")
 
-ARRAY_VAR_OF_LIST_ELEMENT = Union[
-    ArrayVar[List[LIST_ELEMENT]],
-    ArrayVar[Set[LIST_ELEMENT]],
-    ArrayVar[Tuple[LIST_ELEMENT, ...]],
-]
+ARRAY_VAR_OF_LIST_ELEMENT = TypeAliasType(
+    "ARRAY_VAR_OF_LIST_ELEMENT",
+    Union[
+        ArrayVar[List[LIST_ELEMENT]],
+        ArrayVar[Tuple[LIST_ELEMENT, ...]],
+        ArrayVar[Set[LIST_ELEMENT]],
+    ],
+    type_params=(LIST_ELEMENT,),
+)
 
 
 @dataclasses.dataclass(
@@ -1663,9 +1683,9 @@ if TYPE_CHECKING:
 
 @var_operation
 def map_array_operation(
-    array: Var[ARRAY_VAR_TYPE],
-    function: Var[ReflexCallable],
-):
+    array: Var[ARRAY_VAR_OF_LIST_ELEMENT[INNER_ARRAY_VAR]],
+    function: Var[ReflexCallable[[INNER_ARRAY_VAR], ANOTHER_ARRAY_VAR]],
+) -> CustomVarOperationReturn[List[ANOTHER_ARRAY_VAR]]:
     """Map a function over an array.
 
     Args:

@@ -416,9 +416,6 @@ def format_args_function_operation(
 
     Args:
         self: The function operation.
-        args: The function arguments.
-        return_expr: The return expression.
-        explicit_return: Whether to use explicit return syntax.
 
     Returns:
         The formatted args function operation.
@@ -454,6 +451,9 @@ def pre_check_args(
 
     Returns:
         True if the function can be called with the given arguments.
+
+    Raises:
+        VarTypeError: If the arguments are invalid.
     """
     for i, (validator, arg) in enumerate(zip(self._validators, args)):
         if not validator(arg):
