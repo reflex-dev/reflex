@@ -44,6 +44,16 @@ class ObjectState(rx.State):
 
     bare: rx.Field[Bare] = rx.field(Bare())
     base: rx.Field[Base] = rx.field(Base())
+    d: rx.Field[dict[str, str]] = rx.field({})
+    d_bool: rx.Field[dict[str, bool]] = rx.field({})
+
+    @rx.var
+    def computed_d(self) -> dict[str, str]:
+        return self.d
+
+    @rx.var
+    def computed_d_bool(self) -> dict[str, bool]:
+        return self.d_bool
 
 
 @pytest.mark.parametrize("type_", [Base, Bare])
@@ -109,4 +119,8 @@ def test_typing() -> None:
     _ = assert_type(var, ObjectVar[Base])
 
     # Collection
+    ObjectState.d["key"]
+    ObjectState.computed_d["key"]
+    ObjectState.d_bool["key"]
+    ObjectState.computed_d_bool["key"]
     ObjectState.base.collection[0]
