@@ -1242,30 +1242,6 @@ def prompt_for_template_options(templates: list[Template]) -> str:
     return templates[int(template)].name
 
 
-def get_other_templates() -> list[dict[str, str]]:
-    """Get other templates not included in the templates repo.
-
-    Returns:
-        List of other templates.
-    """
-    return [
-        {
-            "name": "llamaindex",
-            "description": "A minimal chat app using LLamaIndex.",
-            "demo_url": "https://frontend-gold-orca.dev.reflexcorp.run/",
-            "code_url": "https://github.com/reflex-dev/reflex-llamaindex-template/archive/refs/heads/main.zip",
-            "hidden": False,
-        },
-        {
-            "name": "chat",
-            "description": "A chat app with a dark theme.",
-            "demo_url": "https://chat.reflex.run",
-            "code_url": "https://github.com/reflex-dev/reflex-chat/archive/refs/heads/main.zip",
-            "hidden": False,
-        },
-    ]
-
-
 def fetch_app_templates(version: str) -> dict[str, Template]:
     """Fetch a dict of templates from the templates repo using github API.
 
@@ -1312,8 +1288,6 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
             ),
             None,
         )
-    # include other templates not in the templates repo.
-    templates_data.extend(get_other_templates())
 
     filtered_templates = {}
     for tp in templates_data:
