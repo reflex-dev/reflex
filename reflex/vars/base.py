@@ -14,7 +14,7 @@ import re
 import string
 import sys
 import warnings
-from types import CodeType, EllipsisType, FunctionType
+from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -96,9 +96,17 @@ class ReflexCallable(Protocol[P, R]):
     __call__: Callable[P, R]
 
 
+if sys.version_info >= (3, 10):
+    from types import EllipsisType
+
+    ReflexCallableParams = Union[EllipsisType, Tuple[GenericType, ...]]
+else:
+    ReflexCallableParams = Union[Any, Tuple[GenericType, ...]]
+
+
 def unwrap_reflex_callalbe(
     callable_type: GenericType,
-) -> Tuple[Union[EllipsisType, Tuple[GenericType, ...]], GenericType]:
+) -> Tuple[ReflexCallableParams, GenericType]:
     """Unwrap the ReflexCallable type.
 
     Args:
