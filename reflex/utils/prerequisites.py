@@ -1485,7 +1485,6 @@ def fetch_and_prompt_with_remote_templates(
     try:
         # Get the available templates
         available_templates = fetch_app_templates(constants.Reflex.VERSION)
-        console.info(available_templates)
         if not show_prompt and template in available_templates:
             return template, available_templates
 
