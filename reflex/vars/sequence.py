@@ -720,7 +720,7 @@ class SliceVar(Var[slice], python_types=slice):
 class LiteralSliceVar(CachedVarOperation, LiteralVar, SliceVar):
     """Base class for immutable literal slice vars."""
 
-    _var_value: slice = dataclasses.field(default=slice(None))
+    _var_value: slice = dataclasses.field(default_factory=lambda: slice(None))
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
