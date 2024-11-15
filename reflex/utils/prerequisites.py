@@ -1493,6 +1493,7 @@ def fetch_and_prompt_with_remote_templates(
         if not show_prompt and (template not in available_templates):
             console.error(f"{template!r} is not a valid template name.")
 
+        redir.open_browser(constants.Templates.REFLEX_TEMPLATES_URL)
         template = (
             prompt_for_remote_template_selection(available_templates)
             if available_templates
