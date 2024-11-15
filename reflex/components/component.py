@@ -1904,6 +1904,11 @@ memo = custom_component
 class NoSSRComponent(Component):
     """A dynamic component that is not rendered on the server."""
 
+    def _get_import_name(self) -> None | str:
+        if not self.library:
+            return None
+        return f"${self.library}" if self.library.startswith("/") else self.library
+
     def _get_imports(self) -> ParsedImportDict:
         """Get the imports for the component.
 
@@ -1917,8 +1922,9 @@ class NoSSRComponent(Component):
         _imports = super()._get_imports()
 
         # Do NOT import the main library/tag statically.
-        if self.library is not None:
-            _imports[self.library] = [
+        import_name = self._get_import_name()
+        if import_name is not None:
+            _imports[import_name] = [
                 imports.ImportVar(
                     tag=None,
                     render=False,
@@ -1936,10 +1942,10 @@ class NoSSRComponent(Component):
         opts_fragment = ", { ssr: false });"
 
         # extract the correct import name from library name
-        if self.library is None:
+        base_import_name = self._get_import_name()
+        if base_import_name is None:
             raise ValueError("Undefined library for NoSSRComponent")
-
-        import_name = format.format_library_name(self.library)
+        import_name = format.format_library_name(base_import_name)
 
         library_import = f"const {self.alias if self.alias else self.tag} = dynamic(() => import('{import_name}')"
         mod_import = (
