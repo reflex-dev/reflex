@@ -860,6 +860,33 @@ export const isTrue = (val) => {
 };
 
 /**
+ * Returns a copy of a section of an array.
+ * @param {Array | string} arrayLike The array to slice.
+ * @param {[number, number, number]} slice The slice to apply.
+ * @returns The sliced array.
+ */
+export const atSlice = (arrayLike, slice) => {
+  const array = [...arrayLike];
+  const [startSlice, endSlice, stepSlice] = slice;
+  if (stepSlice ?? null === null) {
+    return array.slice(startSlice ?? undefined, endSlice ?? undefined);
+  }
+  const step = stepSlice ?? 1;
+  if (step > 0) {
+    return array
+      .slice(startSlice ?? undefined, endSlice ?? undefined)
+      .filter((_, i) => i % step === 0);
+  }
+  const actualStart = (endSlice ?? null) === null ? 0 : endSlice + 1;
+  const actualEnd =
+    (startSlice ?? null) === null ? array.length : startSlice + 1;
+  return array
+    .slice(actualStart, actualEnd)
+    .reverse()
+    .filter((_, i) => i % step === 0);
+};
+
+/**
  * Get the value from a ref.
  * @param ref The ref to get the value from.
  * @returns The value.

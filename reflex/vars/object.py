@@ -11,6 +11,7 @@ from typing import (
     Dict,
     List,
     NoReturn,
+    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -71,9 +72,9 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
     ) -> Type[VALUE_TYPE]: ...
 
     @overload
-    def _value_type(self) -> Type: ...
+    def _value_type(self) -> GenericType: ...
 
-    def _value_type(self) -> Type:
+    def _value_type(self) -> GenericType:
         """Get the type of the values of the object.
 
         Returns:
@@ -85,7 +86,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
         args = get_args(self._var_type) if issubclass(fixed_type, dict) else ()
         return args[1] if args else Any
 
-    def keys(self) -> ArrayVar[List[str]]:
+    def keys(self) -> ArrayVar[Sequence[str]]:
         """Get the keys of the object.
 
         Returns:
@@ -96,7 +97,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
     @overload
     def values(
         self: ObjectVar[Dict[Any, VALUE_TYPE]],
-    ) -> ArrayVar[List[VALUE_TYPE]]: ...
+    ) -> ArrayVar[Sequence[VALUE_TYPE]]: ...
 
     @overload
     def values(self) -> ArrayVar: ...
@@ -112,7 +113,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
     @overload
     def entries(
         self: ObjectVar[Dict[Any, VALUE_TYPE]],
-    ) -> ArrayVar[List[Tuple[str, VALUE_TYPE]]]: ...
+    ) -> ArrayVar[Sequence[Tuple[str, VALUE_TYPE]]]: ...
 
     @overload
     def entries(self) -> ArrayVar: ...
@@ -163,21 +164,15 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
 
     @overload
     def __getitem__(
-        self: ObjectVar[Dict[Any, list[ARRAY_INNER_TYPE]]],
+        self: ObjectVar[Dict[Any, Sequence[ARRAY_INNER_TYPE]]],
         key: Var | Any,
-    ) -> ArrayVar[list[ARRAY_INNER_TYPE]]: ...
+    ) -> ArrayVar[Sequence[ARRAY_INNER_TYPE]]: ...
 
     @overload
     def __getitem__(
         self: ObjectVar[Dict[Any, set[ARRAY_INNER_TYPE]]],
         key: Var | Any,
     ) -> ArrayVar[set[ARRAY_INNER_TYPE]]: ...
-
-    @overload
-    def __getitem__(
-        self: ObjectVar[Dict[Any, tuple[ARRAY_INNER_TYPE, ...]]],
-        key: Var | Any,
-    ) -> ArrayVar[tuple[ARRAY_INNER_TYPE, ...]]: ...
 
     @overload
     def __getitem__(
@@ -202,7 +197,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
 
     # NoReturn is used here to catch when key value is Any
     @overload
-    def __getattr__(
+    def __getattr__(  # pyright: ignore [reportOverlappingOverload]
         self: ObjectVar[Dict[Any, NoReturn]],
         name: str,
     ) -> Var: ...
@@ -225,21 +220,15 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
 
     @overload
     def __getattr__(
-        self: ObjectVar[Dict[Any, list[ARRAY_INNER_TYPE]]],
+        self: ObjectVar[Dict[Any, Sequence[ARRAY_INNER_TYPE]]],
         name: str,
-    ) -> ArrayVar[list[ARRAY_INNER_TYPE]]: ...
+    ) -> ArrayVar[Sequence[ARRAY_INNER_TYPE]]: ...
 
     @overload
     def __getattr__(
         self: ObjectVar[Dict[Any, set[ARRAY_INNER_TYPE]]],
         name: str,
     ) -> ArrayVar[set[ARRAY_INNER_TYPE]]: ...
-
-    @overload
-    def __getattr__(
-        self: ObjectVar[Dict[Any, tuple[ARRAY_INNER_TYPE, ...]]],
-        name: str,
-    ) -> ArrayVar[tuple[ARRAY_INNER_TYPE, ...]]: ...
 
     @overload
     def __getattr__(
@@ -311,7 +300,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
         default_factory=dict
     )
 
-    def _key_type(self) -> Type:
+    def _key_type(self) -> GenericType:
         """Get the type of the keys of the object.
 
         Returns:
@@ -320,7 +309,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
         args_list = typing.get_args(self._var_type)
         return args_list[0] if args_list else Any
 
-    def _value_type(self) -> Type:
+    def _value_type(self) -> GenericType:
         """Get the type of the values of the object.
 
         Returns:

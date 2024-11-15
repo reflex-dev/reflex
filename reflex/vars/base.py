@@ -26,7 +26,9 @@ from typing import (
     Iterable,
     List,
     Literal,
+    NoReturn,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Type,
@@ -69,6 +71,7 @@ from reflex.utils.types import (
     _isinstance,
     get_origin,
     has_args,
+    typehint_issubclass,
     unionize,
 )
 
@@ -82,6 +85,9 @@ if TYPE_CHECKING:
 
 
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
+VALUE = TypeVar("VALUE")
+INT_OR_FLOAT = TypeVar("INT_OR_FLOAT", int, float)
+FAKE_VAR_TYPE = TypeVar("FAKE_VAR_TYPE")
 OTHER_VAR_TYPE = TypeVar("OTHER_VAR_TYPE")
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
@@ -545,11 +551,11 @@ class Var(Generic[VAR_TYPE]):
     @classmethod
     def create(
         cls,
-        value: Any,
+        value: FAKE_VAR_TYPE,
         _var_is_local: bool | None = None,
         _var_is_string: bool | None = None,
         _var_data: VarData | None = None,
-    ) -> Var:
+    ) -> Var[FAKE_VAR_TYPE]:
         """Create a var from a value.
 
         Args:
@@ -587,7 +593,7 @@ class Var(Generic[VAR_TYPE]):
             return LiteralVar.create(value)
 
         if _var_is_string is False or _var_is_local is True:
-            return cls(
+            return Var(
                 _js_expr=value,
                 _var_data=_var_data,
             )
@@ -629,19 +635,22 @@ class Var(Generic[VAR_TYPE]):
         return f"{constants.REFLEX_VAR_OPENING_TAG}{hashed_var}{constants.REFLEX_VAR_CLOSING_TAG}{self._js_expr}"
 
     @overload
-    def to(self, output: Type[str]) -> StringVar: ...
+    def to(self, output: Type[bool]) -> BooleanVar: ...  # pyright: ignore [reportOverlappingOverload]
 
     @overload
-    def to(self, output: Type[bool]) -> BooleanVar: ...
+    def to(self, output: Type[int]) -> NumberVar[int]: ...
 
     @overload
-    def to(self, output: type[int] | type[float]) -> NumberVar: ...
+    def to(self, output: type[float]) -> NumberVar[float]: ...
+
+    @overload
+    def to(self, output: Type[str]) -> StringVar: ...  # pyright: ignore [reportOverlappingOverload]
 
     @overload
     def to(
         self,
-        output: type[list] | type[tuple] | type[set],
-    ) -> ArrayVar: ...
+        output: type[Sequence[VALUE]] | type[set[VALUE]],
+    ) -> ArrayVar[Sequence[VALUE]]: ...
 
     @overload
     def to(
@@ -728,20 +737,29 @@ class Var(Generic[VAR_TYPE]):
 
         return self
 
+    # We use `NoReturn` here to catch `Var[Any]` and `Var[Unknown]` cases first.
     @overload
-    def guess_type(self: Var[str]) -> StringVar: ...
+    def guess_type(self: Var[NoReturn]) -> Var: ...  # pyright: ignore [reportOverlappingOverload]
 
     @overload
     def guess_type(self: Var[bool]) -> BooleanVar: ...
 
     @overload
-    def guess_type(self: Var[int] | Var[float] | Var[int | float]) -> NumberVar: ...
+    def guess_type(self: Var[INT_OR_FLOAT]) -> NumberVar[INT_OR_FLOAT]: ...
 
     @overload
-    def guess_type(self: Var[list] | Var[tuple] | Var[set]) -> ArrayVar: ...
+    def guess_type(self: Var[str]) -> StringVar: ...  # pyright: ignore [reportOverlappingOverload]
 
     @overload
-    def guess_type(self: Var[dict]) -> ObjectVar[dict]: ...
+    def guess_type(self: Var[Sequence[VALUE]]) -> ArrayVar[Sequence[VALUE]]: ...
+
+    @overload
+    def guess_type(self: Var[Set[VALUE]]) -> ArrayVar[Set[VALUE]]: ...
+
+    @overload
+    def guess_type(
+        self: Var[Dict[VALUE, OTHER_VAR_TYPE]],
+    ) -> ObjectVar[Dict[VALUE, OTHER_VAR_TYPE]]: ...
 
     @overload
     def guess_type(self) -> Self: ...
@@ -925,7 +943,7 @@ class Var(Generic[VAR_TYPE]):
         """
         from .number import equal_operation
 
-        return equal_operation(self, other)
+        return equal_operation(self, other).guess_type()
 
     def __ne__(self, other: Var | Any) -> BooleanVar:
         """Check if the current object is not equal to the given object.
@@ -948,7 +966,7 @@ class Var(Generic[VAR_TYPE]):
         """
         from .number import boolify
 
-        return boolify(self).guess_type()
+        return boolify(self)  # pyright: ignore [reportReturnType]
 
     def __and__(self, other: Var | Any) -> Var:
         """Perform a logical AND operation on the current instance and another variable.
@@ -1150,7 +1168,7 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     @classmethod
-    def range(cls, stop: int | NumberVar, /) -> ArrayVar[List[int]]: ...
+    def range(cls, stop: int | NumberVar, /) -> ArrayVar[Sequence[int]]: ...
 
     @overload
     @classmethod
@@ -1160,15 +1178,16 @@ class Var(Generic[VAR_TYPE]):
         end: int | NumberVar,
         step: int | NumberVar = 1,
         /,
-    ) -> ArrayVar[List[int]]: ...
+    ) -> ArrayVar[Sequence[int]]: ...
 
     @classmethod
     def range(
         cls,
-        first_endpoint: int | NumberVar,
-        second_endpoint: int | NumberVar | None = None,
-        step: int | NumberVar | None = None,
-    ) -> ArrayVar[List[int]]:
+        first_endpoint: int | Var[int],
+        second_endpoint: int | Var[int] | None = None,
+        step: int | Var[int] | None = None,
+        /,
+    ) -> ArrayVar[Sequence[int]]:
         """Create a range of numbers.
 
         Args:
@@ -1181,7 +1200,11 @@ class Var(Generic[VAR_TYPE]):
         """
         from .sequence import ArrayVar
 
-        return ArrayVar.range(first_endpoint, second_endpoint, step)
+        if second_endpoint is None:
+            return ArrayVar.range.call(first_endpoint).guess_type()
+        if step is None:
+            return ArrayVar.range.call(first_endpoint, second_endpoint).guess_type()
+        return ArrayVar.range.call(first_endpoint, second_endpoint, step).guess_type()
 
     def __bool__(self) -> bool:
         """Raise exception if using Var in a boolean context.
@@ -1219,6 +1242,27 @@ OUTPUT = TypeVar("OUTPUT", bound=Var)
 
 VAR_SUBCLASS = TypeVar("VAR_SUBCLASS", bound=Var)
 VAR_INSIDE = TypeVar("VAR_INSIDE")
+
+
+class VarWithDefault(Var[VAR_TYPE]):
+    """Annotate an optional argument."""
+
+    def __init__(self, default_value: VAR_TYPE):
+        """Initialize the default value.
+
+        Args:
+            default_value: The default value.
+        """
+        self._default = default_value
+
+    @property
+    def default(self) -> Var[VAR_TYPE]:
+        """Get the default value.
+
+        Returns:
+            The default value.
+        """
+        return Var.create(self._default)
 
 
 class ToOperation:
@@ -1362,9 +1406,6 @@ class LiteralVar(Var):
         Raises:
             TypeError: If the value is not a supported type for LiteralVar.
         """
-        from .object import LiteralObjectVar
-        from .sequence import LiteralStringVar
-
         if isinstance(value, Var):
             if _var_data is None:
                 return value
@@ -1376,6 +1417,9 @@ class LiteralVar(Var):
 
         from reflex.event import EventHandler
         from reflex.utils.format import get_event_handler_parts
+
+        from .object import LiteralObjectVar
+        from .sequence import LiteralStringVar
 
         if isinstance(value, EventHandler):
             return Var(_js_expr=".".join(filter(None, get_event_handler_parts(value))))
@@ -1466,7 +1510,7 @@ def get_python_literal(value: Union[LiteralVar, Any]) -> Any | None:
     return value
 
 
-def validate_arg(type_hint: GenericType) -> Callable[[Any], bool]:
+def validate_arg(type_hint: GenericType) -> Callable[[Any], str | None]:
     """Create a validator for an argument.
 
     Args:
@@ -1477,7 +1521,15 @@ def validate_arg(type_hint: GenericType) -> Callable[[Any], bool]:
     """
 
     def validate(value: Any):
-        return True
+        if isinstance(value, LiteralVar):
+            if not _isinstance(value._var_value, type_hint):
+                return f"Expected {type_hint} but got {value._var_value} of type {type(value._var_value)}."
+        elif isinstance(value, Var):
+            if not typehint_issubclass(value._var_type, type_hint):
+                return f"Expected {type_hint} but got {value._var_type}."
+        else:
+            if not _isinstance(value, type_hint):
+                return f"Expected {type_hint} but got {value} of type {type(value)}."
 
     return validate
 
@@ -1505,14 +1557,58 @@ class TypeComputer(Protocol):
 
 @overload
 def var_operation(
-    func: Callable[[], CustomVarOperationReturn[T]],
-) -> ArgsFunctionOperation[ReflexCallable[[], T]]: ...
+    func: Callable[[Var[V1], Var[V2], Var[V3]], CustomVarOperationReturn[T]],
+) -> ArgsFunctionOperation[ReflexCallable[[V1, V2, V3], T]]: ...
 
 
 @overload
 def var_operation(
-    func: Callable[[Var[V1]], CustomVarOperationReturn[T]],
-) -> ArgsFunctionOperation[ReflexCallable[[V1], T]]: ...
+    func: Callable[[Var[V1], Var[V2], VarWithDefault[V3]], CustomVarOperationReturn[T]],
+) -> ArgsFunctionOperation[ReflexCallable[[V1, V2, VarWithDefault[V3]], T]]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[
+        [
+            Var[V1],
+            VarWithDefault[V2],
+            VarWithDefault[V3],
+        ],
+        CustomVarOperationReturn[T],
+    ],
+) -> ArgsFunctionOperation[
+    ReflexCallable[
+        [
+            V1,
+            VarWithDefault[V2],
+            VarWithDefault[V3],
+        ],
+        T,
+    ]
+]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[
+        [
+            VarWithDefault[V1],
+            VarWithDefault[V2],
+            VarWithDefault[V3],
+        ],
+        CustomVarOperationReturn[T],
+    ],
+) -> ArgsFunctionOperation[
+    ReflexCallable[
+        [
+            VarWithDefault[V1],
+            VarWithDefault[V1],
+            VarWithDefault[V1],
+        ],
+        T,
+    ]
+]: ...
 
 
 @overload
@@ -1523,23 +1619,68 @@ def var_operation(
 
 @overload
 def var_operation(
-    func: Callable[[Var[V1], Var[V2], Var[V3]], CustomVarOperationReturn[T]],
-) -> ArgsFunctionOperation[ReflexCallable[[V1, V2, V3], T]]: ...
-
-
-@overload
-def var_operation(
-    func: Callable[[Var[V1], Var[V2], Var[V3], Var[V4]], CustomVarOperationReturn[T]],
-) -> ArgsFunctionOperation[ReflexCallable[[V1, V2, V3, V4], T]]: ...
+    func: Callable[
+        [
+            Var[V1],
+            VarWithDefault[V2],
+        ],
+        CustomVarOperationReturn[T],
+    ],
+) -> ArgsFunctionOperation[
+    ReflexCallable[
+        [
+            V1,
+            VarWithDefault[V2],
+        ],
+        T,
+    ]
+]: ...
 
 
 @overload
 def var_operation(
     func: Callable[
-        [Var[V1], Var[V2], Var[V3], Var[V4], Var[V5]],
+        [
+            VarWithDefault[V1],
+            VarWithDefault[V2],
+        ],
         CustomVarOperationReturn[T],
     ],
-) -> ArgsFunctionOperation[ReflexCallable[[V1, V2, V3, V4, V5], T]]: ...
+) -> ArgsFunctionOperation[
+    ReflexCallable[
+        [
+            VarWithDefault[V1],
+            VarWithDefault[V2],
+        ],
+        T,
+    ]
+]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[[Var[V1]], CustomVarOperationReturn[T]],
+) -> ArgsFunctionOperation[ReflexCallable[[V1], T]]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[
+        [VarWithDefault[V1]],
+        CustomVarOperationReturn[T],
+    ],
+) -> ArgsFunctionOperation[
+    ReflexCallable[
+        [VarWithDefault[V1]],
+        T,
+    ]
+]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[[], CustomVarOperationReturn[T]],
+) -> ArgsFunctionOperation[ReflexCallable[[], T]]: ...
 
 
 def var_operation(
@@ -1568,6 +1709,7 @@ def var_operation(
     func_name = func.__name__
 
     func_arg_spec = inspect.getfullargspec(func)
+    func_signature = inspect.signature(func)
 
     if func_arg_spec.kwonlyargs:
         raise TypeError(f"Function {func_name} cannot have keyword-only arguments.")
@@ -1576,10 +1718,23 @@ def var_operation(
 
     arg_names = func_arg_spec.args
 
+    arg_default_values: Sequence[inspect.Parameter.empty | VarWithDefault] = tuple(
+        (
+            default_value
+            if isinstance(
+                (default_value := func_signature.parameters[arg_name].default),
+                VarWithDefault,
+            )
+            else inspect.Parameter.empty()
+        )
+        for arg_name in arg_names
+    )
+
     type_hints = get_type_hints(func)
 
     if not all(
-        (get_origin((type_hint := type_hints.get(arg_name, Any))) or type_hint) is Var
+        (get_origin((type_hint := type_hints.get(arg_name, Any))) or type_hint)
+        in (Var, VarWithDefault)
         and len(get_args(type_hint)) <= 1
         for arg_name in arg_names
     ):
@@ -1606,13 +1761,22 @@ def var_operation(
     args_operation = ArgsFunctionOperation.create(
         tuple(map(str, arg_vars)),
         custom_operation_return,
+        default_values=arg_default_values,
         validators=tuple(
-            validate_arg(type_hints.get(arg_name, Any)) for arg_name in arg_names
+            validate_arg(arg_type)
+            if not isinstance(arg_type, TypeVar)
+            else validate_arg(arg_type.__bound__ or Any)
+            for _, arg_type in args_with_type_hints
         ),
         function_name=func_name,
         type_computer=custom_operation_return._type_computer,
         _var_type=ReflexCallable[
-            tuple(arg_python_type for _, arg_python_type in args_with_type_hints),  # type: ignore
+            tuple(
+                arg_python_type
+                if isinstance(arg_default_values[i], inspect.Parameter)
+                else VarWithDefault[arg_python_type]
+                for i, (_, arg_python_type) in enumerate(args_with_type_hints)
+            ),  # type: ignore
             custom_operation_return._var_type,
         ],
     )
@@ -2018,10 +2182,10 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: ComputedVar[list[LIST_INSIDE]],
+        self: ComputedVar[Sequence[LIST_INSIDE]],
         instance: None,
         owner: Type,
-    ) -> ArrayVar[list[LIST_INSIDE]]: ...
+    ) -> ArrayVar[Sequence[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
@@ -2029,13 +2193,6 @@ class ComputedVar(Var[RETURN_TYPE]):
         instance: None,
         owner: Type,
     ) -> ArrayVar[set[LIST_INSIDE]]: ...
-
-    @overload
-    def __get__(
-        self: ComputedVar[tuple[LIST_INSIDE, ...]],
-        instance: None,
-        owner: Type,
-    ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
 
     @overload
     def __get__(self, instance: None, owner: Type) -> ComputedVar[RETURN_TYPE]: ...
@@ -2175,7 +2332,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                     d.update(
                         self._deps(
                             objclass=objclass,
-                            obj=ref_obj,
+                            obj=ref_obj,  # pyright: ignore [reportArgumentType]
                         )
                     )
                 # recurse into property fget functions
@@ -2218,7 +2375,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         with contextlib.suppress(AttributeError):
             delattr(instance, self._cache_attr)
 
-    def _determine_var_type(self) -> Type:
+    def _determine_var_type(self) -> GenericType:
         """Get the type of the var.
 
         Returns:
@@ -2672,8 +2829,12 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
                 var_datas.append(sub._var_data)
             elif not isinstance(sub, str):
                 # Recurse into dict values.
-                if hasattr(sub, "values") and callable(sub.values):
-                    var_datas.extend(_extract_var_data(sub.values()))
+                if (
+                    (values_fn := getattr(sub, "values", None)) is not None
+                    and callable(values_fn)
+                    and isinstance((values := values_fn()), Iterable)
+                ):
+                    var_datas.extend(_extract_var_data(values))
                 # Recurse into iterable values (or dict keys).
                 var_datas.extend(_extract_var_data(sub))
 
@@ -2682,9 +2843,9 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
         var_datas.append(value._var_data)
     else:
         # Recurse when value is a dict itself.
-        values = getattr(value, "values", None)
-        if callable(values):
-            var_datas.extend(_extract_var_data(values()))
+        values_fn = getattr(value, "values", None)
+        if callable(values_fn) and isinstance((values := values_fn()), Iterable):
+            var_datas.extend(_extract_var_data(values))
     return var_datas
 
 
@@ -2966,10 +3127,10 @@ class Field(Generic[T]):
 
     @overload
     def __get__(
-        self: Field[List[V]] | Field[Set[V]] | Field[Tuple[V, ...]],
+        self: Field[Sequence[V]] | Field[Set[V]],
         instance: None,
         owner,
-    ) -> ArrayVar[List[V]]: ...
+    ) -> ArrayVar[Sequence[V]]: ...
 
     @overload
     def __get__(
@@ -3151,7 +3312,7 @@ def nary_type_computer(
     def type_computer(*args: Var):
         if len(args) != len(types):
             return (
-                ReflexCallable[[], types[len(args)]],  # type: ignore
+                types[len(args)],
                 functools.partial(type_computer, *args),
             )
         return (

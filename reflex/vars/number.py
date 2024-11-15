@@ -30,6 +30,7 @@ from .base import (
 NUMBER_T = TypeVar("NUMBER_T", int, float, Union[int, float], bool)
 
 if TYPE_CHECKING:
+    from .function import FunctionVar
     from .sequence import ArrayVar
 
 
@@ -53,13 +54,7 @@ def raise_unsupported_operand_types(
 class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     """Base class for immutable number vars."""
 
-    @overload
-    def __add__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __add__(self, other: NoReturn) -> NoReturn: ...
-
-    def __add__(self, other: Any):
+    def __add__(self, other: number_types) -> NumberVar:
         """Add two numbers.
 
         Args:
@@ -72,13 +67,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             raise_unsupported_operand_types("+", (type(self), type(other)))
         return number_add_operation(self, +other).guess_type()
 
-    @overload
-    def __radd__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __radd__(self, other: NoReturn) -> NoReturn: ...
-
-    def __radd__(self, other: Any):
+    def __radd__(self, other: number_types) -> NumberVar:
         """Add two numbers.
 
         Args:
@@ -91,13 +80,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             raise_unsupported_operand_types("+", (type(other), type(self)))
         return number_add_operation(+other, self).guess_type()
 
-    @overload
-    def __sub__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __sub__(self, other: NoReturn) -> NoReturn: ...
-
-    def __sub__(self, other: Any):
+    def __sub__(self, other: number_types) -> NumberVar:
         """Subtract two numbers.
 
         Args:
@@ -111,13 +94,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_subtract_operation(self, +other).guess_type()
 
-    @overload
-    def __rsub__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __rsub__(self, other: NoReturn) -> NoReturn: ...
-
-    def __rsub__(self, other: Any):
+    def __rsub__(self, other: number_types) -> NumberVar:
         """Subtract two numbers.
 
         Args:
@@ -193,13 +170,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_multiply_operation(+other, self).guess_type()
 
-    @overload
-    def __truediv__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __truediv__(self, other: NoReturn) -> NoReturn: ...
-
-    def __truediv__(self, other: Any):
+    def __truediv__(self, other: number_types) -> NumberVar:
         """Divide two numbers.
 
         Args:
@@ -213,13 +184,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_true_division_operation(self, +other).guess_type()
 
-    @overload
-    def __rtruediv__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __rtruediv__(self, other: NoReturn) -> NoReturn: ...
-
-    def __rtruediv__(self, other: Any):
+    def __rtruediv__(self, other: number_types) -> NumberVar:
         """Divide two numbers.
 
         Args:
@@ -233,13 +198,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_true_division_operation(+other, self).guess_type()
 
-    @overload
-    def __floordiv__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __floordiv__(self, other: NoReturn) -> NoReturn: ...
-
-    def __floordiv__(self, other: Any):
+    def __floordiv__(self, other: number_types) -> NumberVar:
         """Floor divide two numbers.
 
         Args:
@@ -253,13 +212,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_floor_division_operation(self, +other).guess_type()
 
-    @overload
-    def __rfloordiv__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __rfloordiv__(self, other: NoReturn) -> NoReturn: ...
-
-    def __rfloordiv__(self, other: Any):
+    def __rfloordiv__(self, other: number_types) -> NumberVar:
         """Floor divide two numbers.
 
         Args:
@@ -273,13 +226,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_floor_division_operation(+other, self).guess_type()
 
-    @overload
-    def __mod__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __mod__(self, other: NoReturn) -> NoReturn: ...
-
-    def __mod__(self, other: Any):
+    def __mod__(self, other: number_types) -> NumberVar:
         """Modulo two numbers.
 
         Args:
@@ -293,13 +240,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_modulo_operation(self, +other).guess_type()
 
-    @overload
-    def __rmod__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __rmod__(self, other: NoReturn) -> NoReturn: ...
-
-    def __rmod__(self, other: Any):
+    def __rmod__(self, other: number_types) -> NumberVar:
         """Modulo two numbers.
 
         Args:
@@ -313,13 +254,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_modulo_operation(+other, self).guess_type()
 
-    @overload
-    def __pow__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __pow__(self, other: NoReturn) -> NoReturn: ...
-
-    def __pow__(self, other: Any):
+    def __pow__(self, other: number_types) -> NumberVar:
         """Exponentiate two numbers.
 
         Args:
@@ -333,13 +268,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_exponent_operation(self, +other).guess_type()
 
-    @overload
-    def __rpow__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __rpow__(self, other: NoReturn) -> NoReturn: ...
-
-    def __rpow__(self, other: Any):
+    def __rpow__(self, other: number_types) -> NumberVar:
         """Exponentiate two numbers.
 
         Args:
@@ -409,13 +338,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         return number_trunc_operation(self).guess_type()
 
-    @overload
-    def __lt__(self, other: number_types) -> BooleanVar: ...
-
-    @overload
-    def __lt__(self, other: NoReturn) -> NoReturn: ...
-
-    def __lt__(self, other: Any):
+    def __lt__(self, other: number_types) -> BooleanVar:
         """Less than comparison.
 
         Args:
@@ -426,15 +349,9 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("<", (type(self), type(other)))
-        return less_than_operation(self, +other)
+        return less_than_operation(self, +other).guess_type()
 
-    @overload
-    def __le__(self, other: number_types) -> BooleanVar: ...
-
-    @overload
-    def __le__(self, other: NoReturn) -> NoReturn: ...
-
-    def __le__(self, other: Any):
+    def __le__(self, other: number_types) -> BooleanVar:
         """Less than or equal comparison.
 
         Args:
@@ -445,9 +362,9 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("<=", (type(self), type(other)))
-        return less_than_or_equal_operation(self, +other)
+        return less_than_or_equal_operation(self, +other).guess_type()
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: Any) -> BooleanVar:
         """Equal comparison.
 
         Args:
@@ -457,10 +374,10 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             The result of the comparison.
         """
         if isinstance(other, NUMBER_TYPES):
-            return equal_operation(self, +other)
-        return equal_operation(self, other)
+            return equal_operation(self, +other).guess_type()
+        return equal_operation(self, other).guess_type()
 
-    def __ne__(self, other: Any):
+    def __ne__(self, other: Any) -> BooleanVar:
         """Not equal comparison.
 
         Args:
@@ -470,16 +387,10 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             The result of the comparison.
         """
         if isinstance(other, NUMBER_TYPES):
-            return not_equal_operation(self, +other)
-        return not_equal_operation(self, other)
+            return not_equal_operation(self, +other).guess_type()
+        return not_equal_operation(self, other).guess_type()
 
-    @overload
-    def __gt__(self, other: number_types) -> BooleanVar: ...
-
-    @overload
-    def __gt__(self, other: NoReturn) -> NoReturn: ...
-
-    def __gt__(self, other: Any):
+    def __gt__(self, other: number_types) -> BooleanVar:
         """Greater than comparison.
 
         Args:
@@ -490,15 +401,9 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types(">", (type(self), type(other)))
-        return greater_than_operation(self, +other)
+        return greater_than_operation(self, +other).guess_type()
 
-    @overload
-    def __ge__(self, other: number_types) -> BooleanVar: ...
-
-    @overload
-    def __ge__(self, other: NoReturn) -> NoReturn: ...
-
-    def __ge__(self, other: Any):
+    def __ge__(self, other: number_types) -> BooleanVar:
         """Greater than or equal comparison.
 
         Args:
@@ -509,9 +414,9 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types(">=", (type(self), type(other)))
-        return greater_than_or_equal_operation(self, +other)
+        return greater_than_or_equal_operation(self, +other).guess_type()
 
-    def bool(self):
+    def bool(self) -> BooleanVar:
         """Boolean conversion.
 
         Returns:
@@ -863,7 +768,7 @@ def boolean_to_number_operation(value: Var[bool]):
 
 def comparison_operator(
     func: Callable[[Var, Var], str],
-) -> Callable[[Var | Any, Var | Any], BooleanVar]:
+) -> FunctionVar[ReflexCallable[[Any, Any], bool]]:
     """Decorator to create a comparison operation.
 
     Args:
@@ -873,26 +778,15 @@ def comparison_operator(
         The comparison operation.
     """
 
-    @var_operation
     def operation(lhs: Var[Any], rhs: Var[Any]):
         return var_operation_return(
             js_expression=func(lhs, rhs),
             var_type=bool,
         )
 
-    def wrapper(lhs: Var | Any, rhs: Var | Any) -> BooleanVar:
-        """Create the comparison operation.
+    operation.__name__ = func.__name__
 
-        Args:
-            lhs: The first value.
-            rhs: The second value.
-
-        Returns:
-            The comparison operation.
-        """
-        return operation(lhs, rhs).guess_type()
-
-    return wrapper
+    return var_operation(operation)
 
 
 @comparison_operator
@@ -1104,6 +998,14 @@ _IS_TRUE_IMPORT: ImportDict = {
     f"$/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
 }
 
+_AT_SLICE_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="atSlice")],
+}
+
+_RANGE_IMPORT: ImportDict = {
+    f"$/{Dirs.UTILS}/helpers/range": [ImportVar(tag="range", is_default=True)],
+}
+
 
 @var_operation
 def boolify(value: Var):
@@ -1122,8 +1024,8 @@ def boolify(value: Var):
     )
 
 
-T = TypeVar("T")
-U = TypeVar("U")
+T = TypeVar("T", bound=Any)
+U = TypeVar("U", bound=Any)
 
 
 @var_operation

@@ -3,14 +3,25 @@
 from __future__ import annotations
 
 import dataclasses
+import inspect
 import sys
-from typing import Any, Callable, Optional, Sequence, Tuple, Type, Union, overload
+from typing import (
+    Any,
+    Callable,
+    NoReturn,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    overload,
+)
 
 from typing_extensions import Concatenate, Generic, ParamSpec, TypeVar
 
 from reflex.utils import format
 from reflex.utils.exceptions import VarTypeError
-from reflex.utils.types import GenericType
+from reflex.utils.types import GenericType, Unset, get_origin
 
 from .base import (
     CachedVarOperation,
@@ -19,12 +30,14 @@ from .base import (
     TypeComputer,
     Var,
     VarData,
+    VarWithDefault,
     cached_property_no_lock,
     unwrap_reflex_callalbe,
 )
 
 P = ParamSpec("P")
 R = TypeVar("R")
+R2 = TypeVar("R2")
 V1 = TypeVar("V1")
 V2 = TypeVar("V2")
 V3 = TypeVar("V3")
@@ -47,20 +60,39 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
 
     @overload
     def partial(
-        self: FunctionVar[ReflexCallable[Concatenate[V1, P], R]],
+        self: FunctionVar[ReflexCallable[Concatenate[VarWithDefault[V1], P], R]]
+        | FunctionVar[ReflexCallable[Concatenate[V1, P], R]],
         arg1: Union[V1, Var[V1]],
     ) -> FunctionVar[ReflexCallable[P, R]]: ...
 
     @overload
     def partial(
-        self: FunctionVar[ReflexCallable[Concatenate[V1, V2, P], R]],
+        self: FunctionVar[
+            ReflexCallable[Concatenate[VarWithDefault[V1], VarWithDefault[V2], P], R]
+        ]
+        | FunctionVar[ReflexCallable[Concatenate[V1, VarWithDefault[V2], P], R]]
+        | FunctionVar[ReflexCallable[Concatenate[V1, V2, P], R]],
         arg1: Union[V1, Var[V1]],
         arg2: Union[V2, Var[V2]],
     ) -> FunctionVar[ReflexCallable[P, R]]: ...
 
     @overload
     def partial(
-        self: FunctionVar[ReflexCallable[Concatenate[V1, V2, V3, P], R]],
+        self: FunctionVar[
+            ReflexCallable[
+                Concatenate[
+                    VarWithDefault[V1], VarWithDefault[V2], VarWithDefault[V3], P
+                ],
+                R,
+            ]
+        ]
+        | FunctionVar[
+            ReflexCallable[
+                Concatenate[V1, VarWithDefault[V2], VarWithDefault[V3], P], R
+            ]
+        ]
+        | FunctionVar[ReflexCallable[Concatenate[V1, V2, VarWithDefault[V3], P], R]]
+        | FunctionVar[ReflexCallable[Concatenate[V1, V2, V3, P], R]],
         arg1: Union[V1, Var[V1]],
         arg2: Union[V2, Var[V2]],
         arg3: Union[V3, Var[V3]],
@@ -149,9 +181,56 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
         )
 
     @overload
+    def call(self: FunctionVar[ReflexCallable[[], R]]) -> VarOperationCall[[], R]: ...
+
+    @overload
+    def call(
+        self: FunctionVar[ReflexCallable[[VarWithDefault[V1]], R]],
+        arg1: Union[V1, Var[V1], Unset] = Unset(),
+    ) -> VarOperationCall[[VarWithDefault[V1]], R]: ...
+
+    @overload
+    def call(
+        self: FunctionVar[ReflexCallable[[VarWithDefault[V1], VarWithDefault[V2]], R]],
+        arg1: Union[V1, Var[V1], Unset] = Unset(),
+        arg2: Union[V2, Var[V2], Unset] = Unset(),
+    ) -> VarOperationCall[[VarWithDefault[V1], VarWithDefault[V2]], R]: ...
+
+    @overload
+    def call(
+        self: FunctionVar[
+            ReflexCallable[
+                [VarWithDefault[V1], VarWithDefault[V2], VarWithDefault[V3]], R
+            ]
+        ],
+        arg1: Union[V1, Var[V1], Unset] = Unset(),
+        arg2: Union[V2, Var[V2], Unset] = Unset(),
+        arg3: Union[V3, Var[V3], Unset] = Unset(),
+    ) -> VarOperationCall[
+        [VarWithDefault[V1], VarWithDefault[V2], VarWithDefault[V3]], R
+    ]: ...
+
+    @overload
     def call(
         self: FunctionVar[ReflexCallable[[V1], R]], arg1: Union[V1, Var[V1]]
     ) -> VarOperationCall[[V1], R]: ...
+
+    @overload
+    def call(
+        self: FunctionVar[ReflexCallable[[V1, VarWithDefault[V2]], R]],
+        arg1: Union[V1, Var[V1]],
+        arg2: Union[V2, Var[V2], Unset] = Unset(),
+    ) -> VarOperationCall[[V1, VarWithDefault[V2]], R]: ...
+
+    @overload
+    def call(
+        self: FunctionVar[
+            ReflexCallable[[V1, VarWithDefault[V2], VarWithDefault[V3]], R]
+        ],
+        arg1: Union[V1, Var[V1]],
+        arg2: Union[V2, Var[V2], Unset] = Unset(),
+        arg3: Union[V3, Var[V3], Unset] = Unset(),
+    ) -> VarOperationCall[[V1, VarWithDefault[V2], VarWithDefault[V3]], R]: ...
 
     @overload
     def call(
@@ -159,6 +238,14 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
         arg1: Union[V1, Var[V1]],
         arg2: Union[V2, Var[V2]],
     ) -> VarOperationCall[[V1, V2], R]: ...
+
+    @overload
+    def call(
+        self: FunctionVar[ReflexCallable[[V1, V2, VarWithDefault[V3]], R]],
+        arg1: Union[V1, Var[V1]],
+        arg2: Union[V2, Var[V2]],
+        arg3: Union[V3, Var[V3], Unset] = Unset(),
+    ) -> VarOperationCall[[V1, V2, VarWithDefault[V3]], R]: ...
 
     @overload
     def call(
@@ -198,15 +285,11 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
         arg6: Union[V6, Var[V6]],
     ) -> VarOperationCall[[V1, V2, V3, V4, V5, V6], R]: ...
 
+    # Capture Any to allow for arbitrary number of arguments
     @overload
-    def call(
-        self: FunctionVar[ReflexCallable[P, R]], *args: Var | Any
-    ) -> VarOperationCall[P, R]: ...
+    def call(self: FunctionVar[NoReturn], *args: Var | Any) -> VarOperationCall: ...
 
-    @overload
-    def call(self, *args: Var | Any) -> Var: ...
-
-    def call(self, *args: Var | Any) -> Var:  # type: ignore
+    def call(self, *args: Var | Any) -> VarOperationCall:  # type: ignore
         """Call the function with the given arguments.
 
         Args:
@@ -218,13 +301,53 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
         Raises:
             VarTypeError: If the number of arguments is invalid
         """
+        required_arg_len = self._required_arg_len()
         arg_len = self._arg_len()
-        if arg_len is not None and len(args) != arg_len:
-            raise VarTypeError(f"Invalid number of arguments provided to {str(self)}")
+        if arg_len is not None:
+            if len(args) < required_arg_len:
+                raise VarTypeError(
+                    f"Passed {len(args)} arguments, expected at least {required_arg_len} for {str(self)}"
+                )
+            if len(args) > arg_len:
+                raise VarTypeError(
+                    f"Passed {len(args)} arguments, expected at most {arg_len} for {str(self)}"
+                )
         args = tuple(map(LiteralVar.create, args))
         self._pre_check(*args)
         return_type = self._return_type(*args)
-        return VarOperationCall.create(self, *args, _var_type=return_type).guess_type()
+        return VarOperationCall.create(self, *args, _var_type=return_type)
+
+    def chain(
+        self: FunctionVar[ReflexCallable[P, R]],
+        other: FunctionVar[ReflexCallable[[R], R2]]
+        | FunctionVar[ReflexCallable[[R, VarWithDefault[Any]], R2]]
+        | FunctionVar[
+            ReflexCallable[[R, VarWithDefault[Any], VarWithDefault[Any]], R2]
+        ],
+    ) -> FunctionVar[ReflexCallable[P, R2]]:
+        """Chain two functions together.
+
+        Args:
+            other: The other function to chain.
+
+        Returns:
+            The chained function.
+        """
+        self_arg_type, self_return_type = unwrap_reflex_callalbe(self._var_type)
+        _, other_return_type = unwrap_reflex_callalbe(other._var_type)
+
+        return ArgsFunctionOperationBuilder.create(
+            (),
+            VarOperationCall.create(
+                other,
+                VarOperationCall.create(
+                    self, Var(_js_expr="...args"), _var_type=self_return_type
+                ),
+                _var_type=other_return_type,
+            ),
+            rest="arg",
+            _var_type=ReflexCallable[self_arg_type, other_return_type],  # pyright: ignore [reportInvalidTypeArguments]
+        )
 
     def _partial_type(
         self, *args: Var | Any
@@ -253,6 +376,21 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
             return len(args_types)
         return None
 
+    def _required_arg_len(self) -> int:
+        """Get the number of required arguments the function takes.
+
+        Returns:
+            The number of required arguments the function takes.
+        """
+        args_types, _ = unwrap_reflex_callalbe(self._var_type)
+        if isinstance(args_types, tuple):
+            return sum(
+                1
+                for arg_type in args_types
+                if get_origin(arg_type) is not VarWithDefault
+            )
+        return 0
+
     def _return_type(self, *args: Var | Any) -> GenericType:
         """Override the type of the function call with the given arguments.
 
@@ -265,7 +403,9 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
         partial_types, _ = self._partial_type(*args)
         return unwrap_reflex_callalbe(partial_types)[1]
 
-    def _pre_check(self, *args: Var | Any) -> Tuple[Callable[[Any], bool], ...]:
+    def _pre_check(
+        self, *args: Var | Any
+    ) -> Tuple[Callable[[Any], Optional[str]], ...]:
         """Check if the function can be called with the given arguments.
 
         Args:
@@ -275,6 +415,30 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
             True if the function can be called with the given arguments.
         """
         return tuple()
+
+    @overload
+    def __get__(self, instance: None, owner: Any) -> FunctionVar[CALLABLE_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: FunctionVar[ReflexCallable[Concatenate[V1, P], R]],
+        instance: Var[V1],
+        owner: Any,
+    ) -> FunctionVar[ReflexCallable[P, R]]: ...
+
+    def __get__(self, instance: Any, owner: Any):
+        """Get the function var.
+
+        Args:
+            instance: The instance of the class.
+            owner: The owner of the class.
+
+        Returns:
+            The function var.
+        """
+        if instance is None:
+            return self
+        return self.partial(instance)
 
     __call__ = call
 
@@ -321,7 +485,9 @@ class FunctionStringVar(FunctionVar[CALLABLE_TYPE]):
 class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
     """Base class for immutable vars that are the result of a function call."""
 
-    _func: Optional[FunctionVar[ReflexCallable[P, R]]] = dataclasses.field(default=None)
+    _func: Optional[FunctionVar[ReflexCallable[..., R]]] = dataclasses.field(
+        default=None
+    )
     _args: Tuple[Union[Var, Any], ...] = dataclasses.field(default_factory=tuple)
 
     @cached_property_no_lock
@@ -331,7 +497,8 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
         Returns:
             The name of the var.
         """
-        return f"({str(self._func)}({', '.join([str(LiteralVar.create(arg)) for arg in self._args])}))"
+        func_str = str(self._func)
+        return f"({func_str}({', '.join([str(LiteralVar.create(arg)) for arg in self._args])}))"
 
     @cached_property_no_lock
     def _cached_get_all_var_data(self) -> VarData | None:
@@ -422,8 +589,16 @@ def format_args_function_operation(
     """
     arg_names_str = ", ".join(
         [
-            arg if isinstance(arg, str) else arg.to_javascript()
-            for arg in self._args.args
+            (arg if isinstance(arg, str) else arg.to_javascript())
+            + (
+                f" = {str(default_value.default)}"
+                if i < len(self._default_values)
+                and not isinstance(
+                    (default_value := self._default_values[i]), inspect.Parameter.empty
+                )
+                else ""
+            )
+            for i, arg in enumerate(self._args.args)
         ]
         + ([f"...{self._args.rest}"] if self._args.rest else [])
     )
@@ -442,7 +617,7 @@ def format_args_function_operation(
 
 def pre_check_args(
     self: ArgsFunctionOperation | ArgsFunctionOperationBuilder, *args: Var | Any
-) -> Tuple[Callable[[Any], bool], ...]:
+) -> Tuple[Callable[[Any], Optional[str]], ...]:
     """Check if the function can be called with the given arguments.
 
     Args:
@@ -456,14 +631,14 @@ def pre_check_args(
         VarTypeError: If the arguments are invalid.
     """
     for i, (validator, arg) in enumerate(zip(self._validators, args)):
-        if not validator(arg):
+        if (validation_message := validator(arg)) is not None:
             arg_name = self._args.args[i] if i < len(self._args.args) else None
             if arg_name is not None:
                 raise VarTypeError(
-                    f"Invalid argument {str(arg)} provided to {arg_name} in {self._function_name or 'var operation'}"
+                    f"Invalid argument {str(arg)} provided to {arg_name} in {self._function_name or 'var operation'}. {validation_message}"
                 )
             raise VarTypeError(
-                f"Invalid argument {str(arg)} provided to argument {i} in {self._function_name or 'var operation'}"
+                f"Invalid argument {str(arg)} provided to argument {i} in {self._function_name or 'var operation'}. {validation_message}"
             )
     return self._validators[len(args) :]
 
@@ -497,7 +672,10 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar[CALLABLE_TYPE]):
     """Base class for immutable function defined via arguments and return expression."""
 
     _args: FunctionArgs = dataclasses.field(default_factory=FunctionArgs)
-    _validators: Tuple[Callable[[Any], bool], ...] = dataclasses.field(
+    _default_values: Tuple[VarWithDefault | inspect.Parameter.empty, ...] = (
+        dataclasses.field(default_factory=tuple)
+    )
+    _validators: Tuple[Callable[[Any], Optional[str]], ...] = dataclasses.field(
         default_factory=tuple
     )
     _return_expr: Union[Var, Any] = dataclasses.field(default=None)
@@ -516,8 +694,10 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar[CALLABLE_TYPE]):
         cls,
         args_names: Sequence[Union[str, DestructuredArg]],
         return_expr: Var | Any,
+        /,
+        default_values: Sequence[VarWithDefault | inspect.Parameter.empty] = (),
         rest: str | None = None,
-        validators: Sequence[Callable[[Any], bool]] = (),
+        validators: Sequence[Callable[[Any], Optional[str]]] = (),
         function_name: str = "",
         explicit_return: bool = False,
         type_computer: Optional[TypeComputer] = None,
@@ -529,6 +709,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar[CALLABLE_TYPE]):
         Args:
             args_names: The names of the arguments.
             return_expr: The return expression of the function.
+            default_values: The default values of the arguments.
             rest: The name of the rest argument.
             validators: The validators for the arguments.
             function_name: The name of the function.
@@ -545,6 +726,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar[CALLABLE_TYPE]):
             _var_type=_var_type,
             _var_data=_var_data,
             _args=FunctionArgs(args=tuple(args_names), rest=rest),
+            _default_values=tuple(default_values),
             _function_name=function_name,
             _validators=tuple(validators),
             _return_expr=return_expr,
@@ -564,7 +746,10 @@ class ArgsFunctionOperationBuilder(
     """Base class for immutable function defined via arguments and return expression with the builder pattern."""
 
     _args: FunctionArgs = dataclasses.field(default_factory=FunctionArgs)
-    _validators: Tuple[Callable[[Any], bool], ...] = dataclasses.field(
+    _default_values: Tuple[VarWithDefault | inspect.Parameter.empty, ...] = (
+        dataclasses.field(default_factory=tuple)
+    )
+    _validators: Tuple[Callable[[Any], Optional[str]], ...] = dataclasses.field(
         default_factory=tuple
     )
     _return_expr: Union[Var, Any] = dataclasses.field(default=None)
@@ -583,8 +768,10 @@ class ArgsFunctionOperationBuilder(
         cls,
         args_names: Sequence[Union[str, DestructuredArg]],
         return_expr: Var | Any,
+        /,
+        default_values: Sequence[VarWithDefault | inspect.Parameter.empty] = (),
         rest: str | None = None,
-        validators: Sequence[Callable[[Any], bool]] = (),
+        validators: Sequence[Callable[[Any], Optional[str]]] = (),
         function_name: str = "",
         explicit_return: bool = False,
         type_computer: Optional[TypeComputer] = None,
@@ -596,6 +783,7 @@ class ArgsFunctionOperationBuilder(
         Args:
             args_names: The names of the arguments.
             return_expr: The return expression of the function.
+            default_values: The default values of the arguments.
             rest: The name of the rest argument.
             validators: The validators for the arguments.
             function_name: The name of the function.
@@ -612,6 +800,7 @@ class ArgsFunctionOperationBuilder(
             _var_type=_var_type,
             _var_data=_var_data,
             _args=FunctionArgs(args=tuple(args_names), rest=rest),
+            _default_values=tuple(default_values),
             _function_name=function_name,
             _validators=tuple(validators),
             _return_expr=return_expr,

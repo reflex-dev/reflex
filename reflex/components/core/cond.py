@@ -138,34 +138,18 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
     """
     # Convert the condition to a Var.
     cond_var = LiteralVar.create(condition)
-    if cond_var is None:
-        raise ValueError("The condition must be set.")
 
-    # If the first component is a component, create a Cond component.
+    # If the first component is a component, create a Fragment if the second component is not set.
     if isinstance(c1, BaseComponent):
-        if c2 is not None and not isinstance(c2, BaseComponent):
-            raise ValueError("Both arguments must be components.")
-        return Cond.create(cond_var, c1, c2)
+        c2 = c2 if c2 is not None else Fragment.create()
 
-    # Otherwise, create a conditional Var.
     # Check that the second argument is valid.
-    if isinstance(c2, BaseComponent):
-        raise ValueError("Both arguments must be props.")
     if c2 is None:
         raise ValueError("For conditional vars, the second argument must be set.")
 
-    def create_var(cond_part):
-        return LiteralVar.create(cond_part)
-
-    # convert the truth and false cond parts into vars so the _var_data can be obtained.
-    c1 = create_var(c1)
-    c2 = create_var(c2)
-
     # Create the conditional var.
     return ternary_operation(
-        cond_var.bool()._replace(  # type: ignore
-            merge_var_data=VarData(imports=_IS_TRUE_IMPORT),
-        ),  # type: ignore
+        cond_var.bool(),
         c1,
         c2,
     )
