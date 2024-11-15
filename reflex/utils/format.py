@@ -766,16 +766,3 @@ def format_data_editor_cell(cell: Any):
         "kind": Var(_js_expr="GridCellKind.Text"),
         "data": cell,
     }
-
-
-def format_template_name(name: str) -> str:
-    """Format the template name of remote templates obtained during reflex init.
-
-    Args:
-        name: The name of the template.
-
-    Returns:
-        The formatted template name.
-    """
-    formatted_name = to_kebab_case(name)
-    return formatted_name.removesuffix("-app").removesuffix("-template")

@@ -39,7 +39,7 @@ from reflex.utils.exceptions import (
     GeneratedCodeHasNoFunctionDefs,
     raise_system_package_missing_error,
 )
-from reflex.utils.format import format_library_name, format_template_name
+from reflex.utils.format import format_library_name
 from reflex.utils.registry import _get_npm_registry
 
 CURRENTLY_INSTALLING_NODE = False
@@ -1221,11 +1221,14 @@ def prompt_for_template_options(templates: list[Template]) -> str:
     # Show the user the URLs of each template to preview.
     console.print("\nGet started with a template:")
 
+    def format_demo_url_str(url: str) -> str:
+        return f" ({url})" if url else ""
+
     # Prompt the user to select a template.
     id_to_name = {
         str(
             idx
-        ): f"{template.name.replace('_', ' ').replace('-', ' ')} ({template.demo_url}) - {template.description}"
+        ): f"{template.name.replace('_', ' ').replace('-', ' ')}{format_demo_url_str(template.demo_url)} - {template.description}"
         for idx, template in enumerate(templates)
     }
     for id in range(len(id_to_name)):
@@ -1291,7 +1294,6 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
 
     filtered_templates = {}
     for tp in templates_data:
-        tp["name"] = format_template_name(tp["name"])
         if tp["hidden"] or tp["code_url"] is None:
             continue
         known_fields = set(f.name for f in dataclasses.fields(Template))
@@ -1580,14 +1582,14 @@ def get_init_cli_prompt_options() -> list[Template]:
         ),
         Template(
             name=constants.Templates.AI,
-            description="Generate a template using AI (Flexgen)",
-            demo_url=constants.Templates.REFLEX_BUILD_FRONTEND,
+            description="Generate a template using AI [Experimental]",
+            demo_url="",
             code_url="",
         ),
         Template(
             name=constants.Templates.CHOOSE_TEMPLATES,
             description="Choose an existing template.",
-            demo_url=constants.Templates.REFLEX_TEMPLATES_URL,
+            demo_url="",
             code_url="",
         ),
     ]
