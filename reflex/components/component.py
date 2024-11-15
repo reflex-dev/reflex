@@ -2521,17 +2521,14 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
                     "@emotion/react": [
                         ImportVar(tag="jsx"),
                     ],
-                }
-            ),
-            VarData(
-                imports=self._var_value._get_all_imports(),
-            ),
-            VarData(
-                imports={
                     "react": [
                         ImportVar(tag="Fragment"),
                     ],
-                }
+                },
+                components=(self._var_value,),
+            ),
+            VarData(
+                imports=self._var_value._get_all_imports(),
             ),
         )
 
