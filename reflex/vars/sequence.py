@@ -189,8 +189,11 @@ def string_contains_field_operation(
         The string contains operation.
     """
     return var_operation_return(
-        js_expression=f"{field.bool()} ? {haystack}.some(obj => obj[{field}] === {needle}) : {haystack}.some(obj => obj === {needle})",
+        js_expression=f"isTrue({field}) ? {haystack}.some(obj => obj[{field}] === {needle}) : {haystack}.some(obj => obj === {needle})",
         var_type=bool,
+        var_data=VarData(
+            imports=_IS_TRUE_IMPORT,
+        ),
     )
 
 
