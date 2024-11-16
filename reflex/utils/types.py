@@ -778,6 +778,24 @@ StateBases = get_base_class(StateVar)
 StateIterBases = get_base_class(StateIterVar)
 
 
+def safe_issubclass(cls: Any, class_or_tuple: Any, /) -> bool:
+    """Check if a class is a subclass of another class or a tuple of classes.
+
+    Args:
+        cls: The class to check.
+        class_or_tuple: The class or tuple of classes to check against.
+
+    Returns:
+        Whether the class is a subclass of the other class or tuple of classes.
+    """
+    try:
+        return issubclass(cls, class_or_tuple)
+    except TypeError as e:
+        raise TypeError(
+            f"Invalid arguments for issubclass: {cls}, {class_or_tuple}"
+        ) from e
+
+
 def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> bool:
     """Check if a type hint is a subclass of another type hint.
 
@@ -798,7 +816,7 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
 
     if provided_type_origin is None and accepted_type_origin is None:
         # In this case, we are dealing with a non-generic type, so we can use issubclass
-        return issubclass(possible_subclass, possible_superclass)
+        return safe_issubclass(possible_subclass, possible_superclass)
 
     # Remove this check when Python 3.10 is the minimum supported version
     if hasattr(types, "UnionType"):
@@ -835,17 +853,17 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
         iterable_type = accepted_args[0] if accepted_args else Any
 
         if provided_type_origin is None:
-            if not issubclass(
+            if not safe_issubclass(
                 possible_subclass, (accepted_type_origin or possible_superclass)
             ):
                 return False
 
-            if issubclass(possible_subclass, str) and not isinstance(
+            if safe_issubclass(possible_subclass, str) and not isinstance(
                 iterable_type, TypeVar
             ):
                 return typehint_issubclass(str, iterable_type)
 
-        if not issubclass(
+        if not safe_issubclass(
             provided_type_origin, (accepted_type_origin or possible_superclass)
         ):
             return False
@@ -867,7 +885,7 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
         return True
 
     # Check if the origin of both types is the same (e.g., list for List[int])
-    if not issubclass(
+    if not safe_issubclass(
         provided_type_origin or possible_subclass,
         accepted_type_origin or possible_superclass,
     ):
