@@ -862,6 +862,7 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
                 iterable_type, TypeVar
             ):
                 return typehint_issubclass(str, iterable_type)
+            return True
 
         if not safe_issubclass(
             provided_type_origin, (accepted_type_origin or possible_superclass)
