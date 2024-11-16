@@ -409,6 +409,51 @@ def string_split_operation(
     )
 
 
+def _element_type(array: Var, index: Var) -> Any:
+    array_args = typing.get_args(array._var_type)
+
+    if (
+        array_args
+        and isinstance(index, LiteralNumberVar)
+        and is_tuple_type(array._var_type)
+    ):
+        index_value = int(index._var_value)
+        return array_args[index_value % len(array_args)]
+
+    return unionize(*(array_arg for array_arg in array_args if array_arg is not ...))
+
+
+@var_operation
+def array_item_or_slice_operation(
+    array: Var[Sequence[INNER_ARRAY_VAR]],
+    index_or_slice: Var[Union[int, slice]],
+) -> CustomVarOperationReturn[Union[INNER_ARRAY_VAR, Sequence[INNER_ARRAY_VAR]]]:
+    """Get an item or slice from an array.
+
+    Args:
+        array: The array.
+        index_or_slice: The index or slice.
+
+    Returns:
+        The item or slice from the array.
+    """
+    return var_operation_return(
+        js_expression=f"Array.isArray({index_or_slice}) ? at_slice({array}, {index_or_slice}) : {array}.at({index_or_slice})",
+        type_computer=nary_type_computer(
+            ReflexCallable[[Sequence, Union[int, slice]], Any],
+            ReflexCallable[[Union[int, slice]], Any],
+            computer=lambda args: (
+                args[0]._var_type
+                if args[1]._var_type is slice
+                else (_element_type(args[0], args[1]))
+            ),
+        ),
+        var_data=VarData(
+            imports=_AT_SLICE_IMPORT,
+        ),
+    )
+
+
 @var_operation
 def array_slice_operation(
     array: Var[Sequence[INNER_ARRAY_VAR]],
@@ -424,7 +469,7 @@ def array_slice_operation(
         The item or slice from the array.
     """
     return var_operation_return(
-        js_expression=f"at_slice({array}, {slice})",
+        js_expression=f"atSlice({array}, {slice})",
         type_computer=nary_type_computer(
             ReflexCallable[[List, slice], Any],
             ReflexCallable[[slice], Any],
@@ -813,7 +858,9 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
 
     __add__ = array_concat_operation
 
-    __getitem__ = array_item_operation
+    __getitem__ = array_item_or_slice_operation
+
+    at = array_item_operation
 
     slice = array_slice_operation
 
