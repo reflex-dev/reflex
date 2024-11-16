@@ -1,4 +1,4 @@
-from typing import Dict, List, Set, Tuple, Union
+from typing import Dict, List, Sequence, Set, Tuple, Union
 
 import pytest
 
@@ -115,8 +115,10 @@ def display_colors_set(color):
     return box(text(color))
 
 
-def display_nested_list_element(element: ArrayVar[List[str]], index: NumberVar[int]):
-    assert element._var_type == List[str]
+def display_nested_list_element(
+    element: ArrayVar[Sequence[str]], index: NumberVar[int]
+):
+    assert element._var_type == Sequence[str]
     assert index._var_type is int
     return box(text(element[index]))
 

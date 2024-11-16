@@ -63,7 +63,7 @@ reflex-chakra = ">=0.6.0"
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.1.2,<9.0"
 pytest-mock = ">=3.10.0,<4.0"
-pyright = ">=1.1.229,<1.1.335"
+pyright = ">=1.1.229,<=1.1.389"
 darglint = ">=1.8.1,<2.0"
 dill = ">=0.3.8"
 toml = ">=0.10.2,<1.0"
@@ -88,6 +88,7 @@ requires = ["poetry-core>=1.5.1"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pyright]
+reportIncompatibleMethodOverride = false
 
 [tool.ruff]
 target-version = "py39"
