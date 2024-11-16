@@ -1264,6 +1264,7 @@ class VarWithDefault(Var[VAR_TYPE]):
         Args:
             default_value: The default value.
         """
+        super().__init__("")
         self._default = default_value
 
     @property

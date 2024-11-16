@@ -818,7 +818,7 @@ class LiteralSliceVar(CachedVarOperation, LiteralVar, SliceVar):
         """
         return cls(
             _js_expr="",
-            _var_type=_var_type,
+            _var_type=slice if _var_type is None else _var_type,
             _var_data=_var_data,
             _var_value=value,
         )
