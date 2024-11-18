@@ -151,6 +151,10 @@ class InvalidPropValueError(ReflexError):
     """Raised when a prop value is invalid."""
 
 
+class StateTooLargeError(ReflexError):
+    """Raised when the state is too large to be serialized."""
+
+
 class SystemPackageMissingError(ReflexError):
     """Raised when a system package is missing."""
 

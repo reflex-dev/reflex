@@ -43,7 +43,7 @@ from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
 from reflex import event
-from reflex.config import get_config
+from reflex.config import PerformanceMode, get_config
 from reflex.istate.data import RouterData
 from reflex.istate.storage import ClientStorageBase
 from reflex.model import Model
@@ -89,6 +89,7 @@ from reflex.utils.exceptions import (
     LockExpiredError,
     SetUndefinedStateVarError,
     StateSchemaMismatchError,
+    StateTooLargeError,
 )
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import serializer
@@ -109,10 +110,11 @@ Delta = Dict[str, Any]
 var = computed_var
 
 
-# If the state is this large, it's considered a performance issue.
-TOO_LARGE_SERIALIZED_STATE = 100 * 1024  # 100kb
-# Only warn about each state class size once.
-_WARNED_ABOUT_STATE_SIZE: Set[str] = set()
+if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
+    # If the state is this large, it's considered a performance issue.
+    TOO_LARGE_SERIALIZED_STATE = environment.REFLEX_STATE_SIZE_LIMIT.get() * 1024
+    # Only warn about each state class size once.
+    _WARNED_ABOUT_STATE_SIZE: Set[str] = set()
 
 # Errors caught during pickling of state
 HANDLED_PICKLE_ERRORS = (
@@ -2092,7 +2094,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             state["__dict__"].pop(inherited_var_name, None)
         return state
 
-    def _warn_if_too_large(
+    def _check_state_size(
         self,
         pickle_state_size: int,
     ):
@@ -2100,6 +2102,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Args:
             pickle_state_size: The size of the pickled state.
+
+        Raises:
+            StateTooLargeError: If the state is too large.
         """
         state_full_name = self.get_full_name()
         if (
@@ -2107,10 +2112,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             and pickle_state_size > TOO_LARGE_SERIALIZED_STATE
             and self.substates
         ):
-            console.warn(
+            msg = (
                 f"State {state_full_name} serializes to {pickle_state_size} bytes "
-                "which may present performance issues. Consider reducing the size of this state."
+                + "which may present performance issues. Consider reducing the size of this state."
             )
+            if environment.REFLEX_PERF_MODE.get() == PerformanceMode.WARN:
+                console.warn(msg)
+            elif environment.REFLEX_PERF_MODE.get() == PerformanceMode.RAISE:
+                raise StateTooLargeError(msg)
             _WARNED_ABOUT_STATE_SIZE.add(state_full_name)
 
     @classmethod
@@ -2152,7 +2161,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         try:
             pickle_state = pickle.dumps((self._to_schema(), self))
-            self._warn_if_too_large(len(pickle_state))
+            if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
+                self._check_state_size(len(pickle_state))
             return pickle_state
         except HANDLED_PICKLE_ERRORS as og_pickle_error:
             error = (
