@@ -11,7 +11,7 @@ import reflex.constants as constants
 def test_shared_asset() -> None:
     """Test shared assets."""
     # The asset function copies a file to the app's external assets directory.
-    asset = rx._x.asset(path="custom_script.js", shared=True, subfolder="subfolder")
+    asset = rx.asset(path="custom_script.js", shared=True, subfolder="subfolder")
     assert asset == "/external/test_assets/subfolder/custom_script.js"
     result_file = Path(
         Path.cwd(), "assets/external/test_assets/subfolder/custom_script.js"
@@ -19,10 +19,10 @@ def test_shared_asset() -> None:
     assert result_file.exists()
 
     # Running a second time should not raise an error.
-    asset = rx._x.asset(path="custom_script.js", shared=True, subfolder="subfolder")
+    asset = rx.asset(path="custom_script.js", shared=True, subfolder="subfolder")
 
     # Test the asset function without a subfolder.
-    asset = rx._x.asset(path="custom_script.js", shared=True)
+    asset = rx.asset(path="custom_script.js", shared=True)
     assert asset == "/external/test_assets/custom_script.js"
     result_file = Path(Path.cwd(), "assets/external/test_assets/custom_script.js")
     assert result_file.exists()
@@ -31,10 +31,23 @@ def test_shared_asset() -> None:
     shutil.rmtree(Path.cwd() / "assets/external")
 
     with pytest.raises(FileNotFoundError):
-        asset = rx._x.asset("non_existent_file.js")
+        asset = rx.asset("non_existent_file.js")
 
     # Nothing is done to assets when file does not exist.
     assert not Path(Path.cwd() / "assets/external").exists()
+
+
+def test_deprecated_x_asset(capsys) -> None:
+    """Test that the deprecated asset function raises a warning.
+
+    Args:
+        capsys: Pytest fixture that captures stdout and stderr.
+    """
+    assert rx.asset("custom_script.js", shared=True) == rx._x.asset("custom_script.js")
+    assert (
+        "DeprecationWarning: rx._x.asset has been deprecated in version 0.6.6"
+        in capsys.readouterr().out
+    )
 
 
 @pytest.mark.parametrize(
@@ -52,7 +65,7 @@ def test_invalid_assets(path: str, shared: bool) -> None:
         shared: Whether the asset should be shared.
     """
     with pytest.raises(FileNotFoundError):
-        _ = rx._x.asset(path, shared=shared)
+        _ = rx.asset(path, shared=shared)
 
 
 @pytest.fixture
@@ -77,5 +90,5 @@ def test_local_asset(custom_script_in_asset_dir: Path) -> None:
         custom_script_in_asset_dir: Fixture that creates a custom_script.js file in the app's assets directory.
 
     """
-    asset = rx._x.asset("custom_script.js", shared=False)
+    asset = rx.asset("custom_script.js", shared=False)
     assert asset == "/custom_script.js"
