@@ -705,6 +705,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
 def redirect(
     path: str | Var[str],
     external: Optional[bool] = False,
+    is_external: Optional[bool] = False,
     replace: Optional[bool] = False,
 ) -> EventSpec:
     """Redirect to a new path.
@@ -712,16 +713,26 @@ def redirect(
     Args:
         path: The path to redirect to.
         external: Whether to open in new tab or not.
+        is_external: Whether to open in new tab or not.
         replace: If True, the current page will not create a new history entry.
 
     Returns:
         An event to redirect to the path.
     """
+    if external:
+        console.deprecate(
+            "The `external` prop in `rx.redirect`",
+            "use `is_external` instead.",
+            "0.6.6",
+            "0.7.0",
+        )
+        is_external = external
+
     return server_side(
         "_redirect",
         get_fn_signature(redirect),
         path=path,
-        external=external,
+        external=is_external,
         replace=replace,
     )
 
