@@ -7,7 +7,8 @@ from typing import Any, Dict, Iterable, Literal, Optional, Union, overload
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.el.elements.typography import Li, Ol, Ul
-from reflex.event import EventType
+from reflex.components.markdown.markdown import MarkdownComponentMap
+from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
@@ -29,13 +30,12 @@ LiteralListStyleTypeOrdered = Literal[
     "katakana",
 ]
 
-class BaseList(Component):
+class BaseList(Component, MarkdownComponentMap):
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Union[Iterable, Var[Iterable]]] = None,
         list_style_type: Optional[
             Union[
                 Literal[
@@ -78,35 +78,36 @@ class BaseList(Component):
                 ],
             ]
         ] = None,
+        items: Optional[Union[Iterable, Var[Iterable]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "BaseList":
         """Create a list component.
 
         Args:
             *children: The children of the component.
-            items: A list of items to add to the list.
             list_style_type: The style of the list. Default to "none".
+            items: A list of items to add to the list.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -129,8 +130,49 @@ class UnorderedList(BaseList, Ul):
     def create(  # type: ignore
         cls,
         *children,
+        list_style_type: Optional[
+            Union[
+                Literal[
+                    "armenian",
+                    "decimal",
+                    "decimal-leading-zero",
+                    "georgian",
+                    "hiragana",
+                    "katakana",
+                    "lower-alpha",
+                    "lower-greek",
+                    "lower-latin",
+                    "lower-roman",
+                    "none",
+                    "upper-alpha",
+                    "upper-latin",
+                    "upper-roman",
+                ],
+                Literal["circle", "disc", "none", "square"],
+                Var[
+                    Union[
+                        Literal[
+                            "armenian",
+                            "decimal",
+                            "decimal-leading-zero",
+                            "georgian",
+                            "hiragana",
+                            "katakana",
+                            "lower-alpha",
+                            "lower-greek",
+                            "lower-latin",
+                            "lower-roman",
+                            "none",
+                            "upper-alpha",
+                            "upper-latin",
+                            "upper-roman",
+                        ],
+                        Literal["circle", "disc", "none", "square"],
+                    ]
+                ],
+            ]
+        ] = None,
         items: Optional[Union[Iterable, Var[Iterable]]] = None,
-        list_style_type: Optional[LiteralListStyleTypeUnordered] = "disc",
         access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_capitalize: Optional[
             Union[Var[Union[bool, int, str]], bool, int, str]
@@ -160,30 +202,30 @@ class UnorderedList(BaseList, Ul):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "UnorderedList":
-        """Create a unordered list component.
+        """Create an unordered list component.
 
         Args:
             *children: The children of the component.
+            list_style_type: The style of the list. Default to "none".
             items: A list of items to add to the list.
-            list_style_type: The style of the list.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -220,8 +262,49 @@ class OrderedList(BaseList, Ol):
     def create(  # type: ignore
         cls,
         *children,
+        list_style_type: Optional[
+            Union[
+                Literal[
+                    "armenian",
+                    "decimal",
+                    "decimal-leading-zero",
+                    "georgian",
+                    "hiragana",
+                    "katakana",
+                    "lower-alpha",
+                    "lower-greek",
+                    "lower-latin",
+                    "lower-roman",
+                    "none",
+                    "upper-alpha",
+                    "upper-latin",
+                    "upper-roman",
+                ],
+                Literal["circle", "disc", "none", "square"],
+                Var[
+                    Union[
+                        Literal[
+                            "armenian",
+                            "decimal",
+                            "decimal-leading-zero",
+                            "georgian",
+                            "hiragana",
+                            "katakana",
+                            "lower-alpha",
+                            "lower-greek",
+                            "lower-latin",
+                            "lower-roman",
+                            "none",
+                            "upper-alpha",
+                            "upper-latin",
+                            "upper-roman",
+                        ],
+                        Literal["circle", "disc", "none", "square"],
+                    ]
+                ],
+            ]
+        ] = None,
         items: Optional[Union[Iterable, Var[Iterable]]] = None,
-        list_style_type: Optional[LiteralListStyleTypeOrdered] = "decimal",
         reversed: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         start: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         type: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
@@ -254,30 +337,30 @@ class OrderedList(BaseList, Ol):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "OrderedList":
         """Create an ordered list component.
 
         Args:
             *children: The children of the component.
+            list_style_type: The style of the list. Default to "none".
             items: A list of items to add to the list.
-            list_style_type: The style of the list.
             reversed: Reverses the order of the list.
             start: Specifies the start value of the first list item in an ordered list.
             type: Specifies the kind of marker to use in the list (letters or numbers).
@@ -311,7 +394,7 @@ class OrderedList(BaseList, Ol):
         """
         ...
 
-class ListItem(Li):
+class ListItem(Li, MarkdownComponentMap):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -346,22 +429,22 @@ class ListItem(Li):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "ListItem":
         """Create a list item component.
@@ -406,7 +489,6 @@ class List(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        items: Optional[Union[Iterable, Var[Iterable]]] = None,
         list_style_type: Optional[
             Union[
                 Literal[
@@ -449,35 +531,36 @@ class List(ComponentNamespace):
                 ],
             ]
         ] = None,
+        items: Optional[Union[Iterable, Var[Iterable]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "BaseList":
         """Create a list component.
 
         Args:
             *children: The children of the component.
-            items: A list of items to add to the list.
             list_style_type: The style of the list. Default to "none".
+            items: A list of items to add to the list.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

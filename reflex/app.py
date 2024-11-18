@@ -12,7 +12,6 @@ import inspect
 import io
 import json
 import multiprocessing
-import os
 import platform
 import sys
 import traceback
@@ -25,6 +24,7 @@ from typing import (
     Callable,
     Coroutine,
     Dict,
+    Generic,
     List,
     Optional,
     Set,
@@ -46,13 +46,9 @@ from starlette_admin.contrib.sqla.view import ModelView
 from reflex import constants
 from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
-from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
-from reflex.compiler.compiler import (
-    ExecutorSafeFunctions,
-    compile_theme,
-)
+from reflex.compiler.compiler import ExecutorSafeFunctions, compile_theme
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.error_boundary import ErrorBoundary
 from reflex.components.base.fragment import Fragment
@@ -70,11 +66,17 @@ from reflex.components.core.client_side_routing import (
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
 from reflex.config import environment, get_config
-from reflex.event import Event, EventHandler, EventSpec, window_alert
-from reflex.model import Model, get_db_status
-from reflex.page import (
-    DECORATED_PAGES,
+from reflex.event import (
+    BASE_STATE,
+    Event,
+    EventHandler,
+    EventSpec,
+    EventType,
+    IndividualEventType,
+    window_alert,
 )
+from reflex.model import Model, get_db_status
+from reflex.page import DECORATED_PAGES
 from reflex.route import (
     get_route_args,
     replace_brackets_with_keywords,
@@ -90,7 +92,7 @@ from reflex.state import (
     code_uses_state_contexts,
 )
 from reflex.utils import codespaces, console, exceptions, format, prerequisites, types
-from reflex.utils.exec import is_prod_mode, is_testing_env, should_skip_compile
+from reflex.utils.exec import is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
 
 if TYPE_CHECKING:
@@ -181,7 +183,7 @@ class OverlayFragment(Fragment):
 @dataclasses.dataclass(
     frozen=True,
 )
-class UnevaluatedPage:
+class UnevaluatedPage(Generic[BASE_STATE]):
     """An uncompiled page."""
 
     component: Union[Component, ComponentCallable]
@@ -189,11 +191,12 @@ class UnevaluatedPage:
     title: Union[Var, str, None]
     description: Union[Var, str, None]
     image: str
-    on_load: Union[EventHandler, EventSpec, List[Union[EventHandler, EventSpec]], None]
+    on_load: Union[EventType[[], BASE_STATE], None]
     meta: List[Dict[str, str]]
 
 
-class App(MiddlewareMixin, LifespanMixin, Base):
+@dataclasses.dataclass()
+class App(MiddlewareMixin, LifespanMixin):
     """The main Reflex app that encapsulates the backend and frontend.
 
     Every Reflex app needs an app defined in its main module.
@@ -215,24 +218,26 @@ class App(MiddlewareMixin, LifespanMixin, Base):
     """
 
     # The global [theme](https://reflex.dev/docs/styling/theming/#theme) for the entire app.
-    theme: Optional[Component] = themes.theme(accent_color="blue")
+    theme: Optional[Component] = dataclasses.field(
+        default_factory=lambda: themes.theme(accent_color="blue")
+    )
 
     # The [global style](https://reflex.dev/docs/styling/overview/#global-styles}) for the app.
-    style: ComponentStyle = {}
+    style: ComponentStyle = dataclasses.field(default_factory=dict)
 
     # A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
-    stylesheets: List[str] = []
+    stylesheets: List[str] = dataclasses.field(default_factory=list)
 
     # A component that is present on every page (defaults to the Connection Error banner).
     overlay_component: Optional[Union[Component, ComponentCallable]] = (
-        default_overlay_component()
+        dataclasses.field(default_factory=default_overlay_component)
     )
 
     # Error boundary component to wrap the app with.
     error_boundary: Optional[ComponentCallable] = default_error_boundary
 
     # Components to add to the head of every page.
-    head_components: List[Component] = []
+    head_components: List[Component] = dataclasses.field(default_factory=list)
 
     # The Socket.IO AsyncServer instance.
     sio: Optional[AsyncServer] = None
@@ -244,10 +249,12 @@ class App(MiddlewareMixin, LifespanMixin, Base):
     html_custom_attrs: Optional[Dict[str, str]] = None
 
     # A map from a route to an unevaluated page. PRIVATE.
-    unevaluated_pages: Dict[str, UnevaluatedPage] = {}
+    unevaluated_pages: Dict[str, UnevaluatedPage] = dataclasses.field(
+        default_factory=dict
+    )
 
     # A map from a page route to the component to render. Users should use `add_page`. PRIVATE.
-    pages: Dict[str, Component] = {}
+    pages: Dict[str, Component] = dataclasses.field(default_factory=dict)
 
     # The backend API object. PRIVATE.
     api: FastAPI = None  # type: ignore
@@ -259,7 +266,9 @@ class App(MiddlewareMixin, LifespanMixin, Base):
     _state_manager: Optional[StateManager] = None
 
     # Mapping from a route to event handlers to trigger when the page loads. PRIVATE.
-    load_events: Dict[str, List[Union[EventHandler, EventSpec]]] = {}
+    load_events: Dict[str, List[IndividualEventType[[], Any]]] = dataclasses.field(
+        default_factory=dict
+    )
 
     # Admin dashboard to view and manage the database. PRIVATE.
     admin_dash: Optional[AdminDash] = None
@@ -268,7 +277,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
     event_namespace: Optional[EventNamespace] = None
 
     # Background tasks that are currently running. PRIVATE.
-    background_tasks: Set[asyncio.Task] = set()
+    background_tasks: Set[asyncio.Task] = dataclasses.field(default_factory=set)
 
     # Frontend Error Handler Function
     frontend_exception_handler: Callable[[Exception], None] = (
@@ -280,23 +289,14 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         [Exception], Union[EventSpec, List[EventSpec], None]
     ] = default_backend_exception_handler
 
-    def __init__(self, **kwargs):
+    def __post_init__(self):
         """Initialize the app.
-
-        Args:
-            **kwargs: Kwargs to initialize the app with.
 
         Raises:
             ValueError: If the event namespace is not provided in the config.
                         Also, if there are multiple client subclasses of rx.BaseState(Subclasses of rx.BaseState should consist
                         of the DefaultState and the client app state).
         """
-        if "connect_error_component" in kwargs:
-            raise ValueError(
-                "`connect_error_component` is deprecated, use `overlay_component` instead"
-            )
-        super().__init__(**kwargs)
-
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
         if not is_testing_env() and BaseState.__subclasses__() != [State]:
             # Only rx.State is allowed as Base State subclass.
@@ -471,9 +471,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         title: str | Var | None = None,
         description: str | Var | None = None,
         image: str = constants.DefaultPage.IMAGE,
-        on_load: (
-            EventHandler | EventSpec | list[EventHandler | EventSpec] | None
-        ) = None,
+        on_load: EventType[[], BASE_STATE] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
     ):
         """Add a page to the app.
@@ -505,7 +503,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         # Check if the route given is valid
         verify_route_validity(route)
 
-        if route in self.unevaluated_pages and os.getenv(constants.RELOAD_CONFIG):
+        if route in self.unevaluated_pages and environment.RELOAD_CONFIG.is_set():
             # when the app is reloaded(typically for app harness tests), we should maintain
             # the latest render function of a route.This applies typically to decorated pages
             # since they are only added when app._compile is called.
@@ -549,7 +547,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             route: The route of the page to compile.
         """
         component, enable_state = compiler.compile_unevaluated_page(
-            route, self.unevaluated_pages[route], self.state
+            route, self.unevaluated_pages[route], self.state, self.style, self.theme
         )
 
         if enable_state:
@@ -559,7 +557,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         self._check_routes_conflict(route)
         self.pages[route] = component
 
-    def get_load_events(self, route: str) -> list[EventHandler | EventSpec]:
+    def get_load_events(self, route: str) -> list[IndividualEventType[[], Any]]:
         """Get the load events for a route.
 
         Args:
@@ -618,9 +616,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         title: str = constants.Page404.TITLE,
         image: str = constants.Page404.IMAGE,
         description: str = constants.Page404.DESCRIPTION,
-        on_load: (
-            EventHandler | EventSpec | list[EventHandler | EventSpec] | None
-        ) = None,
+        on_load: EventType[[], BASE_STATE] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
     ):
         """Define a custom 404 page for any url having no match.
@@ -724,7 +720,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             Whether the app should be compiled.
         """
         # Check the environment variable.
-        if should_skip_compile():
+        if environment.REFLEX_SKIP_COMPILE.get():
             return False
 
         nocompile = prerequisites.get_web_dir() / constants.NOCOMPILE_FILE
@@ -842,6 +838,21 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         if constants.Page404.SLUG not in self.unevaluated_pages:
             self.add_custom_404_page()
 
+        # Fix up the style.
+        self.style = evaluate_style_namespaces(self.style)
+
+        # Add the app wrappers.
+        app_wrappers: Dict[tuple[int, str], Component] = {
+            # Default app wrap component renders {children}
+            (0, "AppWrap"): AppWrap.create()
+        }
+
+        if self.theme is not None:
+            # If a theme component was provided, wrap the app with it
+            app_wrappers[(20, "Theme")] = self.theme
+            # Fix #2992 by removing the top-level appearance prop
+            self.theme.appearance = None
+
         for route in self.unevaluated_pages:
             self._compile_page(route)
 
@@ -868,7 +879,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         progress.start()
         task = progress.add_task(
             f"[{get_compilation_time()}] Compiling:",
-            total=len(self.unevaluated_pages)
+            total=len(self.pages)
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,
         )
@@ -879,23 +890,40 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         # Store the compile results.
         compile_results = []
 
-        # Add the app wrappers.
-        app_wrappers: Dict[tuple[int, str], Component] = {
-            # Default app wrap component renders {children}
-            (0, "AppWrap"): AppWrap.create()
-        }
-        if self.theme is not None:
-            # If a theme component was provided, wrap the app with it
-            app_wrappers[(20, "Theme")] = self.theme
-
         progress.advance(task)
-
-        # Fix up the style.
-        self.style = evaluate_style_namespaces(self.style)
 
         # Track imports and custom components found.
         all_imports = {}
         custom_components = set()
+
+        # This has to happen before compiling stateful components as that
+        # prevents recursive functions from reaching all components.
+        for component in self.pages.values():
+            # Add component._get_all_imports() to all_imports.
+            all_imports.update(component._get_all_imports())
+
+            # Add the app wrappers from this component.
+            app_wrappers.update(component._get_all_app_wrap_components())
+
+            # Add the custom components from the page to the set.
+            custom_components |= component._get_all_custom_components()
+
+        # Perform auto-memoization of stateful components.
+        (
+            stateful_components_path,
+            stateful_components_code,
+            page_components,
+        ) = compiler.compile_stateful_components(self.pages.values())
+
+        progress.advance(task)
+
+        # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
+        if code_uses_state_contexts(stateful_components_code) and self.state is None:
+            raise ReflexRuntimeError(
+                "To access rx.State in frontend components, at least one "
+                "subclass of rx.State must be defined in the app."
+            )
+        compile_results.append((stateful_components_path, stateful_components_code))
 
         progress.advance(task)
 
@@ -908,10 +936,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             )
         )
 
-        # Fix #2992 by removing the top-level appearance prop
-        if self.theme is not None:
-            self.theme.appearance = None
-
         progress.advance(task)
 
         # Use a forking process pool, if possible.  Much faster, especially for large sites.
@@ -919,7 +943,7 @@ class App(MiddlewareMixin, LifespanMixin, Base):
         executor = None
         if (
             platform.system() in ("Linux", "Darwin")
-            and (number_of_processes := environment.REFLEX_COMPILE_PROCESSES)
+            and (number_of_processes := environment.REFLEX_COMPILE_PROCESSES.get())
             is not None
         ):
             executor = concurrent.futures.ProcessPoolExecutor(
@@ -928,45 +952,21 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             )
         else:
             executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=environment.REFLEX_COMPILE_THREADS
+                max_workers=environment.REFLEX_COMPILE_THREADS.get()
             )
 
-        for route, component in self.pages.items():
-            component._add_style_recursive(self.style, self.theme)
-
+        for route, component in zip(self.pages, page_components):
             ExecutorSafeFunctions.COMPONENTS[route] = component
-
-        for route, page in self.unevaluated_pages.items():
-            if route in self.pages:
-                continue
-
-            ExecutorSafeFunctions.UNCOMPILED_PAGES[route] = page
 
         ExecutorSafeFunctions.STATE = self.state
 
-        pages_results = []
-
         with executor:
             result_futures = []
-            pages_futures = []
 
             def _submit_work(fn, *args, **kwargs):
                 f = executor.submit(fn, *args, **kwargs)
                 # f = executor.apipe(fn, *args, **kwargs)
                 result_futures.append(f)
-
-            # Compile all page components.
-            for route in self.unevaluated_pages:
-                if route in self.pages:
-                    continue
-
-                f = executor.submit(
-                    ExecutorSafeFunctions.compile_unevaluated_page,
-                    route,
-                    self.style,
-                    self.theme,
-                )
-                pages_futures.append(f)
 
             # Compile the pre-compiled pages.
             for route in self.pages:
@@ -994,42 +994,6 @@ class App(MiddlewareMixin, LifespanMixin, Base):
             for future in concurrent.futures.as_completed(result_futures):
                 compile_results.append(future.result())
                 progress.advance(task)
-
-            for future in concurrent.futures.as_completed(pages_futures):
-                pages_results.append(future.result())
-                progress.advance(task)
-
-        for route, component, compiled_page in pages_results:
-            self._check_routes_conflict(route)
-            self.pages[route] = component
-            compile_results.append(compiled_page)
-
-        for _, component in self.pages.items():
-            # Add component._get_all_imports() to all_imports.
-            all_imports.update(component._get_all_imports())
-
-            # Add the app wrappers from this component.
-            app_wrappers.update(component._get_all_app_wrap_components())
-
-            # Add the custom components from the page to the set.
-            custom_components |= component._get_all_custom_components()
-
-        # Perform auto-memoization of stateful components.
-        (
-            stateful_components_path,
-            stateful_components_code,
-            page_components,
-        ) = compiler.compile_stateful_components(self.pages.values())
-
-        progress.advance(task)
-
-        # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
-        if code_uses_state_contexts(stateful_components_code) and self.state is None:
-            raise ReflexRuntimeError(
-                "To access rx.State in frontend components, at least one "
-                "subclass of rx.State must be defined in the app."
-            )
-        compile_results.append((stateful_components_path, stateful_components_code))
 
         app_root = self._app_root(app_wrappers=app_wrappers)
 
@@ -1423,7 +1387,7 @@ def upload(app: App):
         if isinstance(func, EventHandler):
             if func.is_background:
                 raise UploadTypeError(
-                    f"@rx.background is not supported for upload handler `{handler}`.",
+                    f"@rx.event(background=True) is not supported for upload handler `{handler}`.",
                 )
             func = func.fn
         if isinstance(func, functools.partial):

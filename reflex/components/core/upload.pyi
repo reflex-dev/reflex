@@ -6,13 +6,10 @@
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional, Union, overload
 
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
 from reflex.constants import Dirs
-from reflex.event import (
-    CallableEventSpec,
-    EventSpec,
-    EventType,
-)
+from reflex.event import BASE_STATE, CallableEventSpec, EventSpec, EventType
 from reflex.style import Style
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
@@ -53,28 +50,78 @@ class UploadFilesProvider(Component):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "UploadFilesProvider":
         """Create the component.
 
         Args:
             *children: The children of the component.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The props of the component.
+
+        Returns:
+            The component.
+        """
+        ...
+
+class GhostUpload(Fragment):
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_drop: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[Any], BASE_STATE]]
+        ] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
+        **props,
+    ) -> "GhostUpload":
+        """Create the component.
+
+        Args:
+            *children: The children of the component.
+            on_drop: Fired when files are dropped.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -110,23 +157,25 @@ class Upload(MemoizationLeaf):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_drop: Optional[EventType[Any]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_drop: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[Any], BASE_STATE]]
+        ] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "Upload":
         """Create an upload component.
@@ -142,6 +191,7 @@ class Upload(MemoizationLeaf):
             no_click: Whether to disable click to upload.
             no_drag: Whether to disable drag and drop.
             no_keyboard: Whether to disable using the space/enter keys to upload.
+            on_drop: Fired when files are dropped.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -175,23 +225,25 @@ class StyledUpload(Upload):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_drop: Optional[EventType[Any]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_drop: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[Any], BASE_STATE]]
+        ] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "StyledUpload":
         """Create the styled upload component.
@@ -207,6 +259,7 @@ class StyledUpload(Upload):
             no_click: Whether to disable click to upload.
             no_drag: Whether to disable drag and drop.
             no_keyboard: Whether to disable using the space/enter keys to upload.
+            on_drop: Fired when files are dropped.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -240,23 +293,25 @@ class UploadNamespace(ComponentNamespace):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_drop: Optional[EventType[Any]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_drop: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[Any], BASE_STATE]]
+        ] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "StyledUpload":
         """Create the styled upload component.
@@ -272,6 +327,7 @@ class UploadNamespace(ComponentNamespace):
             no_click: Whether to disable click to upload.
             no_drag: Whether to disable drag and drop.
             no_keyboard: Whether to disable using the space/enter keys to upload.
+            on_drop: Fired when files are dropped.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

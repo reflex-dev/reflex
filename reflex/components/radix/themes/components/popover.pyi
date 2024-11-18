@@ -8,7 +8,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.el import elements
-from reflex.event import EventType
+from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
@@ -22,28 +22,31 @@ class PopoverRoot(RadixThemesComponent):
         *children,
         open: Optional[Union[Var[bool], bool]] = None,
         modal: Optional[Union[Var[bool], bool]] = None,
+        default_open: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_open_change: Optional[EventType[bool]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_open_change: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[bool], BASE_STATE]]
+        ] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "PopoverRoot":
         """Create a new component instance.
@@ -55,6 +58,8 @@ class PopoverRoot(RadixThemesComponent):
             *children: Child components.
             open: The controlled open state of the popover.
             modal: The modality of the popover. When set to true, interaction with outside elements will be disabled and only popover content will be visible to screen readers.
+            on_open_change: Fired when the open state changes.
+            default_open: The open state of the popover when it is initially rendered. Use when you do not need to control its open state.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -79,22 +84,22 @@ class PopoverTrigger(RadixThemesTriggerComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "PopoverTrigger":
         """Create a new RadixThemesTriggerComponent instance.
@@ -141,6 +146,18 @@ class PopoverContent(elements.Div, RadixThemesComponent):
         ] = None,
         align_offset: Optional[Union[Var[int], int]] = None,
         avoid_collisions: Optional[Union[Var[bool], bool]] = None,
+        collision_padding: Optional[
+            Union[
+                Dict[str, Union[float, int]],
+                Var[Union[Dict[str, Union[float, int]], float, int]],
+                float,
+                int,
+            ]
+        ] = None,
+        sticky: Optional[
+            Union[Literal["always", "partial"], Var[Literal["always", "partial"]]]
+        ] = None,
+        hide_when_detached: Optional[Union[Var[bool], bool]] = None,
         access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_capitalize: Optional[
             Union[Var[Union[bool, int, str]], bool, int, str]
@@ -170,28 +187,28 @@ class PopoverContent(elements.Div, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_close_auto_focus: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_escape_key_down: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_focus_outside: Optional[EventType[[]]] = None,
-        on_interact_outside: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_open_auto_focus: Optional[EventType[[]]] = None,
-        on_pointer_down_outside: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_close_auto_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_escape_key_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus_outside: Optional[EventType[[], BASE_STATE]] = None,
+        on_interact_outside: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_open_auto_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_pointer_down_outside: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "PopoverContent":
         """Create a new component instance.
@@ -207,6 +224,15 @@ class PopoverContent(elements.Div, RadixThemesComponent):
             align: The preferred alignment against the anchor. May change when collisions occur.
             align_offset: The vertical distance in pixels from the anchor.
             avoid_collisions: When true, overrides the side andalign preferences to prevent collisions with boundary edges.
+            collision_padding: The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
+            sticky: The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
+            hide_when_detached: Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
+            on_open_auto_focus: Fired when the dialog is opened.
+            on_close_auto_focus: Fired when the dialog is closed.
+            on_escape_key_down: Fired when the escape key is pressed.
+            on_pointer_down_outside: Fired when the pointer is down outside the dialog.
+            on_focus_outside: Fired when focus moves outside the dialog.
+            on_interact_outside: Fired when the pointer interacts outside the dialog.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -247,22 +273,22 @@ class PopoverClose(RadixThemesTriggerComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "PopoverClose":
         """Create a new RadixThemesTriggerComponent instance.

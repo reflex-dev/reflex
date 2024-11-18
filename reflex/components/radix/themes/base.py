@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, Literal
 
 from reflex.components import Component
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.tags import Tag
 from reflex.config import get_config
 from reflex.utils.imports import ImportDict, ImportVar
@@ -74,6 +75,31 @@ class CommonMarginProps(Component):
     ml: Var[LiteralSpacing]
 
 
+class CommonPaddingProps(Component):
+    """Many radix-themes elements accept shorthand padding props."""
+
+    # Padding: "0" - "9"
+    p: Var[Responsive[LiteralSpacing]]
+
+    # Padding horizontal: "0" - "9"
+    px: Var[Responsive[LiteralSpacing]]
+
+    # Padding vertical: "0" - "9"
+    py: Var[Responsive[LiteralSpacing]]
+
+    # Padding top: "0" - "9"
+    pt: Var[Responsive[LiteralSpacing]]
+
+    # Padding right: "0" - "9"
+    pr: Var[Responsive[LiteralSpacing]]
+
+    # Padding bottom: "0" - "9"
+    pb: Var[Responsive[LiteralSpacing]]
+
+    # Padding left: "0" - "9"
+    pl: Var[Responsive[LiteralSpacing]]
+
+
 class RadixLoadingProp(Component):
     """Base class for components that can be in a loading state."""
 
@@ -85,6 +111,9 @@ class RadixThemesComponent(Component):
     """Base class for all @radix-ui/themes components."""
 
     library = "@radix-ui/themes@^3.0.0"
+
+    # Temporary pin < 3.1.5 until radix-ui/themes#627 is resolved.
+    library = library + " && <3.1.5"
 
     # "Fake" prop color_scheme is used to avoid shadowing CSS prop "color".
     _rename_props: Dict[str, str] = {"colorScheme": "color"}
@@ -236,7 +265,7 @@ class Theme(RadixThemesComponent):
         tag = super()._render(props)
         tag.add_props(
             css=Var(
-                _js_expr=f"{{...theme.styles.global[':root'], ...theme.styles.global.body}}"
+                _js_expr="{...theme.styles.global[':root'], ...theme.styles.global.body}"
             ),
         )
         return tag

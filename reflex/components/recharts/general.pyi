@@ -7,13 +7,11 @@ from typing import Any, Dict, List, Literal, Optional, Union, overload
 
 from reflex.components.component import MemoizationLeaf
 from reflex.constants.colors import Color
-from reflex.event import EventType
+from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
-from .recharts import (
-    Recharts,
-)
+from .recharts import Recharts
 
 class ResponsiveContainer(Recharts, MemoizationLeaf):
     @overload
@@ -32,23 +30,23 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_resize: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_resize: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "ResponsiveContainer":
         """Create a new memoization leaf component.
@@ -61,6 +59,7 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
             min_width: The minimum width of chart container. Number
             min_height: The minimum height of chart container. Number
             debounce: If specified a positive number, debounced function will be used to handle the resize event. Default: 0
+            on_resize: If specified provides a callback providing the updated chart width and height values.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -142,22 +141,22 @@ class Legend(Recharts):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "Legend":
         """Create the component.
@@ -175,6 +174,14 @@ class Legend(Recharts):
             chart_width: The width of chart container, usually calculated internally.
             chart_height: The height of chart container, usually calculated internally.
             margin: The margin of chart container, usually calculated internally.
+            on_click: The customized event handler of click on the items in this group
+            on_mouse_down: The customized event handler of mousedown on the items in this group
+            on_mouse_up: The customized event handler of mouseup on the items in this group
+            on_mouse_move: The customized event handler of mousemove on the items in this group
+            on_mouse_over: The customized event handler of mouseover on the items in this group
+            on_mouse_out: The customized event handler of mouseout on the items in this group
+            on_mouse_enter: The customized event handler of mouseenter on the items in this group
+            on_mouse_leave: The customized event handler of mouseleave on the items in this group
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -224,44 +231,44 @@ class GraphingTooltip(Recharts):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "GraphingTooltip":
         """Create the component.
 
         Args:
             *children: The children of the component.
-            separator: The separator between name and value.
-            offset: The offset size of tooltip. Number
-            filter_null: When an item of the payload has value null or undefined, this item won't be displayed.
-            cursor: If set false, no cursor will be drawn when tooltip is active.
+            separator: The separator between name and value. Default: ":"
+            offset: The offset size of tooltip. Number. Default: 10
+            filter_null: When an item of the payload has value null or undefined, this item won't be displayed. Default: True
+            cursor: If set false, no cursor will be drawn when tooltip is active. Default: {"strokeWidth": 1, "fill": rx.color("gray", 3)}
             view_box: The box of viewing area, which has the shape of {x: someVal, y: someVal, width: someVal, height: someVal}, usually calculated internally.
-            item_style: The style of default tooltip content item which is a li element. DEFAULT: {}
-            wrapper_style: The style of tooltip wrapper which is a dom element. DEFAULT: {}
-            content_style: The style of tooltip content which is a dom element. DEFAULT: {}
-            label_style: The style of default tooltip label which is a p element. DEFAULT: {}
-            allow_escape_view_box: This option allows the tooltip to extend beyond the viewBox of the chart itself. DEFAULT: { x: false, y: false }
-            active: If set true, the tooltip is displayed. If set false, the tooltip is hidden, usually calculated internally.
+            item_style: The style of default tooltip content item which is a li element. Default: {"color": rx.color("gray", 12)}
+            wrapper_style: The style of tooltip wrapper which is a dom element. Default: {}
+            content_style: The style of tooltip content which is a dom element. Default: {"background": rx.color("gray", 1), "borderColor": rx.color("gray", 4), "borderRadius": "8px"}
+            label_style: The style of default tooltip label which is a p element. Default: {"color": rx.color("gray", 11)}
+            allow_escape_view_box: This option allows the tooltip to extend beyond the viewBox of the chart itself. Default: {"x": False, "y": False}
+            active: If set true, the tooltip is displayed. If set false, the tooltip is hidden, usually calculated internally. Default: False
             position: If this field is set, the tooltip position will be fixed and will not move anymore.
-            coordinate: The coordinate of tooltip which is usually calculated internally.
-            is_animation_active: If set false, animation of tooltip will be disabled. DEFAULT: true in CSR, and false in SSR
-            animation_duration: Specifies the duration of animation, the unit of this option is ms. DEFAULT: 1500
-            animation_easing: The type of easing function. DEFAULT: 'ease'
+            coordinate: The coordinate of tooltip which is usually calculated internally. Default: {"x": 0, "y": 0}
+            is_animation_active: If set false, animation of tooltip will be disabled. Default: True
+            animation_duration: Specifies the duration of animation, the unit of this option is ms. Default: 1500
+            animation_easing: The type of easing function. Default: "ease"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -335,22 +342,22 @@ class Label(Recharts):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "Label":
         """Create the component.
@@ -435,22 +442,22 @@ class LabelList(Recharts):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "LabelList":
         """Create the component.

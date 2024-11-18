@@ -44,7 +44,7 @@ def deploy_url_sample(
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("deploy_url_sample"),
-        app_source=DeployUrlSample,  # type: ignore
+        app_source=DeployUrlSample,
     ) as harness:
         yield harness
 

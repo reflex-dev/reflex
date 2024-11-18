@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional, Union, overload
 
 import reflex
 from reflex.components.react_player.react_player import ReactPlayer
-from reflex.event import EventType
+from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
@@ -33,40 +33,49 @@ class Audio(ReactPlayer):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_buffer: Optional[EventType[[]]] = None,
-        on_buffer_end: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_click_preview: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_disable_pip: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_duration: Optional[EventType[float]] = None,
-        on_enable_pip: Optional[EventType[[]]] = None,
-        on_ended: Optional[EventType[[]]] = None,
-        on_error: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_pause: Optional[EventType[[]]] = None,
-        on_play: Optional[EventType[[]]] = None,
-        on_playback_quality_change: Optional[EventType[[]]] = None,
-        on_playback_rate_change: Optional[EventType[[]]] = None,
-        on_progress: Optional[
-            EventType[reflex.components.react_player.react_player.Progress]
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_buffer: Optional[EventType[[], BASE_STATE]] = None,
+        on_buffer_end: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_click_preview: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_disable_pip: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_duration: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[float], BASE_STATE]]
         ] = None,
-        on_ready: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_seek: Optional[EventType[float]] = None,
-        on_start: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        on_enable_pip: Optional[EventType[[], BASE_STATE]] = None,
+        on_ended: Optional[EventType[[], BASE_STATE]] = None,
+        on_error: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_pause: Optional[EventType[[], BASE_STATE]] = None,
+        on_play: Optional[EventType[[], BASE_STATE]] = None,
+        on_playback_quality_change: Optional[EventType[[], BASE_STATE]] = None,
+        on_playback_rate_change: Optional[EventType[[], BASE_STATE]] = None,
+        on_progress: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[
+                    [reflex.components.react_player.react_player.Progress], BASE_STATE
+                ],
+            ]
+        ] = None,
+        on_ready: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_seek: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[float], BASE_STATE]]
+        ] = None,
+        on_start: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "Audio":
         """Create the component.
@@ -82,6 +91,22 @@ class Audio(ReactPlayer):
             muted: Mutes the player
             width: Set the width of the player: ex:640px
             height: Set the height of the player: ex:640px
+            on_ready: Called when media is loaded and ready to play. If playing is set to true, media will play immediately.
+            on_start: Called when media starts playing.
+            on_play: Called when media starts or resumes playing after pausing or buffering.
+            on_progress: Callback containing played and loaded progress as a fraction, and playedSeconds and loadedSeconds in seconds. eg { played: 0.12, playedSeconds: 11.3, loaded: 0.34, loadedSeconds: 16.7 }
+            on_duration: Callback containing duration of the media, in seconds.
+            on_pause: Called when media is paused.
+            on_buffer: Called when media starts buffering.
+            on_buffer_end: Called when media has finished buffering. Works for files, YouTube and Facebook.
+            on_seek: Called when media seeks with seconds parameter.
+            on_playback_rate_change: Called when playback rate of the player changed. Only supported by YouTube, Vimeo (if enabled), Wistia, and file paths.
+            on_playback_quality_change: Called when playback quality of the player changed. Only supported by YouTube (if enabled).
+            on_ended: Called when media finishes playing. Does not fire when loop is set to true.
+            on_error: Called when an error occurs whilst attempting to play media.
+            on_click_preview: Called when user clicks the light mode preview.
+            on_enable_pip: Called when picture-in-picture mode is enabled.
+            on_disable_pip: Called when picture-in-picture mode is disabled.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

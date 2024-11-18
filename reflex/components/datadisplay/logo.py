@@ -1,22 +1,23 @@
 """A Reflex logo component."""
 
+from typing import Union
+
 import reflex as rx
 
 
-def logo(**props):
-    """A Reflex logo.
+def svg_logo(color: Union[str, rx.Var[str]] = rx.color_mode_cond("#110F1F", "white")):
+    """A Reflex logo SVG.
 
     Args:
-        **props: The props to pass to the component.
+        color: The color of the logo.
 
     Returns:
-        The logo component.
+        The Reflex logo SVG.
     """
 
     def logo_path(d):
         return rx.el.svg.path(
             d=d,
-            fill=rx.color_mode_cond("#110F1F", "white"),
         )
 
     paths = [
@@ -28,18 +29,30 @@ def logo(**props):
         "M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z",
     ]
 
+    return rx.el.svg(
+        *[logo_path(d) for d in paths],
+        width="56",
+        height="12",
+        viewBox="0 0 56 12",
+        fill=color,
+        xmlns="http://www.w3.org/2000/svg",
+    )
+
+
+def logo(**props):
+    """A Reflex logo.
+
+    Args:
+        **props: The props to pass to the component.
+
+    Returns:
+        The logo component.
+    """
     return rx.center(
         rx.link(
             rx.hstack(
                 "Built with ",
-                rx.el.svg(
-                    *[logo_path(d) for d in paths],
-                    width="56",
-                    height="12",
-                    viewBox="0 0 56 12",
-                    fill="none",
-                    xmlns="http://www.w3.org/2000/svg",
-                ),
+                svg_logo(),
                 text_align="center",
                 align="center",
                 padding="1em",

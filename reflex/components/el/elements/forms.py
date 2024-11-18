@@ -111,6 +111,15 @@ def on_submit_event_spec() -> Tuple[Var[Dict[str, Any]]]:
     return (FORM_DATA,)
 
 
+def on_submit_string_event_spec() -> Tuple[Var[Dict[str, str]]]:
+    """Event handler spec for the on_submit event.
+
+    Returns:
+        The event handler spec.
+    """
+    return (FORM_DATA,)
+
+
 class Form(BaseHTML):
     """Display the form element."""
 
@@ -150,7 +159,7 @@ class Form(BaseHTML):
     handle_submit_unique_name: Var[str]
 
     # Fired when the form is submitted
-    on_submit: EventHandler[on_submit_event_spec]
+    on_submit: EventHandler[on_submit_event_spec, on_submit_string_event_spec]
 
     @classmethod
     def create(cls, *children, **props):
@@ -230,13 +239,13 @@ class Form(BaseHTML):
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):
-                ref_var = Var(_js_expr=ref[:-3]).as_ref()
+                ref_var = Var(_js_expr=ref[:-3])._as_ref()
                 form_refs[ref[len("refs_") : -3]] = Var(
                     _js_expr=f"getRefValues({str(ref_var)})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
             else:
-                ref_var = Var(_js_expr=ref).as_ref()
+                ref_var = Var(_js_expr=ref)._as_ref()
                 form_refs[ref[4:]] = Var(
                     _js_expr=f"getRefValue({str(ref_var)})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),

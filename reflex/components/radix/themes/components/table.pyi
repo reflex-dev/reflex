@@ -8,11 +8,11 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.el import elements
-from reflex.event import EventType
+from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
-from ..base import RadixThemesComponent
+from ..base import CommonPaddingProps, RadixThemesComponent
 
 class TableRoot(elements.Table, RadixThemesComponent):
     @overload
@@ -65,22 +65,22 @@ class TableRoot(elements.Table, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "TableRoot":
         """Create a new component instance.
@@ -159,22 +159,22 @@ class TableHeader(elements.Thead, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "TableHeader":
         """Create a new component instance.
@@ -255,22 +255,22 @@ class TableRow(elements.Tr, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "TableRow":
         """Create a new component instance.
@@ -322,6 +322,12 @@ class TableColumnHeaderCell(elements.Th, RadixThemesComponent):
                 Var[Literal["center", "end", "start"]],
             ]
         ] = None,
+        min_width: Optional[
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
+        ] = None,
+        max_width: Optional[
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
+        ] = None,
         align: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         col_span: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         headers: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
@@ -356,22 +362,22 @@ class TableColumnHeaderCell(elements.Th, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "TableColumnHeaderCell":
         """Create a new component instance.
@@ -382,6 +388,8 @@ class TableColumnHeaderCell(elements.Th, RadixThemesComponent):
         Args:
             *children: Child components.
             justify: The justification of the column
+            min_width: The minimum width of the cell
+            max_width: The maximum width of the cell
             align: Alignment of the content within the table header cell
             col_span: Number of columns a header cell should span
             headers: IDs of the headers associated with this header cell
@@ -452,22 +460,22 @@ class TableBody(elements.Tbody, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "TableBody":
         """Create a new component instance.
@@ -507,7 +515,7 @@ class TableBody(elements.Tbody, RadixThemesComponent):
         """
         ...
 
-class TableCell(elements.Td, RadixThemesComponent):
+class TableCell(elements.Td, CommonPaddingProps, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -518,6 +526,12 @@ class TableCell(elements.Td, RadixThemesComponent):
                 Literal["center", "end", "start"],
                 Var[Literal["center", "end", "start"]],
             ]
+        ] = None,
+        min_width: Optional[
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
+        ] = None,
+        max_width: Optional[
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         align: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         col_span: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
@@ -547,27 +561,146 @@ class TableCell(elements.Td, RadixThemesComponent):
         spell_check: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         tab_index: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         title: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        p: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        px: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        py: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pt: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pr: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pb: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pl: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "TableCell":
         """Create a new component instance.
@@ -578,6 +711,8 @@ class TableCell(elements.Td, RadixThemesComponent):
         Args:
             *children: Child components.
             justify: The justification of the column
+            min_width: The minimum width of the cell
+            max_width: The maximum width of the cell
             align: Alignment of the content within the table cell
             col_span: Number of columns a cell should span
             headers: IDs of the headers associated with this cell
@@ -598,6 +733,13 @@ class TableCell(elements.Td, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
+            p: Padding: "0" - "9"
+            px: Padding horizontal: "0" - "9"
+            py: Padding vertical: "0" - "9"
+            pt: Padding top: "0" - "9"
+            pr: Padding right: "0" - "9"
+            pb: Padding bottom: "0" - "9"
+            pl: Padding left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -611,7 +753,7 @@ class TableCell(elements.Td, RadixThemesComponent):
         """
         ...
 
-class TableRowHeaderCell(elements.Th, RadixThemesComponent):
+class TableRowHeaderCell(elements.Th, CommonPaddingProps, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -622,6 +764,12 @@ class TableRowHeaderCell(elements.Th, RadixThemesComponent):
                 Literal["center", "end", "start"],
                 Var[Literal["center", "end", "start"]],
             ]
+        ] = None,
+        min_width: Optional[
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
+        ] = None,
+        max_width: Optional[
+            Union[Breakpoints[str, str], Var[Union[Breakpoints[str, str], str]], str]
         ] = None,
         align: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         col_span: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
@@ -652,27 +800,146 @@ class TableRowHeaderCell(elements.Th, RadixThemesComponent):
         spell_check: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         tab_index: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         title: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        p: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        px: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        py: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pt: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pr: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pb: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
+        pl: Optional[
+            Union[
+                Breakpoints[
+                    str, Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                ],
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[
+                    Union[
+                        Breakpoints[
+                            str,
+                            Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                        ],
+                        Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                    ]
+                ],
+            ]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "TableRowHeaderCell":
         """Create a new component instance.
@@ -683,6 +950,8 @@ class TableRowHeaderCell(elements.Th, RadixThemesComponent):
         Args:
             *children: Child components.
             justify: The justification of the column
+            min_width: The minimum width of the cell
+            max_width: The maximum width of the cell
             align: Alignment of the content within the table header cell
             col_span: Number of columns a header cell should span
             headers: IDs of the headers associated with this header cell
@@ -704,6 +973,13 @@ class TableRowHeaderCell(elements.Th, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
+            p: Padding: "0" - "9"
+            px: Padding horizontal: "0" - "9"
+            py: Padding vertical: "0" - "9"
+            pt: Padding top: "0" - "9"
+            pr: Padding right: "0" - "9"
+            pb: Padding bottom: "0" - "9"
+            pl: Padding left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

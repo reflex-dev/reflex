@@ -58,7 +58,7 @@ class Icon(LucideIconComponent):
 
         props["tag"] = format.to_title_case(format.to_snake_case(props["tag"])) + "Icon"
         props["alias"] = f"Lucide{props['tag']}"
-        props.setdefault("color", f"var(--current-color)")
+        props.setdefault("color", "var(--current-color)")
         return super().create(*children, **props)
 
 

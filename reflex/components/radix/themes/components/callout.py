@@ -9,10 +9,7 @@ from reflex.components.el import elements
 from reflex.components.lucide.icon import Icon
 from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, RadixThemesComponent
 
 CalloutVariant = Literal["soft", "surface", "outline"]
 

@@ -12,8 +12,10 @@ from reflex.components.core.colors import color
 from reflex.components.core.cond import color_mode_cond
 from reflex.components.el.elements.forms import Button
 from reflex.components.lucide.icon import Icon
+from reflex.components.markdown.markdown import MarkdownComponentMap
+from reflex.components.props import NoExtrasAllowedProps
 from reflex.components.radix.themes.layout.box import Box
-from reflex.event import call_script, set_clipboard
+from reflex.event import run_script, set_clipboard
 from reflex.style import Style
 from reflex.utils.exceptions import VarTypeError
 from reflex.utils.imports import ImportVar
@@ -25,49 +27,48 @@ from reflex.vars.sequence import StringVar, string_replace_operation
 def copy_script() -> Any:
     """Copy script for the code block and modify the child SVG element.
 
-
     Returns:
         Any: The result of calling the script.
     """
-    return call_script(
-        f"""
+    return run_script(
+        """
 // Event listener for the parent click
-document.addEventListener('click', function(event) {{
-    // Find the closest div (parent element)
-    const parent = event.target.closest('div');
+document.addEventListener('click', function(event) {
+    // Find the closest button (parent element)
+    const parent = event.target.closest('button');
     // If the parent is found
-    if (parent) {{
+    if (parent) {
         // Find the SVG element within the parent
         const svgIcon = parent.querySelector('svg');
         // If the SVG exists, proceed with the script
-        if (svgIcon) {{
+        if (svgIcon) {
             const originalPath = svgIcon.innerHTML;
             const checkmarkPath = '<polyline points="20 6 9 17 4 12"></polyline>';  // Checkmark SVG path
-            function transition(element, scale, opacity) {{
-                element.style.transform = `scale(${{scale}})`;
+            function transition(element, scale, opacity) {
+                element.style.transform = `scale(${scale})`;
                 element.style.opacity = opacity;
-            }}
+            }
             // Animate the SVG
             transition(svgIcon, 0, '0');
-            setTimeout(() => {{
+            setTimeout(() => {
                 svgIcon.innerHTML = checkmarkPath;  // Replace content with checkmark
                 svgIcon.setAttribute('viewBox', '0 0 24 24');  // Adjust viewBox if necessary
                 transition(svgIcon, 1, '1');
-                setTimeout(() => {{
+                setTimeout(() => {
                     transition(svgIcon, 0, '0');
-                    setTimeout(() => {{
+                    setTimeout(() => {
                         svgIcon.innerHTML = originalPath;  // Restore original SVG content
                         transition(svgIcon, 1, '1');
-                    }}, 125);
-                }}, 600);
-            }}, 125);
-        }} else {{
+                    }, 125);
+                }, 600);
+            }, 125);
+        } else {
             // console.error('SVG element not found within the parent.');
-        }}
-    }} else {{
+        }
+    } else {
         // console.error('Parent element not found.');
-    }}
-}});
+    }
+})
 """
     )
 
@@ -253,6 +254,7 @@ LiteralCodeLanguage = Literal[
     "pascal",
     "perl",
     "php",
+    "plain",
     "plsql",
     "po",
     "postcss",
@@ -369,10 +371,11 @@ LiteralCodeTheme = Literal[
     "nord",
     "one-dark-pro",
     "one-light",
-    "plain",
     "plastic",
     "poimandres",
     "red",
+    # rose-pine themes dont work with the current version of shikijs transformers
+    # https://github.com/shikijs/shiki/issues/730
     "rose-pine",
     "rose-pine-dawn",
     "rose-pine-moon",
@@ -388,6 +391,23 @@ LiteralCodeTheme = Literal[
     "vitesse-dark",
     "vitesse-light",
 ]
+
+
+class Position(NoExtrasAllowedProps):
+    """Position of the decoration."""
+
+    line: int
+    character: int
+
+
+class ShikiDecorations(NoExtrasAllowedProps):
+    """Decorations for the code block."""
+
+    start: Union[int, Position]
+    end: Union[int, Position]
+    tag_name: str = "span"
+    properties: dict[str, Any] = {}
+    always_wrap: bool = False
 
 
 class ShikiBaseTransformers(Base):
@@ -509,7 +529,7 @@ class ShikiJsTransformer(ShikiBaseTransformers):
         super().__init__(**kwargs)
 
 
-class ShikiCodeBlock(Component):
+class ShikiCodeBlock(Component, MarkdownComponentMap):
     """A Code block."""
 
     library = "/components/shiki/code"
@@ -537,6 +557,9 @@ class ShikiCodeBlock(Component):
         []
     )
 
+    # The decorations to use for the syntax highlighter.
+    decorations: Var[list[ShikiDecorations]] = Var.create([])
+
     @classmethod
     def create(
         cls,
@@ -555,6 +578,7 @@ class ShikiCodeBlock(Component):
         # Separate props for the code block and the wrapper
         code_block_props = {}
         code_wrapper_props = {}
+        decorations = props.pop("decorations", [])
 
         class_props = cls.get_props()
 
@@ -563,6 +587,15 @@ class ShikiCodeBlock(Component):
             (code_block_props if key in class_props else code_wrapper_props)[key] = (
                 value
             )
+
+        # cast decorations into ShikiDecorations.
+        decorations = [
+            ShikiDecorations(**decoration)
+            if not isinstance(decoration, ShikiDecorations)
+            else decoration
+            for decoration in decorations
+        ]
+        code_block_props["decorations"] = decorations
 
         code_block_props["code"] = children[0]
         code_block = super().create(**code_block_props)
@@ -676,10 +709,10 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
     show_line_numbers: Var[bool]
 
     # Whether a copy button should appear.
-    can_copy: Var[bool] = Var.create(False)
+    can_copy: bool = False
 
     # copy_button: A custom copy button to override the default one.
-    copy_button: Var[Optional[Union[Component, bool]]] = Var.create(None)
+    copy_button: Optional[Union[Component, bool]] = None
 
     @classmethod
     def create(

@@ -8,8 +8,8 @@ from typing import Any, ClassVar, Dict, Literal, Optional, Union, overload
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
-from reflex.components.props import PropsBase
-from reflex.event import EventSpec, EventType
+from reflex.components.props import NoExtrasAllowedProps, PropsBase
+from reflex.event import BASE_STATE, EventSpec, EventType
 from reflex.style import Style
 from reflex.utils.serializers import serializer
 from reflex.vars.base import Var
@@ -31,7 +31,7 @@ class ToastAction(Base):
 @serializer
 def serialize_action(action: ToastAction) -> dict: ...
 
-class ToastProps(PropsBase):
+class ToastProps(PropsBase, NoExtrasAllowedProps):
     title: Optional[Union[str, Var]]
     description: Optional[Union[str, Var]]
     close_button: Optional[bool]
@@ -45,17 +45,13 @@ class ToastProps(PropsBase):
     id: Optional[Union[str, Var]]
     unstyled: Optional[bool]
     style: Optional[Style]
+    class_name: Optional[str]
     action_button_styles: Optional[Style]
     cancel_button_styles: Optional[Style]
     on_dismiss: Optional[Any]
     on_auto_close: Optional[Any]
 
     def dict(self, *args, **kwargs) -> dict[str, Any]: ...
-
-    class Config:
-        arbitrary_types_allowed = True
-        use_enum_values = True
-        extra = "forbid"
 
 class Toaster(Component):
     is_used: ClassVar[bool] = False
@@ -120,22 +116,22 @@ class Toaster(Component):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "Toaster":
         """Create a toaster component.

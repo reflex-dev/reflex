@@ -115,7 +115,7 @@ def component_state_app(tmp_path) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path,
-        app_source=ComponentStateApp,  # type: ignore
+        app_source=ComponentStateApp,
     ) as harness:
         yield harness
 

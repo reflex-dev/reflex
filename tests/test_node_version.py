@@ -43,7 +43,7 @@ def node_version_app(tmp_path) -> Generator[AppHarness, Any, None]:
     """
     with AppHarness.create(
         root=tmp_path,
-        app_source=TestNodeVersionApp,  # type: ignore
+        app_source=TestNodeVersionApp,
     ) as harness:
         yield harness
 

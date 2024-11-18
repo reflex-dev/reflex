@@ -8,7 +8,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.el import elements
-from reflex.event import EventType
+from reflex.event import BASE_STATE, EventType, KeyInputInfo
 from reflex.style import Style
 from reflex.vars.base import Var
 
@@ -148,25 +148,43 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[str]] = None,
-        on_change: Optional[EventType[str]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[str]] = None,
-        on_key_down: Optional[EventType[str]] = None,
-        on_key_up: Optional[EventType[str]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
+        ] = None,
+        on_change: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
+        ] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
+        ] = None,
+        on_key_down: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[str], BASE_STATE],
+                EventType[[str, KeyInputInfo], BASE_STATE],
+            ]
+        ] = None,
+        on_key_up: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[str], BASE_STATE],
+                EventType[[str, KeyInputInfo], BASE_STATE],
+            ]
+        ] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "TextFieldRoot":
         """Create an Input component.
@@ -188,6 +206,11 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
             required: Indicates that the input is required
             type: Specifies the type of input
             value: Value of the input
+            on_change: Fired when the value of the textarea changes.
+            on_focus: Fired when the textarea is focused.
+            on_blur: Fired when the textarea is blurred.
+            on_key_down: Fired when a key is pressed down.
+            on_key_up: Fired when a key is released.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -290,22 +313,22 @@ class TextFieldSlot(RadixThemesComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "TextFieldSlot":
         """Create a new component instance.
@@ -460,25 +483,43 @@ class TextField(ComponentNamespace):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[str]] = None,
-        on_change: Optional[EventType[str]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[str]] = None,
-        on_key_down: Optional[EventType[str]] = None,
-        on_key_up: Optional[EventType[str]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
+        ] = None,
+        on_change: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
+        ] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
+        ] = None,
+        on_key_down: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[str], BASE_STATE],
+                EventType[[str, KeyInputInfo], BASE_STATE],
+            ]
+        ] = None,
+        on_key_up: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[str], BASE_STATE],
+                EventType[[str, KeyInputInfo], BASE_STATE],
+            ]
+        ] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "TextFieldRoot":
         """Create an Input component.
@@ -500,6 +541,11 @@ class TextField(ComponentNamespace):
             required: Indicates that the input is required
             type: Specifies the type of input
             value: Value of the input
+            on_change: Fired when the value of the textarea changes.
+            on_focus: Fired when the textarea is focused.
+            on_blur: Fired when the textarea is blurred.
+            on_key_down: Fired when a key is pressed down.
+            on_key_up: Fired when a key is released.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.

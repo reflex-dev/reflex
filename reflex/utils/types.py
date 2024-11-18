@@ -26,9 +26,7 @@ from typing import (
     get_args,
     get_type_hints,
 )
-from typing import (
-    get_origin as get_origin_og,
-)
+from typing import get_origin as get_origin_og
 
 import sqlalchemy
 
@@ -42,12 +40,7 @@ except ModuleNotFoundError:
 
 from sqlalchemy.ext.associationproxy import AssociationProxyInstance
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Mapped,
-    QueryableAttribute,
-    Relationship,
-)
+from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
 
 from reflex import constants
 from reflex.base import Base
@@ -510,16 +503,72 @@ def _issubclass(cls: GenericType, cls_check: GenericType, instance: Any = None) 
         raise TypeError(f"Invalid type for issubclass: {cls_base}") from te
 
 
-def _isinstance(obj: Any, cls: GenericType) -> bool:
+def _isinstance(obj: Any, cls: GenericType, nested: bool = False) -> bool:
     """Check if an object is an instance of a class.
 
     Args:
         obj: The object to check.
         cls: The class to check against.
+        nested: Whether the check is nested.
 
     Returns:
         Whether the object is an instance of the class.
     """
+    if cls is Any:
+        return True
+
+    if cls is None or cls is type(None):
+        return obj is None
+
+    if is_literal(cls):
+        return obj in get_args(cls)
+
+    if is_union(cls):
+        return any(_isinstance(obj, arg) for arg in get_args(cls))
+
+    origin = get_origin(cls)
+
+    if origin is None:
+        # cls is a simple class
+        return isinstance(obj, cls)
+
+    args = get_args(cls)
+
+    if not args:
+        # cls is a simple generic class
+        return isinstance(obj, origin)
+
+    if nested and args:
+        if origin is list:
+            return isinstance(obj, list) and all(
+                _isinstance(item, args[0]) for item in obj
+            )
+        if origin is tuple:
+            if args[-1] is Ellipsis:
+                return isinstance(obj, tuple) and all(
+                    _isinstance(item, args[0]) for item in obj
+                )
+            return (
+                isinstance(obj, tuple)
+                and len(obj) == len(args)
+                and all(_isinstance(item, arg) for item, arg in zip(obj, args))
+            )
+        if origin is dict:
+            return isinstance(obj, dict) and all(
+                _isinstance(key, args[0]) and _isinstance(value, args[1])
+                for key, value in obj.items()
+            )
+        if origin is set:
+            return isinstance(obj, set) and all(
+                _isinstance(item, args[0]) for item in obj
+            )
+
+    if args:
+        from reflex.vars import Field
+
+        if origin is Field:
+            return _isinstance(obj, args[0])
+
     return isinstance(obj, get_base_class(cls))
 
 
@@ -724,3 +773,69 @@ def validate_parameter_literals(func):
 # Store this here for performance.
 StateBases = get_base_class(StateVar)
 StateIterBases = get_base_class(StateIterVar)
+
+
+def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> bool:
+    """Check if a type hint is a subclass of another type hint.
+
+    Args:
+        possible_subclass: The type hint to check.
+        possible_superclass: The type hint to check against.
+
+    Returns:
+        Whether the type hint is a subclass of the other type hint.
+    """
+    if possible_superclass is Any:
+        return True
+    if possible_subclass is Any:
+        return False
+
+    provided_type_origin = get_origin(possible_subclass)
+    accepted_type_origin = get_origin(possible_superclass)
+
+    if provided_type_origin is None and accepted_type_origin is None:
+        # In this case, we are dealing with a non-generic type, so we can use issubclass
+        return issubclass(possible_subclass, possible_superclass)
+
+    # Remove this check when Python 3.10 is the minimum supported version
+    if hasattr(types, "UnionType"):
+        provided_type_origin = (
+            Union if provided_type_origin is types.UnionType else provided_type_origin
+        )
+        accepted_type_origin = (
+            Union if accepted_type_origin is types.UnionType else accepted_type_origin
+        )
+
+    # Get type arguments (e.g., [float, int] for Dict[float, int])
+    provided_args = get_args(possible_subclass)
+    accepted_args = get_args(possible_superclass)
+
+    if accepted_type_origin is Union:
+        if provided_type_origin is not Union:
+            return any(
+                typehint_issubclass(possible_subclass, accepted_arg)
+                for accepted_arg in accepted_args
+            )
+        return all(
+            any(
+                typehint_issubclass(provided_arg, accepted_arg)
+                for accepted_arg in accepted_args
+            )
+            for provided_arg in provided_args
+        )
+
+    # Check if the origin of both types is the same (e.g., list for List[int])
+    # This probably should be issubclass instead of ==
+    if (provided_type_origin or possible_subclass) != (
+        accepted_type_origin or possible_superclass
+    ):
+        return False
+
+    # Ensure all specific types are compatible with accepted types
+    # Note this is not necessarily correct, as it doesn't check against contravariance and covariance
+    # It also ignores when the length of the arguments is different
+    return all(
+        typehint_issubclass(provided_arg, accepted_arg)
+        for provided_arg, accepted_arg in zip(provided_args, accepted_args)
+        if accepted_arg is not Any
+    )

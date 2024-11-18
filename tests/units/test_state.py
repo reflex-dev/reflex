@@ -8,6 +8,7 @@ import functools
 import json
 import os
 import sys
+import threading
 from textwrap import dedent
 from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Union
 from unittest.mock import AsyncMock, Mock
@@ -44,7 +45,7 @@ from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.exceptions import SetUndefinedStateVarError
 from reflex.utils.format import json_dumps
-from reflex.vars.base import ComputedVar, Var
+from reflex.vars.base import Var, computed_var
 from tests.units.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState
@@ -108,7 +109,7 @@ class TestState(BaseState):
     _backend: int = 0
     asynctest: int = 0
 
-    @ComputedVar
+    @computed_var
     def sum(self) -> float:
         """Dynamically sum the numbers.
 
@@ -117,7 +118,7 @@ class TestState(BaseState):
         """
         return self.num1 + self.num2
 
-    @ComputedVar
+    @computed_var
     def upper(self) -> str:
         """Uppercase the key.
 
@@ -1123,7 +1124,7 @@ def test_child_state():
         v: int = 2
 
     class ChildState(MainState):
-        @ComputedVar
+        @computed_var
         def rendered_var(self):
             return self.v
 
@@ -1142,7 +1143,7 @@ def test_conditional_computed_vars():
         t1: str = "a"
         t2: str = "b"
 
-        @ComputedVar
+        @computed_var
         def rendered_var(self) -> str:
             if self.flag:
                 return self.t1
@@ -1557,7 +1558,7 @@ def test_error_on_state_method_shadow():
 
     assert (
         err.value.args[0]
-        == f"The event handler name `reset` shadows a builtin State method; use a different name instead"
+        == "The event handler name `reset` shadows a builtin State method; use a different name instead"
     )
 
 
@@ -1965,7 +1966,7 @@ class BackgroundTaskState(BaseState):
         """
         return self.order
 
-    @rx.background
+    @rx.event(background=True)
     async def background_task(self):
         """A background task that updates the state."""
         async with self:
@@ -2002,7 +2003,7 @@ class BackgroundTaskState(BaseState):
             self.other()  # direct calling event handlers works in context
             self._private_method()
 
-    @rx.background
+    @rx.event(background=True)
     async def background_task_reset(self):
         """A background task that resets the state."""
         with pytest.raises(ImmutableStateError):
@@ -2016,7 +2017,7 @@ class BackgroundTaskState(BaseState):
         async with self:
             self.order.append("reset")
 
-    @rx.background
+    @rx.event(background=True)
     async def background_task_generator(self):
         """A background task generator that does nothing.
 
@@ -2724,6 +2725,7 @@ class OnLoadState(State):
 
     num: int = 0
 
+    @rx.event
     def test_handler(self):
         """Test handler."""
         self.num += 1
@@ -3093,12 +3095,12 @@ def test_potentially_dirty_substates():
     """
 
     class State(RxState):
-        @ComputedVar
+        @computed_var
         def foo(self) -> str:
             return ""
 
     class C1(State):
-        @ComputedVar
+        @computed_var
         def bar(self) -> str:
             return ""
 
@@ -3390,9 +3392,52 @@ def test_fallback_pickle():
     assert unpickled_state._f() == 420
     assert unpickled_state._o._f() == 42
 
+    # Threading locks are unpicklable normally, and raise TypeError instead of PicklingError.
+    state2 = DillState(_reflex_internal_init=True)  # type: ignore
+    state2._g = threading.Lock()
+    pk2 = state2._serialize()
+    unpickled_state2 = BaseState._deserialize(pk2)
+    assert isinstance(unpickled_state2._g, type(threading.Lock()))
+
     # Some object, like generator, are still unpicklable with dill.
-    state._g = (i for i in range(10))
-    pk = state._serialize()
-    assert len(pk) == 0
-    with pytest.raises(EOFError):
-        BaseState._deserialize(pk)
+    state3 = DillState(_reflex_internal_init=True)  # type: ignore
+    state3._g = (i for i in range(10))
+    pk3 = state3._serialize()
+    assert len(pk3) == 0
+
+
+def test_typed_state() -> None:
+    class TypedState(rx.State):
+        field: rx.Field[str] = rx.field("")
+
+    _ = TypedState(field="str")
+
+
+def test_get_value():
+    class GetValueState(rx.State):
+        foo: str = "FOO"
+        bar: str = "BAR"
+
+    state = GetValueState()
+
+    assert state.dict() == {
+        state.get_full_name(): {
+            "foo": "FOO",
+            "bar": "BAR",
+        }
+    }
+    assert state.get_delta() == {}
+
+    state.bar = "foo"
+
+    assert state.dict() == {
+        state.get_full_name(): {
+            "foo": "FOO",
+            "bar": "foo",
+        }
+    }
+    assert state.get_delta() == {
+        state.get_full_name(): {
+            "bar": "foo",
+        }
+    }

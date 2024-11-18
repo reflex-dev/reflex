@@ -7,7 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
-from reflex.event import EventType
+from reflex.components.markdown.markdown import MarkdownComponentMap
+from reflex.components.props import NoExtrasAllowedProps
+from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 from reflex.vars.function import FunctionStringVar
@@ -192,6 +194,7 @@ LiteralCodeLanguage = Literal[
     "pascal",
     "perl",
     "php",
+    "plain",
     "plsql",
     "po",
     "postcss",
@@ -308,7 +311,6 @@ LiteralCodeTheme = Literal[
     "nord",
     "one-dark-pro",
     "one-light",
-    "plain",
     "plastic",
     "poimandres",
     "red",
@@ -328,6 +330,17 @@ LiteralCodeTheme = Literal[
     "vitesse-light",
 ]
 
+class Position(NoExtrasAllowedProps):
+    line: int
+    character: int
+
+class ShikiDecorations(NoExtrasAllowedProps):
+    start: Union[int, Position]
+    end: Union[int, Position]
+    tag_name: str
+    properties: dict[str, Any]
+    always_wrap: bool
+
 class ShikiBaseTransformers(Base):
     library: str
     fns: list[FunctionStringVar]
@@ -338,7 +351,7 @@ class ShikiJsTransformer(ShikiBaseTransformers):
     fns: list[FunctionStringVar]
     style: Optional[Style]
 
-class ShikiCodeBlock(Component):
+class ShikiCodeBlock(Component, MarkdownComponentMap):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -479,6 +492,7 @@ class ShikiCodeBlock(Component):
                     "pascal",
                     "perl",
                     "php",
+                    "plain",
                     "plsql",
                     "po",
                     "postcss",
@@ -694,6 +708,7 @@ class ShikiCodeBlock(Component):
                         "pascal",
                         "perl",
                         "php",
+                        "plain",
                         "plsql",
                         "po",
                         "postcss",
@@ -815,7 +830,6 @@ class ShikiCodeBlock(Component):
                     "nord",
                     "one-dark-pro",
                     "one-light",
-                    "plain",
                     "plastic",
                     "poimandres",
                     "red",
@@ -870,7 +884,6 @@ class ShikiCodeBlock(Component):
                         "nord",
                         "one-dark-pro",
                         "one-light",
-                        "plain",
                         "plastic",
                         "poimandres",
                         "red",
@@ -906,27 +919,30 @@ class ShikiCodeBlock(Component):
                 list[Union[ShikiBaseTransformers, dict[str, Any]]],
             ]
         ] = None,
+        decorations: Optional[
+            Union[Var[list[ShikiDecorations]], list[ShikiDecorations]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "ShikiCodeBlock":
         """Create a code block component using [shiki syntax highlighter](https://shiki.matsu.io/).
@@ -938,6 +954,7 @@ class ShikiCodeBlock(Component):
             themes: The set of themes to use for different modes.
             code: The code to display.
             transformers: The transformers to use for the syntax highlighter.
+            decorations: The decorations to use for the syntax highlighter.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -965,10 +982,8 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
         *children,
         use_transformers: Optional[Union[Var[bool], bool]] = None,
         show_line_numbers: Optional[Union[Var[bool], bool]] = None,
-        can_copy: Optional[Union[Var[bool], bool]] = None,
-        copy_button: Optional[
-            Union[Component, Var[Optional[Union[Component, bool]]], bool]
-        ] = None,
+        can_copy: Optional[bool] = None,
+        copy_button: Optional[Union[Component, bool]] = None,
         language: Optional[
             Union[
                 Literal[
@@ -1104,6 +1119,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                     "pascal",
                     "perl",
                     "php",
+                    "plain",
                     "plsql",
                     "po",
                     "postcss",
@@ -1319,6 +1335,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                         "pascal",
                         "perl",
                         "php",
+                        "plain",
                         "plsql",
                         "po",
                         "postcss",
@@ -1440,7 +1457,6 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                     "nord",
                     "one-dark-pro",
                     "one-light",
-                    "plain",
                     "plastic",
                     "poimandres",
                     "red",
@@ -1495,7 +1511,6 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                         "nord",
                         "one-dark-pro",
                         "one-light",
-                        "plain",
                         "plastic",
                         "poimandres",
                         "red",
@@ -1531,27 +1546,30 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                 list[Union[ShikiBaseTransformers, dict[str, Any]]],
             ]
         ] = None,
+        decorations: Optional[
+            Union[Var[list[ShikiDecorations]], list[ShikiDecorations]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "ShikiHighLevelCodeBlock":
         """Create a code block component using [shiki syntax highlighter](https://shiki.matsu.io/).
@@ -1567,6 +1585,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
             themes: The set of themes to use for different modes.
             code: The code to display.
             transformers: The transformers to use for the syntax highlighter.
+            decorations: The decorations to use for the syntax highlighter.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -1593,10 +1612,8 @@ class CodeblockNamespace(ComponentNamespace):
         *children,
         use_transformers: Optional[Union[Var[bool], bool]] = None,
         show_line_numbers: Optional[Union[Var[bool], bool]] = None,
-        can_copy: Optional[Union[Var[bool], bool]] = None,
-        copy_button: Optional[
-            Union[Component, Var[Optional[Union[Component, bool]]], bool]
-        ] = None,
+        can_copy: Optional[bool] = None,
+        copy_button: Optional[Union[Component, bool]] = None,
         language: Optional[
             Union[
                 Literal[
@@ -1732,6 +1749,7 @@ class CodeblockNamespace(ComponentNamespace):
                     "pascal",
                     "perl",
                     "php",
+                    "plain",
                     "plsql",
                     "po",
                     "postcss",
@@ -1947,6 +1965,7 @@ class CodeblockNamespace(ComponentNamespace):
                         "pascal",
                         "perl",
                         "php",
+                        "plain",
                         "plsql",
                         "po",
                         "postcss",
@@ -2068,7 +2087,6 @@ class CodeblockNamespace(ComponentNamespace):
                     "nord",
                     "one-dark-pro",
                     "one-light",
-                    "plain",
                     "plastic",
                     "poimandres",
                     "red",
@@ -2123,7 +2141,6 @@ class CodeblockNamespace(ComponentNamespace):
                         "nord",
                         "one-dark-pro",
                         "one-light",
-                        "plain",
                         "plastic",
                         "poimandres",
                         "red",
@@ -2159,27 +2176,30 @@ class CodeblockNamespace(ComponentNamespace):
                 list[Union[ShikiBaseTransformers, dict[str, Any]]],
             ]
         ] = None,
+        decorations: Optional[
+            Union[Var[list[ShikiDecorations]], list[ShikiDecorations]]
+        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "ShikiHighLevelCodeBlock":
         """Create a code block component using [shiki syntax highlighter](https://shiki.matsu.io/).
@@ -2195,6 +2215,7 @@ class CodeblockNamespace(ComponentNamespace):
             themes: The set of themes to use for different modes.
             code: The code to display.
             transformers: The transformers to use for the syntax highlighter.
+            decorations: The decorations to use for the syntax highlighter.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

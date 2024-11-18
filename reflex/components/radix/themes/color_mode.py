@@ -17,7 +17,7 @@ rx.text(
 
 from __future__ import annotations
 
-from typing import Dict, List, Literal, get_args
+from typing import Dict, List, Literal, Optional, Union, get_args
 
 from reflex.components.component import BaseComponent
 from reflex.components.core.cond import Cond, color_mode_cond, cond
@@ -96,26 +96,31 @@ def _set_static_default(props, position, prop, default):
 class ColorModeIconButton(IconButton):
     """Icon Button for toggling light / dark mode via toggle_color_mode."""
 
+    # The position of the icon button. Follow document flow if None.
+    position: Optional[Union[LiteralPosition, Var[LiteralPosition]]] = None
+
+    # Allow picking the "system" value for the color mode.
+    allow_system: bool = False
+
     @classmethod
     def create(
         cls,
-        position: LiteralPosition | None = None,
-        allow_system: bool = False,
         **props,
     ):
-        """Create a icon button component that calls toggle_color_mode on click.
+        """Create an icon button component that calls toggle_color_mode on click.
 
         Args:
-            position: The position of the icon button. Follow document flow if None.
-            allow_system: Allow picking the "system" value for the color mode.
             **props: The props to pass to the component.
 
         Returns:
             The button component.
         """
+        position = props.pop("position", None)
+        allow_system = props.pop("allow_system", False)
+
         # position is used to set nice defaults for positioning the icon button
         if isinstance(position, Var):
-            _set_var_default(props, position, "position", "fixed", position)
+            _set_var_default(props, position, "position", "fixed", position)  # type: ignore
             _set_var_default(props, position, "bottom", "2rem")
             _set_var_default(props, position, "top", "2rem")
             _set_var_default(props, position, "left", "2rem")
@@ -155,11 +160,14 @@ class ColorModeIconButton(IconButton):
                     color_mode_item("system"),
                 ),
             )
-        return super().create(
+        return IconButton.create(
             ColorModeIcon.create(),
             on_click=toggle_color_mode,
             **props,
         )
+
+    def _exclude_props(self) -> list[str]:
+        return ["position", "allow_system"]
 
 
 class ColorModeSwitch(Switch):
@@ -195,5 +203,5 @@ class ColorModeNamespace(Var):
 color_mode = color_mode_var_and_namespace = ColorModeNamespace(
     _js_expr=color_mode._js_expr,
     _var_type=color_mode._var_type,
-    _var_data=color_mode.get_default_value(),
+    _var_data=color_mode._get_default_value(),
 )

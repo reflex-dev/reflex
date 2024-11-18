@@ -63,7 +63,7 @@ class Bun(SimpleNamespace):
         """
         from reflex.config import environment
 
-        return environment.REFLEX_DIR / "bun"
+        return environment.REFLEX_DIR.get() / "bun"
 
     @classproperty
     @classmethod
@@ -74,6 +74,11 @@ class Bun(SimpleNamespace):
             The default bun path.
         """
         return cls.ROOT_PATH / "bin" / ("bun" if not IS_WINDOWS else "bun.exe")
+
+    DEFAULT_CONFIG = """
+[install]
+registry = "{registry}"
+"""
 
 
 # FNM config.
@@ -100,7 +105,7 @@ class Fnm(SimpleNamespace):
         """
         from reflex.config import environment
 
-        return environment.REFLEX_DIR / "fnm"
+        return environment.REFLEX_DIR.get() / "fnm"
 
     @classproperty
     @classmethod
@@ -118,7 +123,7 @@ class Node(SimpleNamespace):
     """Node/ NPM constants."""
 
     # The Node version.
-    VERSION = "22.10.0"
+    VERSION = "22.11.0"
     # The minimum required node version.
     MIN_VERSION = "18.18.0"
 
@@ -177,7 +182,7 @@ class PackageJson(SimpleNamespace):
         "@emotion/react": "11.13.3",
         "axios": "1.7.7",
         "json5": "2.2.3",
-        "next": "15.0.1",
+        "next": "14.2.16",
         "next-sitemap": "4.2.3",
         "next-themes": "0.3.0",
         "react": "18.3.1",

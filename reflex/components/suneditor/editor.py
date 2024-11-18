@@ -7,7 +7,7 @@ from typing import Dict, List, Literal, Optional, Tuple, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
-from reflex.event import EventHandler, empty_event, identity_event
+from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.utils.format import to_camel_case
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import Var
@@ -207,31 +207,31 @@ class Editor(NoSSRComponent):
     disable_toolbar: Var[bool]
 
     # Fired when the editor content changes.
-    on_change: EventHandler[identity_event(str)]
+    on_change: EventHandler[passthrough_event_spec(str)]
 
     # Fired when the something is inputted in the editor.
-    on_input: EventHandler[empty_event]
+    on_input: EventHandler[no_args_event_spec]
 
     # Fired when the editor loses focus.
     on_blur: EventHandler[on_blur_spec]
 
     # Fired when the editor is loaded.
-    on_load: EventHandler[identity_event(bool)]
+    on_load: EventHandler[passthrough_event_spec(bool)]
 
     # Fired when the editor content is copied.
-    on_copy: EventHandler[empty_event]
+    on_copy: EventHandler[no_args_event_spec]
 
     # Fired when the editor content is cut.
-    on_cut: EventHandler[empty_event]
+    on_cut: EventHandler[no_args_event_spec]
 
     # Fired when the editor content is pasted.
     on_paste: EventHandler[on_paste_spec]
 
     # Fired when the code view is toggled.
-    toggle_code_view: EventHandler[identity_event(bool)]
+    toggle_code_view: EventHandler[passthrough_event_spec(bool)]
 
     # Fired when the full screen mode is toggled.
-    toggle_full_screen: EventHandler[identity_event(bool)]
+    toggle_full_screen: EventHandler[passthrough_event_spec(bool)]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the Editor component.

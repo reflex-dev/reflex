@@ -63,6 +63,9 @@ def load_dynamic_serializer():
         """
         # Causes a circular import, so we import here.
         from reflex.compiler import templates, utils
+        from reflex.components.base.bare import Bare
+
+        component = Bare.create(Var.create(component))
 
         rendered_components = {}
         # Include dynamic imports in the shared component.
@@ -108,9 +111,9 @@ def load_dynamic_serializer():
             if line.startswith("import "):
                 if 'from "$/' in line or 'from "/' in line:
                     module_code_lines[ix] = (
-                        line.replace("import ", "const ", 1).replace(
-                            " from ", " = window['__reflex'][", 1
-                        )
+                        line.replace("import ", "const ", 1)
+                        .replace(" as ", ": ")
+                        .replace(" from ", " = window['__reflex'][", 1)
                         + "]"
                     )
                 else:
@@ -127,14 +130,15 @@ def load_dynamic_serializer():
                 module_code_lines[ix] = line.replace(
                     "export function", "export default function", 1
                 )
+            line_stripped = line.strip()
+            if line_stripped.startswith("{") and line_stripped.endswith("}"):
+                module_code_lines[ix] = line_stripped[1:-1]
 
         module_code_lines.insert(0, "const React = window.__reflex.react;")
 
         return "\n".join(
             [
                 "//__reflex_evaluate",
-                "/** @jsx jsx */",
-                "const { jsx } = window.__reflex['@emotion/react']",
                 *module_code_lines,
             ]
         )

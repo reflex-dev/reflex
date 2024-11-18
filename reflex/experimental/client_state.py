@@ -8,12 +8,9 @@ import sys
 from typing import Any, Callable, Union
 
 from reflex import constants
-from reflex.event import EventChain, EventHandler, EventSpec, call_script
+from reflex.event import EventChain, EventHandler, EventSpec, run_script
 from reflex.utils.imports import ImportVar
-from reflex.vars import (
-    VarData,
-    get_unique_variable_name,
-)
+from reflex.vars import VarData, get_unique_variable_name
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import FunctionVar
 
@@ -227,7 +224,7 @@ class ClientStateVar(Var):
         """
         if not self._global_ref:
             raise ValueError("ClientStateVar must be global to retrieve the value.")
-        return call_script(_client_state_ref(self._getter_name), callback=callback)
+        return run_script(_client_state_ref(self._getter_name), callback=callback)
 
     def push(self, value: Any) -> EventSpec:
         """Push a value to the client state variable from the backend.
@@ -245,4 +242,4 @@ class ClientStateVar(Var):
         """
         if not self._global_ref:
             raise ValueError("ClientStateVar must be global to push the value.")
-        return call_script(f"{_client_state_ref(self._setter_name)}({value})")
+        return run_script(f"{_client_state_ref(self._setter_name)}({value})")
