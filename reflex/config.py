@@ -9,6 +9,7 @@ import inspect
 import os
 import sys
 import urllib.parse
+from importlib.util import find_spec
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -810,8 +811,11 @@ def get_config(reload: bool = False) -> Config:
     sys.path.insert(0, os.getcwd())
     # only import the module if it exists. If a module spec exists then
     # the module exists.
-    spec = importlib.util.find_spec(constants.Config.MODULE)  # type: ignore
-    if not spec:
+    spec = find_spec(constants.Config.MODULE)  # type: ignore
+    cwd = Path(os.getcwd())
+    if not spec or (
+        spec.origin is not None and not Path(spec.origin).is_relative_to(cwd)
+    ):
         # we need this condition to ensure that a ModuleNotFound error is not thrown when
         # running unit/integration tests.
         return Config(app_name="")
