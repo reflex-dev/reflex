@@ -854,6 +854,7 @@ class App(MiddlewareMixin, LifespanMixin):
             self.theme.appearance = None
 
         for route in self.unevaluated_pages:
+            console.debug(f"Evaluating page: {route}")
             self._compile_page(route)
 
         # Add the optional endpoints (_upload)
