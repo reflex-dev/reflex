@@ -808,18 +808,22 @@ def get_config(reload: bool = False) -> Config:
     Returns:
         The app config.
     """
+    # Remove any cached module when `reload` is requested.
+    if reload and constants.Config.MODULE in sys.modules:
+        del sys.modules[constants.Config.MODULE]
+
     sys.path.insert(0, os.getcwd())
     # only import the module if it exists. If a module spec exists then
     # the module exists.
     spec = find_spec(constants.Config.MODULE)
     cwd = Path(os.getcwd()).resolve()
     if not spec or (
-        spec.origin is not None and not Path(spec.origin).resolve().is_relative_to(cwd)
+        # Config module path must be relative to the working directory.
+        (spec.origin is not None)
+        and not Path(spec.origin).resolve().is_relative_to(cwd)
     ):
         # we need this condition to ensure that a ModuleNotFound error is not thrown when
-        # running unit/integration tests.
+        # running unit/integration tests or during `reflex init`.
         return Config(app_name="")
     rxconfig = importlib.import_module(constants.Config.MODULE)
-    if reload:
-        importlib.reload(rxconfig)
     return rxconfig.config
