@@ -811,7 +811,7 @@ def get_config(reload: bool = False) -> Config:
     sys.path.insert(0, os.getcwd())
     # only import the module if it exists. If a module spec exists then
     # the module exists.
-    spec = find_spec(constants.Config.MODULE)  # type: ignore
+    spec = find_spec(constants.Config.MODULE)
     cwd = Path(os.getcwd())
     if not spec or (
         spec.origin is not None and not Path(spec.origin).is_relative_to(cwd)
