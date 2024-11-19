@@ -1,7 +1,8 @@
 """Moment component for humanized date rendering."""
 
 import dataclasses
-from typing import List, Optional
+from datetime import date, datetime, time, timedelta
+from typing import List, Optional, Union
 
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventHandler, passthrough_event_spec
@@ -19,7 +20,7 @@ class MomentDelta:
     weeks: Optional[int] = dataclasses.field(default=None)
     days: Optional[int] = dataclasses.field(default=None)
     hours: Optional[int] = dataclasses.field(default=None)
-    minutess: Optional[int] = dataclasses.field(default=None)
+    minutes: Optional[int] = dataclasses.field(default=None)
     seconds: Optional[int] = dataclasses.field(default=None)
     milliseconds: Optional[int] = dataclasses.field(default=None)
 
@@ -78,7 +79,7 @@ class Moment(NoSSRComponent):
     duration: Var[str]
 
     # The date to display (also work if passed as children).
-    date: Var[str]
+    date: Var[Union[str, datetime, date, time, timedelta]]
 
     # Shows the duration (elapsed time) between now and the provided datetime.
     duration_from_now: Var[bool]
