@@ -1490,6 +1490,7 @@ class Textarea(BaseHTML):
         ...
 
 button = Button.create
+datalist = Datalist.create
 fieldset = Fieldset.create
 form = Form.create
 input = Input.create
