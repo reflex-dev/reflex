@@ -704,7 +704,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
 
 def redirect(
     path: str | Var[str],
-    external: Optional[bool] = False,
+    external: Optional[bool] = None,
     is_external: Optional[bool] = False,
     replace: Optional[bool] = False,
 ) -> EventSpec:
@@ -719,7 +719,7 @@ def redirect(
     Returns:
         An event to redirect to the path.
     """
-    if external:
+    if external is not None:
         console.deprecate(
             "The `external` prop in `rx.redirect`",
             "use `is_external` instead.",
