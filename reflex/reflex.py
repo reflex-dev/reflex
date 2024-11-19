@@ -647,7 +647,7 @@ def deployv2(
     vmtype: Optional[str] = typer.Option(
         None,
         "--vmtype",
-        help="Vm type id. Run reflex apps vmtypes list to get options.",
+        help="VM type id. Run `reflex apps vmtypes` to get options.",
     ),
     hostname: Optional[str] = typer.Option(
         None,
