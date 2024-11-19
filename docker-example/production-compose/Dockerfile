@@ -4,7 +4,7 @@
 # Stage 1: init
 FROM python:3.11 as init
 
-ARG uv=/root/.cargo/bin/uv
+ARG uv=/root/.local/bin/uv
 
 # Install `uv` for faster package boostrapping
 ADD --chmod=755 https://astral.sh/uv/install.sh /install.sh

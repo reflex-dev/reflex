@@ -152,6 +152,7 @@ from .components.suneditor import editor as editor
 from .config import Config as Config
 from .config import DBConfig as DBConfig
 from .constants import Env as Env
+from .constants.colors import Color as Color
 from .event import EventChain as EventChain
 from .event import EventHandler as EventHandler
 from .event import background as background
@@ -192,6 +193,7 @@ from .state import dynamic as dynamic
 from .state import var as var
 from .style import Style as Style
 from .style import toggle_color_mode as toggle_color_mode
+from .utils.imports import ImportDict as ImportDict
 from .utils.imports import ImportVar as ImportVar
 from .utils.serializers import serializer as serializer
 from .vars import Field as Field

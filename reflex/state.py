@@ -46,6 +46,7 @@ from reflex import event
 from reflex.config import get_config
 from reflex.istate.data import RouterData
 from reflex.istate.storage import ClientStorageBase
+from reflex.model import Model
 from reflex.vars.base import (
     ComputedVar,
     DynamicRouteVar,
@@ -1733,15 +1734,20 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 if value is None:
                     continue
                 hinted_args = value_inside_optional(hinted_args)
-            if (
-                isinstance(value, dict)
-                and inspect.isclass(hinted_args)
-                and (
-                    dataclasses.is_dataclass(hinted_args)
-                    or issubclass(hinted_args, Base)
-                )
-            ):
-                payload[arg] = hinted_args(**value)
+            if isinstance(value, dict) and inspect.isclass(hinted_args):
+                if issubclass(hinted_args, Model):
+                    # Remove non-fields from the payload
+                    payload[arg] = hinted_args(
+                        **{
+                            key: value
+                            for key, value in value.items()
+                            if key in hinted_args.__fields__
+                        }
+                    )
+                elif dataclasses.is_dataclass(hinted_args) or issubclass(
+                    hinted_args, Base
+                ):
+                    payload[arg] = hinted_args(**value)
             if isinstance(value, list) and (hinted_args is set or hinted_args is Set):
                 payload[arg] = set(value)
             if isinstance(value, list) and (
@@ -1884,7 +1890,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         )
 
         subdelta: Dict[str, Any] = {
-            prop: self.get_value(getattr(self, prop))
+            prop: self.get_value(prop)
             for prop in delta_vars
             if not types.is_backend_base_variable(prop, type(self))
         }
@@ -1976,9 +1982,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The value of the field.
         """
-        if isinstance(key, MutableProxy):
-            return super().get_value(key.__wrapped__)
-        return super().get_value(key)
+        value = super().get_value(key)
+        if isinstance(value, MutableProxy):
+            return value.__wrapped__
+        return value
 
     def dict(
         self, include_computed: bool = True, initial: bool = False, **kwargs
@@ -2000,8 +2007,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self._mark_dirty()
 
         base_vars = {
-            prop_name: self.get_value(getattr(self, prop_name))
-            for prop_name in self.base_vars
+            prop_name: self.get_value(prop_name) for prop_name in self.base_vars
         }
         if initial and include_computed:
             computed_vars = {
@@ -2010,7 +2016,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     cv._initial_value
                     if is_computed_var(cv)
                     and not isinstance(cv._initial_value, types.Unset)
-                    else self.get_value(getattr(self, prop_name))
+                    else self.get_value(prop_name)
                 )
                 for prop_name, cv in self.computed_vars.items()
                 if not cv._backend
@@ -2018,7 +2024,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         elif include_computed:
             computed_vars = {
                 # Include the computed vars.
-                prop_name: self.get_value(getattr(self, prop_name))
+                prop_name: self.get_value(prop_name)
                 for prop_name, cv in self.computed_vars.items()
                 if not cv._backend
             }

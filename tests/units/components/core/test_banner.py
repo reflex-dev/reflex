@@ -4,6 +4,7 @@ from reflex.components.core.banner import (
     ConnectionPulser,
     WebsocketTargetURL,
 )
+from reflex.components.radix.themes.base import RadixThemesComponent
 from reflex.components.radix.themes.typography.text import Text
 
 
@@ -24,7 +25,7 @@ def test_connection_banner():
             "react",
             "$/utils/context",
             "$/utils/state",
-            "@radix-ui/themes@^3.0.0",
+            RadixThemesComponent().library or "",
             "$/env.json",
         )
     )
@@ -42,7 +43,7 @@ def test_connection_modal():
             "react",
             "$/utils/context",
             "$/utils/state",
-            "@radix-ui/themes@^3.0.0",
+            RadixThemesComponent().library or "",
             "$/env.json",
         )
     )
