@@ -847,6 +847,10 @@ class App(MiddlewareMixin, LifespanMixin):
             (0, "AppWrap"): AppWrap.create()
         }
 
+        if self.theme is not None:
+            # If a theme component was provided, wrap the app with it
+            app_wrappers[(20, "Theme")] = self.theme
+
         for route in self.unevaluated_pages:
             console.debug(f"Evaluating page: {route}")
             self._compile_page(route)
@@ -1001,13 +1005,10 @@ class App(MiddlewareMixin, LifespanMixin):
         compile_results.append(
             compiler.compile_contexts(self.state, self.theme),
         )
-        progress.advance(task)
-
         if self.theme is not None:
-            # If a theme component was provided, wrap the app with it
-            app_wrappers[(20, "Theme")] = self.theme
             # Fix #2992 by removing the top-level appearance prop
             self.theme.appearance = None
+        progress.advance(task)
 
         # Compile the app root.
         compile_results.append(
