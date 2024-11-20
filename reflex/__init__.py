@@ -84,6 +84,9 @@ In the example above, you will be able to do `rx.list`
 
 from __future__ import annotations
 
+from types import ModuleType
+from typing import Any
+
 from reflex.utils import (
     compat,  # for side-effects
     lazy_loader,
@@ -365,7 +368,7 @@ getattr, __dir__, __all__ = lazy_loader.attach(
 )
 
 
-def __getattr__(name):
+def __getattr__(name: ModuleType | Any):
     if name == "chakra":
         from reflex.utils import console
 
