@@ -705,8 +705,8 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
 def redirect(
     path: str | Var[str],
     external: Optional[bool] = None,
-    is_external: Optional[bool] = False,
-    replace: Optional[bool] = False,
+    is_external: Optional[bool] = None,
+    replace: bool = False,
 ) -> EventSpec:
     """Redirect to a new path.
 
@@ -726,6 +726,11 @@ def redirect(
             "0.6.6",
             "0.7.0",
         )
+
+    if external is None and is_external is None:
+        is_external = False
+
+    if external is not None and is_external is None:
         is_external = external
 
     return server_side(
