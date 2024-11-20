@@ -171,7 +171,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         super().__init_subclass__()
 
     @classmethod
-    def _dict_recursive(cls, value):
+    def _dict_recursive(cls, value: Any):
         """Recursively serialize the relationship object(s).
 
         Args:

@@ -1582,7 +1582,9 @@ def array_contains_field_operation(
 
 
 @var_operation
-def array_contains_operation(haystack: ArrayVar, needle: Any | Var):
+def array_contains_operation(
+    haystack: ArrayVar, needle: Any | Var
+) -> CustomVarOperationReturn[bool]:
     """Check if an array contains an element.
 
     Args:
@@ -1625,7 +1627,7 @@ if TYPE_CHECKING:
 def map_array_operation(
     array: ArrayVar[ARRAY_VAR_TYPE],
     function: FunctionVar,
-):
+) -> CustomVarOperationReturn[List[Any]]:
     """Map a function over an array.
 
     Args:
