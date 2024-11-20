@@ -14,7 +14,8 @@ from reflex.testing import DEFAULT_TIMEOUT, AppHarness, WebDriver
 def HybridProperties():
     """Test app for hybrid properties."""
     import reflex as rx
-    from reflex.vars import Var, hybrid_property
+    from reflex.experimental import hybrid_property
+    from reflex.vars import Var
 
     class State(rx.State):
         first_name: str = "John"
@@ -71,7 +72,7 @@ def HybridProperties():
                 rx.text(f"has_last_name: {State.has_last_name}", id="has_last_name"),
                 rx.input(
                     value=State.last_name,
-                    on_change=State.set_last_name,  # type: ignore
+                    on_change=State.setvar("last_name"),
                     id="set_last_name",
                 ),
             ),

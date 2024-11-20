@@ -7,7 +7,6 @@ from .base import VarData as VarData
 from .base import field as field
 from .base import get_unique_variable_name as get_unique_variable_name
 from .base import get_uuid_string_var as get_uuid_string_var
-from .base import hybrid_property as hybrid_property
 from .base import var_operation as var_operation
 from .base import var_operation_return as var_operation_return
 from .function import FunctionStringVar as FunctionStringVar
