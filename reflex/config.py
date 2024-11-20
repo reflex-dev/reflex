@@ -546,6 +546,9 @@ class EnvironmentVariables:
     # Where to save screenshots when tests fail.
     SCREENSHOT_DIR: EnvVar[Optional[Path]] = env_var(None)
 
+    # Whether to check for outdated package versions.
+    REFLEX_CHECK_LATEST_VERSION: EnvVar[bool] = env_var(True)
+
 
 environment = EnvironmentVariables()
 
