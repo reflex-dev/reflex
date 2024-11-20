@@ -253,7 +253,7 @@ class Toaster(Component):
         toast_command = f"{toast_ref}.{level}" if level is not None else toast_ref
         if isinstance(message, Var):
             props.setdefault("title", message)
-        elif message == "" and ("title" not in props and "description" not in props):
+        elif message == "" and "title" not in props and "description" not in props:
             raise ValueError("Toast message or title or description must be provided.")
         if props:
             args = LiteralVar.create(ToastProps(component_name="rx.toast", **props))  # type: ignore
