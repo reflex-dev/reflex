@@ -389,7 +389,7 @@ class Var(Generic[VAR_TYPE]):
                 frozen=True,
                 **{"slots": True} if sys.version_info >= (3, 10) else {},
             )
-            class ToVarOperation(ToOperation, cls):
+            class ToVarOperation(ToOperation, cls):  # type: ignore
                 """Base class of converting a var to another var type."""
 
                 _original: Var = dataclasses.field(
@@ -447,20 +447,30 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     def _replace(
-        self, _var_type: Type[OTHER_VAR_TYPE], merge_var_data=None, **kwargs: Any
+        self,
+        _var_type: Type[OTHER_VAR_TYPE],
+        merge_var_data: VarData | None = None,
+        **kwargs: Any,
     ) -> Var[OTHER_VAR_TYPE]: ...
 
     @overload
     def _replace(
-        self, _var_type: GenericType | None = None, merge_var_data=None, **kwargs: Any
+        self,
+        _var_type: GenericType | None = None,
+        merge_var_data: VarData | None = None,
+        **kwargs: Any,
     ) -> Self: ...
 
     def _replace(
-        self, _var_type: GenericType | None = None, merge_var_data=None, **kwargs: Any
+        self,
+        _var_type: GenericType | None = None,
+        merge_var_data: VarData | None = None,
+        **kwargs: Any,
     ) -> Self | Var:
         """Make a copy of this Var with updated fields.
 
         Args:
+            _var_type: The new type of the Var.
             merge_var_data: VarData to merge into the existing VarData.
             **kwargs: Var fields to update.
 
@@ -861,7 +871,7 @@ class Var(Generic[VAR_TYPE]):
             ),
         ).guess_type()
 
-    def __eq__(self, other: Var | Any) -> BooleanVar:
+    def __eq__(self, other: Var | Any) -> BooleanVar:  # type: ignore
         """Check if the current variable is equal to the given variable.
 
         Args:
@@ -874,7 +884,7 @@ class Var(Generic[VAR_TYPE]):
 
         return equal_operation(self, other)
 
-    def __ne__(self, other: Var | Any) -> BooleanVar:
+    def __ne__(self, other: Var | Any) -> BooleanVar:  # type: ignore
         """Check if the current object is not equal to the given object.
 
         Parameters:
@@ -1292,7 +1302,7 @@ class LiteralVar(Var):
         _var_literal_subclasses.append((cls, var_subclass))
 
     @classmethod
-    def create(
+    def create(  # type: ignore
         cls,
         value: Any,
         _var_data: VarData | None = None,
@@ -1419,7 +1429,7 @@ T = TypeVar("T")
 
 # NoReturn is used to match CustomVarOperationReturn with no type hint.
 @overload
-def var_operation(
+def var_operation(  # type: ignore
     func: Callable[P, CustomVarOperationReturn[NoReturn]],
 ) -> Callable[P, Var]: ...
 
@@ -1469,7 +1479,7 @@ def var_operation(
 ) -> Callable[P, Var[T]]: ...
 
 
-def var_operation(
+def var_operation(  # type: ignore
     func: Callable[P, CustomVarOperationReturn[T]],
 ) -> Callable[P, Var[T]]:
     """Decorator for creating a var operation.
@@ -1715,7 +1725,7 @@ class CallableVar(Var):
         object.__setattr__(self, "fn", fn)
         object.__setattr__(self, "original_var", original_var)
 
-    def __call__(self, *args, **kwargs) -> Var:
+    def __call__(self, *args: Any, **kwargs: Any) -> Var:
         """Call the decorated function.
 
         Args:
@@ -1876,10 +1886,16 @@ class ComputedVar(Var[RETURN_TYPE]):
         object.__setattr__(self, "_fget", fget)
 
     @override
-    def _replace(self, merge_var_data=None, **kwargs: Any) -> Self:
+    def _replace(
+        self,
+        _var_type: Any = None,
+        merge_var_data: VarData | None = None,
+        **kwargs: Any,
+    ) -> Self:
         """Replace the attributes of the ComputedVar.
 
         Args:
+            _var_type: ignored in ComputedVar.
             merge_var_data: VarData to merge into the existing VarData.
             **kwargs: Var fields to update.
 
@@ -1992,7 +2008,7 @@ class ComputedVar(Var[RETURN_TYPE]):
     @overload
     def __get__(self, instance: BaseState, owner: Type) -> RETURN_TYPE: ...
 
-    def __get__(self, instance: BaseState | None, owner):
+    def __get__(self, instance: BaseState | None, owner: Type):
         """Get the ComputedVar value.
 
         If the value is already cached on the instance, return the cached value.
@@ -2158,7 +2174,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             self_is_top_of_stack = False
         return d
 
-    def mark_dirty(self, instance) -> None:
+    def mark_dirty(self, instance: BaseState) -> None:
         """Mark this ComputedVar as dirty.
 
         Args:
@@ -2880,7 +2896,7 @@ BASE_TYPE = TypeVar("BASE_TYPE", bound=Base)
 class Field(Generic[T]):
     """Shadow class for Var to allow for type hinting in the IDE."""
 
-    def __set__(self, instance, value: T):
+    def __set__(self, instance: Any, value: T):
         """Set the Var.
 
         Args:

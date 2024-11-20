@@ -743,7 +743,7 @@ class ConcatVarOperation(CachedVarOperation, StringVar[str]):
         """Create a var from a string value.
 
         Args:
-            value: The values to concatenate.
+            *value: The values to concatenate.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -1286,6 +1286,7 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
 
         Args:
             value: The value to create the var from.
+            _var_type: The type of the var.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:

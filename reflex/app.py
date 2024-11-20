@@ -627,8 +627,8 @@ class App(MiddlewareMixin, LifespanMixin):
         Args:
             component: The component to display at the page.
             title: The title of the page.
-            description: The description of the page.
             image: The image to display on the page.
+            description: The description of the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
         """
@@ -1277,15 +1277,14 @@ async def process(
                 if app._process_background(state, event) is not None:
                     # `final=True` allows the frontend send more events immediately.
                     yield StateUpdate(final=True)
-                    return
+                else:
+                    # Process the event synchronously.
+                    async for update in state._process(event):
+                        # Postprocess the event.
+                        update = await app._postprocess(state, event, update)
 
-                # Process the event synchronously.
-                async for update in state._process(event):
-                    # Postprocess the event.
-                    update = await app._postprocess(state, event, update)
-
-                    # Yield the update.
-                    yield update
+                        # Yield the update.
+                        yield update
     except Exception as ex:
         telemetry.send_error(ex, context="backend")
 
@@ -1476,7 +1475,7 @@ class EventNamespace(AsyncNamespace):
         super().__init__(namespace)
         self.app = app
 
-    def on_connect(self, sid, environ):
+    def on_connect(self, sid: str, environ: dict):
         """Event for when the websocket is connected.
 
         Args:
@@ -1485,7 +1484,7 @@ class EventNamespace(AsyncNamespace):
         """
         pass
 
-    def on_disconnect(self, sid):
+    def on_disconnect(self, sid: str):
         """Event for when the websocket disconnects.
 
         Args:
@@ -1507,7 +1506,7 @@ class EventNamespace(AsyncNamespace):
             self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
         )
 
-    async def on_event(self, sid, data):
+    async def on_event(self, sid: str, data: Any):
         """Event for receiving front-end websocket events.
 
         Raises:
@@ -1550,7 +1549,7 @@ class EventNamespace(AsyncNamespace):
             # Emit the update from processing the event.
             await self.emit_update(update=update, sid=sid)
 
-    async def on_ping(self, sid):
+    async def on_ping(self, sid: str):
         """Event for testing the API endpoint.
 
         Args:

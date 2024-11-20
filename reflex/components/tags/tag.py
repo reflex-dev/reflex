@@ -49,7 +49,7 @@ class Tag:
         """Set the tag's fields.
 
         Args:
-            kwargs: The fields to set.
+            **kwargs: The fields to set.
 
         Returns:
             The tag with the fields
