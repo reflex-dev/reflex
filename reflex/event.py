@@ -181,6 +181,18 @@ class EventActionsMixin:
             event_actions={"debounce": delay_ms, **self.event_actions},
         )
 
+    @property
+    def temporal(self):
+        """Do not queue the event if the backend is down.
+
+        Returns:
+            New EventHandler-like with temporal set to True.
+        """
+        return dataclasses.replace(
+            self,
+            event_actions={"temporal": True, **self.event_actions},
+        )
+
 
 @dataclasses.dataclass(
     init=True,
