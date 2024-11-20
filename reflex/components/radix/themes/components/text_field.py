@@ -11,11 +11,7 @@ from reflex.components.el import elements
 from reflex.event import EventHandler, input_event, key_event
 from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    LiteralRadius,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
 LiteralTextFieldSize = Literal["1", "2", "3"]
 LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
@@ -70,6 +66,9 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
 
     # Value of the input
     value: Var[Union[str, int, float]]
+
+    # References a datalist for suggested options
+    list: Var[Union[str, int, bool]]
 
     # Fired when the value of the textarea changes.
     on_change: EventHandler[input_event]

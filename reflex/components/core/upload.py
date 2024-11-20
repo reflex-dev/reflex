@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple
 
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
     Component,
     ComponentNamespace,
@@ -15,15 +16,15 @@ from reflex.components.el.elements.forms import Input
 from reflex.components.radix.themes.layout.box import Box
 from reflex.config import environment
 from reflex.constants import Dirs
-from reflex.constants.compiler import Imports
+from reflex.constants.compiler import Hooks, Imports
 from reflex.event import (
     CallableEventSpec,
     EventChain,
     EventHandler,
     EventSpec,
     call_event_fn,
-    call_script,
     parse_args_spec,
+    run_script,
 )
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
@@ -106,8 +107,8 @@ def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec:
     """
     # UploadFilesProvider assigns a special function to clear selected files
     # into the shared global refs object to make it accessible outside a React
-    # component via `call_script` (otherwise backend could never clear files).
-    return call_script(f"refs['__clear_selected_files']({id_!r})")
+    # component via `run_script` (otherwise backend could never clear files).
+    return run_script(f"refs['__clear_selected_files']({id_!r})")
 
 
 def cancel_upload(upload_id: str) -> EventSpec:
@@ -119,7 +120,7 @@ def cancel_upload(upload_id: str) -> EventSpec:
     Returns:
         An event spec that cancels the upload when triggered.
     """
-    return call_script(
+    return run_script(
         f"upload_controllers[{str(LiteralVar.create(upload_id))}]?.abort()"
     )
 
@@ -132,7 +133,7 @@ def get_upload_dir() -> Path:
     """
     Upload.is_used = True
 
-    uploaded_files_dir = environment.REFLEX_UPLOADED_FILES_DIR
+    uploaded_files_dir = environment.REFLEX_UPLOADED_FILES_DIR.get()
     uploaded_files_dir.mkdir(parents=True, exist_ok=True)
     return uploaded_files_dir
 
@@ -179,6 +180,13 @@ class UploadFilesProvider(Component):
 
     library = f"$/{Dirs.CONTEXTS_PATH}"
     tag = "UploadFilesProvider"
+
+
+class GhostUpload(Fragment):
+    """A ghost upload component."""
+
+    # Fired when files are dropped.
+    on_drop: EventHandler[_on_drop_spec]
 
 
 class Upload(MemoizationLeaf):
@@ -276,8 +284,8 @@ class Upload(MemoizationLeaf):
         root_props_unique_name = get_unique_variable_name()
 
         event_var, callback_str = StatefulComponent._get_memoized_event_triggers(
-            Box.create(on_click=upload_props["on_drop"])  # type: ignore
-        )["on_click"]
+            GhostUpload.create(on_drop=upload_props["on_drop"])
+        )["on_drop"]
 
         upload_props["on_drop"] = event_var
 
@@ -285,20 +293,18 @@ class Upload(MemoizationLeaf):
             format.to_camel_case(key): value for key, value in upload_props.items()
         }
 
-        use_dropzone_arguements = {
+        use_dropzone_arguments = {
             "onDrop": event_var,
             **upload_props,
         }
 
         left_side = f"const {{getRootProps: {root_props_unique_name}, getInputProps: {input_props_unique_name}}} "
-        right_side = f"useDropzone({str(Var.create(use_dropzone_arguements))})"
+        right_side = f"useDropzone({str(Var.create(use_dropzone_arguments))})"
 
         var_data = VarData.merge(
             VarData(
                 imports=Imports.EVENTS,
-                hooks={
-                    "const [addEvents, connectError] = useContext(EventLoopContext);": None
-                },
+                hooks={Hooks.EVENTS: None},
             ),
             event_var._get_all_var_data(),
             VarData(

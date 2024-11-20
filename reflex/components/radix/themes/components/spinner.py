@@ -5,10 +5,7 @@ from typing import Literal
 from reflex.components.core.breakpoints import Responsive
 from reflex.vars.base import Var
 
-from ..base import (
-    RadixLoadingProp,
-    RadixThemesComponent,
-)
+from ..base import RadixLoadingProp, RadixThemesComponent
 
 LiteralSpinnerSize = Literal["1", "2", "3"]
 

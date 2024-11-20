@@ -68,7 +68,7 @@ def table_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("table"),
-        app_source=Table,  # type: ignore
+        app_source=Table,
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
         yield harness

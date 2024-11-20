@@ -43,6 +43,7 @@ import reflex.utils.exec
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
+from reflex.config import environment
 from reflex.state import (
     BaseState,
     StateManager,
@@ -117,7 +118,7 @@ class AppHarness:
 
     app_name: str
     app_source: Optional[
-        types.FunctionType | types.ModuleType | str | functools.partial[Any]
+        Callable[[], None] | types.ModuleType | str | functools.partial[Any]
     ]
     app_path: pathlib.Path
     app_module_path: pathlib.Path
@@ -137,7 +138,7 @@ class AppHarness:
         cls,
         root: pathlib.Path,
         app_source: Optional[
-            types.FunctionType | types.ModuleType | str | functools.partial[Any]
+            Callable[[], None] | types.ModuleType | str | functools.partial[Any]
         ] = None,
         app_name: Optional[str] = None,
     ) -> "AppHarness":
@@ -250,6 +251,7 @@ class AppHarness:
 
     def _initialize_app(self):
         # disable telemetry reporting for tests
+
         os.environ["TELEMETRY_ENABLED"] = "false"
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
@@ -615,10 +617,10 @@ class AppHarness:
         if self.frontend_url is None:
             raise RuntimeError("Frontend is not running.")
         want_headless = False
-        if os.environ.get("APP_HARNESS_HEADLESS"):
+        if environment.APP_HARNESS_HEADLESS.get():
             want_headless = True
         if driver_clz is None:
-            requested_driver = os.environ.get("APP_HARNESS_DRIVER", "Chrome")
+            requested_driver = environment.APP_HARNESS_DRIVER.get()
             driver_clz = getattr(webdriver, requested_driver)
             if driver_options is None:
                 driver_options = getattr(webdriver, f"{requested_driver}Options")()
@@ -640,7 +642,7 @@ class AppHarness:
                 driver_options.add_argument("headless")
         if driver_options is None:
             raise RuntimeError(f"Could not determine options for {driver_clz}")
-        if args := os.environ.get("APP_HARNESS_DRIVER_ARGS"):
+        if args := environment.APP_HARNESS_DRIVER_ARGS.get():
             for arg in args.split(","):
                 driver_options.add_argument(arg)
         if driver_option_args is not None:
@@ -944,7 +946,7 @@ class AppHarnessProd(AppHarness):
     def _start_backend(self):
         if self.app_instance is None:
             raise RuntimeError("App was not initialized.")
-        os.environ[reflex.constants.SKIP_COMPILE_ENV_VAR] = "yes"
+        environment.REFLEX_SKIP_COMPILE.set(True)
         self.backend = uvicorn.Server(
             uvicorn.Config(
                 app=self.app_instance,
@@ -961,7 +963,7 @@ class AppHarnessProd(AppHarness):
         try:
             return super()._poll_for_servers(timeout)
         finally:
-            os.environ.pop(reflex.constants.SKIP_COMPILE_ENV_VAR, None)
+            environment.REFLEX_SKIP_COMPILE.set(None)
 
     def stop(self):
         """Stop the frontend python webserver."""

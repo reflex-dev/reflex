@@ -178,11 +178,6 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
-  if (event.name == "_console") {
-    console.log(event.payload.message);
-    return false;
-  }
-
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
     queueEventIfSocketExists(initialEvents(), socket);
@@ -213,12 +208,6 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
-  if (event.name == "_set_clipboard") {
-    const content = event.payload.content;
-    navigator.clipboard.writeText(content);
-    return false;
-  }
-
   if (event.name == "_download") {
     const a = document.createElement("a");
     a.hidden = true;
@@ -230,11 +219,6 @@ export const applyEvent = async (event, socket) => {
     a.download = event.payload.filename;
     a.click();
     a.remove();
-    return false;
-  }
-
-  if (event.name == "_alert") {
-    alert(event.payload.message);
     return false;
   }
 
@@ -254,9 +238,35 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
-  if (event.name == "_call_script") {
+  if (
+    event.name == "_call_function" &&
+    typeof event.payload.function !== "string"
+  ) {
     try {
-      const eval_result = eval(event.payload.javascript_code);
+      const eval_result = event.payload.function();
+      if (event.payload.callback) {
+        if (!!eval_result && typeof eval_result.then === "function") {
+          event.payload.callback(await eval_result);
+        } else {
+          event.payload.callback(eval_result);
+        }
+      }
+    } catch (e) {
+      console.log("_call_function", e);
+      if (window && window?.onerror) {
+        window.onerror(e.message, null, null, null, e);
+      }
+    }
+    return false;
+  }
+
+  if (event.name == "_call_script" || event.name == "_call_function") {
+    try {
+      const eval_result =
+        event.name == "_call_script"
+          ? eval(event.payload.javascript_code)
+          : eval(event.payload.function)();
+
       if (event.payload.callback) {
         if (!!eval_result && typeof eval_result.then === "function") {
           eval(event.payload.callback)(await eval_result);

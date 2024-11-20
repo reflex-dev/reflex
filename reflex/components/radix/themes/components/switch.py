@@ -3,13 +3,10 @@
 from typing import Literal
 
 from reflex.components.core.breakpoints import Responsive
-from reflex.event import EventHandler, identity_event
+from reflex.event import EventHandler, passthrough_event_spec
 from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, RadixThemesComponent
 
 LiteralSwitchSize = Literal["1", "2", "3"]
 
@@ -59,7 +56,7 @@ class Switch(RadixThemesComponent):
     _rename_props = {"onChange": "onCheckedChange"}
 
     # Fired when the value of the switch changes
-    on_change: EventHandler[identity_event(bool)]
+    on_change: EventHandler[passthrough_event_spec(bool)]
 
 
 switch = Switch.create

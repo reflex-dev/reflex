@@ -8,8 +8,10 @@ import copy
 import dataclasses
 import functools
 import inspect
+import json
 import pickle
 import sys
+import typing
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -43,9 +45,8 @@ from typing_extensions import Self
 from reflex import event
 from reflex.config import get_config
 from reflex.istate.data import RouterData
-from reflex.istate.storage import (
-    ClientStorageBase,
-)
+from reflex.istate.storage import ClientStorageBase
+from reflex.model import Model
 from reflex.vars.base import (
     ComputedVar,
     DynamicRouteVar,
@@ -86,12 +87,19 @@ from reflex.utils.exceptions import (
     ImmutableStateError,
     InvalidStateManagerMode,
     LockExpiredError,
+    ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSchemaMismatchError,
 )
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import serializer
-from reflex.utils.types import _isinstance, get_origin, override
+from reflex.utils.types import (
+    _isinstance,
+    get_origin,
+    is_union,
+    override,
+    value_inside_optional,
+)
 from reflex.vars import VarData
 
 if TYPE_CHECKING:
@@ -104,6 +112,8 @@ var = computed_var
 
 # If the state is this large, it's considered a performance issue.
 TOO_LARGE_SERIALIZED_STATE = 100 * 1024  # 100kb
+# Only warn about each state class size once.
+_WARNED_ABOUT_STATE_SIZE: Set[str] = set()
 
 # Errors caught during pickling of state
 HANDLED_PICKLE_ERRORS = (
@@ -353,7 +363,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
     def __init__(
         self,
-        *args,
         parent_state: BaseState | None = None,
         init_substates: bool = True,
         _reflex_internal_init: bool = False,
@@ -364,11 +373,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         DO NOT INSTANTIATE STATE CLASSES DIRECTLY! Use StateManager.get_state() instead.
 
         Args:
-            *args: The args to pass to the Pydantic init method.
             parent_state: The parent state.
             init_substates: Whether to initialize the substates in this instance.
             _reflex_internal_init: A flag to indicate that the state is being initialized by the framework.
-            **kwargs: The kwargs to pass to the Pydantic init method.
+            **kwargs: The kwargs to set as attributes on the state.
 
         Raises:
             ReflexRuntimeError: If the state is instantiated directly by end user.
@@ -380,8 +388,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 "State classes should not be instantiated directly in a Reflex app. "
                 "See https://reflex.dev/docs/state/ for further information."
             )
+        if type(self)._mixin:
+            raise ReflexRuntimeError(
+                f"{type(self).__name__} is a state mixin and cannot be instantiated directly."
+            )
         kwargs["parent_state"] = parent_state
-        super().__init__(*args, **kwargs)
+        super().__init__()
+        for name, value in kwargs.items():
+            setattr(self, name, value)
 
         # Setup the substates (for memory state manager only).
         if init_substates:
@@ -1035,9 +1049,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             prop: The var to create a setter for.
         """
-        setter_name = prop.get_setter_name(include_state=False)
+        setter_name = prop._get_setter_name(include_state=False)
         if setter_name not in cls.__dict__:
-            event_handler = cls._create_event_handler(prop.get_setter())
+            event_handler = cls._create_event_handler(prop._get_setter())
             cls.event_handlers[setter_name] = event_handler
             setattr(cls, setter_name, event_handler)
 
@@ -1051,7 +1065,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Get the pydantic field for the var.
         field = cls.get_fields()[prop._var_field_name]
         if field.required:
-            default_value = prop.get_default_value()
+            default_value = prop._get_default_value()
             if default_value is not None:
                 field.required = False
                 field.default = default_value
@@ -1078,7 +1092,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return getattr(cls, name)
         except AttributeError:
             try:
-                return Var("", _var_type=annotation_value).get_default_value()
+                return Var("", _var_type=annotation_value)._get_default_value()
             except TypeError:
                 pass
         return None
@@ -1285,16 +1299,19 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         fields = self.get_fields()
 
-        if name in fields and not _isinstance(
-            value, (field_type := fields[name].outer_type_)
-        ):
-            console.deprecate(
-                "mismatched-type-assignment",
-                f"Tried to assign value {value} of type {type(value)} to field {type(self).__name__}.{name} of type {field_type}."
-                " This might lead to unexpected behavior.",
-                "0.6.5",
-                "0.7.0",
-            )
+        if name in fields:
+            field = fields[name]
+            field_type = field.outer_type_
+            if field.allow_none:
+                field_type = Union[field_type, None]
+            if not _isinstance(value, field_type):
+                console.deprecate(
+                    "mismatched-type-assignment",
+                    f"Tried to assign value {value} of type {type(value)} to field {type(self).__name__}.{name} of type {field_type}."
+                    " This might lead to unexpected behavior.",
+                    "0.6.5",
+                    "0.7.0",
+                )
 
         # Set the attribute.
         super().__setattr__(name, value)
@@ -1709,6 +1726,40 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Get the function to process the event.
         fn = functools.partial(handler.fn, state)
 
+        try:
+            type_hints = typing.get_type_hints(handler.fn)
+        except Exception:
+            type_hints = {}
+
+        for arg, value in list(payload.items()):
+            hinted_args = type_hints.get(arg, Any)
+            if hinted_args is Any:
+                continue
+            if is_union(hinted_args):
+                if value is None:
+                    continue
+                hinted_args = value_inside_optional(hinted_args)
+            if isinstance(value, dict) and inspect.isclass(hinted_args):
+                if issubclass(hinted_args, Model):
+                    # Remove non-fields from the payload
+                    payload[arg] = hinted_args(
+                        **{
+                            key: value
+                            for key, value in value.items()
+                            if key in hinted_args.__fields__
+                        }
+                    )
+                elif dataclasses.is_dataclass(hinted_args) or issubclass(
+                    hinted_args, Base
+                ):
+                    payload[arg] = hinted_args(**value)
+            if isinstance(value, list) and (hinted_args is set or hinted_args is Set):
+                payload[arg] = set(value)
+            if isinstance(value, list) and (
+                hinted_args is tuple or hinted_args is Tuple
+            ):
+                payload[arg] = tuple(value)
+
         # Wrap the function in a try/except block.
         try:
             # Handle async functions.
@@ -1844,7 +1895,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         )
 
         subdelta: Dict[str, Any] = {
-            prop: self.get_value(getattr(self, prop))
+            prop: self.get_value(prop)
             for prop in delta_vars
             if not types.is_backend_base_variable(prop, type(self))
         }
@@ -1936,9 +1987,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The value of the field.
         """
-        if isinstance(key, MutableProxy):
-            return super().get_value(key.__wrapped__)
-        return super().get_value(key)
+        value = super().get_value(key)
+        if isinstance(value, MutableProxy):
+            return value.__wrapped__
+        return value
 
     def dict(
         self, include_computed: bool = True, initial: bool = False, **kwargs
@@ -1960,8 +2012,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self._mark_dirty()
 
         base_vars = {
-            prop_name: self.get_value(getattr(self, prop_name))
-            for prop_name in self.base_vars
+            prop_name: self.get_value(prop_name) for prop_name in self.base_vars
         }
         if initial and include_computed:
             computed_vars = {
@@ -1970,7 +2021,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     cv._initial_value
                     if is_computed_var(cv)
                     and not isinstance(cv._initial_value, types.Unset)
-                    else self.get_value(getattr(self, prop_name))
+                    else self.get_value(prop_name)
                 )
                 for prop_name, cv in self.computed_vars.items()
                 if not cv._backend
@@ -1978,7 +2029,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         elif include_computed:
             computed_vars = {
                 # Include the computed vars.
-                prop_name: self.get_value(getattr(self, prop_name))
+                prop_name: self.get_value(prop_name)
                 for prop_name, cv in self.computed_vars.items()
                 if not cv._backend
             }
@@ -2046,6 +2097,27 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             state["__dict__"].pop(inherited_var_name, None)
         return state
 
+    def _warn_if_too_large(
+        self,
+        pickle_state_size: int,
+    ):
+        """Print a warning when the state is too large.
+
+        Args:
+            pickle_state_size: The size of the pickled state.
+        """
+        state_full_name = self.get_full_name()
+        if (
+            state_full_name not in _WARNED_ABOUT_STATE_SIZE
+            and pickle_state_size > TOO_LARGE_SERIALIZED_STATE
+            and self.substates
+        ):
+            console.warn(
+                f"State {state_full_name} serializes to {pickle_state_size} bytes "
+                "which may present performance issues. Consider reducing the size of this state."
+            )
+            _WARNED_ABOUT_STATE_SIZE.add(state_full_name)
+
     @classmethod
     @functools.lru_cache()
     def _to_schema(cls) -> str:
@@ -2084,7 +2156,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             The serialized state.
         """
         try:
-            return pickle.dumps((self._to_schema(), self))
+            pickle_state = pickle.dumps((self._to_schema(), self))
+            self._warn_if_too_large(len(pickle_state))
+            return pickle_state
         except HANDLED_PICKLE_ERRORS as og_pickle_error:
             error = (
                 f"Failed to serialize state {self.get_full_name()} due to unpicklable object. "
@@ -2297,6 +2371,23 @@ class ComponentState(State, mixin=True):
 
     # The number of components created from this class.
     _per_component_state_instance_count: ClassVar[int] = 0
+
+    def __init__(self, *args, **kwargs):
+        """Do not allow direct initialization of the ComponentState.
+
+        Args:
+            *args: The args to pass to the State init method.
+            **kwargs: The kwargs to pass to the State init method.
+
+        Raises:
+            ReflexRuntimeError: If the ComponentState is initialized directly.
+        """
+        if type(self)._mixin:
+            raise ReflexRuntimeError(
+                f"{ComponentState.__name__} {type(self).__name__} is not meant to be initialized directly. "
+                + "Use the `create` method to create a new instance and access the state via the `State` attribute."
+            )
+        super().__init__(*args, **kwargs)
 
     @classmethod
     def __init_subclass__(cls, mixin: bool = True, **kwargs):
@@ -3075,9 +3166,6 @@ class StateManagerRedis(StateManager):
         b"evicted",
     }
 
-    # Only warn about each state class size once.
-    _warned_about_state_size: ClassVar[Set[str]] = set()
-
     async def _get_parent_state(
         self, token: str, state: BaseState | None = None
     ) -> BaseState | None:
@@ -3221,29 +3309,6 @@ class StateManagerRedis(StateManager):
             return state._get_root_state()
         return state
 
-    def _warn_if_too_large(
-        self,
-        state: BaseState,
-        pickle_state_size: int,
-    ):
-        """Print a warning when the state is too large.
-
-        Args:
-            state: The state to check.
-            pickle_state_size: The size of the pickled state.
-        """
-        state_full_name = state.get_full_name()
-        if (
-            state_full_name not in self._warned_about_state_size
-            and pickle_state_size > TOO_LARGE_SERIALIZED_STATE
-            and state.substates
-        ):
-            console.warn(
-                f"State {state_full_name} serializes to {pickle_state_size} bytes "
-                "which may present performance issues. Consider reducing the size of this state."
-            )
-            self._warned_about_state_size.add(state_full_name)
-
     @override
     async def set_state(
         self,
@@ -3294,7 +3359,6 @@ class StateManagerRedis(StateManager):
         # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
         if state._get_was_touched():
             pickle_state = state._serialize()
-            self._warn_if_too_large(state, len(pickle_state))
             if pickle_state:
                 await self.redis.set(
                     _substate_key(client_token, state),
@@ -3375,7 +3439,7 @@ class StateManagerRedis(StateManager):
             )
         except ResponseError:
             # Some redis servers only allow out-of-band configuration, so ignore errors here.
-            if not environment.REFLEX_IGNORE_REDIS_CONFIG_ERROR:
+            if not environment.REFLEX_IGNORE_REDIS_CONFIG_ERROR.get():
                 raise
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(lock_key_channel)
@@ -3713,6 +3777,29 @@ def serialize_mutable_proxy(mp: MutableProxy):
         The wrapped object.
     """
     return mp.__wrapped__
+
+
+_orig_json_JSONEncoder_default = json.JSONEncoder.default
+
+
+def _json_JSONEncoder_default_wrapper(self: json.JSONEncoder, o: Any) -> Any:
+    """Wrap JSONEncoder.default to handle MutableProxy objects.
+
+    Args:
+        self: the JSONEncoder instance.
+        o: the object to serialize.
+
+    Returns:
+        A JSON-able object.
+    """
+    try:
+        return o.__wrapped__
+    except AttributeError:
+        pass
+    return _orig_json_JSONEncoder_default(self, o)
+
+
+json.JSONEncoder.default = _json_JSONEncoder_default_wrapper
 
 
 class ImmutableMutableProxy(MutableProxy):

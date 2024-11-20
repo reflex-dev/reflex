@@ -5,13 +5,10 @@ from typing import Literal
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
-from reflex.event import EventHandler, empty_event, identity_event
+from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
 
-from ..base import (
-    RadixThemesComponent,
-    RadixThemesTriggerComponent,
-)
+from ..base import RadixThemesComponent, RadixThemesTriggerComponent
 
 
 class DialogRoot(RadixThemesComponent):
@@ -23,7 +20,10 @@ class DialogRoot(RadixThemesComponent):
     open: Var[bool]
 
     # Fired when the open state changes.
-    on_open_change: EventHandler[identity_event(bool)]
+    on_open_change: EventHandler[passthrough_event_spec(bool)]
+
+    # The open state of the dialog when it is initially rendered. Use when you do not need to control its open state.
+    default_open: Var[bool]
 
 
 class DialogTrigger(RadixThemesTriggerComponent):
@@ -47,19 +47,19 @@ class DialogContent(elements.Div, RadixThemesComponent):
     size: Var[Responsive[Literal["1", "2", "3", "4"]]]
 
     # Fired when the dialog is opened.
-    on_open_auto_focus: EventHandler[empty_event]
+    on_open_auto_focus: EventHandler[no_args_event_spec]
 
     # Fired when the dialog is closed.
-    on_close_auto_focus: EventHandler[empty_event]
+    on_close_auto_focus: EventHandler[no_args_event_spec]
 
     # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[empty_event]
+    on_escape_key_down: EventHandler[no_args_event_spec]
 
     # Fired when the pointer is down outside the dialog.
-    on_pointer_down_outside: EventHandler[empty_event]
+    on_pointer_down_outside: EventHandler[no_args_event_spec]
 
     # Fired when the pointer interacts outside the dialog.
-    on_interact_outside: EventHandler[empty_event]
+    on_interact_outside: EventHandler[no_args_event_spec]
 
 
 class DialogDescription(RadixThemesComponent):

@@ -4,16 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Iterable,
-    Tuple,
-    Type,
-    Union,
-    get_args,
-)
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Tuple, Type, Union, get_args
 
 from reflex.components.tags.tag import Tag
 from reflex.vars import LiteralArrayVar, Var, get_unique_variable_name

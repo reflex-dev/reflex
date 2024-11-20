@@ -13,6 +13,8 @@ from platformdirs import PlatformDirs
 from .utils import classproperty
 
 IS_WINDOWS = platform.system() == "Windows"
+IS_MACOS = platform.system() == "Darwin"
+IS_LINUX = platform.system() == "Linux"
 
 
 class Dirs(SimpleNamespace):
@@ -76,7 +78,7 @@ class Reflex(SimpleNamespace):
     # The root directory of the reflex library.
     ROOT_DIR = Path(__file__).parents[2]
 
-    RELEASES_URL = f"https://api.github.com/repos/reflex-dev/templates/releases"
+    RELEASES_URL = "https://api.github.com/repos/reflex-dev/templates/releases"
 
 
 class ReflexHostingCLI(SimpleNamespace):
@@ -112,7 +114,7 @@ class Templates(SimpleNamespace):
         from reflex.config import environment
 
         return (
-            environment.REFLEX_BUILD_FRONTEND
+            environment.REFLEX_BUILD_FRONTEND.get()
             + "/gen?reflex_init_token={reflex_init_token}"
         )
 
@@ -126,7 +128,7 @@ class Templates(SimpleNamespace):
         """
         from reflex.config import environment
 
-        return environment.REFLEX_BUILD_BACKEND + "/api/init/{reflex_init_token}"
+        return environment.REFLEX_BUILD_BACKEND.get() + "/api/init/{reflex_init_token}"
 
     @classproperty
     @classmethod
@@ -139,7 +141,8 @@ class Templates(SimpleNamespace):
         from reflex.config import environment
 
         return (
-            environment.REFLEX_BUILD_BACKEND + "/api/gen/{generation_hash}/refactored"
+            environment.REFLEX_BUILD_BACKEND.get()
+            + "/api/gen/{generation_hash}/refactored"
         )
 
     class Dirs(SimpleNamespace):
@@ -239,19 +242,9 @@ COOKIES = "cookies"
 LOCAL_STORAGE = "local_storage"
 SESSION_STORAGE = "session_storage"
 
-# If this env var is set to "yes", App.compile will be a no-op
-SKIP_COMPILE_ENV_VAR = "__REFLEX_SKIP_COMPILE"
-
-# This env var stores the execution mode of the app
-ENV_MODE_ENV_VAR = "REFLEX_ENV_MODE"
-
-ENV_BACKEND_ONLY_ENV_VAR = "REFLEX_BACKEND_ONLY"
-ENV_FRONTEND_ONLY_ENV_VAR = "REFLEX_FRONTEND_ONLY"
-
 # Testing variables.
 # Testing os env set by pytest when running a test case.
 PYTEST_CURRENT_TEST = "PYTEST_CURRENT_TEST"
-RELOAD_CONFIG = "__REFLEX_RELOAD_CONFIG"
 
 REFLEX_VAR_OPENING_TAG = "<reflex.Var>"
 REFLEX_VAR_CLOSING_TAG = "</reflex.Var>"

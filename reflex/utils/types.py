@@ -14,9 +14,11 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    FrozenSet,
     Iterable,
     List,
     Literal,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -26,11 +28,10 @@ from typing import (
     get_args,
     get_type_hints,
 )
-from typing import (
-    get_origin as get_origin_og,
-)
+from typing import get_origin as get_origin_og
 
 import sqlalchemy
+from typing_extensions import is_typeddict
 
 import reflex
 from reflex.components.core.breakpoints import Breakpoints
@@ -42,12 +43,7 @@ except ModuleNotFoundError:
 
 from sqlalchemy.ext.associationproxy import AssociationProxyInstance
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Mapped,
-    QueryableAttribute,
-    Relationship,
-)
+from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
 
 from reflex import constants
 from reflex.base import Base
@@ -506,6 +502,14 @@ def _issubclass(cls: GenericType, cls_check: GenericType, instance: Any = None) 
     if isinstance(instance, Breakpoints):
         return _breakpoints_satisfies_typing(cls_check, instance)
 
+    if isinstance(cls_check_base, tuple):
+        cls_check_base = tuple(
+            cls_check_one if not is_typeddict(cls_check_one) else dict
+            for cls_check_one in cls_check_base
+        )
+    if is_typeddict(cls_check_base):
+        cls_check_base = dict
+
     # Check if the types match.
     try:
         return cls_check_base == Any or issubclass(cls_base, cls_check_base)
@@ -513,6 +517,36 @@ def _issubclass(cls: GenericType, cls_check: GenericType, instance: Any = None) 
         # These errors typically arise from bad annotations and are hard to
         # debug without knowing the type that we tried to compare.
         raise TypeError(f"Invalid type for issubclass: {cls_base}") from te
+
+
+def does_obj_satisfy_typed_dict(obj: Any, cls: GenericType) -> bool:
+    """Check if an object satisfies a typed dict.
+
+    Args:
+        obj: The object to check.
+        cls: The typed dict to check against.
+
+    Returns:
+        Whether the object satisfies the typed dict.
+    """
+    if not isinstance(obj, Mapping):
+        return False
+
+    key_names_to_values = get_type_hints(cls)
+    required_keys: FrozenSet[str] = getattr(cls, "__required_keys__", frozenset())
+
+    if not all(
+        isinstance(key, str)
+        and key in key_names_to_values
+        and _isinstance(value, key_names_to_values[key])
+        for key, value in obj.items()
+    ):
+        return False
+
+    # TODO in 3.14: Implement https://peps.python.org/pep-0728/ if it's approved
+
+    # required keys are all present
+    return required_keys.issubset(required_keys)
 
 
 def _isinstance(obj: Any, cls: GenericType, nested: bool = False) -> bool:
@@ -541,6 +575,12 @@ def _isinstance(obj: Any, cls: GenericType, nested: bool = False) -> bool:
     origin = get_origin(cls)
 
     if origin is None:
+        # cls is a typed dict
+        if is_typeddict(cls):
+            if nested:
+                return does_obj_satisfy_typed_dict(obj, cls)
+            return isinstance(obj, dict)
+
         # cls is a simple class
         return isinstance(obj, cls)
 
@@ -565,7 +605,7 @@ def _isinstance(obj: Any, cls: GenericType, nested: bool = False) -> bool:
                 and len(obj) == len(args)
                 and all(_isinstance(item, arg) for item, arg in zip(obj, args))
             )
-        if origin is dict:
+        if origin in (dict, Breakpoints):
             return isinstance(obj, dict) and all(
                 _isinstance(key, args[0]) and _isinstance(value, args[1])
                 for key, value in obj.items()
@@ -574,6 +614,12 @@ def _isinstance(obj: Any, cls: GenericType, nested: bool = False) -> bool:
             return isinstance(obj, set) and all(
                 _isinstance(item, args[0]) for item in obj
             )
+
+    if args:
+        from reflex.vars import Field
+
+        if origin is Field:
+            return _isinstance(obj, args[0])
 
     return isinstance(obj, get_base_class(cls))
 

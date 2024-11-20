@@ -63,7 +63,7 @@ class Bun(SimpleNamespace):
         """
         from reflex.config import environment
 
-        return environment.REFLEX_DIR / "bun"
+        return environment.REFLEX_DIR.get() / "bun"
 
     @classproperty
     @classmethod
@@ -74,6 +74,11 @@ class Bun(SimpleNamespace):
             The default bun path.
         """
         return cls.ROOT_PATH / "bin" / ("bun" if not IS_WINDOWS else "bun.exe")
+
+    DEFAULT_CONFIG = """
+[install]
+registry = "{registry}"
+"""
 
 
 # FNM config.
@@ -100,7 +105,7 @@ class Fnm(SimpleNamespace):
         """
         from reflex.config import environment
 
-        return environment.REFLEX_DIR / "fnm"
+        return environment.REFLEX_DIR.get() / "fnm"
 
     @classproperty
     @classmethod
@@ -177,17 +182,17 @@ class PackageJson(SimpleNamespace):
         "@emotion/react": "11.13.3",
         "axios": "1.7.7",
         "json5": "2.2.3",
-        "next": "15.0.1",
+        "next": "14.2.16",
         "next-sitemap": "4.2.3",
-        "next-themes": "0.3.0",
+        "next-themes": "0.4.3",
         "react": "18.3.1",
         "react-dom": "18.3.1",
         "react-focus-lock": "2.13.2",
         "socket.io-client": "4.8.1",
-        "universal-cookie": "7.2.1",
+        "universal-cookie": "7.2.2",
     }
     DEV_DEPENDENCIES = {
         "autoprefixer": "10.4.20",
-        "postcss": "8.4.47",
+        "postcss": "8.4.49",
         "postcss-import": "16.1.0",
     }

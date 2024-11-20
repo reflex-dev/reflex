@@ -17,6 +17,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Sequence,
     Set,
     Type,
     Union,
@@ -38,6 +39,7 @@ from reflex.constants import (
     PageNames,
 )
 from reflex.constants.compiler import SpecialAttributes
+from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.event import (
     EventCallback,
     EventChain,
@@ -47,8 +49,8 @@ from reflex.event import (
     EventVar,
     call_event_fn,
     call_event_handler,
-    empty_event,
     get_handler_args,
+    no_args_event_spec,
 )
 from reflex.style import Style, format_as_emotion
 from reflex.utils import format, imports, types
@@ -156,7 +158,6 @@ class ComponentNamespace(SimpleNamespace):
     def __hash__(self) -> int:
         """Get the hash of the namespace.
 
-
         Returns:
             The hash of the namespace.
         """
@@ -183,6 +184,23 @@ ComponentStyle = Dict[
     Union[str, Type[BaseComponent], Callable, ComponentNamespace], Any
 ]
 ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
+
+
+def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
+    """Check if an object satisfies a type hint.
+
+    Args:
+        obj: The object to check.
+        type_hint: The type hint to check against.
+
+    Returns:
+        Whether the object satisfies the type hint.
+    """
+    if isinstance(obj, LiteralVar):
+        return types._isinstance(obj._var_value, type_hint)
+    if isinstance(obj, Var):
+        return types._issubclass(obj._var_type, type_hint)
+    return types._isinstance(obj, type_hint)
 
 
 class Component(BaseComponent, ABC):
@@ -228,7 +246,7 @@ class Component(BaseComponent, ABC):
     _rename_props: Dict[str, str] = {}
 
     # custom attribute
-    custom_attrs: Dict[str, Union[Var, str]] = {}
+    custom_attrs: Dict[str, Union[Var, Any]] = {}
 
     # When to memoize this component and its children.
     _memoization_mode: MemoizationMode = MemoizationMode()
@@ -459,8 +477,7 @@ class Component(BaseComponent, ABC):
                     )
                 ) or (
                     # Else just check if the passed var type is valid.
-                    not passed_types
-                    and not types._issubclass(passed_type, expected_type, value)
+                    not passed_types and not satisfies_type_hint(value, expected_type)
                 ):
                     value_name = value._js_expr if isinstance(value, Var) else value
 
@@ -533,7 +550,7 @@ class Component(BaseComponent, ABC):
 
     def _create_event_chain(
         self,
-        args_spec: Any,
+        args_spec: types.ArgsSpec | Sequence[types.ArgsSpec],
         value: Union[
             Var,
             EventHandler,
@@ -599,7 +616,7 @@ class Component(BaseComponent, ABC):
 
         # If the input is a callable, create an event chain.
         elif isinstance(value, Callable):
-            result = call_event_fn(value, args_spec)
+            result = call_event_fn(value, args_spec, key=key)
             if isinstance(result, Var):
                 # Recursively call this function if the lambda returned an EventChain Var.
                 return self._create_event_chain(args_spec, result, key=key)
@@ -629,29 +646,31 @@ class Component(BaseComponent, ABC):
                 event_actions={},
             )
 
-    def get_event_triggers(self) -> Dict[str, Any]:
+    def get_event_triggers(
+        self,
+    ) -> Dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]]:
         """Get the event triggers for the component.
 
         Returns:
             The event triggers.
 
         """
-        default_triggers = {
-            EventTriggers.ON_FOCUS: empty_event,
-            EventTriggers.ON_BLUR: empty_event,
-            EventTriggers.ON_CLICK: empty_event,
-            EventTriggers.ON_CONTEXT_MENU: empty_event,
-            EventTriggers.ON_DOUBLE_CLICK: empty_event,
-            EventTriggers.ON_MOUSE_DOWN: empty_event,
-            EventTriggers.ON_MOUSE_ENTER: empty_event,
-            EventTriggers.ON_MOUSE_LEAVE: empty_event,
-            EventTriggers.ON_MOUSE_MOVE: empty_event,
-            EventTriggers.ON_MOUSE_OUT: empty_event,
-            EventTriggers.ON_MOUSE_OVER: empty_event,
-            EventTriggers.ON_MOUSE_UP: empty_event,
-            EventTriggers.ON_SCROLL: empty_event,
-            EventTriggers.ON_MOUNT: empty_event,
-            EventTriggers.ON_UNMOUNT: empty_event,
+        default_triggers: Dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
+            EventTriggers.ON_FOCUS: no_args_event_spec,
+            EventTriggers.ON_BLUR: no_args_event_spec,
+            EventTriggers.ON_CLICK: no_args_event_spec,
+            EventTriggers.ON_CONTEXT_MENU: no_args_event_spec,
+            EventTriggers.ON_DOUBLE_CLICK: no_args_event_spec,
+            EventTriggers.ON_MOUSE_DOWN: no_args_event_spec,
+            EventTriggers.ON_MOUSE_ENTER: no_args_event_spec,
+            EventTriggers.ON_MOUSE_LEAVE: no_args_event_spec,
+            EventTriggers.ON_MOUSE_MOVE: no_args_event_spec,
+            EventTriggers.ON_MOUSE_OUT: no_args_event_spec,
+            EventTriggers.ON_MOUSE_OVER: no_args_event_spec,
+            EventTriggers.ON_MOUSE_UP: no_args_event_spec,
+            EventTriggers.ON_SCROLL: no_args_event_spec,
+            EventTriggers.ON_MOUNT: no_args_event_spec,
+            EventTriggers.ON_UNMOUNT: no_args_event_spec,
         }
 
         # Look for component specific triggers,
@@ -662,7 +681,7 @@ class Component(BaseComponent, ABC):
                 annotation = field.annotation
                 if (metadata := getattr(annotation, "__metadata__", None)) is not None:
                     args_spec = metadata[0]
-                default_triggers[field.name] = args_spec or (empty_event)  # type: ignore
+                default_triggers[field.name] = args_spec or (no_args_event_spec)  # type: ignore
         return default_triggers
 
     def __repr__(self) -> str:
@@ -1142,7 +1161,10 @@ class Component(BaseComponent, ABC):
                     if isinstance(event, EventCallback):
                         continue
                     if isinstance(event, EventSpec):
-                        if event.handler.state_full_name:
+                        if (
+                            event.handler.state_full_name
+                            and event.handler.state_full_name != FRONTEND_EVENT_STATE
+                        ):
                             return True
                     else:
                         if event._var_state:
@@ -1444,7 +1466,7 @@ class Component(BaseComponent, ABC):
         """
         ref = self.get_ref()
         if ref is not None:
-            return f"const {ref} = useRef(null); {str(Var(_js_expr=ref).as_ref())} = {ref};"
+            return f"const {ref} = useRef(null); {str(Var(_js_expr=ref)._as_ref())} = {ref};"
 
     def _get_vars_hooks(self) -> dict[str, None]:
         """Get the hooks required by vars referenced in this component.
@@ -1723,7 +1745,7 @@ class CustomComponent(Component):
                 value = self._create_event_chain(
                     value=value,
                     args_spec=event_triggers_in_component_declaration.get(
-                        key, empty_event
+                        key, no_args_event_spec
                     ),
                     key=key,
                 )
@@ -1898,6 +1920,11 @@ memo = custom_component
 class NoSSRComponent(Component):
     """A dynamic component that is not rendered on the server."""
 
+    def _get_import_name(self) -> None | str:
+        if not self.library:
+            return None
+        return f"${self.library}" if self.library.startswith("/") else self.library
+
     def _get_imports(self) -> ParsedImportDict:
         """Get the imports for the component.
 
@@ -1911,8 +1938,9 @@ class NoSSRComponent(Component):
         _imports = super()._get_imports()
 
         # Do NOT import the main library/tag statically.
-        if self.library is not None:
-            _imports[self.library] = [
+        import_name = self._get_import_name()
+        if import_name is not None:
+            _imports[import_name] = [
                 imports.ImportVar(
                     tag=None,
                     render=False,
@@ -1930,10 +1958,10 @@ class NoSSRComponent(Component):
         opts_fragment = ", { ssr: false });"
 
         # extract the correct import name from library name
-        if self.library is None:
+        base_import_name = self._get_import_name()
+        if base_import_name is None:
             raise ValueError("Undefined library for NoSSRComponent")
-
-        import_name = format.format_library_name(self.library)
+        import_name = format.format_library_name(base_import_name)
 
         library_import = f"const {self.alias if self.alias else self.tag} = dynamic(() => import('{import_name}')"
         mod_import = (

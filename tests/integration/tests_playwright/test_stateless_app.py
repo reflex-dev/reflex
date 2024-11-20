@@ -33,7 +33,7 @@ def stateless_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("stateless_app"),
-        app_source=StatelessApp,  # type: ignore
+        app_source=StatelessApp,
     ) as harness:
         yield harness
 
