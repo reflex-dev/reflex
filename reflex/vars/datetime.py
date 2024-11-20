@@ -1,5 +1,7 @@
 """Immutable datetime and date vars."""
 
+from __future__ import annotations
+
 from datetime import date, datetime
 from typing import Any, NoReturn, TypeVar, Union, overload
 
