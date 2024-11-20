@@ -727,11 +727,12 @@ def redirect(
             "0.7.0",
         )
 
-    if external is None and is_external is None:
-        is_external = False
-
-    if external is not None and is_external is None:
-        is_external = external
+    # is_external should take precedence over external.
+    is_external = (
+        (False if external is None else external)
+        if is_external is None
+        else is_external
+    )
 
     return server_side(
         "_redirect",
