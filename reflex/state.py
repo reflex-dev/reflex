@@ -87,6 +87,7 @@ from reflex.utils.exceptions import (
     ImmutableStateError,
     InvalidStateManagerMode,
     LockExpiredError,
+    ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSchemaMismatchError,
 )
@@ -441,6 +442,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             raise ReflexRuntimeError(
                 "State classes should not be instantiated directly in a Reflex app. "
                 "See https://reflex.dev/docs/state/ for further information."
+            )
+        if type(self)._mixin:
+            raise ReflexRuntimeError(
+                f"{type(self).__name__} is a state mixin and cannot be instantiated directly."
             )
         kwargs["parent_state"] = parent_state
         super().__init__()
@@ -2424,6 +2429,23 @@ class ComponentState(State, mixin=True):
 
     # The number of components created from this class.
     _per_component_state_instance_count: ClassVar[int] = 0
+
+    def __init__(self, *args, **kwargs):
+        """Do not allow direct initialization of the ComponentState.
+
+        Args:
+            *args: The args to pass to the State init method.
+            **kwargs: The kwargs to pass to the State init method.
+
+        Raises:
+            ReflexRuntimeError: If the ComponentState is initialized directly.
+        """
+        if type(self)._mixin:
+            raise ReflexRuntimeError(
+                f"{ComponentState.__name__} {type(self).__name__} is not meant to be initialized directly. "
+                + "Use the `create` method to create a new instance and access the state via the `State` attribute."
+            )
+        super().__init__(*args, **kwargs)
 
     @classmethod
     def __init_subclass__(cls, mixin: bool = True, **kwargs):

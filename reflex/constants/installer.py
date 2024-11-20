@@ -184,15 +184,15 @@ class PackageJson(SimpleNamespace):
         "json5": "2.2.3",
         "next": "14.2.16",
         "next-sitemap": "4.2.3",
-        "next-themes": "0.3.0",
+        "next-themes": "0.4.3",
         "react": "18.3.1",
         "react-dom": "18.3.1",
         "react-focus-lock": "2.13.2",
         "socket.io-client": "4.8.1",
-        "universal-cookie": "7.2.1",
+        "universal-cookie": "7.2.2",
     }
     DEV_DEPENDENCIES = {
         "autoprefixer": "10.4.20",
-        "postcss": "8.4.47",
+        "postcss": "8.4.49",
         "postcss-import": "16.1.0",
     }

@@ -263,7 +263,11 @@ def serialize_base(value: Base) -> dict:
     Returns:
         The serialized Base.
     """
-    return {k: v for k, v in value.dict().items() if not callable(v)}
+    from reflex.vars.base import Var
+
+    return {
+        k: v for k, v in value.dict().items() if isinstance(v, Var) or not callable(v)
+    }
 
 
 @serializer
