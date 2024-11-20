@@ -83,7 +83,7 @@ class Image(NextComponent):
         style = props.get("style", {})
         DEFAULT_W_H = "100%"
 
-        def check_prop_type(prop_name, prop_value):
+        def check_prop_type(prop_name: str, prop_value: int | str | None):
             if types.check_prop_in_allowed_types(prop_value, allowed_types=[int]):
                 props[prop_name] = prop_value
 

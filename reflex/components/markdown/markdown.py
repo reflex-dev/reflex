@@ -8,7 +8,7 @@ from functools import lru_cache
 from hashlib import md5
 from typing import Any, Callable, Dict, Sequence, Union
 
-from reflex.components.component import Component, CustomComponent
+from reflex.components.component import BaseComponent, Component, CustomComponent
 from reflex.components.tags.tag import Tag
 from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
@@ -379,7 +379,9 @@ const {str(_LANGUAGE)} = match ? match[1] : '';
         # fallback to the default fn Var creation if the component is not a MarkdownComponentMap.
         return MarkdownComponentMap.create_map_fn_var(fn_body=formatted_component)
 
-    def _get_map_fn_custom_code_from_children(self, component) -> list[str]:
+    def _get_map_fn_custom_code_from_children(
+        self, component: BaseComponent
+    ) -> list[str]:
         """Recursively get markdown custom code from children components.
 
         Args:
@@ -409,7 +411,7 @@ const {str(_LANGUAGE)} = match ? match[1] : '';
         return custom_code_list
 
     @staticmethod
-    def _component_map_hash(component_map) -> str:
+    def _component_map_hash(component_map: dict) -> str:
         inp = str(
             {tag: component(_MOCK_ARG) for tag, component in component_map.items()}
         ).encode()

@@ -812,7 +812,7 @@ class Component(BaseComponent, ABC):
         # Filter out None props
         props = {key: value for key, value in props.items() if value is not None}
 
-        def validate_children(children):
+        def validate_children(children: tuple):
             for child in children:
                 if isinstance(child, tuple):
                     validate_children(child)
@@ -957,7 +957,7 @@ class Component(BaseComponent, ABC):
             else {}
         )
 
-    def render(self) -> Dict:
+    def render(self) -> dict:
         """Render the component.
 
         Returns:
@@ -975,7 +975,7 @@ class Component(BaseComponent, ABC):
         self._replace_prop_names(rendered_dict)
         return rendered_dict
 
-    def _replace_prop_names(self, rendered_dict) -> None:
+    def _replace_prop_names(self, rendered_dict: dict) -> None:
         """Replace the prop names in the render dictionary.
 
         Args:
@@ -1015,7 +1015,7 @@ class Component(BaseComponent, ABC):
             comp.__name__ for comp in (Fragment, Foreach, Cond, Match)
         ]
 
-        def validate_child(child):
+        def validate_child(child: Any):
             child_name = type(child).__name__
 
             # Iterate through the immediate children of fragment

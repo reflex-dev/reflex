@@ -109,7 +109,7 @@ class Match(MemoizationLeaf):
         return cases, default
 
     @classmethod
-    def _create_case_var_with_var_data(cls, case_element):
+    def _create_case_var_with_var_data(cls, case_element: Any) -> Var:
         """Convert a case element into a Var.If the case
         is a Style type, we extract the var data and merge it with the
         newly created Var.
