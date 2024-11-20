@@ -799,6 +799,23 @@ class Config(Base):
         self._replace_defaults(**kwargs)
 
 
+def _get_config() -> Config:
+    """Get the app config.
+
+    Returns:
+        The app config.
+    """
+    # only import the module if it exists. If a module spec exists then
+    # the module exists.
+    spec = find_spec(constants.Config.MODULE)
+    if not spec:
+        # we need this condition to ensure that a ModuleNotFound error is not thrown when
+        # running unit/integration tests or during `reflex init`.
+        return Config(app_name="")
+    rxconfig = importlib.import_module(constants.Config.MODULE)
+    return rxconfig.config
+
+
 def get_config(reload: bool = False) -> Config:
     """Get the app config.
 
@@ -812,30 +829,17 @@ def get_config(reload: bool = False) -> Config:
     if reload and constants.Config.MODULE in sys.modules:
         del sys.modules[constants.Config.MODULE]
 
-    sys_path = list(sys.path)
+    sys_path = sys.path.copy()
     sys.path.clear()
     sys.path.append(os.getcwd())
     try:
-        # only import the module if it exists. If a module spec exists then
-        # the module exists.
-        spec = find_spec(constants.Config.MODULE)
-        if not spec:
-            # we need this condition to ensure that a ModuleNotFound error is not thrown when
-            # running unit/integration tests or during `reflex init`.
-            return Config(app_name="")
-        rxconfig = importlib.import_module(constants.Config.MODULE)
-        return rxconfig.config
+        # Try to import the module with only the current directory in the path.
+        return _get_config()
     except Exception:
+        # If the module import fails, try to import with the original sys.path.
         sys.path.extend(sys_path)
-        # only import the module if it exists. If a module spec exists then
-        # the module exists.
-        spec = find_spec(constants.Config.MODULE)
-        if not spec:
-            # we need this condition to ensure that a ModuleNotFound error is not thrown when
-            # running unit/integration tests or during `reflex init`.
-            return Config(app_name="")
-        rxconfig = importlib.import_module(constants.Config.MODULE)
-        return rxconfig.config
+        return _get_config()
     finally:
+        # Restore the original sys.path.
         sys.path.clear()
         sys.path.extend(sys_path)
