@@ -154,7 +154,7 @@ class Unset:
 
 
 @lru_cache()
-def get_origin(tp):
+def get_origin(tp: Any):
     """Get the origin of a class.
 
     Args:
@@ -237,7 +237,7 @@ def is_literal(cls: GenericType) -> bool:
     return get_origin(cls) is Literal
 
 
-def has_args(cls) -> bool:
+def has_args(cls: Type) -> bool:
     """Check if the class has generic parameters.
 
     Args:
@@ -740,7 +740,7 @@ def check_prop_in_allowed_types(prop: Any, allowed_types: Iterable) -> bool:
     return type_ in allowed_types
 
 
-def is_encoded_fstring(value) -> bool:
+def is_encoded_fstring(value: Any) -> bool:
     """Check if a value is an encoded Var f-string.
 
     Args:
@@ -783,7 +783,7 @@ def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
             )
 
 
-def validate_parameter_literals(func):
+def validate_parameter_literals(func: Callable):
     """Decorator to check that the arguments passed to a function
     correspond to the correct function parameter if it (the parameter)
     is a literal type.

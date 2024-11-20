@@ -23,7 +23,7 @@ def set_env_json():
     )
 
 
-def generate_sitemap_config(deploy_url: str, export=False):
+def generate_sitemap_config(deploy_url: str, export: bool = False):
     """Generate the sitemap config file.
 
     Args:
