@@ -964,7 +964,7 @@ class App(MiddlewareMixin, LifespanMixin):
         with executor:
             result_futures = []
 
-            def _submit_work(fn, *args, **kwargs):
+            def _submit_work(fn: Callable, *args, **kwargs):
                 f = executor.submit(fn, *args, **kwargs)
                 # f = executor.apipe(fn, *args, **kwargs)
                 result_futures.append(f)
