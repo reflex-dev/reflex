@@ -714,7 +714,7 @@ def redirect(
         path: The path to redirect to.
         is_external: Whether to open in new tab or not.
         replace: If True, the current page will not create a new history entry.
-        external: Whether to open in new tab or not.
+        external(Deprecated): Whether to open in new tab or not.
 
     Returns:
         An event to redirect to the path.
