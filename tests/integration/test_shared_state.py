@@ -39,7 +39,7 @@ def shared_state(
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("shared_state"),
-        app_source=SharedStateApp,  # type: ignore
+        app_source=SharedStateApp,
     ) as harness:
         yield harness
 

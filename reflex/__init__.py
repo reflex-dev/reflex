@@ -298,6 +298,7 @@ _MAPPING: dict = {
     "components.moment": ["MomentDelta", "moment"],
     "config": ["Config", "DBConfig"],
     "constants": ["Env"],
+    "constants.colors": ["Color"],
     "event": [
         "EventChain",
         "EventHandler",
@@ -338,7 +339,7 @@ _MAPPING: dict = {
     ],
     "istate.wrappers": ["get_state"],
     "style": ["Style", "toggle_color_mode"],
-    "utils.imports": ["ImportVar"],
+    "utils.imports": ["ImportDict", "ImportVar"],
     "utils.serializers": ["serializer"],
     "vars": ["Var", "field", "Field"],
 }

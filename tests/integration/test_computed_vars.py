@@ -125,7 +125,7 @@ def computed_vars(
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("computed_vars"),
-        app_source=ComputedVars,  # type: ignore
+        app_source=ComputedVars,
     ) as harness:
         yield harness
 

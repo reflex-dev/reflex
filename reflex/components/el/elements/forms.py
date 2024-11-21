@@ -239,13 +239,13 @@ class Form(BaseHTML):
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):
-                ref_var = Var(_js_expr=ref[:-3]).as_ref()
+                ref_var = Var(_js_expr=ref[:-3])._as_ref()
                 form_refs[ref[len("refs_") : -3]] = Var(
                     _js_expr=f"getRefValues({str(ref_var)})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
             else:
-                ref_var = Var(_js_expr=ref).as_ref()
+                ref_var = Var(_js_expr=ref)._as_ref()
                 form_refs[ref[4:]] = Var(
                     _js_expr=f"getRefValue({str(ref_var)})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
@@ -681,6 +681,7 @@ class Textarea(BaseHTML):
 
 
 button = Button.create
+datalist = Datalist.create
 fieldset = Fieldset.create
 form = Form.create
 input = Input.create

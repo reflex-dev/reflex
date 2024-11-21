@@ -361,20 +361,28 @@ class Var(Generic[VAR_TYPE]):
         return False
 
     def __init_subclass__(
-        cls, python_types: Tuple[GenericType, ...] | GenericType = types.Unset, **kwargs
+        cls,
+        python_types: Tuple[GenericType, ...] | GenericType = types.Unset(),
+        default_type: GenericType = types.Unset(),
+        **kwargs,
     ):
         """Initialize the subclass.
 
         Args:
             python_types: The python types that the var represents.
+            default_type: The default type of the var. Defaults to the first python type.
             **kwargs: Additional keyword arguments.
         """
         super().__init_subclass__(**kwargs)
 
-        if python_types is not types.Unset:
+        if python_types or default_type:
             python_types = (
-                python_types if isinstance(python_types, tuple) else (python_types,)
+                (python_types if isinstance(python_types, tuple) else (python_types,))
+                if python_types
+                else ()
             )
+
+            default_type = default_type or (python_types[0] if python_types else Any)
 
             @dataclasses.dataclass(
                 eq=False,
@@ -388,7 +396,7 @@ class Var(Generic[VAR_TYPE]):
                     default=Var(_js_expr="null", _var_type=None),
                 )
 
-                _default_var_type: ClassVar[GenericType] = python_types[0]
+                _default_var_type: ClassVar[GenericType] = default_type
 
             ToVarOperation.__name__ = f'To{cls.__name__.removesuffix("Var")}Operation'
 
@@ -590,6 +598,12 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     def to(
+        self,
+        output: type[dict],
+    ) -> ObjectVar[dict]: ...
+
+    @overload
+    def to(
         self, output: Type[ObjectVar], var_type: Type[VAR_INSIDE]
     ) -> ObjectVar[VAR_INSIDE]: ...
 
@@ -734,7 +748,7 @@ class Var(Generic[VAR_TYPE]):
 
         return self
 
-    def get_default_value(self) -> Any:
+    def _get_default_value(self) -> Any:
         """Get the default value of the var.
 
         Returns:
@@ -777,7 +791,7 @@ class Var(Generic[VAR_TYPE]):
                 ) from e
         return set() if issubclass(type_, set) else None
 
-    def get_setter_name(self, include_state: bool = True) -> str:
+    def _get_setter_name(self, include_state: bool = True) -> str:
         """Get the name of the var's generated setter function.
 
         Args:
@@ -794,7 +808,7 @@ class Var(Generic[VAR_TYPE]):
             return setter
         return ".".join((var_data.state, setter))
 
-    def get_setter(self) -> Callable[[BaseState, Any], None]:
+    def _get_setter(self) -> Callable[[BaseState, Any], None]:
         """Get the var's setter function.
 
         Returns:
@@ -820,7 +834,7 @@ class Var(Generic[VAR_TYPE]):
             else:
                 setattr(state, actual_name, value)
 
-        setter.__qualname__ = self.get_setter_name()
+        setter.__qualname__ = self._get_setter_name()
 
         return setter
 
@@ -953,7 +967,7 @@ class Var(Generic[VAR_TYPE]):
             else PROTOTYPE_TO_STRING.call(self).to(StringVar)
         )
 
-    def as_ref(self) -> Var:
+    def _as_ref(self) -> Var:
         """Get a reference to the var.
 
         Returns:
@@ -998,27 +1012,13 @@ class Var(Generic[VAR_TYPE]):
         type_of = FunctionStringVar("typeof")
         return type_of.call(self).to(StringVar)
 
-    def without_data(self):
+    def _without_data(self):
         """Create a copy of the var without the data.
 
         Returns:
             The var without the data.
         """
         return dataclasses.replace(self, _var_data=None)
-
-    def contains(self, value: Any = None, field: Any = None):
-        """Get an attribute of the var.
-
-        Args:
-            value: The value to check for.
-            field: The field to check for.
-
-        Raises:
-            TypeError: If the var does not support contains check.
-        """
-        raise TypeError(
-            f"Var of type {self._var_type} does not support contains check."
-        )
 
     def __get__(self, instance: Any, owner: Any):
         """Get the var.
@@ -1031,14 +1031,6 @@ class Var(Generic[VAR_TYPE]):
             The var.
         """
         return self
-
-    def reverse(self):
-        """Reverse the var.
-
-        Raises:
-            TypeError: If the var does not support reverse.
-        """
-        raise TypeError("Cannot reverse non-list var.")
 
     def __getattr__(self, name: str):
         """Get an attribute of the var.
@@ -1055,6 +1047,13 @@ class Var(Generic[VAR_TYPE]):
         """
         if name.startswith("_"):
             return self.__getattribute__(name)
+
+        if name == "contains":
+            raise TypeError(
+                f"Var of type {self._var_type} does not support contains check."
+            )
+        if name == "reverse":
+            raise TypeError("Cannot reverse non-list var.")
 
         if self._var_type is Any:
             raise TypeError(
@@ -1084,10 +1083,7 @@ class Var(Generic[VAR_TYPE]):
         try:
             return json.loads(str(self))
         except ValueError:
-            try:
-                return json.loads(self.json())
-            except (ValueError, NotImplementedError):
-                return str(self)
+            return str(self)
 
     @property
     def _var_state(self) -> str:
@@ -1164,14 +1160,6 @@ class Var(Generic[VAR_TYPE]):
         raise VarTypeError(
             "'in' operator not supported for Var types, use Var.contains() instead."
         )
-
-    def json(self) -> str:
-        """Serialize the var to a JSON string.
-
-        Raises:
-            NotImplementedError: If the method is not implemented.
-        """
-        raise NotImplementedError("Var subclasses must implement the json method.")
 
 
 OUTPUT = TypeVar("OUTPUT", bound=Var)

@@ -265,7 +265,7 @@ const extractPoints = (points) => {
             merge_dicts.append(layout_dict)
         if self.template is not None:
             template_dict = LiteralVar.create({"layout": {"template": self.template}})
-            merge_dicts.append(template_dict.without_data())
+            merge_dicts.append(template_dict._without_data())
         if merge_dicts:
             tag.special_props.append(
                 # Merge all dictionaries and spread the result over props.

@@ -118,7 +118,7 @@ class AppHarness:
 
     app_name: str
     app_source: Optional[
-        types.FunctionType | types.ModuleType | str | functools.partial[Any]
+        Callable[[], None] | types.ModuleType | str | functools.partial[Any]
     ]
     app_path: pathlib.Path
     app_module_path: pathlib.Path
@@ -138,7 +138,7 @@ class AppHarness:
         cls,
         root: pathlib.Path,
         app_source: Optional[
-            types.FunctionType | types.ModuleType | str | functools.partial[Any]
+            Callable[[], None] | types.ModuleType | str | functools.partial[Any]
         ] = None,
         app_name: Optional[str] = None,
     ) -> "AppHarness":

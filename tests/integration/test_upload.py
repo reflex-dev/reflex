@@ -133,7 +133,7 @@ def upload_file(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("upload_file"),
-        app_source=UploadFile,  # type: ignore
+        app_source=UploadFile,
     ) as harness:
         yield harness
 

@@ -9,6 +9,7 @@ import inspect
 import os
 import sys
 import urllib.parse
+from importlib.util import find_spec
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -801,6 +802,23 @@ class Config(Base):
         self._replace_defaults(**kwargs)
 
 
+def _get_config() -> Config:
+    """Get the app config.
+
+    Returns:
+        The app config.
+    """
+    # only import the module if it exists. If a module spec exists then
+    # the module exists.
+    spec = find_spec(constants.Config.MODULE)
+    if not spec:
+        # we need this condition to ensure that a ModuleNotFound error is not thrown when
+        # running unit/integration tests or during `reflex init`.
+        return Config(app_name="")
+    rxconfig = importlib.import_module(constants.Config.MODULE)
+    return rxconfig.config
+
+
 def get_config(reload: bool = False) -> Config:
     """Get the app config.
 
@@ -810,15 +828,21 @@ def get_config(reload: bool = False) -> Config:
     Returns:
         The app config.
     """
-    sys.path.insert(0, os.getcwd())
-    # only import the module if it exists. If a module spec exists then
-    # the module exists.
-    spec = importlib.util.find_spec(constants.Config.MODULE)  # type: ignore
-    if not spec:
-        # we need this condition to ensure that a ModuleNotFound error is not thrown when
-        # running unit/integration tests.
-        return Config(app_name="")
-    rxconfig = importlib.import_module(constants.Config.MODULE)
-    if reload:
-        importlib.reload(rxconfig)
-    return rxconfig.config
+    # Remove any cached module when `reload` is requested.
+    if reload and constants.Config.MODULE in sys.modules:
+        del sys.modules[constants.Config.MODULE]
+
+    sys_path = sys.path.copy()
+    sys.path.clear()
+    sys.path.append(os.getcwd())
+    try:
+        # Try to import the module with only the current directory in the path.
+        return _get_config()
+    except Exception:
+        # If the module import fails, try to import with the original sys.path.
+        sys.path.extend(sys_path)
+        return _get_config()
+    finally:
+        # Restore the original sys.path.
+        sys.path.clear()
+        sys.path.extend(sys_path)

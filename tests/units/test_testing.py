@@ -29,7 +29,7 @@ def test_app_harness(tmp_path):
 
     with AppHarness.create(
         root=tmp_path,
-        app_source=BasicApp,  # type: ignore
+        app_source=BasicApp,
     ) as harness:
         assert harness.app_instance is not None
         assert harness.backend is not None
