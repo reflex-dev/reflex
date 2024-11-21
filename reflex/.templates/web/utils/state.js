@@ -762,7 +762,7 @@ export const useEventLoop = (
     window.onunhandledrejection = function (event) {
       addEvents([
         Event(`${exception_state_name}.handle_frontend_exception`, {
-          stack: event.reason.stack,
+          stack: event.reason?.stack,
           component_stack: "",
         }),
       ]);
@@ -837,11 +837,20 @@ export const useEventLoop = (
       }
     };
     const change_complete = () => addEvents(onLoadInternalEvent());
+    const change_error = () => {
+      // Remove cached error state from router for this page, otherwise the
+      // page will never send on_load events again.
+      if (router.components[router.pathname].error) {
+        delete router.components[router.pathname].error;
+      }
+    }
     router.events.on("routeChangeStart", change_start);
     router.events.on("routeChangeComplete", change_complete);
+    router.events.on("routeChangeError", change_error);
     return () => {
       router.events.off("routeChangeStart", change_start);
       router.events.off("routeChangeComplete", change_complete);
+      router.events.off("routeChangeError", change_error);
     };
   }, [router]);
 
