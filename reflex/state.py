@@ -3365,7 +3365,7 @@ class StateManagerRedis(StateManager):
         # Check that we're holding the lock.
         if (
             lock_id is not None
-            and await self.redis.get(prefix_redis_token_str(self._lock_key(token)))
+            and await self.redis.get(prefix_redis_token_bytes(self._lock_key(token)))
             != lock_id
         ):
             raise LockExpiredError(
