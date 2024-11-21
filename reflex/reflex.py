@@ -20,7 +20,7 @@ from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
 
 # Disable typer+rich integration for help panels
-typer.core.rich = False  # type: ignore
+typer.core.rich = None  # type: ignore
 
 # Create the app.
 try:
