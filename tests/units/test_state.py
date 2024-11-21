@@ -40,7 +40,7 @@ from reflex.state import (
     StateProxy,
     StateUpdate,
     _substate_key,
-    prefix_redis_token,
+    prefix_redis_token_str,
 )
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
@@ -1672,7 +1672,9 @@ async def test_state_manager_modify_state(
     """
     async with state_manager.modify_state(substate_token) as state:
         if isinstance(state_manager, StateManagerRedis):
-            assert await state_manager.redis.get(prefix_redis_token(f"{token}_lock"))
+            assert await state_manager.redis.get(
+                prefix_redis_token_str(f"{token}_lock")
+            )
         elif isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
             assert token in state_manager._states_locks
             assert state_manager._states_locks[token].locked()
@@ -1683,7 +1685,7 @@ async def test_state_manager_modify_state(
     # lock should be dropped after exiting the context
     if isinstance(state_manager, StateManagerRedis):
         assert (
-            await state_manager.redis.get(prefix_redis_token(f"{token}_lock"))
+            await state_manager.redis.get(prefix_redis_token_str(f"{token}_lock"))
         ) is None
     elif isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
         assert not state_manager._states_locks[token].locked()
@@ -1727,7 +1729,7 @@ async def test_state_manager_contend(
 
     if isinstance(state_manager, StateManagerRedis):
         assert (
-            await state_manager.redis.get(prefix_redis_token(f"{token}_lock"))
+            await state_manager.redis.get(prefix_redis_token_str(f"{token}_lock"))
         ) is None
     elif isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
         assert token in state_manager._states_locks
@@ -1859,7 +1861,7 @@ async def test_state_manager_redis_prefix(
     async with state_manager_redis.modify_state(substate_token_redis) as state:
         state.num1 = 42
 
-    prefixed_token = prefix_redis_token(substate_token_redis)
+    prefixed_token = prefix_redis_token_str(substate_token_redis)
     assert prefixed_token == f"{redis_prefix}{substate_token_redis}"
 
     assert await state_manager_redis.redis.get(prefixed_token)

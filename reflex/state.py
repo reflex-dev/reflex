@@ -3142,7 +3142,7 @@ TOKEN_TYPE = TypeVar("TOKEN_TYPE", str, bytes)
 
 
 @functools.lru_cache
-def prefix_redis_token(token: TOKEN_TYPE) -> TOKEN_TYPE:
+def prefix_redis_token_str(token: str) -> str:
     """Prefix the token with the redis prefix.
 
     Args:
@@ -3154,9 +3154,23 @@ def prefix_redis_token(token: TOKEN_TYPE) -> TOKEN_TYPE:
     prefix = EnvironmentVariables.REFLEX_REDIS_PREFIX.get()
     if not prefix:
         return token
-    if isinstance(token, bytes):
-        return prefix.encode() + token
     return f"{prefix}{token}"
+
+
+@functools.lru_cache
+def prefix_redis_token_bytes(token: bytes) -> bytes:
+    """Prefix the token with the redis prefix.
+
+    Args:
+        token: The token to prefix.
+
+    Returns:
+        The prefixed token.
+    """
+    prefix = EnvironmentVariables.REFLEX_REDIS_PREFIX.get()
+    if not prefix:
+        return token
+    return prefix.encode() + token
 
 
 class StateManagerRedis(StateManager):
@@ -3296,7 +3310,7 @@ class StateManagerRedis(StateManager):
         state = None
 
         # Fetch the serialized substate from redis.
-        redis_state = await self.redis.get(prefix_redis_token(token))
+        redis_state = await self.redis.get(prefix_redis_token_str(token))
 
         if redis_state is not None:
             # Deserialize the substate.
@@ -3351,7 +3365,7 @@ class StateManagerRedis(StateManager):
         # Check that we're holding the lock.
         if (
             lock_id is not None
-            and await self.redis.get(prefix_redis_token(self._lock_key(token)))
+            and await self.redis.get(prefix_redis_token_str(self._lock_key(token)))
             != lock_id
         ):
             raise LockExpiredError(
@@ -3383,7 +3397,7 @@ class StateManagerRedis(StateManager):
             pickle_state = state._serialize()
             if pickle_state:
                 await self.redis.set(
-                    prefix_redis_token(_substate_key(client_token, state)),
+                    prefix_redis_token_str(_substate_key(client_token, state)),
                     pickle_state,
                     ex=self.token_expiration,
                 )
@@ -3433,7 +3447,7 @@ class StateManagerRedis(StateManager):
             True if the lock was obtained.
         """
         return await self.redis.set(
-            prefix_redis_token(lock_key),
+            prefix_redis_token_bytes(lock_key),
             lock_id,
             px=self.lock_expiration,
             nx=True,  # only set if it doesn't exist
@@ -3468,7 +3482,7 @@ class StateManagerRedis(StateManager):
             while not state_is_locked:
                 # wait for the lock to be released
                 while True:
-                    if not await self.redis.exists(prefix_redis_token(lock_key)):
+                    if not await self.redis.exists(prefix_redis_token_bytes(lock_key)):
                         break  # key was removed, try to get the lock again
                     message = await pubsub.get_message(
                         ignore_subscribe_messages=True,
@@ -3509,7 +3523,7 @@ class StateManagerRedis(StateManager):
         finally:
             if state_is_locked:
                 # only delete our lock
-                await self.redis.delete(prefix_redis_token(lock_key))
+                await self.redis.delete(prefix_redis_token_str(lock_key))
 
     async def close(self):
         """Explicitly close the redis connection and connection_pool.
