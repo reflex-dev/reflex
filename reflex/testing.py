@@ -976,17 +976,6 @@ class AppHarnessProd(AppHarness):
             EnvironmentVariables.REFLEX_SKIP_COMPILE.set(None)
 
     @override
-    def start(self) -> AppHarnessProd:
-        """Start AppHarnessProd instance.
-
-        Returns:
-            self
-        """
-        EnvironmentVariables.REFLEX_ENV_MODE.set(reflex.constants.base.Env.PROD)
-        _ = super().start()
-        return self
-
-    @override
     def stop(self):
         """Stop the frontend python webserver."""
         super().stop()
@@ -994,4 +983,3 @@ class AppHarnessProd(AppHarness):
             self.frontend_server.shutdown()
         if self.frontend_thread is not None:
             self.frontend_thread.join()
-        EnvironmentVariables.REFLEX_ENV_MODE.set(None)
