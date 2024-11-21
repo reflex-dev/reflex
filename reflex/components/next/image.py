@@ -1,5 +1,7 @@
 """Image component from next/image."""
 
+from __future__ import annotations
+
 from typing import Any, Literal, Optional, Union
 
 from reflex.event import EventHandler, no_args_event_spec
