@@ -8,6 +8,7 @@ import importlib
 import inspect
 import os
 import sys
+import threading
 import urllib.parse
 from importlib.util import find_spec
 from pathlib import Path
@@ -816,6 +817,10 @@ def _get_config() -> Config:
     return rxconfig.config
 
 
+# Protect sys.path from concurrent modification
+_config_lock = threading.RLock()
+
+
 def get_config(reload: bool = False) -> Config:
     """Get the app config.
 
@@ -825,21 +830,26 @@ def get_config(reload: bool = False) -> Config:
     Returns:
         The app config.
     """
-    # Remove any cached module when `reload` is requested.
-    if reload and constants.Config.MODULE in sys.modules:
-        del sys.modules[constants.Config.MODULE]
+    cached_rxconfig = sys.modules.get(constants.Config.MODULE, None)
+    if cached_rxconfig is not None:
+        if reload:
+            # Remove any cached module when `reload` is requested.
+            del sys.modules[constants.Config.MODULE]
+        else:
+            return cached_rxconfig.config
 
-    sys_path = sys.path.copy()
-    sys.path.clear()
-    sys.path.append(os.getcwd())
-    try:
-        # Try to import the module with only the current directory in the path.
-        return _get_config()
-    except Exception:
-        # If the module import fails, try to import with the original sys.path.
-        sys.path.extend(sys_path)
-        return _get_config()
-    finally:
-        # Restore the original sys.path.
+    with _config_lock:
+        sys_path = sys.path.copy()
         sys.path.clear()
-        sys.path.extend(sys_path)
+        sys.path.append(os.getcwd())
+        try:
+            # Try to import the module with only the current directory in the path.
+            return _get_config()
+        except Exception:
+            # If the module import fails, try to import with the original sys.path.
+            sys.path.extend(sys_path)
+            return _get_config()
+        finally:
+            # Restore the original sys.path.
+            sys.path.clear()
+            sys.path.extend(sys_path)
