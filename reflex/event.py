@@ -712,9 +712,9 @@ def redirect(
 
     Args:
         path: The path to redirect to.
-        external: Whether to open in new tab or not.
         is_external: Whether to open in new tab or not.
         replace: If True, the current page will not create a new history entry.
+        external: Whether to open in new tab or not.
 
     Returns:
         An event to redirect to the path.
