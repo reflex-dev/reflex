@@ -93,6 +93,8 @@ def check_latest_package_version(package_name: str):
     Args:
         package_name: The name of the package.
     """
+    if environment.REFLEX_CHECK_LATEST_VERSION.get() is False:
+        return
     try:
         # Get the latest version from PyPI
         current_version = importlib.metadata.version(package_name)
