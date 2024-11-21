@@ -186,6 +186,23 @@ ComponentStyle = Dict[
 ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
 
 
+def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
+    """Check if an object satisfies a type hint.
+
+    Args:
+        obj: The object to check.
+        type_hint: The type hint to check against.
+
+    Returns:
+        Whether the object satisfies the type hint.
+    """
+    if isinstance(obj, LiteralVar):
+        return types._isinstance(obj._var_value, type_hint)
+    if isinstance(obj, Var):
+        return types._issubclass(obj._var_type, type_hint)
+    return types._isinstance(obj, type_hint)
+
+
 class Component(BaseComponent, ABC):
     """A component with style, event trigger and other props."""
 
@@ -460,8 +477,7 @@ class Component(BaseComponent, ABC):
                     )
                 ) or (
                     # Else just check if the passed var type is valid.
-                    not passed_types
-                    and not types._issubclass(passed_type, expected_type, value)
+                    not passed_types and not satisfies_type_hint(value, expected_type)
                 ):
                     value_name = value._js_expr if isinstance(value, Var) else value
 

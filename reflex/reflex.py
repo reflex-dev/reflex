@@ -11,7 +11,7 @@ import typer
 import typer.core
 from reflex_cli.deployments import deployments_cli
 from reflex_cli.utils import dependency
-from reflex_cli.v2.deployments import hosting_cli
+from reflex_cli.v2.deployments import check_version, hosting_cli
 
 from reflex import constants
 from reflex.config import environment, get_config
@@ -20,7 +20,7 @@ from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
 
 # Disable typer+rich integration for help panels
-typer.core.rich = False  # type: ignore
+typer.core.rich = None  # type: ignore
 
 # Create the app.
 try:
@@ -120,7 +120,7 @@ def _init(
     # Initialize the requirements.txt.
     prerequisites.initialize_requirements_txt()
 
-    template_msg = "" if template else f" using the {template} template"
+    template_msg = "" if not template else f" using the {template} template"
     # Finish initializing the app.
     console.success(f"Initialized {app_name}{template_msg}")
 
@@ -390,6 +390,8 @@ def loginv2(loglevel: constants.LogLevel = typer.Option(config.loglevel)):
     """Authenicate with experimental Reflex hosting service."""
     from reflex_cli.v2 import cli as hosting_cli
 
+    check_version()
+
     hosting_cli.login()
 
 
@@ -417,6 +419,8 @@ def logoutv2(
 ):
     """Log out of access to Reflex hosting service."""
     from reflex_cli.v2.utils import hosting
+
+    check_version()
 
     console.set_log_level(loglevel)
 
@@ -637,7 +641,7 @@ def deployv2(
         list(),
         "-r",
         "--region",
-        help="The regions to deploy to. For multiple envs, repeat this option, e.g. --region sjc --region iad",
+        help="The regions to deploy to. `reflex apps regions` For multiple envs, repeat this option, e.g. --region sjc --region iad",
     ),
     envs: List[str] = typer.Option(
         list(),
@@ -647,13 +651,12 @@ def deployv2(
     vmtype: Optional[str] = typer.Option(
         None,
         "--vmtype",
-        help="Vm type id. Run reflex apps vmtypes list to get options.",
+        help="Vm type id. Run `reflex apps vmtypes` to get options.",
     ),
     hostname: Optional[str] = typer.Option(
         None,
         "--hostname",
         help="The hostname of the frontend.",
-        hidden=True,
     ),
     interactive: bool = typer.Option(
         True,
@@ -663,7 +666,6 @@ def deployv2(
         None,
         "--envfile",
         help="The path to an env file to use. Will override any envs set manually.",
-        hidden=True,
     ),
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
@@ -678,7 +680,6 @@ def deployv2(
         None,
         "--token",
         help="token to use for auth",
-        hidden=True,
     ),
 ):
     """Deploy the app to the Reflex hosting service."""
@@ -687,6 +688,8 @@ def deployv2(
 
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
+
+    check_version()
 
     # Set the log level.
     console.set_log_level(loglevel)

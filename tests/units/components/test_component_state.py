@@ -1,7 +1,10 @@
 """Ensure that Components returned by ComponentState.create have independent State classes."""
 
+import pytest
+
 import reflex as rx
 from reflex.components.base.bare import Bare
+from reflex.utils.exceptions import ReflexRuntimeError
 
 
 def test_component_state():
@@ -40,3 +43,21 @@ def test_component_state():
     assert len(cs2.children) == 1
     assert cs2.children[0].render() == Bare.create("b").render()
     assert cs2.id == "b"
+
+
+def test_init_component_state() -> None:
+    """Ensure that ComponentState subclasses cannot be instantiated directly."""
+
+    class CS(rx.ComponentState):
+        @classmethod
+        def get_component(cls, *children, **props):
+            return rx.el.div()
+
+    with pytest.raises(ReflexRuntimeError):
+        CS()
+
+    class SubCS(CS):
+        pass
+
+    with pytest.raises(ReflexRuntimeError):
+        SubCS()
