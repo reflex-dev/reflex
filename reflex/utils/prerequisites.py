@@ -1383,28 +1383,6 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
     shutil.rmtree(unzip_dir)
 
 
-def prompt_for_remote_template_selection(templates: dict[str, Template]) -> str:
-    """Prompt the user to input a remote template.
-
-    Args:
-        templates: The available templates.
-
-    Returns:
-        The selected template.
-    """
-    while True:
-        console.print(
-            f"Visit {constants.Templates.REFLEX_TEMPLATES_URL} for the complete list of templates."
-        )
-        selected_template = console.ask(
-            "Enter a valid template name", show_choices=False
-        )
-        if selected_template not in templates:
-            console.error("Invalid template name. Please try again.")
-        else:
-            return selected_template
-
-
 def initialize_default_app(app_name: str):
     """Initialize the default app.
 
@@ -1470,40 +1448,43 @@ def generate_template_using_ai(template: str | None = None) -> str:
         raise typer.Exit(2)
 
 
-def fetch_and_prompt_with_remote_templates(
-    template: str, show_prompt: bool = True
+def fetch_remote_templates(
+    template: Optional[str] = None,
 ) -> tuple[str, dict[str, Template]]:
-    """Fetch the available remote templates and prompt the user for an input.
+    """Fetch the available remote templates.
 
     Args:
         template: The name of the template.
-        show_prompt: Whether to show the prompt.
 
     Returns:
         The selected template and the available templates.
+
+    Raises:
+        Exit: If the template is not valid or if the template is not specified.
     """
     available_templates = {}
 
     try:
         # Get the available templates
         available_templates = fetch_app_templates(constants.Reflex.VERSION)
-        if not show_prompt and template in available_templates:
-            return template, available_templates
-
-        if not show_prompt and (template not in available_templates):
-            console.error(f"{template!r} is not a valid template name.")
-
-        redir.open_browser(constants.Templates.REFLEX_TEMPLATES_URL)
-        template = (
-            prompt_for_remote_template_selection(available_templates)
-            if available_templates
-            else constants.Templates.DEFAULT
-        )
     except Exception as e:
         console.warn("Failed to fetch templates. Falling back to default template.")
         console.debug(f"Error while fetching templates: {e}")
+        template = constants.Templates.DEFAULT
 
-    return (template or constants.Templates.DEFAULT), available_templates
+    if template == constants.Templates.DEFAULT:
+        return template, available_templates
+
+    if template in available_templates:
+        return template, available_templates
+
+    else:
+        if template is not None:
+            console.error(f"{template!r} is not a valid template name.")
+        console.print(
+            f"Go to the templates page ({constants.Templates.REFLEX_TEMPLATES_URL}) and copy the command to init with a template."
+        )
+        raise typer.Exit(0)
 
 
 def initialize_app(
@@ -1536,9 +1517,7 @@ def initialize_app(
 
     # Don't fetch app templates if the user directly asked for DEFAULT.
     if template is not None and (template not in (constants.Templates.DEFAULT,)):
-        template, templates = fetch_and_prompt_with_remote_templates(
-            template, show_prompt=False
-        )
+        template, templates = fetch_remote_templates(template)
 
     if template is None:
         template = prompt_for_template_options(get_init_cli_prompt_options())
@@ -1547,7 +1526,7 @@ def initialize_app(
             # change to the default to allow creation of default app
             template = constants.Templates.DEFAULT
         elif template == constants.Templates.CHOOSE_TEMPLATES:
-            template, templates = fetch_and_prompt_with_remote_templates(template)
+            template, templates = fetch_remote_templates()
 
     # If the blank template is selected, create a blank app.
     if template in (constants.Templates.DEFAULT,):
