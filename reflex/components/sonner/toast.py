@@ -266,7 +266,7 @@ class Toaster(Component):
             raise ValueError("Toast message or title or description must be provided.")
 
         if props:
-            args = LiteralVar.create(ToastProps(component_name="rx.toast", **props))  # pyright: ignore [reportCallIssue]
+            args = LiteralVar.create(ToastProps(component_name="rx.toast", **props))  # pyright: ignore [reportCallIssue, reportGeneralTypeIssues]
             toast = toast_command.call(message, args)
         else:
             toast = toast_command.call(message)
