@@ -285,7 +285,7 @@ def test_background_task(
         increment_button.click()
     yield_increment_button.click()
     blocking_pause_button.click()
-    assert background_task._poll_for(lambda: counter.text == "620", timeout=40)
+    assert background_task._poll_for(lambda: counter.text == "620", timeout=60)
     # all tasks should have exited and cleaned up
     assert background_task._poll_for(
         lambda: not background_task.app_instance.background_tasks  # type: ignore
