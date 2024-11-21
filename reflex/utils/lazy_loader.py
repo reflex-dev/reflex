@@ -1,5 +1,7 @@
 """Module to implement lazy loading in reflex."""
 
+from __future__ import annotations
+
 import copy
 
 import lazy_loader as lazy
