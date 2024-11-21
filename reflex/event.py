@@ -704,9 +704,9 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
 
 def redirect(
     path: str | Var[str],
-    external: Optional[bool] = None,
     is_external: Optional[bool] = None,
     replace: bool = False,
+    external: Optional[bool] = None,
 ) -> EventSpec:
     """Redirect to a new path.
 
