@@ -3141,6 +3141,7 @@ def _default_lock_expiration() -> int:
 TOKEN_TYPE = TypeVar("TOKEN_TYPE", str, bytes)
 
 
+@functools.lru_cache
 def prefix_redis_token(token: TOKEN_TYPE) -> TOKEN_TYPE:
     """Prefix the token with the redis prefix.
 
