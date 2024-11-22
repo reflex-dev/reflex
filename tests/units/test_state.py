@@ -43,7 +43,7 @@ from reflex.state import (
 )
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
-from reflex.utils.exceptions import SetUndefinedStateVarError
+from reflex.utils.exceptions import ReflexRuntimeError, SetUndefinedStateVarError
 from reflex.utils.format import json_dumps
 from reflex.vars.base import Var, computed_var
 from tests.units.states.mutation import MutableSQLAModel, MutableTestState
@@ -3441,3 +3441,19 @@ def test_get_value():
             "bar": "foo",
         }
     }
+
+
+def test_init_mixin() -> None:
+    """Ensure that State mixins can not be instantiated directly."""
+
+    class Mixin(BaseState, mixin=True):
+        pass
+
+    with pytest.raises(ReflexRuntimeError):
+        Mixin()
+
+    class SubMixin(Mixin, mixin=True):
+        pass
+
+    with pytest.raises(ReflexRuntimeError):
+        SubMixin()
