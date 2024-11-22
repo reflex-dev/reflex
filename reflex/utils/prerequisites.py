@@ -1397,7 +1397,9 @@ def initialize_default_app(app_name: str):
     initialize_app_directory(app_name)
 
 
-def validate_and_create_app_using_remote_template(app_name, template, templates):
+def validate_and_create_app_using_remote_template(
+    app_name: str, template: str, templates: dict[str, Template]
+):
     """Validate and create an app using a remote template.
 
     Args:
