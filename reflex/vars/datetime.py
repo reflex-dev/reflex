@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import dataclasses
-import json
 import sys
 from datetime import date, datetime
 from typing import Any, NoReturn, TypeVar, Union, overload
@@ -200,22 +199,6 @@ class LiteralDatetimeVar(LiteralVar, DateTimeVar):
     """Base class for immutable datetime and date vars."""
 
     _var_value: datetime | date = dataclasses.field(default=datetime.now())
-
-    def json(self) -> str:
-        """Return the JSON representation of the datetime.
-
-        Returns:
-            The JSON representation of the datetime.
-        """
-        return json.dumps(self._var_value)
-
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((self.__class__.__name__, self._var_value))
 
     @classmethod
     def create(cls, value: datetime | date, _var_data: VarData | None = None):
