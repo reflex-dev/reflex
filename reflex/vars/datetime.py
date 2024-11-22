@@ -210,11 +210,7 @@ class LiteralDatetimeVar(LiteralVar, DateTimeVar):
         Returns:
             LiteralDatetimeVar: The new instance of the class.
         """
-        if isinstance(value, datetime):
-            js_expr = f"'{value.year}-{value.month - 1}-{value.day} {value.hour}:{value.minute}:{value.second}, {value.microsecond})"
-            js_expr = f'"{str(value)}"'
-        elif isinstance(value, date):
-            js_expr = f"new Date({value.year}, {value.month - 1}, {value.day})"
+        js_expr = f'"{str(value)}"'
         return cls(
             _js_expr=js_expr,
             _var_type=type(value),
