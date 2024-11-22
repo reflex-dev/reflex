@@ -16,6 +16,8 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 import pytest_asyncio
 from plotly.graph_objects import Figure
+from pydantic import BaseModel as BaseModelV2
+from pydantic.v1 import BaseModel as BaseModelV1
 
 import reflex as rx
 import reflex.config
@@ -3412,6 +3414,53 @@ def test_typed_state() -> None:
         field: rx.Field[str] = rx.field("")
 
     _ = TypedState(field="str")
+
+
+class ModelV1(BaseModelV1):
+    """A pydantic BaseModel v1."""
+
+    foo: str = "bar"
+
+
+class ModelV2(BaseModelV2):
+    """A pydantic BaseModel v2."""
+
+    foo: str = "bar"
+
+
+@dataclasses.dataclass
+class ModelDC:
+    """A dataclass."""
+
+    foo: str = "bar"
+
+
+class PydanticState(rx.State):
+    """A state with pydantic BaseModel vars."""
+
+    v1: ModelV1 = ModelV1()
+    v2: ModelV2 = ModelV2()
+    dc: ModelDC = ModelDC()
+
+
+def test_mutable_models():
+    """Test that dataclass and pydantic BaseModel v1 and v2 use dep tracking."""
+    state = PydanticState()
+    assert isinstance(state.v1, MutableProxy)
+    state.v1.foo = "baz"
+    assert state.dirty_vars == {"v1"}
+    state.dirty_vars.clear()
+
+    assert isinstance(state.v2, MutableProxy)
+    state.v2.foo = "baz"
+    assert state.dirty_vars == {"v2"}
+    state.dirty_vars.clear()
+
+    # Not yet supported ENG-4083
+    # assert isinstance(state.dc, MutableProxy)
+    # state.dc.foo = "baz"
+    # assert state.dirty_vars == {"dc"}
+    # state.dirty_vars.clear()
 
 
 def test_get_value():

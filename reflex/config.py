@@ -7,6 +7,7 @@ import importlib
 import inspect
 import os
 import sys
+import threading
 import urllib.parse
 from importlib.util import find_spec
 from pathlib import Path
@@ -468,6 +469,14 @@ class PathExistsFlag:
 ExistingPath = Annotated[Path, PathExistsFlag]
 
 
+class PerformanceMode(enum.Enum):
+    """Performance mode for the app."""
+
+    WARN = "warn"
+    RAISE = "raise"
+    OFF = "off"
+
+
 class EnvironmentVariables:
     """Environment variables class to instantiate environment variables."""
 
@@ -570,6 +579,15 @@ class EnvironmentVariables:
 
     # Where to save screenshots when tests fail.
     SCREENSHOT_DIR: EnvVar[Optional[Path]] = env_var(None)
+
+    # Whether to check for outdated package versions.
+    REFLEX_CHECK_LATEST_VERSION: EnvVar[bool] = env_var(True)
+
+    # In which performance mode to run the app.
+    REFLEX_PERF_MODE: EnvVar[Optional[PerformanceMode]] = env_var(PerformanceMode.WARN)
+
+    # The maximum size of the reflex state in kilobytes.
+    REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
 
     # Whether to minify state names. Default to true in prod mode and false otherwise.
     REFLEX_MINIFY_STATES: EnvVar[Optional[bool]] = env_var(
@@ -844,6 +862,10 @@ def _get_config() -> Config:
     return rxconfig.config
 
 
+# Protect sys.path from concurrent modification
+_config_lock = threading.RLock()
+
+
 def get_config(reload: bool = False) -> Config:
     """Get the app config.
 
@@ -853,21 +875,26 @@ def get_config(reload: bool = False) -> Config:
     Returns:
         The app config.
     """
-    # Remove any cached module when `reload` is requested.
-    if reload and constants.Config.MODULE in sys.modules:
-        del sys.modules[constants.Config.MODULE]
+    cached_rxconfig = sys.modules.get(constants.Config.MODULE, None)
+    if cached_rxconfig is not None:
+        if reload:
+            # Remove any cached module when `reload` is requested.
+            del sys.modules[constants.Config.MODULE]
+        else:
+            return cached_rxconfig.config
 
-    sys_path = sys.path.copy()
-    sys.path.clear()
-    sys.path.append(os.getcwd())
-    try:
-        # Try to import the module with only the current directory in the path.
-        return _get_config()
-    except Exception:
-        # If the module import fails, try to import with the original sys.path.
-        sys.path.extend(sys_path)
-        return _get_config()
-    finally:
-        # Restore the original sys.path.
+    with _config_lock:
+        sys_path = sys.path.copy()
         sys.path.clear()
-        sys.path.extend(sys_path)
+        sys.path.append(os.getcwd())
+        try:
+            # Try to import the module with only the current directory in the path.
+            return _get_config()
+        except Exception:
+            # If the module import fails, try to import with the original sys.path.
+            sys.path.extend(sys_path)
+            return _get_config()
+        finally:
+            # Restore the original sys.path.
+            sys.path.clear()
+            sys.path.extend(sys_path)

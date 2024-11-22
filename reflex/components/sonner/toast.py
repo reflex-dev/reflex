@@ -15,6 +15,8 @@ from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serializer
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
+from reflex.vars.function import FunctionVar
+from reflex.vars.object import ObjectVar
 
 LiteralPosition = Literal[
     "top-left",
@@ -232,7 +234,9 @@ class Toaster(Component):
         return [hook]
 
     @staticmethod
-    def send_toast(message: str = "", level: str | None = None, **props) -> EventSpec:
+    def send_toast(
+        message: str | Var = "", level: str | None = None, **props
+    ) -> EventSpec:
         """Send a toast message.
 
         Args:
@@ -250,20 +254,27 @@ class Toaster(Component):
             raise ValueError(
                 "Toaster component must be created before sending a toast. (use `rx.toast.provider()`)"
             )
-        toast_command = f"{toast_ref}.{level}" if level is not None else toast_ref
-        if message == "" and ("title" not in props or "description" not in props):
-            raise ValueError("Toast message or title or description must be provided.")
-        if props:
-            args = LiteralVar.create(ToastProps(component_name="rx.toast", **props))  # type: ignore
-            toast = f"{toast_command}(`{message}`, {str(args)})"
-        else:
-            toast = f"{toast_command}(`{message}`)"
 
-        toast_action = Var(_js_expr=toast)
-        return run_script(toast_action)
+        toast_command = (
+            ObjectVar.__getattr__(toast_ref.to(dict), level) if level else toast_ref
+        ).to(FunctionVar)
+
+        if isinstance(message, Var):
+            props.setdefault("title", message)
+            message = ""
+        elif message == "" and "title" not in props and "description" not in props:
+            raise ValueError("Toast message or title or description must be provided.")
+
+        if props:
+            args = LiteralVar.create(ToastProps(component_name="rx.toast", **props))  # pyright: ignore [reportCallIssue, reportGeneralTypeIssues]
+            toast = toast_command.call(message, args)
+        else:
+            toast = toast_command.call(message)
+
+        return run_script(toast)
 
     @staticmethod
-    def toast_info(message: str = "", **kwargs):
+    def toast_info(message: str | Var = "", **kwargs):
         """Display an info toast message.
 
         Args:
@@ -276,7 +287,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="info", **kwargs)
 
     @staticmethod
-    def toast_warning(message: str = "", **kwargs):
+    def toast_warning(message: str | Var = "", **kwargs):
         """Display a warning toast message.
 
         Args:
@@ -289,7 +300,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="warning", **kwargs)
 
     @staticmethod
-    def toast_error(message: str = "", **kwargs):
+    def toast_error(message: str | Var = "", **kwargs):
         """Display an error toast message.
 
         Args:
@@ -302,7 +313,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="error", **kwargs)
 
     @staticmethod
-    def toast_success(message: str = "", **kwargs):
+    def toast_success(message: str | Var = "", **kwargs):
         """Display a success toast message.
 
         Args:

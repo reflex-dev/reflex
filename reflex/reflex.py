@@ -17,10 +17,10 @@ from reflex_cli.v2.deployments import check_version, hosting_cli
 from reflex import constants
 from reflex.config import EnvironmentVariables, get_config
 from reflex.custom_components.custom_components import custom_components_cli
-from reflex.utils import console, redir, telemetry
+from reflex.utils import console, telemetry
 
 # Disable typer+rich integration for help panels
-typer.core.rich = False  # type: ignore
+typer.core.rich = None  # type: ignore
 
 # Create the app.
 try:
@@ -89,30 +89,8 @@ def _init(
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
 
-    # Integrate with reflex.build.
-    generation_hash = None
-    if ai:
-        if template is None:
-            # If AI is requested and no template specified, redirect the user to reflex.build.
-            generation_hash = redir.reflex_build_redirect()
-        elif prerequisites.is_generation_hash(template):
-            # Otherwise treat the template as a generation hash.
-            generation_hash = template
-        else:
-            console.error(
-                "Cannot use `--template` option with `--ai` option. Please remove `--template` option."
-            )
-            raise typer.Exit(2)
-        template = constants.Templates.DEFAULT
-
     # Initialize the app.
-    template = prerequisites.initialize_app(app_name, template)
-
-    # If a reflex.build generation hash is available, download the code and apply it to the main module.
-    if generation_hash:
-        prerequisites.initialize_main_module_index_from_generation(
-            app_name, generation_hash=generation_hash
-        )
+    template = prerequisites.initialize_app(app_name, template, ai)
 
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()
@@ -120,7 +98,7 @@ def _init(
     # Initialize the requirements.txt.
     prerequisites.initialize_requirements_txt()
 
-    template_msg = "" if not template else f" using the {template} template"
+    template_msg = f" using the {template} template" if template else ""
     # Finish initializing the app.
     console.success(f"Initialized {app_name}{template_msg}")
 
@@ -675,8 +653,7 @@ def deployv2(
     project: Optional[str] = typer.Option(
         None,
         "--project",
-        help="project to deploy to",
-        hidden=True,
+        help="project id to deploy to",
     ),
     token: Optional[str] = typer.Option(
         None,
