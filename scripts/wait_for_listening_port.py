@@ -14,7 +14,7 @@ from typing import Tuple
 import psutil
 
 
-def _pid_exists(pid):
+def _pid_exists(pid: int):
     # os.kill(pid, 0) doesn't work on Windows (actually kills the PID)
     # psutil.pid_exists() doesn't work on Windows (does os.kill underneath)
     # psutil.pids() seems to return the right thing. Inefficient but doesn't matter - keeps things simple.
@@ -23,7 +23,7 @@ def _pid_exists(pid):
     return pid in psutil.pids()
 
 
-def _wait_for_port(port, server_pid, timeout) -> Tuple[bool, str]:
+def _wait_for_port(port: int, server_pid: int, timeout: float) -> Tuple[bool, str]:
     start = time.time()
     print(f"Waiting for up to {timeout} seconds for port {port} to start listening.")
     while True:
