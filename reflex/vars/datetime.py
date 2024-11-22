@@ -2,13 +2,23 @@
 
 from __future__ import annotations
 
+import dataclasses
+import json
+import sys
 from datetime import date, datetime
 from typing import Any, NoReturn, TypeVar, Union, overload
 
 from reflex.utils.exceptions import VarTypeError
 from reflex.vars.number import BooleanVar
 
-from .base import CustomVarOperationReturn, Var, var_operation, var_operation_return
+from .base import (
+    CustomVarOperationReturn,
+    LiteralVar,
+    Var,
+    VarData,
+    var_operation,
+    var_operation_return,
+)
 
 DATETIME_T = TypeVar("DATETIME_T", datetime, date)
 
@@ -176,9 +186,57 @@ def date_compare_operation(
         The result of the operation.
     """
     return var_operation_return(
-        f"isTrue({lhs} { '<' if strict else '<='} {rhs})",
+        f"({lhs} { '<' if strict else '<='} {rhs})",
         bool,
     )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class LiteralDatetimeVar(LiteralVar, DateTimeVar):
+    """Base class for immutable datetime and date vars."""
+
+    _var_value: datetime | date = dataclasses.field(default=datetime.now())
+
+    def json(self) -> str:
+        """Return the JSON representation of the datetime.
+
+        Returns:
+            The JSON representation of the datetime.
+        """
+        return json.dumps(self._var_value)
+
+    def __hash__(self) -> int:
+        """Calculate the hash value of the object.
+
+        Returns:
+            int: The hash value of the object.
+        """
+        return hash((self.__class__.__name__, self._var_value))
+
+    @classmethod
+    def create(cls, value: datetime | date, _var_data: VarData | None = None):
+        """Create a new instance of the class.
+
+        Args:
+            value: The value to set.
+
+        Returns:
+            LiteralDatetimeVar: The new instance of the class.
+        """
+        if isinstance(value, datetime):
+            js_expr = f"new Date({value.year}, {value.month - 1}, {value.day}, {value.hour}, {value.minute}, {value.second}, {value.microsecond})"
+        elif isinstance(value, date):
+            js_expr = f"new Date({value.year}, {value.month - 1}, {value.day})"
+        return cls(
+            _js_expr=js_expr,
+            _var_type=type(value),
+            _var_value=value,
+            _var_data=_var_data,
+        )
 
 
 DATETIME_TYPES = (datetime, date, DateTimeVar)
