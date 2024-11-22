@@ -651,8 +651,7 @@ def deployv2(
     project: Optional[str] = typer.Option(
         None,
         "--project",
-        help="project to deploy to",
-        hidden=True,
+        help="project id to deploy to",
     ),
     token: Optional[str] = typer.Option(
         None,
