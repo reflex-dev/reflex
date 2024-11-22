@@ -270,6 +270,53 @@ def serialize_base(value: Base) -> dict:
     }
 
 
+try:
+    from pydantic.v1 import BaseModel as BaseModelV1
+
+    @serializer(to=dict)
+    def serialize_base_model_v1(model: BaseModelV1) -> dict:
+        """Serialize a pydantic v1 BaseModel instance.
+
+        Args:
+            model: The BaseModel to serialize.
+
+        Returns:
+            The serialized BaseModel.
+        """
+        return model.dict()
+
+    from pydantic import BaseModel as BaseModelV2
+
+    if BaseModelV1 is not BaseModelV2:
+
+        @serializer(to=dict)
+        def serialize_base_model_v2(model: BaseModelV2) -> dict:
+            """Serialize a pydantic v2 BaseModel instance.
+
+            Args:
+                model: The BaseModel to serialize.
+
+            Returns:
+                The serialized BaseModel.
+            """
+            return model.model_dump()
+except ImportError:
+    # Older pydantic v1 import
+    from pydantic import BaseModel as BaseModelV1
+
+    @serializer(to=dict)
+    def serialize_base_model_v1(model: BaseModelV1) -> dict:
+        """Serialize a pydantic v1 BaseModel instance.
+
+        Args:
+            model: The BaseModel to serialize.
+
+        Returns:
+            The serialized BaseModel.
+        """
+        return model.dict()
+
+
 @serializer
 def serialize_set(value: Set) -> list:
     """Serialize a set to a JSON serializable list.

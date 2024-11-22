@@ -43,7 +43,7 @@ from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
 from reflex import event
-from reflex.config import EnvironmentVariables, get_config
+from reflex.config import EnvironmentVariables, PerformanceMode, get_config
 from reflex.istate.data import RouterData
 from reflex.istate.storage import ClientStorageBase
 from reflex.model import Model
@@ -61,6 +61,13 @@ try:
     import pydantic.v1 as pydantic
 except ModuleNotFoundError:
     import pydantic
+
+from pydantic import BaseModel as BaseModelV2
+
+try:
+    from pydantic.v1 import BaseModel as BaseModelV1
+except ModuleNotFoundError:
+    BaseModelV1 = BaseModelV2
 
 import wrapt
 from redis.asyncio import Redis
@@ -90,6 +97,7 @@ from reflex.utils.exceptions import (
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSchemaMismatchError,
+    StateTooLargeError,
 )
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import serializer
@@ -110,10 +118,11 @@ Delta = Dict[str, Any]
 var = computed_var
 
 
-# If the state is this large, it's considered a performance issue.
-TOO_LARGE_SERIALIZED_STATE = 100 * 1024  # 100kb
-# Only warn about each state class size once.
-_WARNED_ABOUT_STATE_SIZE: Set[str] = set()
+if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
+    # If the state is this large, it's considered a performance issue.
+    TOO_LARGE_SERIALIZED_STATE = environment.REFLEX_STATE_SIZE_LIMIT.get() * 1024
+    # Only warn about each state class size once.
+    _WARNED_ABOUT_STATE_SIZE: Set[str] = set()
 
 # Errors caught during pickling of state
 HANDLED_PICKLE_ERRORS = (
@@ -1248,7 +1257,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if parent_state is not None:
                 return getattr(parent_state, name)
 
-        if isinstance(value, MutableProxy.__mutable_types__) and (
+        if MutableProxy._is_mutable_type(value) and (
             name in super().__getattribute__("base_vars") or name in backend_vars
         ):
             # track changes in mutable containers (list, dict, set, etc)
@@ -2097,7 +2106,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             state["__dict__"].pop(inherited_var_name, None)
         return state
 
-    def _warn_if_too_large(
+    def _check_state_size(
         self,
         pickle_state_size: int,
     ):
@@ -2105,6 +2114,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Args:
             pickle_state_size: The size of the pickled state.
+
+        Raises:
+            StateTooLargeError: If the state is too large.
         """
         state_full_name = self.get_full_name()
         if (
@@ -2112,10 +2124,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             and pickle_state_size > TOO_LARGE_SERIALIZED_STATE
             and self.substates
         ):
-            console.warn(
+            msg = (
                 f"State {state_full_name} serializes to {pickle_state_size} bytes "
-                "which may present performance issues. Consider reducing the size of this state."
+                + "which may present performance issues. Consider reducing the size of this state."
             )
+            if environment.REFLEX_PERF_MODE.get() == PerformanceMode.WARN:
+                console.warn(msg)
+            elif environment.REFLEX_PERF_MODE.get() == PerformanceMode.RAISE:
+                raise StateTooLargeError(msg)
             _WARNED_ABOUT_STATE_SIZE.add(state_full_name)
 
     @classmethod
@@ -2157,7 +2173,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         try:
             pickle_state = pickle.dumps((self._to_schema(), self))
-            self._warn_if_too_large(len(pickle_state))
+            if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
+                self._check_state_size(len(pickle_state))
             return pickle_state
         except HANDLED_PICKLE_ERRORS as og_pickle_error:
             error = (
@@ -3567,7 +3584,16 @@ class MutableProxy(wrapt.ObjectProxy):
         pydantic.BaseModel.__dict__
     )
 
-    __mutable_types__ = (list, dict, set, Base, DeclarativeBase)
+    # These types will be wrapped in MutableProxy
+    __mutable_types__ = (
+        list,
+        dict,
+        set,
+        Base,
+        DeclarativeBase,
+        BaseModelV2,
+        BaseModelV1,
+    )
 
     def __init__(self, wrapped: Any, state: BaseState, field_name: str):
         """Create a proxy for a mutable object that tracks changes.
@@ -3607,6 +3633,18 @@ class MutableProxy(wrapt.ObjectProxy):
         if wrapped is not None:
             return wrapped(*args, **(kwargs or {}))
 
+    @classmethod
+    def _is_mutable_type(cls, value: Any) -> bool:
+        """Check if a value is of a mutable type and should be wrapped.
+
+        Args:
+            value: The value to check.
+
+        Returns:
+            Whether the value is of a mutable type.
+        """
+        return isinstance(value, cls.__mutable_types__)
+
     def _wrap_recursive(self, value: Any) -> Any:
         """Wrap a value recursively if it is mutable.
 
@@ -3617,9 +3655,7 @@ class MutableProxy(wrapt.ObjectProxy):
             The wrapped value.
         """
         # Recursively wrap mutable types, but do not re-wrap MutableProxy instances.
-        if isinstance(value, self.__mutable_types__) and not isinstance(
-            value, MutableProxy
-        ):
+        if self._is_mutable_type(value) and not isinstance(value, MutableProxy):
             return type(self)(
                 wrapped=value,
                 state=self._self_state,
@@ -3677,7 +3713,7 @@ class MutableProxy(wrapt.ObjectProxy):
                     self._wrap_recursive_decorator,
                 )
 
-        if isinstance(value, self.__mutable_types__) and __name not in (
+        if self._is_mutable_type(value) and __name not in (
             "__wrapped__",
             "_self_state",
         ):

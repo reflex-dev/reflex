@@ -576,6 +576,10 @@ def _isinstance(obj: Any, cls: GenericType, nested: bool = False) -> bool:
                 return does_obj_satisfy_typed_dict(obj, cls)
             return isinstance(obj, dict)
 
+        # cls is a float
+        if cls is float:
+            return isinstance(obj, (float, int))
+
         # cls is a simple class
         return isinstance(obj, cls)
 

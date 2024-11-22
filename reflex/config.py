@@ -454,6 +454,14 @@ class PathExistsFlag:
 ExistingPath = Annotated[Path, PathExistsFlag]
 
 
+class PerformanceMode(enum.Enum):
+    """Performance mode for the app."""
+
+    WARN = "warn"
+    RAISE = "raise"
+    OFF = "off"
+
+
 class EnvironmentVariables:
     """Environment variables class to instantiate environment variables."""
 
@@ -549,6 +557,12 @@ class EnvironmentVariables:
 
     # Whether to check for outdated package versions.
     REFLEX_CHECK_LATEST_VERSION: EnvVar[bool] = env_var(True)
+
+    # In which performance mode to run the app.
+    REFLEX_PERF_MODE: EnvVar[Optional[PerformanceMode]] = env_var(PerformanceMode.WARN)
+
+    # The maximum size of the reflex state in kilobytes.
+    REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
 
     # Optional redis key prefix for the state manager.
     REFLEX_REDIS_PREFIX: EnvVar[Optional[str]] = env_var(None)
