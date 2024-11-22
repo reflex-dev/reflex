@@ -181,6 +181,18 @@ class EventActionsMixin:
             event_actions={"debounce": delay_ms, **self.event_actions},
         )
 
+    @property
+    def temporal(self):
+        """Do not queue the event if the backend is down.
+
+        Returns:
+            New EventHandler-like with temporal set to True.
+        """
+        return dataclasses.replace(
+            self,
+            event_actions={"temporal": True, **self.event_actions},
+        )
+
 
 @dataclasses.dataclass(
     init=True,
@@ -1346,6 +1358,10 @@ def check_fn_match_arg_spec(
         EventFnArgMismatch: Raised if the number of mandatory arguments do not match
     """
     user_args = inspect.getfullargspec(user_func).args
+    # Drop the first argument if it's a bound method
+    if inspect.ismethod(user_func) and user_func.__self__ is not None:
+        user_args = user_args[1:]
+
     user_default_args = inspect.getfullargspec(user_func).defaults
     number_of_user_args = len(user_args) - number_of_bound_args
     number_of_user_default_args = len(user_default_args) if user_default_args else 0

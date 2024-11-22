@@ -34,7 +34,7 @@ from redis.asyncio import Redis
 from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, environment, get_config
-from reflex.utils import console, net, path_ops, processes
+from reflex.utils import console, net, path_ops, processes, redir
 from reflex.utils.exceptions import (
     GeneratedCodeHasNoFunctionDefs,
     raise_system_package_missing_error,
@@ -93,6 +93,8 @@ def check_latest_package_version(package_name: str):
     Args:
         package_name: The name of the package.
     """
+    if environment.REFLEX_CHECK_LATEST_VERSION.get() is False:
+        return
     try:
         # Get the latest version from PyPI
         current_version = importlib.metadata.version(package_name)
@@ -1211,7 +1213,7 @@ def check_schema_up_to_date():
                 )
 
 
-def prompt_for_template(templates: list[Template]) -> str:
+def prompt_for_template_options(templates: list[Template]) -> str:
     """Prompt the user to specify a template.
 
     Args:
@@ -1223,9 +1225,14 @@ def prompt_for_template(templates: list[Template]) -> str:
     # Show the user the URLs of each template to preview.
     console.print("\nGet started with a template:")
 
+    def format_demo_url_str(url: str) -> str:
+        return f" ({url})" if url else ""
+
     # Prompt the user to select a template.
     id_to_name = {
-        str(idx): f"{template.name} ({template.demo_url}) - {template.description}"
+        str(
+            idx
+        ): f"{template.name.replace('_', ' ').replace('-', ' ')}{format_demo_url_str(template.demo_url)} - {template.description}"
         for idx, template in enumerate(templates)
     }
     for id in range(len(id_to_name)):
@@ -1380,15 +1387,119 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
     shutil.rmtree(unzip_dir)
 
 
-def initialize_app(app_name: str, template: str | None = None) -> str | None:
+def initialize_default_app(app_name: str):
+    """Initialize the default app.
+
+    Args:
+        app_name: The name of the app.
+    """
+    create_config(app_name)
+    initialize_app_directory(app_name)
+
+
+def validate_and_create_app_using_remote_template(app_name, template, templates):
+    """Validate and create an app using a remote template.
+
+    Args:
+        app_name: The name of the app.
+        template: The name of the template.
+        templates: The available templates.
+
+    Raises:
+        Exit: If the template is not found.
+    """
+    # If user selects a template, it needs to exist.
+    if template in templates:
+        template_url = templates[template].code_url
+    else:
+        # Check if the template is a github repo.
+        if template.startswith("https://github.com"):
+            template_url = f"{template.strip('/').replace('.git', '')}/archive/main.zip"
+        else:
+            console.error(f"Template `{template}` not found.")
+            raise typer.Exit(1)
+
+    if template_url is None:
+        return
+
+    create_config_init_app_from_remote_template(
+        app_name=app_name, template_url=template_url
+    )
+
+
+def generate_template_using_ai(template: str | None = None) -> str:
+    """Generate a template using AI(Flexgen).
+
+    Args:
+        template: The name of the template.
+
+    Returns:
+        The generation hash.
+
+    Raises:
+        Exit: If the template and ai flags are used.
+    """
+    if template is None:
+        # If AI is requested and no template specified, redirect the user to reflex.build.
+        return redir.reflex_build_redirect()
+    elif is_generation_hash(template):
+        # Otherwise treat the template as a generation hash.
+        return template
+    else:
+        console.error(
+            "Cannot use `--template` option with `--ai` option. Please remove `--template` option."
+        )
+        raise typer.Exit(2)
+
+
+def fetch_remote_templates(
+    template: Optional[str] = None,
+) -> tuple[str, dict[str, Template]]:
+    """Fetch the available remote templates.
+
+    Args:
+        template: The name of the template.
+
+    Returns:
+        The selected template and the available templates.
+
+    Raises:
+        Exit: If the template is not valid or if the template is not specified.
+    """
+    available_templates = {}
+
+    try:
+        # Get the available templates
+        available_templates = fetch_app_templates(constants.Reflex.VERSION)
+    except Exception as e:
+        console.warn("Failed to fetch templates. Falling back to default template.")
+        console.debug(f"Error while fetching templates: {e}")
+        template = constants.Templates.DEFAULT
+
+    if template == constants.Templates.DEFAULT:
+        return template, available_templates
+
+    if template in available_templates:
+        return template, available_templates
+
+    else:
+        if template is not None:
+            console.error(f"{template!r} is not a valid template name.")
+        console.print(
+            f"Go to the templates page ({constants.Templates.REFLEX_TEMPLATES_URL}) and copy the command to init with a template."
+        )
+        raise typer.Exit(0)
+
+
+def initialize_app(
+    app_name: str, template: str | None = None, ai: bool = False
+) -> str | None:
     """Initialize the app either from a remote template or a blank app. If the config file exists, it is considered as reinit.
 
     Args:
         app_name: The name of the app.
         template: The name of the template to use.
-
-    Raises:
-        Exit: If template is directly provided in the command flag and is invalid.
+        ai: Whether to use AI to generate the template.
 
     Returns:
         The name of the template.
@@ -1401,52 +1512,71 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
         telemetry.send("reinit")
         return
 
+    generation_hash = None
+    if ai:
+        generation_hash = generate_template_using_ai(template)
+        template = constants.Templates.DEFAULT
+
     templates: dict[str, Template] = {}
 
     # Don't fetch app templates if the user directly asked for DEFAULT.
-    if template is None or (template != constants.Templates.DEFAULT):
-        try:
-            # Get the available templates
-            templates = fetch_app_templates(constants.Reflex.VERSION)
-            if template is None and len(templates) > 0:
-                template = prompt_for_template(list(templates.values()))
-        except Exception as e:
-            console.warn("Failed to fetch templates. Falling back to default template.")
-            console.debug(f"Error while fetching templates: {e}")
-        finally:
-            template = template or constants.Templates.DEFAULT
+    if template is not None and (template not in (constants.Templates.DEFAULT,)):
+        template, templates = fetch_remote_templates(template)
+
+    if template is None:
+        template = prompt_for_template_options(get_init_cli_prompt_options())
+        if template == constants.Templates.AI:
+            generation_hash = generate_template_using_ai()
+            # change to the default to allow creation of default app
+            template = constants.Templates.DEFAULT
+        elif template == constants.Templates.CHOOSE_TEMPLATES:
+            template, templates = fetch_remote_templates()
 
     # If the blank template is selected, create a blank app.
-    if template == constants.Templates.DEFAULT:
+    if template in (constants.Templates.DEFAULT,):
         # Default app creation behavior: a blank app.
-        create_config(app_name)
-        initialize_app_directory(app_name)
+        initialize_default_app(app_name)
     else:
-        # Fetch App templates from the backend server.
-        console.debug(f"Available templates: {templates}")
-
-        # If user selects a template, it needs to exist.
-        if template in templates:
-            template_url = templates[template].code_url
-        else:
-            # Check if the template is a github repo.
-            if template.startswith("https://github.com"):
-                template_url = (
-                    f"{template.strip('/').replace('.git', '')}/archive/main.zip"
-                )
-            else:
-                console.error(f"Template `{template}` not found.")
-                raise typer.Exit(1)
-
-        if template_url is None:
-            return
-
-        create_config_init_app_from_remote_template(
-            app_name=app_name, template_url=template_url
+        validate_and_create_app_using_remote_template(
+            app_name=app_name, template=template, templates=templates
         )
 
+    # If a reflex.build generation hash is available, download the code and apply it to the main module.
+    if generation_hash:
+        initialize_main_module_index_from_generation(
+            app_name, generation_hash=generation_hash
+        )
     telemetry.send("init", template=template)
+
     return template
+
+
+def get_init_cli_prompt_options() -> list[Template]:
+    """Get the CLI options for initializing a Reflex app.
+
+    Returns:
+        The CLI options.
+    """
+    return [
+        Template(
+            name=constants.Templates.DEFAULT,
+            description="A blank Reflex app.",
+            demo_url=constants.Templates.DEFAULT_TEMPLATE_URL,
+            code_url="",
+        ),
+        Template(
+            name=constants.Templates.AI,
+            description="Generate a template using AI [Experimental]",
+            demo_url="",
+            code_url="",
+        ),
+        Template(
+            name=constants.Templates.CHOOSE_TEMPLATES,
+            description="Choose an existing template.",
+            demo_url="",
+            code_url="",
+        ),
+    ]
 
 
 def initialize_main_module_index_from_generation(app_name: str, generation_hash: str):

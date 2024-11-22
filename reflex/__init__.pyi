@@ -19,6 +19,7 @@ from . import vars as vars
 from .admin import AdminDash as AdminDash
 from .app import App as App
 from .app import UploadFile as UploadFile
+from .assets import asset as asset
 from .base import Base as Base
 from .components import el as el
 from .components import lucide as lucide

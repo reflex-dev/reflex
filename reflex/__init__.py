@@ -267,6 +267,7 @@ _MAPPING: dict = {
     "experimental": ["_x"],
     "admin": ["AdminDash"],
     "app": ["App", "UploadFile"],
+    "assets": ["asset"],
     "base": ["Base"],
     "components.component": [
         "Component",
