@@ -2,6 +2,7 @@ from typing import Callable, List
 
 import pytest
 
+import reflex as rx
 from reflex.event import (
     Event,
     EventChain,
@@ -439,3 +440,17 @@ def test_event_var_data():
     # Ensure chain carries _var_data
     chain_var = Var.create(EventChain(events=[S.s(S.x)], args_spec=_args_spec))
     assert chain_var._get_all_var_data() == S.x._get_all_var_data()
+
+
+def test_event_bound_method() -> None:
+    class S(BaseState):
+        @event
+        def e(self, arg: str):
+            print(arg)
+
+    class Wrapper:
+        def get_handler(self, arg: str):
+            return S.e(arg)
+
+    w = Wrapper()
+    _ = rx.input(on_change=w.get_handler)

@@ -119,6 +119,7 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
         required: Optional[Union[Var[bool], bool]] = None,
         type: Optional[Union[Var[str], str]] = None,
         value: Optional[Union[Var[Union[float, int, str]], float, int, str]] = None,
+        list: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_capitalize: Optional[
             Union[Var[Union[bool, int, str]], bool, int, str]
@@ -206,6 +207,7 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
             required: Indicates that the input is required
             type: Specifies the type of input
             value: Value of the input
+            list: References a datalist for suggested options
             on_change: Fired when the value of the textarea changes.
             on_focus: Fired when the textarea is focused.
             on_blur: Fired when the textarea is blurred.
@@ -454,6 +456,7 @@ class TextField(ComponentNamespace):
         required: Optional[Union[Var[bool], bool]] = None,
         type: Optional[Union[Var[str], str]] = None,
         value: Optional[Union[Var[Union[float, int, str]], float, int, str]] = None,
+        list: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_capitalize: Optional[
             Union[Var[Union[bool, int, str]], bool, int, str]
@@ -541,6 +544,7 @@ class TextField(ComponentNamespace):
             required: Indicates that the input is required
             type: Specifies the type of input
             value: Value of the input
+            list: References a datalist for suggested options
             on_change: Fired when the value of the textarea changes.
             on_focus: Fired when the textarea is focused.
             on_blur: Fired when the textarea is blurred.
