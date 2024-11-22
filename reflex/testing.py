@@ -43,7 +43,7 @@ import reflex.utils.exec
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
-from reflex.config import EnvironmentVariables
+from reflex.config import environment
 from reflex.state import (
     BaseState,
     State,
@@ -198,7 +198,7 @@ class AppHarness:
         state_name = reflex.utils.format.to_snake_case(
             f"{self.app_name}___{self.app_name}___" + state_cls_name
         )
-        if EnvironmentVariables.REFLEX_MINIFY_STATES.get():
+        if environment.REFLEX_MINIFY_STATES.get():
             return minified_state_names.get(state_name, state_name)
         return state_name
 
@@ -623,10 +623,10 @@ class AppHarness:
         if self.frontend_url is None:
             raise RuntimeError("Frontend is not running.")
         want_headless = False
-        if EnvironmentVariables.APP_HARNESS_HEADLESS.get():
+        if environment.APP_HARNESS_HEADLESS.get():
             want_headless = True
         if driver_clz is None:
-            requested_driver = EnvironmentVariables.APP_HARNESS_DRIVER.get()
+            requested_driver = environment.APP_HARNESS_DRIVER.get()
             driver_clz = getattr(webdriver, requested_driver)
             if driver_options is None:
                 driver_options = getattr(webdriver, f"{requested_driver}Options")()
@@ -648,7 +648,7 @@ class AppHarness:
                 driver_options.add_argument("headless")
         if driver_options is None:
             raise RuntimeError(f"Could not determine options for {driver_clz}")
-        if args := EnvironmentVariables.APP_HARNESS_DRIVER_ARGS.get():
+        if args := environment.APP_HARNESS_DRIVER_ARGS.get():
             for arg in args.split(","):
                 driver_options.add_argument(arg)
         if driver_option_args is not None:
@@ -955,7 +955,7 @@ class AppHarnessProd(AppHarness):
     def _start_backend(self):
         if self.app_instance is None:
             raise RuntimeError("App was not initialized.")
-        EnvironmentVariables.REFLEX_SKIP_COMPILE.set(True)
+        environment.REFLEX_SKIP_COMPILE.set(True)
         self.backend = uvicorn.Server(
             uvicorn.Config(
                 app=self.app_instance,
@@ -973,7 +973,7 @@ class AppHarnessProd(AppHarness):
         try:
             return super()._poll_for_servers(timeout)
         finally:
-            EnvironmentVariables.REFLEX_SKIP_COMPILE.set(None)
+            environment.REFLEX_SKIP_COMPILE.set(None)
 
     @override
     def stop(self):

@@ -15,7 +15,7 @@ from urllib.parse import urljoin
 import psutil
 
 from reflex import constants
-from reflex.config import EnvironmentVariables, get_config
+from reflex.config import environment, get_config
 from reflex.constants.base import LogLevel
 from reflex.utils import console, path_ops
 from reflex.utils.prerequisites import get_web_dir
@@ -184,7 +184,7 @@ def should_use_granian():
     Returns:
         True if Granian should be used.
     """
-    return EnvironmentVariables.REFLEX_USE_GRANIAN.get()
+    return environment.REFLEX_USE_GRANIAN.get()
 
 
 def get_app_module():
@@ -370,7 +370,7 @@ def run_uvicorn_backend_prod(host, port, loglevel):
         run=True,
         show_logs=True,
         env={
-            EnvironmentVariables.REFLEX_SKIP_COMPILE.name: "true"
+            environment.REFLEX_SKIP_COMPILE.name: "true"
         },  # skip compile for prod backend
     )
 
@@ -407,7 +407,7 @@ def run_granian_backend_prod(host, port, loglevel):
             run=True,
             show_logs=True,
             env={
-                EnvironmentVariables.REFLEX_SKIP_COMPILE.name: "true"
+                environment.REFLEX_SKIP_COMPILE.name: "true"
             },  # skip compile for prod backend
         )
     except ImportError:
@@ -493,7 +493,7 @@ def is_prod_mode() -> bool:
     Returns:
         True if the app is running in production mode or False if running in dev mode.
     """
-    current_mode = EnvironmentVariables.REFLEX_ENV_MODE.get()
+    current_mode = environment.REFLEX_ENV_MODE.get()
     return current_mode == constants.Env.PROD
 
 
@@ -509,7 +509,7 @@ def is_frontend_only() -> bool:
         deprecation_version="0.6.5",
         removal_version="0.7.0",
     )
-    return EnvironmentVariables.REFLEX_FRONTEND_ONLY.get()
+    return environment.REFLEX_FRONTEND_ONLY.get()
 
 
 def is_backend_only() -> bool:
@@ -524,7 +524,7 @@ def is_backend_only() -> bool:
         deprecation_version="0.6.5",
         removal_version="0.7.0",
     )
-    return EnvironmentVariables.REFLEX_BACKEND_ONLY.get()
+    return environment.REFLEX_BACKEND_ONLY.get()
 
 
 def should_skip_compile() -> bool:
@@ -539,4 +539,4 @@ def should_skip_compile() -> bool:
         deprecation_version="0.6.5",
         removal_version="0.7.0",
     )
-    return EnvironmentVariables.REFLEX_SKIP_COMPILE.get()
+    return environment.REFLEX_SKIP_COMPILE.get()

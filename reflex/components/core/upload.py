@@ -14,7 +14,7 @@ from reflex.components.component import (
 )
 from reflex.components.el.elements.forms import Input
 from reflex.components.radix.themes.layout.box import Box
-from reflex.config import EnvironmentVariables
+from reflex.config import environment
 from reflex.constants import Dirs
 from reflex.constants.compiler import Hooks, Imports
 from reflex.event import (
@@ -133,7 +133,7 @@ def get_upload_dir() -> Path:
     """
     Upload.is_used = True
 
-    uploaded_files_dir = EnvironmentVariables.REFLEX_UPLOADED_FILES_DIR.get()
+    uploaded_files_dir = environment.REFLEX_UPLOADED_FILES_DIR.get()
     uploaded_files_dir.mkdir(parents=True, exist_ok=True)
     return uploaded_files_dir
 

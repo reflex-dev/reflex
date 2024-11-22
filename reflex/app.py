@@ -65,7 +65,7 @@ from reflex.components.core.client_side_routing import (
 )
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
-from reflex.config import EnvironmentVariables, get_config
+from reflex.config import environment, get_config
 from reflex.event import (
     BASE_STATE,
     Event,
@@ -503,10 +503,7 @@ class App(MiddlewareMixin, LifespanMixin):
         # Check if the route given is valid
         verify_route_validity(route)
 
-        if (
-            route in self.unevaluated_pages
-            and EnvironmentVariables.RELOAD_CONFIG.is_set()
-        ):
+        if route in self.unevaluated_pages and environment.RELOAD_CONFIG.is_set():
             # when the app is reloaded(typically for app harness tests), we should maintain
             # the latest render function of a route.This applies typically to decorated pages
             # since they are only added when app._compile is called.
@@ -723,7 +720,7 @@ class App(MiddlewareMixin, LifespanMixin):
             Whether the app should be compiled.
         """
         # Check the environment variable.
-        if EnvironmentVariables.REFLEX_SKIP_COMPILE.get():
+        if environment.REFLEX_SKIP_COMPILE.get():
             return False
 
         nocompile = prerequisites.get_web_dir() / constants.NOCOMPILE_FILE
@@ -945,10 +942,7 @@ class App(MiddlewareMixin, LifespanMixin):
         executor = None
         if (
             platform.system() in ("Linux", "Darwin")
-            and (
-                number_of_processes
-                := EnvironmentVariables.REFLEX_COMPILE_PROCESSES.get()
-            )
+            and (number_of_processes := environment.REFLEX_COMPILE_PROCESSES.get())
             is not None
         ):
             executor = concurrent.futures.ProcessPoolExecutor(
@@ -957,7 +951,7 @@ class App(MiddlewareMixin, LifespanMixin):
             )
         else:
             executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=EnvironmentVariables.REFLEX_COMPILE_THREADS.get()
+                max_workers=environment.REFLEX_COMPILE_THREADS.get()
             )
 
         for route, component in zip(self.pages, page_components):

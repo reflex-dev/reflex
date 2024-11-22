@@ -123,10 +123,10 @@ class Templates(SimpleNamespace):
         Returns:
             The URL to redirect to reflex.build.
         """
-        from reflex.config import EnvironmentVariables
+        from reflex.config import environment
 
         return (
-            EnvironmentVariables.REFLEX_BUILD_FRONTEND.get()
+            environment.REFLEX_BUILD_FRONTEND.get()
             + "/gen?reflex_init_token={reflex_init_token}"
         )
 
@@ -138,12 +138,9 @@ class Templates(SimpleNamespace):
         Returns:
             The URL to poll waiting for the user to select a generation.
         """
-        from reflex.config import EnvironmentVariables
+        from reflex.config import environment
 
-        return (
-            EnvironmentVariables.REFLEX_BUILD_BACKEND.get()
-            + "/api/init/{reflex_init_token}"
-        )
+        return environment.REFLEX_BUILD_BACKEND.get() + "/api/init/{reflex_init_token}"
 
     @classproperty
     @classmethod
@@ -153,10 +150,10 @@ class Templates(SimpleNamespace):
         Returns:
             The URL to fetch the generation's reflex code.
         """
-        from reflex.config import EnvironmentVariables
+        from reflex.config import environment
 
         return (
-            EnvironmentVariables.REFLEX_BUILD_BACKEND.get()
+            environment.REFLEX_BUILD_BACKEND.get()
             + "/api/gen/{generation_hash}/refactored"
         )
 

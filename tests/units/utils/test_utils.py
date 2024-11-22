@@ -10,7 +10,7 @@ from packaging import version
 
 from reflex import constants
 from reflex.base import Base
-from reflex.config import EnvironmentVariables
+from reflex.config import environment
 from reflex.event import EventHandler
 from reflex.state import BaseState
 from reflex.utils import build, prerequisites, types
@@ -600,7 +600,7 @@ def cleanup_reflex_env_mode():
         None
     """
     yield
-    EnvironmentVariables.REFLEX_ENV_MODE.set(None)
+    environment.REFLEX_ENV_MODE.set(None)
 
 
 def test_is_prod_mode(cleanup_reflex_env_mode: None) -> None:
@@ -609,7 +609,7 @@ def test_is_prod_mode(cleanup_reflex_env_mode: None) -> None:
     Args:
         cleanup_reflex_env_mode: Fixture to cleanup the reflex env mode.
     """
-    EnvironmentVariables.REFLEX_ENV_MODE.set(constants.Env.PROD)
+    environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
     assert utils_exec.is_prod_mode()
-    EnvironmentVariables.REFLEX_ENV_MODE.set(None)
+    environment.REFLEX_ENV_MODE.set(None)
     assert not utils_exec.is_prod_mode()

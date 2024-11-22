@@ -8,9 +8,9 @@ import pytest
 import reflex as rx
 import reflex.config
 from reflex.config import (
-    EnvironmentVariables,
     EnvVar,
     env_var,
+    environment,
     interpret_boolean_env,
     interpret_enum_env,
     interpret_int_env,
@@ -216,7 +216,7 @@ def test_replace_defaults(
 
 
 def reflex_dir_constant() -> Path:
-    return EnvironmentVariables.REFLEX_DIR.get()
+    return environment.REFLEX_DIR.get()
 
 
 def test_reflex_dir_env_var(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

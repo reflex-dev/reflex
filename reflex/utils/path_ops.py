@@ -9,7 +9,7 @@ import shutil
 from pathlib import Path
 
 from reflex import constants
-from reflex.config import EnvironmentVariables
+from reflex.config import environment
 
 # Shorthand for join.
 join = os.linesep.join
@@ -136,7 +136,7 @@ def use_system_node() -> bool:
     Returns:
         Whether the system node should be used.
     """
-    return EnvironmentVariables.REFLEX_USE_SYSTEM_NODE.get()
+    return environment.REFLEX_USE_SYSTEM_NODE.get()
 
 
 def use_system_bun() -> bool:
@@ -145,7 +145,7 @@ def use_system_bun() -> bool:
     Returns:
         Whether the system bun should be used.
     """
-    return EnvironmentVariables.REFLEX_USE_SYSTEM_BUN.get()
+    return environment.REFLEX_USE_SYSTEM_BUN.get()
 
 
 def get_node_bin_path() -> Path | None:

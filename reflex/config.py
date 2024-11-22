@@ -591,9 +591,11 @@ class EnvironmentVariables:
 
     # Whether to minify state names. Default to true in prod mode and false otherwise.
     REFLEX_MINIFY_STATES: EnvVar[Optional[bool]] = env_var(
-        default_factory=lambda: EnvironmentVariables.REFLEX_ENV_MODE.get()
-        == constants.Env.PROD
+        default_factory=lambda: environment.REFLEX_ENV_MODE.get() == constants.Env.PROD
     )
+
+
+environment = EnvironmentVariables
 
 
 class Config(Base):

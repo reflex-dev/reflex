@@ -76,7 +76,7 @@ from redis.exceptions import ResponseError
 import reflex.istate.dynamic
 from reflex import constants
 from reflex.base import Base
-from reflex.config import EnvironmentVariables
+from reflex.config import environment
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,
@@ -118,11 +118,9 @@ Delta = Dict[str, Any]
 var = computed_var
 
 
-if EnvironmentVariables.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
+if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
     # If the state is this large, it's considered a performance issue.
-    TOO_LARGE_SERIALIZED_STATE = (
-        EnvironmentVariables.REFLEX_STATE_SIZE_LIMIT.get() * 1024
-    )
+    TOO_LARGE_SERIALIZED_STATE = environment.REFLEX_STATE_SIZE_LIMIT.get() * 1024
     # Only warn about each state class size once.
     _WARNED_ABOUT_STATE_SIZE: Set[str] = set()
 
@@ -954,7 +952,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         module = cls.__module__.replace(".", "___")
         state_name = format.to_snake_case(f"{module}___{cls.__name__}")
-        if EnvironmentVariables.REFLEX_MINIFY_STATES.get():
+        if environment.REFLEX_MINIFY_STATES.get():
             return get_minified_state_name(state_name)
         return state_name
 
@@ -2188,9 +2186,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 f"State {state_full_name} serializes to {pickle_state_size} bytes "
                 + "which may present performance issues. Consider reducing the size of this state."
             )
-            if EnvironmentVariables.REFLEX_PERF_MODE.get() == PerformanceMode.WARN:
+            if environment.REFLEX_PERF_MODE.get() == PerformanceMode.WARN:
                 console.warn(msg)
-            elif EnvironmentVariables.REFLEX_PERF_MODE.get() == PerformanceMode.RAISE:
+            elif environment.REFLEX_PERF_MODE.get() == PerformanceMode.RAISE:
                 raise StateTooLargeError(msg)
             _WARNED_ABOUT_STATE_SIZE.add(state_full_name)
 
@@ -2233,7 +2231,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         try:
             pickle_state = pickle.dumps((self._to_schema(), self))
-            if EnvironmentVariables.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
+            if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
                 self._check_state_size(len(pickle_state))
             return pickle_state
         except HANDLED_PICKLE_ERRORS as og_pickle_error:
@@ -3516,7 +3514,7 @@ class StateManagerRedis(StateManager):
             )
         except ResponseError:
             # Some redis servers only allow out-of-band configuration, so ignore errors here.
-            if not EnvironmentVariables.REFLEX_IGNORE_REDIS_CONFIG_ERROR.get():
+            if not environment.REFLEX_IGNORE_REDIS_CONFIG_ERROR.get():
                 raise
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(lock_key_channel)

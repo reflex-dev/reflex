@@ -9,7 +9,7 @@ import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
-from reflex.config import EnvironmentVariables
+from reflex.config import environment
 from reflex.testing import AppHarness, AppHarnessProd
 
 
@@ -62,9 +62,9 @@ def minify_state_env(
         minify_states: whether to minify state names
     """
     minify_states: Optional[bool] = request.param
-    EnvironmentVariables.REFLEX_MINIFY_STATES.set(minify_states)
+    environment.REFLEX_MINIFY_STATES.set(minify_states)
     yield minify_states
-    EnvironmentVariables.REFLEX_MINIFY_STATES.set(None)
+    environment.REFLEX_MINIFY_STATES.set(None)
 
 
 @pytest.fixture

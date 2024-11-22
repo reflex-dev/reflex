@@ -33,7 +33,7 @@ from redis.asyncio import Redis
 
 from reflex import constants, model
 from reflex.compiler import templates
-from reflex.config import Config, EnvironmentVariables, get_config
+from reflex.config import Config, environment, get_config
 from reflex.utils import console, net, path_ops, processes, redir
 from reflex.utils.exceptions import (
     GeneratedCodeHasNoFunctionDefs,
@@ -72,7 +72,7 @@ def get_web_dir() -> Path:
     Returns:
         The working directory.
     """
-    return EnvironmentVariables.REFLEX_WEB_WORKDIR.get()
+    return environment.REFLEX_WEB_WORKDIR.get()
 
 
 def _python_version_check():
@@ -93,7 +93,7 @@ def check_latest_package_version(package_name: str):
     Args:
         package_name: The name of the package.
     """
-    if EnvironmentVariables.REFLEX_CHECK_LATEST_VERSION.get() is False:
+    if environment.REFLEX_CHECK_LATEST_VERSION.get() is False:
         return
     try:
         # Get the latest version from PyPI
@@ -265,7 +265,7 @@ def windows_npm_escape_hatch() -> bool:
     Returns:
         If the user has set REFLEX_USE_NPM.
     """
-    return EnvironmentVariables.REFLEX_USE_NPM.get()
+    return environment.REFLEX_USE_NPM.get()
 
 
 def get_app(reload: bool = False) -> ModuleType:
@@ -283,7 +283,7 @@ def get_app(reload: bool = False) -> ModuleType:
     from reflex.utils import telemetry
 
     try:
-        EnvironmentVariables.RELOAD_CONFIG.set(reload)
+        environment.RELOAD_CONFIG.set(reload)
         config = get_config()
         if not config.app_name:
             raise RuntimeError(
@@ -1026,7 +1026,7 @@ def needs_reinit(frontend: bool = True) -> bool:
         return False
 
     # Make sure the .reflex directory exists.
-    if not EnvironmentVariables.REFLEX_DIR.get().exists():
+    if not environment.REFLEX_DIR.get().exists():
         return True
 
     # Make sure the .web directory exists in frontend mode.
@@ -1131,7 +1131,7 @@ def ensure_reflex_installation_id() -> Optional[int]:
     """
     try:
         initialize_reflex_user_directory()
-        installation_id_file = EnvironmentVariables.REFLEX_DIR.get() / "installation_id"
+        installation_id_file = environment.REFLEX_DIR.get() / "installation_id"
 
         installation_id = None
         if installation_id_file.exists():
@@ -1156,7 +1156,7 @@ def ensure_reflex_installation_id() -> Optional[int]:
 def initialize_reflex_user_directory():
     """Initialize the reflex user directory."""
     # Create the reflex directory.
-    path_ops.mkdir(EnvironmentVariables.REFLEX_DIR.get())
+    path_ops.mkdir(environment.REFLEX_DIR.get())
 
 
 def initialize_frontend_dependencies():
@@ -1181,7 +1181,7 @@ def check_db_initialized() -> bool:
     """
     if (
         get_config().db_url is not None
-        and not EnvironmentVariables.ALEMBIC_CONFIG.get().exists()
+        and not environment.ALEMBIC_CONFIG.get().exists()
     ):
         console.error(
             "Database is not initialized. Run [bold]reflex db init[/bold] first."
@@ -1192,10 +1192,7 @@ def check_db_initialized() -> bool:
 
 def check_schema_up_to_date():
     """Check if the sqlmodel metadata matches the current database schema."""
-    if (
-        get_config().db_url is None
-        or not EnvironmentVariables.ALEMBIC_CONFIG.get().exists()
-    ):
+    if get_config().db_url is None or not environment.ALEMBIC_CONFIG.get().exists():
         return
     with model.Model.get_db_engine().connect() as connection:
         try:
