@@ -705,6 +705,11 @@ export const useEventLoop = (
       _e.stopPropagation();
     }
     const combined_name = events.map((e) => e.name).join("+++");
+    if (event_actions?.temporal) {
+      if (!socket.current || !socket.current.connected) {
+        return;  // don't queue when the backend is not connected
+      }
+    }
     if (event_actions?.throttle) {
       // If throttle returns false, the events are not added to the queue.
       if (!throttle(combined_name, event_actions.throttle)) {
