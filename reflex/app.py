@@ -1497,7 +1497,7 @@ class EventNamespace(AsyncNamespace):
         disconnect_token = self.sid_to_token.pop(sid, None)
         if disconnect_token:
             self.token_to_sid.pop(disconnect_token, None)
-        await self.app.state_manager.disconnect(sid)
+            await self.app.state_manager.disconnect(disconnect_token)
 
     async def emit_update(self, update: StateUpdate, sid: str) -> None:
         """Emit an update to the client.

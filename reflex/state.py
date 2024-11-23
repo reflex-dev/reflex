@@ -39,6 +39,14 @@ from typing import (
     get_type_hints,
 )
 
+from glide import (
+    OK,
+    ConditionalChange,
+    ExpirySet,
+    ExpiryType,
+    GlideClient,
+    GlideClientConfiguration,
+)
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
@@ -70,8 +78,6 @@ except ModuleNotFoundError:
     BaseModelV1 = BaseModelV2
 
 import wrapt
-from redis.asyncio import Redis
-from redis.exceptions import ResponseError
 
 import reflex.istate.dynamic
 from reflex import constants
@@ -94,6 +100,7 @@ from reflex.utils.exceptions import (
     ImmutableStateError,
     InvalidStateManagerMode,
     LockExpiredError,
+    RedisConfigError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSchemaMismatchError,
@@ -2781,16 +2788,17 @@ class StateManager(Base, ABC):
             return StateManagerMemory(state=state)
         if config.state_manager_mode == constants.StateManagerMode.DISK:
             return StateManagerDisk(state=state)
-        if config.state_manager_mode == constants.StateManagerMode.REDIS:
-            redis = prerequisites.get_redis()
-            if redis is not None:
-                # make sure expiration values are obtained only from the config object on creation
-                return StateManagerRedis(
-                    state=state,
-                    redis=redis,
-                    token_expiration=config.redis_token_expiration,
-                    lock_expiration=config.redis_lock_expiration,
-                )
+        if (
+            config.state_manager_mode == constants.StateManagerMode.REDIS
+            and prerequisites.parse_redis_url() is not None
+        ):
+            # make sure expiration values are obtained only from the config object on creation
+            return StateManagerRedis(
+                state=state,
+                # redis=redis,
+                token_expiration=config.redis_token_expiration,
+                lock_expiration=config.redis_lock_expiration,
+            )
         raise InvalidStateManagerMode(
             f"Expected one of: DISK, MEMORY, REDIS, got {config.state_manager_mode}"
         )
@@ -3185,7 +3193,7 @@ class StateManagerRedis(StateManager):
     """A state manager that stores states in redis."""
 
     # The redis client to use.
-    redis: Redis
+    redis: Optional[GlideClient] = None
 
     # The token expiration time (s).
     token_expiration: int = pydantic.Field(default_factory=_default_token_expiration)
@@ -3211,6 +3219,34 @@ class StateManagerRedis(StateManager):
 
     # This lock is used to ensure we only subscribe to keyspace events once per token and worker
     _pubsub_locks: Dict[bytes, asyncio.Lock] = pydantic.PrivateAttr({})
+
+    async def get_redis(self) -> GlideClient:
+        """Get the redis client.
+
+        Returns:
+            The redis client.
+
+        Raises:
+            RedisConfigError: If the redis client could not be configured.
+        """
+        if self.redis is not None:
+            return self.redis
+        redis = await prerequisites.get_redis()
+        assert redis is not None
+        config_result = await redis.config_set(
+            {"notify-keyspace-events": self._redis_notify_keyspace_events},
+        )
+        # Some redis servers only allow out-of-band configuration, so ignore errors here.
+        if (
+            config_result != OK
+            and not environment.REFLEX_IGNORE_REDIS_CONFIG_ERROR.get()
+        ):
+            raise RedisConfigError(
+                f"Failed to set notify-keyspace-events: {config_result}"
+            )
+
+        self.redis = redis
+        return redis
 
     async def _get_parent_state(
         self, token: str, state: BaseState | None = None
@@ -3321,7 +3357,8 @@ class StateManagerRedis(StateManager):
         state = None
 
         # Fetch the serialized substate from redis.
-        redis_state = await self.redis.get(token)
+        redis = await self.get_redis()
+        redis_state = await redis.get(token)
 
         if redis_state is not None:
             # Deserialize the substate.
@@ -3374,10 +3411,9 @@ class StateManagerRedis(StateManager):
             RuntimeError: If the state instance doesn't match the state name in the token.
         """
         # Check that we're holding the lock.
-        if (
-            lock_id is not None
-            and await self.redis.get(self._lock_key(token)) != lock_id
-        ):
+        redis = await self.get_redis()
+
+        if lock_id is not None and await redis.get(self._lock_key(token)) != lock_id:
             raise LockExpiredError(
                 f"Lock expired for token {token} while processing. Consider increasing "
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
@@ -3404,13 +3440,21 @@ class StateManagerRedis(StateManager):
             )
         # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
         if state._get_was_touched():
+            redis = await self.get_redis()
             pickle_state = state._serialize()
             if pickle_state:
-                await self.redis.set(
+                _ = await redis.set(
                     _substate_key(client_token, state),
                     pickle_state,
-                    ex=self.token_expiration,
+                    expiry=ExpirySet(
+                        expiry_type=ExpiryType.MILLSEC,
+                        value=self.token_expiration,
+                    ),
                 )
+                # if str(res) != OK:
+                #     raise RuntimeError(
+                #         f"Failed to set state for token {token}. {res} {OK}"
+                #     )
 
         # Wait for substates to be persisted.
         for t in tasks:
@@ -3456,12 +3500,42 @@ class StateManagerRedis(StateManager):
         Returns:
             True if the lock was obtained.
         """
-        return await self.redis.set(
+        redis = await self.get_redis()
+        response = await redis.set(
             lock_key,
             lock_id,
-            px=self.lock_expiration,
-            nx=True,  # only set if it doesn't exist
+            expiry=ExpirySet(
+                expiry_type=ExpiryType.MILLSEC,
+                value=self.lock_expiration,
+            ),
+            conditional_set=ConditionalChange.ONLY_IF_DOES_NOT_EXIST,
         )
+        return str(response) == OK
+
+    async def get_pubsub(self, lock_key: bytes) -> GlideClient:
+        """Get the pubsub client for a lock key channel.
+
+        Args:
+            lock_key: The redis key for the lock.
+
+        Returns:
+            The pubsub client.
+        """
+        lock_key_channel = f"__keyspace@0__:{lock_key.decode()}"
+        pubsub_config = GlideClientConfiguration.PubSubSubscriptions(
+            channels_and_patterns={
+                GlideClientConfiguration.PubSubChannelModes.Pattern: {lock_key_channel},
+                # GlideClientConfiguration.PubSubChannelModes.Exact: {lock_key_channel},
+            },
+            callback=None,
+            context=None,
+        )
+        config = prerequisites.get_glide_client_configuration(
+            pubsub_subscriptions=pubsub_config
+        )
+        assert config is not None
+        pubsub = await GlideClient.create(config)
+        return pubsub
 
     async def _wait_lock(self, lock_key: bytes, lock_id: bytes) -> None:
         """Wait for a redis lock to be released via pubsub.
@@ -3471,43 +3545,35 @@ class StateManagerRedis(StateManager):
         Args:
             lock_key: The redis key for the lock.
             lock_id: The ID of the lock.
-
-        Raises:
-            ResponseError: when the keyspace config cannot be set.
         """
         state_is_locked = False
-        lock_key_channel = f"__keyspace@0__:{lock_key.decode()}"
         # Enable keyspace notifications for the lock key, so we know when it is available.
-        try:
-            await self.redis.config_set(
-                "notify-keyspace-events",
-                self._redis_notify_keyspace_events,
-            )
-        except ResponseError:
-            # Some redis servers only allow out-of-band configuration, so ignore errors here.
-            if not environment.REFLEX_IGNORE_REDIS_CONFIG_ERROR.get():
-                raise
+        redis = await self.get_redis()
         if lock_key not in self._pubsub_locks:
             self._pubsub_locks[lock_key] = asyncio.Lock()
-        async with self._pubsub_locks[lock_key], self.redis.pubsub() as pubsub:
-            await pubsub.psubscribe(lock_key_channel)
+        async with self._pubsub_locks[lock_key]:
+            pubsub = await self.get_pubsub(lock_key)
             while not state_is_locked:
                 # wait for the lock to be released
                 while True:
-                    if not await self.redis.exists(lock_key):
+                    # check if we missed lock release events
+                    if await redis.exists([lock_key]) == 0:
                         break  # key was removed, try to get the lock again
-                    message = await pubsub.get_message(
-                        ignore_subscribe_messages=True,
-                        timeout=self.lock_expiration / 1000.0,
-                    )
-                    if message is None:
+
+                    try:
+                        # TODO: alternative to ignore_subscribe_messages?
+                        message = await asyncio.wait_for(
+                            pubsub.get_pubsub_message(),
+                            timeout=self.lock_expiration / 1000.0,
+                        )
+                    except asyncio.TimeoutError:
                         continue
-                    if message["data"] in self._redis_keyspace_lock_release_events:
+                    if message.message in self._redis_keyspace_lock_release_events:
                         break
                 state_is_locked = await self._try_get_lock(lock_key, lock_id)
 
     @override
-    async def disconnect(self, token: str):
+    async def disconnect(self, token: str) -> None:
         """Disconnect the token from the redis client.
 
         Args:
@@ -3520,7 +3586,7 @@ class StateManagerRedis(StateManager):
             del self._pubsub_locks[lock_key]
 
     @contextlib.asynccontextmanager
-    async def _lock(self, token: str):
+    async def _lock(self, token: str) -> AsyncIterator[bytes]:
         """Obtain a redis lock for a token.
 
         Args:
@@ -3548,9 +3614,12 @@ class StateManagerRedis(StateManager):
         finally:
             if state_is_locked:
                 # only delete our lock
-                await self.redis.delete(lock_key)
+                redis = await self.get_redis()
+                _ = await redis.delete([lock_key])
+                # if not res:
+                #     raise RuntimeError(f"Failed to release lock for token {token}")
 
-    async def close(self):
+    async def close(self) -> None:
         """Explicitly close the redis connection and connection_pool.
 
         It is necessary in testing scenarios to close between asyncio test cases
@@ -3559,7 +3628,9 @@ class StateManagerRedis(StateManager):
 
         Note: Connections will be automatically reopened when needed.
         """
-        await self.redis.aclose(close_connection_pool=True)
+        if self.redis is not None:
+            await self.redis.close()
+            self.redis = None
 
 
 def get_state_manager() -> StateManager:

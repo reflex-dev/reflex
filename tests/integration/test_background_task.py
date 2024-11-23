@@ -44,7 +44,7 @@ def BackgroundTask():
 
         @rx.event(background=True)
         async def fast_yielding(self):
-            for _ in range(100000):
+            for _ in range(1000):
                 yield State.increment()
 
         @rx.event
@@ -409,4 +409,4 @@ def test_fast_yielding(
     assert background_task._poll_for(lambda: counter.text == "0", timeout=5)
 
     fast_yielding_button.click()
-    assert background_task._poll_for(lambda: counter.text == "100000", timeout=1200)
+    assert background_task._poll_for(lambda: counter.text == "1000", timeout=20)

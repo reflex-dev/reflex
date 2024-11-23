@@ -1683,7 +1683,8 @@ async def test_state_manager_modify_state(
     """
     async with state_manager.modify_state(substate_token) as state:
         if isinstance(state_manager, StateManagerRedis):
-            assert await state_manager.redis.get(f"{token}_lock")
+            redis = await state_manager.get_redis()
+            assert await redis.get(f"{token}_lock")
         elif isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
             assert token in state_manager._states_locks
             assert state_manager._states_locks[token].locked()
@@ -1693,7 +1694,8 @@ async def test_state_manager_modify_state(
         state.complex[3] = complex_1
     # lock should be dropped after exiting the context
     if isinstance(state_manager, StateManagerRedis):
-        assert (await state_manager.redis.get(f"{token}_lock")) is None
+        redis = await state_manager.get_redis()
+        assert (await redis.get(f"{token}_lock")) is None
     elif isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
         assert not state_manager._states_locks[token].locked()
 
@@ -1735,7 +1737,8 @@ async def test_state_manager_contend(
     assert (await state_manager.get_state(substate_token)).num1 == exp_num1
 
     if isinstance(state_manager, StateManagerRedis):
-        assert (await state_manager.redis.get(f"{token}_lock")) is None
+        redis = await state_manager.get_redis()
+        assert (await redis.get(f"{token}_lock")) is None
     elif isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
         assert token in state_manager._states_locks
         assert not state_manager._states_locks[token].locked()
@@ -1925,6 +1928,14 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
         # Cannot access substates
         sp.substates[""]
 
+    assert (
+        sp.router.session.client_token == grandchild_state.router.session.client_token
+    )
+    assert (
+        sp.__wrapped__.router.session.client_token
+        == grandchild_state.router.session.client_token
+    )
+    assert sp.router.session.client_token is not None
     async with sp:
         assert sp._self_actx is not None
         assert sp._self_mutable  # proxy is mutable inside context
