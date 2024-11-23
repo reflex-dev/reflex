@@ -2830,6 +2830,14 @@ class StateManager(Base, ABC):
         """
         yield self.state()
 
+    async def disconnect(self, token: str) -> None:
+        """Disconnect the client with the given token.
+
+        Args:
+            token: The token to disconnect.
+        """
+        pass
+
 
 class StateManagerMemory(StateManager):
     """A state manager that stores states in memory."""
@@ -2898,6 +2906,20 @@ class StateManagerMemory(StateManager):
             state = await self.get_state(token)
             yield state
             await self.set_state(token, state)
+
+    @override
+    async def disconnect(self, token: str) -> None:
+        """Disconnect the client with the given token.
+
+        Args:
+            token: The token to disconnect.
+        """
+        if token in self.states:
+            del self.states[token]
+        if lock := self._states_locks.get(token):
+            if lock.locked():
+                lock.release()
+            del self._states_locks[token]
 
 
 def _default_token_expiration() -> int:
@@ -3187,6 +3209,9 @@ class StateManagerRedis(StateManager):
         b"evicted",
     }
 
+    # This lock is used to ensure we only subscribe to keyspace events once per token and worker
+    _pubsub_locks: Dict[bytes, asyncio.Lock] = pydantic.PrivateAttr({})
+
     async def _get_parent_state(
         self, token: str, state: BaseState | None = None
     ) -> BaseState | None:
@@ -3462,7 +3487,9 @@ class StateManagerRedis(StateManager):
             # Some redis servers only allow out-of-band configuration, so ignore errors here.
             if not environment.REFLEX_IGNORE_REDIS_CONFIG_ERROR.get():
                 raise
-        async with self.redis.pubsub() as pubsub:
+        if lock_key not in self._pubsub_locks:
+            self._pubsub_locks[lock_key] = asyncio.Lock()
+        async with self._pubsub_locks[lock_key], self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(lock_key_channel)
             while not state_is_locked:
                 # wait for the lock to be released
@@ -3478,6 +3505,19 @@ class StateManagerRedis(StateManager):
                     if message["data"] in self._redis_keyspace_lock_release_events:
                         break
                 state_is_locked = await self._try_get_lock(lock_key, lock_id)
+
+    @override
+    async def disconnect(self, token: str):
+        """Disconnect the token from the redis client.
+
+        Args:
+            token: The token to disconnect.
+        """
+        lock_key = self._lock_key(token)
+        if lock := self._pubsub_locks.get(lock_key):
+            if lock.locked():
+                lock.release()
+            del self._pubsub_locks[lock_key]
 
     @contextlib.asynccontextmanager
     async def _lock(self, token: str):
