@@ -1748,7 +1748,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 if value is None:
                     continue
                 hinted_args = value_inside_optional(hinted_args)
-            if isinstance(value, dict) and inspect.isclass(hinted_args):
+            if (
+                isinstance(value, dict)
+                and inspect.isclass(hinted_args)
+                and not types.is_generic_alias(hinted_args)  # py3.9-py3.10
+            ):
                 if issubclass(hinted_args, Model):
                     # Remove non-fields from the payload
                     payload[arg] = hinted_args(
@@ -1759,7 +1763,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                         }
                     )
                 elif dataclasses.is_dataclass(hinted_args) or issubclass(
-                    hinted_args, Base
+                    hinted_args, (Base, BaseModelV1, BaseModelV2)
                 ):
                     payload[arg] = hinted_args(**value)
             if isinstance(value, list) and (hinted_args is set or hinted_args is Set):
