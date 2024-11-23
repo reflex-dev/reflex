@@ -178,7 +178,6 @@ def run_frontend_prod(root: Path, port: str, backend_present=True):
     )
 
 
-### REWORK <--
 def run_backend(
     host: str,
     port: int,
@@ -237,12 +236,11 @@ def run_backend_prod(
         run=True,
         show_logs=True,
         env={
-            environment.REFLEX_SKIP_COMPILE.name: "true"
-        },  # skip compile for prod backend
+            environment.REFLEX_SKIP_COMPILE.name: "true"  # skip compile for prod backend
+        },
     )
 
 
-### REWORK-->
 def output_system_info():
     """Show system information if the loglevel is in DEBUG."""
     if console._LOG_LEVEL > constants.LogLevel.DEBUG:

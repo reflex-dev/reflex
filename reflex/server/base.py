@@ -7,7 +7,7 @@ from abc import abstractmethod
 from dataclasses import Field, dataclass
 from dataclasses import field as dc_field
 from pathlib import Path
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Sequence, ClassVar
 
 from reflex import constants
 from reflex.constants.base import Env, LogLevel
@@ -156,7 +156,9 @@ def field_(
 class CustomBackendServer:
     """BackendServer base."""
 
-    _app_uri: str = field_(default="", metadata_cli=None, exclude=True)
+    _env: ClassVar[Env] = field_(default=Env.DEV, metadata_cli=None, exclude=True, repr = False, init = False)
+    _app: ClassVar[Any] = field_(default=None, metadata_cli=None, exclude=True, repr = False, init = False)
+    _app_uri: ClassVar[str] = field_(default="", metadata_cli=None, exclude=True, repr = False, init = False)
 
     @staticmethod
     def get_app_module(for_granian_target: bool = False, add_extra_api: bool = False):
@@ -247,6 +249,11 @@ class CustomBackendServer:
         return False
 
     @abstractmethod
+    def get_backend_bind(self) -> tuple[str, int]:
+        """Return the backend host and port"""
+        raise NotImplementedError()
+    
+    @abstractmethod
     def check_import(self):
         """Check package importation."""
         raise NotImplementedError()
@@ -264,4 +271,9 @@ class CustomBackendServer:
     @abstractmethod
     def run_dev(self):
         """Run in development mode."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    async def shutdown(self):
+        """Shutdown the backend server."""
         raise NotImplementedError()

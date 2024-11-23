@@ -183,6 +183,10 @@ class UvicornBackendServer(CustomBackendServer):
         metadata_cli=CliType.default("--h11-max-incomplete-event-size {value}"),
     )
 
+    def get_backend_bind(self) -> tuple[str, int]:
+        """Return the backend host and port"""
+        return self.host, self.port
+    
     def check_import(self):
         """Check package importation."""
         from importlib.util import find_spec
@@ -211,6 +215,7 @@ class UvicornBackendServer(CustomBackendServer):
         self.log_level = loglevel.value
         self.host = host
         self.port = port
+        self._env = env
 
         if env == Env.PROD:
             if self.workers == self.get_fields()["workers"].default:
@@ -250,6 +255,17 @@ class UvicornBackendServer(CustomBackendServer):
             if not self.is_default_value(key, value)
         }
 
-        Server(
+        self._app = Server(
             config=Config(**options_, app=self._app_uri),
-        ).run()
+        )
+        self._app.run()
+
+    async def shutdown(self):
+        """Shutdown the backend server."""
+        if self._app and self._env == Env.DEV:
+            self._app.shutdown()  # type: ignore
+
+        # TODO: hard because currently `*BackendServer` don't execute the server command, he just create it
+        # if self._env == Env.PROD:
+        #     pass
+            
