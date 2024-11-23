@@ -278,6 +278,11 @@ class GunicornBackendServer(CustomBackendServer):
         default="drop", metadata_cli=CliType.default("--header-map {value}")
     )
 
+    def get_backend_bind(self) -> tuple[str, int]:
+        """Return the backend host and port"""
+        host, port = self.bind[0].split(":")
+        return host, int(port)
+    
     def check_import(self):
         """Check package importation."""
         from importlib.util import find_spec
@@ -303,6 +308,7 @@ class GunicornBackendServer(CustomBackendServer):
         self._app_uri = f"{self.get_app_module()}()"
         self.loglevel = loglevel.value  # type: ignore
         self.bind = [f"{host}:{port}"]
+        self._env = env
 
         if env == Env.PROD:
             if self.workers == self.get_fields()["workers"].default:
@@ -370,5 +376,20 @@ class GunicornBackendServer(CustomBackendServer):
 
             def load(self):
                 return gunicorn_import_app(self._app_uri)
+        
+            def stop(self):
+                from gunicorn.arbiter import Arbiter
 
-        StandaloneApplication(app_uri=self._app_uri, options=options_).run()
+                Arbiter(self).stop()
+
+        self._app = StandaloneApplication(app_uri=self._app_uri, options=options_)
+        self._app.run()
+
+    async def shutdown(self):
+        """Shutdown the backend server."""
+        if self._app and self._env == Env.DEV:
+            self._app.stop()  # type: ignore
+
+        # TODO: complicated because currently `*BackendServer` don't execute the server command, he just create it
+        # if self._env == Env.PROD:
+        #     pass
