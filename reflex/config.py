@@ -687,6 +687,9 @@ class Config(Base):
     backend_server_prod: server.CustomBackendServer = server.GunicornBackendServer(
         threads=2,
         workers=4,
+        max_requests=100,
+        max_requests_jitter=25,
+        timeout=120
     )
     backend_server_dev: server.CustomBackendServer = server.UvicornBackendServer(
         workers=1,
@@ -721,26 +724,15 @@ class Config(Base):
             raise ConfigError(
                 "REDIS_URL is required when using the redis state manager."
             )
-
-        for key in (
-            "timeout",
-            "gunicorn_worker_class",
-            "gunicorn_workers",
-            "gunicorn_max_requests",
-            "gunicorn_max_requests_jitter",
+        
+        if any(
+            getattr(self.get_fields().get(key, None), "default", None) == self.get_value(key)
+            for key in ("timeout","gunicorn_worker_class", "gunicorn_workers", "gunicorn_max_requests", "gunicorn_max_requests_jitter" )
         ):
-            if isinstance(self.backend_server_prod, server.GunicornBackendServer):
-                value = self.get_value(key)
-                if (
-                    value
-                    != self.backend_server_prod.get_fields()[
-                        key.replace("gunicorn_", "")
-                    ].default
-                    and value is not None
-                ):
-                    setattr(
-                        self.backend_server_prod, key.replace("gunicorn_", ""), value
-                    )
+            console.warn(
+                'The following reflex configuration fields are obsolete: "timeout", "gunicorn_worker_class", "gunicorn_workers", "gunicorn_max_requests", "gunicorn_max_requests_jitter"\nplease update your configuration.'
+            )
+        
 
     @property
     def module(self) -> str:
