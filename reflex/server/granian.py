@@ -192,6 +192,11 @@ class GranianBackendServer(CustomBackendServer):
     )
 
     def get_backend_bind(self) -> tuple[str, int]:
+        """Return the backend host and port.
+
+        Returns:
+            tuple[str, int]: The host address and port.
+        """
         return self.address, self.port
 
     def check_import(self):
@@ -215,13 +220,20 @@ class GranianBackendServer(CustomBackendServer):
             sys.exit()
 
     def setup(self, host: str, port: int, loglevel: LogLevel, env: Env):
-        """Setup."""
-        self._app_uri = self.get_app_module(for_granian_target=True, add_extra_api=True)
+        """Setup.
+
+        Args:
+            host (str): host address
+            port (int): port address
+            loglevel (LogLevel): log level
+            env (Env): prod/dev environment
+        """
+        self._app_uri = self.get_app_module(for_granian_target=True, add_extra_api=True)  # type: ignore
         self.log_level = loglevel.value  # type: ignore
         self.address = host
         self.port = port
         self.interface = "asgi"  # NOTE: prevent obvious error
-        self._env = env
+        self._env = env  # type: ignore
 
         if env == Env.PROD:
             if self.workers == self.get_fields()["workers"].default:
@@ -244,7 +256,11 @@ class GranianBackendServer(CustomBackendServer):
             self.reload_ignore_dirs = [".web"]
 
     def run_prod(self):
-        """Run in production mode."""
+        """Run in production mode.
+
+        Returns:
+            list[str]: Command ready to be executed
+        """
         self.check_import()
         command = ["granian"]
 
@@ -261,7 +277,7 @@ class GranianBackendServer(CustomBackendServer):
     def run_dev(self):
         """Run in development mode."""
         self.check_import()
-        from granian import Granian
+        from granian import Granian  # type: ignore
 
         exclude_keys = (
             "http1_keep_alive",
@@ -277,7 +293,8 @@ class GranianBackendServer(CustomBackendServer):
             "http2_max_headers_size",
             "http2_max_send_buffer_size",
         )
-        self._app = Granian(
+
+        self._app = Granian(  # type: ignore
             **{
                 **{
                     key: value
@@ -309,5 +326,6 @@ class GranianBackendServer(CustomBackendServer):
         self._app.serve()
 
     async def shutdown(self):
+        """Shutdown the backend server."""
         if self._app and self._env == Env.DEV:
             self._app.shutdown()
