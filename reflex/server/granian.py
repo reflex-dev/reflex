@@ -191,6 +191,9 @@ class GranianBackendServer(CustomBackendServer):
         default=None, metadata_cli=CliType.default("--pid-file {value}")
     )
 
+    def get_backend_bind(self) -> tuple[str, int]:
+        return self.address, self.port
+
     def check_import(self):
         """Check package importation."""
         from importlib.util import find_spec
@@ -218,6 +221,7 @@ class GranianBackendServer(CustomBackendServer):
         self.address = host
         self.port = port
         self.interface = "asgi"  # NOTE: prevent obvious error
+        self._env = env
 
         if env == Env.PROD:
             if self.workers == self.get_fields()["workers"].default:
@@ -273,7 +277,7 @@ class GranianBackendServer(CustomBackendServer):
             "http2_max_headers_size",
             "http2_max_send_buffer_size",
         )
-        Granian(
+        self._app = Granian(
             **{
                 **{
                     key: value
@@ -301,4 +305,9 @@ class GranianBackendServer(CustomBackendServer):
                     self.http2_max_send_buffer_size,
                 ),
             }
-        ).serve()
+        )
+        self._app.serve()
+
+    async def shutdown(self):
+        if self._app and self._env == Env.DEV:
+            self._app.shutdown()
