@@ -279,10 +279,14 @@ class GunicornBackendServer(CustomBackendServer):
     )
 
     def get_backend_bind(self) -> tuple[str, int]:
-        """Return the backend host and port"""
+        """Return the backend host and port.
+
+        Returns:
+            tuple[str, int]: The host address and port.
+        """
         host, port = self.bind[0].split(":")
         return host, int(port)
-    
+
     def check_import(self):
         """Check package importation."""
         from importlib.util import find_spec
@@ -304,11 +308,18 @@ class GunicornBackendServer(CustomBackendServer):
             sys.exit()
 
     def setup(self, host: str, port: int, loglevel: LogLevel, env: Env):
-        """Setup."""
-        self._app_uri = f"{self.get_app_module()}()"
+        """Setup.
+
+        Args:
+            host (str): host address
+            port (int): port address
+            loglevel (LogLevel): log level
+            env (Env): prod/dev environment
+        """
+        self._app_uri = f"{self.get_app_module()}()"  # type: ignore
         self.loglevel = loglevel.value  # type: ignore
         self.bind = [f"{host}:{port}"]
-        self._env = env
+        self._env = env  # type: ignore
 
         if env == Env.PROD:
             if self.workers == self.get_fields()["workers"].default:
@@ -328,7 +339,11 @@ class GunicornBackendServer(CustomBackendServer):
             self.reload = True
 
     def run_prod(self) -> list[str]:
-        """Run in production mode."""
+        """Run in production mode.
+
+        Returns:
+            list[str]: Command ready to be executed
+        """
         self.check_import()
         command = ["gunicorn"]
 
@@ -376,13 +391,13 @@ class GunicornBackendServer(CustomBackendServer):
 
             def load(self):
                 return gunicorn_import_app(self._app_uri)
-        
+
             def stop(self):
                 from gunicorn.arbiter import Arbiter
 
                 Arbiter(self).stop()
 
-        self._app = StandaloneApplication(app_uri=self._app_uri, options=options_)
+        self._app = StandaloneApplication(app_uri=self._app_uri, options=options_)  # type: ignore
         self._app.run()
 
     async def shutdown(self):
