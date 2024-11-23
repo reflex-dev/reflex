@@ -7,7 +7,7 @@ from abc import abstractmethod
 from dataclasses import Field, dataclass
 from dataclasses import field as dc_field
 from pathlib import Path
-from typing import Any, Callable, Sequence, ClassVar
+from typing import Any, Callable, ClassVar, Sequence
 
 from reflex import constants
 from reflex.constants.base import Env, LogLevel
@@ -26,6 +26,12 @@ class CliType:
             fmt: `'--env-file {value}'`
             value: `'/config.conf'`
             result => `'--env-file /config.conf'`
+
+        Args:
+            fmt (str): format
+
+        Returns:
+            ReturnCliTypeFn: function wrapper
         """
 
         def wrapper(value: bool) -> str:
@@ -46,6 +52,13 @@ class CliType:
             fmt: `'--reload'`
             value: `True`
             result => `'--reload'`
+
+        Args:
+            fmt (str): format
+            bool_value (bool): boolean value used for toggle condition
+
+        Returns:
+            ReturnCliTypeFn: function wrapper
         """
 
         def wrapper(value: bool) -> str:
@@ -80,6 +93,16 @@ class CliType:
             value: `True`
             toggle_value: `True`
             result => `'--no-access-log'`
+
+        Args:
+            fmt (str): format
+            toggle_kw (str): keyword used when toggled. Defaults to "no".
+            toggle_sep (str): separator used when toggled. Defaults to "-".
+            toggle_value (bool): boolean value used for toggle condition. Defaults to False.
+            **kwargs: Keyword arguments to pass to the format string function.
+
+        Returns:
+            ReturnCliTypeFn: function wrapper
         """
 
         def wrapper(value: bool) -> str:
@@ -102,6 +125,7 @@ class CliType:
         Example (Multiple args mode):
             fmt: `'--header {value}'`.
             data_list: `['X-Forwarded-Proto=https', 'X-Forwarded-For=0.0.0.0']`
+            join_sep: `None`
             result => `'--header \"X-Forwarded-Proto=https\" --header \"X-Forwarded-For=0.0.0.0\"'`
 
         Example (Single args mode):
@@ -116,6 +140,14 @@ class CliType:
             join_sep (required): `';'`
             value_transformer: `lambda value: f'{value[0]}:{value[1]}'`
             result => `--headers \"X-Forwarded-Proto:https;X-Forwarded-For:0.0.0.0\"`
+
+        Args:
+            fmt (str): format
+            join_sep (str): separator used
+            value_transformer (Callable[[Any], str]): function used for transformer the element
+
+        Returns:
+            ReturnCliTypeFn: function wrapper
         """
 
         def wrapper(values: Sequence[str]) -> str:
@@ -139,7 +171,17 @@ def field_(
     exclude: bool = False,
     **kwargs,
 ):
-    """Custom dataclass field builder."""
+    """Custom dataclass field builder.
+
+    Args:
+        default (Any): default value. Defaults to None.
+        metadata_cli (ReturnCliTypeFn | None): cli wrapper function. Defaults to None.
+        exclude (bool): used for excluding the field to the server configuration (system field). Defaults to False.
+        **kwargs: Keyword arguments to pass to the field dataclasses function.
+
+    Returns:
+        Field: return the field dataclasses
+    """
     params_ = {
         "default": default,
         "metadata": {"cli": metadata_cli, "exclude": exclude},
@@ -156,16 +198,28 @@ def field_(
 class CustomBackendServer:
     """BackendServer base."""
 
-    _env: ClassVar[Env] = field_(default=Env.DEV, metadata_cli=None, exclude=True, repr = False, init = False)
-    _app: ClassVar[Any] = field_(default=None, metadata_cli=None, exclude=True, repr = False, init = False)
-    _app_uri: ClassVar[str] = field_(default="", metadata_cli=None, exclude=True, repr = False, init = False)
+    _env: ClassVar[Env] = field_(
+        default=Env.DEV, metadata_cli=None, exclude=True, repr=False, init=False
+    )
+    _app: ClassVar[Any] = field_(
+        default=None, metadata_cli=None, exclude=True, repr=False, init=False
+    )
+    _app_uri: ClassVar[str] = field_(
+        default="", metadata_cli=None, exclude=True, repr=False, init=False
+    )
 
     @staticmethod
-    def get_app_module(for_granian_target: bool = False, add_extra_api: bool = False):
+    def get_app_module(
+        for_granian_target: bool = False, add_extra_api: bool = False
+    ) -> str:
         """Get the app module for the backend.
 
+        Args:
+            for_granian_target (bool): make the return compatible with Granian. Defaults to False.
+            add_extra_api (bool): add the keyword "api" at the end (needed for Uvicorn & Granian). Defaults to False.
+
         Returns:
-            The app module for the backend.
+            str: The app module for the backend.
         """
         import reflex
 
@@ -177,21 +231,41 @@ class CustomBackendServer:
         return f"{app_path}:{constants.CompileVars.APP}{f'.{constants.CompileVars.API}' if add_extra_api else ''}"
 
     def get_available_cpus(self) -> int:
-        """Get available cpus."""
+        """Get available cpus.
+
+        Returns:
+            int: number of available cpu cores
+        """
         return os.cpu_count() or 1
 
     def get_max_workers(self) -> int:
-        """Get max workers."""
+        """Get maximum workers.
+
+        Returns:
+            int: get the maximum number of workers
+        """
         # https://docs.gunicorn.org/en/latest/settings.html#workers
         return (os.cpu_count() or 1) * 4 + 1
 
     def get_recommended_workers(self) -> int:
-        """Get recommended workers."""
+        """Get recommended workers.
+
+        Returns:
+            int: get the recommended number of workers
+        """
         # https://docs.gunicorn.org/en/latest/settings.html#workers
         return (os.cpu_count() or 1) * 2 + 1
 
     def get_max_threads(self, wait_time_ms: int = 50, service_time_ms: int = 5) -> int:
-        """Get max threads."""
+        """Get maximum threads.
+
+        Args:
+            wait_time_ms (int): the mean waiting duration targeted. Defaults to 50.
+            service_time_ms (int): the mean working duration. Defaults to 5.
+
+        Returns:
+            int: get the maximum number of threads
+        """
         # https://engineering.zalando.com/posts/2019/04/how-to-set-an-ideal-thread-pool-size.html
         # Brian Goetz formula
         return int(self.get_available_cpus() * (1 + wait_time_ms / service_time_ms))
@@ -202,7 +276,16 @@ class CustomBackendServer:
         wait_time_ms: int = 50,
         service_time_ms: int = 5,
     ) -> int:
-        """Get recommended threads."""
+        """Get recommended threads.
+
+        Args:
+            target_reqs (int | None): number of requests targeted. Defaults to None.
+            wait_time_ms (int): the mean waiting duration targeted. Defaults to 50.
+            service_time_ms (int): the mean working duration. Defaults to 5.
+
+        Returns:
+            int: get the recommended number of threads
+        """
         # https://engineering.zalando.com/posts/2019/04/how-to-set-an-ideal-thread-pool-size.html
         max_available_threads = self.get_max_threads()
 
@@ -221,19 +304,35 @@ class CustomBackendServer:
         )
 
     def get_fields(self) -> dict[str, Field]:
-        """Return all the fields."""
+        """Return all the fields.
+
+        Returns:
+            dict[str, Field]: return the fields dictionary
+        """
         return self.__dataclass_fields__
 
     def get_values(self) -> dict[str, Any]:
-        """Return all values."""
+        """Return all values.
+
+        Returns:
+            dict[str, Any]: returns the value of the fields
+        """
         return {
             key: getattr(self, key)
             for key, field in self.__dataclass_fields__.items()
             if field.metadata["exclude"] is False
         }
 
-    def is_default_value(self, key, value: Any | None = None) -> bool:
-        """Check if the `value` is the same value from default context."""
+    def is_default_value(self, key: str, value: Any | None = None) -> bool:
+        """Check if the `value` is the same value from default context.
+
+        Args:
+            key (str): the name of the field
+            value (Any | None, optional): the value to check if is equal to the default value. Defaults to None.
+
+        Returns:
+            bool: result of the condition of value are equal to the default value
+        """
         from dataclasses import MISSING
 
         field = self.get_fields()[key]
@@ -250,9 +349,13 @@ class CustomBackendServer:
 
     @abstractmethod
     def get_backend_bind(self) -> tuple[str, int]:
-        """Return the backend host and port"""
+        """Return the backend host and port.
+
+        Returns:
+            tuple[str, int]: The host address and port.
+        """
         raise NotImplementedError()
-    
+
     @abstractmethod
     def check_import(self):
         """Check package importation."""
@@ -260,12 +363,23 @@ class CustomBackendServer:
 
     @abstractmethod
     def setup(self, host: str, port: int, loglevel: LogLevel, env: Env):
-        """Setup."""
+        """Setup.
+
+        Args:
+            host (str): host address
+            port (int): port address
+            loglevel (LogLevel): log level
+            env (Env): prod/dev environment
+        """
         raise NotImplementedError()
 
     @abstractmethod
-    def run_prod(self):
-        """Run in production mode."""
+    def run_prod(self) -> list[str]:
+        """Run in production mode.
+
+        Returns:
+            list[str]: Command ready to be executed
+        """
         raise NotImplementedError()
 
     @abstractmethod

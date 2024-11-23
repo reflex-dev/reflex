@@ -184,9 +184,13 @@ class UvicornBackendServer(CustomBackendServer):
     )
 
     def get_backend_bind(self) -> tuple[str, int]:
-        """Return the backend host and port"""
+        """Return the backend host and port.
+
+        Returns:
+            tuple[str, int]: The host address and port.
+        """
         return self.host, self.port
-    
+
     def check_import(self):
         """Check package importation."""
         from importlib.util import find_spec
@@ -210,12 +214,19 @@ class UvicornBackendServer(CustomBackendServer):
             sys.exit()
 
     def setup(self, host: str, port: int, loglevel: LogLevel, env: Env):
-        """Setup."""
-        self._app_uri = self.get_app_module(add_extra_api=True)
+        """Setup.
+
+        Args:
+            host (str): host address
+            port (int): port address
+            loglevel (LogLevel): log level
+            env (Env): prod/dev environment
+        """
+        self._app_uri = self.get_app_module(add_extra_api=True)  # type: ignore
         self.log_level = loglevel.value
         self.host = host
         self.port = port
-        self._env = env
+        self._env = env  # type: ignore
 
         if env == Env.PROD:
             if self.workers == self.get_fields()["workers"].default:
@@ -230,8 +241,12 @@ class UvicornBackendServer(CustomBackendServer):
             self.reload = True
             self.reload_dirs = [str(Path(get_config().app_name))]
 
-    def run_prod(self):
-        """Run in production mode."""
+    def run_prod(self) -> list[str]:
+        """Run in production mode.
+
+        Returns:
+            list[str]: Command ready to be executed
+        """
         self.check_import()
         command = ["uvicorn"]
 
@@ -255,7 +270,7 @@ class UvicornBackendServer(CustomBackendServer):
             if not self.is_default_value(key, value)
         }
 
-        self._app = Server(
+        self._app = Server(  # type: ignore
             config=Config(**options_, app=self._app_uri),
         )
         self._app.run()
@@ -268,4 +283,3 @@ class UvicornBackendServer(CustomBackendServer):
         # TODO: hard because currently `*BackendServer` don't execute the server command, he just create it
         # if self._env == Env.PROD:
         #     pass
-            
