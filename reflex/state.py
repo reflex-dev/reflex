@@ -2171,11 +2171,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The serialized state.
         """
+        payload = b""
         try:
-            pickle_state = pickle.dumps((self._to_schema(), self))
-            if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
-                self._check_state_size(len(pickle_state))
-            return pickle_state
+            payload = pickle.dumps((self._to_schema(), self))
         except HANDLED_PICKLE_ERRORS as og_pickle_error:
             error = (
                 f"Failed to serialize state {self.get_full_name()} due to unpicklable object. "
@@ -2184,7 +2182,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             try:
                 import dill
 
-                return dill.dumps((self._to_schema(), self))
+                payload = dill.dumps((self._to_schema(), self))
             except ImportError:
                 error += (
                     f"Pickle error: {og_pickle_error}. "
@@ -2192,8 +2190,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 )
             except HANDLED_PICKLE_ERRORS as ex:
                 error += f"Dill was also unable to pickle the state: {ex}"
-        console.warn(error)
-        return b""
+            console.warn(error)
+        if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
+            self._check_state_size(len(payload))
+        return payload
 
     @classmethod
     def _deserialize(
