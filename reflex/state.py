@@ -2171,11 +2171,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The serialized state.
         """
+        payload = b""
         try:
-            pickle_state = pickle.dumps((self._to_schema(), self))
+            payload = pickle.dumps((self._to_schema(), self))
             if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
-                self._check_state_size(len(pickle_state))
-            return pickle_state
+                self._check_state_size(len(payload))
         except HANDLED_PICKLE_ERRORS as og_pickle_error:
             error = (
                 f"Failed to serialize state {self.get_full_name()} due to unpicklable object. "
@@ -2184,7 +2184,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             try:
                 import dill
 
-                return dill.dumps((self._to_schema(), self))
+                payload = dill.dumps((self._to_schema(), self))
             except ImportError:
                 error += (
                     f"Pickle error: {og_pickle_error}. "
@@ -2192,8 +2192,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 )
             except HANDLED_PICKLE_ERRORS as ex:
                 error += f"Dill was also unable to pickle the state: {ex}"
-        console.warn(error)
-        return b""
+            console.warn(error)
+        if environment.REFLEX_COMPRESS_STATE.get():
+            from blosc2 import compress
+
+            payload = compress(payload)
+        return payload
 
     @classmethod
     def _deserialize(
@@ -2214,10 +2218,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             ValueError: If both data and fp are provided, or neither are provided.
             StateSchemaMismatchError: If the state schema does not match the expected schema.
         """
+        if environment.REFLEX_COMPRESS_STATE.get():
+            from blosc2 import decompress
+
+            data = decompress(data)
         if data is not None and fp is None:
-            (substate_schema, state) = pickle.loads(data)
+            substate_schema, state = pickle.loads(data)
         elif fp is not None and data is None:
-            (substate_schema, state) = pickle.load(fp)
+            substate_schema, state = pickle.load(fp)
         else:
             raise ValueError("Only one of `data` or `fp` must be provided")
         if substate_schema != state._to_schema():
