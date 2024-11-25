@@ -2248,7 +2248,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     data = decompress(data)
             data = pickle.loads(data)  # type: ignore
         elif fp is not None and data is None:
-            # TODO: use SChunk to read compressed data
             if environment.REFLEX_COMPRESS_STATE.get():
                 # read first byte to determine if compressed
                 is_compressed = fp.read(1) == STATE_COMPRESSED
