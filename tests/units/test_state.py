@@ -1759,7 +1759,7 @@ def substate_token_redis(state_manager_redis, token):
     Returns:
         Token concatenated with the state_manager's state full_name.
     """
-    return _substate_key(token, state_manager_redis.state)
+    return _substate_key(token, type(state_manager_redis.state))
 
 
 @pytest.mark.asyncio
@@ -1918,7 +1918,9 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
 
     # Get the state from the state manager directly and check that the value is updated
     gotten_state = await mock_app.state_manager.get_state(
-        _substate_key(grandchild_state.router.session.client_token, grandchild_state)
+        _substate_key(
+            grandchild_state.router.session.client_token, type(grandchild_state)
+        )
     )
     if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
         # For in-process store, only one instance of the state exists
