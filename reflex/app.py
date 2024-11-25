@@ -1462,10 +1462,10 @@ class EventNamespace(AsyncNamespace):
     app: App
 
     # Keep a mapping between socket ID and client token.
-    token_to_sid: dict[str, str] = {}
+    token_to_sid: dict[str, str]
 
     # Keep a mapping between client token and socket ID.
-    sid_to_token: dict[str, str] = {}
+    sid_to_token: dict[str, str]
 
     def __init__(self, namespace: str, app: App):
         """Initialize the event namespace.
@@ -1475,6 +1475,8 @@ class EventNamespace(AsyncNamespace):
             app: The application object.
         """
         super().__init__(namespace)
+        self.token_to_sid = {}
+        self.sid_to_token = {}
         self.app = app
 
     def on_connect(self, sid, environ):

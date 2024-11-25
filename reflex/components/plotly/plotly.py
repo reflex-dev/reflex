@@ -255,7 +255,7 @@ const extractPoints = (points) => {
 
     def _render(self):
         tag = super()._render()
-        figure = self.data.to(dict)
+        figure = self.data.to(dict) if self.data is not None else {}
         merge_dicts = []  # Data will be merged and spread from these dict Vars
         if self.layout is not None:
             # Why is this not a literal dict? Great question... it didn't work

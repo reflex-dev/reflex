@@ -1748,7 +1748,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 if value is None:
                     continue
                 hinted_args = value_inside_optional(hinted_args)
-            if isinstance(value, dict) and inspect.isclass(hinted_args):
+            if (
+                isinstance(value, dict)
+                and inspect.isclass(hinted_args)
+                and not types.is_generic_alias(hinted_args)  # py3.9-py3.10
+            ):
                 if issubclass(hinted_args, Model):
                     # Remove non-fields from the payload
                     payload[arg] = hinted_args(
@@ -1759,7 +1763,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                         }
                     )
                 elif dataclasses.is_dataclass(hinted_args) or issubclass(
-                    hinted_args, Base
+                    hinted_args, (Base, BaseModelV1, BaseModelV2)
                 ):
                     payload[arg] = hinted_args(**value)
             if isinstance(value, list) and (hinted_args is set or hinted_args is Set):
@@ -2174,8 +2178,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         payload = b""
         try:
             payload = pickle.dumps((self._to_schema(), self))
-            if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
-                self._check_state_size(len(payload))
         except HANDLED_PICKLE_ERRORS as og_pickle_error:
             error = (
                 f"Failed to serialize state {self.get_full_name()} due to unpicklable object. "
@@ -2193,10 +2195,15 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             except HANDLED_PICKLE_ERRORS as ex:
                 error += f"Dill was also unable to pickle the state: {ex}"
             console.warn(error)
+
         if environment.REFLEX_COMPRESS_STATE.get():
             from blosc2 import compress
 
             payload = compress(payload)
+
+        if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
+            self._check_state_size(len(payload))
+
         return payload
 
     @classmethod
