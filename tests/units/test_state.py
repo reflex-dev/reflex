@@ -35,6 +35,7 @@ from reflex import constants
 from reflex.app import App
 from reflex.base import Base
 from reflex.components.sonner.toast import Toaster
+from reflex.config import environment
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
 from reflex.state import (
@@ -3428,7 +3429,8 @@ def test_fallback_pickle():
     state3 = DillState(_reflex_internal_init=True)  # type: ignore
     state3._g = (i for i in range(10))
     pk3 = state3._serialize()
-    assert len(pk3) == 0
+    expected_size = 1 if environment.REFLEX_COMPRESS_STATE.get() else 0
+    assert len(pk3) == expected_size
 
 
 def test_typed_state() -> None:

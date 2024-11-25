@@ -567,6 +567,9 @@ class EnvironmentVariables:
     # Whether to compress the reflex state.
     REFLEX_COMPRESS_STATE: EnvVar[bool] = env_var(False)
 
+    # Threshold for the reflex state compression in bytes.
+    REFLEX_COMPRESS_THRESHOLD: EnvVar[int] = env_var(1024)
+
 
 environment = EnvironmentVariables()
 

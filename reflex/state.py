@@ -16,6 +16,7 @@ import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from hashlib import md5
+from io import BytesIO
 from pathlib import Path
 from types import FunctionType, MethodType
 from typing import (
@@ -132,6 +133,10 @@ HANDLED_PICKLE_ERRORS = (
     TypeError,
     ValueError,
 )
+
+STATE_NOT_COMPRESSED = b"\x01"
+STATE_COMPRESSED = b"\x02"
+STATE_CHUNK_SIZE = 1024
 
 
 def _no_chain_background_task(
@@ -2196,13 +2201,19 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 error += f"Dill was also unable to pickle the state: {ex}"
             console.warn(error)
 
-        if environment.REFLEX_COMPRESS_STATE.get():
-            from blosc2 import compress
-
-            payload = compress(payload)
-
+        size = len(payload)
         if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
-            self._check_state_size(len(payload))
+            self._check_state_size(size)
+
+        if environment.REFLEX_COMPRESS_STATE.get():
+            if size > environment.REFLEX_COMPRESS_THRESHOLD.get():
+                from blosc2 import compress
+
+                payload = compress(payload)
+                prefix = STATE_COMPRESSED
+            else:
+                prefix = STATE_NOT_COMPRESSED
+            payload = prefix + payload
 
         return payload
 
@@ -2225,19 +2236,42 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             ValueError: If both data and fp are provided, or neither are provided.
             StateSchemaMismatchError: If the state schema does not match the expected schema.
         """
-        if environment.REFLEX_COMPRESS_STATE.get():
-            from blosc2 import decompress
-
-            data = decompress(data)
         if data is not None and fp is None:
-            substate_schema, state = pickle.loads(data)
+            if environment.REFLEX_COMPRESS_STATE.get():
+                # get first byte to determine if compressed
+                is_compressed = data[:1] == STATE_COMPRESSED
+                # remove compression byte
+                data = data[1:]
+                if is_compressed:
+                    from blosc2 import decompress
+
+                    data = decompress(data)
+            data = pickle.loads(data)  # type: ignore
         elif fp is not None and data is None:
-            substate_schema, state = pickle.load(fp)
+            # TODO: use SChunk to read compressed data
+            if environment.REFLEX_COMPRESS_STATE.get():
+                # read first byte to determine if compressed
+                is_compressed = fp.read(1) == STATE_COMPRESSED
+                if is_compressed:
+                    from blosc2 import SChunk
+
+                    schunk = SChunk(chunksize=STATE_CHUNK_SIZE)
+
+                    while chunk := fp.read(STATE_CHUNK_SIZE):
+                        schunk.append_data(chunk)
+
+                    fp = BytesIO()
+
+                    for chunk_index in range(schunk.nchunks):
+                        fp.write(schunk.decompress_chunk(chunk_index))
+
+            data = pickle.load(fp)
         else:
             raise ValueError("Only one of `data` or `fp` must be provided")
-        if substate_schema != state._to_schema():
+        substate_schema, state = data  # type: ignore
+        if substate_schema != state._to_schema():  # type: ignore
             raise StateSchemaMismatchError()
-        return state
+        return state  # type: ignore
 
 
 class State(BaseState):
