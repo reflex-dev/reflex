@@ -386,7 +386,7 @@ def logout(
 
     hosting.log_out_on_browser()
     console.debug("Deleting access token from config locally")
-    hosting.delete_token_from_config(include_invitation_code=True)
+    hosting.delete_token_from_config()
 
 
 @cli.command()
