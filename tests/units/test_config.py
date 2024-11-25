@@ -248,10 +248,16 @@ def test_interpret_bool_env(value: str, expected: bool) -> None:
 
 
 def test_env_var():
+    def validate_positive(value: int) -> None:
+        if value < 0:
+            raise ValueError("Value must be positive")
+
     class TestEnv:
         BLUBB: EnvVar[str] = env_var("default")
         INTERNAL: EnvVar[str] = env_var("default", internal=True)
         BOOLEAN: EnvVar[bool] = env_var(False)
+
+        VALIDATE: EnvVar[int] = env_var(0, validators=[validate_positive])
 
     assert TestEnv.BLUBB.get() == "default"
     assert TestEnv.BLUBB.name == "BLUBB"
@@ -280,3 +286,9 @@ def test_env_var():
     assert TestEnv.BOOLEAN.get() is False
     TestEnv.BOOLEAN.set(None)
     assert "BOOLEAN" not in os.environ
+
+    assert TestEnv.VALIDATE.get() == 0
+    TestEnv.VALIDATE.set(1)
+    assert TestEnv.VALIDATE.get() == 1
+    with pytest.raises(ValueError):
+        TestEnv.VALIDATE.set(-1)
