@@ -231,6 +231,24 @@ class ContextMenuSeparator(RadixThemesComponent):
 
     tag = "ContextMenu.Separator"
 
+class ContextMenuCheckBoxItem(RadixThemesComponent):
+    """The component that contains the context menu checkbox items."""
+    
+    tag = "ContextMenu.CheckboxItem"
+    
+    # Whether the checkbox is checked.
+    checked: Var[bool] 
+    
+    # Whether the checkbox is disabled.
+    disabled: Var[bool]
+    
+    # Event handler for when the checkbox state changes.
+    on_check_change: EventHandler[passthrough_event_spec(bool)]
+    
+    def toggle_state(self):
+        """Toggle the checked state dynamically."""
+        if self.checked is not None:
+            self.checked.set(not self.checked.get())
 
 class ContextMenu(ComponentNamespace):
     """Menu representing a set of actions, displayed at the origin of a pointer right-click or long-press."""
@@ -243,6 +261,7 @@ class ContextMenu(ComponentNamespace):
     sub_content = staticmethod(ContextMenuSubContent.create)
     item = staticmethod(ContextMenuItem.create)
     separator = staticmethod(ContextMenuSeparator.create)
+    checkbox_item = staticmethod(ContextMenuCheckBoxItem.create)
 
 
 context_menu = ContextMenu()
