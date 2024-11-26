@@ -788,7 +788,7 @@ export const useEventLoop = (
         connect(
           socket,
           dispatch,
-          ["websocket", "polling"],
+          ["websocket"],
           setConnectErrors,
           client_storage
         );

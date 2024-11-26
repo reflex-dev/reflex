@@ -362,6 +362,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
                 ping_interval=constants.Ping.INTERVAL,
                 ping_timeout=constants.Ping.TIMEOUT,
+                transports=["websocket"],
             )
         elif getattr(self.sio, "async_mode", "") != "asgi":
             raise RuntimeError(
