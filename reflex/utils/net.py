@@ -1,9 +1,8 @@
 """Helpers for downloading files from the network."""
 
-import os
-
 import httpx
 
+from ..config import environment
 from . import console
 
 
@@ -13,8 +12,7 @@ def _httpx_verify_kwarg() -> bool:
     Returns:
         True if SSL verification is enabled, False otherwise
     """
-    ssl_no_verify = os.environ.get("SSL_NO_VERIFY", "").lower() in ["true", "1", "yes"]
-    return not ssl_no_verify
+    return not environment.SSL_NO_VERIFY.get()
 
 
 def get(url: str, **kwargs) -> httpx.Response:

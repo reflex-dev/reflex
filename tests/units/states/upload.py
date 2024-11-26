@@ -71,7 +71,7 @@ class FileUploadState(State):
             assert file.filename is not None
             self.img_list.append(file.filename)
 
-    @rx.background
+    @rx.event(background=True)
     async def bg_upload(self, files: List[rx.UploadFile]):
         """Background task cannot be upload handler.
 
@@ -119,7 +119,7 @@ class ChildFileUploadState(FileStateBase1):
             assert file.filename is not None
             self.img_list.append(file.filename)
 
-    @rx.background
+    @rx.event(background=True)
     async def bg_upload(self, files: List[rx.UploadFile]):
         """Background task cannot be upload handler.
 
@@ -167,7 +167,7 @@ class GrandChildFileUploadState(FileStateBase2):
             assert file.filename is not None
             self.img_list.append(file.filename)
 
-    @rx.background
+    @rx.event(background=True)
     async def bg_upload(self, files: List[rx.UploadFile]):
         """Background task cannot be upload handler.
 

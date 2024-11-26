@@ -15,7 +15,7 @@ from reflex.vars.base import LiteralVar, Var
 from reflex.vars.number import ternary_operation
 
 _IS_TRUE_IMPORT: ImportDict = {
-    f"/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
 }
 
 
@@ -169,6 +169,14 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
         c1,
         c2,
     )
+
+
+@overload
+def color_mode_cond(light: Component, dark: Component | None = None) -> Component: ...  # type: ignore
+
+
+@overload
+def color_mode_cond(light: Any, dark: Any = None) -> Var: ...
 
 
 def color_mode_cond(light: Any, dark: Any = None) -> Var | Component:

@@ -111,6 +111,15 @@ def on_submit_event_spec() -> Tuple[Var[Dict[str, Any]]]:
     return (FORM_DATA,)
 
 
+def on_submit_string_event_spec() -> Tuple[Var[Dict[str, str]]]:
+    """Event handler spec for the on_submit event.
+
+    Returns:
+        The event handler spec.
+    """
+    return (FORM_DATA,)
+
+
 class Form(BaseHTML):
     """Display the form element."""
 
@@ -150,7 +159,7 @@ class Form(BaseHTML):
     handle_submit_unique_name: Var[str]
 
     # Fired when the form is submitted
-    on_submit: EventHandler[on_submit_event_spec]
+    on_submit: EventHandler[on_submit_event_spec, on_submit_string_event_spec]
 
     @classmethod
     def create(cls, *children, **props):
@@ -187,7 +196,7 @@ class Form(BaseHTML):
         """
         return {
             "react": "useCallback",
-            f"/{Dirs.STATE_PATH}": ["getRefValue", "getRefValues"],
+            f"$/{Dirs.STATE_PATH}": ["getRefValue", "getRefValues"],
         }
 
     def add_hooks(self) -> list[str]:
@@ -230,13 +239,13 @@ class Form(BaseHTML):
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):
-                ref_var = Var(_js_expr=ref[:-3]).as_ref()
+                ref_var = Var(_js_expr=ref[:-3])._as_ref()
                 form_refs[ref[len("refs_") : -3]] = Var(
                     _js_expr=f"getRefValues({str(ref_var)})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
             else:
-                ref_var = Var(_js_expr=ref).as_ref()
+                ref_var = Var(_js_expr=ref)._as_ref()
                 form_refs[ref[4:]] = Var(
                     _js_expr=f"getRefValue({str(ref_var)})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
@@ -615,6 +624,42 @@ class Textarea(BaseHTML):
     # Fired when a key is released
     on_key_up: EventHandler[key_event]
 
+    @classmethod
+    def create(cls, *children, **props):
+        """Create a textarea component.
+
+        Args:
+            *children: The children of the textarea.
+            **props: The properties of the textarea.
+
+        Returns:
+            The textarea component.
+
+        Raises:
+            ValueError: when `enter_key_submit` is combined with `on_key_down`.
+        """
+        enter_key_submit = props.get("enter_key_submit")
+        auto_height = props.get("auto_height")
+        custom_attrs = props.setdefault("custom_attrs", {})
+
+        if enter_key_submit is not None:
+            enter_key_submit = Var.create(enter_key_submit)
+            if "on_key_down" in props:
+                raise ValueError(
+                    "Cannot combine `enter_key_submit` with `on_key_down`.",
+                )
+            custom_attrs["on_key_down"] = Var(
+                _js_expr=f"(e) => enterKeySubmitOnKeyDown(e, {str(enter_key_submit)})",
+                _var_data=VarData.merge(enter_key_submit._get_all_var_data()),
+            )
+        if auto_height is not None:
+            auto_height = Var.create(auto_height)
+            custom_attrs["on_input"] = Var(
+                _js_expr=f"(e) => autoHeightOnInput(e, {str(auto_height)})",
+                _var_data=VarData.merge(auto_height._get_all_var_data()),
+            )
+        return super().create(*children, **props)
+
     def _exclude_props(self) -> list[str]:
         return super()._exclude_props() + [
             "auto_height",
@@ -634,30 +679,9 @@ class Textarea(BaseHTML):
             custom_code.add(ENTER_KEY_SUBMIT_JS)
         return custom_code
 
-    def _render(self) -> Tag:
-        tag = super()._render()
-        if self.enter_key_submit is not None:
-            if "on_key_down" in self.event_triggers:
-                raise ValueError(
-                    "Cannot combine `enter_key_submit` with `on_key_down`.",
-                )
-            tag.add_props(
-                on_key_down=Var(
-                    _js_expr=f"(e) => enterKeySubmitOnKeyDown(e, {str(self.enter_key_submit)})",
-                    _var_data=VarData.merge(self.enter_key_submit._get_all_var_data()),
-                )
-            )
-        if self.auto_height is not None:
-            tag.add_props(
-                on_input=Var(
-                    _js_expr=f"(e) => autoHeightOnInput(e, {str(self.auto_height)})",
-                    _var_data=VarData.merge(self.auto_height._get_all_var_data()),
-                )
-            )
-        return tag
-
 
 button = Button.create
+datalist = Datalist.create
 fieldset = Fieldset.create
 form = Form.create
 input = Input.create

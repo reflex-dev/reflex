@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Literal
 
 from reflex.components.component import Component
-from reflex.event import EventHandler, empty_event
+from reflex.event import EventHandler, no_args_event_spec
 from reflex.vars.base import LiteralVar, Var
 
 
@@ -35,13 +35,13 @@ class Script(Component):
     )
 
     # Triggered when the script is loading
-    on_load: EventHandler[empty_event]
+    on_load: EventHandler[no_args_event_spec]
 
     # Triggered when the script has loaded
-    on_ready: EventHandler[empty_event]
+    on_ready: EventHandler[no_args_event_spec]
 
     # Triggered when the script has errored
-    on_error: EventHandler[empty_event]
+    on_error: EventHandler[no_args_event_spec]
 
     @classmethod
     def create(cls, *children, **props) -> Component:

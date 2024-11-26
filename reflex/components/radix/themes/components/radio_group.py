@@ -9,16 +9,12 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
-from reflex.event import EventHandler, identity_event
+from reflex.event import EventHandler, passthrough_event_spec
 from reflex.utils import types
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.sequence import StringVar
 
-from ..base import (
-    LiteralAccentColor,
-    LiteralSpacing,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, LiteralSpacing, RadixThemesComponent
 
 LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 
@@ -59,7 +55,7 @@ class RadioGroupRoot(RadixThemesComponent):
     _rename_props = {"onChange": "onValueChange"}
 
     # Fired when the value of the radio group changes.
-    on_change: EventHandler[identity_event(str)]
+    on_change: EventHandler[passthrough_event_spec(str)]
 
 
 class RadioGroupItem(RadixThemesComponent):

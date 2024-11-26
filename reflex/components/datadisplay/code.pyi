@@ -7,10 +7,10 @@ import dataclasses
 from typing import Any, ClassVar, Dict, Literal, Optional, Union, overload
 
 from reflex.components.component import Component, ComponentNamespace
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.constants.colors import Color
-from reflex.event import EventType
+from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
-from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var
 
 LiteralCodeLanguage = Literal[
@@ -349,15 +349,12 @@ for theme_name in dir(Theme):
         continue
     setattr(Theme, theme_name, getattr(Theme, theme_name)._replace(_var_type=Theme))
 
-class CodeBlock(Component):
-    def add_imports(self) -> ImportDict: ...
+class CodeBlock(Component, MarkdownComponentMap):
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        can_copy: Optional[bool] = False,
-        copy_button: Optional[Union[Component, bool]] = None,
         theme: Optional[Union[Theme, Var[Union[Theme, str]], str]] = None,
         language: Optional[
             Union[
@@ -933,35 +930,35 @@ class CodeBlock(Component):
         wrap_long_lines: Optional[Union[Var[bool], bool]] = None,
         custom_style: Optional[Dict[str, Union[str, Var, Color]]] = None,
         code_tag_props: Optional[Union[Dict[str, str], Var[Dict[str, str]]]] = None,
+        can_copy: Optional[bool] = None,
+        copy_button: Optional[Union[Component, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "CodeBlock":
         """Create a text component.
 
         Args:
             *children: The children of the component.
-            can_copy: Whether a copy button should appears.
-            copy_button: A custom copy button to override the default one.
             theme: The theme to use ("light" or "dark").
             language: The language to use.
             code: The code to display.
@@ -970,6 +967,8 @@ class CodeBlock(Component):
             wrap_long_lines: Whether to wrap long lines.
             custom_style: A custom style for the code block.
             code_tag_props: Props passed down to the code tag.
+            can_copy: Whether a copy button should appear.
+            copy_button: A custom copy button to override the default one.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -984,6 +983,9 @@ class CodeBlock(Component):
         ...
 
     def add_style(self): ...
+    @classmethod
+    def get_component_map_custom_code(cls) -> str: ...
+    def add_hooks(self) -> list[str | Var]: ...
 
 class CodeblockNamespace(ComponentNamespace):
     themes = Theme
@@ -991,8 +993,6 @@ class CodeblockNamespace(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        can_copy: Optional[bool] = False,
-        copy_button: Optional[Union[Component, bool]] = None,
         theme: Optional[Union[Theme, Var[Union[Theme, str]], str]] = None,
         language: Optional[
             Union[
@@ -1568,35 +1568,35 @@ class CodeblockNamespace(ComponentNamespace):
         wrap_long_lines: Optional[Union[Var[bool], bool]] = None,
         custom_style: Optional[Dict[str, Union[str, Var, Color]]] = None,
         code_tag_props: Optional[Union[Dict[str, str], Var[Dict[str, str]]]] = None,
+        can_copy: Optional[bool] = None,
+        copy_button: Optional[Union[Component, bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "CodeBlock":
         """Create a text component.
 
         Args:
             *children: The children of the component.
-            can_copy: Whether a copy button should appears.
-            copy_button: A custom copy button to override the default one.
             theme: The theme to use ("light" or "dark").
             language: The language to use.
             code: The code to display.
@@ -1605,6 +1605,8 @@ class CodeblockNamespace(ComponentNamespace):
             wrap_long_lines: Whether to wrap long lines.
             custom_style: A custom style for the code block.
             code_tag_props: Props passed down to the code tag.
+            can_copy: Whether a copy button should appear.
+            copy_button: A custom copy button to override the default one.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

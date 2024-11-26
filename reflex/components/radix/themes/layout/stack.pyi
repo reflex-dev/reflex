@@ -6,11 +6,10 @@
 from typing import Any, Dict, Literal, Optional, Union, overload
 
 from reflex.components.core.breakpoints import Breakpoints
-from reflex.event import EventType
+from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
-from ..base import LiteralAlign, LiteralSpacing
 from .flex import Flex
 
 class Stack(Flex):
@@ -19,8 +18,18 @@ class Stack(Flex):
     def create(  # type: ignore
         cls,
         *children,
-        spacing: Optional[LiteralSpacing] = "3",
-        align: Optional[LiteralAlign] = "start",
+        spacing: Optional[
+            Union[
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+            ]
+        ] = None,
+        align: Optional[
+            Union[
+                Literal["baseline", "center", "end", "start", "stretch"],
+                Var[Literal["baseline", "center", "end", "start", "stretch"]],
+            ]
+        ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         direction: Optional[
             Union[
@@ -92,30 +101,30 @@ class Stack(Flex):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "Stack":
         """Create a new instance of the component.
 
         Args:
             *children: The children of the stack.
-            spacing: The spacing between each stack item.
-            align: The alignment of the stack items.
+            spacing: Gap between children: "0" - "9"
+            align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
             justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
@@ -155,12 +164,22 @@ class VStack(Stack):
     def create(  # type: ignore
         cls,
         *children,
-        spacing: Optional[LiteralSpacing] = "3",
-        align: Optional[LiteralAlign] = "start",
         direction: Optional[
             Union[
                 Literal["column", "column-reverse", "row", "row-reverse"],
                 Var[Literal["column", "column-reverse", "row", "row-reverse"]],
+            ]
+        ] = None,
+        spacing: Optional[
+            Union[
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+            ]
+        ] = None,
+        align: Optional[
+            Union[
+                Literal["baseline", "center", "end", "start", "stretch"],
+                Var[Literal["baseline", "center", "end", "start", "stretch"]],
             ]
         ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
@@ -217,31 +236,31 @@ class VStack(Stack):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "VStack":
         """Create a new instance of the component.
 
         Args:
             *children: The children of the stack.
-            spacing: The spacing between each stack item.
-            align: The alignment of the stack items.
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
+            spacing: Gap between children: "0" - "9"
+            align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
             wrap: Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
@@ -280,12 +299,22 @@ class HStack(Stack):
     def create(  # type: ignore
         cls,
         *children,
-        spacing: Optional[LiteralSpacing] = "3",
-        align: Optional[LiteralAlign] = "start",
         direction: Optional[
             Union[
                 Literal["column", "column-reverse", "row", "row-reverse"],
                 Var[Literal["column", "column-reverse", "row", "row-reverse"]],
+            ]
+        ] = None,
+        spacing: Optional[
+            Union[
+                Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+                Var[Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+            ]
+        ] = None,
+        align: Optional[
+            Union[
+                Literal["baseline", "center", "end", "start", "stretch"],
+                Var[Literal["baseline", "center", "end", "start", "stretch"]],
             ]
         ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
@@ -342,31 +371,31 @@ class HStack(Stack):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "HStack":
         """Create a new instance of the component.
 
         Args:
             *children: The children of the stack.
-            spacing: The spacing between each stack item.
-            align: The alignment of the stack items.
             direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
+            spacing: Gap between children: "0" - "9"
+            align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
             wrap: Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"

@@ -33,9 +33,12 @@ from redis.asyncio import Redis
 
 from reflex import constants, model
 from reflex.compiler import templates
-from reflex.config import Config, get_config
-from reflex.utils import console, net, path_ops, processes
-from reflex.utils.exceptions import GeneratedCodeHasNoFunctionDefs
+from reflex.config import Config, environment, get_config
+from reflex.utils import console, net, path_ops, processes, redir
+from reflex.utils.exceptions import (
+    GeneratedCodeHasNoFunctionDefs,
+    raise_system_package_missing_error,
+)
 from reflex.utils.format import format_library_name
 from reflex.utils.registry import _get_npm_registry
 
@@ -69,8 +72,7 @@ def get_web_dir() -> Path:
     Returns:
         The working directory.
     """
-    workdir = Path(os.getenv("REFLEX_WEB_WORKDIR", constants.Dirs.WEB))
-    return workdir
+    return environment.REFLEX_WEB_WORKDIR.get()
 
 
 def _python_version_check():
@@ -91,6 +93,8 @@ def check_latest_package_version(package_name: str):
     Args:
         package_name: The name of the package.
     """
+    if environment.REFLEX_CHECK_LATEST_VERSION.get() is False:
+        return
     try:
         # Get the latest version from PyPI
         current_version = importlib.metadata.version(package_name)
@@ -205,9 +209,12 @@ def get_bun_version() -> version.Version | None:
         return None
 
 
-def get_install_package_manager() -> str | None:
+def get_install_package_manager(on_failure_return_none: bool = False) -> str | None:
     """Get the package manager executable for installation.
       Currently, bun is used for installation only.
+
+    Args:
+        on_failure_return_none: Whether to return None on failure.
 
     Returns:
         The path to the package manager.
@@ -218,21 +225,29 @@ def get_install_package_manager() -> str | None:
         or windows_check_onedrive_in_path()
         or windows_npm_escape_hatch()
     ):
-        return get_package_manager()
+        return get_package_manager(on_failure_return_none)
     return str(get_config().bun_path)
 
 
-def get_package_manager() -> str | None:
+def get_package_manager(on_failure_return_none: bool = False) -> str | None:
     """Get the package manager executable for running app.
       Currently on unix systems, npm is used for running the app only.
 
+    Args:
+        on_failure_return_none: Whether to return None on failure.
+
     Returns:
         The path to the package manager.
+
+    Raises:
+        FileNotFoundError: If the package manager is not found.
     """
     npm_path = path_ops.get_npm_path()
     if npm_path is not None:
-        npm_path = str(Path(npm_path).resolve())
-    return npm_path
+        return str(Path(npm_path).resolve())
+    if on_failure_return_none:
+        return None
+    raise FileNotFoundError("NPM not found. You may need to run `reflex init`.")
 
 
 def windows_check_onedrive_in_path() -> bool:
@@ -250,7 +265,7 @@ def windows_npm_escape_hatch() -> bool:
     Returns:
         If the user has set REFLEX_USE_NPM.
     """
-    return os.environ.get("REFLEX_USE_NPM", "").lower() in ["true", "1", "yes"]
+    return environment.REFLEX_USE_NPM.get()
 
 
 def get_app(reload: bool = False) -> ModuleType:
@@ -268,7 +283,7 @@ def get_app(reload: bool = False) -> ModuleType:
     from reflex.utils import telemetry
 
     try:
-        os.environ[constants.RELOAD_CONFIG] = str(reload)
+        environment.RELOAD_CONFIG.set(reload)
         config = get_config()
         if not config.app_name:
             raise RuntimeError(
@@ -431,7 +446,7 @@ def create_config(app_name: str):
 
 def initialize_gitignore(
     gitignore_file: Path = constants.GitIgnore.FILE,
-    files_to_ignore: set[str] = constants.GitIgnore.DEFAULTS,
+    files_to_ignore: set[str] | list[str] = constants.GitIgnore.DEFAULTS,
 ):
     """Initialize the template .gitignore file.
 
@@ -440,23 +455,20 @@ def initialize_gitignore(
         files_to_ignore: The files to add to the .gitignore file.
     """
     # Combine with the current ignored files.
-    current_ignore: set[str] = set()
+    current_ignore: list[str] = []
     if gitignore_file.exists():
-        current_ignore |= set(
-            line.strip() for line in gitignore_file.read_text().splitlines()
-        )
+        current_ignore = [ln.strip() for ln in gitignore_file.read_text().splitlines()]
 
     if files_to_ignore == current_ignore:
         console.debug(f"{gitignore_file} already up to date.")
         return
-    files_to_ignore |= current_ignore
+    files_to_ignore = [ln for ln in files_to_ignore if ln not in current_ignore]
+    files_to_ignore += current_ignore
 
     # Write files to the .gitignore file.
     gitignore_file.touch(exist_ok=True)
     console.debug(f"Creating {gitignore_file}")
-    gitignore_file.write_text(
-        "\n".join(sorted(files_to_ignore)) + "\n",
-    )
+    gitignore_file.write_text("\n".join(files_to_ignore) + "\n")
 
 
 def initialize_requirements_txt():
@@ -588,6 +600,8 @@ def initialize_web_directory():
 
     initialize_package_json()
 
+    initialize_bun_config()
+
     path_ops.mkdir(get_web_dir() / constants.Dirs.PUBLIC)
 
     update_next_config()
@@ -612,17 +626,21 @@ def _compile_package_json():
 def initialize_package_json():
     """Render and write in .web the package.json file."""
     output_path = get_web_dir() / constants.PackageJson.PATH
-    code = _compile_package_json()
-    output_path.write_text(code)
+    output_path.write_text(_compile_package_json())
 
-    best_registry = _get_npm_registry()
+
+def initialize_bun_config():
+    """Initialize the bun config file."""
     bun_config_path = get_web_dir() / constants.Bun.CONFIG_PATH
-    bun_config_path.write_text(
-        f"""
-[install]
-registry = "{best_registry}"
-"""
-    )
+
+    if (custom_bunfig := Path(constants.Bun.CONFIG_PATH)).exists():
+        bunfig_content = custom_bunfig.read_text()
+        console.info(f"Copying custom bunfig.toml inside {get_web_dir()} folder")
+    else:
+        best_registry = _get_npm_registry()
+        bunfig_content = constants.Bun.DEFAULT_CONFIG.format(registry=best_registry)
+
+    bun_config_path.write_text(bunfig_content)
 
 
 def init_reflex_json(project_hash: int | None):
@@ -678,6 +696,7 @@ def _update_next_config(
         "compress": config.next_compression,
         "reactStrictMode": config.react_strict_mode,
         "trailingSlash": True,
+        "staticPageGenerationTimeout": config.static_page_generation_timeout,
     }
     if transpile_packages:
         next_config["transpilePackages"] = list(
@@ -812,11 +831,7 @@ def install_node():
 
 
 def install_bun():
-    """Install bun onto the user's system.
-
-    Raises:
-        FileNotFoundError: If required packages are not found.
-    """
+    """Install bun onto the user's system."""
     win_supported = is_windows_bun_supported()
     one_drive_in_path = windows_check_onedrive_in_path()
     if constants.IS_WINDOWS and not win_supported or one_drive_in_path:
@@ -855,7 +870,7 @@ def install_bun():
     else:
         unzip_path = path_ops.which("unzip")
         if unzip_path is None:
-            raise FileNotFoundError("Reflex requires unzip to be installed.")
+            raise_system_package_missing_error("unzip")
 
         # Run the bun install script.
         download_and_run(
@@ -920,20 +935,39 @@ def install_frontend_packages(packages: set[str], config: Config):
         packages: A list of package names to be installed.
         config: The config object.
 
+    Raises:
+        FileNotFoundError: If the package manager is not found.
+
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
     # unsupported archs(arm and 32bit machines) will use npm anyway. so we dont have to run npm twice
     fallback_command = (
-        get_package_manager()
-        if not constants.IS_WINDOWS
-        or constants.IS_WINDOWS
-        and is_windows_bun_supported()
-        and not windows_check_onedrive_in_path()
+        get_package_manager(on_failure_return_none=True)
+        if (
+            not constants.IS_WINDOWS
+            or constants.IS_WINDOWS
+            and is_windows_bun_supported()
+            and not windows_check_onedrive_in_path()
+        )
         else None
     )
+
+    install_package_manager = (
+        get_install_package_manager(on_failure_return_none=True) or fallback_command
+    )
+
+    if install_package_manager is None:
+        raise FileNotFoundError(
+            "Could not find a package manager to install frontend packages. You may need to run `reflex init`."
+        )
+
+    fallback_command = (
+        fallback_command if fallback_command is not install_package_manager else None
+    )
+
     processes.run_process_with_fallback(
-        [get_install_package_manager(), "install"],  # type: ignore
+        [install_package_manager, "install"],  # type: ignore
         fallback=fallback_command,
         analytics_enabled=True,
         show_status_message="Installing base frontend packages",
@@ -944,7 +978,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     if config.tailwind is not None:
         processes.run_process_with_fallback(
             [
-                get_install_package_manager(),
+                install_package_manager,
                 "add",
                 "-d",
                 constants.Tailwind.VERSION,
@@ -960,7 +994,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
         processes.run_process_with_fallback(
-            [get_install_package_manager(), "add", *packages],
+            [install_package_manager, "add", *packages],
             fallback=fallback_command,
             analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",
@@ -992,7 +1026,7 @@ def needs_reinit(frontend: bool = True) -> bool:
         return False
 
     # Make sure the .reflex directory exists.
-    if not constants.Reflex.DIR.exists():
+    if not environment.REFLEX_DIR.get().exists():
         return True
 
     # Make sure the .web directory exists in frontend mode.
@@ -1097,7 +1131,7 @@ def ensure_reflex_installation_id() -> Optional[int]:
     """
     try:
         initialize_reflex_user_directory()
-        installation_id_file = constants.Reflex.DIR / "installation_id"
+        installation_id_file = environment.REFLEX_DIR.get() / "installation_id"
 
         installation_id = None
         if installation_id_file.exists():
@@ -1122,7 +1156,7 @@ def ensure_reflex_installation_id() -> Optional[int]:
 def initialize_reflex_user_directory():
     """Initialize the reflex user directory."""
     # Create the reflex directory.
-    path_ops.mkdir(constants.Reflex.DIR)
+    path_ops.mkdir(environment.REFLEX_DIR.get())
 
 
 def initialize_frontend_dependencies():
@@ -1145,7 +1179,10 @@ def check_db_initialized() -> bool:
     Returns:
         True if alembic is initialized (or if database is not used).
     """
-    if get_config().db_url is not None and not Path(constants.ALEMBIC_CONFIG).exists():
+    if (
+        get_config().db_url is not None
+        and not environment.ALEMBIC_CONFIG.get().exists()
+    ):
         console.error(
             "Database is not initialized. Run [bold]reflex db init[/bold] first."
         )
@@ -1155,7 +1192,7 @@ def check_db_initialized() -> bool:
 
 def check_schema_up_to_date():
     """Check if the sqlmodel metadata matches the current database schema."""
-    if get_config().db_url is None or not Path(constants.ALEMBIC_CONFIG).exists():
+    if get_config().db_url is None or not environment.ALEMBIC_CONFIG.get().exists():
         return
     with model.Model.get_db_engine().connect() as connection:
         try:
@@ -1174,7 +1211,7 @@ def check_schema_up_to_date():
                 )
 
 
-def prompt_for_template(templates: list[Template]) -> str:
+def prompt_for_template_options(templates: list[Template]) -> str:
     """Prompt the user to specify a template.
 
     Args:
@@ -1186,9 +1223,14 @@ def prompt_for_template(templates: list[Template]) -> str:
     # Show the user the URLs of each template to preview.
     console.print("\nGet started with a template:")
 
+    def format_demo_url_str(url: str) -> str:
+        return f" ({url})" if url else ""
+
     # Prompt the user to select a template.
     id_to_name = {
-        str(idx): f"{template.name} ({template.demo_url}) - {template.description}"
+        str(
+            idx
+        ): f"{template.name.replace('_', ' ').replace('-', ' ')}{format_demo_url_str(template.demo_url)} - {template.description}"
         for idx, template in enumerate(templates)
     }
     for id in range(len(id_to_name)):
@@ -1343,15 +1385,122 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
     shutil.rmtree(unzip_dir)
 
 
-def initialize_app(app_name: str, template: str | None = None):
+def initialize_default_app(app_name: str):
+    """Initialize the default app.
+
+    Args:
+        app_name: The name of the app.
+    """
+    create_config(app_name)
+    initialize_app_directory(app_name)
+
+
+def validate_and_create_app_using_remote_template(app_name, template, templates):
+    """Validate and create an app using a remote template.
+
+    Args:
+        app_name: The name of the app.
+        template: The name of the template.
+        templates: The available templates.
+
+    Raises:
+        Exit: If the template is not found.
+    """
+    # If user selects a template, it needs to exist.
+    if template in templates:
+        template_url = templates[template].code_url
+    else:
+        # Check if the template is a github repo.
+        if template.startswith("https://github.com"):
+            template_url = f"{template.strip('/').replace('.git', '')}/archive/main.zip"
+        else:
+            console.error(f"Template `{template}` not found.")
+            raise typer.Exit(1)
+
+    if template_url is None:
+        return
+
+    create_config_init_app_from_remote_template(
+        app_name=app_name, template_url=template_url
+    )
+
+
+def generate_template_using_ai(template: str | None = None) -> str:
+    """Generate a template using AI(Flexgen).
+
+    Args:
+        template: The name of the template.
+
+    Returns:
+        The generation hash.
+
+    Raises:
+        Exit: If the template and ai flags are used.
+    """
+    if template is None:
+        # If AI is requested and no template specified, redirect the user to reflex.build.
+        return redir.reflex_build_redirect()
+    elif is_generation_hash(template):
+        # Otherwise treat the template as a generation hash.
+        return template
+    else:
+        console.error(
+            "Cannot use `--template` option with `--ai` option. Please remove `--template` option."
+        )
+        raise typer.Exit(2)
+
+
+def fetch_remote_templates(
+    template: Optional[str] = None,
+) -> tuple[str, dict[str, Template]]:
+    """Fetch the available remote templates.
+
+    Args:
+        template: The name of the template.
+
+    Returns:
+        The selected template and the available templates.
+
+    Raises:
+        Exit: If the template is not valid or if the template is not specified.
+    """
+    available_templates = {}
+
+    try:
+        # Get the available templates
+        available_templates = fetch_app_templates(constants.Reflex.VERSION)
+    except Exception as e:
+        console.warn("Failed to fetch templates. Falling back to default template.")
+        console.debug(f"Error while fetching templates: {e}")
+        template = constants.Templates.DEFAULT
+
+    if template == constants.Templates.DEFAULT:
+        return template, available_templates
+
+    if template in available_templates:
+        return template, available_templates
+
+    else:
+        if template is not None:
+            console.error(f"{template!r} is not a valid template name.")
+        console.print(
+            f"Go to the templates page ({constants.Templates.REFLEX_TEMPLATES_URL}) and copy the command to init with a template."
+        )
+        raise typer.Exit(0)
+
+
+def initialize_app(
+    app_name: str, template: str | None = None, ai: bool = False
+) -> str | None:
     """Initialize the app either from a remote template or a blank app. If the config file exists, it is considered as reinit.
 
     Args:
         app_name: The name of the app.
         template: The name of the template to use.
+        ai: Whether to use AI to generate the template.
 
-    Raises:
-        Exit: If template is directly provided in the command flag and is invalid.
+    Returns:
+        The name of the template.
     """
     # Local imports to avoid circular imports.
     from reflex.utils import telemetry
@@ -1361,51 +1510,71 @@ def initialize_app(app_name: str, template: str | None = None):
         telemetry.send("reinit")
         return
 
+    generation_hash = None
+    if ai:
+        generation_hash = generate_template_using_ai(template)
+        template = constants.Templates.DEFAULT
+
     templates: dict[str, Template] = {}
 
     # Don't fetch app templates if the user directly asked for DEFAULT.
-    if template is None or (template != constants.Templates.DEFAULT):
-        try:
-            # Get the available templates
-            templates = fetch_app_templates(constants.Reflex.VERSION)
-            if template is None and len(templates) > 0:
-                template = prompt_for_template(list(templates.values()))
-        except Exception as e:
-            console.warn("Failed to fetch templates. Falling back to default template.")
-            console.debug(f"Error while fetching templates: {e}")
-        finally:
-            template = template or constants.Templates.DEFAULT
+    if template is not None and (template not in (constants.Templates.DEFAULT,)):
+        template, templates = fetch_remote_templates(template)
+
+    if template is None:
+        template = prompt_for_template_options(get_init_cli_prompt_options())
+        if template == constants.Templates.AI:
+            generation_hash = generate_template_using_ai()
+            # change to the default to allow creation of default app
+            template = constants.Templates.DEFAULT
+        elif template == constants.Templates.CHOOSE_TEMPLATES:
+            template, templates = fetch_remote_templates()
 
     # If the blank template is selected, create a blank app.
-    if template == constants.Templates.DEFAULT:
+    if template in (constants.Templates.DEFAULT,):
         # Default app creation behavior: a blank app.
-        create_config(app_name)
-        initialize_app_directory(app_name)
+        initialize_default_app(app_name)
     else:
-        # Fetch App templates from the backend server.
-        console.debug(f"Available templates: {templates}")
-
-        # If user selects a template, it needs to exist.
-        if template in templates:
-            template_url = templates[template].code_url
-        else:
-            # Check if the template is a github repo.
-            if template.startswith("https://github.com"):
-                template_url = (
-                    f"{template.strip('/').replace('.git', '')}/archive/main.zip"
-                )
-            else:
-                console.error(f"Template `{template}` not found.")
-                raise typer.Exit(1)
-
-        if template_url is None:
-            return
-
-        create_config_init_app_from_remote_template(
-            app_name=app_name, template_url=template_url
+        validate_and_create_app_using_remote_template(
+            app_name=app_name, template=template, templates=templates
         )
 
+    # If a reflex.build generation hash is available, download the code and apply it to the main module.
+    if generation_hash:
+        initialize_main_module_index_from_generation(
+            app_name, generation_hash=generation_hash
+        )
     telemetry.send("init", template=template)
+
+    return template
+
+
+def get_init_cli_prompt_options() -> list[Template]:
+    """Get the CLI options for initializing a Reflex app.
+
+    Returns:
+        The CLI options.
+    """
+    return [
+        Template(
+            name=constants.Templates.DEFAULT,
+            description="A blank Reflex app.",
+            demo_url=constants.Templates.DEFAULT_TEMPLATE_URL,
+            code_url="",
+        ),
+        Template(
+            name=constants.Templates.AI,
+            description="Generate a template using AI [Experimental]",
+            demo_url="",
+            code_url="",
+        ),
+        Template(
+            name=constants.Templates.CHOOSE_TEMPLATES,
+            description="Choose an existing template.",
+            demo_url="",
+            code_url="",
+        ),
+    ]
 
 
 def initialize_main_module_index_from_generation(app_name: str, generation_hash: str):

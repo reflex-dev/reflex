@@ -66,8 +66,8 @@ class WebsocketTargetURL(Var):
             _js_expr="getBackendURL(env.EVENT).href",
             _var_data=VarData(
                 imports={
-                    "/env.json": [ImportVar(tag="env", is_default=True)],
-                    f"/{Dirs.STATE_PATH}": [ImportVar(tag="getBackendURL")],
+                    "$/env.json": [ImportVar(tag="env", is_default=True)],
+                    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="getBackendURL")],
                 },
             ),
             _var_type=WebsocketTargetURL,
@@ -110,7 +110,7 @@ class ConnectionToaster(Toaster):
 
         individual_hooks = [
             f"const toast_props = {str(LiteralVar.create(props))};",
-            f"const [userDismissed, setUserDismissed] = useState(false);",
+            "const [userDismissed, setUserDismissed] = useState(false);",
             FunctionStringVar(
                 "useEffect",
                 _var_data=VarData(

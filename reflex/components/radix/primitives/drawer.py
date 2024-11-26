@@ -10,8 +10,7 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import Theme
 from reflex.components.radix.themes.layout.flex import Flex
-from reflex.event import EventHandler, empty_event, identity_event
-from reflex.utils import console
+from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
 
 
@@ -33,14 +32,29 @@ class DrawerRoot(DrawerComponent):
 
     alias = "Vaul" + tag
 
+    # The open state of the drawer when it is initially rendered. Use when you do not need to control its open state.
+    default_open: Var[bool]
+
     # Whether the drawer is open or not.
     open: Var[bool]
 
-    # Enable background scaling, it requires an element with [vaul-drawer-wrapper] data attribute to scale its background.
-    should_scale_background: Var[bool]
+    # Fires when the drawer is opened or closed.
+    on_open_change: EventHandler[passthrough_event_spec(bool)]
 
-    # Number between 0 and 1 that determines when the drawer should be closed.
-    close_threshold: Var[float]
+    # When `False`, it allows interaction with elements outside of the drawer without closing it. Defaults to `True`.
+    modal: Var[bool]
+
+    # Direction of the drawer. This adjusts the animations and the drag direction. Defaults to `"bottom"`
+    direction: Var[LiteralDirectionType]
+
+    # Gets triggered after the open or close animation ends, it receives an open argument with the open state of the drawer by the time the function was triggered.
+    on_animation_end: EventHandler[passthrough_event_spec(bool)]
+
+    # When `False`, dragging, clicking outside, pressing esc, etc. will not close the drawer. Use this in combination with the open prop, otherwise you won't be able to open/close the drawer.
+    dismissible: Var[bool]
+
+    # When `True`, dragging will only be possible by the handle.
+    handle_only: Var[bool]
 
     # Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account.
     snap_points: Optional[List[Union[str, float]]]
@@ -51,17 +65,14 @@ class DrawerRoot(DrawerComponent):
     # Duration for which the drawer is not draggable after scrolling content inside of the drawer. Defaults to 500ms
     scroll_lock_timeout: Var[int]
 
-    # When `False`, it allows to interact with elements outside of the drawer without closing it. Defaults to `True`.
-    modal: Var[bool]
-
-    # Direction of the drawer. Defaults to `"bottom"`
-    direction: Var[LiteralDirectionType]
-
     # When `True`, it prevents scroll restoration. Defaults to `True`.
     preventScrollRestoration: Var[bool]
 
-    # Fires when the drawer is opened.
-    on_open_change: EventHandler[identity_event(bool)]
+    # Enable background scaling, it requires container element with `vaul-drawer-wrapper` attribute to scale its background.
+    should_scale_background: Var[bool]
+
+    # Number between 0 and 1 that determines when the drawer should be closed.
+    close_threshold: Var[float]
 
 
 class DrawerTrigger(DrawerComponent):
@@ -79,8 +90,8 @@ class DrawerTrigger(DrawerComponent):
         """Create a new DrawerTrigger instance.
 
         Args:
-            children: The children of the element.
-            props: The properties of the element.
+            *children: The children of the element.
+            **props: The properties of the element.
 
         Returns:
             The new DrawerTrigger instance.
@@ -128,20 +139,20 @@ class DrawerContent(DrawerComponent):
         base_style.update(style)
         return {"css": base_style}
 
-    # Fired when the drawer content is opened. Deprecated.
-    on_open_auto_focus: EventHandler[empty_event]
+    # Fired when the drawer content is opened.
+    on_open_auto_focus: EventHandler[no_args_event_spec]
 
-    # Fired when the drawer content is closed. Deprecated.
-    on_close_auto_focus: EventHandler[empty_event]
+    # Fired when the drawer content is closed.
+    on_close_auto_focus: EventHandler[no_args_event_spec]
 
-    # Fired when the escape key is pressed. Deprecated.
-    on_escape_key_down: EventHandler[empty_event]
+    # Fired when the escape key is pressed.
+    on_escape_key_down: EventHandler[no_args_event_spec]
 
-    # Fired when the pointer is down outside the drawer content. Deprecated.
-    on_pointer_down_outside: EventHandler[empty_event]
+    # Fired when the pointer is down outside the drawer content.
+    on_pointer_down_outside: EventHandler[no_args_event_spec]
 
-    # Fired when interacting outside the drawer content. Deprecated.
-    on_interact_outside: EventHandler[empty_event]
+    # Fired when interacting outside the drawer content.
+    on_interact_outside: EventHandler[no_args_event_spec]
 
     @classmethod
     def create(cls, *children, **props):
@@ -158,23 +169,6 @@ class DrawerContent(DrawerComponent):
         Returns:
                  The drawer content.
         """
-        deprecated_properties = [
-            "on_open_auto_focus",
-            "on_close_auto_focus",
-            "on_escape_key_down",
-            "on_pointer_down_outside",
-            "on_interact_outside",
-        ]
-
-        for prop in deprecated_properties:
-            if prop in props:
-                console.deprecate(
-                    feature_name="drawer content events",
-                    reason=f"The `{prop}` event is deprecated and will be removed in 0.7.0.",
-                    deprecation_version="0.6.3",
-                    removal_version="0.7.0",
-                )
-
         comp = super().create(*children, **props)
 
         return Theme.create(comp)
@@ -263,6 +257,14 @@ class DrawerDescription(DrawerComponent):
         return {"css": base_style}
 
 
+class DrawerHandle(DrawerComponent):
+    """A description for the drawer."""
+
+    tag = "Drawer.Handle"
+
+    alias = "Vaul" + tag
+
+
 class Drawer(ComponentNamespace):
     """A namespace for Drawer components."""
 
@@ -274,6 +276,7 @@ class Drawer(ComponentNamespace):
     close = staticmethod(DrawerClose.create)
     title = staticmethod(DrawerTitle.create)
     description = staticmethod(DrawerDescription.create)
+    handle = staticmethod(DrawerHandle.create)
 
 
 drawer = Drawer()

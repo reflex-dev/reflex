@@ -613,7 +613,7 @@ def var_operations(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("var_operations"),
-        app_source=VarOperations,  # type: ignore
+        app_source=VarOperations,
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
         yield harness
@@ -793,8 +793,8 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("foreach_list_ix", "1\n2"),
         ("foreach_list_nested", "1\n1\n2"),
         # rx.memo component with state
-        ("memo_comp", "[1,2]10"),
-        ("memo_comp_nested", "[3,4]5"),
+        ("memo_comp", "1210"),
+        ("memo_comp_nested", "345"),
         # foreach in a match
         ("foreach_in_match", "first\nsecond\nthird"),
     ]
