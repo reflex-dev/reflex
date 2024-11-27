@@ -1008,6 +1008,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     sid = "mock_sid"
     client_ip = "127.0.0.1"
     state = await app.state_manager.get_state(substate_token)
+    state.router_data = {"simulate": "hydrated"}
     assert state.dynamic == ""
     exp_vals = ["foo", "foobar", "baz"]
 
@@ -1180,6 +1181,9 @@ async def test_process_events(mocker, token: str):
         "ip": "127.0.0.1",
     }
     app = App(state=GenState)
+    state = await app.state_manager.get_state(_substate_key(token, GenState))
+    state.router_data = {"simulate": "hydrated"}
+
     mocker.patch.object(app, "_postprocess", AsyncMock())
     event = Event(
         token=token,
