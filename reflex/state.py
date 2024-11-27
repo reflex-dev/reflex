@@ -3289,7 +3289,7 @@ class StateManagerRedis(StateManager):
             state_cls = self.state.get_class_substate(state_path)
         else:
             raise RuntimeError(
-                "StateManagerRedis requires token to be specified in the form of {token}_{state_full_name}"
+                f"StateManagerRedis requires token to be specified in the form of {{token}}_{{state_full_name}}, but got {token}"
             )
 
         # The deserialized or newly created (sub)state instance.
