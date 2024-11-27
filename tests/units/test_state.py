@@ -2815,8 +2815,8 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
     app = app_module_mock.app = App(
         state=State, load_events={"index": [test_state.test_handler]}
     )
-    state = await app.state_manager.get_state(_substate_key(token, State))
-    state.router_data = {"simulate": "hydrate"}
+    async with app.state_manager.modify_state(_substate_key(token, State)) as state:
+        state.router_data = {"simulate": "hydrate"}
 
     updates = []
     async for update in rx.app.process(
@@ -2863,8 +2863,8 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         state=State,
         load_events={"index": [OnLoadState.test_handler, OnLoadState.test_handler]},
     )
-    state = await app.state_manager.get_state(_substate_key(token, State))
-    state.router_data = {"simulate": "hydrate"}
+    async with app.state_manager.modify_state(_substate_key(token, State)) as state:
+        state.router_data = {"simulate": "hydrate"}
 
     updates = []
     async for update in rx.app.process(
