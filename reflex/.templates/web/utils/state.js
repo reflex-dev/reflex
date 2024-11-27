@@ -454,6 +454,10 @@ export const connect = async (
       queueEvents(update.events, socket);
     }
   });
+  socket.current.on("reload", async (event) => {
+    event_processing = false;
+    queueEvents([...initialEvents(), JSON5.parse(event)], socket);
+  })
 
   document.addEventListener("visibilitychange", checkVisibility);
 };
