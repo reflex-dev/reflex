@@ -1837,6 +1837,24 @@ async def test_state_manager_lock_expire_contend(
     assert (await state_manager_redis.get_state(substate_token_redis)).num1 == exp_num1
 
 
+class CopyingAsyncMock(AsyncMock):
+    """An AsyncMock, but deepcopy the args and kwargs first."""
+
+    def __call__(self, *args, **kwargs):
+        """Call the mock.
+
+        Args:
+            args: the arguments passed to the mock
+            kwargs: the keyword arguments passed to the mock
+
+        Returns:
+            The result of the mock call
+        """
+        args = copy.deepcopy(args)
+        kwargs = copy.deepcopy(kwargs)
+        return super().__call__(*args, **kwargs)
+
+
 @pytest.fixture(scope="function")
 def mock_app_simple(monkeypatch) -> rx.App:
     """Simple Mock app fixture.
@@ -1853,7 +1871,7 @@ def mock_app_simple(monkeypatch) -> rx.App:
 
     setattr(app_module, CompileVars.APP, app)
     app.state = TestState
-    app.event_namespace.emit = AsyncMock()  # type: ignore
+    app.event_namespace.emit = CopyingAsyncMock()  # type: ignore
 
     def _mock_get_app(*args, **kwargs):
         return app_module
@@ -1957,21 +1975,19 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     mock_app.event_namespace.emit.assert_called_once()
     mcall = mock_app.event_namespace.emit.mock_calls[0]
     assert mcall.args[0] == str(SocketEvent.EVENT)
-    assert json.loads(mcall.args[1]) == dataclasses.asdict(
-        StateUpdate(
-            delta={
-                parent_state.get_full_name(): {
-                    "upper": "",
-                    "sum": 3.14,
-                },
-                grandchild_state.get_full_name(): {
-                    "value2": "42",
-                },
-                GrandchildState3.get_full_name(): {
-                    "computed": "",
-                },
-            }
-        )
+    assert mcall.args[1] == StateUpdate(
+        delta={
+            parent_state.get_full_name(): {
+                "upper": "",
+                "sum": 3.14,
+            },
+            grandchild_state.get_full_name(): {
+                "value2": "42",
+            },
+            GrandchildState3.get_full_name(): {
+                "computed": "",
+            },
+        }
     )
     assert mcall.kwargs["to"] == grandchild_state.router.session.session_id
 
@@ -2149,51 +2165,51 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     assert mock_app.event_namespace is not None
     emit_mock = mock_app.event_namespace.emit
 
-    first_ws_message = json.loads(emit_mock.mock_calls[0].args[1])
+    first_ws_message = emit_mock.mock_calls[0].args[1]
     assert (
-        first_ws_message["delta"][BackgroundTaskState.get_full_name()].pop("router")
+        first_ws_message.delta[BackgroundTaskState.get_full_name()].pop("router")
         is not None
     )
-    assert first_ws_message == {
-        "delta": {
+    assert first_ws_message == StateUpdate(
+        delta={
             BackgroundTaskState.get_full_name(): {
                 "order": ["background_task:start"],
                 "computed_order": ["background_task:start"],
             }
         },
-        "events": [],
-        "final": True,
-    }
+        events=[],
+        final=True,
+    )
     for call in emit_mock.mock_calls[1:5]:
-        assert json.loads(call.args[1]) == {
-            "delta": {
+        assert call.args[1] == StateUpdate(
+            delta={
                 BackgroundTaskState.get_full_name(): {
                     "computed_order": ["background_task:start"],
                 }
             },
-            "events": [],
-            "final": True,
-        }
-    assert json.loads(emit_mock.mock_calls[-2].args[1]) == {
-        "delta": {
+            events=[],
+            final=True,
+        )
+    assert emit_mock.mock_calls[-2].args[1] == StateUpdate(
+        delta={
             BackgroundTaskState.get_full_name(): {
                 "order": exp_order,
                 "computed_order": exp_order,
                 "dict_list": {},
             }
         },
-        "events": [],
-        "final": True,
-    }
-    assert json.loads(emit_mock.mock_calls[-1].args[1]) == {
-        "delta": {
+        events=[],
+        final=True,
+    )
+    assert emit_mock.mock_calls[-1].args[1] == StateUpdate(
+        delta={
             BackgroundTaskState.get_full_name(): {
                 "computed_order": exp_order,
             },
         },
-        "events": [],
-        "final": True,
-    }
+        events=[],
+        final=True,
+    )
 
 
 @pytest.mark.asyncio
