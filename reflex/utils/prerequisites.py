@@ -1408,6 +1408,15 @@ def validate_and_create_app_using_remote_template(app_name, template, templates)
     """
     # If user selects a template, it needs to exist.
     if template in templates:
+        from reflex_cli.v2.utils import hosting
+
+        authenticated_token = hosting.authenticated_token()
+        if not authenticated_token or not authenticated_token[0]:
+            console.print(
+                f"Please use `reflex loginv2` to access the '{template}' template."
+            )
+            raise typer.Exit(3)
+
         template_url = templates[template].code_url
     else:
         # Check if the template is a github repo.
