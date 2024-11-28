@@ -55,7 +55,11 @@ from reflex.state import (
 )
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
-from reflex.utils.exceptions import ReflexRuntimeError, SetUndefinedStateVarError
+from reflex.utils.exceptions import (
+    ReflexRuntimeError,
+    SetUndefinedStateVarError,
+    StateSerializationError,
+)
 from reflex.utils.format import json_dumps
 from reflex.vars.base import Var, computed_var
 from tests.units.states.mutation import MutableSQLAModel, MutableTestState
@@ -3433,8 +3437,9 @@ def test_fallback_pickle():
     # Some object, like generator, are still unpicklable with dill.
     state3 = DillState(_reflex_internal_init=True)  # type: ignore
     state3._g = (i for i in range(10))
-    pk3 = state3._serialize()
-    assert len(pk3) == 0
+
+    with pytest.raises(StateSerializationError):
+        _ = state3._serialize()
 
 
 def test_typed_state() -> None:
