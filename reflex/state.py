@@ -1959,6 +1959,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 if var in self.base_vars or var in self._backend_vars:
                     self._was_touched = True
                     break
+                if var == constants.ROUTER_DATA and self.parent_state is None:
+                    self._was_touched = True
+                    break
 
     def _get_was_touched(self) -> bool:
         """Check current dirty_vars and flag to determine if state instance was modified.

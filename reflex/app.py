@@ -73,6 +73,7 @@ from reflex.event import (
     EventSpec,
     EventType,
     IndividualEventType,
+    get_hydrate_event,
     window_alert,
 )
 from reflex.model import Model, get_db_status
@@ -1259,6 +1260,21 @@ async def process(
         )
         # Get the state for the session exclusively.
         async with app.state_manager.modify_state(event.substate_token) as state:
+            # When this is a brand new instance of the state, signal the
+            # frontend to reload before processing it.
+            if (
+                not state.router_data
+                and event.name != get_hydrate_event(state)
+                and app.event_namespace is not None
+            ):
+                await asyncio.create_task(
+                    app.event_namespace.emit(
+                        "reload",
+                        data=format.json_dumps(event),
+                        to=sid,
+                    )
+                )
+                return
             # re-assign only when the value is different
             if state.router_data != router_data:
                 # assignment will recurse into substates and force recalculation of
