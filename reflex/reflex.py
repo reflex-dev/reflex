@@ -370,7 +370,9 @@ def loginv2(loglevel: constants.LogLevel = typer.Option(config.loglevel)):
 
     check_version()
 
-    hosting_cli.login()
+    validated_info = hosting_cli.login()
+    if validated_info is not None:
+        telemetry.send("loginv2", user_uuid=validated_info.get("user_id"))
 
 
 @cli.command()
