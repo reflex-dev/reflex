@@ -3,6 +3,7 @@
 assets/external/*
 dist/*
 examples/
+glide-logs/
 .web
 .idea
 .vscode

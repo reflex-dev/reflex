@@ -21,15 +21,15 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, List, Optional
 
 import httpx
 import typer
 from alembic.util.exc import CommandError
+from glide import GlideClient, GlideClientConfiguration, NodeAddress
 from packaging import version
 from redis import Redis as RedisSync
 from redis import exceptions
-from redis.asyncio import Redis
 
 from reflex import constants, model
 from reflex.compiler import templates
@@ -43,6 +43,9 @@ from reflex.utils.format import format_library_name
 from reflex.utils.registry import _get_npm_registry
 
 CURRENTLY_INSTALLING_NODE = False
+
+if TYPE_CHECKING:
+    from reflex.app import App
 
 
 @dataclasses.dataclass(frozen=True)
@@ -320,7 +323,7 @@ def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
         The compiled app based on the default config.
     """
     app_module = get_app(reload=reload)
-    app = getattr(app_module, constants.CompileVars.APP)
+    app: App = getattr(app_module, constants.CompileVars.APP)
     # For py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).
     app._apply_decorated_pages()
@@ -328,17 +331,46 @@ def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     return app_module
 
 
-def get_redis() -> Redis | None:
+def get_node_addresses() -> List[NodeAddress]:
+    """Get the node addresses from the config.
+
+    Returns:
+        The node addresses.
+    """
+    redis = get_redis_sync()
+    if redis is None:
+        return []
+    host = redis.connection_pool.connection_kwargs["host"]
+    port = redis.connection_pool.connection_kwargs["port"]
+    return [NodeAddress(host=host, port=port)]
+
+
+def get_glide_client_configuration(**kwargs) -> GlideClientConfiguration | None:
+    """Get the glide client configuration.
+
+    Args:
+        kwargs: Additional keyword arguments to pass to the GlideClientConfiguration.
+
+    Returns:
+        The glide client configuration.
+    """
+    addresses = get_node_addresses()
+    if not addresses:
+        return None
+    return GlideClientConfiguration(addresses=addresses, **kwargs)
+
+
+async def get_redis() -> GlideClient | None:
     """Get the asynchronous redis client.
 
     Returns:
         The asynchronous redis client.
     """
-    if isinstance((redis_url_or_options := parse_redis_url()), str):
-        return Redis.from_url(redis_url_or_options)
-    elif isinstance(redis_url_or_options, dict):
-        return Redis(**redis_url_or_options)
-    return None
+    config = get_glide_client_configuration()
+    if config is None:
+        return None
+    client = await GlideClient.create(config)
+    return client
 
 
 def get_redis_sync() -> RedisSync | None:
@@ -354,7 +386,7 @@ def get_redis_sync() -> RedisSync | None:
     return None
 
 
-def parse_redis_url() -> str | dict | None:
+def parse_redis_url() -> str | dict[Any, Any] | None:
     """Parse the REDIS_URL in config if applicable.
 
     Returns:

@@ -87,6 +87,10 @@ class LockExpiredError(ReflexError):
     """Raised when the state lock expires while an event is being processed."""
 
 
+class RedisConfigError(ReflexError):
+    """Raised when the Redis configuration is not applied correctly."""
+
+
 class MatchTypeError(ReflexError, TypeError):
     """Raised when the return types of match cases are different."""
 
