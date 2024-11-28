@@ -1982,6 +1982,10 @@ class BackgroundTaskState(BaseState):
     order: List[str] = []
     dict_list: Dict[str, List[int]] = {"foo": [1, 2, 3]}
 
+    def __init__(self, **kwargs):  # noqa: D107
+        super().__init__(**kwargs)
+        self.router_data = {"simulate": "hydrate"}
+
     @rx.var
     def computed_order(self) -> List[str]:
         """Get the order as a computed var.
@@ -2732,7 +2736,7 @@ def test_set_base_field_via_setter():
     assert "c2" in bfss.dirty_vars
 
 
-def exp_is_hydrated(state: State, is_hydrated: bool = True) -> Dict[str, Any]:
+def exp_is_hydrated(state: BaseState, is_hydrated: bool = True) -> Dict[str, Any]:
     """Expected IS_HYDRATED delta that would be emitted by HydrateMiddleware.
 
     Args:
@@ -2811,7 +2815,8 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
     app = app_module_mock.app = App(
         state=State, load_events={"index": [test_state.test_handler]}
     )
-    state = State()
+    async with app.state_manager.modify_state(_substate_key(token, State)) as state:
+        state.router_data = {"simulate": "hydrate"}
 
     updates = []
     async for update in rx.app.process(
@@ -2858,7 +2863,8 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         state=State,
         load_events={"index": [OnLoadState.test_handler, OnLoadState.test_handler]},
     )
-    state = State()
+    async with app.state_manager.modify_state(_substate_key(token, State)) as state:
+        state.router_data = {"simulate": "hydrate"}
 
     updates = []
     async for update in rx.app.process(
