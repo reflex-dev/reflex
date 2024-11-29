@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest a new custom component for Reflex
+about: Suggest a new feature for Reflex
 title: ''
 labels: 'feature request'
 assignees: ''
@@ -15,4 +15,4 @@ A clear and concise description of what the features does.
 - Show an example / use cases for the new feature.
  
 **Additional context**
-Add any other context about the custom component here.
+Add any other context here.
