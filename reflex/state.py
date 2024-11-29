@@ -436,7 +436,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         return [
             v
-            for mixin in cls._mixins() + [cls]
+            for mixin in [*cls._mixins(), cls]
             for name, v in mixin.__dict__.items()
             if is_computed_var(v) and name not in cls.inherited_vars
         ]

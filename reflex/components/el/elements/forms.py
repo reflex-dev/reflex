@@ -241,13 +241,13 @@ class Form(BaseHTML):
             if ref.startswith("refs_"):
                 ref_var = Var(_js_expr=ref[:-3])._as_ref()
                 form_refs[ref[len("refs_") : -3]] = Var(
-                    _js_expr=f"getRefValues({str(ref_var)})",
+                    _js_expr=f"getRefValues({ref_var!s})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
             else:
                 ref_var = Var(_js_expr=ref)._as_ref()
                 form_refs[ref[4:]] = Var(
-                    _js_expr=f"getRefValue({str(ref_var)})",
+                    _js_expr=f"getRefValue({ref_var!s})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
         # print(repr(form_refs))
@@ -258,7 +258,8 @@ class Form(BaseHTML):
         yield from self._get_form_refs().values()
 
     def _exclude_props(self) -> list[str]:
-        return super()._exclude_props() + [
+        return [
+            *super()._exclude_props(),
             "reset_on_submit",
             "handle_submit_unique_name",
         ]
@@ -649,19 +650,20 @@ class Textarea(BaseHTML):
                     "Cannot combine `enter_key_submit` with `on_key_down`.",
                 )
             custom_attrs["on_key_down"] = Var(
-                _js_expr=f"(e) => enterKeySubmitOnKeyDown(e, {str(enter_key_submit)})",
+                _js_expr=f"(e) => enterKeySubmitOnKeyDown(e, {enter_key_submit!s})",
                 _var_data=VarData.merge(enter_key_submit._get_all_var_data()),
             )
         if auto_height is not None:
             auto_height = Var.create(auto_height)
             custom_attrs["on_input"] = Var(
-                _js_expr=f"(e) => autoHeightOnInput(e, {str(auto_height)})",
+                _js_expr=f"(e) => autoHeightOnInput(e, {auto_height!s})",
                 _var_data=VarData.merge(auto_height._get_all_var_data()),
             )
         return super().create(*children, **props)
 
     def _exclude_props(self) -> list[str]:
-        return super()._exclude_props() + [
+        return [
+            *super()._exclude_props(),
             "auto_height",
             "enter_key_submit",
         ]

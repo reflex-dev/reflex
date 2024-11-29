@@ -1770,7 +1770,7 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
 )
 def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List[str]):
     for operator in operators:
-        print(f"testing {operator} on {str(operand1_var)} and {str(operand2_var)}")
+        print(f"testing {operator} on {operand1_var!s} and {operand2_var!s}")
         with pytest.raises(TypeError):
             print(eval(f"operand1_var {operator} operand2_var"))
             # operand1_var.operation(op=operator, other=operand2_var)
