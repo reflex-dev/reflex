@@ -3445,7 +3445,6 @@ class StateManagerRedis(StateManager):
         Raises:
             ResponseError: when the keyspace config cannot be set.
         """
-        state_is_locked = False
         lock_key_channel = f"__keyspace@0__:{lock_key.decode()}"
         # Enable keyspace notifications for the lock key, so we know when it is available.
         try:
