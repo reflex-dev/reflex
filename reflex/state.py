@@ -3411,11 +3411,15 @@ class StateManagerRedis(StateManager):
         if not redis_hashset:
             return
 
-        await self.redis.hmset(name=client_token, mapping=redis_hashset)  # type: ignore
-        await self.redis.hexpire(
-            client_token,
-            self.token_expiration,
-            *redis_hashset.keys(),
+        pipe = self.redis.pipeline()
+        await (
+            pipe.hmset(name=client_token, mapping=redis_hashset)
+            .hexpire(  # type: ignore
+                client_token,
+                self.token_expiration,
+                *redis_hashset.keys(),
+            )
+            .execute()
         )
 
     @override
