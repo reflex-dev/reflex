@@ -19,11 +19,14 @@ def UploadFile():
 
     import reflex as rx
 
+    LARGE_DATA = "DUMMY" * 1024 * 512
+
     class UploadState(rx.State):
         _file_data: Dict[str, str] = {}
         event_order: List[str] = []
         progress_dicts: List[dict] = []
         disabled: bool = False
+        large_data: str = ""
 
         async def handle_upload(self, files: List[rx.UploadFile]):
             for file in files:
@@ -34,6 +37,7 @@ def UploadFile():
             for file in files:
                 upload_data = await file.read()
                 self._file_data[file.filename or ""] = upload_data.decode("utf-8")
+                self.large_data = LARGE_DATA
                 yield UploadState.chain_event
 
         def upload_progress(self, progress):
@@ -42,13 +46,15 @@ def UploadFile():
             self.progress_dicts.append(progress)
 
         def chain_event(self):
+            assert self.large_data == LARGE_DATA
+            self.large_data = ""
             self.event_order.append("chain_event")
 
     def index():
         return rx.vstack(
             rx.input(
                 value=UploadState.router.session.client_token,
-                is_read_only=True,
+                read_only=True,
                 id="token",
             ),
             rx.heading("Default Upload"),
