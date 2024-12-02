@@ -23,6 +23,7 @@ def UploadFile():
         _file_data: Dict[str, str] = {}
         event_order: List[str] = []
         progress_dicts: List[dict] = []
+        disabled: bool = False
 
         async def handle_upload(self, files: List[rx.UploadFile]):
             for file in files:
@@ -56,6 +57,7 @@ def UploadFile():
                     rx.button("Select File"),
                     rx.text("Drag and drop files here or click to select files"),
                 ),
+                disabled=UploadState.disabled,
             ),
             rx.button(
                 "Upload",
