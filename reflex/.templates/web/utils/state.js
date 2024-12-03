@@ -214,7 +214,7 @@ export const applyEvent = async (event, socket) => {
     a.href = event.payload.url;
     // Special case when linking to uploaded files
     if (a.href.includes("getBackendURL(env.UPLOAD)")) {
-      a.href = eval(
+      a.href = eval?.(
         event.payload.url.replace(
           "getBackendURL(env.UPLOAD)",
           `"${getBackendURL(env.UPLOAD)}"`
