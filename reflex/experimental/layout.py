@@ -32,7 +32,6 @@ class Sidebar(Box, MemoizationLeaf):
 
         Returns:
             The sidebar component.
-
         """
         return super().create(
             Box.create(*children, **props),  # sidebar for content
