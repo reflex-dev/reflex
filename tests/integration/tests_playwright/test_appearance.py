@@ -182,21 +182,28 @@ def test_appearance_color_toggle(color_toggle_app: AppHarness, page: Page):
     current_color_mode = page.locator("id=current_color_mode")
     resolved_color_mode = page.locator("id=resolved_color_mode")
     color_mode_cond = page.locator("id=color_mode_cond")
+    root_body = page.locator('div[data-is-root-theme="true"]')
+
+    dark_background = "rgb(17, 17, 19)"
+    light_background = "rgb(255, 255, 255)"
 
     # click dark mode
     radio_dark.click()
     expect(current_color_mode).to_have_text("dark")
     expect(resolved_color_mode).to_have_text("dark")
     expect(color_mode_cond).to_have_text("DarkMode")
+    expect(root_body).to_have_css("background-color", dark_background)
 
     # click light mode
     radio_light.click()
     expect(current_color_mode).to_have_text("light")
     expect(resolved_color_mode).to_have_text("light")
     expect(color_mode_cond).to_have_text("LightMode")
+    expect(root_body).to_have_css("background-color", light_background)
 
     # click system mode
     radio_system.click()
     expect(current_color_mode).to_have_text("system")
     expect(resolved_color_mode).to_have_text("light")
     expect(color_mode_cond).to_have_text("LightMode")
+    expect(root_body).to_have_css("background-color", light_background)
