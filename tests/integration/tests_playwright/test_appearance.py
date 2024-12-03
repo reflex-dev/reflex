@@ -184,7 +184,7 @@ def test_appearance_color_toggle(color_toggle_app: AppHarness, page: Page):
     color_mode_cond = page.locator("id=color_mode_cond")
     root_body = page.locator('div[data-is-root-theme="true"]')
 
-    dark_background = "rgb(17, 17, 19)"
+    dark_background = "rgb(17, 17, 19)"  # value based on dark native appearance, can change depending on the browser
     light_background = "rgb(255, 255, 255)"
 
     # click dark mode
@@ -199,6 +199,8 @@ def test_appearance_color_toggle(color_toggle_app: AppHarness, page: Page):
     expect(current_color_mode).to_have_text("light")
     expect(resolved_color_mode).to_have_text("light")
     expect(color_mode_cond).to_have_text("LightMode")
+    expect(root_body).to_have_css("background-color", light_background)
+    page.reload()
     expect(root_body).to_have_css("background-color", light_background)
 
     # click system mode
