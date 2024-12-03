@@ -275,65 +275,65 @@ class DataEditor(NoSSRComponent):
         """Create the DataEditor component.
 
         Args:
-        *children: The children of the data editor.
-        rows: Number of rows.
-        columns: Headers of the columns for the data grid.
-        data: The data.
-        get_cell_content: The name of the callback used to find the data to display.
-        get_cells_for_selection: Allow selection for copying.
-        on_paste: Allow paste.
-        draw_focus_ring: Controls the drawing of the focus ring.
-        fixed_shadow_x: Enables or disables the overlay shadow when scrolling horizontally.
-        fixed_shadow_y: Enables or disables the overlay shadow when scrolling vertically.
-        freeze_columns: The number of columns which should remain in place when scrolling horizontally. Doesn't include rowMarkers.
-        group_header_height: Controls the header of the group header row.
-        header_height: Controls the height of the header row.
-        max_column_auto_width: Additional header icons:  header_icons: Var[Any] # (TODO: must be a map of name: svg) #noqa: ERA001  The maximum width a column can be automatically sized to.
-        max_column_width: The maximum width a column can be resized to.
-        min_column_width: The minimum width a column can be resized to.
-        row_height: Determins the height of each row.
-        row_markers: Kind of row markers.
-        row_marker_start_index: Changes the starting index for row markers.
-        row_marker_width: Sets the width of row markers in pixels, if unset row markers will automatically size.
-        smooth_scroll_x: Enable horizontal smooth scrolling.
-        smooth_scroll_y: Enable vertical smooth scrolling.
-        vertical_border: Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders.
-        column_select: Allow columns selections. ("none", "single", "multi")
-        prevent_diagonal_scrolling: Prevent diagonal scrolling.
-        overscroll_x: Allow to scroll past the limit of the actual content on the horizontal axis.
-        overscroll_y: Allow to scroll past the limit of the actual content on the vertical axis.
-        scroll_offset_x: Initial scroll offset on the horizontal axis.
-        scroll_offset_y: Initial scroll offset on the vertical axis.
-        theme: global theme
-        on_cell_activated: Fired when a cell is activated.
-        on_cell_clicked: Fired when a cell is clicked.
-        on_cell_context_menu: Fired when a cell is right-clicked.
-        on_cell_edited: Fired when a cell is edited.
-        on_group_header_clicked: Fired when a group header is clicked.
-        on_group_header_context_menu: Fired when a group header is right-clicked.
-        on_group_header_renamed: Fired when a group header is renamed.
-        on_header_clicked: Fired when a header is clicked.
-        on_header_context_menu: Fired when a header is right-clicked.
-        on_header_menu_click: Fired when a header menu item is clicked.
-        on_item_hovered: Fired when an item is hovered.
-        on_delete: Fired when a selection is deleted.
-        on_finished_editing: Fired when editing is finished.
-        on_row_appended: Fired when a row is appended.
-        on_selection_cleared: Fired when the selection is cleared.
-        on_column_resize: Fired when a column is resized.
-        style: The style of the component.
-        key: A unique key for the component.
-        id: The id for the component.
-        class_name: The class name for the component.
-        autofocus: Whether the component should take the focus once the page is loaded
-        custom_attrs: custom attribute
-        **props: The props of the data editor.
+            *children: The children of the data editor.
+            rows: Number of rows.
+            columns: Headers of the columns for the data grid.
+            data: The data.
+            get_cell_content: The name of the callback used to find the data to display.
+            get_cells_for_selection: Allow selection for copying.
+            on_paste: Allow paste.
+            draw_focus_ring: Controls the drawing of the focus ring.
+            fixed_shadow_x: Enables or disables the overlay shadow when scrolling horizontally.
+            fixed_shadow_y: Enables or disables the overlay shadow when scrolling vertically.
+            freeze_columns: The number of columns which should remain in place when scrolling horizontally. Doesn't include rowMarkers.
+            group_header_height: Controls the header of the group header row.
+            header_height: Controls the height of the header row.
+            max_column_auto_width: Additional header icons:  header_icons: Var[Any] # (TODO: must be a map of name: svg) #noqa: ERA001  The maximum width a column can be automatically sized to.
+            max_column_width: The maximum width a column can be resized to.
+            min_column_width: The minimum width a column can be resized to.
+            row_height: Determins the height of each row.
+            row_markers: Kind of row markers.
+            row_marker_start_index: Changes the starting index for row markers.
+            row_marker_width: Sets the width of row markers in pixels, if unset row markers will automatically size.
+            smooth_scroll_x: Enable horizontal smooth scrolling.
+            smooth_scroll_y: Enable vertical smooth scrolling.
+            vertical_border: Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders.
+            column_select: Allow columns selections. ("none", "single", "multi")
+            prevent_diagonal_scrolling: Prevent diagonal scrolling.
+            overscroll_x: Allow to scroll past the limit of the actual content on the horizontal axis.
+            overscroll_y: Allow to scroll past the limit of the actual content on the vertical axis.
+            scroll_offset_x: Initial scroll offset on the horizontal axis.
+            scroll_offset_y: Initial scroll offset on the vertical axis.
+            theme: global theme
+            on_cell_activated: Fired when a cell is activated.
+            on_cell_clicked: Fired when a cell is clicked.
+            on_cell_context_menu: Fired when a cell is right-clicked.
+            on_cell_edited: Fired when a cell is edited.
+            on_group_header_clicked: Fired when a group header is clicked.
+            on_group_header_context_menu: Fired when a group header is right-clicked.
+            on_group_header_renamed: Fired when a group header is renamed.
+            on_header_clicked: Fired when a header is clicked.
+            on_header_context_menu: Fired when a header is right-clicked.
+            on_header_menu_click: Fired when a header menu item is clicked.
+            on_item_hovered: Fired when an item is hovered.
+            on_delete: Fired when a selection is deleted.
+            on_finished_editing: Fired when editing is finished.
+            on_row_appended: Fired when a row is appended.
+            on_selection_cleared: Fired when the selection is cleared.
+            on_column_resize: Fired when a column is resized.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The props of the data editor.
 
         Raises:
-        ValueError: invalid input.
+            ValueError: invalid input.
 
         Returns:
-        The DataEditor component.&
+            The DataEditor component.&
         """
         ...
 

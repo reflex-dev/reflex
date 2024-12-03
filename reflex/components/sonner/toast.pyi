@@ -137,31 +137,31 @@ class Toaster(Component):
         """Create a toaster component.
 
         Args:
-        *children: The children of the toaster.
-        theme: the theme of the toast
-        rich_colors: whether to show rich colors
-        expand: whether to expand the toast
-        visible_toasts: the number of toasts that are currently visible
-        position: the position of the toast
-        close_button: whether to show the close button
-        offset: offset of the toast
-        dir: directionality of the toast (default: ltr)
-        hotkey: Keyboard shortcut that will move focus to the toaster area.
-        invert: Dark toasts in light mode and vice versa.
-        toast_options: These will act as default options for all toasts. See toast() for all available options.
-        gap: Gap between toasts when expanded
-        loading_icon: Changes the default loading icon
-        pause_when_page_is_hidden: Pauses toast timers when the page is hidden, e.g., when the tab is backgrounded, the browser is minimized, or the OS is locked.
-        style: The style of the component.
-        key: A unique key for the component.
-        id: The id for the component.
-        class_name: The class name for the component.
-        autofocus: Whether the component should take the focus once the page is loaded
-        custom_attrs: custom attribute
-        **props: The properties of the toaster.
+            *children: The children of the toaster.
+            theme: the theme of the toast
+            rich_colors: whether to show rich colors
+            expand: whether to expand the toast
+            visible_toasts: the number of toasts that are currently visible
+            position: the position of the toast
+            close_button: whether to show the close button
+            offset: offset of the toast
+            dir: directionality of the toast (default: ltr)
+            hotkey: Keyboard shortcut that will move focus to the toaster area.
+            invert: Dark toasts in light mode and vice versa.
+            toast_options: These will act as default options for all toasts. See toast() for all available options.
+            gap: Gap between toasts when expanded
+            loading_icon: Changes the default loading icon
+            pause_when_page_is_hidden: Pauses toast timers when the page is hidden, e.g., when the tab is backgrounded, the browser is minimized, or the OS is locked.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the toaster.
 
         Returns:
-        The toaster component.
+            The toaster component.
         """
         ...
 
@@ -181,15 +181,15 @@ class ToastNamespace(ComponentNamespace):
         """Send a toast message.
 
         Args:
-        message: The message to display.
-        level: The level of the toast.
-        **props: The options for the toast.
+            message: The message to display.
+            level: The level of the toast.
+            **props: The options for the toast.
 
         Raises:
-        ValueError: If the Toaster component is not created.
+            ValueError: If the Toaster component is not created.
 
         Returns:
-        The toast event.
+            The toast event.
         """
         ...
 
