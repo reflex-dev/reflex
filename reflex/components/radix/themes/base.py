@@ -53,7 +53,7 @@ LiteralAccentColor = Literal[
 class CommonMarginProps(Component):
     """Many radix-themes elements accept shorthand margin props."""
 
-    # Margin: "0" - "9"
+    # Margin global: "0" - "9"
     m: Var[LiteralSpacing]
 
     # Margin horizontal: "0" - "9"
@@ -78,7 +78,7 @@ class CommonMarginProps(Component):
 class CommonPaddingProps(Component):
     """Many radix-themes elements accept shorthand padding props."""
 
-    # Padding: "0" - "9"
+    # Padding global: "0" - "9"
     p: Var[Responsive[LiteralSpacing]]
 
     # Padding horizontal: "0" - "9"
@@ -142,11 +142,6 @@ class RadixThemesComponent(Component):
         component.alias = "RadixThemes" + (
             component.tag or component.__class__.__name__
         )
-        # value = props.get("value")
-        # if value is not None and component.alias == "RadixThemesSelect.Root":
-        #     lv = LiteralVar.create(value)
-        #     print(repr(lv))
-        #     print(f"Warning: Value {value} is not used in {component.alias}.")
         return component
 
     @staticmethod

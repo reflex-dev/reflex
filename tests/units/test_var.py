@@ -1495,8 +1495,6 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
         )
         eval(f"operand1_var {operator} operand2_var")
         eval(f"operand2_var {operator} operand1_var")
-        # operand1_var.operation(op=operator, other=operand2_var)
-        # operand1_var.operation(op=operator, other=operand2_var, flip=True)
 
 
 @pytest.mark.parametrize(
@@ -1773,11 +1771,9 @@ def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List
         print(f"testing {operator} on {str(operand1_var)} and {str(operand2_var)}")
         with pytest.raises(TypeError):
             print(eval(f"operand1_var {operator} operand2_var"))
-            # operand1_var.operation(op=operator, other=operand2_var)
 
         with pytest.raises(TypeError):
             print(eval(f"operand2_var {operator} operand1_var"))
-            # operand1_var.operation(op=operator, other=operand2_var, flip=True)
 
 
 @pytest.mark.parametrize(

@@ -51,27 +51,6 @@ class GridColumnIcons(Enum):
     VideoUri = "video_uri"
 
 
-# @serializer
-# def serialize_gridcolumn_icon(icon: GridColumnIcons) -> str:
-#     """Serialize grid column icon.
-
-#     Args:
-#         icon: the Icon to serialize.
-
-#     Returns:
-#         The serialized value.
-#     """
-#     return "prefix" + str(icon)
-
-
-# class DataEditorColumn(Base):
-#     """Column."""
-
-#     title: str
-#     id: Optional[str] = None
-#     type_: str = "str"
-
-
 class DataEditorTheme(Base):
     """The theme for the DataEditor component."""
 
@@ -229,7 +208,7 @@ class DataEditor(NoSSRComponent):
     header_height: Var[int]
 
     # Additional header icons:
-    # header_icons: Var[Any] # (TODO: must be a map of name: svg)
+    # header_icons: Var[Any] # (TODO: must be a map of name: svg) #noqa: ERA001
 
     # The maximum width a column can be automatically sized to.
     max_column_auto_width: Var[int]

@@ -196,12 +196,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
     elif isinstance(value, str):
         ev = eval(value, type_hint_globals)
         if rx_types.is_optional(ev):
-            # hints = {
-            #     _get_type_hint(arg, type_hint_globals, is_optional=False)
-            #     for arg in ev.__args__
-            # }
             return _get_type_hint(ev, type_hint_globals, is_optional=False)
-            # return f"Optional[{', '.join(hints)}]"
 
         if rx_types.is_union(ev):
             res = [

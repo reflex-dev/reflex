@@ -965,7 +965,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
             def _submit_work(fn, *args, **kwargs):
                 f = executor.submit(fn, *args, **kwargs)
-                # f = executor.apipe(fn, *args, **kwargs)
                 result_futures.append(f)
 
             # Compile the pre-compiled pages.
