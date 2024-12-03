@@ -349,13 +349,14 @@ class EventSpec(EventActionsMixin):
 
         # Construct the payload.
         values = []
-        for arg in args:
-            try:
-                values.append(LiteralVar.create(arg))
-            except TypeError as e:
-                raise EventHandlerTypeError(
-                    f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
-                ) from e
+        arg = None
+        try:
+            for arg in args:
+                values.append(LiteralVar.create(value=arg))  # noqa: PERF401
+        except TypeError as e:
+            raise EventHandlerTypeError(
+                f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
+            ) from e
         new_payload = tuple(zip(fn_args, values))
         return self.with_args(self.args + new_payload)
 
