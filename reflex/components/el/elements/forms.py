@@ -570,6 +570,9 @@ class Textarea(BaseHTML):
     # Visible width of the text control, in average character widths
     cols: Var[Union[str, int, bool]]
 
+    # The default value of the textarea when initially rendered
+    default_value: Var[str]
+
     # Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted
     dirname: Var[Union[str, int, bool]]
 
