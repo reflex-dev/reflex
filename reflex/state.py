@@ -1899,36 +1899,33 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if include_backend or not self.computed_vars[cvar]._backend
         )
 
-    # TODO: just return full name? cache?
     @classmethod
-    def _potentially_dirty_substates(cls) -> set[Type[BaseState]]:
+    def _potentially_dirty_substates(cls) -> set[str]:
         """Determine substates which could be affected by dirty vars in this state.
 
         Returns:
-            Set of State classes that may need to be fetched to recalc computed vars.
+            Set of State full names that may need to be fetched to recalc computed vars.
         """
         # _always_dirty_substates need to be fetched to recalc computed vars.
         fetch_substates = set(
-            cls.get_class_substate((cls.get_name(), *substate_name.split(".")))
+            f"{cls.get_full_name()}.{substate_name}"
             for substate_name in cls._always_dirty_substates
         )
         for dependent_substates in cls._substate_var_dependencies.values():
             fetch_substates.update(
                 set(
-                    cls.get_class_substate((cls.get_name(), *substate_name.split(".")))
+                    f"{cls.get_full_name()}.{substate_name}"
                     for substate_name in dependent_substates
                 )
             )
         return fetch_substates
 
-    # TODO: just return full name? cache?
-    # this only needs to be computed once, and only for the root state?
     @classmethod
-    def _recursive_potentially_dirty_substates(cls) -> set[Type[BaseState]]:
+    def _recursive_potentially_dirty_substates(cls) -> set[str]:
         """Recursively determine substates which could be affected by dirty vars in this state.
 
         Returns:
-            Set of State classes that may need to be fetched to recalc computed vars.
+            Set of full state names that may need to be fetched to recalc computed vars.
         """
         fetch_substates = cls._potentially_dirty_substates()
         for substate_cls in cls.get_substates():
@@ -3285,12 +3282,7 @@ class StateManagerRedis(StateManager):
             walk_state_path = walk_state_path.rpartition(".")[0]
             state_tokens.add(walk_state_path)
 
-        state_tokens.update(
-            {
-                substate.get_full_name()
-                for substate in self.state._recursive_potentially_dirty_substates()
-            }
-        )
+        state_tokens.update(self.state._recursive_potentially_dirty_substates())
         if get_substates:
             state_tokens.update(
                 {
