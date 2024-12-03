@@ -941,7 +941,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         raise ValueError(f"Invalid path: {cls.get_full_name()=} {path=}")
 
     @classmethod
-    # @functools.lru_cache()
     def get_all_substate_classes(cls) -> set[Type[BaseState]]:
         """Get all substate classes of the state.
 
