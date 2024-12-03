@@ -291,13 +291,15 @@ class Upload(MemoizationLeaf):
             format.to_camel_case(key): value for key, value in upload_props.items()
         }
 
-        use_dropzone_arguments = {
-            "onDrop": event_var,
-            **upload_props,
-        }
+        use_dropzone_arguments = Var.create(
+            {
+                "onDrop": event_var,
+                **upload_props,
+            }
+        )
 
         left_side = f"const {{getRootProps: {root_props_unique_name}, getInputProps: {input_props_unique_name}}} "
-        right_side = f"useDropzone({Var.create(use_dropzone_arguments)!s})"
+        right_side = f"useDropzone({use_dropzone_arguments!s})"
 
         var_data = VarData.merge(
             VarData(
@@ -305,6 +307,7 @@ class Upload(MemoizationLeaf):
                 hooks={Hooks.EVENTS: None},
             ),
             event_var._get_all_var_data(),
+            use_dropzone_arguments._get_all_var_data(),
             VarData(
                 hooks={
                     callback_str: None,
