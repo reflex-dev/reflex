@@ -3349,11 +3349,12 @@ class StateManagerRedis(StateManager):
             The values.
         """
         d = {}
-        for state in await self.redis.hmget(name=name, keys=keys):  # type: ignore
+        for redis_state in await self.redis.hmget(name=name, keys=keys):  # type: ignore
             key = keys.pop(0)
-            if state is not None:
+            state = None
+            if redis_state is not None:
                 with contextlib.suppress(StateSchemaMismatchError):
-                    state = BaseState._deserialize(data=state)
+                    state = BaseState._deserialize(data=redis_state)
             if state is None:
                 state_cls = self.state.get_class_substate(key)
                 state = state_cls(
