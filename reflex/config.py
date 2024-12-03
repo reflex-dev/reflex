@@ -858,7 +858,7 @@ def get_config(reload: bool = False) -> Config:
     with _config_lock:
         sys_path = sys.path.copy()
         sys.path.clear()
-        sys.path.append(os.getcwd())
+        sys.path.append(str(Path.cwd()))
         try:
             # Try to import the module with only the current directory in the path.
             return _get_config()

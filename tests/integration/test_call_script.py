@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Generator
 
 import pytest
@@ -186,8 +187,7 @@ def CallScript():
             self.reset()
 
     app = rx.App(state=rx.State)
-    with open("assets/external.js", "w") as f:
-        f.write(external_scripts)
+    Path("assets/external.js").write_text(external_scripts)
 
     @app.add_page
     def index():
