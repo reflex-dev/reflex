@@ -242,13 +242,8 @@ class ContextMenuCheckBoxItem(RadixThemesComponent):
     # Whether the checkbox is disabled.
     disabled: Var[bool]
     
-    # Event handler for when the checkbox state changes.
+    # Fired when the checkbox state changes.
     on_check_change: EventHandler[passthrough_event_spec(bool)]
-    
-    def toggle_state(self):
-        """Toggle the checked state dynamically."""
-        if self.checked is not None:
-            self.checked.set(not self.checked.get())
 
 class ContextMenu(ComponentNamespace):
     """Menu representing a set of actions, displayed at the origin of a pointer right-click or long-press."""
@@ -262,6 +257,5 @@ class ContextMenu(ComponentNamespace):
     item = staticmethod(ContextMenuItem.create)
     separator = staticmethod(ContextMenuSeparator.create)
     checkbox_item = staticmethod(ContextMenuCheckBoxItem.create)
-
 
 context_menu = ContextMenu()
