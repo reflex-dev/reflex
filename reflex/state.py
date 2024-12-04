@@ -536,11 +536,17 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             **new_backend_vars,
         }
 
+        from reflex.vars.base import Field
+
         # Set the base and computed vars.
         cls.base_vars = {
             f.name: get_var_for_field(cls, f)
             for f in cls.get_fields().values()
             if f.name not in cls.get_skip_vars()
+            and (
+                not get_config().state_explicit_vars
+                or get_origin(f.outer_type_) is Field
+            )
         }
         cls.computed_vars = {
             v._js_expr: v._replace(merge_var_data=VarData.from_state(cls))
