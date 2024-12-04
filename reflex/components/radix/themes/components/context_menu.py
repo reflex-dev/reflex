@@ -25,11 +25,6 @@ LiteralStickyType = Literal[
     "always",
 ]
 
-LiteralCheckboxSize = Literal["1", "2", "3"]
-
-LiteralCheckboxVariant = Literal["classic", "surface", "soft"]
-
-
 class ContextMenuRoot(RadixThemesComponent):
     """Menu representing a set of actions, displayed at the origin of a pointer right-click or long-press."""
 
