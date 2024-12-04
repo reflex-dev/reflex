@@ -5,7 +5,11 @@ from typing import Dict, List, Literal, Union
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
-from reflex.vars.base import Var
+from reflex.vars.base import LiteralVar, Var
+from reflex.components.component import Component
+from reflex.components.radix.themes.typography.text import Text
+from reflex.components.radix.themes.layout.flex import Flex
+from .checkbox import HighLevelCheckbox
 
 from ..base import LiteralAccentColor, RadixThemesComponent
 
@@ -24,6 +28,9 @@ LiteralStickyType = Literal[
     "always",
 ]
 
+LiteralCheckboxSize = Literal["1", "2", "3"]
+
+LiteralCheckboxVariant = Literal["classic", "surface", "soft"]
 
 class ContextMenuRoot(RadixThemesComponent):
     """Menu representing a set of actions, displayed at the origin of a pointer right-click or long-press."""
@@ -231,22 +238,26 @@ class ContextMenuSeparator(RadixThemesComponent):
 
     tag = "ContextMenu.Separator"
 
-class ContextMenuCheckBoxItem(RadixThemesComponent):
-    """The component that contains the context menu checkbox items."""
+class ContextMenuCheckbox(RadixThemesComponent):
+    """The component that contains the checkbox."""
     
-    tag = "ContextMenu.CheckboxItem"
+    tag = "ContextMenu.Checkbox"
     
-    # Whether the checkbox is checked.
-    checked: Var[bool] 
-    
-    # Whether the checkbox is disabled.
-    disabled: Var[bool]
-    
-    # Fired when the checkbox state changes.
-    on_check_change: EventHandler[passthrough_event_spec(bool)]
+    @classmethod
+    def create(cls, text: Var[str] = LiteralVar.create(""), **props) -> Component:
+        """Create a checkbox with a label.
+
+        Args:
+            text: The text of the label.
+            **props: Additional properties to apply to the checkbox item.
+
+        Returns:
+            The checkbox component with a label.
+        """
+        return HighLevelCheckbox.create(text=text, **props)
 
 class ContextMenu(ComponentNamespace):
-    """Menu representing a set of actions, displayed at the origin of a pointer right-click or long-press."""
+    """Menu representing a set of actions, diplayed at the origin of a pointer right-click or long-press."""
 
     root = staticmethod(ContextMenuRoot.create)
     trigger = staticmethod(ContextMenuTrigger.create)
@@ -256,6 +267,6 @@ class ContextMenu(ComponentNamespace):
     sub_content = staticmethod(ContextMenuSubContent.create)
     item = staticmethod(ContextMenuItem.create)
     separator = staticmethod(ContextMenuSeparator.create)
-    checkbox_item = staticmethod(ContextMenuCheckBoxItem.create)
+    checkbox = staticmethod(ContextMenuCheckbox.create)
 
 context_menu = ContextMenu()
