@@ -340,7 +340,7 @@ def login(loglevel: constants.LogLevel = typer.Option(config.loglevel)):
 
 
 @cli.command()
-def logoutv2(
+def logout(
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
