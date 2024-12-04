@@ -434,7 +434,7 @@ def makemigrations(
 
 
 @cli.command()
-def deployv2(
+def deploy(
     app_name: str = typer.Option(
         config.app_name,
         "--app-name",
