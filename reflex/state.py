@@ -43,7 +43,7 @@ from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
 from reflex import event
-from reflex.config import EnvironmentVariables, PerformanceMode, get_config
+from reflex.config import PerformanceMode, get_config
 from reflex.istate.data import RouterData
 from reflex.istate.storage import ClientStorageBase
 from reflex.model import Model
@@ -979,7 +979,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 f'Found var "{prop._js_expr}" with type {prop._var_type}.'
             )
         cls._set_var(prop)
-        if EnvironmentVariables.REFLEX_AUTO_CREATE_SETTERS.get():
+        if get_config().state_auto_setters:
             cls._create_setter(prop)
         cls._set_default_value(prop)
 
