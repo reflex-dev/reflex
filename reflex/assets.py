@@ -46,7 +46,7 @@ def asset(
 
     Raises:
         FileNotFoundError: If the file does not exist.
-        ValueError: If subfolder is provided for local assets.
+        ValueError: If subfolder is provided for local assets or the module is not found.
 
     Returns:
         The relative URL to the asset.
@@ -69,7 +69,8 @@ def asset(
     frame = inspect.stack()[_stack_level]
     calling_file = frame.filename
     module = inspect.getmodule(frame[0])
-    assert module is not None
+    if module is None:
+        raise ValueError(f"Module {frame[0]} not found.")
 
     external = constants.Dirs.EXTERNAL_APP_ASSETS
     src_file_shared = Path(calling_file).parent / path
