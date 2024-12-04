@@ -487,7 +487,7 @@ def deploy(
 ):
     """Deploy the app to the Reflex hosting service."""
     from reflex_cli.v2 import cli as hosting_cli
-    from reflex_cli.v2.utils import dependency
+    from reflex_cli.utils import dependency
 
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
