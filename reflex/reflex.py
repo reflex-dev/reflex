@@ -10,7 +10,6 @@ from typing import List, Optional
 import typer
 import typer.core
 from reflex_cli.deployments import deployments_cli
-from reflex_cli.utils import dependency
 from reflex_cli.v2.deployments import check_version, hosting_cli
 
 from reflex import constants
