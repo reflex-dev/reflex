@@ -538,14 +538,9 @@ def deploy(
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
 cli.add_typer(script_cli, name="script", help="Subcommands running helper scripts.")
 cli.add_typer(
-    deployments_cli,
-    name="deployments",
-    help="Subcommands for managing the Deployments.",
-)
-cli.add_typer(
     hosting_cli,
-    name="apps",
-    help="Subcommands for managing the Deployments.",
+    name="cloud",
+    help="Subcommands for managing the reflex cloud.",
 )
 cli.add_typer(
     custom_components_cli,
