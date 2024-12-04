@@ -7,8 +7,6 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import LiteralVar, Var
 from reflex.components.component import Component
-from reflex.components.radix.themes.typography.text import Text
-from reflex.components.radix.themes.layout.flex import Flex
 from .checkbox import HighLevelCheckbox
 
 from ..base import LiteralAccentColor, RadixThemesComponent
@@ -243,7 +241,6 @@ class ContextMenuCheckbox(RadixThemesComponent):
     
     tag = "ContextMenu.Checkbox"
     
-    @classmethod
     def create(cls, text: Var[str] = LiteralVar.create(""), **props) -> Component:
         """Create a checkbox with a label.
 
@@ -254,7 +251,7 @@ class ContextMenuCheckbox(RadixThemesComponent):
         Returns:
             The checkbox component with a label.
         """
-        return HighLevelCheckbox.create(text=text, **props)
+        return HighLevelCheckbox.create(cls, **props)
 
 class ContextMenu(ComponentNamespace):
     """Menu representing a set of actions, diplayed at the origin of a pointer right-click or long-press."""
