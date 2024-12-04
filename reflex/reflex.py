@@ -665,6 +665,8 @@ def deployv2(
 
     # Set the log level.
     console.set_log_level(loglevel)
+    # make sure user is logged in.
+    hosting_cli.login()
 
     # Only check requirements if interactive.
     # There is user interaction for requirements update.
