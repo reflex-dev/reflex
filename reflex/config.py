@@ -564,6 +564,9 @@ class EnvironmentVariables:
     # The maximum size of the reflex state in kilobytes.
     REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
 
+    # Whether to automatically create setters for state base vars
+    REFLEX_AUTO_CREATE_SETTERS: EnvVar[bool] = env_var(True)
+
 
 environment = EnvironmentVariables()
 
