@@ -25,6 +25,7 @@ LiteralStickyType = Literal[
     "always",
 ]
 
+
 class ContextMenuRoot(RadixThemesComponent):
     """Menu representing a set of actions, displayed at the origin of a pointer right-click or long-press."""
 
