@@ -1258,8 +1258,12 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
     """
 
     def get_release_by_tag(tag: str) -> dict | None:
-        response = net.get(constants.Reflex.RELEASES_URL)
-        response.raise_for_status()
+        try:
+            response = net.get(constants.Reflex.RELEASES_URL)
+            response.raise_for_status()
+        except Exception:
+            response = net.get(constants.Reflex.RELEASES_URL_FALLBACK)
+            response.raise_for_status()
         releases = response.json()
         for release in releases:
             if release["tag_name"] == f"v{tag}":
