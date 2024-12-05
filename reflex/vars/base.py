@@ -2164,6 +2164,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         Args:
             instance: the state instance that needs to recompute the value.
         """
+        print(f"Marking {self._js_expr} as dirty")
         with contextlib.suppress(AttributeError):
             delattr(instance, self._cache_attr)
 

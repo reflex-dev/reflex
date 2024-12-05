@@ -1288,6 +1288,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return
 
         if name in self.backend_vars:
+            if self._backend_vars.get(name) == value:
+                return
+            print(f"Setting {name} to {value}.")
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
@@ -1323,6 +1326,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 )
 
         # Set the attribute.
+        current_value = getattr(self, name, None)
+        if current_value == value:
+            return
         super().__setattr__(name, value)
 
         # Add the var to the dirty list.
