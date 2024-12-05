@@ -2206,13 +2206,13 @@ reflex = ">=0.6.0a"
 
 [[package]]
 name = "reflex-hosting-cli"
-version = "0.1.17"
+version = "0.1.27"
 description = "Reflex Hosting CLI"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "reflex_hosting_cli-0.1.17-py3-none-any.whl", hash = "sha256:cf1accec70745557a40125ffa2a8929e6ef9834808afe78e4f4a01933ac0cb67"},
-    {file = "reflex_hosting_cli-0.1.17.tar.gz", hash = "sha256:263d8dc217eb24d4198ac0bcfd710980bd7795d9818a5e522027657f94752710"},
+    {file = "reflex_hosting_cli-0.1.27-py3-none-any.whl", hash = "sha256:126689115fc8ec7d3fa25ce4b8f45e8c3da9df0a644e8a3f1a006494c9cd5f41"},
+    {file = "reflex_hosting_cli-0.1.27.tar.gz", hash = "sha256:0afa0abb80000484939619d3dcb5c4c18bb6d8669248ba8f8cd8c33bea970f29"},
 ]
 
 [package.dependencies]
@@ -2224,7 +2224,7 @@ pydantic = ">=1.10.2,<3.0"
 python-dateutil = ">=2.8.1"
 rich = ">=13.0.0,<14.0"
 tabulate = ">=0.9.0,<0.10.0"
-typer = ">=0.4.2,<1"
+typer = ">=0.15.0,<1"
 websockets = ">=10.4"
 
 [[package]]
@@ -2722,13 +2722,13 @@ urllib3 = ">=1.26.0"
 
 [[package]]
 name = "typer"
-version = "0.13.1"
+version = "0.15.1"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "typer-0.13.1-py3-none-any.whl", hash = "sha256:5b59580fd925e89463a29d363e0a43245ec02765bde9fb77d39e5d0f29dd7157"},
-    {file = "typer-0.13.1.tar.gz", hash = "sha256:9d444cb96cc268ce6f8b94e13b4335084cef4c079998a9f4851a90229a3bd25c"},
+    {file = "typer-0.15.1-py3-none-any.whl", hash = "sha256:7994fb7b8155b64d3402518560648446072864beefd44aa2dc36972a5972e847"},
+    {file = "typer-0.15.1.tar.gz", hash = "sha256:a0588c0a7fa68a1978a069818657778f86abe6ff5ea6abf472f940a08bfe4f0a"},
 ]
 
 [package.dependencies]
@@ -3041,4 +3041,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "8000601d48cfc1b10d0ae18c6046cc59a50cb6c45e6d3ef4775a3203769f2154"
+content-hash = "0f3c94b3db5b5207847bda34df3bf6c3c2efe1fd517af3e8a280d9eae6d560fb"
