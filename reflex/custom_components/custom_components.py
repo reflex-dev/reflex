@@ -827,11 +827,11 @@ def _collect_details_for_gallery():
     Raises:
         Exit: If pyproject.toml file is ill-formed or the request to the backend services fails.
     """
-    from reflex.reflex import _login
+    from reflex_cli.utils import hosting
 
     console.rule("[bold]Authentication with Reflex Services")
     console.print("First let's log in to Reflex backend services.")
-    access_token = _login()
+    access_token, _ = hosting.authenticated_token()
 
     console.rule("[bold]Custom Component Information")
     params = {}
