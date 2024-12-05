@@ -9,7 +9,6 @@ from typing import List, Optional
 
 import typer
 import typer.core
-from reflex_cli.deployments import deployments_cli
 from reflex_cli.v2.deployments import check_version, hosting_cli
 
 from reflex import constants
@@ -336,7 +335,9 @@ def login(loglevel: constants.LogLevel = typer.Option(config.loglevel)):
 
     check_version()
 
-    hosting_cli.login()
+    validated_info = hosting_cli.login()
+    if validated_info is not None:
+        telemetry.send("loginv2", user_uuid=validated_info.get("user_id"))
 
 
 @cli.command()
@@ -350,7 +351,7 @@ def logout(
 
     check_version()
 
-    logout(loglevel)
+    logout(loglevel)  # type: ignore
 
 
 db_cli = typer.Typer()
@@ -486,8 +487,8 @@ def deploy(
     ),
 ):
     """Deploy the app to the Reflex hosting service."""
-    from reflex_cli.v2 import cli as hosting_cli
     from reflex_cli.utils import dependency
+    from reflex_cli.v2 import cli as hosting_cli
 
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
@@ -496,6 +497,8 @@ def deploy(
 
     # Set the log level.
     console.set_log_level(loglevel)
+    # make sure user is logged in.
+    hosting_cli.login()
 
     # Only check requirements if interactive.
     # There is user interaction for requirements update.
@@ -529,7 +532,7 @@ def deploy(
         envfile=envfile,
         hostname=hostname,
         interactive=interactive,
-        loglevel=type(loglevel).INFO,
+        loglevel=type(loglevel).INFO,  # type: ignore
         token=token,
         project=project,
     )
