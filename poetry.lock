@@ -2206,13 +2206,13 @@ reflex = ">=0.6.0a"
 
 [[package]]
 name = "reflex-hosting-cli"
-version = "0.1.28"
+version = "0.1.29"
 description = "Reflex Hosting CLI"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "reflex_hosting_cli-0.1.28-py3-none-any.whl", hash = "sha256:68c60e8b2cb8856d0b8eac1f06410d8fe192944884f54bfad47adf5db62bd395"},
-    {file = "reflex_hosting_cli-0.1.28.tar.gz", hash = "sha256:9b4fb771396ffeba857ada0207fdfd78e2e40b8e35a5486b89cb07f1aa416867"},
+    {file = "reflex_hosting_cli-0.1.29-py3-none-any.whl", hash = "sha256:fcbdad829762287f32397cd8a5d46536ab0db396e7fdb8a23c7f9343d7dc8de0"},
+    {file = "reflex_hosting_cli-0.1.29.tar.gz", hash = "sha256:7b421fec6936c26549c8c65c9dda34fc042eaaec79b238dce6b9c020f848563b"},
 ]
 
 [package.dependencies]
@@ -3041,4 +3041,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "8d908859a32731cfe8ec4d0d855f5643a2d8150f4a2a27b3dd8d4485877862ea"
+content-hash = "3810e99ff4d09952e62d88b2c26651a0d8e0ffe4007bc3274c2fb83b68243951"
