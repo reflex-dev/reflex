@@ -1288,8 +1288,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return
 
         if name in self.backend_vars:
-            if self._backend_vars.get(name) == value:
-                return
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
@@ -1325,9 +1323,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 )
 
         # Set the attribute.
-        current_value = getattr(self, name, None)
-        if current_value == value:
-            return
         super().__setattr__(name, value)
 
         # Add the var to the dirty list.
@@ -1831,8 +1826,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for cvar in self._dirty_computed_vars(from_vars=calc_vars):
                 actual_var = self.computed_vars.get(cvar)
                 if actual_var is not None:
-                    changed = actual_var.mark_dirty(instance=self)
-                    if not changed:
+                    if actual_var.has_changed(instance=self):
+                        actual_var.mark_dirty(instance=self)
+                    else:
+                        # var has not changed, do not mark as dirty
                         continue
                 self.dirty_vars.add(cvar)
                 dirty_vars.add(cvar)

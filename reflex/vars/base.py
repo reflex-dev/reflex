@@ -2158,22 +2158,27 @@ class ComputedVar(Var[RETURN_TYPE]):
             self_is_top_of_stack = False
         return d
 
-    def mark_dirty(self, instance: BaseState) -> bool:
+    def mark_dirty(self, instance: BaseState) -> None:
         """Mark this ComputedVar as dirty.
+
+        Args:
+            instance: the state instance that needs to recompute the value.
+        """
+        with contextlib.suppress(AttributeError):
+            delattr(instance, self._cache_attr)
+
+    def has_changed(self, instance: BaseState) -> bool:
+        """Check if the ComputedVar value has changed.
 
         Args:
             instance: the state instance that needs to recompute the value.
 
         Returns:
-            True if the value was marked dirty (has changed), False otherwise.
+            True if the value has changed, False otherwise.
         """
         cached_value = getattr(instance, self._cache_attr, None)
         new_value = self.fget(instance)
-        if cached_value == new_value:
-            return False
-        with contextlib.suppress(AttributeError):
-            delattr(instance, self._cache_attr)
-        return True
+        return cached_value != new_value
 
     def _determine_var_type(self) -> Type:
         """Get the type of the var.
