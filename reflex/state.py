@@ -1290,7 +1290,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if name in self.backend_vars:
             if self._backend_vars.get(name) == value:
                 return
-            print(f"Setting {name} to {value}.")
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
@@ -1830,11 +1829,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         while dirty_vars:
             calc_vars, dirty_vars = dirty_vars, set()
             for cvar in self._dirty_computed_vars(from_vars=calc_vars):
-                self.dirty_vars.add(cvar)
-                dirty_vars.add(cvar)
                 actual_var = self.computed_vars.get(cvar)
                 if actual_var is not None:
-                    actual_var.mark_dirty(instance=self)
+                    changed = actual_var.mark_dirty(instance=self)
+                    if not changed:
+                        continue
+                self.dirty_vars.add(cvar)
+                dirty_vars.add(cvar)
 
     def _expired_computed_vars(self) -> set[str]:
         """Determine ComputedVars that need to be recalculated based on the expiration time.
