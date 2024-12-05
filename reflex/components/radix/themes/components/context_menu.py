@@ -2,10 +2,10 @@
 
 from typing import Dict, List, Literal, Union
 
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
-from reflex.vars.base import LiteralVar, Var
+from reflex.vars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
 from .checkbox import HighLevelCheckbox
@@ -233,26 +233,13 @@ class ContextMenuSeparator(RadixThemesComponent):
     tag = "ContextMenu.Separator"
 
 
-class ContextMenuCheckbox(RadixThemesComponent):
+class ContextMenuCheckbox(HighLevelCheckbox):
     """The component that contains the checkbox."""
 
     tag = "ContextMenu.Checkbox"
 
-    def create(cls, text: Var[str] = LiteralVar.create(""), **props) -> Component:
-        """Create a checkbox with a label.
-
-        Args:
-            text: The text of the label.
-            **props: Additional properties to apply to the checkbox item.
-
-        Returns:
-            The checkbox component with a label.
-        """
-        return HighLevelCheckbox.create(cls, **props)
-
-
 class ContextMenu(ComponentNamespace):
-    """Menu representing a set of actions, diplayed at the origin of a pointer right-click or long-press."""
+    """Menu representing a set of actions, displayed at the origin of a pointer right-click or long-press."""
 
     root = staticmethod(ContextMenuRoot.create)
     trigger = staticmethod(ContextMenuTrigger.create)
