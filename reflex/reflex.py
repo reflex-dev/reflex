@@ -398,15 +398,10 @@ def logoutv2(
     ),
 ):
     """Log out of access to Reflex hosting service."""
-    from reflex_cli.v2.utils import hosting
+    from reflex_cli.v2 import cli
 
     check_version()
-
-    console.set_log_level(loglevel)
-
-    hosting.log_out_on_browser()
-    console.debug("Deleting access token from config locally")
-    hosting.delete_token_from_config()
+    cli.logout()
 
 
 db_cli = typer.Typer()
@@ -672,6 +667,8 @@ def deployv2(
 
     # Set the log level.
     console.set_log_level(loglevel)
+    # make sure user is logged in.
+    hosting_cli.login()
 
     # Only check requirements if interactive.
     # There is user interaction for requirements update.
