@@ -1413,7 +1413,7 @@ def validate_and_create_app_using_remote_template(app_name, template, templates)
         authenticated_token = hosting.authenticated_token()
         if not authenticated_token or not authenticated_token[0]:
             console.print(
-                f"Please use `reflex loginv2` to access the '{template}' template."
+                f"Please use `reflex login` to access the '{template}' template."
             )
             raise typer.Exit(3)
 
