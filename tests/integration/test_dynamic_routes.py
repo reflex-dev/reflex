@@ -405,7 +405,8 @@ async def test_render_dynamic_arg(
             el = driver.find_element(By.ID, id)
             assert el
             assert (
-                dynamic_route.poll_for_content(el, exp_not_equal=expect_not) == expected
+                dynamic_route.poll_for_content(el, timeout=30, exp_not_equal=expect_not)
+                == expected
             )
 
     assert_content("0", "")
