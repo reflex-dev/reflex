@@ -89,6 +89,11 @@ def DynamicRoute():
     @rx.page(route="/arg/[arg_str]")
     def arg() -> rx.Component:
         return rx.vstack(
+            rx.input(
+                value=DynamicState.router.session.client_token,
+                read_only=True,
+                id="token",
+            ),
             rx.data_list.root(
                 rx.data_list.item(
                     rx.data_list.label("rx.State.arg_str (dynamic)"),
@@ -373,12 +378,14 @@ async def test_on_load_navigate_non_dynamic(
 async def test_render_dynamic_arg(
     dynamic_route: AppHarness,
     driver: WebDriver,
+    token: str,
 ):
     """Assert that dynamic arg var is rendered correctly in different contexts.
 
     Args:
         dynamic_route: harness for DynamicRoute app.
         driver: WebDriver instance.
+        token: The token visible in the driver browser.
     """
     assert dynamic_route.app_instance is not None
     with poll_for_navigation(driver):
