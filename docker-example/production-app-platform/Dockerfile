@@ -52,7 +52,7 @@ FROM python:3.11-slim
 WORKDIR /app
 RUN adduser --disabled-password --home /app reflex
 COPY --chown=reflex --from=init /app /app
-# Install libpq-dev for psycopg2 (skip if not using postgres).
+# Install libpq-dev for psycopg (skip if not using postgres).
 RUN apt-get update -y && apt-get install -y libpq-dev && rm -rf /var/lib/apt/lists/*
 USER reflex
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1

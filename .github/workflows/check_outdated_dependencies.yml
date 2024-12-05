@@ -58,7 +58,7 @@ jobs:
       working-directory: ./reflex-web
       run: poetry run uv pip install -r requirements.txt
     - name: Install additional dependencies for DB access
-      run: poetry run uv pip install psycopg2-binary
+      run: poetry run uv pip install psycopg
     - name: Init Website for reflex-web
       working-directory: ./reflex-web
       run: poetry run reflex init

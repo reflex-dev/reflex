@@ -28,7 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ['3.9.18', '3.10.13', '3.11.5', '3.12.0']
+        python-version: ['3.9.18', '3.10.13', '3.11.5', '3.12.0', '3.13.0']
         # Windows is a bit behind on Python version availability in Github
         exclude:
           - os: windows-latest
@@ -88,7 +88,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.9.18', '3.10.13', '3.11.5', '3.12.0']
+        python-version: ['3.9.18', '3.10.13', '3.11.5', '3.12.0', '3.13.0']
     runs-on: macos-12
     steps:
       - uses: actions/checkout@v4
