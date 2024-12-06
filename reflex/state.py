@@ -1331,7 +1331,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self._mark_dirty()
             return
 
-        # For now, handle router_data updates as a special case if using redis.
+        # For now, handle router_data updates as a special case
         if name == constants.ROUTER_DATA and self.parent_state is None:
             self.dirty_vars.add(name)
             self._mark_dirty()
