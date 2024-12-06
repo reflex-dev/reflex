@@ -21,6 +21,8 @@ from reflex.config import environment, get_config
 from reflex.utils import console
 from reflex.utils.compat import sqlmodel, sqlmodel_field_has_primary_key
 
+_ENGINE: sqlalchemy.engine.Engine | None = None
+
 
 def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     """Get the database engine.
@@ -34,6 +36,10 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     Raises:
         ValueError: If the database url is None.
     """
+    global _ENGINE
+    if _ENGINE is not None:
+        return _ENGINE
+
     conf = get_config()
     url = url or conf.db_url
     if url is None:
@@ -46,7 +52,9 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     echo_db_query = environment.SQLALCHEMY_ECHO.get()
     # Needed for the admin dash on sqlite.
     connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-    return sqlmodel.create_engine(url, echo=echo_db_query, connect_args=connect_args)
+
+    _ENGINE = sqlmodel.create_engine(url, echo=echo_db_query, connect_args=connect_args)
+    return _ENGINE
 
 
 async def get_db_status() -> bool:
