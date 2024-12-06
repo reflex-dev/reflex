@@ -37,10 +37,10 @@ def get_engine_args(url: str | None = None) -> dict[str, Any]:
         The database engine arguments as a dict.
     """
     kwargs: dict[str, Any] = dict(
+        # Print the SQL queries if the log level is INFO or lower.
+        echo=environment.SQLALCHEMY_ECHO.get(),
         # Check connections before returning them.
         pool_pre_ping=environment.SQLALCHEMY_POOL_PRE_PING.get(),
-        # Print the SQL queries if the log level is INFO or lower.
-        echo_db_query=environment.SQLALCHEMY_ECHO.get(),
     )
     conf = get_config()
     url = url or conf.db_url
