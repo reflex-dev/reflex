@@ -43,7 +43,7 @@ def ColorToggleApp():
     import reflex as rx
     from reflex.style import color_mode, resolved_color_mode, set_color_mode
 
-    app = rx.App()
+    app = rx.App(theme=rx.theme(appearance="light"))
 
     @app.add_page
     def index():
@@ -173,19 +173,26 @@ def test_appearance_color_toggle(color_toggle_app: AppHarness, page: Page):
     assert color_toggle_app.frontend_url is not None
     page.goto(color_toggle_app.frontend_url)
 
-    expect(page.get_by_text("system")).to_be_visible()
-
+    # Radio buttons locators.
     radio_system = page.get_by_role("radio").nth(0)
     radio_light = page.get_by_role("radio").nth(1)
     radio_dark = page.get_by_role("radio").nth(2)
 
+    # Text locators to check.
     current_color_mode = page.locator("id=current_color_mode")
     resolved_color_mode = page.locator("id=resolved_color_mode")
     color_mode_cond = page.locator("id=color_mode_cond")
     root_body = page.locator('div[data-is-root-theme="true"]')
 
+    # Background colors.
     dark_background = "rgb(17, 17, 19)"  # value based on dark native appearance, can change depending on the browser
     light_background = "rgb(255, 255, 255)"
+
+    # check initial state
+    expect(current_color_mode).to_have_text("light")
+    expect(resolved_color_mode).to_have_text("light")
+    expect(color_mode_cond).to_have_text("LightMode")
+    expect(root_body).to_have_css("background-color", light_background)
 
     # click dark mode
     radio_dark.click()
