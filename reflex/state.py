@@ -1332,9 +1332,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return
 
         # For now, handle router_data updates as a special case if using redis.
-        # TODO: it would be better to check for the state manager instead of redis url
-        # however get_state_manager causes a circular import
-        if name == constants.ROUTER_DATA and get_config().redis_url:
+        if name == constants.ROUTER_DATA and self.parent_state is None:
             self.dirty_vars.add(name)
             self._mark_dirty()
 
