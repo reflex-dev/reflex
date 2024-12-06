@@ -1329,6 +1329,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if name in self.vars or name in self._computed_var_dependencies:
             self.dirty_vars.add(name)
             self._mark_dirty()
+            return
+
+        # For now, handle router_data updates as a special case if using redis.
+        if name == constants.ROUTER_DATA and get_config().redis_url:
+            self.dirty_vars.add(name)
+            self._mark_dirty()
 
     def reset(self):
         """Reset all the base vars to their default values."""
