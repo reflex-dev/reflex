@@ -27,6 +27,29 @@ _ASYNC_ENGINE: dict[str, sqlalchemy.engine.Engine] = {}
 _AsyncSessionLocal: dict[str | None, sqlalchemy.orm.sessionmaker] = {}
 
 
+def get_engine_args(url: str | None = None) -> dict[str, Any]:
+    """Get the database engine arguments.
+
+    Args:
+        url: The database url.
+
+    Returns:
+        The database engine arguments as a dict.
+    """
+    kwargs: dict[str, Any] = dict(
+        # Check connections before returning them.
+        pool_pre_ping=environment.SQLALCHEMY_POOL_PRE_PING.get(),
+        # Print the SQL queries if the log level is INFO or lower.
+        echo_db_query=environment.SQLALCHEMY_ECHO.get(),
+    )
+    conf = get_config()
+    url = url or conf.db_url
+    if url is not None and url.startswith("sqlite"):
+        # Needed for the admin dash on sqlite.
+        kwargs["connect_args"] = {"check_same_thread": False}
+    return kwargs
+
+
 def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     """Get the database engine.
 
@@ -52,13 +75,9 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
         console.warn(
             "Database is not initialized, run [bold]reflex db init[/bold] first."
         )
-    # Print the SQL queries if the log level is INFO or lower.
-    echo_db_query = environment.SQLALCHEMY_ECHO.get()
-    # Needed for the admin dash on sqlite.
-    connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-
     _ENGINE[url] = sqlmodel.create_engine(
-        url, echo=echo_db_query, connect_args=connect_args
+        url,
+        **get_engine_args(url),
     )
     return _ENGINE[url]
 
@@ -88,12 +107,9 @@ def get_async_engine(url: str | None) -> sqlalchemy.engine.Engine:
         console.warn(
             "Database is not initialized, run [bold]reflex db init[/bold] first."
         )
-    # Print the SQL queries if the log level is INFO or lower.
-    echo_db_query = environment.SQLALCHEMY_ECHO.get()
-    # Needed for the admin dash on sqlite.
-    connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
     _ASYNC_ENGINE[url] = sqlmodel.create_engine(
-        url, echo=echo_db_query, connect_args=connect_args
+        url,
+        **get_engine_args(url),
     )
     return _ASYNC_ENGINE[url]
 

@@ -512,6 +512,9 @@ class EnvironmentVariables:
     # Whether to print the SQL queries if the log level is INFO or lower.
     SQLALCHEMY_ECHO: EnvVar[bool] = env_var(False)
 
+    # Whether to check db connections before using them.
+    SQLALCHEMY_POOL_PRE_PING: EnvVar[bool] = env_var(True)
+
     # Whether to ignore the redis config error. Some redis servers only allow out-of-band configuration.
     REFLEX_IGNORE_REDIS_CONFIG_ERROR: EnvVar[bool] = env_var(False)
 
