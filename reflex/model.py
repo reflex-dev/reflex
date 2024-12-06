@@ -39,14 +39,15 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     Raises:
         ValueError: If the database url is None.
     """
-    global _ENGINE
-    if url in _ENGINE:
-        return _ENGINE[url]
-
     conf = get_config()
     url = url or conf.db_url
     if url is None:
         raise ValueError("No database url configured")
+
+    global _ENGINE
+    if url in _ENGINE:
+        return _ENGINE[url]
+
     if not environment.ALEMBIC_CONFIG.get().exists():
         console.warn(
             "Database is not initialized, run [bold]reflex db init[/bold] first."
@@ -74,14 +75,15 @@ def get_async_engine(url: str | None) -> sqlalchemy.engine.Engine:
     Raises:
         ValueError: If the async database url is None.
     """
-    global _ASYNC_ENGINE
-    if url in _ASYNC_ENGINE:
-        return _ASYNC_ENGINE[url]
-
     conf = get_config()
     url = url or conf.async_db_url
     if url is None:
         raise ValueError("No async database url configured")
+
+    global _ASYNC_ENGINE
+    if url in _ASYNC_ENGINE:
+        return _ASYNC_ENGINE[url]
+
     if not environment.ALEMBIC_CONFIG.get().exists():
         console.warn(
             "Database is not initialized, run [bold]reflex db init[/bold] first."
