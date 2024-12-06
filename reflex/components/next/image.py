@@ -9,6 +9,7 @@ from reflex.vars.base import Var
 from .base import NextComponent
 
 
+# implementing image call back technique here
 class Image(NextComponent):
     """Display an image."""
 
