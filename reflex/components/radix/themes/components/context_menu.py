@@ -238,6 +238,7 @@ class ContextMenuCheckbox(HighLevelCheckbox):
 
     tag = "ContextMenu.Checkbox"
 
+
 class ContextMenu(ComponentNamespace):
     """Menu representing a set of actions, displayed at the origin of a pointer right-click or long-press."""
 
