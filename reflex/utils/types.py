@@ -122,6 +122,7 @@ RESERVED_BACKEND_VAR_NAMES = {
     "_abc_impl",
     "_backend_vars",
     "_was_touched",
+    "_changed_computed_vars",
 }
 
 if sys.version_info >= (3, 11):

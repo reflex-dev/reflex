@@ -370,6 +370,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     # A special event handler for setting base vars.
     setvar: ClassVar[EventHandler]
 
+    # Track if computed vars have changed since last serialization
+    _changed_computed_vars: Set[str] = set()
+
     def __init__(
         self,
         parent_state: BaseState | None = None,
@@ -1825,14 +1828,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             calc_vars, dirty_vars = dirty_vars, set()
             for cvar in self._dirty_computed_vars(from_vars=calc_vars):
                 actual_var = self.computed_vars.get(cvar)
-                if actual_var is not None:
-                    if actual_var.has_changed(instance=self):
-                        actual_var.mark_dirty(instance=self)
-                    else:
-                        # var has not changed, do not mark as dirty
-                        continue
-                self.dirty_vars.add(cvar)
-                dirty_vars.add(cvar)
+                assert actual_var is not None
+                if actual_var.has_changed(instance=self):
+                    actual_var.mark_dirty(instance=self)
+                    self.dirty_vars.add(cvar)
+                    dirty_vars.add(cvar)
 
     def _expired_computed_vars(self) -> set[str]:
         """Determine ComputedVars that need to be recalculated based on the expiration time.
@@ -2112,6 +2112,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         state["__dict__"]["parent_state"] = None
         state["__dict__"]["substates"] = {}
         state["__dict__"].pop("_was_touched", None)
+        state["__dict__"].pop("_changed_computed_vars", None)
         # Remove all inherited vars.
         for inherited_var_name in self.inherited_vars:
             state["__dict__"].pop(inherited_var_name, None)
