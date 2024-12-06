@@ -129,7 +129,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
 
     cpuinfo = get_cpu_info()
 
-    additional_keys = ["template", "context", "detail"]
+    additional_keys = ["template", "context", "detail", "user_uuid"]
     additional_fields = {
         key: value for key in additional_keys if (value := kwargs.get(key)) is not None
     }
