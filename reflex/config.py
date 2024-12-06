@@ -625,7 +625,7 @@ class Config(Base):
     db_url: Optional[str] = "sqlite:///reflex.db"
 
     # The async database url used by rx.Model.
-    async_db_url: Optional[str] = "sqlite+aiosqlite:///reflex.db"
+    async_db_url: Optional[str] = None
 
     # The redis url
     redis_url: Optional[str] = None
