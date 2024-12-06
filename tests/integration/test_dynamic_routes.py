@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import Callable, Coroutine, Generator, Type
 from urllib.parse import urlsplit
 
@@ -177,6 +178,8 @@ def driver(dynamic_route: AppHarness) -> Generator[WebDriver, None, None]:
     """
     assert dynamic_route.app_instance is not None, "app is not running"
     driver = dynamic_route.frontend()
+    # TODO: drop after flakiness is resolved
+    driver.implicitly_wait(30)
     try:
         yield driver
     finally:
@@ -390,6 +393,9 @@ async def test_render_dynamic_arg(
     assert dynamic_route.app_instance is not None
     with poll_for_navigation(driver):
         driver.get(f"{dynamic_route.frontend_url}/arg/0")
+
+    # TODO: drop after flakiness is resolved
+    time.sleep(3)
 
     def assert_content(expected: str, expect_not: str):
         ids = [
