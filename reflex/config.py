@@ -571,6 +571,10 @@ class EnvironmentVariables:
 environment = EnvironmentVariables()
 
 
+# These vars are not logged because they may contain sensitive information.
+_sensitive_env_vars = {"DB_URL", "ASYNC_DB_URL"}
+
+
 class Config(Base):
     """The config defines runtime settings for the app.
 
@@ -754,7 +758,7 @@ class Config(Base):
 
             # If the env var is set, override the config value.
             if env_var is not None:
-                if key.upper() != "DB_URL":
+                if key.upper() not in _sensitive_env_vars:
                     console.info(
                         f"Overriding config value {key} with env var {key.upper()}={env_var}",
                         dedupe=True,
