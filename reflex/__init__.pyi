@@ -186,6 +186,7 @@ from .istate.wrappers import get_state as get_state
 from .middleware import Middleware as Middleware
 from .middleware import middleware as middleware
 from .model import Model as Model
+from .model import asession as asession
 from .model import session as session
 from .page import page as page
 from .state import ComponentState as ComponentState
