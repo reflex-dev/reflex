@@ -179,7 +179,7 @@ def driver(dynamic_route: AppHarness) -> Generator[WebDriver, None, None]:
     assert dynamic_route.app_instance is not None, "app is not running"
     driver = dynamic_route.frontend()
     # TODO: drop after flakiness is resolved
-    driver.implicitly_wait = 30
+    driver.implicitly_wait(30)
     try:
         yield driver
     finally:
