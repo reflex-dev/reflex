@@ -10,7 +10,7 @@ class CustomComponents(SimpleNamespace):
     """Constants for the custom components."""
 
     # The name of the custom components source directory.
-    SRC_DIR = "custom_components"
+    SRC_DIR = Path("custom_components")
     # The name of the custom components pyproject.toml file.
     PYPROJECT_TOML = Path("pyproject.toml")
     # The name of the custom components package README file.

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import atexit
-import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -298,7 +297,7 @@ def export(
         True, "--frontend-only", help="Export only frontend.", show_default=False
     ),
     zip_dest_dir: str = typer.Option(
-        os.getcwd(),
+        str(Path.cwd()),
         help="The directory to export the zip files to.",
         show_default=False,
     ),
