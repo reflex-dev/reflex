@@ -155,6 +155,10 @@ class StateTooLargeError(ReflexError):
     """Raised when the state is too large to be serialized."""
 
 
+class StateSerializationError(ReflexError):
+    """Raised when the state cannot be serialized."""
+
+
 class SystemPackageMissingError(ReflexError):
     """Raised when a system package is missing."""
 
