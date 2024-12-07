@@ -8,6 +8,7 @@ from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spe
 from reflex.vars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
+from .checkbox import HighLevelCheckbox
 
 LiteralDirType = Literal["ltr", "rtl"]
 
@@ -232,6 +233,12 @@ class ContextMenuSeparator(RadixThemesComponent):
     tag = "ContextMenu.Separator"
 
 
+class ContextMenuCheckbox(HighLevelCheckbox):
+    """The component that contains the checkbox."""
+
+    tag = "ContextMenu.Checkbox"
+
+
 class ContextMenu(ComponentNamespace):
     """Menu representing a set of actions, displayed at the origin of a pointer right-click or long-press."""
 
@@ -243,6 +250,7 @@ class ContextMenu(ComponentNamespace):
     sub_content = staticmethod(ContextMenuSubContent.create)
     item = staticmethod(ContextMenuItem.create)
     separator = staticmethod(ContextMenuSeparator.create)
+    checkbox = staticmethod(ContextMenuCheckbox.create)
 
 
 context_menu = ContextMenu()
