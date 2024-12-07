@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 from reflex import constants
+from reflex.config import get_config
 from reflex.utils.exec import is_backend_only
 
 
@@ -52,6 +53,10 @@ def asset(
         The relative URL to the asset.
     """
     assets = constants.Dirs.APP_ASSETS
+    config = get_config()
+    frontend_path = config.frontend_path
+    if not frontend_path.endswith("/"):
+        frontend_path += "/"
     backend_only = is_backend_only()
 
     # Local asset handling
@@ -62,7 +67,7 @@ def asset(
             raise ValueError("Subfolder is not supported for local assets.")
         if not backend_only and not src_file_local.exists():
             raise FileNotFoundError(f"File not found: {src_file_local}")
-        return f"/{path}"
+        return f"{frontend_path}{path}"
 
     # Shared asset handling
     # Determine the file by which the asset is exposed.
@@ -92,4 +97,4 @@ def asset(
         ):
             dst_file.symlink_to(src_file_shared)
 
-    return f"/{external}/{subfolder}/{path}"
+    return f"{frontend_path}{external}/{subfolder}/{path}"
