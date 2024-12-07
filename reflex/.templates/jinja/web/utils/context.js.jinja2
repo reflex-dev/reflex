@@ -23,6 +23,8 @@ export const clientStorage = {{ client_storage|json_dumps }}
 export const clientStorage = {}
 {% endif %}
 
+export const main_state_name = "{{const.main_state_name}}"
+export const update_vars_internal = "{{const.update_vars_internal}}"
 {% if state_name %}
 export const state_name = "{{state_name}}"
 

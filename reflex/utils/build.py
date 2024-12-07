@@ -44,7 +44,7 @@ def generate_sitemap_config(deploy_url: str, export=False):
     config = json.dumps(config)
 
     sitemap = prerequisites.get_web_dir() / constants.Next.SITEMAP_CONFIG_FILE
-    sitemap.write_text(templates.SITEMAP_CONFIG(config=config))
+    sitemap.write_text(templates.sitemap_config()(config=config))
 
 
 def _zip(

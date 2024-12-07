@@ -253,6 +253,11 @@ def test_env_var():
         INTERNAL: EnvVar[str] = env_var("default", internal=True)
         BOOLEAN: EnvVar[bool] = env_var(False)
 
+        # default_factory with other env_var as fallback
+        BLUBB_OR_BLA: EnvVar[str] = env_var(
+            default_factory=lambda: TestEnv.BLUBB.getenv() or "bla"
+        )
+
     assert TestEnv.BLUBB.get() == "default"
     assert TestEnv.BLUBB.name == "BLUBB"
     TestEnv.BLUBB.set("new")
@@ -280,3 +285,15 @@ def test_env_var():
     assert TestEnv.BOOLEAN.get() is False
     TestEnv.BOOLEAN.set(None)
     assert "BOOLEAN" not in os.environ
+
+    assert TestEnv.BLUBB_OR_BLA.get() == "bla"
+    TestEnv.BLUBB.set("new")
+    assert TestEnv.BLUBB_OR_BLA.get() == "new"
+    TestEnv.BLUBB.set(None)
+    assert TestEnv.BLUBB_OR_BLA.get() == "bla"
+    TestEnv.BLUBB_OR_BLA.set("test")
+    assert TestEnv.BLUBB_OR_BLA.get() == "test"
+    TestEnv.BLUBB.set("other")
+    assert TestEnv.BLUBB_OR_BLA.get() == "test"
+    TestEnv.BLUBB_OR_BLA.set(None)
+    TestEnv.BLUBB.set(None)

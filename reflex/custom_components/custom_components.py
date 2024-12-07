@@ -65,7 +65,7 @@ def _create_package_config(module_name: str, package_name: str):
 
     pyproject = Path(CustomComponents.PYPROJECT_TOML)
     pyproject.write_text(
-        templates.CUSTOM_COMPONENTS_PYPROJECT_TOML.render(
+        templates.custom_components_pyproject_toml().render(
             module_name=module_name,
             package_name=package_name,
             reflex_version=constants.Reflex.VERSION,
@@ -106,7 +106,7 @@ def _create_readme(module_name: str, package_name: str):
 
     readme = Path(CustomComponents.PACKAGE_README)
     readme.write_text(
-        templates.CUSTOM_COMPONENTS_README.render(
+        templates.custom_components_readme().render(
             module_name=module_name,
             package_name=package_name,
         )
@@ -129,14 +129,14 @@ def _write_source_and_init_py(
 
     module_path = custom_component_src_dir / f"{module_name}.py"
     module_path.write_text(
-        templates.CUSTOM_COMPONENTS_SOURCE.render(
+        templates.custom_components_source().render(
             component_class_name=component_class_name, module_name=module_name
         )
     )
 
     init_path = custom_component_src_dir / CustomComponents.INIT_FILE
     init_path.write_text(
-        templates.CUSTOM_COMPONENTS_INIT_FILE.render(module_name=module_name)
+        templates.custom_components_init.render(module_name=module_name)
     )
 
 
@@ -164,7 +164,7 @@ def _populate_demo_app(name_variants: NameVariants):
         # This source file is rendered using jinja template file.
         with open(f"{demo_app_name}/{demo_app_name}.py", "w") as f:
             f.write(
-                templates.CUSTOM_COMPONENTS_DEMO_APP.render(
+                templates.custom_components_demo_app().render(
                     custom_component_module_dir=name_variants.custom_component_module_dir,
                     module_name=name_variants.module_name,
                 )

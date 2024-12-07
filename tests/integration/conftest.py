@@ -3,10 +3,13 @@
 import os
 import re
 from pathlib import Path
+from typing import Generator, Type
 
 import pytest
 
+import reflex.constants
 from reflex.config import environment
+from reflex.constants.base import Env
 from reflex.testing import AppHarness, AppHarnessProd
 
 DISPLAY = None
@@ -64,15 +67,30 @@ def pytest_exception_interact(node, call, report):
 
 
 @pytest.fixture(
-    scope="session", params=[AppHarness, AppHarnessProd], ids=["dev", "prod"]
+    scope="session",
+    params=[
+        AppHarness,
+        AppHarnessProd,
+    ],
+    ids=[
+        reflex.constants.Env.DEV.value,
+        reflex.constants.Env.PROD.value,
+    ],
 )
-def app_harness_env(request):
+def app_harness_env(
+    request: pytest.FixtureRequest,
+) -> Generator[Type[AppHarness], None, None]:
     """Parametrize the AppHarness class to use for the test, either dev or prod.
 
     Args:
         request: The pytest fixture request object.
 
-    Returns:
+    Yields:
         The AppHarness class to use for the test.
     """
-    return request.param
+    harness: Type[AppHarness] = request.param
+    if issubclass(harness, AppHarnessProd):
+        environment.REFLEX_ENV_MODE.set(Env.PROD)
+    yield harness
+    if isinstance(harness, AppHarnessProd):
+        environment.REFLEX_ENV_MODE.set(None)
