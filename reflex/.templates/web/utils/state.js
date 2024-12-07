@@ -300,7 +300,7 @@ export const applyEvent = async (event, socket) => {
   if (socket) {
     socket.emit(
       "event",
-      JSON.stringify(event, (k, v) => (v === undefined ? null : v))
+      event,
     );
     return true;
   }
@@ -407,6 +407,8 @@ export const connect = async (
     transports: transports,
     autoUnref: false,
   });
+  // Ensure undefined fields in events are sent as null instead of removed
+  socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v)
 
   function checkVisibility() {
     if (document.visibilityState === "visible") {
@@ -444,7 +446,7 @@ export const connect = async (
 
   // On each received message, queue the updates and events.
   socket.current.on("event", async (message) => {
-    const update = JSON5.parse(message);
+    const update = message;
     for (const substate in update.delta) {
       dispatch[substate](update.delta[substate]);
     }
