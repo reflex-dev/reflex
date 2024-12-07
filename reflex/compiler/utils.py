@@ -495,7 +495,7 @@ def empty_dir(path: str | Path, keep_files: list[str] | None = None):
             path_ops.rm(element)
 
 
-def is_valid_url(url) -> bool:
+def is_valid_url(url: str) -> bool:
     """Check if a url is valid.
 
     Args:
