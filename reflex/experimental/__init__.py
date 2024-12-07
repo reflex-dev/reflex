@@ -11,6 +11,7 @@ from ..utils.console import warn
 from . import hooks as hooks
 from .assets import asset as asset
 from .client_state import ClientStateVar as ClientStateVar
+from .hybrid_property import hybrid_property as hybrid_property
 from .layout import layout as layout
 from .misc import run_in_thread as run_in_thread
 
@@ -69,4 +70,5 @@ _x = ExperimentalNamespace(
     PropsBase=PropsBase,
     run_in_thread=run_in_thread,
     code_block=code_block,
+    hybrid_property=hybrid_property,
 )
