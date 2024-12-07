@@ -3135,9 +3135,16 @@ def test_potentially_dirty_substates():
         def bar(self) -> str:
             return ""
 
-    assert RxState._potentially_dirty_substates() == {State}
-    assert State._potentially_dirty_substates() == {C1}
+    assert RxState._potentially_dirty_substates() == {State.get_full_name()}
+    assert State._potentially_dirty_substates() == {C1.get_full_name()}
     assert C1._potentially_dirty_substates() == set()
+
+    assert RxState._recursive_potentially_dirty_substates() == {
+        State.get_full_name(),
+        C1.get_full_name(),
+    }
+    assert State._recursive_potentially_dirty_substates() == {C1.get_full_name()}
+    assert C1._recursive_potentially_dirty_substates() == set()
 
 
 def test_router_var_dep() -> None:
@@ -3159,7 +3166,9 @@ def test_router_var_dep() -> None:
     State._init_var_dependency_dicts()
 
     assert foo._deps(objclass=RouterVarDepState) == {"router"}
-    assert RouterVarParentState._potentially_dirty_substates() == {RouterVarDepState}
+    assert RouterVarParentState._potentially_dirty_substates() == {
+        RouterVarDepState.get_full_name()
+    }
     assert RouterVarParentState._substate_var_dependencies == {
         "router": {RouterVarDepState.get_name()}
     }
