@@ -219,9 +219,8 @@ def get_install_package_manager(on_failure_return_none: bool = False) -> str | N
     Returns:
         The path to the package manager.
     """
-    if (
-        constants.IS_WINDOWS
-        and not is_windows_bun_supported()
+    if constants.IS_WINDOWS and (
+        not is_windows_bun_supported()
         or windows_check_onedrive_in_path()
         or windows_npm_escape_hatch()
     ):
@@ -834,7 +833,7 @@ def install_bun():
     """Install bun onto the user's system."""
     win_supported = is_windows_bun_supported()
     one_drive_in_path = windows_check_onedrive_in_path()
-    if constants.IS_WINDOWS and not win_supported or one_drive_in_path:
+    if constants.IS_WINDOWS and (not win_supported or one_drive_in_path):
         if not win_supported:
             console.warn(
                 "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
@@ -926,7 +925,7 @@ def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
 
 @cached_procedure(
     cache_file=str(get_web_dir() / "reflex.install_frontend_packages.cached"),
-    payload_fn=lambda p, c: f"{repr(sorted(list(p)))},{c.json()}",
+    payload_fn=lambda p, c: f"{sorted(list(p))!r},{c.json()}",
 )
 def install_frontend_packages(packages: set[str], config: Config):
     """Installs the base and custom frontend packages.
@@ -946,9 +945,12 @@ def install_frontend_packages(packages: set[str], config: Config):
         get_package_manager(on_failure_return_none=True)
         if (
             not constants.IS_WINDOWS
-            or constants.IS_WINDOWS
-            and is_windows_bun_supported()
-            and not windows_check_onedrive_in_path()
+            or (
+                constants.IS_WINDOWS
+                and (
+                    is_windows_bun_supported() and not windows_check_onedrive_in_path()
+                )
+            )
         )
         else None
     )

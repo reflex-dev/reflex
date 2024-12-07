@@ -103,8 +103,8 @@ class Bare(Component):
     def _render(self) -> Tag:
         if isinstance(self.contents, Var):
             if isinstance(self.contents, (BooleanVar, ObjectVar)):
-                return Tagless(contents=f"{{{str(self.contents.to_string())}}}")
-            return Tagless(contents=f"{{{str(self.contents)}}}")
+                return Tagless(contents=f"{{{self.contents.to_string()!s}}}")
+            return Tagless(contents=f"{{{self.contents!s}}}")
         return Tagless(contents=str(self.contents))
 
     def _get_vars(self, include_children: bool = False) -> Iterator[Var]:

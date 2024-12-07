@@ -33,9 +33,9 @@ def test_html_fstring_create():
 
     assert (
         str(html.dangerouslySetInnerHTML)  # type: ignore
-        == f'({{ ["__html"] : ("<p>Hello "+{str(TestState.myvar)}+"!</p>") }})'
+        == f'({{ ["__html"] : ("<p>Hello "+{TestState.myvar!s}+"!</p>") }})'
     )
     assert (
         str(html)
-        == f'<div className={{"rx-Html"}} dangerouslySetInnerHTML={{{str(html.dangerouslySetInnerHTML)}}}/>'  # type: ignore
+        == f'<div className={{"rx-Html"}} dangerouslySetInnerHTML={{{html.dangerouslySetInnerHTML!s}}}/>'  # type: ignore
     )

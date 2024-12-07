@@ -51,7 +51,7 @@ class Clipboard(Fragment):
         return super().create(*children, **props)
 
     def _exclude_props(self) -> list[str]:
-        return super()._exclude_props() + ["on_paste", "on_paste_event_actions"]
+        return [*super()._exclude_props(), "on_paste", "on_paste_event_actions"]
 
     def _render(self) -> Tag:
         tag = super()._render()
