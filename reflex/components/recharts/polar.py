@@ -136,7 +136,7 @@ class Radar(Recharts):
     # Fill color. Default: rx.color("accent", 3)
     fill: Var[str] = LiteralVar.create(Color("accent", 3))
 
-    # opacity. Default: 0.6
+    # The opacity to fill the chart. Default: 0.6
     fill_opacity: Var[float] = LiteralVar.create(0.6)
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered. Default: "rect"

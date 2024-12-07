@@ -97,7 +97,6 @@ StateIterVar = Union[list, set, tuple]
 if TYPE_CHECKING:
     from reflex.vars.base import Var
 
-    # ArgsSpec = Callable[[Var], list[Var]]
     ArgsSpec = (
         Callable[[], Sequence[Var]]
         | Callable[[Var], Sequence[Var]]

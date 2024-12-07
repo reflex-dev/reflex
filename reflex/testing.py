@@ -206,7 +206,7 @@ class AppHarness:
             The full state name
         """
         # NOTE: using State.get_name() somehow causes trouble here
-        # path = [State.get_name()] + [self.get_state_name(p) for p in path]
+        # path = [State.get_name()] + [self.get_state_name(p) for p in path] # noqa: ERA001
         path = ["reflex___state____state"] + [self.get_state_name(p) for p in path]
         return ".".join(path)
 

@@ -125,7 +125,7 @@ class CommonMarginProps(Component):
 
         Args:
             *children: The children of the component.
-            m: Margin: "0" - "9"
+            m: Margin global: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"
             mt: Margin top: "0" - "9"
@@ -297,7 +297,7 @@ class CommonPaddingProps(Component):
 
         Args:
             *children: The children of the component.
-            p: Padding: "0" - "9"
+            p: Padding global: "0" - "9"
             px: Padding horizontal: "0" - "9"
             py: Padding vertical: "0" - "9"
             pt: Padding top: "0" - "9"

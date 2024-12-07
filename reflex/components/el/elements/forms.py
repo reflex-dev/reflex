@@ -250,7 +250,6 @@ class Form(BaseHTML):
                     _js_expr=f"getRefValue({str(ref_var)})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
-        # print(repr(form_refs))
         return form_refs
 
     def _get_vars(self, include_children: bool = True) -> Iterator[Var]:

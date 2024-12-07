@@ -188,7 +188,7 @@ class Slider(ComponentNamespace):
         else:
             children = [
                 track,
-                #     Foreach.create(props.get("value"), lambda e: SliderThumb.create()),  # foreach doesn't render Thumbs properly
+                #     Foreach.create(props.get("value"), lambda e: SliderThumb.create()),  # foreach doesn't render Thumbs properly # noqa: ERA001
             ]
 
         return SliderRoot.create(*children, **props)

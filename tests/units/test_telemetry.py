@@ -34,12 +34,6 @@ def test_disable():
 @pytest.mark.parametrize("event", ["init", "reinit", "run-dev", "run-prod", "export"])
 def test_send(mocker, event):
     httpx_post_mock = mocker.patch("httpx.post")
-    # mocker.patch(
-    #     "builtins.open",
-    #     mocker.mock_open(
-    #         read_data='{"project_hash": "78285505863498957834586115958872998605"}'
-    #     ),
-    # )
 
     # Mock the read_text method of Path
     pathlib_path_read_text_mock = mocker.patch(
