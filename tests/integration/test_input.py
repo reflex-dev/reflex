@@ -11,10 +11,15 @@ from reflex.testing import AppHarness
 
 def FullyControlledInput():
     """App using a fully controlled input with implicit debounce wrapper."""
+    from typing import Optional
+
     import reflex as rx
 
     class State(rx.State):
-        text: str = "initial"
+        text: Optional[str] = "initial"
+
+        def set_none(self):
+            self.text = None
 
     app = rx.App(state=rx.State)
 
@@ -48,6 +53,7 @@ def FullyControlledInput():
             rx.button(
                 "CLEAR", on_click=rx.set_value("on_change_input", ""), id="clear"
             ),
+            rx.button("SET NONE", on_click=State.set_none, id="set_none"),
         )
 
 
@@ -186,3 +192,8 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     # assert backend_state.text == ""
     # assert debounce_input.get_attribute("value") == ""
     # assert value_input.get_attribute("value") == ""
+
+    set_none_button = driver.find_element(By.ID, "set_none")
+    set_none_button.click()
+    assert await get_state_text() is None
+    assert AppHarness._poll_for(lambda: debounce_input.get_attribute("value") == "")
