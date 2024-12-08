@@ -2204,21 +2204,14 @@ class ComputedVar(Var[RETURN_TYPE]):
 
         has_cache = hasattr(instance, self._cache_attr)
 
-        if self.already_computed(instance):
-            if has_cache:
-                return getattr(instance, self._cache_attr)
-            else:
-                assert not isinstance(self._initial_value, types.Unset)
-                return self._initial_value
+        if self.already_computed(instance) and has_cache:
+            return getattr(instance, self._cache_attr)
 
         cache_value = getattr(instance, self._cache_attr, None)
         instance._ready_computed_vars.add(self._js_expr)
         setattr(instance, self._last_updated_attr, datetime.datetime.now())
         new_value = self.fget(instance)
-        # NOTE: does not store initial_value in redis to save space/time
-        if (has_cache and cache_value != new_value) or (
-            not has_cache and new_value != self._initial_value
-        ):
+        if cache_value != new_value:
             instance._changed_computed_vars.add(self._js_expr)
             instance._was_touched = True
             setattr(instance, self._cache_attr, new_value)
