@@ -2023,26 +2023,6 @@ class ComputedVar(Var[RETURN_TYPE]):
             )
 
         value = self.get_value(instance)
-        # if not self._cache:
-        #     value = self.fget(instance)
-        # else:
-        #     # handle caching
-        #     if not self.has_changed(instance):
-        #         # Get the new value.
-        #         new_value = self.fget(instance)
-        #         # Get the current cached value.
-        #         cached_value = getattr(instance, self._cache_attr, None)
-        #         # Check if the new value is different from the cached value.
-        #         if new_value == cached_value:
-        #             return new_value
-        #         instance._changed_computed_vars.add(self._js_expr)
-        #         # Set cache attr on state instance.
-        #         setattr(instance, self._cache_attr, new_value)
-        #         # Ensure the computed var gets serialized to redis.
-        #         instance._was_touched = True
-        #         # Set the last updated timestamp on the state instance.
-        #         setattr(instance, self._last_updated_attr, datetime.datetime.now())
-        #     value = getattr(instance, self._cache_attr)
 
         if not _isinstance(value, self._var_type):
             console.deprecate(
