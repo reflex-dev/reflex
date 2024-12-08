@@ -3437,6 +3437,33 @@ def test_fallback_pickle():
     assert len(pk3) == 0
 
 
+def test_pickle():
+    class PickleState(BaseState):
+        pass
+
+    state = PickleState(_reflex_internal_init=True)  # type: ignore
+
+    # test computed var cache is persisted
+    setattr(state, "__cvcached", 1)
+    state = PickleState._deserialize(state._serialize())
+    assert getattr(state, "__cvcached", None) == 1
+
+    # test ready computed vars set is not persisted
+    state._ready_computed_vars = {"foo"}
+    state = PickleState._deserialize(state._serialize())
+    assert not state._ready_computed_vars
+
+    # test that changed computed vars set is not persisted
+    state._changed_computed_vars = {"foo"}
+    state = PickleState._deserialize(state._serialize())
+    assert not state._changed_computed_vars
+
+    # test was_touched is not persisted
+    state._was_touched = True
+    state = PickleState._deserialize(state._serialize())
+    assert not state._was_touched
+
+
 def test_typed_state() -> None:
     class TypedState(rx.State):
         field: rx.Field[str] = rx.field("")

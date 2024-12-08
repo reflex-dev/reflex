@@ -2022,26 +2022,27 @@ class ComputedVar(Var[RETURN_TYPE]):
                 existing_var=self,
             )
 
-        if not self._cache:
-            value = self.fget(instance)
-        else:
-            # handle caching
-            if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
-                # Get the new value.
-                new_value = self.fget(instance)
-                # Get the current cached value.
-                cached_value = getattr(instance, self._cache_attr, None)
-                # Check if the new value is different from the cached value.
-                if new_value == cached_value:
-                    return new_value
-                instance._changed_computed_vars.add(self._js_expr)
-                # Set cache attr on state instance.
-                setattr(instance, self._cache_attr, new_value)
-                # Ensure the computed var gets serialized to redis.
-                instance._was_touched = True
-                # Set the last updated timestamp on the state instance.
-                setattr(instance, self._last_updated_attr, datetime.datetime.now())
-            value = getattr(instance, self._cache_attr)
+        value = self.get_value(instance)
+        # if not self._cache:
+        #     value = self.fget(instance)
+        # else:
+        #     # handle caching
+        #     if not self.has_changed(instance):
+        #         # Get the new value.
+        #         new_value = self.fget(instance)
+        #         # Get the current cached value.
+        #         cached_value = getattr(instance, self._cache_attr, None)
+        #         # Check if the new value is different from the cached value.
+        #         if new_value == cached_value:
+        #             return new_value
+        #         instance._changed_computed_vars.add(self._js_expr)
+        #         # Set cache attr on state instance.
+        #         setattr(instance, self._cache_attr, new_value)
+        #         # Ensure the computed var gets serialized to redis.
+        #         instance._was_touched = True
+        #         # Set the last updated timestamp on the state instance.
+        #         setattr(instance, self._last_updated_attr, datetime.datetime.now())
+        #     value = getattr(instance, self._cache_attr)
 
         if not _isinstance(value, self._var_type):
             console.deprecate(
@@ -2172,8 +2173,56 @@ class ComputedVar(Var[RETURN_TYPE]):
         Args:
             instance: the state instance that needs to recompute the value.
         """
-        with contextlib.suppress(AttributeError):
-            delattr(instance, self._cache_attr)
+        instance._ready_computed_vars.discard(self._js_expr)
+
+    def already_computed(self, instance: BaseState) -> bool:
+        """Check if the ComputedVar has already been computed.
+
+        Args:
+            instance: the state instance that needs to recompute the value.
+
+        Returns:
+            True if the ComputedVar has already been computed, False otherwise.
+        """
+        if self.needs_update(instance):
+            return False
+        return self._js_expr in instance._ready_computed_vars
+
+    def get_value(self, instance: BaseState) -> RETURN_TYPE:
+        """Get the value of the ComputedVar.
+
+        Args:
+            instance: the state instance that needs to recompute the value.
+
+        Returns:
+            The value of the ComputedVar.
+        """
+        if not self._cache:
+            instance._was_touched = True
+            new = self.fget(instance)
+            return new
+
+        has_cache = hasattr(instance, self._cache_attr)
+
+        if self.already_computed(instance):
+            if has_cache:
+                return getattr(instance, self._cache_attr)
+            else:
+                assert not isinstance(self._initial_value, types.Unset)
+                return self._initial_value
+
+        cache_value = getattr(instance, self._cache_attr, None)
+        instance._ready_computed_vars.add(self._js_expr)
+        setattr(instance, self._last_updated_attr, datetime.datetime.now())
+        new_value = self.fget(instance)
+        # NOTE: does not store initial_value in redis to save space/time
+        if (has_cache and cache_value != new_value) or (
+            not has_cache and new_value != self._initial_value
+        ):
+            instance._changed_computed_vars.add(self._js_expr)
+            instance._was_touched = True
+            setattr(instance, self._cache_attr, new_value)
+        return new_value
 
     def has_changed(self, instance: BaseState) -> bool:
         """Check if the ComputedVar value has changed.
@@ -2188,15 +2237,9 @@ class ComputedVar(Var[RETURN_TYPE]):
             return True
         if self._js_expr in instance._changed_computed_vars:
             return True
-        if not hasattr(instance, self._cache_attr):
-            return True
-        cached_value = getattr(instance, self._cache_attr)
-        new_value = self.fget(instance)
-        has_changed = cached_value != new_value
-        if has_changed:
-            instance._changed_computed_vars.add(self._js_expr)
-            setattr(instance, self._cache_attr, new_value)
-        return has_changed
+        if not self.already_computed(instance):
+            self.get_value(instance)
+        return self._js_expr in instance._changed_computed_vars
 
     def _determine_var_type(self) -> Type:
         """Get the type of the var.
