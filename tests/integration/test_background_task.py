@@ -42,6 +42,11 @@ def BackgroundTask():
                     yield State.increment()  # type: ignore
                 await asyncio.sleep(0.005)
 
+        @rx.event(background=True)
+        async def fast_yielding(self):
+            for _ in range(10000):
+                yield State.increment()
+
         @rx.event
         def increment(self):
             self.counter += 1
@@ -168,6 +173,11 @@ def BackgroundTask():
                 "Yield in Async with Self",
                 on_click=State.yield_in_async_with_self,
                 id="yield-in-async-with-self",
+            ),
+            rx.button(
+                "Fast Yielding",
+                on_click=State.fast_yielding,
+                id="fast-yielding",
             ),
             rx.button("Reset", on_click=State.reset_counter, id="reset"),
         )
@@ -375,3 +385,28 @@ def test_yield_in_async_with_self(
 
     yield_in_async_with_self_button.click()
     assert background_task._poll_for(lambda: counter.text == "2", timeout=5)
+
+
+def test_fast_yielding(
+    background_task: AppHarness,
+    driver: WebDriver,
+    token: str,
+) -> None:
+    """Test that fast yielding works as expected.
+
+    Args:
+        background_task: harness for BackgroundTask app.
+        driver: WebDriver instance.
+        token: The token for the connected client.
+    """
+    assert background_task.app_instance is not None
+
+    # get a reference to all buttons
+    fast_yielding_button = driver.find_element(By.ID, "fast-yielding")
+
+    # get a reference to the counter
+    counter = driver.find_element(By.ID, "counter")
+    assert background_task._poll_for(lambda: counter.text == "0", timeout=5)
+
+    fast_yielding_button.click()
+    assert background_task._poll_for(lambda: counter.text == "10000", timeout=50)
