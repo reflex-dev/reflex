@@ -10,18 +10,11 @@ from typing import Literal
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    RadixThemesComponent,
-)
-from .base import (
-    LiteralTextAlign,
-    LiteralTextSize,
-    LiteralTextTrim,
-    LiteralTextWeight,
-)
+from ..base import LiteralAccentColor, RadixThemesComponent
+from .base import LiteralTextAlign, LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 
 LiteralType = Literal[
     "p",
@@ -45,7 +38,7 @@ LiteralType = Literal[
 ]
 
 
-class Text(elements.Span, RadixThemesComponent):
+class Text(elements.Span, RadixThemesComponent, MarkdownComponentMap):
     """A foundational text primitive based on the <span> element."""
 
     tag = "Text"

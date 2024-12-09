@@ -6,9 +6,11 @@
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional, Union, overload
 
+from typing_extensions import TypedDict
+
 from reflex.base import Base
 from reflex.components.component import NoSSRComponent
-from reflex.event import EventType
+from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.utils.serializers import serializer
@@ -76,7 +78,53 @@ class DataEditorTheme(Base):
     text_light: Optional[str]
     text_medium: Optional[str]
 
-def on_edit_spec(pos, data: dict[str, Any]): ...
+class Bounds(TypedDict):
+    x: int
+    y: int
+    width: int
+    height: int
+
+class CompatSelection(TypedDict):
+    items: list
+
+class Rectangle(TypedDict):
+    x: int
+    y: int
+    width: int
+    height: int
+
+class GridSelectionCurrent(TypedDict):
+    cell: tuple[int, int]
+    range: Rectangle
+    rangeStack: list[Rectangle]
+
+class GridSelection(TypedDict):
+    current: Optional[GridSelectionCurrent]
+    columns: CompatSelection
+    rows: CompatSelection
+
+class GroupHeaderClickedEventArgs(TypedDict):
+    kind: str
+    group: str
+    location: tuple[int, int]
+    bounds: Bounds
+    isEdge: bool
+    shiftKey: bool
+    ctrlKey: bool
+    metaKey: bool
+    isTouch: bool
+    localEventX: int
+    localEventY: int
+    button: int
+    buttons: int
+    scrollEdge: tuple[int, int]
+
+class GridCell(TypedDict):
+    span: Optional[List[int]]
+
+class GridColumn(TypedDict):
+    title: str
+    group: Optional[str]
 
 class DataEditor(NoSSRComponent):
     def add_imports(self) -> ImportDict: ...
@@ -92,7 +140,7 @@ class DataEditor(NoSSRComponent):
         ] = None,
         data: Optional[Union[List[List[Any]], Var[List[List[Any]]]]] = None,
         get_cell_content: Optional[Union[Var[str], str]] = None,
-        get_cell_for_selection: Optional[Union[Var[bool], bool]] = None,
+        get_cells_for_selection: Optional[Union[Var[bool], bool]] = None,
         on_paste: Optional[Union[Var[bool], bool]] = None,
         draw_focus_ring: Optional[Union[Var[bool], bool]] = None,
         fixed_shadow_x: Optional[Union[Var[bool], bool]] = None,
@@ -134,38 +182,94 @@ class DataEditor(NoSSRComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[EventType[[]]] = None,
-        on_cell_activated: Optional[EventType] = None,
-        on_cell_clicked: Optional[EventType] = None,
-        on_cell_context_menu: Optional[EventType] = None,
-        on_cell_edited: Optional[EventType] = None,
-        on_click: Optional[EventType[[]]] = None,
-        on_column_resize: Optional[EventType] = None,
-        on_context_menu: Optional[EventType[[]]] = None,
-        on_delete: Optional[EventType] = None,
-        on_double_click: Optional[EventType[[]]] = None,
-        on_finished_editing: Optional[EventType] = None,
-        on_focus: Optional[EventType[[]]] = None,
-        on_group_header_clicked: Optional[EventType] = None,
-        on_group_header_context_menu: Optional[EventType] = None,
-        on_group_header_renamed: Optional[EventType] = None,
-        on_header_clicked: Optional[EventType] = None,
-        on_header_context_menu: Optional[EventType] = None,
-        on_header_menu_click: Optional[EventType] = None,
-        on_item_hovered: Optional[EventType] = None,
-        on_mount: Optional[EventType[[]]] = None,
-        on_mouse_down: Optional[EventType[[]]] = None,
-        on_mouse_enter: Optional[EventType[[]]] = None,
-        on_mouse_leave: Optional[EventType[[]]] = None,
-        on_mouse_move: Optional[EventType[[]]] = None,
-        on_mouse_out: Optional[EventType[[]]] = None,
-        on_mouse_over: Optional[EventType[[]]] = None,
-        on_mouse_up: Optional[EventType[[]]] = None,
-        on_row_appended: Optional[EventType[[]]] = None,
-        on_scroll: Optional[EventType[[]]] = None,
-        on_selection_cleared: Optional[EventType[[]]] = None,
-        on_unmount: Optional[EventType[[]]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_cell_activated: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[tuple[int, int]], BASE_STATE]]
+        ] = None,
+        on_cell_clicked: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[tuple[int, int]], BASE_STATE]]
+        ] = None,
+        on_cell_context_menu: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[tuple[int, int]], BASE_STATE]]
+        ] = None,
+        on_cell_edited: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[tuple[int, int]], BASE_STATE],
+                EventType[[tuple[int, int], GridCell], BASE_STATE],
+            ]
+        ] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_column_resize: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[GridColumn], BASE_STATE],
+                EventType[[GridColumn, int], BASE_STATE],
+            ]
+        ] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_delete: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[GridSelection], BASE_STATE]]
+        ] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_finished_editing: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[Union[GridCell, None]], BASE_STATE],
+                EventType[[Union[GridCell, None], tuple[int, int]], BASE_STATE],
+            ]
+        ] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_group_header_clicked: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[tuple[int, int]], BASE_STATE],
+                EventType[[tuple[int, int], GridCell], BASE_STATE],
+            ]
+        ] = None,
+        on_group_header_context_menu: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[int], BASE_STATE],
+                EventType[[int, GroupHeaderClickedEventArgs], BASE_STATE],
+            ]
+        ] = None,
+        on_group_header_renamed: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[str], BASE_STATE],
+                EventType[[str, str], BASE_STATE],
+            ]
+        ] = None,
+        on_header_clicked: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[tuple[int, int]], BASE_STATE]]
+        ] = None,
+        on_header_context_menu: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[tuple[int, int]], BASE_STATE]]
+        ] = None,
+        on_header_menu_click: Optional[
+            Union[
+                EventType[[], BASE_STATE],
+                EventType[[int], BASE_STATE],
+                EventType[[int, Rectangle], BASE_STATE],
+            ]
+        ] = None,
+        on_item_hovered: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[tuple[int, int]], BASE_STATE]]
+        ] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_row_appended: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_selection_cleared: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "DataEditor":
         """Create the DataEditor component.
@@ -176,7 +280,7 @@ class DataEditor(NoSSRComponent):
             columns: Headers of the columns for the data grid.
             data: The data.
             get_cell_content: The name of the callback used to find the data to display.
-            get_cell_for_selection: Allow selection for copying.
+            get_cells_for_selection: Allow selection for copying.
             on_paste: Allow paste.
             draw_focus_ring: Controls the drawing of the focus ring.
             fixed_shadow_x: Enables or disables the overlay shadow when scrolling horizontally.
@@ -201,6 +305,22 @@ class DataEditor(NoSSRComponent):
             scroll_offset_x: Initial scroll offset on the horizontal axis.
             scroll_offset_y: Initial scroll offset on the vertical axis.
             theme: global theme
+            on_cell_activated: Fired when a cell is activated.
+            on_cell_clicked: Fired when a cell is clicked.
+            on_cell_context_menu: Fired when a cell is right-clicked.
+            on_cell_edited: Fired when a cell is edited.
+            on_group_header_clicked: Fired when a group header is clicked.
+            on_group_header_context_menu: Fired when a group header is right-clicked.
+            on_group_header_renamed: Fired when a group header is renamed.
+            on_header_clicked: Fired when a header is clicked.
+            on_header_context_menu: Fired when a header is right-clicked.
+            on_header_menu_click: Fired when a header menu item is clicked.
+            on_item_hovered: Fired when an item is hovered.
+            on_delete: Fired when a selection is deleted.
+            on_finished_editing: Fired when editing is finished.
+            on_row_appended: Fired when a row is appended.
+            on_selection_cleared: Fired when the selection is cleared.
+            on_column_resize: Fired when a column is resized.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

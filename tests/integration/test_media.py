@@ -84,7 +84,7 @@ def media_app(tmp_path) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path,
-        app_source=MediaApp,  # type: ignore
+        app_source=MediaApp,
     ) as harness:
         yield harness
 

@@ -4,6 +4,7 @@ from reflex.components.core.banner import (
     ConnectionPulser,
     WebsocketTargetURL,
 )
+from reflex.components.radix.themes.base import RadixThemesComponent
 from reflex.components.radix.themes.typography.text import Text
 
 
@@ -12,7 +13,7 @@ def test_websocket_target_url():
     var_data = url._get_all_var_data()
     assert var_data is not None
     assert sorted(tuple((key for key, _ in var_data.imports))) == sorted(
-        ("/utils/state", "/env.json")
+        ("$/utils/state", "$/env.json")
     )
 
 
@@ -22,10 +23,10 @@ def test_connection_banner():
     assert sorted(tuple(_imports)) == sorted(
         (
             "react",
-            "/utils/context",
-            "/utils/state",
-            "@radix-ui/themes@^3.0.0",
-            "/env.json",
+            "$/utils/context",
+            "$/utils/state",
+            RadixThemesComponent().library or "",
+            "$/env.json",
         )
     )
 
@@ -40,10 +41,10 @@ def test_connection_modal():
     assert sorted(tuple(_imports)) == sorted(
         (
             "react",
-            "/utils/context",
-            "/utils/state",
-            "@radix-ui/themes@^3.0.0",
-            "/env.json",
+            "$/utils/context",
+            "$/utils/state",
+            RadixThemesComponent().library or "",
+            "$/env.json",
         )
     )
 

@@ -114,8 +114,8 @@ class Imports(SimpleNamespace):
 
     EVENTS = {
         "react": [ImportVar(tag="useContext")],
-        f"/{Dirs.CONTEXTS_PATH}": [ImportVar(tag="EventLoopContext")],
-        f"/{Dirs.STATE_PATH}": [ImportVar(tag=CompileVars.TO_EVENT)],
+        f"$/{Dirs.CONTEXTS_PATH}": [ImportVar(tag="EventLoopContext")],
+        f"$/{Dirs.STATE_PATH}": [ImportVar(tag=CompileVars.TO_EVENT)],
     }
 
 
@@ -131,16 +131,6 @@ class Hooks(SimpleNamespace):
                     focusRef.current.focus();
                   }
                 })"""
-
-    FRONTEND_ERRORS = f"""
-    const logFrontendError = (error, info) => {{
-        if (process.env.NODE_ENV === "production") {{
-            addEvents([Event("{CompileVars.FRONTEND_EXCEPTION_STATE_FULL}.handle_frontend_exception", {{
-                stack: error.stack,
-            }})])
-        }}
-    }}
-    """
 
 
 class MemoizationDisposition(enum.Enum):

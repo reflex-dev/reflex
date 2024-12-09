@@ -21,7 +21,7 @@ route_not_found: Var = Var(_js_expr=constants.ROUTE_NOT_FOUND)
 class ClientSideRouting(Component):
     """The client-side routing component."""
 
-    library = "/utils/client_side_routing"
+    library = "$/utils/client_side_routing"
     tag = "useClientSideRouting"
 
     def add_hooks(self) -> list[str]:

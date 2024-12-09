@@ -7,13 +7,10 @@ from typing import Any, Dict, List, Literal
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.colors import color
-from reflex.event import EventHandler, identity_event
+from reflex.event import EventHandler, passthrough_event_spec
 from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, RadixThemesComponent
 
 vertical_orientation_css = "&[data-orientation='vertical']"
 
@@ -42,7 +39,7 @@ class TabsRoot(RadixThemesComponent):
     _rename_props = {"onChange": "onValueChange"}
 
     # Fired when the value of the tabs changes.
-    on_change: EventHandler[identity_event(str)]
+    on_change: EventHandler[passthrough_event_spec(str)]
 
     def add_style(self) -> Dict[str, Any] | None:
         """Add style for the component.

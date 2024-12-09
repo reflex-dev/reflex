@@ -1,4 +1,4 @@
-"""Test @rx.background task functionality."""
+"""Test @rx.event(background=True) task functionality."""
 
 from typing import Generator
 
@@ -22,8 +22,7 @@ def BackgroundTask():
         _task_id: int = 0
         iterations: int = 10
 
-        @rx.background
-        @rx.event
+        @rx.event(background=True)
         async def handle_event(self):
             async with self:
                 self._task_id += 1
@@ -32,8 +31,7 @@ def BackgroundTask():
                     self.counter += 1
                 await asyncio.sleep(0.005)
 
-        @rx.background
-        @rx.event
+        @rx.event(background=True)
         async def handle_event_yield_only(self):
             async with self:
                 self._task_id += 1
@@ -48,7 +46,7 @@ def BackgroundTask():
         def increment(self):
             self.counter += 1
 
-        @rx.background
+        @rx.event(background=True)
         async def increment_arbitrary(self, amount: int):
             async with self:
                 self.counter += int(amount)
@@ -61,8 +59,7 @@ def BackgroundTask():
         async def blocking_pause(self):
             await asyncio.sleep(0.02)
 
-        @rx.background
-        @rx.event
+        @rx.event(background=True)
         async def non_blocking_pause(self):
             await asyncio.sleep(0.02)
 
@@ -74,15 +71,13 @@ def BackgroundTask():
                     self.counter += 1
                 await asyncio.sleep(0.005)
 
-        @rx.background
-        @rx.event
+        @rx.event(background=True)
         async def handle_racy_event(self):
             await asyncio.gather(
                 self.racy_task(), self.racy_task(), self.racy_task(), self.racy_task()
             )
 
-        @rx.background
-        @rx.event
+        @rx.event(background=True)
         async def nested_async_with_self(self):
             async with self:
                 self.counter += 1
@@ -94,8 +89,7 @@ def BackgroundTask():
             third_state = await self.get_state(ThirdState)
             await third_state._triple_count()
 
-        @rx.background
-        @rx.event
+        @rx.event(background=True)
         async def yield_in_async_with_self(self):
             async with self:
                 self.counter += 1
@@ -103,8 +97,7 @@ def BackgroundTask():
                 self.counter += 1
 
     class OtherState(rx.State):
-        @rx.background
-        @rx.event
+        @rx.event(background=True)
         async def get_other_state(self):
             async with self:
                 state = await self.get_state(State)
@@ -196,8 +189,8 @@ def background_task(
         running AppHarness instance
     """
     with AppHarness.create(
-        root=tmp_path_factory.mktemp(f"background_task"),
-        app_source=BackgroundTask,  # type: ignore
+        root=tmp_path_factory.mktemp("background_task"),
+        app_source=BackgroundTask,
     ) as harness:
         yield harness
 

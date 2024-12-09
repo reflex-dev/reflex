@@ -8,7 +8,6 @@ import typing
 from inspect import isclass
 from typing import (
     Any,
-    ClassVar,
     Dict,
     List,
     NoReturn,
@@ -27,7 +26,6 @@ from reflex.utils.types import GenericType, get_attribute_access_type, get_origi
 from .base import (
     CachedVarOperation,
     LiteralVar,
-    ToOperation,
     Var,
     VarData,
     cached_property_no_lock,
@@ -38,7 +36,7 @@ from .base import (
 from .number import BooleanVar, NumberVar, raise_unsupported_operand_types
 from .sequence import ArrayVar, StringVar
 
-OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Dict)
+OBJECT_TYPE = TypeVar("OBJECT_TYPE")
 
 KEY_TYPE = TypeVar("KEY_TYPE")
 VALUE_TYPE = TypeVar("VALUE_TYPE")
@@ -48,7 +46,7 @@ ARRAY_INNER_TYPE = TypeVar("ARRAY_INNER_TYPE")
 OTHER_KEY_TYPE = TypeVar("OTHER_KEY_TYPE")
 
 
-class ObjectVar(Var[OBJECT_TYPE]):
+class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
     """Base class for immutable object vars."""
 
     def _key_type(self) -> Type:
@@ -61,7 +59,7 @@ class ObjectVar(Var[OBJECT_TYPE]):
 
     @overload
     def _value_type(
-        self: ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]],
+        self: ObjectVar[Dict[Any, VALUE_TYPE]],
     ) -> Type[VALUE_TYPE]: ...
 
     @overload
@@ -89,7 +87,7 @@ class ObjectVar(Var[OBJECT_TYPE]):
 
     @overload
     def values(
-        self: ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]],
+        self: ObjectVar[Dict[Any, VALUE_TYPE]],
     ) -> ArrayVar[List[VALUE_TYPE]]: ...
 
     @overload
@@ -105,7 +103,7 @@ class ObjectVar(Var[OBJECT_TYPE]):
 
     @overload
     def entries(
-        self: ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]],
+        self: ObjectVar[Dict[Any, VALUE_TYPE]],
     ) -> ArrayVar[List[Tuple[str, VALUE_TYPE]]]: ...
 
     @overload
@@ -135,47 +133,47 @@ class ObjectVar(Var[OBJECT_TYPE]):
     # NoReturn is used here to catch when key value is Any
     @overload
     def __getitem__(
-        self: ObjectVar[Dict[KEY_TYPE, NoReturn]],
+        self: ObjectVar[Dict[Any, NoReturn]],
         key: Var | Any,
     ) -> Var: ...
 
     @overload
     def __getitem__(
         self: (
-            ObjectVar[Dict[KEY_TYPE, int]]
-            | ObjectVar[Dict[KEY_TYPE, float]]
-            | ObjectVar[Dict[KEY_TYPE, int | float]]
+            ObjectVar[Dict[Any, int]]
+            | ObjectVar[Dict[Any, float]]
+            | ObjectVar[Dict[Any, int | float]]
         ),
         key: Var | Any,
     ) -> NumberVar: ...
 
     @overload
     def __getitem__(
-        self: ObjectVar[Dict[KEY_TYPE, str]],
+        self: ObjectVar[Dict[Any, str]],
         key: Var | Any,
     ) -> StringVar: ...
 
     @overload
     def __getitem__(
-        self: ObjectVar[Dict[KEY_TYPE, list[ARRAY_INNER_TYPE]]],
+        self: ObjectVar[Dict[Any, list[ARRAY_INNER_TYPE]]],
         key: Var | Any,
     ) -> ArrayVar[list[ARRAY_INNER_TYPE]]: ...
 
     @overload
     def __getitem__(
-        self: ObjectVar[Dict[KEY_TYPE, set[ARRAY_INNER_TYPE]]],
+        self: ObjectVar[Dict[Any, set[ARRAY_INNER_TYPE]]],
         key: Var | Any,
     ) -> ArrayVar[set[ARRAY_INNER_TYPE]]: ...
 
     @overload
     def __getitem__(
-        self: ObjectVar[Dict[KEY_TYPE, tuple[ARRAY_INNER_TYPE, ...]]],
+        self: ObjectVar[Dict[Any, tuple[ARRAY_INNER_TYPE, ...]]],
         key: Var | Any,
     ) -> ArrayVar[tuple[ARRAY_INNER_TYPE, ...]]: ...
 
     @overload
     def __getitem__(
-        self: ObjectVar[Dict[KEY_TYPE, dict[OTHER_KEY_TYPE, VALUE_TYPE]]],
+        self: ObjectVar[Dict[Any, dict[OTHER_KEY_TYPE, VALUE_TYPE]]],
         key: Var | Any,
     ) -> ObjectVar[dict[OTHER_KEY_TYPE, VALUE_TYPE]]: ...
 
@@ -197,49 +195,55 @@ class ObjectVar(Var[OBJECT_TYPE]):
     # NoReturn is used here to catch when key value is Any
     @overload
     def __getattr__(
-        self: ObjectVar[Dict[KEY_TYPE, NoReturn]],
+        self: ObjectVar[Dict[Any, NoReturn]],
         name: str,
     ) -> Var: ...
 
     @overload
     def __getattr__(
         self: (
-            ObjectVar[Dict[KEY_TYPE, int]]
-            | ObjectVar[Dict[KEY_TYPE, float]]
-            | ObjectVar[Dict[KEY_TYPE, int | float]]
+            ObjectVar[Dict[Any, int]]
+            | ObjectVar[Dict[Any, float]]
+            | ObjectVar[Dict[Any, int | float]]
         ),
         name: str,
     ) -> NumberVar: ...
 
     @overload
     def __getattr__(
-        self: ObjectVar[Dict[KEY_TYPE, str]],
+        self: ObjectVar[Dict[Any, str]],
         name: str,
     ) -> StringVar: ...
 
     @overload
     def __getattr__(
-        self: ObjectVar[Dict[KEY_TYPE, list[ARRAY_INNER_TYPE]]],
+        self: ObjectVar[Dict[Any, list[ARRAY_INNER_TYPE]]],
         name: str,
     ) -> ArrayVar[list[ARRAY_INNER_TYPE]]: ...
 
     @overload
     def __getattr__(
-        self: ObjectVar[Dict[KEY_TYPE, set[ARRAY_INNER_TYPE]]],
+        self: ObjectVar[Dict[Any, set[ARRAY_INNER_TYPE]]],
         name: str,
     ) -> ArrayVar[set[ARRAY_INNER_TYPE]]: ...
 
     @overload
     def __getattr__(
-        self: ObjectVar[Dict[KEY_TYPE, tuple[ARRAY_INNER_TYPE, ...]]],
+        self: ObjectVar[Dict[Any, tuple[ARRAY_INNER_TYPE, ...]]],
         name: str,
     ) -> ArrayVar[tuple[ARRAY_INNER_TYPE, ...]]: ...
 
     @overload
     def __getattr__(
-        self: ObjectVar[Dict[KEY_TYPE, dict[OTHER_KEY_TYPE, VALUE_TYPE]]],
+        self: ObjectVar[Dict[Any, dict[OTHER_KEY_TYPE, VALUE_TYPE]]],
         name: str,
     ) -> ObjectVar[dict[OTHER_KEY_TYPE, VALUE_TYPE]]: ...
+
+    @overload
+    def __getattr__(
+        self: ObjectVar,
+        name: str,
+    ) -> ObjectItemOperation: ...
 
     def __getattr__(self, name) -> Var:
         """Get an attribute of the var.
@@ -379,8 +383,8 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
     @classmethod
     def create(
         cls,
-        _var_value: OBJECT_TYPE,
-        _var_type: GenericType | None = None,
+        _var_value: dict,
+        _var_type: Type[OBJECT_TYPE] | None = None,
         _var_data: VarData | None = None,
     ) -> LiteralObjectVar[OBJECT_TYPE]:
         """Create the literal object var.
@@ -519,34 +523,6 @@ class ObjectItemOperation(CachedVarOperation, Var):
             _object=object,
             _key=key if isinstance(key, Var) else LiteralVar.create(key),
         )
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ToObjectOperation(ToOperation, ObjectVar):
-    """Operation to convert a var to an object."""
-
-    _original: Var = dataclasses.field(
-        default_factory=lambda: LiteralObjectVar.create({})
-    )
-
-    _default_var_type: ClassVar[GenericType] = dict
-
-    def __getattr__(self, name: str) -> Any:
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute of the var.
-        """
-        if name == "_js_expr":
-            return self._original._js_expr
-        return ObjectVar.__getattr__(self, name)
 
 
 @var_operation

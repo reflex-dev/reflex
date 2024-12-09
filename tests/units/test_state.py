@@ -8,13 +8,26 @@ import functools
 import json
 import os
 import sys
+import threading
 from textwrap import dedent
-from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
 from plotly.graph_objects import Figure
+from pydantic import BaseModel as BaseModelV2
+from pydantic.v1 import BaseModel as BaseModelV1
 
 import reflex as rx
 import reflex.config
@@ -42,9 +55,9 @@ from reflex.state import (
 )
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
-from reflex.utils.exceptions import SetUndefinedStateVarError
+from reflex.utils.exceptions import ReflexRuntimeError, SetUndefinedStateVarError
 from reflex.utils.format import json_dumps
-from reflex.vars.base import ComputedVar, Var
+from reflex.vars.base import Var, computed_var
 from tests.units.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState
@@ -106,8 +119,9 @@ class TestState(BaseState):
     fig: Figure = Figure()
     dt: datetime.datetime = datetime.datetime.fromisoformat("1989-11-09T18:53:00+01:00")
     _backend: int = 0
+    asynctest: int = 0
 
-    @ComputedVar
+    @computed_var
     def sum(self) -> float:
         """Dynamically sum the numbers.
 
@@ -116,7 +130,7 @@ class TestState(BaseState):
         """
         return self.num1 + self.num2
 
-    @ComputedVar
+    @computed_var
     def upper(self) -> str:
         """Uppercase the key.
 
@@ -128,6 +142,14 @@ class TestState(BaseState):
     def do_something(self):
         """Do something."""
         pass
+
+    async def set_asynctest(self, value: int):
+        """Set the asynctest value. Intentionally overwrite the default setter with an async one.
+
+        Args:
+            value: The new value.
+        """
+        self.asynctest = value
 
 
 class ChildState(TestState):
@@ -313,6 +335,7 @@ def test_class_vars(test_state):
         "upper",
         "fig",
         "dt",
+        "asynctest",
     }
 
 
@@ -733,6 +756,7 @@ def test_reset(test_state, child_state):
         "mapping",
         "dt",
         "_backend",
+        "asynctest",
     }
 
     # The dirty vars should be reset.
@@ -1112,7 +1136,7 @@ def test_child_state():
         v: int = 2
 
     class ChildState(MainState):
-        @ComputedVar
+        @computed_var
         def rendered_var(self):
             return self.v
 
@@ -1131,7 +1155,7 @@ def test_conditional_computed_vars():
         t1: str = "a"
         t2: str = "b"
 
-        @ComputedVar
+        @computed_var
         def rendered_var(self) -> str:
             if self.flag:
                 return self.t1
@@ -1546,7 +1570,7 @@ def test_error_on_state_method_shadow():
 
     assert (
         err.value.args[0]
-        == f"The event handler name `reset` shadows a builtin State method; use a different name instead"
+        == "The event handler name `reset` shadows a builtin State method; use a different name instead"
     )
 
 
@@ -1814,12 +1838,11 @@ async def test_state_manager_lock_expire_contend(
 
 
 @pytest.fixture(scope="function")
-def mock_app(monkeypatch, state_manager: StateManager) -> rx.App:
-    """Mock app fixture.
+def mock_app_simple(monkeypatch) -> rx.App:
+    """Simple Mock app fixture.
 
     Args:
         monkeypatch: Pytest monkeypatch object.
-        state_manager: A state manager.
 
     Returns:
         The app, after mocking out prerequisites.get_app()
@@ -1830,7 +1853,6 @@ def mock_app(monkeypatch, state_manager: StateManager) -> rx.App:
 
     setattr(app_module, CompileVars.APP, app)
     app.state = TestState
-    app._state_manager = state_manager
     app.event_namespace.emit = AsyncMock()  # type: ignore
 
     def _mock_get_app(*args, **kwargs):
@@ -1838,6 +1860,21 @@ def mock_app(monkeypatch, state_manager: StateManager) -> rx.App:
 
     monkeypatch.setattr(prerequisites, "get_app", _mock_get_app)
     return app
+
+
+@pytest.fixture(scope="function")
+def mock_app(mock_app_simple: rx.App, state_manager: StateManager) -> rx.App:
+    """Mock app fixture.
+
+    Args:
+        mock_app_simple: A simple mock app.
+        state_manager: A state manager.
+
+    Returns:
+        The app, after mocking out prerequisites.get_app()
+    """
+    mock_app_simple._state_manager = state_manager
+    return mock_app_simple
 
 
 @pytest.mark.asyncio
@@ -1945,6 +1982,10 @@ class BackgroundTaskState(BaseState):
     order: List[str] = []
     dict_list: Dict[str, List[int]] = {"foo": [1, 2, 3]}
 
+    def __init__(self, **kwargs):  # noqa: D107
+        super().__init__(**kwargs)
+        self.router_data = {"simulate": "hydrate"}
+
     @rx.var(cache=False)
     def computed_order(self) -> List[str]:
         """Get the order as a computed var.
@@ -1954,7 +1995,7 @@ class BackgroundTaskState(BaseState):
         """
         return self.order
 
-    @rx.background
+    @rx.event(background=True)
     async def background_task(self):
         """A background task that updates the state."""
         async with self:
@@ -1991,7 +2032,7 @@ class BackgroundTaskState(BaseState):
             self.other()  # direct calling event handlers works in context
             self._private_method()
 
-    @rx.background
+    @rx.event(background=True)
     async def background_task_reset(self):
         """A background task that resets the state."""
         with pytest.raises(ImmutableStateError):
@@ -2005,7 +2046,7 @@ class BackgroundTaskState(BaseState):
         async with self:
             self.order.append("reset")
 
-    @rx.background
+    @rx.event(background=True)
     async def background_task_generator(self):
         """A background task generator that does nothing.
 
@@ -2695,7 +2736,7 @@ def test_set_base_field_via_setter():
     assert "c2" in bfss.dirty_vars
 
 
-def exp_is_hydrated(state: State, is_hydrated: bool = True) -> Dict[str, Any]:
+def exp_is_hydrated(state: BaseState, is_hydrated: bool = True) -> Dict[str, Any]:
     """Expected IS_HYDRATED delta that would be emitted by HydrateMiddleware.
 
     Args:
@@ -2713,6 +2754,7 @@ class OnLoadState(State):
 
     num: int = 0
 
+    @rx.event
     def test_handler(self):
         """Test handler."""
         self.num += 1
@@ -2773,7 +2815,8 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
     app = app_module_mock.app = App(
         state=State, load_events={"index": [test_state.test_handler]}
     )
-    state = State()
+    async with app.state_manager.modify_state(_substate_key(token, State)) as state:
+        state.router_data = {"simulate": "hydrate"}
 
     updates = []
     async for update in rx.app.process(
@@ -2820,7 +2863,8 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         state=State,
         load_events={"index": [OnLoadState.test_handler, OnLoadState.test_handler]},
     )
-    state = State()
+    async with app.state_manager.modify_state(_substate_key(token, State)) as state:
+        state.router_data = {"simulate": "hydrate"}
 
     updates = []
     async for update in rx.app.process(
@@ -3082,12 +3126,12 @@ def test_potentially_dirty_substates():
     """
 
     class State(RxState):
-        @ComputedVar
+        @computed_var
         def foo(self) -> str:
             return ""
 
     class C1(State):
-        @ComputedVar
+        @computed_var
         def bar(self) -> str:
             return ""
 
@@ -3177,6 +3221,13 @@ async def test_setvar(mock_app: rx.App, token: str):
     # Cannot setvar with non-string
     with pytest.raises(ValueError):
         TestState.setvar(42, 42)
+
+
+@pytest.mark.asyncio
+async def test_setvar_async_setter():
+    """Test that overridden async setters raise Exception when used with setvar."""
+    with pytest.raises(NotImplementedError):
+        TestState.setvar("asynctest", 42)
 
 
 @pytest.mark.skipif("REDIS_URL" not in os.environ, reason="Test requires redis")
@@ -3313,3 +3364,277 @@ def test_assignment_to_undeclared_vars():
 
     state.handle_supported_regular_vars()
     state.handle_non_var()
+
+
+@pytest.mark.asyncio
+async def test_deserialize_gc_state_disk(token):
+    """Test that a state can be deserialized from disk with a grandchild state.
+
+    Args:
+        token: A token.
+    """
+
+    class Root(BaseState):
+        pass
+
+    class State(Root):
+        num: int = 42
+
+    class Child(State):
+        foo: str = "bar"
+
+    dsm = StateManagerDisk(state=Root)
+    async with dsm.modify_state(token) as root:
+        s = await root.get_state(State)
+        s.num += 1
+        c = await root.get_state(Child)
+        assert s._get_was_touched()
+        assert not c._get_was_touched()
+
+    dsm2 = StateManagerDisk(state=Root)
+    root = await dsm2.get_state(token)
+    s = await root.get_state(State)
+    assert s.num == 43
+    c = await root.get_state(Child)
+    assert c.foo == "bar"
+
+
+class Obj(Base):
+    """A object containing a callable for testing fallback pickle."""
+
+    _f: Callable
+
+
+def test_fallback_pickle():
+    """Test that state serialization will fall back to dill."""
+
+    class DillState(BaseState):
+        _o: Optional[Obj] = None
+        _f: Optional[Callable] = None
+        _g: Any = None
+
+    state = DillState(_reflex_internal_init=True)  # type: ignore
+    state._o = Obj(_f=lambda: 42)
+    state._f = lambda: 420
+
+    pk = state._serialize()
+
+    unpickled_state = BaseState._deserialize(pk)
+    assert unpickled_state._f() == 420
+    assert unpickled_state._o._f() == 42
+
+    # Threading locks are unpicklable normally, and raise TypeError instead of PicklingError.
+    state2 = DillState(_reflex_internal_init=True)  # type: ignore
+    state2._g = threading.Lock()
+    pk2 = state2._serialize()
+    unpickled_state2 = BaseState._deserialize(pk2)
+    assert isinstance(unpickled_state2._g, type(threading.Lock()))
+
+    # Some object, like generator, are still unpicklable with dill.
+    state3 = DillState(_reflex_internal_init=True)  # type: ignore
+    state3._g = (i for i in range(10))
+    pk3 = state3._serialize()
+    assert len(pk3) == 0
+
+
+def test_typed_state() -> None:
+    class TypedState(rx.State):
+        field: rx.Field[str] = rx.field("")
+
+    _ = TypedState(field="str")
+
+
+class ModelV1(BaseModelV1):
+    """A pydantic BaseModel v1."""
+
+    foo: str = "bar"
+
+
+class ModelV2(BaseModelV2):
+    """A pydantic BaseModel v2."""
+
+    foo: str = "bar"
+
+
+@dataclasses.dataclass
+class ModelDC:
+    """A dataclass."""
+
+    foo: str = "bar"
+
+
+class PydanticState(rx.State):
+    """A state with pydantic BaseModel vars."""
+
+    v1: ModelV1 = ModelV1()
+    v2: ModelV2 = ModelV2()
+    dc: ModelDC = ModelDC()
+
+
+def test_mutable_models():
+    """Test that dataclass and pydantic BaseModel v1 and v2 use dep tracking."""
+    state = PydanticState()
+    assert isinstance(state.v1, MutableProxy)
+    state.v1.foo = "baz"
+    assert state.dirty_vars == {"v1"}
+    state.dirty_vars.clear()
+
+    assert isinstance(state.v2, MutableProxy)
+    state.v2.foo = "baz"
+    assert state.dirty_vars == {"v2"}
+    state.dirty_vars.clear()
+
+    # Not yet supported ENG-4083
+    # assert isinstance(state.dc, MutableProxy)
+    # state.dc.foo = "baz"
+    # assert state.dirty_vars == {"dc"}
+    # state.dirty_vars.clear()
+
+
+def test_get_value():
+    class GetValueState(rx.State):
+        foo: str = "FOO"
+        bar: str = "BAR"
+
+    state = GetValueState()
+
+    assert state.dict() == {
+        state.get_full_name(): {
+            "foo": "FOO",
+            "bar": "BAR",
+        }
+    }
+    assert state.get_delta() == {}
+
+    state.bar = "foo"
+
+    assert state.dict() == {
+        state.get_full_name(): {
+            "foo": "FOO",
+            "bar": "foo",
+        }
+    }
+    assert state.get_delta() == {
+        state.get_full_name(): {
+            "bar": "foo",
+        }
+    }
+
+
+def test_init_mixin() -> None:
+    """Ensure that State mixins can not be instantiated directly."""
+
+    class Mixin(BaseState, mixin=True):
+        pass
+
+    with pytest.raises(ReflexRuntimeError):
+        Mixin()
+
+    class SubMixin(Mixin, mixin=True):
+        pass
+
+    with pytest.raises(ReflexRuntimeError):
+        SubMixin()
+
+
+class ReflexModel(rx.Model):
+    """A model for testing."""
+
+    foo: str
+
+
+class UpcastState(rx.State):
+    """A state for testing upcasting."""
+
+    passed: bool = False
+
+    def rx_model(self, m: ReflexModel):  # noqa: D102
+        assert isinstance(m, ReflexModel)
+        self.passed = True
+
+    def rx_base(self, o: Object):  # noqa: D102
+        assert isinstance(o, Object)
+        self.passed = True
+
+    def rx_base_or_none(self, o: Optional[Object]):  # noqa: D102
+        if o is not None:
+            assert isinstance(o, Object)
+        self.passed = True
+
+    def rx_basemodelv1(self, m: ModelV1):  # noqa: D102
+        assert isinstance(m, ModelV1)
+        self.passed = True
+
+    def rx_basemodelv2(self, m: ModelV2):  # noqa: D102
+        assert isinstance(m, ModelV2)
+        self.passed = True
+
+    def rx_dataclass(self, dc: ModelDC):  # noqa: D102
+        assert isinstance(dc, ModelDC)
+        self.passed = True
+
+    def py_set(self, s: set):  # noqa: D102
+        assert isinstance(s, set)
+        self.passed = True
+
+    def py_Set(self, s: Set):  # noqa: D102
+        assert isinstance(s, Set)
+        self.passed = True
+
+    def py_tuple(self, t: tuple):  # noqa: D102
+        assert isinstance(t, tuple)
+        self.passed = True
+
+    def py_Tuple(self, t: Tuple):  # noqa: D102
+        assert isinstance(t, tuple)
+        self.passed = True
+
+    def py_dict(self, d: dict[str, str]):  # noqa: D102
+        assert isinstance(d, dict)
+        self.passed = True
+
+    def py_list(self, ls: list[str]):  # noqa: D102
+        assert isinstance(ls, list)
+        self.passed = True
+
+    def py_Any(self, a: Any):  # noqa: D102
+        assert isinstance(a, list)
+        self.passed = True
+
+    def py_unresolvable(self, u: "Unresolvable"):  # noqa: D102, F821  # type: ignore
+        assert isinstance(u, list)
+        self.passed = True
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_app_simple")
+@pytest.mark.parametrize(
+    ("handler", "payload"),
+    [
+        (UpcastState.rx_model, {"m": {"foo": "bar"}}),
+        (UpcastState.rx_base, {"o": {"foo": "bar"}}),
+        (UpcastState.rx_base_or_none, {"o": {"foo": "bar"}}),
+        (UpcastState.rx_base_or_none, {"o": None}),
+        (UpcastState.rx_basemodelv1, {"m": {"foo": "bar"}}),
+        (UpcastState.rx_basemodelv2, {"m": {"foo": "bar"}}),
+        (UpcastState.rx_dataclass, {"dc": {"foo": "bar"}}),
+        (UpcastState.py_set, {"s": ["foo", "foo"]}),
+        (UpcastState.py_Set, {"s": ["foo", "foo"]}),
+        (UpcastState.py_tuple, {"t": ["foo", "foo"]}),
+        (UpcastState.py_Tuple, {"t": ["foo", "foo"]}),
+        (UpcastState.py_dict, {"d": {"foo": "bar"}}),
+        (UpcastState.py_list, {"ls": ["foo", "foo"]}),
+        (UpcastState.py_Any, {"a": ["foo"]}),
+        (UpcastState.py_unresolvable, {"u": ["foo"]}),
+    ],
+)
+async def test_upcast_event_handler_arg(handler, payload):
+    """Test that upcast event handler args work correctly.
+
+    Args:
+        handler: The handler to test.
+        payload: The payload to test.
+    """
+    state = UpcastState()
+    async for update in state._process_event(handler, state, payload):
+        assert update.delta == {UpcastState.get_full_name(): {"passed": True}}

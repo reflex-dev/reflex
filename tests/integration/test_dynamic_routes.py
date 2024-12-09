@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import Callable, Coroutine, Generator, Type
 from urllib.parse import urlsplit
 
@@ -89,6 +90,11 @@ def DynamicRoute():
     @rx.page(route="/arg/[arg_str]")
     def arg() -> rx.Component:
         return rx.vstack(
+            rx.input(
+                value=DynamicState.router.session.client_token,
+                read_only=True,
+                id="token",
+            ),
             rx.data_list.root(
                 rx.data_list.item(
                     rx.data_list.label("rx.State.arg_str (dynamic)"),
@@ -153,9 +159,9 @@ def dynamic_route(
         running AppHarness instance
     """
     with app_harness_env.create(
-        root=tmp_path_factory.mktemp(f"dynamic_route"),
+        root=tmp_path_factory.mktemp("dynamic_route"),
         app_name=f"dynamicroute_{app_harness_env.__name__.lower()}",
-        app_source=DynamicRoute,  # type: ignore
+        app_source=DynamicRoute,
     ) as harness:
         yield harness
 
@@ -172,6 +178,8 @@ def driver(dynamic_route: AppHarness) -> Generator[WebDriver, None, None]:
     """
     assert dynamic_route.app_instance is not None, "app is not running"
     driver = dynamic_route.frontend()
+    # TODO: drop after flakiness is resolved
+    driver.implicitly_wait(30)
     try:
         yield driver
     finally:
@@ -373,16 +381,21 @@ async def test_on_load_navigate_non_dynamic(
 async def test_render_dynamic_arg(
     dynamic_route: AppHarness,
     driver: WebDriver,
+    token: str,
 ):
     """Assert that dynamic arg var is rendered correctly in different contexts.
 
     Args:
         dynamic_route: harness for DynamicRoute app.
         driver: WebDriver instance.
+        token: The token visible in the driver browser.
     """
     assert dynamic_route.app_instance is not None
     with poll_for_navigation(driver):
         driver.get(f"{dynamic_route.frontend_url}/arg/0")
+
+    # TODO: drop after flakiness is resolved
+    time.sleep(3)
 
     def assert_content(expected: str, expect_not: str):
         ids = [
@@ -398,7 +411,8 @@ async def test_render_dynamic_arg(
             el = driver.find_element(By.ID, id)
             assert el
             assert (
-                dynamic_route.poll_for_content(el, exp_not_equal=expect_not) == expected
+                dynamic_route.poll_for_content(el, timeout=30, exp_not_equal=expect_not)
+                == expected
             )
 
     assert_content("0", "")

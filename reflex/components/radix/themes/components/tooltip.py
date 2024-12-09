@@ -3,13 +3,11 @@
 from typing import Dict, Literal, Union
 
 from reflex.components.component import Component
-from reflex.event import EventHandler, empty_event, identity_event
+from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.utils import format
 from reflex.vars.base import Var
 
-from ..base import (
-    RadixThemesComponent,
-)
+from ..base import RadixThemesComponent
 
 LiteralSideType = Literal[
     "top",
@@ -85,13 +83,13 @@ class Tooltip(RadixThemesComponent):
     aria_label: Var[str]
 
     # Fired when the open state changes.
-    on_open_change: EventHandler[identity_event(bool)]
+    on_open_change: EventHandler[passthrough_event_spec(bool)]
 
     # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[empty_event]
+    on_escape_key_down: EventHandler[no_args_event_spec]
 
     # Fired when the pointer is down outside the tooltip.
-    on_pointer_down_outside: EventHandler[empty_event]
+    on_pointer_down_outside: EventHandler[no_args_event_spec]
 
     @classmethod
     def create(cls, *children, **props) -> Component:

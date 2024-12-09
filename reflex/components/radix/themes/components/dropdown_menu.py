@@ -4,14 +4,10 @@ from typing import Dict, List, Literal, Union
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
-from reflex.event import EventHandler, empty_event, identity_event
+from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    RadixThemesComponent,
-    RadixThemesTriggerComponent,
-)
+from ..base import LiteralAccentColor, RadixThemesComponent, RadixThemesTriggerComponent
 
 LiteralDirType = Literal["ltr", "rtl"]
 
@@ -22,7 +18,6 @@ LiteralVariantType = Literal["solid", "soft"]
 LiteralSideType = Literal["top", "right", "bottom", "left"]
 
 LiteralAlignType = Literal["start", "center", "end"]
-
 
 LiteralStickyType = Literal[
     "partial",
@@ -50,7 +45,7 @@ class DropdownMenuRoot(RadixThemesComponent):
     _invalid_children: List[str] = ["DropdownMenuItem"]
 
     # Fired when the open state changes.
-    on_open_change: EventHandler[identity_event(bool)]
+    on_open_change: EventHandler[passthrough_event_spec(bool)]
 
 
 class DropdownMenuTrigger(RadixThemesTriggerComponent):
@@ -110,9 +105,6 @@ class DropdownMenuContent(RadixThemesComponent):
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
     collision_padding: Var[Union[float, int, Dict[str, Union[float, int]]]]
 
-    # The padding between the arrow and the edges of the content. If your content has border-radius, this will prevent it from overflowing the corners. Defaults to 0.
-    arrow_padding: Var[Union[float, int]]
-
     # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
     sticky: Var[LiteralStickyType]
 
@@ -120,19 +112,19 @@ class DropdownMenuContent(RadixThemesComponent):
     hide_when_detached: Var[bool]
 
     # Fired when the dialog is closed.
-    on_close_auto_focus: EventHandler[empty_event]
+    on_close_auto_focus: EventHandler[no_args_event_spec]
 
     # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[empty_event]
+    on_escape_key_down: EventHandler[no_args_event_spec]
 
     # Fired when the pointer is down outside the dialog.
-    on_pointer_down_outside: EventHandler[empty_event]
+    on_pointer_down_outside: EventHandler[no_args_event_spec]
 
     # Fired when focus moves outside the dialog.
-    on_focus_outside: EventHandler[empty_event]
+    on_focus_outside: EventHandler[no_args_event_spec]
 
     # Fired when the pointer interacts outside the dialog.
-    on_interact_outside: EventHandler[empty_event]
+    on_interact_outside: EventHandler[no_args_event_spec]
 
 
 class DropdownMenuSubTrigger(RadixThemesTriggerComponent):
@@ -164,7 +156,7 @@ class DropdownMenuSub(RadixThemesComponent):
     default_open: Var[bool]
 
     # Fired when the open state changes.
-    on_open_change: EventHandler[identity_event(bool)]
+    on_open_change: EventHandler[passthrough_event_spec(bool)]
 
 
 class DropdownMenuSubContent(RadixThemesComponent):
@@ -193,9 +185,6 @@ class DropdownMenuSubContent(RadixThemesComponent):
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
     collision_padding: Var[Union[float, int, Dict[str, Union[float, int]]]]
 
-    # The padding between the arrow and the edges of the content. If your content has border-radius, this will prevent it from overflowing the corners. Defaults to 0.
-    arrow_padding: Var[Union[float, int]]
-
     # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
     sticky: Var[LiteralStickyType]
 
@@ -205,16 +194,16 @@ class DropdownMenuSubContent(RadixThemesComponent):
     _valid_parents: List[str] = ["DropdownMenuSub"]
 
     # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[empty_event]
+    on_escape_key_down: EventHandler[no_args_event_spec]
 
     # Fired when the pointer is down outside the dialog.
-    on_pointer_down_outside: EventHandler[empty_event]
+    on_pointer_down_outside: EventHandler[no_args_event_spec]
 
     # Fired when focus moves outside the dialog.
-    on_focus_outside: EventHandler[empty_event]
+    on_focus_outside: EventHandler[no_args_event_spec]
 
     # Fired when the pointer interacts outside the dialog.
-    on_interact_outside: EventHandler[empty_event]
+    on_interact_outside: EventHandler[no_args_event_spec]
 
 
 class DropdownMenuItem(RadixThemesComponent):
@@ -240,7 +229,7 @@ class DropdownMenuItem(RadixThemesComponent):
     _valid_parents: List[str] = ["DropdownMenuContent", "DropdownMenuSubContent"]
 
     # Fired when the item is selected.
-    on_select: EventHandler[empty_event]
+    on_select: EventHandler[no_args_event_spec]
 
 
 class DropdownMenuSeparator(RadixThemesComponent):

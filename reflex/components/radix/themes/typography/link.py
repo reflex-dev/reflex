@@ -12,26 +12,20 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.colors import color
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.components.next.link import NextLink
 from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    RadixThemesComponent,
-)
-from .base import (
-    LiteralTextSize,
-    LiteralTextTrim,
-    LiteralTextWeight,
-)
+from ..base import LiteralAccentColor, RadixThemesComponent
+from .base import LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 
 LiteralLinkUnderline = Literal["auto", "hover", "always", "none"]
 
 next_link = NextLink.create()
 
 
-class Link(RadixThemesComponent, A, MemoizationLeaf):
+class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
     """A semantic element for navigation between pages."""
 
     tag = "Link"
