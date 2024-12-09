@@ -1,6 +1,5 @@
 """Export utilities."""
 
-import os
 from pathlib import Path
 from typing import Optional
 
@@ -15,7 +14,7 @@ def export(
     zipping: bool = True,
     frontend: bool = True,
     backend: bool = True,
-    zip_dest_dir: str = os.getcwd(),
+    zip_dest_dir: str = str(Path.cwd()),
     upload_db_file: bool = False,
     api_url: Optional[str] = None,
     deploy_url: Optional[str] = None,
