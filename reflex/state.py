@@ -2108,13 +2108,29 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             state["__dict__"].pop("router", None)
             state["__dict__"].pop("router_data", None)
         # Never serialize parent_state or substates.
-        state["__dict__"]["parent_state"] = None
-        state["__dict__"]["substates"] = {}
+        state["__dict__"].pop("parent_state", None)
+        state["__dict__"].pop("substates", None)
+        state["__dict__"].pop("dirty_vars", None)
+        state["__dict__"].pop("dirty_substates", None)
         state["__dict__"].pop("_was_touched", None)
         # Remove all inherited vars.
         for inherited_var_name in self.inherited_vars:
             state["__dict__"].pop(inherited_var_name, None)
         return state
+
+    def __setstate__(self, state: dict[str, Any]):
+        """Set the state from redis deserialization.
+
+        This method is called by pickle to deserialize the object.
+
+        Args:
+            state: The state dict for deserialization.
+        """
+        state["__dict__"]["parent_state"] = None
+        state["__dict__"]["substates"] = {}
+        state["__dict__"]["dirty_vars"] = set()
+        state["__dict__"]["dirty_substates"] = set()
+        super().__setstate__(state)
 
     def _check_state_size(
         self,
