@@ -63,6 +63,10 @@ class UploadValueError(ReflexError, ValueError):
     """Custom ValueError for upload related errors."""
 
 
+class PageValueError(ReflexError, ValueError):
+    """Custom ValueError for page related errors."""
+
+
 class RouteValueError(ReflexError, ValueError):
     """Custom ValueError for route related errors."""
 
