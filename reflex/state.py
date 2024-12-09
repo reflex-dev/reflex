@@ -3599,6 +3599,14 @@ class MutableProxy(wrapt.ObjectProxy):
         self._self_state = state
         self._self_field_name = field_name
 
+    def __repr__(self) -> str:
+        """Get the representation of the wrapped object.
+
+        Returns:
+            The representation of the wrapped object.
+        """
+        return f"{self.__class__.__name__}({self.__wrapped__})"
+
     def _mark_dirty(
         self,
         wrapped=None,
