@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Generator
 
 import pytest
@@ -16,6 +15,7 @@ from .utils import SessionStorage
 
 def CallScript():
     """A test app for browser javascript integration."""
+    from pathlib import Path
     from typing import Dict, List, Optional, Union
 
     import reflex as rx
