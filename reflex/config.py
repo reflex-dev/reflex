@@ -36,7 +36,7 @@ except ModuleNotFoundError:
 
 from reflex_cli.constants.hosting import Hosting
 
-from reflex import constants
+from reflex import constants, server
 from reflex.base import Base
 from reflex.utils import console
 
@@ -639,7 +639,7 @@ class Config(Base):
     # Tailwind config.
     tailwind: Optional[Dict[str, Any]] = {"plugins": ["@tailwindcss/typography"]}
 
-    # Timeout when launching the gunicorn server. TODO(rename this to backend_timeout?)
+    # Timeout when launching the gunicorn server. TODO(rename this to backend_timeout?); deprecated
     timeout: int = 120
 
     # Whether to enable or disable nextJS gzip compression.
@@ -656,16 +656,16 @@ class Config(Base):
     # The hosting service frontend URL.
     cp_web_url: str = Hosting.HOSTING_SERVICE_UI
 
-    # The worker class used in production mode
+    # The worker class used in production mode; deprecated
     gunicorn_worker_class: str = "uvicorn.workers.UvicornH11Worker"
 
-    # Number of gunicorn workers from user
+    # Number of gunicorn workers from user; deprecated
     gunicorn_workers: Optional[int] = None
 
-    # Number of requests before a worker is restarted
+    # Number of requests before a worker is restarted; deprecated
     gunicorn_max_requests: int = 100
 
-    # Variance limit for max requests; gunicorn only
+    # Variance limit for max requests; gunicorn only; deprecated
     gunicorn_max_requests_jitter: int = 25
 
     # Indicate which type of state manager to use
@@ -682,6 +682,14 @@ class Config(Base):
 
     # Path to file containing key-values pairs to override in the environment; Dotenv format.
     env_file: Optional[str] = None
+
+    # Custom Backend Server
+    backend_server_prod: server.CustomBackendServer = server.GunicornBackendServer(
+        threads=2, workers=4, max_requests=100, max_requests_jitter=25, timeout=120
+    )
+    backend_server_dev: server.CustomBackendServer = server.UvicornBackendServer(
+        workers=1,
+    )
 
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
@@ -711,6 +719,21 @@ class Config(Base):
         ):
             raise ConfigError(
                 "REDIS_URL is required when using the redis state manager."
+            )
+
+        if any(
+            getattr(self.get_fields().get(key, None), "default", None)
+            == self.get_value(key)
+            for key in (
+                "timeout",
+                "gunicorn_worker_class",
+                "gunicorn_workers",
+                "gunicorn_max_requests",
+                "gunicorn_max_requests_jitter",
+            )
+        ):
+            console.warn(
+                'The following reflex configuration fields are obsolete: "timeout", "gunicorn_worker_class", "gunicorn_workers", "gunicorn_max_requests", "gunicorn_max_requests_jitter"\nplease update your configuration.'
             )
 
     @property
