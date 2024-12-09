@@ -3405,7 +3405,7 @@ class StateManagerRedis(StateManager):
 
         pipe = self.redis.pipeline()
         await (
-            pipe.hmset(name=client_token, mapping=redis_hashset)
+            pipe.hset(name=client_token, mapping=redis_hashset)
             .hexpire(  # type: ignore
                 client_token,
                 self.token_expiration,
