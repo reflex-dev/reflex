@@ -406,10 +406,8 @@ class DataEditor(NoSSRComponent):
             props["rows"] = data.length() if isinstance(data, Var) else len(data)
 
         if not isinstance(columns, Var) and len(columns):
-            if (
-                types.is_dataframe(type(data))
-                or isinstance(data, Var)
-                and types.is_dataframe(data._var_type)
+            if types.is_dataframe(type(data)) or (
+                isinstance(data, Var) and types.is_dataframe(data._var_type)
             ):
                 raise ValueError(
                     "Cannot pass in both a pandas dataframe and columns to the data_editor component."

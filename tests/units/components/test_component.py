@@ -810,7 +810,8 @@ def test_component_create_unpack_tuple_child(test_component, element, expected):
     comp = test_component.create(element)
 
     assert len(comp.children) == 1
-    assert isinstance((fragment_wrapper := comp.children[0]), Fragment)
+    fragment_wrapper = comp.children[0]
+    assert isinstance(fragment_wrapper, Fragment)
     assert fragment_wrapper.render() == expected
 
 

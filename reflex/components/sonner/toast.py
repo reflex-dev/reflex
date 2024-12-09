@@ -64,7 +64,7 @@ def _toast_callback_signature(toast: Var) -> list[Var]:
     """
     return [
         Var(
-            _js_expr=f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {str(toast)}; return rest}})()"
+            _js_expr=f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {toast!s}; return rest}})()"
         )
     ]
 
@@ -338,7 +338,7 @@ class Toaster(Component):
         dismiss_var_data = None
 
         if isinstance(id, Var):
-            dismiss = f"{toast_ref}.dismiss({str(id)})"
+            dismiss = f"{toast_ref}.dismiss({id!s})"
             dismiss_var_data = id._get_all_var_data()
         elif isinstance(id, str):
             dismiss = f"{toast_ref}.dismiss('{id}')"

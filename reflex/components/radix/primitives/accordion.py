@@ -129,7 +129,8 @@ class AccordionRoot(AccordionComponent):
     on_value_change: EventHandler[on_value_change]
 
     def _exclude_props(self) -> list[str]:
-        return super()._exclude_props() + [
+        return [
+            *super()._exclude_props(),
             "radius",
             "duration",
             "easing",

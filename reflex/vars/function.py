@@ -240,7 +240,7 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
         Returns:
             The name of the var.
         """
-        return f"({str(self._func)}({', '.join([str(LiteralVar.create(arg)) for arg in self._args])}))"
+        return f"({self._func!s}({', '.join([str(LiteralVar.create(arg)) for arg in self._args])}))"
 
     @cached_property_no_lock
     def _cached_get_all_var_data(self) -> VarData | None:
