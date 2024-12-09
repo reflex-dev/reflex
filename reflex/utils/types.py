@@ -124,7 +124,6 @@ RESERVED_BACKEND_VAR_NAMES = {
     "_was_touched",
     "_changed_computed_vars",
     "_ready_computed_vars",
-    "_not_persisted_var_cache",
 }
 
 if sys.version_info >= (3, 11):
