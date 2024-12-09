@@ -683,6 +683,9 @@ class Config(Base):
     # Path to file containing key-values pairs to override in the environment; Dotenv format.
     env_file: Optional[str] = None
 
+    # Whether to only make rx.Field annotated state attributes base vars
+    state_explicit_vars: bool = False
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 
