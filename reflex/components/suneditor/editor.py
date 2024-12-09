@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -244,11 +244,13 @@ class Editor(NoSSRComponent):
         }
 
     @classmethod
-    def create(cls, set_options: Optional[EditorOptions] = None, **props) -> Component:
+    def create(
+        cls, set_options: Optional[EditorOptions] = None, **props: Any
+    ) -> Component:
         """Create an instance of Editor. No children allowed.
 
         Args:
-            set_options(Optional[EditorOptions]): Configuration object to further configure the instance.
+            set_options: Configuration object to further configure the instance.
             **props: Any properties to be passed to the Editor
 
         Returns:

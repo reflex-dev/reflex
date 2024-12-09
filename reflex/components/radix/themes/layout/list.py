@@ -193,7 +193,7 @@ ordered_list = list_ns.ordered
 unordered_list = list_ns.unordered
 
 
-def __getattr__(name):
+def __getattr__(name: Any):
     # special case for when accessing list to avoid shadowing
     # python's built in list object.
     if name == "list":

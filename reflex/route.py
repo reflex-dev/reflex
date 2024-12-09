@@ -103,7 +103,7 @@ def catchall_prefix(route: str) -> str:
     return route.replace(pattern, "") if pattern else ""
 
 
-def replace_brackets_with_keywords(input_string):
+def replace_brackets_with_keywords(input_string: str) -> str:
     """Replace brackets and everything inside it in a string with a keyword.
 
     Args:

@@ -89,7 +89,7 @@ else:
 class chdir(contextlib.AbstractContextManager):
     """Non thread-safe context manager to change the current working directory."""
 
-    def __init__(self, path):
+    def __init__(self, path: str | pathlib.Path):
         """Prepare contextmanager.
 
         Args:
@@ -321,7 +321,7 @@ class AppHarness:
 
         return _shutdown_redis
 
-    def _start_backend(self, port=0):
+    def _start_backend(self, port: int = 0):
         if self.app_instance is None:
             raise RuntimeError("App was not initialized.")
         self.backend = uvicorn.Server(
@@ -425,7 +425,7 @@ class AppHarness:
         return self
 
     @staticmethod
-    def get_app_global_source(key, value):
+    def get_app_global_source(key: str, value: Any):
         """Get the source code of a global object.
         If value is a function or class we render the actual
         source of value otherwise we assign value to key.
