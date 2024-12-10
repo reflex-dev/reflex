@@ -1081,6 +1081,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if (
             not field.required
             and field.default is None
+            and field.default_factory is None
             and not types.is_optional(prop._var_type)
         ):
             # Ensure frontend uses null coalescing when accessing.
