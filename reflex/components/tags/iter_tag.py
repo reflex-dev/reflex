@@ -7,6 +7,7 @@ import inspect
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Tuple, Type, Union, get_args
 
 from reflex.components.tags.tag import Tag
+from reflex.utils.types import is_optional
 from reflex.vars import LiteralArrayVar, Var, get_unique_variable_name
 
 if TYPE_CHECKING:
@@ -38,15 +39,18 @@ class IterTag(Tag):
             The type of the iterable var.
         """
         iterable = self.iterable
+        var_type = iterable._var_type
+        if is_optional(var_type):
+            var_type = get_args(var_type)[0]
         try:
-            if iterable._var_type.mro()[0] is dict:
+            if var_type.mro()[0] is dict:
                 # Arg is a tuple of (key, value).
-                return Tuple[get_args(iterable._var_type)]  # type: ignore
-            elif iterable._var_type.mro()[0] is tuple:
+                return Tuple[get_args(var_type)]  # type: ignore
+            elif var_type.mro()[0] is tuple:
                 # Arg is a union of any possible values in the tuple.
-                return Union[get_args(iterable._var_type)]  # type: ignore
+                return Union[get_args(var_type)]  # type: ignore
             else:
-                return get_args(iterable._var_type)[0]
+                return get_args(var_type)[0]
         except Exception:
             return Any
 
