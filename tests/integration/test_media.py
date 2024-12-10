@@ -22,31 +22,31 @@ def MediaApp():
                 img.format = format  # type: ignore
             return img
 
-        @rx.var(cache=True)
+        @rx.var
         def img_default(self) -> Image.Image:
             return self._blue()
 
-        @rx.var(cache=True)
+        @rx.var
         def img_bmp(self) -> Image.Image:
             return self._blue(format="BMP")
 
-        @rx.var(cache=True)
+        @rx.var
         def img_jpg(self) -> Image.Image:
             return self._blue(format="JPEG")
 
-        @rx.var(cache=True)
+        @rx.var
         def img_png(self) -> Image.Image:
             return self._blue(format="PNG")
 
-        @rx.var(cache=True)
+        @rx.var
         def img_gif(self) -> Image.Image:
             return self._blue(format="GIF")
 
-        @rx.var(cache=True)
+        @rx.var
         def img_webp(self) -> Image.Image:
             return self._blue(format="WEBP")
 
-        @rx.var(cache=True)
+        @rx.var
         def img_from_url(self) -> Image.Image:
             img_url = "https://picsum.photos/id/1/200/300"
             img_resp = httpx.get(img_url, follow_redirects=True)
