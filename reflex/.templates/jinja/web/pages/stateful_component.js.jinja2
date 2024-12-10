@@ -5,11 +5,11 @@ export function {{tag_name}} () {
   {{ hook }}
   {% endfor %}
 
-  {% for hook in memo_trigger_hooks %}
+  {% for hook in component._get_all_hooks() %}
   {{ hook }}
   {% endfor %}
 
-  {% for hook in component._get_all_hooks() %}
+  {% for hook in memo_trigger_hooks %}
   {{ hook }}
   {% endfor %}
 
