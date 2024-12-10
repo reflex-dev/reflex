@@ -497,8 +497,13 @@ def deploy(
 
     # Set the log level.
     console.set_log_level(loglevel)
-    # make sure user is logged in.
-    hosting_cli.login()
+
+    if not token:
+        # make sure user is logged in.
+        if interactive:
+            hosting_cli.login()
+        else:
+            raise SystemExit("Token is required for non-interactive mode.")
 
     # Only check requirements if interactive.
     # There is user interaction for requirements update.
