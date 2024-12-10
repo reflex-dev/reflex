@@ -572,7 +572,7 @@ environment = EnvironmentVariables()
 
 
 # These vars are not logged because they may contain sensitive information.
-_sensitive_env_vars = {"DB_URL", "ASYNC_DB_URL"}
+_sensitive_env_vars = {"DB_URL", "ASYNC_DB_URL", "REDIS_URL"}
 
 
 class Config(Base):
@@ -758,17 +758,19 @@ class Config(Base):
 
             # If the env var is set, override the config value.
             if env_var is not None:
-                if key.upper() not in _sensitive_env_vars:
-                    console.info(
-                        f"Overriding config value {key} with env var {key.upper()}={env_var}",
-                        dedupe=True,
-                    )
-
                 # Interpret the value.
                 value = interpret_env_var_value(env_var, field.outer_type_, field.name)
 
                 # Set the value.
                 updated_values[key] = value
+
+                if key.upper() in _sensitive_env_vars:
+                    env_var = "***"
+
+                console.info(
+                    f"Overriding config value {key} with env var {key.upper()}={env_var}",
+                    dedupe=True,
+                )
 
         return updated_values
 
