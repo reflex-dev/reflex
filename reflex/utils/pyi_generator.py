@@ -263,7 +263,7 @@ def _generate_docstrings(clzs: list[Type[Component]], props: list[str]) -> str:
             # Get comments for prop
             if line.strip().startswith("#"):
                 # Remove noqa from the comments.
-                line = line.partition(" # noqa")[0].strip()
+                line = line.partition(" # noqa")[0]
                 comments.append(line)
                 continue
 
