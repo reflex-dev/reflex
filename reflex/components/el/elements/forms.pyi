@@ -1350,6 +1350,7 @@ class Textarea(BaseHTML):
         auto_focus: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_height: Optional[Union[Var[bool], bool]] = None,
         cols: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        default_value: Optional[Union[Var[str], str]] = None,
         dirname: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         disabled: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         enter_key_submit: Optional[Union[Var[bool], bool]] = None,
@@ -1439,6 +1440,7 @@ class Textarea(BaseHTML):
             auto_focus: Automatically focuses the textarea when the page loads
             auto_height: Automatically fit the content height to the text (use min-height with this prop)
             cols: Visible width of the text control, in average character widths
+            default_value: The default value of the textarea when initially rendered
             dirname: Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted
             disabled: Disables the textarea
             enter_key_submit: Enter key submits form (shift-enter adds new line)

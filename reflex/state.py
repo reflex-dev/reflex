@@ -1288,6 +1288,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return
 
         if name in self.backend_vars:
+            # abort if unchanged
+            if self._backend_vars.get(name) == value:
+                return
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
@@ -3595,6 +3598,14 @@ class MutableProxy(wrapt.ObjectProxy):
         super().__init__(wrapped)
         self._self_state = state
         self._self_field_name = field_name
+
+    def __repr__(self) -> str:
+        """Get the representation of the wrapped object.
+
+        Returns:
+            The representation of the wrapped object.
+        """
+        return f"{self.__class__.__name__}({self.__wrapped__})"
 
     def _mark_dirty(
         self,
