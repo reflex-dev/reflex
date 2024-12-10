@@ -118,6 +118,7 @@ class BaseList(Component, MarkdownComponentMap):
 
         Returns:
             The list component.
+
         """
         ...
 
@@ -251,6 +252,7 @@ class UnorderedList(BaseList, Ul):
 
         Returns:
             The list component.
+
         """
         ...
 
@@ -388,6 +390,7 @@ class OrderedList(BaseList, Ol):
 
         Returns:
             The list component.
+
         """
         ...
 
@@ -474,6 +477,7 @@ class ListItem(Li, MarkdownComponentMap):
 
         Returns:
             The list item component.
+
         """
         ...
 
@@ -567,6 +571,7 @@ class List(ComponentNamespace):
 
         Returns:
             The list component.
+
         """
         ...
 
