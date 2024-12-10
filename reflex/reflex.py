@@ -316,6 +316,10 @@ def export(
     ),
 ):
     """Export the app to a zip file."""
+    # Set env mode in the environment
+    # This must be set before importing modules that contain rx.State subclasses
+    environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
+
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
 
@@ -662,6 +666,10 @@ def deployv2(
     ),
 ):
     """Deploy the app to the Reflex hosting service."""
+    # Set env mode in the environment
+    # This must be set before importing modules that contain rx.State subclasses
+    environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
+
     from reflex_cli.v2 import cli as hosting_cli
     from reflex_cli.v2.utils import dependency
 
