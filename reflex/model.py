@@ -25,7 +25,7 @@ from reflex.utils.compat import sqlmodel, sqlmodel_field_has_primary_key
 
 _ENGINE: dict[str, sqlalchemy.engine.Engine] = {}
 _ASYNC_ENGINE: dict[str, sqlalchemy.ext.asyncio.AsyncEngine] = {}
-_AsyncSessionLocal: dict[str | None, sqlalchemy.orm.sessionmaker] = {}
+_AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] = {}
 
 # Import AsyncSession _after_ reflex.utils.compat
 from sqlmodel.ext.asyncio.session import AsyncSession  # noqa: E402
@@ -532,11 +532,11 @@ def asession(url: str | None = None) -> AsyncSession:
     """
     global _AsyncSessionLocal
     if url not in _AsyncSessionLocal:
-        _AsyncSessionLocal[url] = sqlalchemy.orm.sessionmaker(
+        _AsyncSessionLocal[url] = sqlalchemy.ext.asyncio.async_sessionmaker(
+            bind=get_async_engine(url),
+            class_=AsyncSession,
             autocommit=False,
             autoflush=False,
-            bind=get_async_engine(url),  # type: ignore
-            class_=AsyncSession,
         )
     return _AsyncSessionLocal[url]()
 
