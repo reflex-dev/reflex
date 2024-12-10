@@ -129,7 +129,6 @@ class Img(BaseHTML):
 
         Returns:
             The component.
-
         """
         return (
             super().create(src=children[0], **props)
