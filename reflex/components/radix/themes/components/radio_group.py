@@ -140,10 +140,8 @@ class HighLevelRadioGroup(RadixThemesComponent):
         color_scheme = props.pop("color_scheme", None)
         default_value = props.pop("default_value", "")
 
-        if (
-            not isinstance(items, (list, Var))
-            or isinstance(items, Var)
-            and not types._issubclass(items._var_type, list)
+        if not isinstance(items, (list, Var)) or (
+            isinstance(items, Var) and not types._issubclass(items._var_type, list)
         ):
             items_type = type(items) if not isinstance(items, Var) else items._var_type
             raise TypeError(

@@ -123,6 +123,7 @@ class TextArea(RadixThemesComponent, elements.Textarea):
         ] = None,
         auto_complete: Optional[Union[Var[bool], bool]] = None,
         auto_focus: Optional[Union[Var[bool], bool]] = None,
+        default_value: Optional[Union[Var[str], str]] = None,
         dirname: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         form: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
@@ -217,6 +218,7 @@ class TextArea(RadixThemesComponent, elements.Textarea):
             radius: The radius of the text area: "none" | "small" | "medium" | "large" | "full"
             auto_complete: Whether the form control should have autocomplete enabled
             auto_focus: Automatically focuses the textarea when the page loads
+            default_value: The default value of the textarea when initially rendered
             dirname: Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted
             disabled: Disables the textarea
             form: Associates the textarea with a form (by id)

@@ -160,7 +160,7 @@ def CallScript():
         @rx.event
         def call_with_var_str_cast(self):
             return rx.call_script(
-                f"{str(rx.Var('inline_counter'))} + {str(rx.Var('external_counter'))}",
+                f"{rx.Var('inline_counter')!s} + {rx.Var('external_counter')!s}",
                 callback=CallScriptState.set_last_result,  # type: ignore
             )
 
@@ -175,7 +175,7 @@ def CallScript():
         def call_with_var_str_cast_wrapped(self):
             return rx.call_script(
                 rx.Var(
-                    f"{str(rx.Var('inline_counter'))} + {str(rx.Var('external_counter'))}"
+                    f"{rx.Var('inline_counter')!s} + {rx.Var('external_counter')!s}"
                 ),
                 callback=CallScriptState.set_last_result,  # type: ignore
             )
@@ -315,7 +315,7 @@ def CallScript():
             rx.button(
                 "call_with_var_str_cast_inline",
                 on_click=rx.call_script(
-                    f"{str(rx.Var('inline_counter'))} + {str(rx.Var('external_counter'))}",
+                    f"{rx.Var('inline_counter')!s} + {rx.Var('external_counter')!s}",
                     callback=CallScriptState.set_last_result,  # type: ignore
                 ),
                 id="call_with_var_str_cast_inline",
@@ -334,7 +334,7 @@ def CallScript():
                 "call_with_var_str_cast_wrapped_inline",
                 on_click=rx.call_script(
                     rx.Var(
-                        f"{str(rx.Var('inline_counter'))} + {str(rx.Var('external_counter'))}"
+                        f"{rx.Var('inline_counter')!s} + {rx.Var('external_counter')!s}"
                     ),
                     callback=CallScriptState.set_last_result,  # type: ignore
                 ),

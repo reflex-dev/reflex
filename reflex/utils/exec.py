@@ -206,7 +206,9 @@ def get_granian_target():
 
     app_module_path = Path(reflex.__file__).parent / "app_module_for_backend.py"
 
-    return f"{str(app_module_path)}:{constants.CompileVars.APP}.{constants.CompileVars.API}"
+    return (
+        f"{app_module_path!s}:{constants.CompileVars.APP}.{constants.CompileVars.API}"
+    )
 
 
 def run_backend(
@@ -440,10 +442,8 @@ def output_system_info():
 
     system = platform.system()
 
-    if (
-        system != "Windows"
-        or system == "Windows"
-        and prerequisites.is_windows_bun_supported()
+    if system != "Windows" or (
+        system == "Windows" and prerequisites.is_windows_bun_supported()
     ):
         dependencies.extend(
             [

@@ -94,7 +94,7 @@ class Cond(MemoizationLeaf):
             ).set(
                 props=tag.format_props(),
             ),
-            cond_state=f"isTrue({str(self.cond)})",
+            cond_state=f"isTrue({self.cond!s})",
         )
 
     def add_imports(self) -> ImportDict:

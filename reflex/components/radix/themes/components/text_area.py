@@ -41,6 +41,9 @@ class TextArea(RadixThemesComponent, elements.Textarea):
     # Automatically focuses the textarea when the page loads
     auto_focus: Var[bool]
 
+    # The default value of the textarea when initially rendered
+    default_value: Var[str]
+
     # Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted
     dirname: Var[str]
 

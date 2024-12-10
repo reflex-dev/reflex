@@ -1057,7 +1057,7 @@ class Var(Generic[VAR_TYPE]):
 
         if self._var_type is Any:
             raise TypeError(
-                f"You must provide an annotation for the state var `{str(self)}`. Annotation cannot be `{self._var_type}`."
+                f"You must provide an annotation for the state var `{self!s}`. Annotation cannot be `{self._var_type}`."
             )
 
         if name in REPLACED_NAMES:
@@ -2117,7 +2117,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                     ref_obj = None
                 if instruction.argval in invalid_names:
                     raise VarValueError(
-                        f"Cached var {str(self)} cannot access arbitrary state via `{instruction.argval}`."
+                        f"Cached var {self!s} cannot access arbitrary state via `{instruction.argval}`."
                     )
                 if callable(ref_obj):
                     # recurse into callable attributes
@@ -2492,7 +2492,7 @@ class StateOperation(CachedVarOperation, Var):
         Returns:
             The cached var name.
         """
-        return f"{str(self._state_name)}.{str(self._field)}"
+        return f"{self._state_name!s}.{self._field!s}"
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -2804,9 +2804,9 @@ def dispatch(
 
     if result_origin_var_type in dispatchers:
         fn = dispatchers[result_origin_var_type]
-        fn_first_arg_type = list(inspect.signature(fn).parameters.values())[
-            0
-        ].annotation
+        fn_first_arg_type = next(
+            iter(inspect.signature(fn).parameters.values())
+        ).annotation
 
         fn_return = inspect.signature(fn).return_annotation
 
