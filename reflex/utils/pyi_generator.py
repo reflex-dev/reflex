@@ -292,8 +292,6 @@ def _generate_docstrings(clzs: list[Type[Component]], props: list[str]) -> str:
             ]:
                 new_docstring.append(nline)
         new_docstring.append(line)
-    if new_docstring and new_docstring[-1] != "":
-        new_docstring.append("")
     return "\n".join(new_docstring)
 
 
