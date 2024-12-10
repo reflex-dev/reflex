@@ -8,7 +8,7 @@ from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spe
 from reflex.vars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
-from .checkbox import HighLevelCheckbox
+from .checkbox import Checkbox
 
 LiteralDirType = Literal["ltr", "rtl"]
 
