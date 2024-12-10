@@ -1,4 +1,4 @@
-"""Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+"""Forms classes."""
 
 from __future__ import annotations
 
@@ -84,7 +84,6 @@ class Datalist(BaseHTML):
     """Display the datalist element."""
 
     tag = "datalist"
-    # No unique attributes, only common ones are inherited
 
 
 class Fieldset(Element):
@@ -400,7 +399,6 @@ class Legend(BaseHTML):
     """Display the legend element."""
 
     tag = "legend"
-    # No unique attributes, only common ones are inherited
 
 
 class Meter(BaseHTML):

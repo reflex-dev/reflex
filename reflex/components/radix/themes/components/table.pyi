@@ -733,7 +733,7 @@ class TableCell(elements.Td, CommonPaddingProps, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            p: Padding global: "0" - "9"
+            p: Padding: "0" - "9"
             px: Padding horizontal: "0" - "9"
             py: Padding vertical: "0" - "9"
             pt: Padding top: "0" - "9"
@@ -973,7 +973,7 @@ class TableRowHeaderCell(elements.Th, CommonPaddingProps, RadixThemesComponent):
             spell_check: Defines whether the element may be checked for spelling errors.
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
-            p: Padding global: "0" - "9"
+            p: Padding: "0" - "9"
             px: Padding horizontal: "0" - "9"
             py: Padding vertical: "0" - "9"
             pt: Padding top: "0" - "9"

@@ -195,7 +195,7 @@ class Slider(RadixThemesComponent):
             step: The step value of the slider.
             disabled: Whether the slider is disabled
             orientation: The orientation of the slider.
-            on_change: Props to rename  Fired when the value of the slider changes.
+            on_change: Fired when the value of the slider changes.
             on_value_commit: Fired when a thumb is released after being dragged.
             style: The style of the component.
             key: A unique key for the component.

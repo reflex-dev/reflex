@@ -53,7 +53,7 @@ LiteralAccentColor = Literal[
 class CommonMarginProps(Component):
     """Many radix-themes elements accept shorthand margin props."""
 
-    # Margin global: "0" - "9"
+    # Margin: "0" - "9" # noqa: ERA001
     m: Var[LiteralSpacing]
 
     # Margin horizontal: "0" - "9"
@@ -78,7 +78,7 @@ class CommonMarginProps(Component):
 class CommonPaddingProps(Component):
     """Many radix-themes elements accept shorthand padding props."""
 
-    # Padding global: "0" - "9"
+    # Padding: "0" - "9" # noqa: ERA001
     p: Var[Responsive[LiteralSpacing]]
 
     # Padding horizontal: "0" - "9"

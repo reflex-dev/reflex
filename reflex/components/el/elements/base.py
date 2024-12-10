@@ -1,4 +1,4 @@
-"""Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+"""Base classes."""
 
 from typing import Union
 
