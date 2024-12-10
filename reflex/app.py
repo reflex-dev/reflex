@@ -651,7 +651,7 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         console.deprecate(
             feature_name="App.add_custom_404_page",
-            reason=f"Use app.add_page(component, route=/{constants.Page404.SLUG!r}) instead.",
+            reason=f"Use app.add_page(component, route='/{constants.Page404.SLUG}') instead.",
             deprecation_version="0.6.7",
             removal_version="0.7.0",
         )
