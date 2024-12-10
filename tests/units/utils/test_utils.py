@@ -298,7 +298,7 @@ def tmp_working_dir(tmp_path):
     Yields:
         subdirectory of tmp_path which is now the current working directory.
     """
-    old_pwd = Path().resolve()
+    old_pwd = Path.cwd()
     working_dir = tmp_path / "working_dir"
     working_dir.mkdir()
     os.chdir(working_dir)

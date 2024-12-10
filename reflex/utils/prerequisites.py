@@ -219,9 +219,8 @@ def get_install_package_manager(on_failure_return_none: bool = False) -> str | N
     Returns:
         The path to the package manager.
     """
-    if (
-        constants.IS_WINDOWS
-        and not is_windows_bun_supported()
+    if constants.IS_WINDOWS and (
+        not is_windows_bun_supported()
         or windows_check_onedrive_in_path()
         or windows_npm_escape_hatch()
     ):
@@ -498,7 +497,7 @@ def initialize_requirements_txt():
     try:
         other_requirements_exist = False
         with fp.open("r", encoding=encoding) as f:
-            for req in f.readlines():
+            for req in f:
                 # Check if we have a package name that is reflex
                 if re.match(r"^reflex[^a-zA-Z0-9]", req):
                     console.debug(f"{fp} already has reflex as dependency.")
@@ -836,7 +835,7 @@ def install_bun():
     """Install bun onto the user's system."""
     win_supported = is_windows_bun_supported()
     one_drive_in_path = windows_check_onedrive_in_path()
-    if constants.IS_WINDOWS and not win_supported or one_drive_in_path:
+    if constants.IS_WINDOWS and (not win_supported or one_drive_in_path):
         if not win_supported:
             console.warn(
                 "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
@@ -928,7 +927,7 @@ def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
 
 @cached_procedure(
     cache_file=str(get_web_dir() / "reflex.install_frontend_packages.cached"),
-    payload_fn=lambda p, c: f"{repr(sorted(list(p)))},{c.json()}",
+    payload_fn=lambda p, c: f"{sorted(list(p))!r},{c.json()}",
 )
 def install_frontend_packages(packages: set[str], config: Config):
     """Installs the base and custom frontend packages.
@@ -948,9 +947,12 @@ def install_frontend_packages(packages: set[str], config: Config):
         get_package_manager(on_failure_return_none=True)
         if (
             not constants.IS_WINDOWS
-            or constants.IS_WINDOWS
-            and is_windows_bun_supported()
-            and not windows_check_onedrive_in_path()
+            or (
+                constants.IS_WINDOWS
+                and (
+                    is_windows_bun_supported() and not windows_check_onedrive_in_path()
+                )
+            )
         )
         else None
     )
@@ -1409,13 +1411,22 @@ def validate_and_create_app_using_remote_template(app_name, template, templates)
     """
     # If user selects a template, it needs to exist.
     if template in templates:
+        from reflex_cli.v2.utils import hosting
+
+        authenticated_token = hosting.authenticated_token()
+        if not authenticated_token or not authenticated_token[0]:
+            console.print(
+                f"Please use `reflex login` to access the '{template}' template."
+            )
+            raise typer.Exit(3)
+
         template_url = templates[template].code_url
     else:
         # Check if the template is a github repo.
         if template.startswith("https://github.com"):
             template_url = f"{template.strip('/').replace('.git', '')}/archive/main.zip"
         else:
-            console.error(f"Template `{template}` not found.")
+            console.error(f"Template `{template}` not found or invalid.")
             raise typer.Exit(1)
 
     if template_url is None:
@@ -1452,7 +1463,7 @@ def generate_template_using_ai(template: str | None = None) -> str:
 
 
 def fetch_remote_templates(
-    template: Optional[str] = None,
+    template: str,
 ) -> tuple[str, dict[str, Template]]:
     """Fetch the available remote templates.
 
@@ -1461,9 +1472,6 @@ def fetch_remote_templates(
 
     Returns:
         The selected template and the available templates.
-
-    Raises:
-        Exit: If the template is not valid or if the template is not specified.
     """
     available_templates = {}
 
@@ -1475,19 +1483,7 @@ def fetch_remote_templates(
         console.debug(f"Error while fetching templates: {e}")
         template = constants.Templates.DEFAULT
 
-    if template == constants.Templates.DEFAULT:
-        return template, available_templates
-
-    if template in available_templates:
-        return template, available_templates
-
-    else:
-        if template is not None:
-            console.error(f"{template!r} is not a valid template name.")
-        console.print(
-            f"Go to the templates page ({constants.Templates.REFLEX_TEMPLATES_URL}) and copy the command to init with a template."
-        )
-        raise typer.Exit(0)
+    return template, available_templates
 
 
 def initialize_app(
@@ -1502,6 +1498,9 @@ def initialize_app(
 
     Returns:
         The name of the template.
+
+    Raises:
+        Exit: If the template is not valid or unspecified.
     """
     # Local imports to avoid circular imports.
     from reflex.utils import telemetry
@@ -1529,7 +1528,10 @@ def initialize_app(
             # change to the default to allow creation of default app
             template = constants.Templates.DEFAULT
         elif template == constants.Templates.CHOOSE_TEMPLATES:
-            template, templates = fetch_remote_templates()
+            console.print(
+                f"Go to the templates page ({constants.Templates.REFLEX_TEMPLATES_URL}) and copy the command to init with a template."
+            )
+            raise typer.Exit(0)
 
     # If the blank template is selected, create a blank app.
     if template in (constants.Templates.DEFAULT,):

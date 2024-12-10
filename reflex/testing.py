@@ -879,7 +879,7 @@ class Subdir404TCPServer(socketserver.TCPServer):
 
         Args:
             request: the requesting socket
-            client_address: (host, port) referring to the client’s address.
+            client_address: (host, port) referring to the client's address.
         """
         self.RequestHandlerClass(
             request,

@@ -270,11 +270,11 @@ const extractPoints = (points) => {
             tag.special_props.append(
                 # Merge all dictionaries and spread the result over props.
                 Var(
-                    _js_expr=f"{{...mergician({str(figure)},"
+                    _js_expr=f"{{...mergician({figure!s},"
                     f"{','.join(str(md) for md in merge_dicts)})}}",
                 ),
             )
         else:
             # Spread the figure dict over props, nothing to merge.
-            tag.special_props.append(Var(_js_expr=f"{{...{str(figure)}}}"))
+            tag.special_props.append(Var(_js_expr=f"{{...{figure!s}}}"))
         return tag

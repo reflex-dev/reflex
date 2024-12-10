@@ -652,9 +652,9 @@ class Config(Base):
     frontend_packages: List[str] = []
 
     # The hosting service backend URL.
-    cp_backend_url: str = Hosting.CP_BACKEND_URL
+    cp_backend_url: str = Hosting.HOSTING_SERVICE
     # The hosting service frontend URL.
-    cp_web_url: str = Hosting.CP_WEB_URL
+    cp_web_url: str = Hosting.HOSTING_SERVICE_UI
 
     # The worker class used in production mode
     gunicorn_worker_class: str = "uvicorn.workers.UvicornH11Worker"
