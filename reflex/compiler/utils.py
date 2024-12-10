@@ -123,7 +123,7 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
                 raise ValueError("No default field allowed for empty library.")
             if rest is None or len(rest) == 0:
                 raise ValueError("No fields to import.")
-            import_dicts.extend([get_import_dict(module) for module in sorted(rest)])
+            import_dicts.extend(get_import_dict(module) for module in sorted(rest))
             continue
 
         # remove the version before rendering the package imports
