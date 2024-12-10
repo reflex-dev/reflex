@@ -331,7 +331,11 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
         type_ = field.outer_type_
         if isinstance(type_, ModelField):
             type_ = type_.type_
-        if not field.required and field.default is None:
+        if (
+            not field.required
+            and field.default is None
+            and field.default_factory is None
+        ):
             # Ensure frontend uses null coalescing when accessing.
             type_ = Optional[type_]
         return type_
