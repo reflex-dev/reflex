@@ -24,7 +24,7 @@ from reflex.vars.base import Var
 
 logger = logging.getLogger("pyi_generator")
 
-PWD = Path(".").resolve()
+PWD = Path.cwd()
 
 EXCLUDED_FILES = [
     "app.py",
@@ -834,7 +834,7 @@ class StubGenerator(ast.NodeTransformer):
             self.inserted_imports = True
             default_imports = _generate_imports(self.typing_imports)
             self.import_statements.extend(ast.unparse(i) for i in default_imports)
-            return default_imports + [node]
+            return [*default_imports, node]
         return node
 
     def visit_ImportFrom(

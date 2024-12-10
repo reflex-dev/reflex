@@ -448,7 +448,7 @@ class JavascriptHTMLInputElement:
 class JavascriptInputEvent:
     """Interface for a Javascript InputEvent https://developer.mozilla.org/en-US/docs/Web/API/InputEvent."""
 
-    target: JavascriptHTMLInputElement = JavascriptHTMLInputElement()
+    target: JavascriptHTMLInputElement = JavascriptHTMLInputElement()  # noqa: RUF009
 
 
 @dataclasses.dataclass(

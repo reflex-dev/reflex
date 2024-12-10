@@ -364,7 +364,7 @@ def get_command_with_loglevel(command: list[str]) -> list[str]:
     npm_path = str(Path(npm_path).resolve()) if npm_path else npm_path
 
     if command[0] == npm_path:
-        return command + ["--loglevel", "silly"]
+        return [*command, "--loglevel", "silly"]
     return command
 
 
