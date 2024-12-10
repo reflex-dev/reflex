@@ -255,8 +255,14 @@ def _generate_docstrings(clzs: list[Type[Component]], props: list[str]) -> str:
                 # We've reached the functions, so stop.
                 break
 
+            if line == "":
+                # We hit a blank line, so clear comments to avoid commented out prop appearing in next prop docs.
+                comments.clear()
+                continue
+
             # Get comments for prop
             if line.strip().startswith("#"):
+                print(line)
                 comments.append(line)
                 continue
 
