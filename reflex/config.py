@@ -512,6 +512,9 @@ class EnvironmentVariables:
     # Whether to print the SQL queries if the log level is INFO or lower.
     SQLALCHEMY_ECHO: EnvVar[bool] = env_var(False)
 
+    # Whether to check db connections before using them.
+    SQLALCHEMY_POOL_PRE_PING: EnvVar[bool] = env_var(True)
+
     # Whether to ignore the redis config error. Some redis servers only allow out-of-band configuration.
     REFLEX_IGNORE_REDIS_CONFIG_ERROR: EnvVar[bool] = env_var(False)
 
@@ -568,6 +571,10 @@ class EnvironmentVariables:
 environment = EnvironmentVariables()
 
 
+# These vars are not logged because they may contain sensitive information.
+_sensitive_env_vars = {"DB_URL", "ASYNC_DB_URL", "REDIS_URL"}
+
+
 class Config(Base):
     """The config defines runtime settings for the app.
 
@@ -620,6 +627,9 @@ class Config(Base):
 
     # The database url used by rx.Model.
     db_url: Optional[str] = "sqlite:///reflex.db"
+
+    # The async database url used by rx.Model.
+    async_db_url: Optional[str] = None
 
     # The redis url
     redis_url: Optional[str] = None
@@ -748,17 +758,19 @@ class Config(Base):
 
             # If the env var is set, override the config value.
             if env_var is not None:
-                if key.upper() != "DB_URL":
-                    console.info(
-                        f"Overriding config value {key} with env var {key.upper()}={env_var}",
-                        dedupe=True,
-                    )
-
                 # Interpret the value.
                 value = interpret_env_var_value(env_var, field.outer_type_, field.name)
 
                 # Set the value.
                 updated_values[key] = value
+
+                if key.upper() in _sensitive_env_vars:
+                    env_var = "***"
+
+                console.info(
+                    f"Overriding config value {key} with env var {key.upper()}={env_var}",
+                    dedupe=True,
+                )
 
         return updated_values
 
