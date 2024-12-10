@@ -519,6 +519,11 @@ def session(url: str | None = None) -> sqlmodel.Session:
 def asession(url: str | None = None) -> AsyncSession:
     """Get an async sqlmodel session to interact with the database.
 
+    async with rx.asession() as asession:
+        ...
+
+    Most operations against the `asession` must be awaited.
+
     Args:
         url: The database url.
 
