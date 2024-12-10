@@ -810,7 +810,8 @@ def test_component_create_unpack_tuple_child(test_component, element, expected):
     comp = test_component.create(element)
 
     assert len(comp.children) == 1
-    assert isinstance((fragment_wrapper := comp.children[0]), Fragment)
+    fragment_wrapper = comp.children[0]
+    assert isinstance(fragment_wrapper, Fragment)
     assert fragment_wrapper.render() == expected
 
 
@@ -917,8 +918,8 @@ def test_invalid_event_handler_args(component2, test_state):
     # # Event Handler types must match
     # with pytest.raises(EventHandlerArgTypeMismatch):
     #     component2.create(
-    #         on_user_visited_count_changed=test_state.do_something_with_bool #noqa: ERA001
-    #     ) #noqa: ERA001
+    #         on_user_visited_count_changed=test_state.do_something_with_bool # noqa: ERA001 RUF100
+    #     ) # noqa: ERA001 RUF100
     # with pytest.raises(EventHandlerArgTypeMismatch):
     #     component2.create(on_user_list_changed=test_state.do_something_with_int) #noqa: ERA001
     # with pytest.raises(EventHandlerArgTypeMismatch):

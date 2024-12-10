@@ -2551,7 +2551,7 @@ def test_duplicate_substate_class(mocker):
         class TestState(BaseState):
             pass
 
-        class ChildTestState(TestState):  # type: ignore # noqa
+        class ChildTestState(TestState):  # type: ignore
             pass
 
         class ChildTestState(TestState):  # type: ignore # noqa
@@ -2668,23 +2668,23 @@ def test_state_union_optional():
         c3r: Custom3 = Custom3(c2r=Custom2(c1r=Custom1(foo="")))
         custom_union: Union[Custom1, Custom2, Custom3] = Custom1(foo="")
 
-    assert str(UnionState.c3.c2) == f'{str(UnionState.c3)}?.["c2"]'  # type: ignore
-    assert str(UnionState.c3.c2.c1) == f'{str(UnionState.c3)}?.["c2"]?.["c1"]'  # type: ignore
+    assert str(UnionState.c3.c2) == f'{UnionState.c3!s}?.["c2"]'  # type: ignore
+    assert str(UnionState.c3.c2.c1) == f'{UnionState.c3!s}?.["c2"]?.["c1"]'  # type: ignore
     assert (
-        str(UnionState.c3.c2.c1.foo) == f'{str(UnionState.c3)}?.["c2"]?.["c1"]?.["foo"]'  # type: ignore
+        str(UnionState.c3.c2.c1.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1"]?.["foo"]'  # type: ignore
     )
     assert (
-        str(UnionState.c3.c2.c1r.foo) == f'{str(UnionState.c3)}?.["c2"]?.["c1r"]["foo"]'  # type: ignore
+        str(UnionState.c3.c2.c1r.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1r"]["foo"]'  # type: ignore
     )
-    assert str(UnionState.c3.c2r.c1) == f'{str(UnionState.c3)}?.["c2r"]["c1"]'  # type: ignore
+    assert str(UnionState.c3.c2r.c1) == f'{UnionState.c3!s}?.["c2r"]["c1"]'  # type: ignore
     assert (
-        str(UnionState.c3.c2r.c1.foo) == f'{str(UnionState.c3)}?.["c2r"]["c1"]?.["foo"]'  # type: ignore
+        str(UnionState.c3.c2r.c1.foo) == f'{UnionState.c3!s}?.["c2r"]["c1"]?.["foo"]'  # type: ignore
     )
     assert (
-        str(UnionState.c3.c2r.c1r.foo) == f'{str(UnionState.c3)}?.["c2r"]["c1r"]["foo"]'  # type: ignore
+        str(UnionState.c3.c2r.c1r.foo) == f'{UnionState.c3!s}?.["c2r"]["c1r"]["foo"]'  # type: ignore
     )
-    assert str(UnionState.c3i.c2) == f'{str(UnionState.c3i)}["c2"]'  # type: ignore
-    assert str(UnionState.c3r.c2) == f'{str(UnionState.c3r)}["c2"]'  # type: ignore
+    assert str(UnionState.c3i.c2) == f'{UnionState.c3i!s}["c2"]'  # type: ignore
+    assert str(UnionState.c3r.c2) == f'{UnionState.c3r!s}["c2"]'  # type: ignore
     assert UnionState.custom_union.foo is not None  # type: ignore
     assert UnionState.custom_union.c1 is not None  # type: ignore
     assert UnionState.custom_union.c1r is not None  # type: ignore

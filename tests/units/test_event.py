@@ -315,7 +315,7 @@ def test_remove_cookie_with_options():
     assert spec.args[1][1].equals(LiteralVar.create(options))
     assert (
         format.format_event(spec)
-        == f'Event("_remove_cookie", {{key:"testkey",options:{str(LiteralVar.create(options))}}})'
+        == f'Event("_remove_cookie", {{key:"testkey",options:{LiteralVar.create(options)!s}}})'
     )
 
 

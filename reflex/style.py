@@ -74,7 +74,7 @@ def set_color_mode(
         new_color_mode = LiteralVar.create(new_color_mode)
 
     return Var(
-        f"() => {str(base_setter)}({str(new_color_mode)})",
+        f"() => {base_setter!s}({new_color_mode!s})",
         _var_data=VarData.merge(
             base_setter._get_all_var_data(), new_color_mode._get_all_var_data()
         ),

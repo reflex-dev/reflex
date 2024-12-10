@@ -782,7 +782,7 @@ def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
             )
             value_str = f"'{value}'" if isinstance(value, str) else value
             raise ValueError(
-                f"prop value for {str(key)} of the `{comp_name}` component should be one of the following: {allowed_value_str}. Got {value_str} instead"
+                f"prop value for {key!s} of the `{comp_name}` component should be one of the following: {allowed_value_str}. Got {value_str} instead"
             )
 
 
