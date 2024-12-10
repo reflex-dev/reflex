@@ -108,7 +108,7 @@ def test_render_with_special_props():
         )
     )._render()
     assert len(tag.special_props) == 1
-    assert list(tag.special_props)[0].equals(special_prop)
+    assert next(iter(tag.special_props)).equals(special_prop)
 
 
 def test_event_triggers():

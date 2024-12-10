@@ -73,6 +73,7 @@ from reflex.event import (
     EventSpec,
     EventType,
     IndividualEventType,
+    get_hydrate_event,
     window_alert,
 )
 from reflex.model import Model, get_db_status
@@ -1260,6 +1261,21 @@ async def process(
         )
         # Get the state for the session exclusively.
         async with app.state_manager.modify_state(event.substate_token) as state:
+            # When this is a brand new instance of the state, signal the
+            # frontend to reload before processing it.
+            if (
+                not state.router_data
+                and event.name != get_hydrate_event(state)
+                and app.event_namespace is not None
+            ):
+                await asyncio.create_task(
+                    app.event_namespace.emit(
+                        "reload",
+                        data=format.json_dumps(event),
+                        to=sid,
+                    )
+                )
+                return
             # re-assign only when the value is different
             if state.router_data != router_data:
                 # assignment will recurse into substates and force recalculation of
@@ -1463,10 +1479,10 @@ class EventNamespace(AsyncNamespace):
     app: App
 
     # Keep a mapping between socket ID and client token.
-    token_to_sid: dict[str, str] = {}
+    token_to_sid: dict[str, str]
 
     # Keep a mapping between client token and socket ID.
-    sid_to_token: dict[str, str] = {}
+    sid_to_token: dict[str, str]
 
     def __init__(self, namespace: str, app: App):
         """Initialize the event namespace.
@@ -1476,6 +1492,8 @@ class EventNamespace(AsyncNamespace):
             app: The application object.
         """
         super().__init__(namespace)
+        self.token_to_sid = {}
+        self.sid_to_token = {}
         self.app = app
 
     def on_connect(self, sid, environ):

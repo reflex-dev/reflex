@@ -454,6 +454,10 @@ export const connect = async (
       queueEvents(update.events, socket);
     }
   });
+  socket.current.on("reload", async (event) => {
+    event_processing = false;
+    queueEvents([...initialEvents(), JSON5.parse(event)], socket);
+  });
 
   document.addEventListener("visibilitychange", checkVisibility);
 };
@@ -486,23 +490,30 @@ export const uploadFiles = async (
     return false;
   }
 
+  // Track how many partial updates have been processed for this upload.
   let resp_idx = 0;
   const eventHandler = (progressEvent) => {
-    // handle any delta / event streamed from the upload event handler
+    const event_callbacks = socket._callbacks.$event;
+    // Whenever called, responseText will contain the entire response so far.
     const chunks = progressEvent.event.target.responseText.trim().split("\n");
+    // So only process _new_ chunks beyond resp_idx.
     chunks.slice(resp_idx).map((chunk) => {
-      try {
-        socket._callbacks.$event.map((f) => {
-          f(chunk);
-        });
-        resp_idx += 1;
-      } catch (e) {
-        if (progressEvent.progress === 1) {
-          // Chunk may be incomplete, so only report errors when full response is available.
-          console.log("Error parsing chunk", chunk, e);
-        }
-        return;
-      }
+      event_callbacks.map((f, ix) => {
+        f(chunk)
+          .then(() => {
+            if (ix === event_callbacks.length - 1) {
+              // Mark this chunk as processed.
+              resp_idx += 1;
+            }
+          })
+          .catch((e) => {
+            if (progressEvent.progress === 1) {
+              // Chunk may be incomplete, so only report errors when full response is available.
+              console.log("Error parsing chunk", chunk, e);
+            }
+            return;
+          });
+      });
     });
   };
 
@@ -707,7 +718,7 @@ export const useEventLoop = (
     const combined_name = events.map((e) => e.name).join("+++");
     if (event_actions?.temporal) {
       if (!socket.current || !socket.current.connected) {
-        return;  // don't queue when the backend is not connected
+        return; // don't queue when the backend is not connected
       }
     }
     if (event_actions?.throttle) {
@@ -848,7 +859,7 @@ export const useEventLoop = (
       if (router.components[router.pathname].error) {
         delete router.components[router.pathname].error;
       }
-    }
+    };
     router.events.on("routeChangeStart", change_start);
     router.events.on("routeChangeComplete", change_complete);
     router.events.on("routeChangeError", change_error);

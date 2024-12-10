@@ -10,7 +10,17 @@ import os
 import sys
 import threading
 from textwrap import dedent
-from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -1828,12 +1838,11 @@ async def test_state_manager_lock_expire_contend(
 
 
 @pytest.fixture(scope="function")
-def mock_app(monkeypatch, state_manager: StateManager) -> rx.App:
-    """Mock app fixture.
+def mock_app_simple(monkeypatch) -> rx.App:
+    """Simple Mock app fixture.
 
     Args:
         monkeypatch: Pytest monkeypatch object.
-        state_manager: A state manager.
 
     Returns:
         The app, after mocking out prerequisites.get_app()
@@ -1844,7 +1853,6 @@ def mock_app(monkeypatch, state_manager: StateManager) -> rx.App:
 
     setattr(app_module, CompileVars.APP, app)
     app.state = TestState
-    app._state_manager = state_manager
     app.event_namespace.emit = AsyncMock()  # type: ignore
 
     def _mock_get_app(*args, **kwargs):
@@ -1852,6 +1860,21 @@ def mock_app(monkeypatch, state_manager: StateManager) -> rx.App:
 
     monkeypatch.setattr(prerequisites, "get_app", _mock_get_app)
     return app
+
+
+@pytest.fixture(scope="function")
+def mock_app(mock_app_simple: rx.App, state_manager: StateManager) -> rx.App:
+    """Mock app fixture.
+
+    Args:
+        mock_app_simple: A simple mock app.
+        state_manager: A state manager.
+
+    Returns:
+        The app, after mocking out prerequisites.get_app()
+    """
+    mock_app_simple._state_manager = state_manager
+    return mock_app_simple
 
 
 @pytest.mark.asyncio
@@ -1958,6 +1981,10 @@ class BackgroundTaskState(BaseState):
 
     order: List[str] = []
     dict_list: Dict[str, List[int]] = {"foo": [1, 2, 3]}
+
+    def __init__(self, **kwargs):  # noqa: D107
+        super().__init__(**kwargs)
+        self.router_data = {"simulate": "hydrate"}
 
     @rx.var
     def computed_order(self) -> List[str]:
@@ -2525,7 +2552,7 @@ def test_duplicate_substate_class(mocker):
         class TestState(BaseState):
             pass
 
-        class ChildTestState(TestState):  # type: ignore # noqa
+        class ChildTestState(TestState):  # type: ignore
             pass
 
         class ChildTestState(TestState):  # type: ignore # noqa
@@ -2642,23 +2669,23 @@ def test_state_union_optional():
         c3r: Custom3 = Custom3(c2r=Custom2(c1r=Custom1(foo="")))
         custom_union: Union[Custom1, Custom2, Custom3] = Custom1(foo="")
 
-    assert str(UnionState.c3.c2) == f'{str(UnionState.c3)}?.["c2"]'  # type: ignore
-    assert str(UnionState.c3.c2.c1) == f'{str(UnionState.c3)}?.["c2"]?.["c1"]'  # type: ignore
+    assert str(UnionState.c3.c2) == f'{UnionState.c3!s}?.["c2"]'  # type: ignore
+    assert str(UnionState.c3.c2.c1) == f'{UnionState.c3!s}?.["c2"]?.["c1"]'  # type: ignore
     assert (
-        str(UnionState.c3.c2.c1.foo) == f'{str(UnionState.c3)}?.["c2"]?.["c1"]?.["foo"]'  # type: ignore
+        str(UnionState.c3.c2.c1.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1"]?.["foo"]'  # type: ignore
     )
     assert (
-        str(UnionState.c3.c2.c1r.foo) == f'{str(UnionState.c3)}?.["c2"]?.["c1r"]["foo"]'  # type: ignore
+        str(UnionState.c3.c2.c1r.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1r"]["foo"]'  # type: ignore
     )
-    assert str(UnionState.c3.c2r.c1) == f'{str(UnionState.c3)}?.["c2r"]["c1"]'  # type: ignore
+    assert str(UnionState.c3.c2r.c1) == f'{UnionState.c3!s}?.["c2r"]["c1"]'  # type: ignore
     assert (
-        str(UnionState.c3.c2r.c1.foo) == f'{str(UnionState.c3)}?.["c2r"]["c1"]?.["foo"]'  # type: ignore
+        str(UnionState.c3.c2r.c1.foo) == f'{UnionState.c3!s}?.["c2r"]["c1"]?.["foo"]'  # type: ignore
     )
     assert (
-        str(UnionState.c3.c2r.c1r.foo) == f'{str(UnionState.c3)}?.["c2r"]["c1r"]["foo"]'  # type: ignore
+        str(UnionState.c3.c2r.c1r.foo) == f'{UnionState.c3!s}?.["c2r"]["c1r"]["foo"]'  # type: ignore
     )
-    assert str(UnionState.c3i.c2) == f'{str(UnionState.c3i)}["c2"]'  # type: ignore
-    assert str(UnionState.c3r.c2) == f'{str(UnionState.c3r)}["c2"]'  # type: ignore
+    assert str(UnionState.c3i.c2) == f'{UnionState.c3i!s}["c2"]'  # type: ignore
+    assert str(UnionState.c3r.c2) == f'{UnionState.c3r!s}["c2"]'  # type: ignore
     assert UnionState.custom_union.foo is not None  # type: ignore
     assert UnionState.custom_union.c1 is not None  # type: ignore
     assert UnionState.custom_union.c1r is not None  # type: ignore
@@ -2709,7 +2736,7 @@ def test_set_base_field_via_setter():
     assert "c2" in bfss.dirty_vars
 
 
-def exp_is_hydrated(state: State, is_hydrated: bool = True) -> Dict[str, Any]:
+def exp_is_hydrated(state: BaseState, is_hydrated: bool = True) -> Dict[str, Any]:
     """Expected IS_HYDRATED delta that would be emitted by HydrateMiddleware.
 
     Args:
@@ -2788,7 +2815,8 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
     app = app_module_mock.app = App(
         state=State, load_events={"index": [test_state.test_handler]}
     )
-    state = State()
+    async with app.state_manager.modify_state(_substate_key(token, State)) as state:
+        state.router_data = {"simulate": "hydrate"}
 
     updates = []
     async for update in rx.app.process(
@@ -2835,7 +2863,8 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         state=State,
         load_events={"index": [OnLoadState.test_handler, OnLoadState.test_handler]},
     )
-    state = State()
+    async with app.state_manager.modify_state(_substate_key(token, State)) as state:
+        state.router_data = {"simulate": "hydrate"}
 
     updates = []
     async for update in rx.app.process(
@@ -3506,3 +3535,106 @@ def test_init_mixin() -> None:
 
     with pytest.raises(ReflexRuntimeError):
         SubMixin()
+
+
+class ReflexModel(rx.Model):
+    """A model for testing."""
+
+    foo: str
+
+
+class UpcastState(rx.State):
+    """A state for testing upcasting."""
+
+    passed: bool = False
+
+    def rx_model(self, m: ReflexModel):  # noqa: D102
+        assert isinstance(m, ReflexModel)
+        self.passed = True
+
+    def rx_base(self, o: Object):  # noqa: D102
+        assert isinstance(o, Object)
+        self.passed = True
+
+    def rx_base_or_none(self, o: Optional[Object]):  # noqa: D102
+        if o is not None:
+            assert isinstance(o, Object)
+        self.passed = True
+
+    def rx_basemodelv1(self, m: ModelV1):  # noqa: D102
+        assert isinstance(m, ModelV1)
+        self.passed = True
+
+    def rx_basemodelv2(self, m: ModelV2):  # noqa: D102
+        assert isinstance(m, ModelV2)
+        self.passed = True
+
+    def rx_dataclass(self, dc: ModelDC):  # noqa: D102
+        assert isinstance(dc, ModelDC)
+        self.passed = True
+
+    def py_set(self, s: set):  # noqa: D102
+        assert isinstance(s, set)
+        self.passed = True
+
+    def py_Set(self, s: Set):  # noqa: D102
+        assert isinstance(s, Set)
+        self.passed = True
+
+    def py_tuple(self, t: tuple):  # noqa: D102
+        assert isinstance(t, tuple)
+        self.passed = True
+
+    def py_Tuple(self, t: Tuple):  # noqa: D102
+        assert isinstance(t, tuple)
+        self.passed = True
+
+    def py_dict(self, d: dict[str, str]):  # noqa: D102
+        assert isinstance(d, dict)
+        self.passed = True
+
+    def py_list(self, ls: list[str]):  # noqa: D102
+        assert isinstance(ls, list)
+        self.passed = True
+
+    def py_Any(self, a: Any):  # noqa: D102
+        assert isinstance(a, list)
+        self.passed = True
+
+    def py_unresolvable(self, u: "Unresolvable"):  # noqa: D102, F821  # type: ignore
+        assert isinstance(u, list)
+        self.passed = True
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_app_simple")
+@pytest.mark.parametrize(
+    ("handler", "payload"),
+    [
+        (UpcastState.rx_model, {"m": {"foo": "bar"}}),
+        (UpcastState.rx_base, {"o": {"foo": "bar"}}),
+        (UpcastState.rx_base_or_none, {"o": {"foo": "bar"}}),
+        (UpcastState.rx_base_or_none, {"o": None}),
+        (UpcastState.rx_basemodelv1, {"m": {"foo": "bar"}}),
+        (UpcastState.rx_basemodelv2, {"m": {"foo": "bar"}}),
+        (UpcastState.rx_dataclass, {"dc": {"foo": "bar"}}),
+        (UpcastState.py_set, {"s": ["foo", "foo"]}),
+        (UpcastState.py_Set, {"s": ["foo", "foo"]}),
+        (UpcastState.py_tuple, {"t": ["foo", "foo"]}),
+        (UpcastState.py_Tuple, {"t": ["foo", "foo"]}),
+        (UpcastState.py_dict, {"d": {"foo": "bar"}}),
+        (UpcastState.py_list, {"ls": ["foo", "foo"]}),
+        (UpcastState.py_Any, {"a": ["foo"]}),
+        (UpcastState.py_unresolvable, {"u": ["foo"]}),
+    ],
+)
+async def test_upcast_event_handler_arg(handler, payload):
+    """Test that upcast event handler args work correctly.
+
+    Args:
+        handler: The handler to test.
+        payload: The payload to test.
+    """
+    state = UpcastState()
+    async for update in state._process_event(handler, state, payload):
+        assert update.delta == {UpcastState.get_full_name(): {"passed": True}}

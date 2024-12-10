@@ -436,7 +436,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         return [
             v
-            for mixin in cls._mixins() + [cls]
+            for mixin in [*cls._mixins(), cls]
             for name, v in mixin.__dict__.items()
             if is_computed_var(v) and name not in cls.inherited_vars
         ]
@@ -1288,6 +1288,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return
 
         if name in self.backend_vars:
+            # abort if unchanged
+            if self._backend_vars.get(name) == value:
+                return
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
@@ -1748,7 +1751,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 if value is None:
                     continue
                 hinted_args = value_inside_optional(hinted_args)
-            if isinstance(value, dict) and inspect.isclass(hinted_args):
+            if (
+                isinstance(value, dict)
+                and inspect.isclass(hinted_args)
+                and not types.is_generic_alias(hinted_args)  # py3.9-py3.10
+            ):
                 if issubclass(hinted_args, Model):
                     # Remove non-fields from the payload
                     payload[arg] = hinted_args(
@@ -1759,7 +1766,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                         }
                     )
                 elif dataclasses.is_dataclass(hinted_args) or issubclass(
-                    hinted_args, Base
+                    hinted_args, (Base, BaseModelV1, BaseModelV2)
                 ):
                     payload[arg] = hinted_args(**value)
             if isinstance(value, list) and (hinted_args is set or hinted_args is Set):
@@ -1953,6 +1960,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if self.dirty_vars and not self._was_touched:
             for var in self.dirty_vars:
                 if var in self.base_vars or var in self._backend_vars:
+                    self._was_touched = True
+                    break
+                if var == constants.ROUTER_DATA and self.parent_state is None:
                     self._was_touched = True
                     break
 
@@ -2171,11 +2181,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The serialized state.
         """
+        payload = b""
         try:
-            pickle_state = pickle.dumps((self._to_schema(), self))
-            if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
-                self._check_state_size(len(pickle_state))
-            return pickle_state
+            payload = pickle.dumps((self._to_schema(), self))
         except HANDLED_PICKLE_ERRORS as og_pickle_error:
             error = (
                 f"Failed to serialize state {self.get_full_name()} due to unpicklable object. "
@@ -2184,7 +2192,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             try:
                 import dill
 
-                return dill.dumps((self._to_schema(), self))
+                payload = dill.dumps((self._to_schema(), self))
             except ImportError:
                 error += (
                     f"Pickle error: {og_pickle_error}. "
@@ -2192,8 +2200,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 )
             except HANDLED_PICKLE_ERRORS as ex:
                 error += f"Dill was also unable to pickle the state: {ex}"
-        console.warn(error)
-        return b""
+            console.warn(error)
+        if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
+            self._check_state_size(len(payload))
+        return payload
 
     @classmethod
     def _deserialize(
@@ -3588,6 +3598,14 @@ class MutableProxy(wrapt.ObjectProxy):
         super().__init__(wrapped)
         self._self_state = state
         self._self_field_name = field_name
+
+    def __repr__(self) -> str:
+        """Get the representation of the wrapped object.
+
+        Returns:
+            The representation of the wrapped object.
+        """
+        return f"{self.__class__.__name__}({self.__wrapped__})"
 
     def _mark_dirty(
         self,
