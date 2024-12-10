@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+# WARNING: do not import any modules that contain rx.State subclasses here
 import atexit
 import os
 from pathlib import Path
@@ -14,7 +15,6 @@ from reflex_cli.v2.deployments import check_version, hosting_cli
 from reflex import constants
 from reflex.config import environment, get_config
 from reflex.custom_components.custom_components import custom_components_cli
-from reflex.state import reset_disk_state_manager
 from reflex.utils import console, telemetry
 
 # Disable typer+rich integration for help panels
@@ -132,13 +132,15 @@ def _run(
     loglevel: constants.LogLevel = config.loglevel,
 ):
     """Run the app in the given directory."""
+    # Set env mode in the environment
+    # This must be set before importing modules that contain rx.State subclasses
+    environment.REFLEX_ENV_MODE.set(env)
+
+    from reflex.state import reset_disk_state_manager
     from reflex.utils import build, exec, prerequisites, processes
 
     # Set the log level.
     console.set_log_level(loglevel)
-
-    # Set env mode in the environment
-    environment.REFLEX_ENV_MODE.set(env)
 
     # Show system info
     exec.output_system_info()

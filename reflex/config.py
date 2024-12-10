@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import dataclasses
 import enum
 import importlib
 import inspect
@@ -15,6 +14,7 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     Generic,
     List,
@@ -147,28 +147,6 @@ class DBConfig(Base):
             path = f"{host}"
 
         return f"{self.engine}://{path}/{self.database}"
-
-
-def get_default_value_for_field(field: dataclasses.Field) -> Any:
-    """Get the default value for a field.
-
-    Args:
-        field: The field.
-
-    Returns:
-        The default value.
-
-    Raises:
-        ValueError: If no default value is found.
-    """
-    if field.default != dataclasses.MISSING:
-        return field.default
-    elif field.default_factory != dataclasses.MISSING:
-        return field.default_factory()
-    else:
-        raise ValueError(
-            f"Missing value for environment variable {field.name} and no default value found"
-        )
 
 
 # TODO: Change all interpret_.* signatures to value: str, field: dataclasses.Field once we migrate rx.Config to dataclasses
@@ -314,25 +292,46 @@ def interpret_env_var_value(
 
 T = TypeVar("T")
 
+ENV_VAR_DEFAULT_FACTORY = Callable[[], T]
+
 
 class EnvVar(Generic[T]):
     """Environment variable."""
 
     name: str
     default: Any
+    default_factory: Optional[ENV_VAR_DEFAULT_FACTORY]
     type_: T
 
-    def __init__(self, name: str, default: Any, type_: T) -> None:
+    def __init__(
+        self,
+        name: str,
+        default: Any,
+        default_factory: Optional[ENV_VAR_DEFAULT_FACTORY],
+        type_: T,
+    ) -> None:
         """Initialize the environment variable.
 
         Args:
             name: The environment variable name.
             default: The default value.
+            default_factory: The default factory.
             type_: The type of the value.
         """
         self.name = name
         self.default = default
+        self.default_factory = default_factory
         self.type_ = type_
+
+    def get_default(self) -> T:
+        """Get the default value.
+
+        Returns:
+            The default value.
+        """
+        if self.default_factory is not None:
+            return self.default_factory()
+        return self.default
 
     def interpret(self, value: str) -> T:
         """Interpret the environment variable value.
@@ -373,7 +372,7 @@ class EnvVar(Generic[T]):
         env_value = self.getenv()
         if env_value is not None:
             return env_value
-        return self.default
+        return self.get_default()
 
     def set(self, value: T | None) -> None:
         """Set the environment variable. None unsets the variable.
@@ -394,16 +393,24 @@ class env_var:  # type: ignore
 
     name: str
     default: Any
+    default_factory: Optional[ENV_VAR_DEFAULT_FACTORY]
     internal: bool = False
 
-    def __init__(self, default: Any, internal: bool = False) -> None:
+    def __init__(
+        self,
+        default: Any = None,
+        default_factory: Optional[ENV_VAR_DEFAULT_FACTORY] = None,
+        internal: bool = False,
+    ) -> None:
         """Initialize the descriptor.
 
         Args:
             default: The default value.
+            default_factory: The default factory.
             internal: Whether the environment variable is reflex internal.
         """
         self.default = default
+        self.default_factory = default_factory
         self.internal = internal
 
     def __set_name__(self, owner, name):
@@ -429,22 +436,30 @@ class env_var:  # type: ignore
         env_name = self.name
         if self.internal:
             env_name = f"__{env_name}"
-        return EnvVar(name=env_name, default=self.default, type_=type_)
+        return EnvVar(
+            name=env_name,
+            default=self.default,
+            type_=type_,
+            default_factory=self.default_factory,
+        )
 
+    if TYPE_CHECKING:
 
-if TYPE_CHECKING:
+        def __new__(
+            cls,
+            default: Optional[T] = None,
+            default_factory: Optional[ENV_VAR_DEFAULT_FACTORY[T]] = None,
+            internal: bool = False,
+        ) -> EnvVar[T]:
+            """Create a new EnvVar instance.
 
-    def env_var(default, internal=False) -> EnvVar:
-        """Typing helper for the env_var descriptor.
-
-        Args:
-            default: The default value.
-            internal: Whether the environment variable is reflex internal.
-
-        Returns:
-            The EnvVar instance.
-        """
-        return default
+            Args:
+                cls: The class.
+                default: The default value.
+                default_factory: The default factory.
+                internal: Whether the environment variable is reflex internal.
+            """
+            ...
 
 
 class PathExistsFlag:
@@ -464,6 +479,16 @@ class PerformanceMode(enum.Enum):
 
 class EnvironmentVariables:
     """Environment variables class to instantiate environment variables."""
+
+    def __init__(self):
+        """Initialize the environment variables.
+
+        Raises:
+            NotImplementedError: Always.
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__} is a class singleton and not meant to be instantiated."
+        )
 
     # Whether to use npm over bun to install frontend packages.
     REFLEX_USE_NPM: EnvVar[bool] = env_var(False)
@@ -564,8 +589,13 @@ class EnvironmentVariables:
     # The maximum size of the reflex state in kilobytes.
     REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
 
+    # Whether to minify state names. Default to true in prod mode and false otherwise.
+    REFLEX_MINIFY_STATES: EnvVar[Optional[bool]] = env_var(
+        default_factory=lambda: environment.REFLEX_ENV_MODE.get() == constants.Env.PROD
+    )
 
-environment = EnvironmentVariables()
+
+environment = EnvironmentVariables
 
 
 class Config(Base):
