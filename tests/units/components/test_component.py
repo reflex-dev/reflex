@@ -917,17 +917,17 @@ def test_invalid_event_handler_args(component2, test_state):
     # # Event Handler types must match
     # with pytest.raises(EventHandlerArgTypeMismatch):
     #     component2.create(
-    #         on_user_visited_count_changed=test_state.do_something_with_bool
-    #     )
+    #         on_user_visited_count_changed=test_state.do_something_with_bool #noqa: ERA001
+    #     ) #noqa: ERA001
     # with pytest.raises(EventHandlerArgTypeMismatch):
-    #     component2.create(on_user_list_changed=test_state.do_something_with_int)
+    #     component2.create(on_user_list_changed=test_state.do_something_with_int) #noqa: ERA001
     # with pytest.raises(EventHandlerArgTypeMismatch):
-    #     component2.create(on_user_list_changed=test_state.do_something_with_list_int)
+    #     component2.create(on_user_list_changed=test_state.do_something_with_list_int) #noqa: ERA001
 
-    # component2.create(on_open=test_state.do_something_with_int)
-    # component2.create(on_open=test_state.do_something_with_bool)
-    # component2.create(on_user_visited_count_changed=test_state.do_something_with_int)
-    # component2.create(on_user_list_changed=test_state.do_something_with_list_str)
+    # component2.create(on_open=test_state.do_something_with_int) #noqa: ERA001
+    # component2.create(on_open=test_state.do_something_with_bool) #noqa: ERA001
+    # component2.create(on_user_visited_count_changed=test_state.do_something_with_int) #noqa: ERA001
+    # component2.create(on_user_list_changed=test_state.do_something_with_list_str) #noqa: ERA001
 
     # lambda cannot return weird values.
     with pytest.raises(ValueError):
@@ -1436,8 +1436,6 @@ def test_get_vars(component, exp_vars):
         comp_vars,
         sorted(exp_vars, key=lambda v: v._js_expr),
     ):
-        # print(str(comp_var), str(exp_var))
-        # print(comp_var._get_all_var_data(), exp_var._get_all_var_data())
         assert comp_var.equals(exp_var)
 
 

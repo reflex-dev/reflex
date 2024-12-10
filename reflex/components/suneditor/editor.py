@@ -116,7 +116,7 @@ class Editor(NoSSRComponent):
     # Please refer to the library docs for this.
     # options: "en" | "da" | "de" | "es" | "fr" | "ja" | "ko" | "pt_br" |
     #  "ru" | "zh_cn" | "ro" | "pl" | "ckb" | "lv" | "se" | "ua" | "he" | "it"
-    # default : "en"
+    # default: "en".
     lang: Var[
         Union[
             Literal[
@@ -172,7 +172,7 @@ class Editor(NoSSRComponent):
     set_options: Var[Dict]
 
     # Whether all SunEditor plugins should be loaded.
-    # default: True
+    # default: True.
     set_all_plugins: Var[bool]
 
     # Set the content of the editor.
@@ -191,19 +191,19 @@ class Editor(NoSSRComponent):
     set_default_style: Var[str]
 
     # Disable the editor
-    # default: False
+    # default: False.
     disable: Var[bool]
 
     # Hide the editor
-    # default: False
+    # default: False.
     hide: Var[bool]
 
     # Hide the editor toolbar
-    # default: False
+    # default: False.
     hide_toolbar: Var[bool]
 
     # Disable the editor toolbar
-    # default: False
+    # default: False.
     disable_toolbar: Var[bool]
 
     # Fired when the editor content changes.

@@ -47,7 +47,7 @@ class Image(NextComponent):
     placeholder: Var[str]
 
     # Allows passing CSS styles to the underlying image element.
-    # style: Var[Any]
+    # style: Var[Any] #noqa: ERA001
 
     # The loading behavior of the image. Defaults to lazy. Can hurt performance, recommended to use `priority` instead.
     loading: Var[Literal["lazy", "eager"]]
