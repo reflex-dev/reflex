@@ -1697,7 +1697,7 @@ async def test_state_manager_modify_state(
         assert not state_manager._states_locks[token].locked()
 
         # separate instances should NOT share locks
-        sm2 = state_manager.__class__(state=TestState)
+        sm2 = type(state_manager)(state=TestState)
         assert sm2._state_manager_lock is state_manager._state_manager_lock
         assert not sm2._states_locks
         if state_manager._states_locks:

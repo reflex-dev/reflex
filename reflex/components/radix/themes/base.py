@@ -139,9 +139,7 @@ class RadixThemesComponent(Component):
         component = super().create(*children, **props)
         if component.library is None:
             component.library = RadixThemesComponent.__fields__["library"].default
-        component.alias = "RadixThemes" + (
-            component.tag or component.__class__.__name__
-        )
+        component.alias = "RadixThemes" + (component.tag or type(component).__name__)
         return component
 
     @staticmethod

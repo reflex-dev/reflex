@@ -1156,7 +1156,7 @@ class App(MiddlewareMixin, LifespanMixin):
             if hasattr(handler_fn, "__name__"):
                 _fn_name = handler_fn.__name__
             else:
-                _fn_name = handler_fn.__class__.__name__
+                _fn_name = type(handler_fn).__name__
 
             if isinstance(handler_fn, functools.partial):
                 raise ValueError(

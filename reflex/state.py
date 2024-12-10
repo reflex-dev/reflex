@@ -438,7 +438,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The string representation of the state.
         """
-        return f"{self.__class__.__name__}({self.dict()})"
+        return f"{type(self).__name__}({self.dict()})"
 
     @classmethod
     def _get_computed_vars(cls) -> list[ComputedVar]:
@@ -3618,7 +3618,7 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The representation of the wrapped object.
         """
-        return f"{self.__class__.__name__}({self.__wrapped__})"
+        return f"{type(self).__name__}({self.__wrapped__})"
 
     def _mark_dirty(
         self,
