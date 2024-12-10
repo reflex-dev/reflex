@@ -139,9 +139,7 @@ class RadixThemesComponent(Component):
         component = super().create(*children, **props)
         if component.library is None:
             component.library = RadixThemesComponent.__fields__["library"].default
-        component.alias = "RadixThemes" + (
-            component.tag or component.__class__.__name__
-        )
+        component.alias = "RadixThemes" + (component.tag or type(component).__name__)
         # value = props.get("value")
         # if value is not None and component.alias == "RadixThemesSelect.Root":
         #     lv = LiteralVar.create(value)

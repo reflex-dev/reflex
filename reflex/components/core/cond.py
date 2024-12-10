@@ -49,9 +49,9 @@ class Cond(MemoizationLeaf):
             The conditional component.
         """
         # Wrap everything in fragments.
-        if comp1.__class__.__name__ != "Fragment":
+        if type(comp1).__name__ != "Fragment":
             comp1 = Fragment.create(comp1)
-        if comp2 is None or comp2.__class__.__name__ != "Fragment":
+        if comp2 is None or type(comp2).__name__ != "Fragment":
             comp2 = Fragment.create(comp2) if comp2 else Fragment.create()
         return Fragment.create(
             cls(
