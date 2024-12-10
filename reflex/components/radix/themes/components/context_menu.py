@@ -233,7 +233,7 @@ class ContextMenuSeparator(RadixThemesComponent):
     tag = "ContextMenu.Separator"
 
 
-class ContextMenuCheckbox(HighLevelCheckbox):
+class ContextMenuCheckbox(Checkbox):
     """The component that contains the checkbox."""
 
     tag = "ContextMenu.CheckboxItem"
