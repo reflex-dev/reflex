@@ -24,7 +24,7 @@ from reflex.vars.base import Var
 
 logger = logging.getLogger("pyi_generator")
 
-PWD = Path(".").resolve()
+PWD = Path.cwd()
 
 EXCLUDED_FILES = [
     "app.py",
