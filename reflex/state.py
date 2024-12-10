@@ -279,7 +279,7 @@ if TYPE_CHECKING:
     from pydantic.v1.fields import ModelField
 
 
-def unwrap_field_type(type_: Type) -> Type:
+def _unwrap_field_type(type_: Type) -> Type:
     """Unwrap rx.Field type annotations.
 
     Args:
@@ -310,7 +310,7 @@ def get_var_for_field(cls: Type[BaseState], f: ModelField):
     return dispatch(
         field_name=field_name,
         var_data=VarData.from_state(cls, f.name),
-        result_var_type=unwrap_field_type(f.outer_type_),
+        result_var_type=_unwrap_field_type(f.outer_type_),
     )
 
 
@@ -1326,7 +1326,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         if name in fields:
             field = fields[name]
-            field_type = unwrap_field_type(field.outer_type_)
+            field_type = _unwrap_field_type(field.outer_type_)
             if field.allow_none and not is_optional(field_type):
                 field_type = Union[field_type, None]
             if not _isinstance(value, field_type):
