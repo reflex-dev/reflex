@@ -6,6 +6,7 @@ import reflex as rx
 from reflex.components.core.debounce import DEFAULT_DEBOUNCE_TIMEOUT
 from reflex.state import BaseState
 from reflex.vars.base import LiteralVar, Var
+from reflex.vars.number import ternary_operation
 
 
 def test_create_no_child():
@@ -60,8 +61,13 @@ def test_render_child_props():
     assert "css" in tag.props and isinstance(tag.props["css"], rx.vars.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
+    value_var = Var.create("real")
     assert tag.props["value"].equals(
-        Var(_js_expr="real ?? ''", _var_type=str)
+        ternary_operation(
+            (value_var != Var.create(None)) & (value_var != Var(_js_expr="undefined")),
+            "real",
+            "",
+        )
     )
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change

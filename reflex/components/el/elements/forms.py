@@ -395,11 +395,18 @@ class Input(BaseHTML):
         Returns:
             The component.
         """
+        from reflex.vars.number import ternary_operation
+
         value = props.get("value")
 
         # React expects an empty string(instead of null) for uncontrolled inputs.
         if value is not None:
-            props["value"] = Var(_js_expr=f"{value} ?? ''", _var_type=str)
+            props["value"] = ternary_operation(
+                ((value_var := Var.create(value)) != Var.create(None))
+                & (value_var != Var(_js_expr="undefined")),
+                value,
+                "",
+            )
         return super().create(*children, **props)
 
 
