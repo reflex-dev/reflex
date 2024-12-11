@@ -6,6 +6,7 @@ from typing import Literal, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
+from reflex.components.core.cond import cond
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
 from reflex.event import EventHandler, input_event, key_event
@@ -96,6 +97,12 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
         Returns:
             The component.
         """
+        value = props.get("value")
+
+        # React expects an empty string(instead of null) for uncontrolled inputs.
+        if value is not None:
+            props["value"] = cond(value, value, "")
+
         component = super().create(*children, **props)
         if props.get("value") is not None and props.get("on_change") is not None:
             # create a debounced input if the user requests full control to avoid typing jank

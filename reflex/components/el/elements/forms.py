@@ -7,6 +7,7 @@ from typing import Any, Dict, Iterator, Set, Tuple, Union
 
 from jinja2 import Environment
 
+from reflex.components.core.cond import cond
 from reflex.components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
@@ -383,6 +384,24 @@ class Input(BaseHTML):
 
     # Fired when a key is released
     on_key_up: EventHandler[key_event]
+
+    @classmethod
+    def create(cls, *children, **props):
+        """Create an Input component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The component.
+        """
+        value = props.get("value")
+
+        # React expects an empty string(instead of null) for uncontrolled inputs.
+        if value is not None:
+            props["value"] = cond(value, value, "")
+        return super().create(*children, **props)
 
 
 class Label(BaseHTML):
