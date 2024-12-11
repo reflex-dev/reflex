@@ -947,12 +947,12 @@ class App(MiddlewareMixin, LifespanMixin):
             is not None
         ):
             executor = concurrent.futures.ProcessPoolExecutor(
-                max_workers=number_of_processes,
+                max_workers=number_of_processes or None,
                 mp_context=multiprocessing.get_context("fork"),
             )
         else:
             executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=environment.REFLEX_COMPILE_THREADS.get()
+                max_workers=environment.REFLEX_COMPILE_THREADS.get() or None
             )
 
         for route, component in zip(self.pages, page_components):
