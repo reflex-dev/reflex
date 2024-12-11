@@ -684,6 +684,9 @@ class Config(Base):
     # Maximum expiration lock time for redis state manager
     redis_lock_expiration: int = constants.Expiration.LOCK
 
+    # Maximum lock time before warning for redis state manager.
+    redis_lock_warning_threshold: int = constants.Expiration.LOCK_WARNING_THRESHOLD
+
     # Token expiration time for redis state manager
     redis_token_expiration: int = constants.Expiration.TOKEN
 
