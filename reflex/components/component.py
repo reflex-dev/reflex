@@ -2246,6 +2246,7 @@ class StatefulComponent(BaseComponent):
                     imports={"react": [ImportVar(tag="useCallback")]},
                 ),
             )
+
             # Store the memoized function name and hook code for this event trigger.
             trigger_memo[event_trigger] = (
                 Var(_js_expr=memo_name)._replace(
