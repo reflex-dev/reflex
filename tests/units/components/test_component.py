@@ -2077,7 +2077,7 @@ def test_component_add_hooks_var():
                 ),
             ]
 
-    assert list(hook for hook in HookComponent()._get_all_hooks()) == [
+    assert list(HookComponent()._get_all_hooks()) == [
         "const hook3 = useRef(null)",
         "const hook1 = 42",
         "const hook2 = 43",
