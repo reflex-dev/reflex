@@ -61,7 +61,7 @@ def test_render_child_props():
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
     assert tag.props["value"].equals(
-        rx.cond(real_var := LiteralVar.create("real"), real_var, "")
+        Var(_js_expr="real ?? ''", _var_type=str)
     )
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
