@@ -1557,8 +1557,6 @@ class Component(BaseComponent, ABC):
                 if isinstance(hook, Var):
                     extract_var_hooks(hook)
                 else:
-                    if isinstance(hook, str):
-                        hook = HookVar.create(hook)
                     code[hook] = VarData()
 
         return code
