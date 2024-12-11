@@ -115,12 +115,16 @@ class VarData:
     # Hooks that need to be present in the component to render this var
     hooks: Tuple[str, ...] = dataclasses.field(default_factory=tuple)
 
+    # Dependencies of the var
+    deps: Tuple[Var, ...] = dataclasses.field(default_factory=tuple)
+
     def __init__(
         self,
         state: str = "",
         field_name: str = "",
         imports: ImportDict | ParsedImportDict | None = None,
         hooks: dict[str, None] | None = None,
+        deps: list[Var] | None = None,
     ):
         """Initialize the var data.
 
@@ -129,6 +133,7 @@ class VarData:
             field_name: The name of the field in the state.
             imports: Imports needed to render this var.
             hooks: Hooks that need to be present in the component to render this var.
+            deps: Dependencies of the var for useCallback.
         """
         immutable_imports: ImmutableParsedImportDict = tuple(
             sorted(
@@ -139,6 +144,7 @@ class VarData:
         object.__setattr__(self, "field_name", field_name)
         object.__setattr__(self, "imports", immutable_imports)
         object.__setattr__(self, "hooks", tuple(hooks or {}))
+        object.__setattr__(self, "deps", tuple(deps or []))
 
     def old_school_imports(self) -> ImportDict:
         """Return the imports as a mutable dict.
@@ -184,12 +190,15 @@ class VarData:
             *(var_data.imports for var_data in all_var_datas)
         )
 
-        if state or _imports or hooks or field_name:
+        deps = [dep for var_data in all_var_datas for dep in var_data.deps]
+
+        if state or _imports or hooks or field_name or deps:
             return VarData(
                 state=state,
                 field_name=field_name,
                 imports=_imports,
                 hooks=hooks,
+                deps=deps,
             )
 
         return None
@@ -200,7 +209,9 @@ class VarData:
         Returns:
             True if any field is set to a non-default value.
         """
-        return bool(self.state or self.imports or self.hooks or self.field_name)
+        return bool(
+            self.state or self.imports or self.hooks or self.field_name or self.deps
+        )
 
     @classmethod
     def from_state(cls, state: Type[BaseState] | str, field_name: str = "") -> VarData:
@@ -480,7 +491,6 @@ class Var(Generic[VAR_TYPE]):
             raise TypeError(
                 "The _var_full_name_needs_state_prefix argument is not supported for Var."
             )
-
         value_with_replaced = dataclasses.replace(
             self,
             _var_type=_var_type or self._var_type,
