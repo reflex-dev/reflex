@@ -447,7 +447,7 @@ class JavascriptHTMLInputElement:
 class JavascriptInputEvent:
     """Interface for a Javascript InputEvent https://developer.mozilla.org/en-US/docs/Web/API/InputEvent."""
 
-    target: JavascriptHTMLInputElement = JavascriptHTMLInputElement()
+    target: JavascriptHTMLInputElement = JavascriptHTMLInputElement()  # noqa: RUF009
 
 
 @dataclasses.dataclass(
@@ -1556,7 +1556,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self._js_expr))
+        return hash((type(self).__name__, self._js_expr))
 
     @classmethod
     def create(
@@ -1620,7 +1620,7 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self._js_expr))
+        return hash((type(self).__name__, self._js_expr))
 
     @classmethod
     def create(

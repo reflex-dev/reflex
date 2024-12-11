@@ -161,7 +161,7 @@ class ComponentNamespace(SimpleNamespace):
         Returns:
             The hash of the namespace.
         """
-        return hash(self.__class__.__name__)
+        return hash(type(self).__name__)
 
 
 def evaluate_style_namespaces(style: ComponentStyle) -> dict:
@@ -583,7 +583,7 @@ class Component(BaseComponent, ABC):
                 return self._create_event_chain(args_spec, value.guess_type(), key=key)
             else:
                 raise ValueError(
-                    f"Invalid event chain: {str(value)} of type {value._var_type}"
+                    f"Invalid event chain: {value!s} of type {value._var_type}"
                 )
         elif isinstance(value, EventChain):
             # Trust that the caller knows what they're doing passing an EventChain directly
@@ -1111,7 +1111,7 @@ class Component(BaseComponent, ABC):
                 vars.append(prop_var)
 
         # Style keeps track of its own VarData instance, so embed in a temp Var that is yielded.
-        if isinstance(self.style, dict) and self.style or isinstance(self.style, Var):
+        if (isinstance(self.style, dict) and self.style) or isinstance(self.style, Var):
             vars.append(
                 Var(
                     _js_expr="style",
@@ -1466,7 +1466,9 @@ class Component(BaseComponent, ABC):
         """
         ref = self.get_ref()
         if ref is not None:
-            return f"const {ref} = useRef(null); {str(Var(_js_expr=ref)._as_ref())} = {ref};"
+            return (
+                f"const {ref} = useRef(null); {Var(_js_expr=ref)._as_ref()!s} = {ref};"
+            )
 
     def _get_vars_hooks(self) -> dict[str, None]:
         """Get the hooks required by vars referenced in this component.
@@ -2563,7 +2565,7 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self._js_expr))
+        return hash((type(self).__name__, self._js_expr))
 
     @classmethod
     def create(

@@ -23,7 +23,7 @@
 # for example, pass `docker build --platform=linux/amd64 ...`
 
 # Stage 1: init
-FROM python:3.11 as init
+FROM python:3.13 as init
 
 ARG uv=/root/.local/bin/uv
 
@@ -48,7 +48,7 @@ RUN $uv pip install -r requirements.txt
 RUN reflex init
 
 # Stage 2: copy artifacts into slim image 
-FROM python:3.11-slim
+FROM python:3.13-slim
 WORKDIR /app
 RUN adduser --disabled-password --home /app reflex
 COPY --chown=reflex --from=init /app /app

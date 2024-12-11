@@ -1007,8 +1007,9 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     substate_token = _substate_key(token, DynamicState)
     sid = "mock_sid"
     client_ip = "127.0.0.1"
-    state = await app.state_manager.get_state(substate_token)
-    assert state.dynamic == ""
+    async with app.state_manager.modify_state(substate_token) as state:
+        state.router_data = {"simulate": "hydrated"}
+        assert state.dynamic == ""
     exp_vals = ["foo", "foobar", "baz"]
 
     def _event(name, val, **kwargs):
@@ -1180,6 +1181,7 @@ async def test_process_events(mocker, token: str):
         "ip": "127.0.0.1",
     }
     app = App(state=GenState)
+
     mocker.patch.object(app, "_postprocess", AsyncMock())
     event = Event(
         token=token,
@@ -1187,6 +1189,8 @@ async def test_process_events(mocker, token: str):
         payload={"c": 5},
         router_data=router_data,
     )
+    async with app.state_manager.modify_state(event.substate_token) as state:
+        state.router_data = {"simulate": "hydrated"}
 
     async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):
         pass
@@ -1475,17 +1479,20 @@ def test_add_page_component_returning_tuple():
     app._compile_page("index")
     app._compile_page("page2")
 
-    assert isinstance((fragment_wrapper := app.pages["index"].children[0]), Fragment)
-    assert isinstance((first_text := fragment_wrapper.children[0]), Text)
+    fragment_wrapper = app.pages["index"].children[0]
+    assert isinstance(fragment_wrapper, Fragment)
+    first_text = fragment_wrapper.children[0]
+    assert isinstance(first_text, Text)
     assert str(first_text.children[0].contents) == '"first"'  # type: ignore
-    assert isinstance((second_text := fragment_wrapper.children[1]), Text)
+    second_text = fragment_wrapper.children[1]
+    assert isinstance(second_text, Text)
     assert str(second_text.children[0].contents) == '"second"'  # type: ignore
 
     # Test page with trailing comma.
-    assert isinstance(
-        (page2_fragment_wrapper := app.pages["page2"].children[0]), Fragment
-    )
-    assert isinstance((third_text := page2_fragment_wrapper.children[0]), Text)
+    page2_fragment_wrapper = app.pages["page2"].children[0]
+    assert isinstance(page2_fragment_wrapper, Fragment)
+    third_text = page2_fragment_wrapper.children[0]
+    assert isinstance(third_text, Text)
     assert str(third_text.children[0].contents) == '"third"'  # type: ignore
 
 
