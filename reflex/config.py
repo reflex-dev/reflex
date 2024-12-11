@@ -6,9 +6,12 @@ import enum
 import importlib
 import inspect
 import os
+import subprocess
 import sys
+import tempfile
 import threading
 import urllib.parse
+from functools import lru_cache
 from importlib.util import find_spec
 from pathlib import Path
 from typing import (
@@ -900,3 +903,28 @@ def get_config(reload: bool = False) -> Config:
             # Restore the original sys.path.
             sys.path.clear()
             sys.path.extend(sys_path)
+
+
+@lru_cache
+def get_config_safe() -> Config:
+    """Get the app config without introducing import side-effects.
+
+    Returns:
+        The app config.
+    """
+    with (
+        tempfile.NamedTemporaryFile(mode="w", encoding="utf-8") as script,
+        tempfile.NamedTemporaryFile() as config_json,
+    ):
+        script.write(f"""
+from pathlib import Path
+from reflex.config import get_config
+
+Path({config_json.name!r}).write_text(get_config().json())
+""")
+        script.flush()
+
+        subprocess.run(
+            [sys.executable, script.name],
+        )
+        return Config.parse_file(config_json.name)

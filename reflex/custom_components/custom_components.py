@@ -17,11 +17,11 @@ import typer
 from tomlkit.exceptions import TOMLKitError
 
 from reflex import constants
-from reflex.config import environment, get_config
+from reflex.config import environment, get_config_safe
 from reflex.constants import CustomComponents
 from reflex.utils import console
 
-config = get_config()
+config = get_config_safe()
 custom_components_cli = typer.Typer()
 
 POST_CUSTOM_COMPONENTS_GALLERY_ENDPOINT = (

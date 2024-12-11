@@ -15,7 +15,7 @@ from reflex_cli.utils import dependency
 from reflex_cli.v2.deployments import check_version, hosting_cli
 
 from reflex import constants
-from reflex.config import environment, get_config
+from reflex.config import environment, get_config, get_config_safe
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.utils import console, telemetry
 
@@ -29,8 +29,8 @@ except TypeError:
     # Fallback for older typer versions.
     cli = typer.Typer(add_completion=False)
 
-# Get the config.
-config = get_config()
+# Get the config via subprocess without triggering import side-effects.
+config = get_config_safe()
 
 
 def version(value: bool):
