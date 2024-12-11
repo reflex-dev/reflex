@@ -11,8 +11,7 @@ from reflex.event import EventChain, EventHandler, passthrough_event_spec
 from reflex.utils.format import format_prop, wrap
 from reflex.utils.imports import ImportVar
 from reflex.vars import get_unique_variable_name
-from reflex.vars.base import Var
-from reflex.vars.hooks import HookVar
+from reflex.vars.base import Var, VarData
 
 
 class Clipboard(Fragment):
@@ -74,7 +73,7 @@ class Clipboard(Fragment):
             ),
         }
 
-    def add_hooks(self) -> list[str | Var]:
+    def add_hooks(self) -> list[str | Var[str]]:
         """Add hook to register paste event listener.
 
         Returns:
@@ -86,8 +85,13 @@ class Clipboard(Fragment):
         if isinstance(on_paste, EventChain):
             on_paste = wrap(str(format_prop(on_paste)).strip("{}"), "(")
         hook_expr = f"usePasteHandler({self.targets!s}, {self.on_paste_event_actions!s}, {on_paste!s})"
+
         return [
-            HookVar.create(hook_expr, _position=Hooks.HookPosition.POST_TRIGGER),
+            Var(
+                hook_expr,
+                _var_type="str",
+                _var_data=VarData(position=Hooks.HookPosition.POST_TRIGGER),
+            ),
         ]
 
 

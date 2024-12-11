@@ -70,7 +70,6 @@ from reflex.vars.base import (
     cached_property_no_lock,
 )
 from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar
-from reflex.vars.hooks import HookVar
 from reflex.vars.number import ternary_operation
 from reflex.vars.object import ObjectVar
 from reflex.vars.sequence import LiteralArrayVar
@@ -1543,10 +1542,6 @@ class Component(BaseComponent, ABC):
 
             if str(hook) in code:
                 code[str(hook)] = VarData.merge(var_data, code[str(hook)])
-            elif isinstance(hook, HookVar):
-                code[str(hook)] = VarData.merge(
-                    var_data, VarData(position=hook.position)
-                )
             else:
                 code[str(hook)] = var_data
 
@@ -2253,7 +2248,7 @@ class StatefulComponent(BaseComponent):
             )
             # Store the memoized function name and hook code for this event trigger.
             trigger_memo[event_trigger] = (
-                HookVar(_js_expr=memo_name)._replace(
+                Var(_js_expr=memo_name)._replace(
                     _var_type=EventChain, merge_var_data=memo_var_data
                 ),
                 f"const {memo_name} = useCallback({rendered_chain}, [{', '.join(var_deps)}])",
