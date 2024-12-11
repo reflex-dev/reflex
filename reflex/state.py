@@ -97,6 +97,7 @@ from reflex.utils.exceptions import (
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSchemaMismatchError,
+    StateSerializationError,
     StateTooLargeError,
 )
 from reflex.utils.exec import is_testing_env
@@ -2193,8 +2194,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Returns:
             The serialized state.
+
+        Raises:
+            StateSerializationError: If the state cannot be serialized.
         """
         payload = b""
+        error = ""
         try:
             payload = pickle.dumps((self._to_schema(), self))
         except HANDLED_PICKLE_ERRORS as og_pickle_error:
@@ -2214,8 +2219,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             except HANDLED_PICKLE_ERRORS as ex:
                 error += f"Dill was also unable to pickle the state: {ex}"
             console.warn(error)
+
         if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
             self._check_state_size(len(payload))
+
+        if not payload:
+            raise StateSerializationError(error)
+
         return payload
 
     @classmethod

@@ -266,6 +266,7 @@ class Theme(RadixThemesComponent):
                 _js_expr="{...theme.styles.global[':root'], ...theme.styles.global.body}"
             ),
         )
+        tag.remove_props("appearance")
         return tag
 
 
