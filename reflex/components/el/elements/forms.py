@@ -7,7 +7,6 @@ from typing import Any, Dict, Iterator, Set, Tuple, Union
 
 from jinja2 import Environment
 
-from reflex.components.core.cond import cond
 from reflex.components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
@@ -400,7 +399,7 @@ class Input(BaseHTML):
 
         # React expects an empty string(instead of null) for uncontrolled inputs.
         if value is not None:
-            props["value"] = cond(value, value, "")
+            props["value"] = Var(_js_expr=f"{value} ?? ''", _var_type=str)
         return super().create(*children, **props)
 
 
