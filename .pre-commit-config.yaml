@@ -1,7 +1,6 @@
 fail_fast: true
 
 repos:
-
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.8.2
     hooks:
@@ -11,26 +10,26 @@ repos:
         args: ["--fix", "--exit-non-zero-on-fix"]
         exclude: '^integration/benchmarks/'
 
-  # Run pyi check before pyright because pyright can fail if pyi files are wrong.
   - repo: local
     hooks:
       - id: update-pyi-files
         name: update-pyi-files
         always_run: true
         language: system
+        entry: poetry run python scripts/make_pyi.py
         description: 'Update pyi files as needed'
-        entry: python3 scripts/make_pyi.py
 
-  - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.313
+  - repo: local
     hooks:
       - id: pyright
-        args: [reflex, tests]
+        name: pyright
+        entry: poetry run pyright
         language: system
+        types: [python]
+        args: [reflex, tests]
 
   - repo: https://github.com/terrencepreilly/darglint
     rev: v1.8.1
     hooks:
       - id: darglint
         exclude: '^reflex/reflex.py'
-
