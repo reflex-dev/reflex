@@ -56,6 +56,7 @@ from reflex.components.component import (
     Component,
     ComponentStyle,
     evaluate_style_namespaces,
+    memo,
 )
 from reflex.components.core.banner import connection_pulser, connection_toaster
 from reflex.components.core.breakpoints import set_breakpoints
@@ -162,6 +163,7 @@ def default_overlay_component() -> Component:
     )
 
 
+@memo
 def default_error_boundary(*children: Component) -> Component:
     """Default error_boundary attribute for App.
 

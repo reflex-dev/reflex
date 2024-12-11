@@ -24,6 +24,7 @@ from typing import (
 )
 
 import reflex.state
+from reflex import constants
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
 from reflex.components.core.breakpoints import Breakpoints
@@ -69,6 +70,7 @@ from reflex.vars.base import (
     cached_property_no_lock,
 )
 from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar
+from reflex.vars.hooks import HookVar
 from reflex.vars.number import ternary_operation
 from reflex.vars.object import ObjectVar
 from reflex.vars.sequence import LiteralArrayVar
@@ -1369,7 +1371,9 @@ class Component(BaseComponent, ABC):
         if user_hooks_data is not None:
             other_imports.append(user_hooks_data.imports)
         other_imports.extend(
-            hook_imports for hook_imports in self._get_added_hooks().values()
+            hook_vardata.imports
+            for hook_vardata in self._get_added_hooks().values()
+            if hook_vardata is not None
         )
 
         return imports.merge_imports(_imports, *other_imports)
@@ -1523,7 +1527,7 @@ class Component(BaseComponent, ABC):
             **self._get_special_hooks(),
         }
 
-    def _get_added_hooks(self) -> dict[str, ImportDict]:
+    def _get_added_hooks(self) -> dict[str, VarData]:
         """Get the hooks added via `add_hooks` method.
 
         Returns:
@@ -1532,17 +1536,19 @@ class Component(BaseComponent, ABC):
         code = {}
 
         def extract_var_hooks(hook: Var):
-            _imports = {}
             var_data = VarData.merge(hook._get_all_var_data())
             if var_data is not None:
                 for sub_hook in var_data.hooks:
-                    code[sub_hook] = {}
-                if var_data.imports:
-                    _imports = var_data.imports
+                    code[sub_hook] = None
+
             if str(hook) in code:
-                code[str(hook)] = imports.merge_imports(code[str(hook)], _imports)
+                code[str(hook)] = VarData.merge(var_data, code[str(hook)])
+            elif isinstance(hook, HookVar):
+                code[str(hook)] = VarData.merge(
+                    var_data, VarData(position=hook.position)
+                )
             else:
-                code[str(hook)] = _imports
+                code[str(hook)] = var_data
 
         # Add the hook code from add_hooks for each parent class (this is reversed to preserve
         # the order of the hooks in the final output)
@@ -1551,7 +1557,9 @@ class Component(BaseComponent, ABC):
                 if isinstance(hook, Var):
                     extract_var_hooks(hook)
                 else:
-                    code[hook] = {}
+                    if isinstance(hook, str):
+                        hook = HookVar.create(hook)
+                    code[hook] = VarData()
 
         return code
 
@@ -1593,8 +1601,8 @@ class Component(BaseComponent, ABC):
         if hooks is not None:
             code[hooks] = None
 
-        for hook in self._get_added_hooks():
-            code[hook] = None
+        for hook, var_data in self._get_added_hooks().items():
+            code[hook] = var_data
 
         # Add the hook code for the children.
         for child in self.children:
@@ -2168,6 +2176,7 @@ class StatefulComponent(BaseComponent):
             tag_name=tag_name,
             memo_trigger_hooks=memo_trigger_hooks,
             component=component,
+            positions=constants.Hooks.HookPosition,
         )
 
     @staticmethod
@@ -2244,10 +2253,9 @@ class StatefulComponent(BaseComponent):
                     imports={"react": [ImportVar(tag="useCallback")]},
                 ),
             )
-
             # Store the memoized function name and hook code for this event trigger.
             trigger_memo[event_trigger] = (
-                Var(_js_expr=memo_name)._replace(
+                HookVar(_js_expr=memo_name)._replace(
                     _var_type=EventChain, merge_var_data=memo_var_data
                 ),
                 f"const {memo_name} = useCallback({rendered_chain}, [{', '.join(var_deps)}])",

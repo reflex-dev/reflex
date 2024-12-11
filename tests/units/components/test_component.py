@@ -31,6 +31,7 @@ from reflex.utils.exceptions import EventFnArgMismatch
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
+from reflex.vars.hooks import HookVar
 
 
 @pytest.fixture
@@ -2078,10 +2079,10 @@ def test_component_add_hooks_var():
             ]
 
     assert list(HookComponent()._get_all_hooks()) == [
-        "const hook3 = useRef(null)",
+        HookVar.create("const hook3 = useRef(null)"),
         "const hook1 = 42",
         "const hook2 = 43",
-        "useEffect(() => () => {}, [])",
+        HookVar.create("useEffect(() => () => {}, [])"),
     ]
     imports = HookComponent()._get_all_imports()
     assert len(imports) == 1
