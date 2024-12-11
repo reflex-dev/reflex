@@ -94,6 +94,7 @@ from reflex.utils.exceptions import (
     DynamicRouteArgShadowsStateVar,
     EventHandlerShadowsBuiltInStateMethod,
     ImmutableStateError,
+    InvalidLockWarningThresholdError,
     InvalidStateManagerMode,
     LockExpiredError,
     ReflexRuntimeError,
@@ -3203,6 +3204,30 @@ def _default_lock_expiration() -> int:
     return get_config().redis_lock_expiration
 
 
+def _default_lock_warning_threshold() -> int:
+    """Get the default lock warning threshold.
+
+    Returns:
+        The default lock warning threshold.
+    """
+    lock_warning_threshold = get_config().redis_lock_warning_threshold
+    _validate_lock_warning_threshold(lock_warning_threshold, _default_lock_expiration())
+    return lock_warning_threshold
+
+
+def _validate_lock_warning_threshold(lock_warning_threshold: int, lock_expiration: int):
+    """Validate the lock warning threshold.
+
+    Args:
+        lock_warning_threshold: The lock warning threshold.
+        lock_expiration: The lock expiration time.
+    """
+    if lock_warning_threshold >= lock_expiration:
+        raise InvalidLockWarningThresholdError(
+            f"The lock warning threshold({lock_warning_threshold}) must be less than the lock expiration time({lock_expiration})."
+        )
+
+
 class StateManagerRedis(StateManager):
     """A state manager that stores states in redis."""
 
@@ -3214,6 +3239,11 @@ class StateManagerRedis(StateManager):
 
     # The maximum time to hold a lock (ms).
     lock_expiration: int = pydantic.Field(default_factory=_default_lock_expiration)
+
+    # The minimum time to hold a lock (ms).
+    lock_warning_threshold: int = pydantic.Field(
+        default_factory=_default_lock_warning_threshold
+    )
 
     # The keyspace subscription string when redis is waiting for lock to be released
     _redis_notify_keyspace_events: str = (
@@ -3402,6 +3432,19 @@ class StateManagerRedis(StateManager):
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
                 "or use `@rx.event(background=True)` decorator for long-running tasks."
             )
+        elif lock_id is not None:
+            time_taken = self.lock_expiration / 1000 - (
+                await self.redis.ttl(self._lock_key(token))
+            )
+            _validate_lock_warning_threshold(
+                self.lock_warning_threshold, self.lock_expiration
+            )
+            if time_taken > self.lock_warning_threshold / 1000:
+                console.warn(
+                    f"Lock for token {token} was held too long {time_taken=}s, avoid blocking operations.",
+                    dedupe=True,
+                )
+
         client_token, substate_name = _split_substate_key(token)
         # If the substate name on the token doesn't match the instance name, it cannot have a parent.
         if state.parent_state is not None and state.get_full_name() != substate_name:
