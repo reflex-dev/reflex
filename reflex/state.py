@@ -3494,6 +3494,12 @@ class StateManagerRedis(StateManager):
         Args:
             lock_warning_threshold: The lock warning threshold.
             values: The validated attributes.
+
+        Returns:
+            The lock warning threshold.
+
+        Raises:
+            InvalidLockWarningThresholdError: If the lock warning threshold is invalid.
         """
         if lock_warning_threshold >= (lock_expiration := values["lock_expiration"]):
             raise InvalidLockWarningThresholdError(
