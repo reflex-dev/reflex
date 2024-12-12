@@ -1295,7 +1295,7 @@ async def process(
                 await asyncio.create_task(
                     app.event_namespace.emit(
                         "reload",
-                        data=format.json_dumps(event),
+                        data=event,
                         to=sid,
                     )
                 )
