@@ -560,7 +560,11 @@ def compile_unevaluated_page(
     """
     # Generate the component if it is a callable.
     component = page.component
-    component = component if isinstance(component, Component) else component()
+    component = (
+        component
+        if isinstance(component, Component)
+        else (Fragment.create(component) if isinstance(component, Var) else component())
+    )
 
     # unpack components that return tuples in an rx.fragment.
     if isinstance(component, tuple):
