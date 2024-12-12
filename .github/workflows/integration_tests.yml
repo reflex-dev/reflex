@@ -198,7 +198,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ['3.11.5', '3.12.0']
-    runs-on: macos-12
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_build_env
