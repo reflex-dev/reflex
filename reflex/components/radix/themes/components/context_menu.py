@@ -237,8 +237,10 @@ class ContextMenuCheckbox(Checkbox):
     """The component that contains the checkbox."""
 
     tag = "ContextMenu.CheckboxItem"
+
     # Text to render as shortcut.
     shortcut: Var[str]
+
 
 class ContextMenu(ComponentNamespace):
     """Menu representing a set of actions, displayed at the origin of a pointer right-click or long-press."""
