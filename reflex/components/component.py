@@ -1526,7 +1526,7 @@ class Component(BaseComponent, ABC):
             **self._get_special_hooks(),
         }
 
-    def _get_added_hooks(self) -> dict[str, VarData]:
+    def _get_added_hooks(self) -> dict[str, VarData | None]:
         """Get the hooks added via `add_hooks` method.
 
         Returns:
@@ -1552,7 +1552,7 @@ class Component(BaseComponent, ABC):
                 if isinstance(hook, Var):
                     extract_var_hooks(hook)
                 else:
-                    code[hook] = VarData()
+                    code[hook] = None
 
         return code
 
