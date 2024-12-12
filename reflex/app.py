@@ -947,12 +947,12 @@ class App(MiddlewareMixin, LifespanMixin):
             is not None
         ):
             executor = concurrent.futures.ProcessPoolExecutor(
-                max_workers=number_of_processes,
+                max_workers=number_of_processes or None,
                 mp_context=multiprocessing.get_context("fork"),
             )
         else:
             executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=environment.REFLEX_COMPILE_THREADS.get()
+                max_workers=environment.REFLEX_COMPILE_THREADS.get() or None
             )
 
         for route, component in zip(self.pages, page_components):
@@ -1157,7 +1157,7 @@ class App(MiddlewareMixin, LifespanMixin):
             if hasattr(handler_fn, "__name__"):
                 _fn_name = handler_fn.__name__
             else:
-                _fn_name = handler_fn.__class__.__name__
+                _fn_name = type(handler_fn).__name__
 
             if isinstance(handler_fn, functools.partial):
                 raise ValueError(

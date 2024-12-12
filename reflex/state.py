@@ -98,6 +98,7 @@ from reflex.utils.exceptions import (
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSchemaMismatchError,
+    StateSerializationError,
     StateTooLargeError,
 )
 from reflex.utils.exec import is_testing_env
@@ -443,7 +444,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The string representation of the state.
         """
-        return f"{self.__class__.__name__}({self.dict()})"
+        return f"{type(self).__name__}({self.dict()})"
 
     @classmethod
     def _get_computed_vars(cls) -> list[ComputedVar]:
@@ -2198,8 +2199,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Returns:
             The serialized state.
+
+        Raises:
+            StateSerializationError: If the state cannot be serialized.
         """
         payload = b""
+        error = ""
         try:
             payload = pickle.dumps((self._to_schema(), self))
         except HANDLED_PICKLE_ERRORS as og_pickle_error:
@@ -2233,6 +2238,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             else:
                 prefix = STATE_NOT_COMPRESSED
             payload = prefix + payload
+
+        if not payload:
+            raise StateSerializationError(error)
 
         return payload
 
@@ -3662,7 +3670,7 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The representation of the wrapped object.
         """
-        return f"{self.__class__.__name__}({self.__wrapped__})"
+        return f"{type(self).__name__}({self.__wrapped__})"
 
     def _mark_dirty(
         self,

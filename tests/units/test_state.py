@@ -35,7 +35,6 @@ from reflex import constants
 from reflex.app import App
 from reflex.base import Base
 from reflex.components.sonner.toast import Toaster
-from reflex.config import environment
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
 from reflex.state import (
@@ -56,7 +55,11 @@ from reflex.state import (
 )
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
-from reflex.utils.exceptions import ReflexRuntimeError, SetUndefinedStateVarError
+from reflex.utils.exceptions import (
+    ReflexRuntimeError,
+    SetUndefinedStateVarError,
+    StateSerializationError,
+)
 from reflex.utils.format import json_dumps
 from reflex.vars.base import Var, computed_var
 from tests.units.states.mutation import MutableSQLAModel, MutableTestState
@@ -1699,7 +1702,7 @@ async def test_state_manager_modify_state(
         assert not state_manager._states_locks[token].locked()
 
         # separate instances should NOT share locks
-        sm2 = state_manager.__class__(state=TestState)
+        sm2 = type(state_manager)(state=TestState)
         assert sm2._state_manager_lock is state_manager._state_manager_lock
         assert not sm2._states_locks
         if state_manager._states_locks:
@@ -3434,9 +3437,9 @@ def test_fallback_pickle():
     # Some object, like generator, are still unpicklable with dill.
     state3 = DillState(_reflex_internal_init=True)  # type: ignore
     state3._g = (i for i in range(10))
-    pk3 = state3._serialize()
-    expected_size = 1 if environment.REFLEX_COMPRESS_STATE.get() else 0
-    assert len(pk3) == expected_size
+
+    with pytest.raises(StateSerializationError):
+        _ = state3._serialize()
 
 
 def test_typed_state() -> None:

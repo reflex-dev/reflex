@@ -1569,7 +1569,7 @@ class CachedVarOperation:
         if name == "_js_expr":
             return self._cached_var_name
 
-        parent_classes = inspect.getmro(self.__class__)
+        parent_classes = inspect.getmro(type(self))
 
         next_class = parent_classes[parent_classes.index(CachedVarOperation) + 1]
 
@@ -1611,7 +1611,7 @@ class CachedVarOperation:
         """
         return hash(
             (
-                self.__class__.__name__,
+                type(self).__name__,
                 *[
                     getattr(self, field.name)
                     for field in dataclasses.fields(self)  # type: ignore
@@ -1733,7 +1733,7 @@ class CallableVar(Var):
         Returns:
             The hash of the object.
         """
-        return hash((self.__class__.__name__, self.original_var))
+        return hash((type(self).__name__, self.original_var))
 
 
 RETURN_TYPE = TypeVar("RETURN_TYPE")

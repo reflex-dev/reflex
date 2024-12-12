@@ -26,7 +26,7 @@ class Expiration(SimpleNamespace):
     # Token expiration time in seconds
     TOKEN = 60 * 60
     # Maximum time in milliseconds that a state can be locked for exclusive access.
-    LOCK = 1000
+    LOCK = 10000
     # The PING timeout
     PING = 120
 

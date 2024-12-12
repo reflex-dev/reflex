@@ -495,7 +495,7 @@ def initialize_requirements_txt():
     try:
         other_requirements_exist = False
         with open(fp, "r", encoding=encoding) as f:
-            for req in f.readlines():
+            for req in f:
                 # Check if we have a package name that is reflex
                 if re.match(r"^reflex[^a-zA-Z0-9]", req):
                     console.debug(f"{fp} already has reflex as dependency.")

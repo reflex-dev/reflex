@@ -73,7 +73,7 @@ def StateInheritance():
         def on_click_other_mixin(self):
             self.other_mixin_clicks += 1
             self.other_mixin = (
-                f"{self.__class__.__name__}.clicked.{self.other_mixin_clicks}"
+                f"{type(self).__name__}.clicked.{self.other_mixin_clicks}"
             )
 
     class Base1(Mixin, rx.State):
