@@ -40,9 +40,6 @@ let event_processing = false;
 // Array holding pending events to be processed.
 const event_queue = [];
 
-// Pending upload promises, by id
-const upload_controllers = {};
-
 /**
  * Generate a UUID (Used for session tokens).
  * Taken from: https://stackoverflow.com/questions/105034/how-do-i-create-a-guid-uuid
@@ -485,7 +482,9 @@ export const uploadFiles = async (
     return false;
   }
 
-  if (upload_controllers[upload_id]) {
+  const upload_ref_name = `__upload_controllers_${upload_id}`
+
+  if (refs[upload_ref_name]) {
     console.log("Upload already in progress for ", upload_id);
     return false;
   }
@@ -537,7 +536,7 @@ export const uploadFiles = async (
   });
 
   // Send the file to the server.
-  upload_controllers[upload_id] = controller;
+  refs[upload_ref_name] = controller;
 
   try {
     return await axios.post(getBackendURL(UPLOADURL), formdata, config);
@@ -557,7 +556,7 @@ export const uploadFiles = async (
     }
     return false;
   } finally {
-    delete upload_controllers[upload_id];
+    delete refs[upload_ref_name];
   }
 };
 
