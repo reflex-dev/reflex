@@ -29,6 +29,8 @@ class Expiration(SimpleNamespace):
     LOCK = 10000
     # The PING timeout
     PING = 120
+    # The maximum time in milliseconds to hold a lock before throwing a warning.
+    LOCK_WARNING_THRESHOLD = 1000
 
 
 class GitIgnore(SimpleNamespace):
