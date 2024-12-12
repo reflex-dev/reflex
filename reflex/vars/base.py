@@ -28,6 +28,7 @@ from typing import (
     Literal,
     NoReturn,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Type,
@@ -38,7 +39,14 @@ from typing import (
     overload,
 )
 
-from typing_extensions import ParamSpec, TypeGuard, deprecated, get_type_hints, override
+from typing_extensions import (
+    ParamSpec,
+    Protocol,
+    TypeGuard,
+    deprecated,
+    get_type_hints,
+    override,
+)
 
 from reflex import constants
 from reflex.base import Base
@@ -63,21 +71,65 @@ from reflex.utils.types import (
     _isinstance,
     get_origin,
     has_args,
+    typehint_issubclass,
     unionize,
 )
 
 if TYPE_CHECKING:
+    from reflex.components.component import BaseComponent
     from reflex.state import BaseState
 
+    from .function import ArgsFunctionOperation
     from .number import BooleanVar, NumberVar
     from .object import ObjectVar
     from .sequence import ArrayVar, StringVar
 
 
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
+VALUE = TypeVar("VALUE")
+INT_OR_FLOAT = TypeVar("INT_OR_FLOAT", int, float)
+FAKE_VAR_TYPE = TypeVar("FAKE_VAR_TYPE")
 OTHER_VAR_TYPE = TypeVar("OTHER_VAR_TYPE")
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+class ReflexCallable(Protocol[P, R]):
+    """Protocol for a callable."""
+
+    __call__: Callable[P, R]
+
+
+if sys.version_info >= (3, 10):
+    from types import EllipsisType
+
+    ReflexCallableParams = Union[EllipsisType, Tuple[GenericType, ...]]
+else:
+    ReflexCallableParams = Union[Any, Tuple[GenericType, ...]]
+
+
+def unwrap_reflex_callalbe(
+    callable_type: GenericType,
+) -> Tuple[ReflexCallableParams, GenericType]:
+    """Unwrap the ReflexCallable type.
+
+    Args:
+        callable_type: The ReflexCallable type to unwrap.
+
+    Returns:
+        The unwrapped ReflexCallable type.
+    """
+    if callable_type is ReflexCallable:
+        return Ellipsis, Any
+    if get_origin(callable_type) is not ReflexCallable:
+        return Ellipsis, Any
+    args = get_args(callable_type)
+    if not args or len(args) != 2:
+        return Ellipsis, Any
+    return args
 
 
 @dataclasses.dataclass(
@@ -115,12 +167,16 @@ class VarData:
     # Hooks that need to be present in the component to render this var
     hooks: Tuple[str, ...] = dataclasses.field(default_factory=tuple)
 
+    # Components that need to be present in the component to render this var
+    components: Tuple[BaseComponent, ...] = dataclasses.field(default_factory=tuple)
+
     def __init__(
         self,
         state: str = "",
         field_name: str = "",
         imports: ImportDict | ParsedImportDict | None = None,
         hooks: dict[str, None] | None = None,
+        components: Iterable[BaseComponent] | None = None,
     ):
         """Initialize the var data.
 
@@ -129,6 +185,7 @@ class VarData:
             field_name: The name of the field in the state.
             imports: Imports needed to render this var.
             hooks: Hooks that need to be present in the component to render this var.
+            components: Components that need to be present in the component to render this var.
         """
         immutable_imports: ImmutableParsedImportDict = tuple(
             sorted(
@@ -139,6 +196,9 @@ class VarData:
         object.__setattr__(self, "field_name", field_name)
         object.__setattr__(self, "imports", immutable_imports)
         object.__setattr__(self, "hooks", tuple(hooks or {}))
+        object.__setattr__(
+            self, "components", tuple(components) if components is not None else tuple()
+        )
 
     def old_school_imports(self) -> ImportDict:
         """Return the imports as a mutable dict.
@@ -184,15 +244,17 @@ class VarData:
             *(var_data.imports for var_data in all_var_datas)
         )
 
-        if state or _imports or hooks or field_name:
-            return VarData(
-                state=state,
-                field_name=field_name,
-                imports=_imports,
-                hooks=hooks,
-            )
+        components = tuple(
+            component for var_data in all_var_datas for component in var_data.components
+        )
 
-        return None
+        return VarData(
+            state=state,
+            field_name=field_name,
+            imports=_imports,
+            hooks=hooks,
+            components=components,
+        )
 
     def __bool__(self) -> bool:
         """Check if the var data is non-empty.
@@ -200,7 +262,7 @@ class VarData:
         Returns:
             True if any field is set to a non-default value.
         """
-        return bool(self.state or self.imports or self.hooks or self.field_name)
+        return any(getattr(self, field.name) for field in dataclasses.fields(self))
 
     @classmethod
     def from_state(cls, state: Type[BaseState] | str, field_name: str = "") -> VarData:
@@ -409,9 +471,11 @@ class Var(Generic[VAR_TYPE]):
 
         if _var_data or _js_expr != self._js_expr:
             self.__init__(
-                _js_expr=_js_expr,
-                _var_type=self._var_type,
-                _var_data=VarData.merge(self._var_data, _var_data),
+                **{
+                    **dataclasses.asdict(self),
+                    "_js_expr": _js_expr,
+                    "_var_data": VarData.merge(self._var_data, _var_data),
+                }
             )
 
     def __hash__(self) -> int:
@@ -498,11 +562,11 @@ class Var(Generic[VAR_TYPE]):
     @classmethod
     def create(
         cls,
-        value: Any,
+        value: FAKE_VAR_TYPE,
         _var_is_local: bool | None = None,
         _var_is_string: bool | None = None,
         _var_data: VarData | None = None,
-    ) -> Var:
+    ) -> Var[FAKE_VAR_TYPE]:
         """Create a var from a value.
 
         Args:
@@ -540,7 +604,7 @@ class Var(Generic[VAR_TYPE]):
             return LiteralVar.create(value)
 
         if _var_is_string is False or _var_is_local is True:
-            return cls(
+            return Var(
                 _js_expr=value,
                 _var_data=_var_data,
             )
@@ -582,19 +646,22 @@ class Var(Generic[VAR_TYPE]):
         return f"{constants.REFLEX_VAR_OPENING_TAG}{hashed_var}{constants.REFLEX_VAR_CLOSING_TAG}{self._js_expr}"
 
     @overload
-    def to(self, output: Type[str]) -> StringVar: ...
+    def to(self, output: Type[bool]) -> BooleanVar: ...  # pyright: ignore [reportOverlappingOverload]
 
     @overload
-    def to(self, output: Type[bool]) -> BooleanVar: ...
+    def to(self, output: Type[int]) -> NumberVar[int]: ...
 
     @overload
-    def to(self, output: type[int] | type[float]) -> NumberVar: ...
+    def to(self, output: type[float]) -> NumberVar[float]: ...
+
+    @overload
+    def to(self, output: Type[str]) -> StringVar: ...  # pyright: ignore [reportOverlappingOverload]
 
     @overload
     def to(
         self,
-        output: type[list] | type[tuple] | type[set],
-    ) -> ArrayVar: ...
+        output: type[Sequence[VALUE]] | type[set[VALUE]],
+    ) -> ArrayVar[Sequence[VALUE]]: ...
 
     @overload
     def to(
@@ -681,14 +748,29 @@ class Var(Generic[VAR_TYPE]):
 
         return self
 
+    # We use `NoReturn` here to catch `Var[Any]` and `Var[Unknown]` cases first.
     @overload
-    def guess_type(self: Var[str]) -> StringVar: ...
+    def guess_type(self: Var[NoReturn]) -> Var: ...  # pyright: ignore [reportOverlappingOverload]
 
     @overload
     def guess_type(self: Var[bool]) -> BooleanVar: ...
 
     @overload
-    def guess_type(self: Var[int] | Var[float] | Var[int | float]) -> NumberVar: ...
+    def guess_type(self: Var[INT_OR_FLOAT]) -> NumberVar[INT_OR_FLOAT]: ...
+
+    @overload
+    def guess_type(self: Var[str]) -> StringVar: ...  # pyright: ignore [reportOverlappingOverload]
+
+    @overload
+    def guess_type(self: Var[Sequence[VALUE]]) -> ArrayVar[Sequence[VALUE]]: ...
+
+    @overload
+    def guess_type(self: Var[Set[VALUE]]) -> ArrayVar[Set[VALUE]]: ...
+
+    @overload
+    def guess_type(
+        self: Var[Dict[VALUE, OTHER_VAR_TYPE]],
+    ) -> ObjectVar[Dict[VALUE, OTHER_VAR_TYPE]]: ...
 
     @overload
     def guess_type(self) -> Self: ...
@@ -872,7 +954,7 @@ class Var(Generic[VAR_TYPE]):
         """
         from .number import equal_operation
 
-        return equal_operation(self, other)
+        return equal_operation(self, other).guess_type()
 
     def __ne__(self, other: Var | Any) -> BooleanVar:
         """Check if the current object is not equal to the given object.
@@ -885,7 +967,7 @@ class Var(Generic[VAR_TYPE]):
         """
         from .number import equal_operation
 
-        return ~equal_operation(self, other)
+        return (~equal_operation(self, other)).guess_type()
 
     def bool(self) -> BooleanVar:
         """Convert the var to a boolean.
@@ -895,7 +977,7 @@ class Var(Generic[VAR_TYPE]):
         """
         from .number import boolify
 
-        return boolify(self)
+        return boolify(self)  # pyright: ignore [reportReturnType]
 
     def __and__(self, other: Var | Any) -> Var:
         """Perform a logical AND operation on the current instance and another variable.
@@ -947,7 +1029,7 @@ class Var(Generic[VAR_TYPE]):
         Returns:
             A `BooleanVar` object representing the result of the logical NOT operation.
         """
-        return ~self.bool()
+        return (~self.bool()).guess_type()
 
     def to_string(self, use_json: bool = True) -> StringVar:
         """Convert the var to a string.
@@ -1097,7 +1179,7 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     @classmethod
-    def range(cls, stop: int | NumberVar, /) -> ArrayVar[List[int]]: ...
+    def range(cls, stop: int | NumberVar, /) -> ArrayVar[Sequence[int]]: ...
 
     @overload
     @classmethod
@@ -1107,15 +1189,16 @@ class Var(Generic[VAR_TYPE]):
         end: int | NumberVar,
         step: int | NumberVar = 1,
         /,
-    ) -> ArrayVar[List[int]]: ...
+    ) -> ArrayVar[Sequence[int]]: ...
 
     @classmethod
     def range(
         cls,
-        first_endpoint: int | NumberVar,
-        second_endpoint: int | NumberVar | None = None,
-        step: int | NumberVar | None = None,
-    ) -> ArrayVar[List[int]]:
+        first_endpoint: int | Var[int],
+        second_endpoint: int | Var[int] | None = None,
+        step: int | Var[int] | None = None,
+        /,
+    ) -> ArrayVar[Sequence[int]]:
         """Create a range of numbers.
 
         Args:
@@ -1128,7 +1211,11 @@ class Var(Generic[VAR_TYPE]):
         """
         from .sequence import ArrayVar
 
-        return ArrayVar.range(first_endpoint, second_endpoint, step)
+        if second_endpoint is None:
+            return ArrayVar.range.call(first_endpoint).guess_type()
+        if step is None:
+            return ArrayVar.range.call(first_endpoint, second_endpoint).guess_type()
+        return ArrayVar.range.call(first_endpoint, second_endpoint, step).guess_type()
 
     def __bool__(self) -> bool:
         """Raise exception if using Var in a boolean context.
@@ -1166,6 +1253,28 @@ OUTPUT = TypeVar("OUTPUT", bound=Var)
 
 VAR_SUBCLASS = TypeVar("VAR_SUBCLASS", bound=Var)
 VAR_INSIDE = TypeVar("VAR_INSIDE")
+
+
+class VarWithDefault(Var[VAR_TYPE]):
+    """Annotate an optional argument."""
+
+    def __init__(self, default_value: VAR_TYPE):
+        """Initialize the default value.
+
+        Args:
+            default_value: The default value.
+        """
+        super().__init__("")
+        self._default = default_value
+
+    @property
+    def default(self) -> Var[VAR_TYPE]:
+        """Get the default value.
+
+        Returns:
+            The default value.
+        """
+        return Var.create(self._default)
 
 
 class ToOperation:
@@ -1309,9 +1418,6 @@ class LiteralVar(Var):
         Raises:
             TypeError: If the value is not a supported type for LiteralVar.
         """
-        from .object import LiteralObjectVar
-        from .sequence import LiteralStringVar
-
         if isinstance(value, Var):
             if _var_data is None:
                 return value
@@ -1323,6 +1429,9 @@ class LiteralVar(Var):
 
         from reflex.event import EventHandler
         from reflex.utils.format import get_event_handler_parts
+
+        from .object import LiteralObjectVar
+        from .sequence import LiteralStringVar
 
         if isinstance(value, EventHandler):
             return Var(_js_expr=".".join(filter(None, get_event_handler_parts(value))))
@@ -1413,71 +1522,188 @@ def get_python_literal(value: Union[LiteralVar, Any]) -> Any | None:
     return value
 
 
+def validate_arg(type_hint: GenericType) -> Callable[[Any], str | None]:
+    """Create a validator for an argument.
+
+    Args:
+        type_hint: The type hint of the argument.
+
+    Returns:
+        The validator.
+    """
+
+    def validate(value: Any):
+        if isinstance(value, LiteralVar):
+            if not _isinstance(value._var_value, type_hint):
+                return f"Expected {type_hint} but got {value._var_value} of type {type(value._var_value)}."
+        elif isinstance(value, Var):
+            if not typehint_issubclass(value._var_type, type_hint):
+                return f"Expected {type_hint} but got {value._var_type}."
+        else:
+            if not _isinstance(value, type_hint):
+                return f"Expected {type_hint} but got {value} of type {type(value)}."
+
+    return validate
+
+
 P = ParamSpec("P")
 T = TypeVar("T")
+V1 = TypeVar("V1")
+V2 = TypeVar("V2")
+V3 = TypeVar("V3")
+V4 = TypeVar("V4")
+V5 = TypeVar("V5")
 
 
-# NoReturn is used to match CustomVarOperationReturn with no type hint.
-@overload
-def var_operation(
-    func: Callable[P, CustomVarOperationReturn[NoReturn]],
-) -> Callable[P, Var]: ...
+class TypeComputer(Protocol):
+    """A protocol for type computers."""
 
+    def __call__(self, *args: Var) -> Tuple[GenericType, Union[TypeComputer, None]]:
+        """Compute the type of the operation.
 
-@overload
-def var_operation(
-    func: Callable[P, CustomVarOperationReturn[bool]],
-) -> Callable[P, BooleanVar]: ...
-
-
-NUMBER_T = TypeVar("NUMBER_T", int, float, Union[int, float])
-
-
-@overload
-def var_operation(
-    func: Callable[P, CustomVarOperationReturn[NUMBER_T]],
-) -> Callable[P, NumberVar[NUMBER_T]]: ...
+        Args:
+            *args: The arguments to compute the type of.
+        """
+        ...
 
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[str]],
-) -> Callable[P, StringVar]: ...
-
-
-LIST_T = TypeVar("LIST_T", bound=Union[List[Any], Tuple, Set])
+    func: Callable[[Var[V1], Var[V2], Var[V3]], CustomVarOperationReturn[T]],
+) -> ArgsFunctionOperation[ReflexCallable[[V1, V2, V3], T]]: ...
 
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[LIST_T]],
-) -> Callable[P, ArrayVar[LIST_T]]: ...
-
-
-OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Dict)
+    func: Callable[[Var[V1], Var[V2], VarWithDefault[V3]], CustomVarOperationReturn[T]],
+) -> ArgsFunctionOperation[ReflexCallable[[V1, V2, VarWithDefault[V3]], T]]: ...
 
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[OBJECT_TYPE]],
-) -> Callable[P, ObjectVar[OBJECT_TYPE]]: ...
+    func: Callable[
+        [
+            Var[V1],
+            VarWithDefault[V2],
+            VarWithDefault[V3],
+        ],
+        CustomVarOperationReturn[T],
+    ],
+) -> ArgsFunctionOperation[
+    ReflexCallable[
+        [
+            V1,
+            VarWithDefault[V2],
+            VarWithDefault[V3],
+        ],
+        T,
+    ]
+]: ...
 
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[T]],
-) -> Callable[P, Var[T]]: ...
+    func: Callable[
+        [
+            VarWithDefault[V1],
+            VarWithDefault[V2],
+            VarWithDefault[V3],
+        ],
+        CustomVarOperationReturn[T],
+    ],
+) -> ArgsFunctionOperation[
+    ReflexCallable[
+        [
+            VarWithDefault[V1],
+            VarWithDefault[V1],
+            VarWithDefault[V1],
+        ],
+        T,
+    ]
+]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[[Var[V1], Var[V2]], CustomVarOperationReturn[T]],
+) -> ArgsFunctionOperation[ReflexCallable[[V1, V2], T]]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[
+        [
+            Var[V1],
+            VarWithDefault[V2],
+        ],
+        CustomVarOperationReturn[T],
+    ],
+) -> ArgsFunctionOperation[
+    ReflexCallable[
+        [
+            V1,
+            VarWithDefault[V2],
+        ],
+        T,
+    ]
+]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[
+        [
+            VarWithDefault[V1],
+            VarWithDefault[V2],
+        ],
+        CustomVarOperationReturn[T],
+    ],
+) -> ArgsFunctionOperation[
+    ReflexCallable[
+        [
+            VarWithDefault[V1],
+            VarWithDefault[V2],
+        ],
+        T,
+    ]
+]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[[Var[V1]], CustomVarOperationReturn[T]],
+) -> ArgsFunctionOperation[ReflexCallable[[V1], T]]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[
+        [VarWithDefault[V1]],
+        CustomVarOperationReturn[T],
+    ],
+) -> ArgsFunctionOperation[
+    ReflexCallable[
+        [VarWithDefault[V1]],
+        T,
+    ]
+]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[[], CustomVarOperationReturn[T]],
+) -> ArgsFunctionOperation[ReflexCallable[[], T]]: ...
 
 
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[T]],
-) -> Callable[P, Var[T]]:
+    func: Callable[..., CustomVarOperationReturn[T]],
+) -> ArgsFunctionOperation[ReflexCallable[..., T]]:
     """Decorator for creating a var operation.
 
     Example:
     ```python
     @var_operation
-    def add(a: NumberVar, b: NumberVar):
+    def add(a: Var[int], b: Var[int]):
         return custom_var_operation(f"{a} + {b}")
     ```
 
@@ -1486,27 +1712,88 @@ def var_operation(
 
     Returns:
         The decorated function.
+
+    Raises:
+        TypeError: If the function has keyword-only arguments or arguments without Var type hints.
     """
+    from .function import ArgsFunctionOperation, ReflexCallable
 
-    @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Var[T]:
-        func_args = list(inspect.signature(func).parameters)
-        args_vars = {
-            func_args[i]: (LiteralVar.create(arg) if not isinstance(arg, Var) else arg)
-            for i, arg in enumerate(args)
-        }
-        kwargs_vars = {
-            key: LiteralVar.create(value) if not isinstance(value, Var) else value
-            for key, value in kwargs.items()
-        }
+    func_name = func.__name__
 
-        return CustomVarOperation.create(
-            name=func.__name__,
-            args=tuple(list(args_vars.items()) + list(kwargs_vars.items())),
-            return_var=func(*args_vars.values(), **kwargs_vars),  # type: ignore
-        ).guess_type()
+    func_arg_spec = inspect.getfullargspec(func)
+    func_signature = inspect.signature(func)
 
-    return wrapper
+    if func_arg_spec.kwonlyargs:
+        raise TypeError(f"Function {func_name} cannot have keyword-only arguments.")
+    if func_arg_spec.varargs:
+        raise TypeError(f"Function {func_name} cannot have variable arguments.")
+
+    arg_names = func_arg_spec.args
+
+    arg_default_values: Sequence[inspect.Parameter.empty | VarWithDefault] = tuple(
+        (
+            default_value
+            if isinstance(
+                (default_value := func_signature.parameters[arg_name].default),
+                VarWithDefault,
+            )
+            else inspect.Parameter.empty()
+        )
+        for arg_name in arg_names
+    )
+
+    type_hints = get_type_hints(func)
+
+    if not all(
+        (get_origin((type_hint := type_hints.get(arg_name, Any))) or type_hint)
+        in (Var, VarWithDefault)
+        and len(get_args(type_hint)) <= 1
+        for arg_name in arg_names
+    ):
+        raise TypeError(
+            f"Function {func_name} must have type hints of the form `Var[Type]`."
+        )
+
+    args_with_type_hints = tuple(
+        (arg_name, (args[0] if (args := get_args(type_hints[arg_name])) else Any))
+        for arg_name in arg_names
+    )
+
+    arg_vars = tuple(
+        (
+            Var("_" + arg_name, _var_type=arg_python_type)
+            if not isinstance(arg_python_type, TypeVar)
+            else Var("_" + arg_name)
+        )
+        for arg_name, arg_python_type in args_with_type_hints
+    )
+
+    custom_operation_return = func(*arg_vars)
+
+    args_operation = ArgsFunctionOperation.create(
+        tuple(map(str, arg_vars)),
+        custom_operation_return,
+        default_values=arg_default_values,
+        validators=tuple(
+            validate_arg(arg_type)
+            if not isinstance(arg_type, TypeVar)
+            else validate_arg(arg_type.__bound__ or Any)
+            for _, arg_type in args_with_type_hints
+        ),
+        function_name=func_name,
+        type_computer=custom_operation_return._type_computer,
+        _var_type=ReflexCallable[
+            tuple(
+                arg_python_type
+                if isinstance(arg_default_values[i], inspect.Parameter)
+                else VarWithDefault[arg_python_type]
+                for i, (_, arg_python_type) in enumerate(args_with_type_hints)
+            ),  # type: ignore
+            custom_operation_return._var_type,
+        ],
+    )
+
+    return args_operation
 
 
 def figure_out_type(value: Any) -> types.GenericType:
@@ -1619,66 +1906,6 @@ class CachedVarOperation:
                 ],
             )
         )
-
-
-def and_operation(a: Var | Any, b: Var | Any) -> Var:
-    """Perform a logical AND operation on two variables.
-
-    Args:
-        a: The first variable.
-        b: The second variable.
-
-    Returns:
-        The result of the logical AND operation.
-    """
-    return _and_operation(a, b)  # type: ignore
-
-
-@var_operation
-def _and_operation(a: Var, b: Var):
-    """Perform a logical AND operation on two variables.
-
-    Args:
-        a: The first variable.
-        b: The second variable.
-
-    Returns:
-        The result of the logical AND operation.
-    """
-    return var_operation_return(
-        js_expression=f"({a} && {b})",
-        var_type=unionize(a._var_type, b._var_type),
-    )
-
-
-def or_operation(a: Var | Any, b: Var | Any) -> Var:
-    """Perform a logical OR operation on two variables.
-
-    Args:
-        a: The first variable.
-        b: The second variable.
-
-    Returns:
-        The result of the logical OR operation.
-    """
-    return _or_operation(a, b)  # type: ignore
-
-
-@var_operation
-def _or_operation(a: Var, b: Var):
-    """Perform a logical OR operation on two variables.
-
-    Args:
-        a: The first variable.
-        b: The second variable.
-
-    Returns:
-        The result of the logical OR operation.
-    """
-    return var_operation_return(
-        js_expression=f"({a} || {b})",
-        var_type=unionize(a._var_type, b._var_type),
-    )
 
 
 @dataclasses.dataclass(
@@ -1967,10 +2194,10 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: ComputedVar[list[LIST_INSIDE]],
+        self: ComputedVar[Sequence[LIST_INSIDE]],
         instance: None,
         owner: Type,
-    ) -> ArrayVar[list[LIST_INSIDE]]: ...
+    ) -> ArrayVar[Sequence[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
@@ -1978,13 +2205,6 @@ class ComputedVar(Var[RETURN_TYPE]):
         instance: None,
         owner: Type,
     ) -> ArrayVar[set[LIST_INSIDE]]: ...
-
-    @overload
-    def __get__(
-        self: ComputedVar[tuple[LIST_INSIDE, ...]],
-        instance: None,
-        owner: Type,
-    ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
 
     @overload
     def __get__(self, instance: None, owner: Type) -> ComputedVar[RETURN_TYPE]: ...
@@ -2124,7 +2344,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                     d.update(
                         self._deps(
                             objclass=objclass,
-                            obj=ref_obj,
+                            obj=ref_obj,  # pyright: ignore [reportArgumentType]
                         )
                     )
                 # recurse into property fget functions
@@ -2167,7 +2387,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         with contextlib.suppress(AttributeError):
             delattr(instance, self._cache_attr)
 
-    def _determine_var_type(self) -> Type:
+    def _determine_var_type(self) -> GenericType:
         """Get the type of the var.
 
         Returns:
@@ -2289,14 +2509,22 @@ def computed_var(
 RETURN = TypeVar("RETURN")
 
 
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
 class CustomVarOperationReturn(Var[RETURN]):
     """Base class for custom var operations."""
+
+    _type_computer: Optional[TypeComputer] = dataclasses.field(default=None)
 
     @classmethod
     def create(
         cls,
         js_expression: str,
         _var_type: Type[RETURN] | None = None,
+        _type_computer: Optional[TypeComputer] = None,
         _var_data: VarData | None = None,
     ) -> CustomVarOperationReturn[RETURN]:
         """Create a CustomVarOperation.
@@ -2304,6 +2532,7 @@ class CustomVarOperationReturn(Var[RETURN]):
         Args:
             js_expression: The JavaScript expression to evaluate.
             _var_type: The type of the var.
+            _type_computer: A function to compute the type of the var given the arguments.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -2312,6 +2541,7 @@ class CustomVarOperationReturn(Var[RETURN]):
         return CustomVarOperationReturn(
             _js_expr=js_expression,
             _var_type=_var_type or Any,
+            _type_computer=_type_computer,
             _var_data=_var_data,
         )
 
@@ -2319,6 +2549,7 @@ class CustomVarOperationReturn(Var[RETURN]):
 def var_operation_return(
     js_expression: str,
     var_type: Type[RETURN] | None = None,
+    type_computer: Optional[TypeComputer] = None,
     var_data: VarData | None = None,
 ) -> CustomVarOperationReturn[RETURN]:
     """Shortcut for creating a CustomVarOperationReturn.
@@ -2326,15 +2557,17 @@ def var_operation_return(
     Args:
         js_expression: The JavaScript expression to evaluate.
         var_type: The type of the var.
+        type_computer: A function to compute the type of the var given the arguments.
         var_data: Additional hooks and imports associated with the Var.
 
     Returns:
         The CustomVarOperationReturn.
     """
     return CustomVarOperationReturn.create(
-        js_expression,
-        var_type,
-        var_data,
+        js_expression=js_expression,
+        _var_type=var_type,
+        _type_computer=type_computer,
+        _var_data=var_data,
     )
 
 
@@ -2608,8 +2841,12 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
                 var_datas.append(sub._var_data)
             elif not isinstance(sub, str):
                 # Recurse into dict values.
-                if hasattr(sub, "values") and callable(sub.values):
-                    var_datas.extend(_extract_var_data(sub.values()))
+                if (
+                    (values_fn := getattr(sub, "values", None)) is not None
+                    and callable(values_fn)
+                    and isinstance((values := values_fn()), Iterable)
+                ):
+                    var_datas.extend(_extract_var_data(values))
                 # Recurse into iterable values (or dict keys).
                 var_datas.extend(_extract_var_data(sub))
 
@@ -2618,9 +2855,9 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
         var_datas.append(value._var_data)
     else:
         # Recurse when value is a dict itself.
-        values = getattr(value, "values", None)
-        if callable(values):
-            var_datas.extend(_extract_var_data(values()))
+        values_fn = getattr(value, "values", None)
+        if callable(values_fn) and isinstance((values := values_fn()), Iterable):
+            var_datas.extend(_extract_var_data(values))
     return var_datas
 
 
@@ -2902,10 +3139,10 @@ class Field(Generic[T]):
 
     @overload
     def __get__(
-        self: Field[List[V]] | Field[Set[V]] | Field[Tuple[V, ...]],
+        self: Field[Sequence[V]] | Field[Set[V]],
         instance: None,
         owner,
-    ) -> ArrayVar[List[V]]: ...
+    ) -> ArrayVar[Sequence[V]]: ...
 
     @overload
     def __get__(
@@ -2942,3 +3179,157 @@ def field(value: T) -> Field[T]:
         The Field.
     """
     return value  # type: ignore
+
+
+def and_operation(a: Var | Any, b: Var | Any) -> Var:
+    """Perform a logical AND operation on two variables.
+
+    Args:
+        a: The first variable.
+        b: The second variable.
+
+    Returns:
+        The result of the logical AND operation.
+    """
+    return _and_operation(a, b)  # type: ignore
+
+
+@var_operation
+def _and_operation(a: Var, b: Var):
+    """Perform a logical AND operation on two variables.
+
+    Args:
+        a: The first variable.
+        b: The second variable.
+
+    Returns:
+        The result of the logical AND operation.
+    """
+
+    def type_computer(*args: Var):
+        if not args:
+            return (ReflexCallable[[Any, Any], Any], type_computer)
+        if len(args) == 1:
+            return (
+                ReflexCallable[[Any], Any],
+                functools.partial(type_computer, args[0]),
+            )
+        return (
+            ReflexCallable[[], unionize(args[0]._var_type, args[1]._var_type)],
+            None,
+        )
+
+    return var_operation_return(
+        js_expression=f"({a} && {b})",
+        type_computer=type_computer,
+    )
+
+
+def or_operation(a: Var | Any, b: Var | Any) -> Var:
+    """Perform a logical OR operation on two variables.
+
+    Args:
+        a: The first variable.
+        b: The second variable.
+
+    Returns:
+        The result of the logical OR operation.
+    """
+    return _or_operation(a, b)  # type: ignore
+
+
+@var_operation
+def _or_operation(a: Var, b: Var):
+    """Perform a logical OR operation on two variables.
+
+    Args:
+        a: The first variable.
+        b: The second variable.
+
+    Returns:
+        The result of the logical OR operation.
+    """
+
+    def type_computer(*args: Var):
+        if not args:
+            return (ReflexCallable[[Any, Any], Any], type_computer)
+        if len(args) == 1:
+            return (
+                ReflexCallable[[Any], Any],
+                functools.partial(type_computer, args[0]),
+            )
+        return (
+            ReflexCallable[[], unionize(args[0]._var_type, args[1]._var_type)],
+            None,
+        )
+
+    return var_operation_return(
+        js_expression=f"({a} || {b})",
+        type_computer=type_computer,
+    )
+
+
+def passthrough_unary_type_computer(no_args: GenericType) -> TypeComputer:
+    """Create a type computer for unary operations.
+
+    Args:
+        no_args: The type to return when no arguments are provided.
+
+    Returns:
+        The type computer.
+    """
+
+    def type_computer(*args: Var):
+        if not args:
+            return (no_args, type_computer)
+        return (ReflexCallable[[], args[0]._var_type], None)
+
+    return type_computer
+
+
+def unary_type_computer(
+    no_args: GenericType, computer: Callable[[Var], GenericType]
+) -> TypeComputer:
+    """Create a type computer for unary operations.
+
+    Args:
+        no_args: The type to return when no arguments are provided.
+        computer: The function to compute the type.
+
+    Returns:
+        The type computer.
+    """
+
+    def type_computer(*args: Var):
+        if not args:
+            return (no_args, type_computer)
+        return (ReflexCallable[[], computer(args[0])], None)
+
+    return type_computer
+
+
+def nary_type_computer(
+    *types: GenericType, computer: Callable[..., GenericType]
+) -> TypeComputer:
+    """Create a type computer for n-ary operations.
+
+    Args:
+        types: The types to return when no arguments are provided.
+        computer: The function to compute the type.
+
+    Returns:
+        The type computer.
+    """
+
+    def type_computer(*args: Var):
+        if len(args) != len(types):
+            return (
+                types[len(args)],
+                functools.partial(type_computer, *args),
+            )
+        return (
+            ReflexCallable[[], computer(args)],
+            None,
+        )
+
+    return type_computer
