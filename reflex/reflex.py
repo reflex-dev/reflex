@@ -9,18 +9,16 @@ from typing import List, Optional
 
 import typer
 import typer.core
-from reflex_cli.deployments import deployments_cli
-from reflex_cli.utils import dependency
-from reflex_cli.v2.deployments import hosting_cli
+from reflex_cli.v2.deployments import check_version, hosting_cli
 
 from reflex import constants
 from reflex.config import environment, get_config
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.state import reset_disk_state_manager
-from reflex.utils import console, redir, telemetry
+from reflex.utils import console, telemetry
 
 # Disable typer+rich integration for help panels
-typer.core.rich = False  # type: ignore
+typer.core.rich = None  # type: ignore
 
 # Create the app.
 try:
@@ -89,30 +87,8 @@ def _init(
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
 
-    # Integrate with reflex.build.
-    generation_hash = None
-    if ai:
-        if template is None:
-            # If AI is requested and no template specified, redirect the user to reflex.build.
-            generation_hash = redir.reflex_build_redirect()
-        elif prerequisites.is_generation_hash(template):
-            # Otherwise treat the template as a generation hash.
-            generation_hash = template
-        else:
-            console.error(
-                "Cannot use `--template` option with `--ai` option. Please remove `--template` option."
-            )
-            raise typer.Exit(2)
-        template = constants.Templates.DEFAULT
-
     # Initialize the app.
-    template = prerequisites.initialize_app(app_name, template)
-
-    # If a reflex.build generation hash is available, download the code and apply it to the main module.
-    if generation_hash:
-        prerequisites.initialize_main_module_index_from_generation(
-            app_name, generation_hash=generation_hash
-        )
+    template = prerequisites.initialize_app(app_name, template, ai)
 
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()
@@ -120,7 +96,7 @@ def _init(
     # Initialize the requirements.txt.
     prerequisites.initialize_requirements_txt()
 
-    template_msg = "" if template else f" using the {template} template"
+    template_msg = f" using the {template} template" if template else ""
     # Finish initializing the app.
     console.success(f"Initialized {app_name}{template_msg}")
 
@@ -352,45 +328,16 @@ def export(
     )
 
 
-def _login() -> str:
-    """Helper function to authenticate with Reflex hosting service."""
-    from reflex_cli.utils import hosting
-
-    access_token, invitation_code = hosting.authenticated_token()
-    if access_token:
-        console.print("You already logged in.")
-        return access_token
-
-    # If not already logged in, open a browser window/tab to the login page.
-    access_token = hosting.authenticate_on_browser(invitation_code)
-
-    if not access_token:
-        console.error("Unable to authenticate. Please try again or contact support.")
-        raise typer.Exit(1)
-
-    console.print("Successfully logged in.")
-    return access_token
-
-
 @cli.command()
-def login(
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
-    ),
-):
-    """Authenticate with Reflex hosting service."""
-    # Set the log level.
-    console.set_log_level(loglevel)
-
-    _login()
-
-
-@cli.command()
-def loginv2(loglevel: constants.LogLevel = typer.Option(config.loglevel)):
+def login(loglevel: constants.LogLevel = typer.Option(config.loglevel)):
     """Authenicate with experimental Reflex hosting service."""
     from reflex_cli.v2 import cli as hosting_cli
 
-    hosting_cli.login()
+    check_version()
+
+    validated_info = hosting_cli.login()
+    if validated_info is not None:
+        telemetry.send("login", user_uuid=validated_info.get("user_id"))
 
 
 @cli.command()
@@ -400,29 +347,11 @@ def logout(
     ),
 ):
     """Log out of access to Reflex hosting service."""
-    from reflex_cli.utils import hosting
+    from reflex_cli.v2.cli import logout
 
-    console.set_log_level(loglevel)
+    check_version()
 
-    hosting.log_out_on_browser()
-    console.debug("Deleting access token from config locally")
-    hosting.delete_token_from_config(include_invitation_code=True)
-
-
-@cli.command()
-def logoutv2(
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
-    ),
-):
-    """Log out of access to Reflex hosting service."""
-    from reflex_cli.v2.utils import hosting
-
-    console.set_log_level(loglevel)
-
-    hosting.log_out_on_browser()
-    console.debug("Deleting access token from config locally")
-    hosting.delete_token_from_config(include_invitation_code=True)
+    logout(loglevel)  # type: ignore
 
 
 db_cli = typer.Typer()
@@ -507,12 +436,6 @@ def makemigrations(
 
 @cli.command()
 def deploy(
-    key: Optional[str] = typer.Option(
-        None,
-        "-k",
-        "--deployment-key",
-        help="The name of the deployment. Domain name safe characters only.",
-    ),
     app_name: str = typer.Option(
         config.app_name,
         "--app-name",
@@ -523,121 +446,7 @@ def deploy(
         list(),
         "-r",
         "--region",
-        help="The regions to deploy to.",
-    ),
-    envs: List[str] = typer.Option(
-        list(),
-        "--env",
-        help="The environment variables to set: <key>=<value>. For multiple envs, repeat this option, e.g. --env k1=v2 --env k2=v2.",
-    ),
-    cpus: Optional[int] = typer.Option(
-        None, help="The number of CPUs to allocate.", hidden=True
-    ),
-    memory_mb: Optional[int] = typer.Option(
-        None, help="The amount of memory to allocate.", hidden=True
-    ),
-    auto_start: Optional[bool] = typer.Option(
-        None,
-        help="Whether to auto start the instance.",
-        hidden=True,
-    ),
-    auto_stop: Optional[bool] = typer.Option(
-        None,
-        help="Whether to auto stop the instance.",
-        hidden=True,
-    ),
-    frontend_hostname: Optional[str] = typer.Option(
-        None,
-        "--frontend-hostname",
-        help="The hostname of the frontend.",
-        hidden=True,
-    ),
-    interactive: bool = typer.Option(
-        True,
-        help="Whether to list configuration options and ask for confirmation.",
-    ),
-    with_metrics: Optional[str] = typer.Option(
-        None,
-        help="Setting for metrics scraping for the deployment. Setup required in user code.",
-        hidden=True,
-    ),
-    with_tracing: Optional[str] = typer.Option(
-        None,
-        help="Setting to export tracing for the deployment. Setup required in user code.",
-        hidden=True,
-    ),
-    upload_db_file: bool = typer.Option(
-        False,
-        help="Whether to include local sqlite db files when uploading to hosting service.",
-        hidden=True,
-    ),
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
-    ),
-):
-    """Deploy the app to the Reflex hosting service."""
-    from reflex_cli import cli as hosting_cli
-
-    from reflex.utils import export as export_utils
-    from reflex.utils import prerequisites
-
-    # Set the log level.
-    console.set_log_level(loglevel)
-
-    # Only check requirements if interactive. There is user interaction for requirements update.
-    if interactive:
-        dependency.check_requirements()
-
-    # Check if we are set up.
-    if prerequisites.needs_reinit(frontend=True):
-        _init(name=config.app_name, loglevel=loglevel)
-    prerequisites.check_latest_package_version(constants.ReflexHostingCLI.MODULE_NAME)
-
-    hosting_cli.deploy(
-        app_name=app_name,
-        export_fn=lambda zip_dest_dir,
-        api_url,
-        deploy_url,
-        frontend,
-        backend,
-        zipping: export_utils.export(
-            zip_dest_dir=zip_dest_dir,
-            api_url=api_url,
-            deploy_url=deploy_url,
-            frontend=frontend,
-            backend=backend,
-            zipping=zipping,
-            loglevel=loglevel.subprocess_level(),
-            upload_db_file=upload_db_file,
-        ),
-        key=key,
-        regions=regions,
-        envs=envs,
-        cpus=cpus,
-        memory_mb=memory_mb,
-        auto_start=auto_start,
-        auto_stop=auto_stop,
-        frontend_hostname=frontend_hostname,
-        interactive=interactive,
-        with_metrics=with_metrics,
-        with_tracing=with_tracing,
-        loglevel=loglevel.subprocess_level(),
-    )
-
-
-@cli.command()
-def deployv2(
-    app_name: str = typer.Option(
-        config.app_name,
-        "--app-name",
-        help="The name of the App to deploy under.",
-        hidden=True,
-    ),
-    regions: List[str] = typer.Option(
-        list(),
-        "-r",
-        "--region",
-        help="The regions to deploy to. For multiple envs, repeat this option, e.g. --region sjc --region iad",
+        help="The regions to deploy to. `reflex cloud regions` For multiple envs, repeat this option, e.g. --region sjc --region iad",
     ),
     envs: List[str] = typer.Option(
         list(),
@@ -647,13 +456,12 @@ def deployv2(
     vmtype: Optional[str] = typer.Option(
         None,
         "--vmtype",
-        help="Vm type id. Run reflex apps vmtypes list to get options.",
+        help="Vm type id. Run `reflex cloud vmtypes` to get options.",
     ),
     hostname: Optional[str] = typer.Option(
         None,
         "--hostname",
         help="The hostname of the frontend.",
-        hidden=True,
     ),
     interactive: bool = typer.Option(
         True,
@@ -663,7 +471,6 @@ def deployv2(
         None,
         "--envfile",
         help="The path to an env file to use. Will override any envs set manually.",
-        hidden=True,
     ),
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
@@ -671,25 +478,32 @@ def deployv2(
     project: Optional[str] = typer.Option(
         None,
         "--project",
-        help="project to deploy to",
-        hidden=True,
+        help="project id to deploy to",
     ),
     token: Optional[str] = typer.Option(
         None,
         "--token",
         help="token to use for auth",
-        hidden=True,
     ),
 ):
     """Deploy the app to the Reflex hosting service."""
+    from reflex_cli.utils import dependency
     from reflex_cli.v2 import cli as hosting_cli
-    from reflex_cli.v2.utils import dependency
 
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
 
+    check_version()
+
     # Set the log level.
     console.set_log_level(loglevel)
+
+    if not token:
+        # make sure user is logged in.
+        if interactive:
+            hosting_cli.login()
+        else:
+            raise SystemExit("Token is required for non-interactive mode.")
 
     # Only check requirements if interactive.
     # There is user interaction for requirements update.
@@ -723,7 +537,7 @@ def deployv2(
         envfile=envfile,
         hostname=hostname,
         interactive=interactive,
-        loglevel=loglevel.subprocess_level(),
+        loglevel=type(loglevel).INFO,  # type: ignore
         token=token,
         project=project,
     )
@@ -732,14 +546,9 @@ def deployv2(
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
 cli.add_typer(script_cli, name="script", help="Subcommands running helper scripts.")
 cli.add_typer(
-    deployments_cli,
-    name="deployments",
-    help="Subcommands for managing the Deployments.",
-)
-cli.add_typer(
     hosting_cli,
-    name="apps",
-    help="Subcommands for managing the Deployments.",
+    name="cloud",
+    help="Subcommands for managing the reflex cloud.",
 )
 cli.add_typer(
     custom_components_cli,

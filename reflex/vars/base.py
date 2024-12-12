@@ -1139,7 +1139,7 @@ class Var(Generic[VAR_TYPE]):
 
         if self._var_type is Any:
             raise TypeError(
-                f"You must provide an annotation for the state var `{str(self)}`. Annotation cannot be `{self._var_type}`."
+                f"You must provide an annotation for the state var `{self!s}`. Annotation cannot be `{self._var_type}`."
             )
 
         if name in REPLACED_NAMES:
@@ -1856,7 +1856,7 @@ class CachedVarOperation:
         if name == "_js_expr":
             return self._cached_var_name
 
-        parent_classes = inspect.getmro(self.__class__)
+        parent_classes = inspect.getmro(type(self))
 
         next_class = parent_classes[parent_classes.index(CachedVarOperation) + 1]
 
@@ -1898,7 +1898,7 @@ class CachedVarOperation:
         """
         return hash(
             (
-                self.__class__.__name__,
+                type(self).__name__,
                 *[
                     getattr(self, field.name)
                     for field in dataclasses.fields(self)  # type: ignore
@@ -1960,7 +1960,7 @@ class CallableVar(Var):
         Returns:
             The hash of the object.
         """
-        return hash((self.__class__.__name__, self.original_var))
+        return hash((type(self).__name__, self.original_var))
 
 
 RETURN_TYPE = TypeVar("RETURN_TYPE")
@@ -2337,7 +2337,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                     ref_obj = None
                 if instruction.argval in invalid_names:
                     raise VarValueError(
-                        f"Cached var {str(self)} cannot access arbitrary state via `{instruction.argval}`."
+                        f"Cached var {self!s} cannot access arbitrary state via `{instruction.argval}`."
                     )
                 if callable(ref_obj):
                     # recurse into callable attributes
@@ -2725,7 +2725,7 @@ class StateOperation(CachedVarOperation, Var):
         Returns:
             The cached var name.
         """
-        return f"{str(self._state_name)}.{str(self._field)}"
+        return f"{self._state_name!s}.{self._field!s}"
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -3041,9 +3041,9 @@ def dispatch(
 
     if result_origin_var_type in dispatchers:
         fn = dispatchers[result_origin_var_type]
-        fn_first_arg_type = list(inspect.signature(fn).parameters.values())[
-            0
-        ].annotation
+        fn_first_arg_type = next(
+            iter(inspect.signature(fn).parameters.values())
+        ).annotation
 
         fn_return = inspect.signature(fn).return_annotation
 

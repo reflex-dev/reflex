@@ -243,7 +243,7 @@ class DialogContent(elements.Div, RadixThemesComponent):
             on_escape_key_down: Fired when the escape key is pressed.
             on_pointer_down_outside: Fired when the pointer is down outside the dialog.
             on_interact_outside: Fired when the pointer interacts outside the dialog.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.

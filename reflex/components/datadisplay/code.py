@@ -382,7 +382,7 @@ for theme_name in dir(Theme):
 class CodeBlock(Component, MarkdownComponentMap):
     """A code block."""
 
-    library = "react-syntax-highlighter@15.6.1"
+    library = "react-syntax-highlighter@15.6.0"
 
     tag = "PrismAsyncLight"
 
@@ -519,13 +519,13 @@ class CodeBlock(Component, MarkdownComponentMap):
             The hook to register the language.
         """
         return f"""
- if ({str(_LANGUAGE)}) {{
+ if ({_LANGUAGE!s}) {{
     (async () => {{
       try {{
-        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{str(_LANGUAGE)}}}`);
-        SyntaxHighlighter.registerLanguage({str(_LANGUAGE)}, module.default);
+        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{_LANGUAGE!s}}}`);
+        SyntaxHighlighter.registerLanguage({_LANGUAGE!s}, module.default);
       }} catch (error) {{
-        console.error(`Error importing language module for ${{{str(_LANGUAGE)}}}:`, error);
+        console.error(`Error importing language module for ${{{_LANGUAGE!s}}}:`, error);
       }}
     }})();
   }}
@@ -547,7 +547,7 @@ class CodeBlock(Component, MarkdownComponentMap):
             The hooks for the component.
         """
         return [
-            f"const {str(_LANGUAGE)} = {str(self.language)}",
+            f"const {_LANGUAGE!s} = {self.language!s}",
             self._get_language_registration_hook(),
         ]
 

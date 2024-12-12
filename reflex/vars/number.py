@@ -917,7 +917,7 @@ class LiteralNumberVar(LiteralVar, NumberVar):
         Returns:
             int: The hash value of the object.
         """
-        return hash((self.__class__.__name__, self._var_value))
+        return hash((type(self).__name__, self._var_value))
 
     @classmethod
     def create(cls, value: float | int, _var_data: VarData | None = None):
@@ -969,7 +969,7 @@ class LiteralBooleanVar(LiteralVar, BooleanVar):
         Returns:
             int: The hash value of the object.
         """
-        return hash((self.__class__.__name__, self._var_value))
+        return hash((type(self).__name__, self._var_value))
 
     @classmethod
     def create(cls, value: bool, _var_data: VarData | None = None):

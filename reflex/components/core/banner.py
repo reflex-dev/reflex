@@ -109,7 +109,7 @@ class ConnectionToaster(Toaster):
         )
 
         individual_hooks = [
-            f"const toast_props = {str(LiteralVar.create(props))};",
+            f"const toast_props = {LiteralVar.create(props)!s};",
             "const [userDismissed, setUserDismissed] = useState(false);",
             FunctionStringVar(
                 "useEffect",
@@ -124,7 +124,7 @@ class ConnectionToaster(Toaster):
                 Var(
                     _js_expr=f"""
 () => {{
-    if ({str(has_too_many_connection_errors)}) {{
+    if ({has_too_many_connection_errors!s}) {{
         if (!userDismissed) {{
             toast.error(
                 `Cannot connect to server: ${{{connection_error}}}.`,
