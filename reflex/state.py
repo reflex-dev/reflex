@@ -3427,9 +3427,6 @@ class StateManagerRedis(StateManager):
             time_taken = self.lock_expiration / 1000 - (
                 await self.redis.ttl(self._lock_key(token))
             )
-            print(
-                f"Time taken to set state: {time_taken} - {self.lock_warning_threshold}"
-            )
             if time_taken > self.lock_warning_threshold / 1000:
                 console.warn(
                     f"Lock for token {token} was held too long {time_taken=}s, "
