@@ -7,13 +7,14 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.el import elements
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
 from ..base import RadixThemesComponent
 
-class Code(elements.Code, RadixThemesComponent):
+class Code(elements.Code, RadixThemesComponent, MarkdownComponentMap):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -173,7 +174,7 @@ class Code(elements.Code, RadixThemesComponent):
             weight: Thickness of text: "light" | "regular" | "medium" | "bold"
             color_scheme: Overrides the accent color inherited from the Theme.
             high_contrast: Whether to render the text with higher contrast color
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.

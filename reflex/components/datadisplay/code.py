@@ -8,13 +8,14 @@ from typing import ClassVar, Dict, Literal, Optional, Union
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.cond import color_mode_cond
 from reflex.components.lucide.icon import Icon
+from reflex.components.markdown.markdown import _LANGUAGE, MarkdownComponentMap
 from reflex.components.radix.themes.components.button import Button
 from reflex.components.radix.themes.layout.box import Box
 from reflex.constants.colors import Color
 from reflex.event import set_clipboard
 from reflex.style import Style
 from reflex.utils import console, format
-from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var, VarData
 
 LiteralCodeLanguage = Literal[
@@ -378,10 +379,10 @@ for theme_name in dir(Theme):
     setattr(Theme, theme_name, getattr(Theme, theme_name)._replace(_var_type=Theme))
 
 
-class CodeBlock(Component):
+class CodeBlock(Component, MarkdownComponentMap):
     """A code block."""
 
-    library = "react-syntax-highlighter@15.6.1"
+    library = "react-syntax-highlighter@15.6.0"
 
     tag = "PrismAsyncLight"
 
@@ -416,39 +417,6 @@ class CodeBlock(Component):
 
     # A custom copy button to override the default one.
     copy_button: Optional[Union[bool, Component]] = None
-
-    def add_imports(self) -> ImportDict:
-        """Add imports for the CodeBlock component.
-
-        Returns:
-            The import dict.
-        """
-        imports_: ImportDict = {}
-
-        if (
-            self.language is not None
-            and (language_without_quotes := str(self.language).replace('"', ""))
-            in LiteralCodeLanguage.__args__  # type: ignore
-        ):
-            imports_[
-                f"react-syntax-highlighter/dist/cjs/languages/prism/{language_without_quotes}"
-            ] = [
-                ImportVar(
-                    tag=format.to_camel_case(language_without_quotes),
-                    is_default=True,
-                    install=False,
-                )
-            ]
-
-        return imports_
-
-    def _get_custom_code(self) -> Optional[str]:
-        if (
-            self.language is not None
-            and (language_without_quotes := str(self.language).replace('"', ""))
-            in LiteralCodeLanguage.__args__  # type: ignore
-        ):
-            return f"{self.alias}.registerLanguage('{language_without_quotes}', {format.to_camel_case(language_without_quotes)})"
 
     @classmethod
     def create(
@@ -534,14 +502,54 @@ class CodeBlock(Component):
 
         theme = self.theme
 
-        out.add_props(style=theme).remove_props("theme", "code").add_props(
-            children=self.code
+        out.add_props(style=theme).remove_props("theme", "code", "language").add_props(
+            children=self.code, language=_LANGUAGE
         )
 
         return out
 
     def _exclude_props(self) -> list[str]:
         return ["can_copy", "copy_button"]
+
+    @classmethod
+    def _get_language_registration_hook(cls) -> str:
+        """Get the hook to register the language.
+
+        Returns:
+            The hook to register the language.
+        """
+        return f"""
+ if ({_LANGUAGE!s}) {{
+    (async () => {{
+      try {{
+        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{_LANGUAGE!s}}}`);
+        SyntaxHighlighter.registerLanguage({_LANGUAGE!s}, module.default);
+      }} catch (error) {{
+        console.error(`Error importing language module for ${{{_LANGUAGE!s}}}:`, error);
+      }}
+    }})();
+  }}
+"""
+
+    @classmethod
+    def get_component_map_custom_code(cls) -> str:
+        """Get the custom code for the component.
+
+        Returns:
+            The custom code for the component.
+        """
+        return cls._get_language_registration_hook()
+
+    def add_hooks(self) -> list[str | Var]:
+        """Add hooks for the component.
+
+        Returns:
+            The hooks for the component.
+        """
+        return [
+            f"const {_LANGUAGE!s} = {self.language!s}",
+            self._get_language_registration_hook(),
+        ]
 
 
 class CodeblockNamespace(ComponentNamespace):

@@ -19,10 +19,14 @@ def UploadFile():
 
     import reflex as rx
 
+    LARGE_DATA = "DUMMY" * 1024 * 512
+
     class UploadState(rx.State):
         _file_data: Dict[str, str] = {}
         event_order: List[str] = []
         progress_dicts: List[dict] = []
+        disabled: bool = False
+        large_data: str = ""
 
         async def handle_upload(self, files: List[rx.UploadFile]):
             for file in files:
@@ -33,6 +37,7 @@ def UploadFile():
             for file in files:
                 upload_data = await file.read()
                 self._file_data[file.filename or ""] = upload_data.decode("utf-8")
+                self.large_data = LARGE_DATA
                 yield UploadState.chain_event
 
         def upload_progress(self, progress):
@@ -41,13 +46,15 @@ def UploadFile():
             self.progress_dicts.append(progress)
 
         def chain_event(self):
+            assert self.large_data == LARGE_DATA
+            self.large_data = ""
             self.event_order.append("chain_event")
 
     def index():
         return rx.vstack(
             rx.input(
                 value=UploadState.router.session.client_token,
-                is_read_only=True,
+                read_only=True,
                 id="token",
             ),
             rx.heading("Default Upload"),
@@ -56,6 +63,7 @@ def UploadFile():
                     rx.button("Select File"),
                     rx.text("Drag and drop files here or click to select files"),
                 ),
+                disabled=UploadState.disabled,
             ),
             rx.button(
                 "Upload",
@@ -373,9 +381,22 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
     await asyncio.sleep(0.3)
     cancel_button.click()
 
-    # look up the backend state and assert on progress
+    # Wait a bit for the upload to get cancelled.
+    await asyncio.sleep(0.5)
+
+    # Get interim progress dicts saved in the on_upload_progress handler.
+    async def _progress_dicts():
+        state = await upload_file.get_state(substate_token)
+        return state.substates[state_name].progress_dicts
+
+    # We should have _some_ progress
+    assert await AppHarness._poll_for_async(_progress_dicts)
+
+    # But there should never be a final progress record for a cancelled upload.
+    for p in await _progress_dicts():
+        assert p["progress"] != 1
+
     state = await upload_file.get_state(substate_token)
-    assert state.substates[state_name].progress_dicts
     file_data = state.substates[state_name]._file_data
     assert isinstance(file_data, dict)
     normalized_file_data = {Path(k).name: v for k, v in file_data.items()}

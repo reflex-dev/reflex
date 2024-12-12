@@ -374,7 +374,7 @@ def test_format_match(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))],
                 args_spec=lambda: [],
             ),
-            '((...args) => ((addEvents([(Event("mock_event", ({  }), ({  })))], args, ({  })))))',
+            '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({  }))))',
         ),
         (
             EventChain(
@@ -395,7 +395,7 @@ def test_format_match(
                 ],
                 args_spec=lambda e: [e.target.value],
             ),
-            '((_e) => ((addEvents([(Event("mock_event", ({ ["arg"] : _e["target"]["value"] }), ({  })))], [_e], ({  })))))',
+            '((_e) => (addEvents([(Event("mock_event", ({ ["arg"] : _e["target"]["value"] }), ({  })))], [_e], ({  }))))',
         ),
         (
             EventChain(
@@ -403,7 +403,7 @@ def test_format_match(
                 args_spec=lambda: [],
                 event_actions={"stopPropagation": True},
             ),
-            '((...args) => ((addEvents([(Event("mock_event", ({  }), ({  })))], args, ({ ["stopPropagation"] : true })))))',
+            '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({ ["stopPropagation"] : true }))))',
         ),
         (
             EventChain(
@@ -415,7 +415,7 @@ def test_format_match(
                 ],
                 args_spec=lambda: [],
             ),
-            '((...args) => ((addEvents([(Event("mock_event", ({  }), ({ ["stopPropagation"] : true })))], args, ({  })))))',
+            '((...args) => (addEvents([(Event("mock_event", ({  }), ({ ["stopPropagation"] : true })))], args, ({  }))))',
         ),
         (
             EventChain(
@@ -423,7 +423,7 @@ def test_format_match(
                 args_spec=lambda: [],
                 event_actions={"preventDefault": True},
             ),
-            '((...args) => ((addEvents([(Event("mock_event", ({  }), ({  })))], args, ({ ["preventDefault"] : true })))))',
+            '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({ ["preventDefault"] : true }))))',
         ),
         ({"a": "red", "b": "blue"}, '({ ["a"] : "red", ["b"] : "blue" })'),
         (Var(_js_expr="var", _var_type=int).guess_type(), "var"),

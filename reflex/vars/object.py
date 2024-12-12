@@ -272,7 +272,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
             attribute_type = get_attribute_access_type(var_type, name)
             if attribute_type is None:
                 raise VarAttributeError(
-                    f"The State var `{str(self)}` has no attribute '{name}' or may have been annotated "
+                    f"The State var `{self!s}` has no attribute '{name}' or may have been annotated "
                     f"wrongly."
                 )
             return ObjectItemOperation.create(self, name, attribute_type).guess_type()
@@ -332,7 +332,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
             "({ "
             + ", ".join(
                 [
-                    f"[{str(LiteralVar.create(key))}] : {str(LiteralVar.create(value))}"
+                    f"[{LiteralVar.create(key)!s}] : {LiteralVar.create(value)!s}"
                     for key, value in self._var_value.items()
                 ]
             )
@@ -362,7 +362,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self._js_expr))
+        return hash((type(self).__name__, self._js_expr))
 
     @cached_property_no_lock
     def _cached_get_all_var_data(self) -> VarData | None:
@@ -494,8 +494,8 @@ class ObjectItemOperation(CachedVarOperation, Var):
             The name of the operation.
         """
         if types.is_optional(self._object._var_type):
-            return f"{str(self._object)}?.[{str(self._key)}]"
-        return f"{str(self._object)}[{str(self._key)}]"
+            return f"{self._object!s}?.[{self._key!s}]"
+        return f"{self._object!s}[{self._key!s}]"
 
     @classmethod
     def create(

@@ -7,6 +7,7 @@ from typing import Any, Dict, Iterable, Literal, Optional, Union, overload
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.el.elements.typography import Li, Ol, Ul
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
@@ -29,7 +30,7 @@ LiteralListStyleTypeOrdered = Literal[
     "katakana",
 ]
 
-class BaseList(Component):
+class BaseList(Component, MarkdownComponentMap):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -117,7 +118,6 @@ class BaseList(Component):
 
         Returns:
             The list component.
-
         """
         ...
 
@@ -225,7 +225,7 @@ class UnorderedList(BaseList, Ul):
             *children: The children of the component.
             list_style_type: The style of the list. Default to "none".
             items: A list of items to add to the list.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -251,7 +251,6 @@ class UnorderedList(BaseList, Ul):
 
         Returns:
             The list component.
-
         """
         ...
 
@@ -363,7 +362,7 @@ class OrderedList(BaseList, Ol):
             reversed: Reverses the order of the list.
             start: Specifies the start value of the first list item in an ordered list.
             type: Specifies the kind of marker to use in the list (letters or numbers).
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -389,11 +388,10 @@ class OrderedList(BaseList, Ol):
 
         Returns:
             The list component.
-
         """
         ...
 
-class ListItem(Li):
+class ListItem(Li, MarkdownComponentMap):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -450,7 +448,7 @@ class ListItem(Li):
 
         Args:
             *children: The children of the component.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -476,7 +474,6 @@ class ListItem(Li):
 
         Returns:
             The list item component.
-
         """
         ...
 
@@ -570,7 +567,6 @@ class List(ComponentNamespace):
 
         Returns:
             The list component.
-
         """
         ...
 

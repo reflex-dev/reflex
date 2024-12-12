@@ -8,6 +8,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.components.component import MemoizationLeaf
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.el.elements.inline import A
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.components.next.link import NextLink
 from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
@@ -19,7 +20,7 @@ from ..base import RadixThemesComponent
 LiteralLinkUnderline = Literal["auto", "hover", "always", "none"]
 next_link = NextLink.create()
 
-class Link(RadixThemesComponent, A, MemoizationLeaf):
+class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
     def add_imports(self) -> ImportDict: ...
     @overload
     @classmethod
@@ -214,7 +215,7 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
             rel: Specifies the relationship between the linked document and the current document
             shape: Specifies the shape of the area
             target: Specifies where to open the linked document
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.

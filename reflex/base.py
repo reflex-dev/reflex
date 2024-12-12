@@ -130,8 +130,8 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
         Returns:
             The value of the field.
         """
-        if isinstance(key, str) and key in self.__fields__:
+        if isinstance(key, str):
             # Seems like this function signature was wrong all along?
             # If the user wants a field that we know of, get it and pass it off to _get_value
-            key = getattr(self, key)
+            return getattr(self, key, key)
         return key

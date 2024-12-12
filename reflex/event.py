@@ -45,6 +45,9 @@ from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import (
     ArgsFunctionOperation,
+    ArgsFunctionOperationBuilder,
+    BuilderFunctionVar,
+    FunctionArgs,
     FunctionStringVar,
     FunctionVar,
     VarOperationCall,
@@ -176,6 +179,18 @@ class EventActionsMixin:
         return dataclasses.replace(
             self,
             event_actions={"debounce": delay_ms, **self.event_actions},
+        )
+
+    @property
+    def temporal(self):
+        """Do not queue the event if the backend is down.
+
+        Returns:
+            New EventHandler-like with temporal set to True.
+        """
+        return dataclasses.replace(
+            self,
+            event_actions={"temporal": True, **self.event_actions},
         )
 
 
@@ -432,7 +447,7 @@ class JavascriptHTMLInputElement:
 class JavascriptInputEvent:
     """Interface for a Javascript InputEvent https://developer.mozilla.org/en-US/docs/Web/API/InputEvent."""
 
-    target: JavascriptHTMLInputElement = JavascriptHTMLInputElement()
+    target: JavascriptHTMLInputElement = JavascriptHTMLInputElement()  # noqa: RUF009
 
 
 @dataclasses.dataclass(
@@ -796,8 +811,7 @@ def scroll_to(elem_id: str, align_to_top: bool | Var[bool] = True) -> EventSpec:
     get_element_by_id = FunctionStringVar.create("document.getElementById")
 
     return run_script(
-        get_element_by_id(elem_id)
-        .call(elem_id)
+        get_element_by_id.call(elem_id)
         .to(ObjectVar)
         .scrollIntoView.to(FunctionVar)
         .call(align_to_top),
@@ -898,7 +912,7 @@ def remove_session_storage(key: str) -> EventSpec:
     )
 
 
-def set_clipboard(content: str) -> EventSpec:
+def set_clipboard(content: Union[str, Var[str]]) -> EventSpec:
     """Set the text in content in the clipboard.
 
     Args:
@@ -1208,7 +1222,7 @@ def call_event_handler(
                 except TypeError:
                     # TODO: In 0.7.0, remove this block and raise the exception
                     # raise TypeError(
-                    #     f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_handler.fn.__qualname__} provided for {key}."
+                    #     f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_handler.fn.__qualname__} provided for {key}." # noqa: ERA001
                     # ) from e
                     console.warn(
                         f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_callback.fn.__qualname__} provided for {key}."
@@ -1344,6 +1358,10 @@ def check_fn_match_arg_spec(
         EventFnArgMismatch: Raised if the number of mandatory arguments do not match
     """
     user_args = inspect.getfullargspec(user_func).args
+    # Drop the first argument if it's a bound method
+    if inspect.ismethod(user_func) and user_func.__self__ is not None:
+        user_args = user_args[1:]
+
     user_default_args = inspect.getfullargspec(user_func).defaults
     number_of_user_args = len(user_args) - number_of_bound_args
     number_of_user_default_args = len(user_default_args) if user_default_args else 0
@@ -1538,7 +1556,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self._js_expr))
+        return hash((type(self).__name__, self._js_expr))
 
     @classmethod
     def create(
@@ -1579,7 +1597,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
         )
 
 
-class EventChainVar(FunctionVar, python_types=EventChain):
+class EventChainVar(BuilderFunctionVar, python_types=EventChain):
     """Base class for event chain vars."""
 
 
@@ -1591,7 +1609,7 @@ class EventChainVar(FunctionVar, python_types=EventChain):
 # Note: LiteralVar is second in the inheritance list allowing it act like a
 # CachedVarOperation (ArgsFunctionOperation) and get the _js_expr from the
 # _cached_var_name property.
-class LiteralEventChainVar(ArgsFunctionOperation, LiteralVar, EventChainVar):
+class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainVar):
     """A literal event chain var."""
 
     _var_value: EventChain = dataclasses.field(default=None)  # type: ignore
@@ -1602,7 +1620,7 @@ class LiteralEventChainVar(ArgsFunctionOperation, LiteralVar, EventChainVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self._js_expr))
+        return hash((type(self).__name__, self._js_expr))
 
     @classmethod
     def create(
@@ -1643,7 +1661,7 @@ class LiteralEventChainVar(ArgsFunctionOperation, LiteralVar, EventChainVar):
             _js_expr="",
             _var_type=EventChain,
             _var_data=_var_data,
-            _args_names=arg_def,
+            _args=FunctionArgs(arg_def),
             _return_expr=invocation.call(
                 LiteralVar.create([LiteralVar.create(event) for event in value.events]),
                 arg_def_expr,

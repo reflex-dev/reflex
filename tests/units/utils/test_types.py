@@ -17,7 +17,7 @@ def test_validate_literal_error_msg(params, allowed_value_str, value_str):
         types.validate_literal(*params)
 
     assert (
-        err.value.args[0] == f"prop value for {str(params[0])} of the `{params[-1]}` "
+        err.value.args[0] == f"prop value for {params[0]!s} of the `{params[-1]}` "
         f"component should be one of the following: {allowed_value_str}. Got {value_str} instead"
     )
 

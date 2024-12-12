@@ -8,6 +8,7 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.foreach import Foreach
 from reflex.components.el.elements.typography import Li, Ol, Ul
 from reflex.components.lucide.icon import Icon
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.components.radix.themes.typography.text import Text
 from reflex.vars.base import Var
 
@@ -36,7 +37,7 @@ LiteralListStyleTypeOrdered = Literal[
 ]
 
 
-class BaseList(Component):
+class BaseList(Component, MarkdownComponentMap):
     """Base class for ordered and unordered lists."""
 
     tag = "ul"
@@ -63,7 +64,6 @@ class BaseList(Component):
 
         Returns:
             The list component.
-
         """
         items = props.pop("items", None)
         list_style_type = props.pop("list_style_type", "none")
@@ -113,7 +113,6 @@ class UnorderedList(BaseList, Ul):
 
         Returns:
             The list component.
-
         """
         items = props.pop("items", None)
         list_style_type = props.pop("list_style_type", "disc")
@@ -143,7 +142,6 @@ class OrderedList(BaseList, Ol):
 
         Returns:
             The list component.
-
         """
         items = props.pop("items", None)
         list_style_type = props.pop("list_style_type", "decimal")
@@ -154,7 +152,7 @@ class OrderedList(BaseList, Ol):
         )
 
 
-class ListItem(Li):
+class ListItem(Li, MarkdownComponentMap):
     """Display an item of an ordered or unordered list."""
 
     @classmethod
@@ -167,7 +165,6 @@ class ListItem(Li):
 
         Returns:
             The list item component.
-
         """
         for child in children:
             if isinstance(child, Text):

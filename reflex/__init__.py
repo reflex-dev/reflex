@@ -264,6 +264,7 @@ _MAPPING: dict = {
     "experimental": ["_x"],
     "admin": ["AdminDash"],
     "app": ["App", "UploadFile"],
+    "assets": ["asset"],
     "base": ["Base"],
     "components.component": [
         "Component",
@@ -298,6 +299,7 @@ _MAPPING: dict = {
     "components.moment": ["MomentDelta", "moment"],
     "config": ["Config", "DBConfig"],
     "constants": ["Env"],
+    "constants.colors": ["Color"],
     "event": [
         "EventChain",
         "EventHandler",
@@ -329,7 +331,7 @@ _MAPPING: dict = {
         "SessionStorage",
     ],
     "middleware": ["middleware", "Middleware"],
-    "model": ["session", "Model"],
+    "model": ["asession", "session", "Model"],
     "state": [
         "var",
         "ComponentState",
@@ -338,7 +340,7 @@ _MAPPING: dict = {
     ],
     "istate.wrappers": ["get_state"],
     "style": ["Style", "toggle_color_mode"],
-    "utils.imports": ["ImportVar"],
+    "utils.imports": ["ImportDict", "ImportVar"],
     "utils.serializers": ["serializer"],
     "vars": ["Var", "field", "Field"],
 }
