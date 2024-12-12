@@ -3289,15 +3289,41 @@ async def test_setvar_async_setter():
 @pytest.mark.parametrize(
     "expiration_kwargs, expected_values",
     [
-        ({"redis_lock_expiration": 20000}, (20000, constants.Expiration.TOKEN)),
+        (
+            {"redis_lock_expiration": 20000},
+            (
+                20000,
+                constants.Expiration.TOKEN,
+                constants.Expiration.LOCK_WARNING_THRESHOLD,
+            ),
+        ),
         (
             {"redis_lock_expiration": 50000, "redis_token_expiration": 5600},
-            (50000, 5600),
+            (50000, 5600, constants.Expiration.LOCK_WARNING_THRESHOLD),
         ),
-        ({"redis_token_expiration": 7600}, (constants.Expiration.LOCK, 7600)),
         (
-            {"redis_lock_expiration": 50000, "redis_lock_warning_threshold": 2000},
-            (50000, 2000),
+            {"redis_token_expiration": 7600},
+            (
+                constants.Expiration.LOCK,
+                7600,
+                constants.Expiration.LOCK_WARNING_THRESHOLD,
+            ),
+        ),
+        (
+            {"redis_lock_expiration": 50000, "redis_lock_warning_threshold": 1500},
+            (50000, constants.Expiration.TOKEN, 1500),
+        ),
+        (
+            {"redis_token_expiration": 5600, "redis_lock_warning_threshold": 3000},
+            (constants.Expiration.LOCK, 5600, 3000),
+        ),
+        (
+            {
+                "redis_lock_expiration": 50000,
+                "redis_token_expiration": 5600,
+                "redis_lock_warning_threshold": 2000,
+            },
+            (50000, 5600, 2000),
         ),
     ],
 )
@@ -3328,6 +3354,7 @@ config = rx.Config(
         state_manager = StateManager.create(state=State)
         assert state_manager.lock_expiration == expected_values[0]  # type: ignore
         assert state_manager.token_expiration == expected_values[1]  # type: ignore
+        assert state_manager.lock_warning_threshold == expected_values[2]  # type: ignore
 
 
 @pytest.mark.skipif("REDIS_URL" not in os.environ, reason="Test requires redis")

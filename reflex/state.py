@@ -3240,7 +3240,7 @@ class StateManagerRedis(StateManager):
     # The maximum time to hold a lock (ms).
     lock_expiration: int = pydantic.Field(default_factory=_default_lock_expiration)
 
-    # The minimum time to hold a lock (ms).
+    # The maximum time to hold a lock (ms) before warning.
     lock_warning_threshold: int = pydantic.Field(
         default_factory=_default_lock_warning_threshold
     )
@@ -3436,12 +3436,10 @@ class StateManagerRedis(StateManager):
             time_taken = self.lock_expiration / 1000 - (
                 await self.redis.ttl(self._lock_key(token))
             )
-            _validate_lock_warning_threshold(
-                self.lock_warning_threshold, self.lock_expiration
-            )
             if time_taken > self.lock_warning_threshold / 1000:
                 console.warn(
-                    f"Lock for token {token} was held too long {time_taken=}s, avoid blocking operations.",
+                    f"Lock for token {token} was held too long {time_taken=}s, "
+                    f"use `@rx.event(background=True)` decorator for long-running tasks.",
                     dedupe=True,
                 )
 
