@@ -899,8 +899,6 @@ class DynamicState(BaseState):
     loaded: int = 0
     counter: int = 0
 
-    # side_effect_counter: int = 0
-
     def on_load(self):
         """Event handler for page on_load, should trigger for all navigation events."""
         self.loaded = self.loaded + 1
@@ -917,7 +915,6 @@ class DynamicState(BaseState):
         Returns:
             same as self.dynamic
         """
-        # self.side_effect_counter = self.side_effect_counter + 1
         return self.dynamic
 
     on_load_internal = OnLoadInternalState.on_load_internal.fn
@@ -1059,7 +1056,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     arg_name: exp_val,
                     f"comp_{arg_name}": exp_val,
                     constants.CompileVars.IS_HYDRATED: False,
-                    # "side_effect_counter": exp_index,
                     "router": exp_router,
                 }
             },
@@ -1155,8 +1151,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     state = await app.state_manager.get_state(substate_token)
     assert state.loaded == len(exp_vals)
     assert state.counter == len(exp_vals)
-    # print(f"Expected {exp_vals} rendering side effects, got {state.side_effect_counter}")
-    # assert state.side_effect_counter == len(exp_vals)
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()

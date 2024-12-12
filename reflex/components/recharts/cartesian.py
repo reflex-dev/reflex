@@ -416,7 +416,7 @@ class Bar(Cartesian):
     radius: Var[Union[int, List[int]]]
 
     # The active bar is shown when a user enters a bar chart and this chart has tooltip. If set to false, no active bar will be drawn. If set to true, active bar will be drawn with the props calculated internally. If passed an object, active bar will be drawn, and the internally calculated props will be merged with the key value pairs of the passed object.
-    # active_bar: Var[Union[bool, Dict[str, Any]]]
+    # active_bar: Var[Union[bool, Dict[str, Any]]] #noqa: ERA001
 
     # Valid children components
     _valid_children: List[str] = ["Cell", "LabelList", "ErrorBar"]

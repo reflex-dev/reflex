@@ -215,7 +215,7 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
             rel: Specifies the relationship between the linked document and the current document
             shape: Specifies the shape of the area
             target: Specifies where to open the linked document
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.

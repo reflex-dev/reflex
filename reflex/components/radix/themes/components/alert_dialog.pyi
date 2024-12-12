@@ -194,7 +194,7 @@ class AlertDialogContent(elements.Div, RadixThemesComponent):
             on_open_auto_focus: Fired when the dialog is opened.
             on_close_auto_focus: Fired when the dialog is closed.
             on_escape_key_down: Fired when the escape key is pressed.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.

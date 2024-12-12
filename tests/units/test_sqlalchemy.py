@@ -127,8 +127,8 @@ def test_automigration(
         assert result[0].b == 4.2
 
     # No-op
-    # assert Model.migrate(autogenerate=True)
-    # assert len(list(versions.glob("*.py"))) == 4
+    # assert Model.migrate(autogenerate=True) #noqa: ERA001
+    # assert len(list(versions.glob("*.py"))) == 4 #noqa: ERA001
 
     # drop table (AlembicSecond)
     model_registry.get_metadata().clear()

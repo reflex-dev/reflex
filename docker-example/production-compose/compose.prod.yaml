@@ -15,7 +15,7 @@ services:
 
   app:
     environment:
-      DB_URL: postgresql+psycopg2://postgres:secret@db/postgres
+      DB_URL: postgresql+psycopg://postgres:secret@db/postgres
       REDIS_URL: redis://redis:6379
     depends_on:
       - db

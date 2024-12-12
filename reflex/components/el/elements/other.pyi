@@ -70,7 +70,7 @@ class Details(BaseHTML):
         Args:
             *children: The children of the component.
             open: Indicates whether the details will be visible (expanded) to the user
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -158,7 +158,7 @@ class Dialog(BaseHTML):
         Args:
             *children: The children of the component.
             open: Indicates whether the dialog is active and can be interacted with
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -244,7 +244,7 @@ class Summary(BaseHTML):
 
         Args:
             *children: The children of the component.
-            access_key: No unique attributes, only common ones are inherited; used as a summary or caption for a <details> element   Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -330,7 +330,7 @@ class Slot(BaseHTML):
 
         Args:
             *children: The children of the component.
-            access_key: No unique attributes, only common ones are inherited; used as a placeholder inside a web component   Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -416,7 +416,7 @@ class Template(BaseHTML):
 
         Args:
             *children: The children of the component.
-            access_key: No unique attributes, only common ones are inherited; used for declaring fragments of HTML that can be cloned and inserted in the document   Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -502,7 +502,7 @@ class Math(BaseHTML):
 
         Args:
             *children: The children of the component.
-            access_key: No unique attributes, only common ones are inherited; used for displaying mathematical expressions   Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -590,7 +590,7 @@ class Html(BaseHTML):
         Args:
             *children: The children of the component.
             manifest: Specifies the URL of the document's cache manifest (obsolete in HTML5)
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.

@@ -138,9 +138,6 @@ def convert_item(
     if isinstance(style_item, Var):
         return style_item, style_item._get_all_var_data()
 
-    # if isinstance(style_item, str) and REFLEX_VAR_OPENING_TAG not in style_item:
-    #     return style_item, None
-
     # Otherwise, convert to Var to collapse VarData encoded in f-string.
     new_var = LiteralVar.create(style_item)
     var_data = new_var._get_all_var_data() if new_var is not None else None

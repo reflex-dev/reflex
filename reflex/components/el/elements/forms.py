@@ -1,4 +1,4 @@
-"""Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+"""Forms classes."""
 
 from __future__ import annotations
 
@@ -84,7 +84,6 @@ class Datalist(BaseHTML):
     """Display the datalist element."""
 
     tag = "datalist"
-    # No unique attributes, only common ones are inherited
 
 
 class Fieldset(Element):
@@ -250,7 +249,6 @@ class Form(BaseHTML):
                     _js_expr=f"getRefValue({ref_var!s})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
-        # print(repr(form_refs))
         return form_refs
 
     def _get_vars(self, include_children: bool = True) -> Iterator[Var]:
@@ -401,7 +399,6 @@ class Legend(BaseHTML):
     """Display the legend element."""
 
     tag = "legend"
-    # No unique attributes, only common ones are inherited
 
 
 class Meter(BaseHTML):

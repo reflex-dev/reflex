@@ -209,10 +209,6 @@ def test_event_redirect(input, output):
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_redirect"
 
-    # this asserts need comment about what it's testing (they fail with Var as input)
-    # assert spec.args[0][0].equals(Var(_js_expr="path"))
-    # assert spec.args[0][1].equals(Var(_js_expr="/path"))
-
     assert format.format_event(spec) == output
 
 

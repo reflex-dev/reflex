@@ -95,7 +95,7 @@ class Card(elements.Div, RadixThemesComponent):
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             size: Card size: "1" - "5"
             variant: Variant of Card: "solid" | "soft" | "outline" | "ghost"
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.

@@ -87,7 +87,7 @@ class Section(elements.Section, RadixThemesComponent):
         Args:
             *children: Child components.
             size: The size of the section: "1" - "3" (default "2")
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.

@@ -153,7 +153,7 @@ class Checkbox(RadixThemesComponent):
             required: Whether the checkbox is required
             name: The name of the checkbox control when submitting the form.
             value: The value of the checkbox control when submitting the form.
-            on_change: Props to rename  Fired when the checkbox is checked or unchecked.
+            on_change: Fired when the checkbox is checked or unchecked.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -302,7 +302,7 @@ class HighLevelCheckbox(RadixThemesComponent):
             required: Whether the checkbox is required
             name: The name of the checkbox control when submitting the form.
             value: The value of the checkbox control when submitting the form.
-            on_change: Props to rename  Fired when the checkbox is checked or unchecked.
+            on_change: Fired when the checkbox is checked or unchecked.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -449,7 +449,7 @@ class CheckboxNamespace(ComponentNamespace):
             required: Whether the checkbox is required
             name: The name of the checkbox control when submitting the form.
             value: The value of the checkbox control when submitting the form.
-            on_change: Props to rename  Fired when the checkbox is checked or unchecked.
+            on_change: Fired when the checkbox is checked or unchecked.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
