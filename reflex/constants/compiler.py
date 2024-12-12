@@ -132,6 +132,12 @@ class Hooks(SimpleNamespace):
                   }
                 })"""
 
+    class HookPosition(enum.Enum):
+        """The position of the hook in the component."""
+
+        PRE_TRIGGER = "pre_trigger"
+        POST_TRIGGER = "post_trigger"
+
 
 class MemoizationDisposition(enum.Enum):
     """The conditions under which a component should be memoized."""

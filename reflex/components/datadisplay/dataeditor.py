@@ -339,8 +339,11 @@ class DataEditor(NoSSRComponent):
         editor_id = get_unique_variable_name()
 
         # Define the name of the getData callback associated with this component and assign to get_cell_content.
-        data_callback = f"getData_{editor_id}"
-        self.get_cell_content = Var(_js_expr=data_callback)  # type: ignore
+        if self.get_cell_content is not None:
+            data_callback = self.get_cell_content._js_expr
+        else:
+            data_callback = f"getData_{editor_id}"
+            self.get_cell_content = Var(_js_expr=data_callback)  # type: ignore
 
         code = [f"function {data_callback}([col, row])" "{"]
 
