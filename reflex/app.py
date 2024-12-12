@@ -436,7 +436,7 @@ class App(MiddlewareMixin, LifespanMixin):
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
-            allow_origins=["*"],
+            allow_origins=get_config().cors_allowed_origins,
         )
 
     @property
