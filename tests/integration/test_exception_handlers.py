@@ -13,6 +13,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from reflex.testing import AppHarness, AppHarnessProd
 
+pytestmark = [pytest.mark.ignore_console_error]
+
 
 def TestApp():
     """A test app for event exception handler integration."""
