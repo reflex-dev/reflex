@@ -18,6 +18,7 @@ from reflex import constants
 from reflex.config import environment, get_config
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.utils import console, telemetry
+from reflex.utils.exec import set_env_mode
 
 # Disable typer+rich integration for help panels
 typer.core.rich = None  # type: ignore
@@ -136,7 +137,7 @@ def _run(
     """Run the app in the given directory."""
     # Set env mode in the environment
     # This must be set before importing modules that contain rx.State subclasses
-    environment.REFLEX_ENV_MODE.set(env)
+    set_env_mode(env)
 
     from reflex.state import reset_disk_state_manager
     from reflex.utils import build, exec, prerequisites, processes
@@ -318,7 +319,7 @@ def export(
     """Export the app to a zip file."""
     # Set env mode in the environment
     # This must be set before importing modules that contain rx.State subclasses
-    environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
+    set_env_mode(constants.Env.PROD)
 
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
@@ -668,7 +669,7 @@ def deployv2(
     """Deploy the app to the Reflex hosting service."""
     # Set env mode in the environment
     # This must be set before importing modules that contain rx.State subclasses
-    environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
+    set_env_mode(constants.Env.PROD)
 
     from reflex_cli.v2 import cli as hosting_cli
     from reflex_cli.v2.utils import dependency

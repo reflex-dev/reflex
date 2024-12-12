@@ -497,6 +497,19 @@ def is_prod_mode() -> bool:
     return current_mode == constants.Env.PROD
 
 
+def set_env_mode(mode: constants.Env):
+    """Mark the app as running in dev or prod mode.
+
+    Args:
+        mode: The mode to set the app to.
+    """
+    environment.REFLEX_ENV_MODE.set(mode)
+    from reflex.state import BaseState
+
+    # Ensure that minified names are or are not used based on the mode.
+    BaseState._reset_name_cache()
+
+
 def is_frontend_only() -> bool:
     """Check if the app is running in frontend-only mode.
 

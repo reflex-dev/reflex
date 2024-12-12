@@ -554,18 +554,23 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if parent_state is not None:
             cls.inherited_vars = parent_state.vars
             cls.inherited_backend_vars = parent_state.backend_vars
+        else:
+            # Track class_subclasses of the BaseState
+            parent_state = BaseState
 
-            # Check if another substate class with the same name has already been defined.
-            if cls.get_name() in set(
-                c.get_name() for c in parent_state.class_subclasses
-            ):
-                # This should not happen, since we have added module prefix to state names in #3214
-                raise StateValueError(
-                    f"The substate class '{cls.get_name()}' has been defined multiple times. "
-                    "Shadowing substate classes is not allowed."
-                )
-            # Track this new subclass in the parent state's subclasses set.
-            parent_state.class_subclasses.add(cls)
+        # Check if another substate class with the same name has already been defined.
+        #if not _reflex_internal_reinit and cls.get_name() in set(
+        if cls.get_name() in set(
+            c.get_name() for c in parent_state.class_subclasses
+        ):
+            breakpoint()
+            # This should not happen, since we have added module prefix to state names in #3214
+            raise StateValueError(
+                f"The substate class '{cls.get_name()}' has been defined multiple times. "
+                "Shadowing substate classes is not allowed."
+            )
+        # Track this new subclass in the parent state's subclasses set.
+        parent_state.class_subclasses.add(cls)
 
         # Get computed vars.
         computed_vars = cls._get_computed_vars()
@@ -969,6 +974,21 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if parent_state is not None:
             name = ".".join((parent_state.get_full_name(), name))
         return name
+
+    @classmethod
+    def _reset_name_cache(cls):
+        """Reset `get_name` and `get_full_name` cache to use minified state names."""
+        subclasses = sorted(cls.class_subclasses, key=lambda x: x.__name__)
+        cls.get_name.cache_clear()
+        cls.get_full_name.cache_clear()
+        if cls is BaseState:
+            cls.class_subclasses.clear()
+        else:
+            cls.__init_subclass__()
+            print(f"REINIT {cls.__name__} ({cls.get_full_name()})")
+            print(minified_state_names)
+        for subcls in subclasses:
+            subcls._reset_name_cache()
 
     @classmethod
     @functools.lru_cache()
@@ -1658,6 +1678,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             raise ValueError(
                 "The value of state cannot be None when processing an event."
             )
+        if name not in substate.event_handlers:
+            breakpoint()
         handler = substate.event_handlers[name]
 
         # For background tasks, proxy the state
