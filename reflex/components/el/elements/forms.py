@@ -400,7 +400,7 @@ class Input(BaseHTML):
 
         value = props.get("value")
 
-        # React expects an empty string(instead of null) for uncontrolled inputs.
+        # React expects an empty string(instead of null) for controlled inputs.
         if value is not None and is_optional(
             (value_var := Var.create(value))._var_type
         ):
