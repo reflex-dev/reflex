@@ -2198,6 +2198,35 @@ class StatefulComponent(BaseComponent):
             ]
         return [var_name]
 
+    @staticmethod
+    def _get_deps_from_event_trigger(event: EventChain | EventSpec | Var) -> set[str]:
+        """Get the dependencies accessed by event triggers.
+
+        Args:
+            event: The event trigger to extract deps from.
+
+        Returns:
+            The dependencies accessed by the event triggers.
+        """
+        events: list = [event]
+        deps = set()
+        if isinstance(event, EventChain):
+            events.extend(event.events)
+
+        for ev in events:
+            if isinstance(ev, EventSpec):
+                for arg in ev.args:
+                    deps.union(
+                        {
+                            str(dep)
+                            for a in arg
+                            if a._var_data is not None
+                            for dep in a._var_data.deps
+                            if a._var_data.deps is not None
+                        }
+                    )
+        return deps
+
     @classmethod
     def _get_memoized_event_triggers(
         cls,
@@ -2234,6 +2263,11 @@ class StatefulComponent(BaseComponent):
 
             # Calculate Var dependencies accessed by the handler for useCallback dep array.
             var_deps = ["addEvents", "Event"]
+
+            # Get deps from event trigger var data.
+            var_deps.extend(cls._get_deps_from_event_trigger(event))
+
+            # Get deps from hooks.
             for arg in event_args:
                 var_data = arg._get_all_var_data()
                 if var_data is None:
