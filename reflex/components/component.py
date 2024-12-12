@@ -653,7 +653,6 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The event triggers.
-
         """
         default_triggers: Dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
             EventTriggers.ON_FOCUS: no_args_event_spec,

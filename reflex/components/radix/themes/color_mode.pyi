@@ -257,7 +257,7 @@ class ColorModeIconButton(IconButton):
             name: Name of the button, used when sending form data
             type: Type of the button (submit, reset, or button)
             value: Value of the button, used when sending form data
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -427,7 +427,7 @@ class ColorModeSwitch(Switch):
             color_scheme: Override theme color for switch
             high_contrast: Whether to render the switch with higher contrast color against background
             radius: Override theme radius for switch: "none" | "small" | "full"
-            on_change: Props to rename  Fired when the value of the switch changes
+            on_change: Fired when the value of the switch changes
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

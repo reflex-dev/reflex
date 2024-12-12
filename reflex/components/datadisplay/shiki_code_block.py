@@ -490,17 +490,17 @@ class ShikiJsTransformer(ShikiBaseTransformers):
             },
             # White Space
             # ".tab, .space": {
-            #     "position": "relative",
+            #     "position": "relative", # noqa: ERA001
             # },
             # ".tab::before": {
-            #     "content": "'⇥'",
-            #     "position": "absolute",
-            #     "opacity": "0.3",
+            #     "content": "'⇥'", # noqa: ERA001
+            #     "position": "absolute", # noqa: ERA001
+            #     "opacity": "0.3",# noqa: ERA001
             # },
             # ".space::before": {
-            #     "content": "'·'",
-            #     "position": "absolute",
-            #     "opacity": "0.3",
+            #     "content": "'·'", # noqa: ERA001
+            #     "position": "absolute", # noqa: ERA001
+            #     "opacity": "0.3", # noqa: ERA001
             # },
         }
     )

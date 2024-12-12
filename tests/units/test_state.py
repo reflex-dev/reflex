@@ -791,7 +791,6 @@ async def test_process_event_simple(test_state):
     assert test_state.num1 == 69
 
     # The delta should contain the changes, including computed vars.
-    # assert update.delta == {"test_state": {"num1": 69, "sum": 72.14}}
     assert update.delta == {
         TestState.get_full_name(): {"num1": 69, "sum": 72.14, "upper": ""},
         GrandchildState3.get_full_name(): {"computed": ""},
@@ -3490,10 +3489,10 @@ def test_mutable_models():
     state.dirty_vars.clear()
 
     # Not yet supported ENG-4083
-    # assert isinstance(state.dc, MutableProxy)
-    # state.dc.foo = "baz"
-    # assert state.dirty_vars == {"dc"}
-    # state.dirty_vars.clear()
+    # assert isinstance(state.dc, MutableProxy) #noqa: ERA001
+    # state.dc.foo = "baz" #noqa: ERA001
+    # assert state.dirty_vars == {"dc"} #noqa: ERA001
+    # state.dirty_vars.clear() #noqa: ERA001
 
 
 def test_get_value():

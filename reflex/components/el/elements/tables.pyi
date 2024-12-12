@@ -70,7 +70,7 @@ class Caption(BaseHTML):
         Args:
             *children: The children of the component.
             align: Alignment of the caption
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -160,7 +160,7 @@ class Col(BaseHTML):
             *children: The children of the component.
             align: Alignment of the content within the column
             span: Number of columns the col element spans
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -250,7 +250,7 @@ class Colgroup(BaseHTML):
             *children: The children of the component.
             align: Alignment of the content within the column group
             span: Number of columns the colgroup element spans
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -340,7 +340,7 @@ class Table(BaseHTML):
             *children: The children of the component.
             align: Alignment of the table
             summary: Provides a summary of the table's purpose and structure
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -428,7 +428,7 @@ class Tbody(BaseHTML):
         Args:
             *children: The children of the component.
             align: Alignment of the content within the table body
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -522,7 +522,7 @@ class Td(BaseHTML):
             col_span: Number of columns a cell should span
             headers: IDs of the headers associated with this cell
             row_span: Number of rows a cell should span
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -610,7 +610,7 @@ class Tfoot(BaseHTML):
         Args:
             *children: The children of the component.
             align: Alignment of the content within the table footer
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -706,7 +706,7 @@ class Th(BaseHTML):
             headers: IDs of the headers associated with this header cell
             row_span: Number of rows a header cell should span
             scope: Scope of the header cell (row, col, rowgroup, colgroup)
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -794,7 +794,7 @@ class Thead(BaseHTML):
         Args:
             *children: The children of the component.
             align: Alignment of the content within the table header
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -882,7 +882,7 @@ class Tr(BaseHTML):
         Args:
             *children: The children of the component.
             align: Alignment of the content within the table row
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
