@@ -354,11 +354,11 @@ async def state_manager_redis(
     ],
 )
 async def test_get_state_tree(
-    state_manager_redis,
-    token,
-    substate_cls,
-    exp_root_substates,
-    exp_root_dict_keys,
+    state_manager_redis: StateManagerRedis,
+    token: str,
+    substate_cls: type[BaseState],
+    exp_root_substates: list[str],
+    exp_root_dict_keys: list[str],
 ):
     """Test getting state trees and assert on which branches are retrieved.
 
