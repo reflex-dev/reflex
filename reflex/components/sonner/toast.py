@@ -64,7 +64,7 @@ def _toast_callback_signature(toast: Var) -> list[Var]:
     """
     return [
         Var(
-            _js_expr=f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {str(toast)}; return rest}})()"
+            _js_expr=f"(() => {{let {{action, cancel, onDismiss, onAutoClose, ...rest}} = {toast!s}; return rest}})()"
         )
     ]
 
@@ -98,7 +98,7 @@ class ToastProps(PropsBase, NoExtrasAllowedProps):
 
     # TODO: fix serialization of icons for toast? (might not be possible yet)
     # Icon displayed in front of toast's text, aligned vertically.
-    # icon: Optional[Icon] = None
+    # icon: Optional[Icon] = None # noqa: ERA001
 
     # TODO: fix implementation for action / cancel buttons
     # Renders a primary button, clicking it will close the toast.
@@ -338,7 +338,7 @@ class Toaster(Component):
         dismiss_var_data = None
 
         if isinstance(id, Var):
-            dismiss = f"{toast_ref}.dismiss({str(id)})"
+            dismiss = f"{toast_ref}.dismiss({id!s})"
             dismiss_var_data = id._get_all_var_data()
         elif isinstance(id, str):
             dismiss = f"{toast_ref}.dismiss('{id}')"
@@ -364,9 +364,7 @@ class Toaster(Component):
         return super().create(*children, **props)
 
 
-# TODO: figure out why loading toast stay open forever
-# def toast_loading(message: str, **kwargs):
-#     return _toast(message, level="loading", **kwargs)
+# TODO: figure out why loading toast stay open forever when using level="loading" in toast()
 
 
 class ToastNamespace(ComponentNamespace):
@@ -379,7 +377,6 @@ class ToastNamespace(ComponentNamespace):
     error = staticmethod(Toaster.toast_error)
     success = staticmethod(Toaster.toast_success)
     dismiss = staticmethod(Toaster.toast_dismiss)
-    # loading = staticmethod(toast_loading)
     __call__ = staticmethod(Toaster.send_toast)
 
 

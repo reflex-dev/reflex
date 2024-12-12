@@ -329,12 +329,12 @@ def format_match(
         return_value = case[-1]
 
         case_conditions = " ".join(
-            [f"case JSON.stringify({str(condition)}):" for condition in conditions]
+            [f"case JSON.stringify({condition!s}):" for condition in conditions]
         )
-        case_code = f"{case_conditions}  return ({str(return_value)});  break;"
+        case_code = f"{case_conditions}  return ({return_value!s});  break;"
         switch_code += case_code
 
-    switch_code += f"default:  return ({str(default)});  break;"
+    switch_code += f"default:  return ({default!s});  break;"
     switch_code += "};})()"
 
     return switch_code
@@ -413,7 +413,7 @@ def format_props(*single_props, **key_value_props) -> list[str]:
         )
         for name, prop in sorted(key_value_props.items())
         if prop is not None
-    ] + [(f"{str(LiteralVar.create(prop))}") for prop in single_props]
+    ] + [(f"{LiteralVar.create(prop)!s}") for prop in single_props]
 
 
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
@@ -712,8 +712,7 @@ def format_array_ref(refs: str, idx: Var | None) -> str:
     """
     clean_ref = re.sub(r"[^\w]+", "_", refs)
     if idx is not None:
-        # idx._var_is_local = True
-        return f"refs_{clean_ref}[{str(idx)}]"
+        return f"refs_{clean_ref}[{idx!s}]"
     return f"refs_{clean_ref}"
 
 
