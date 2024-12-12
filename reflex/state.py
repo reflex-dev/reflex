@@ -3252,7 +3252,7 @@ class StateManagerRedis(StateManager):
     lock_expiration: int = pydantic.Field(default_factory=_default_lock_expiration)
 
     # If HEXPIRE is not supported, use EXPIRE instead.
-    _hexpire_not_supported: bool | None = pydantic.PrivateAttr(None)
+    _hexpire_not_supported: Optional[bool] = pydantic.PrivateAttr(None)
 
     # The keyspace subscription string when redis is waiting for lock to be released
     _redis_notify_keyspace_events: str = (
