@@ -97,6 +97,7 @@ from reflex.utils.exceptions import (
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSchemaMismatchError,
+    StateSerializationError,
     StateTooLargeError,
 )
 from reflex.utils.exec import is_testing_env
@@ -104,6 +105,7 @@ from reflex.utils.serializers import serializer
 from reflex.utils.types import (
     _isinstance,
     get_origin,
+    is_optional,
     is_union,
     override,
     value_inside_optional,
@@ -278,6 +280,22 @@ if TYPE_CHECKING:
     from pydantic.v1.fields import ModelField
 
 
+def _unwrap_field_type(type_: Type) -> Type:
+    """Unwrap rx.Field type annotations.
+
+    Args:
+        type_: The type to unwrap.
+
+    Returns:
+        The unwrapped type.
+    """
+    from reflex.vars import Field
+
+    if get_origin(type_) is Field:
+        return get_args(type_)[0]
+    return type_
+
+
 def get_var_for_field(cls: Type[BaseState], f: ModelField):
     """Get a Var instance for a Pydantic field.
 
@@ -288,16 +306,12 @@ def get_var_for_field(cls: Type[BaseState], f: ModelField):
     Returns:
         The Var instance.
     """
-    from reflex.vars import Field
-
     field_name = format.format_state_name(cls.get_full_name()) + "." + f.name
 
     return dispatch(
         field_name=field_name,
         var_data=VarData.from_state(cls, f.name),
-        result_var_type=f.outer_type_
-        if get_origin(f.outer_type_) is not Field
-        else get_args(f.outer_type_)[0],
+        result_var_type=_unwrap_field_type(f.outer_type_),
     )
 
 
@@ -425,7 +439,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The string representation of the state.
         """
-        return f"{self.__class__.__name__}({self.dict()})"
+        return f"{type(self).__name__}({self.dict()})"
 
     @classmethod
     def _get_computed_vars(cls) -> list[ComputedVar]:
@@ -436,7 +450,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         return [
             v
-            for mixin in cls._mixins() + [cls]
+            for mixin in [*cls._mixins(), cls]
             for name, v in mixin.__dict__.items()
             if is_computed_var(v) and name not in cls.inherited_vars
         ]
@@ -1288,6 +1302,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return
 
         if name in self.backend_vars:
+            # abort if unchanged
+            if self._backend_vars.get(name) == value:
+                return
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
@@ -1310,8 +1327,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         if name in fields:
             field = fields[name]
-            field_type = field.outer_type_
-            if field.allow_none:
+            field_type = _unwrap_field_type(field.outer_type_)
+            if field.allow_none and not is_optional(field_type):
                 field_type = Union[field_type, None]
             if not _isinstance(value, field_type):
                 console.deprecate(
@@ -2193,8 +2210,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Returns:
             The serialized state.
+
+        Raises:
+            StateSerializationError: If the state cannot be serialized.
         """
         payload = b""
+        error = ""
         try:
             payload = pickle.dumps((self._to_schema(), self))
         except HANDLED_PICKLE_ERRORS as og_pickle_error:
@@ -2214,8 +2235,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             except HANDLED_PICKLE_ERRORS as ex:
                 error += f"Dill was also unable to pickle the state: {ex}"
             console.warn(error)
+
         if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
             self._check_state_size(len(payload))
+
+        if not payload:
+            raise StateSerializationError(error)
+
         return payload
 
     @classmethod
@@ -3611,6 +3637,14 @@ class MutableProxy(wrapt.ObjectProxy):
         super().__init__(wrapped)
         self._self_state = state
         self._self_field_name = field_name
+
+    def __repr__(self) -> str:
+        """Get the representation of the wrapped object.
+
+        Returns:
+            The representation of the wrapped object.
+        """
+        return f"{type(self).__name__}({self.__wrapped__})"
 
     def _mark_dirty(
         self,
