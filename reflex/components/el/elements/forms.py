@@ -18,6 +18,7 @@ from reflex.event import (
     prevent_default,
 )
 from reflex.utils.imports import ImportDict
+from reflex.utils.types import is_optional
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 
@@ -400,9 +401,11 @@ class Input(BaseHTML):
         value = props.get("value")
 
         # React expects an empty string(instead of null) for uncontrolled inputs.
-        if value is not None:
+        if value is not None and is_optional(
+            (value_var := Var.create(value))._var_type
+        ):
             props["value"] = ternary_operation(
-                ((value_var := Var.create(value)) != Var.create(None))
+                (value_var != Var.create(None))
                 & (value_var != Var(_js_expr="undefined")),
                 value,
                 "",
