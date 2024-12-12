@@ -150,8 +150,8 @@ class VarData:
         object.__setattr__(self, "field_name", field_name)
         object.__setattr__(self, "imports", immutable_imports)
         object.__setattr__(self, "hooks", tuple(hooks or {}))
-        object.__setattr__(self, "position", position or None)
         object.__setattr__(self, "deps", tuple(deps or []))
+        object.__setattr__(self, "position", position or None)
 
     def old_school_imports(self) -> ImportDict:
         """Return the imports as a mutable dict.
