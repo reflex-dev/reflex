@@ -71,6 +71,11 @@ try:
 except ModuleNotFoundError:
     BaseModelV1 = BaseModelV2
 
+try:
+    from pydantic.v1 import validator
+except ModuleNotFoundError:
+    from pydantic import validator
+
 import wrapt
 from redis.asyncio import Redis
 from redis.exceptions import ResponseError
@@ -94,6 +99,7 @@ from reflex.utils.exceptions import (
     DynamicRouteArgShadowsStateVar,
     EventHandlerShadowsBuiltInStateMethod,
     ImmutableStateError,
+    InvalidLockWarningThresholdError,
     InvalidStateManagerMode,
     LockExpiredError,
     ReflexRuntimeError,
@@ -2834,6 +2840,7 @@ class StateManager(Base, ABC):
                     redis=redis,
                     token_expiration=config.redis_token_expiration,
                     lock_expiration=config.redis_lock_expiration,
+                    lock_warning_threshold=config.redis_lock_warning_threshold,
                 )
         raise InvalidStateManagerMode(
             f"Expected one of: DISK, MEMORY, REDIS, got {config.state_manager_mode}"
@@ -3203,6 +3210,15 @@ def _default_lock_expiration() -> int:
     return get_config().redis_lock_expiration
 
 
+def _default_lock_warning_threshold() -> int:
+    """Get the default lock warning threshold.
+
+    Returns:
+        The default lock warning threshold.
+    """
+    return get_config().redis_lock_warning_threshold
+
+
 class StateManagerRedis(StateManager):
     """A state manager that stores states in redis."""
 
@@ -3214,6 +3230,11 @@ class StateManagerRedis(StateManager):
 
     # The maximum time to hold a lock (ms).
     lock_expiration: int = pydantic.Field(default_factory=_default_lock_expiration)
+
+    # The maximum time to hold a lock (ms) before warning.
+    lock_warning_threshold: int = pydantic.Field(
+        default_factory=_default_lock_warning_threshold
+    )
 
     # The keyspace subscription string when redis is waiting for lock to be released
     _redis_notify_keyspace_events: str = (
@@ -3402,6 +3423,17 @@ class StateManagerRedis(StateManager):
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
                 "or use `@rx.event(background=True)` decorator for long-running tasks."
             )
+        elif lock_id is not None:
+            time_taken = self.lock_expiration / 1000 - (
+                await self.redis.ttl(self._lock_key(token))
+            )
+            if time_taken > self.lock_warning_threshold / 1000:
+                console.warn(
+                    f"Lock for token {token} was held too long {time_taken=}s, "
+                    f"use `@rx.event(background=True)` decorator for long-running tasks.",
+                    dedupe=True,
+                )
+
         client_token, substate_name = _split_substate_key(token)
         # If the substate name on the token doesn't match the instance name, it cannot have a parent.
         if state.parent_state is not None and state.get_full_name() != substate_name:
@@ -3450,6 +3482,27 @@ class StateManagerRedis(StateManager):
             state = await self.get_state(token)
             yield state
             await self.set_state(token, state, lock_id)
+
+    @validator("lock_warning_threshold")
+    @classmethod
+    def validate_lock_warning_threshold(cls, lock_warning_threshold: int, values):
+        """Validate the lock warning threshold.
+
+        Args:
+            lock_warning_threshold: The lock warning threshold.
+            values: The validated attributes.
+
+        Returns:
+            The lock warning threshold.
+
+        Raises:
+            InvalidLockWarningThresholdError: If the lock warning threshold is invalid.
+        """
+        if lock_warning_threshold >= (lock_expiration := values["lock_expiration"]):
+            raise InvalidLockWarningThresholdError(
+                f"The lock warning threshold({lock_warning_threshold}) must be less than the lock expiration time({lock_expiration})."
+            )
+        return lock_warning_threshold
 
     @staticmethod
     def _lock_key(token: str) -> bytes:
