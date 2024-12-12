@@ -2210,21 +2210,17 @@ class StatefulComponent(BaseComponent):
         """
         events: list = [event]
         deps = set()
+
         if isinstance(event, EventChain):
             events.extend(event.events)
 
         for ev in events:
             if isinstance(ev, EventSpec):
                 for arg in ev.args:
-                    deps.union(
-                        {
-                            str(dep)
-                            for a in arg
-                            if a._var_data is not None
-                            for dep in a._var_data.deps
-                            if a._var_data.deps is not None
-                        }
-                    )
+                    for a in arg:
+                        var_datas = VarData.merge(a._get_all_var_data())
+                        if var_datas and var_datas.deps is not None:
+                            deps |= {str(dep) for dep in var_datas.deps}
         return deps
 
     @classmethod
