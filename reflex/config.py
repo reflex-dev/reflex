@@ -27,7 +27,12 @@ from typing import (
 from typing_extensions import Annotated, get_type_hints
 
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
-from reflex.utils.types import GenericType, is_union, value_inside_optional
+from reflex.utils.types import (
+    GenericType,
+    is_union,
+    true_type_for_pydantic_field,
+    value_inside_optional,
+)
 
 try:
     import pydantic.v1 as pydantic
@@ -759,7 +764,9 @@ class Config(Base):
             # If the env var is set, override the config value.
             if env_var is not None:
                 # Interpret the value.
-                value = interpret_env_var_value(env_var, field.outer_type_, field.name)
+                value = interpret_env_var_value(
+                    env_var, true_type_for_pydantic_field(field), field.name
+                )
 
                 # Set the value.
                 updated_values[key] = value
