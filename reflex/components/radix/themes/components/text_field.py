@@ -68,8 +68,6 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
     # Specifies the type of input
     type: Var[str]
 
-    step: Var[int]
-
     # Value of the input
     value: Var[Union[str, int, float]]
 

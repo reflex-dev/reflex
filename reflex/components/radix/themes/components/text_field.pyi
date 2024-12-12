@@ -118,7 +118,6 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
         read_only: Optional[Union[Var[bool], bool]] = None,
         required: Optional[Union[Var[bool], bool]] = None,
         type: Optional[Union[Var[str], str]] = None,
-        step: Optional[Union[Var[int], int]] = None,
         value: Optional[Union[Var[Union[float, int, str]], float, int, str]] = None,
         accept: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         alt: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
@@ -143,6 +142,7 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
         multiple: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         pattern: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         src: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        step: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         use_map: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_capitalize: Optional[
@@ -518,7 +518,6 @@ class TextField(ComponentNamespace):
         read_only: Optional[Union[Var[bool], bool]] = None,
         required: Optional[Union[Var[bool], bool]] = None,
         type: Optional[Union[Var[str], str]] = None,
-        step: Optional[Union[Var[int], int]] = None,
         value: Optional[Union[Var[Union[float, int, str]], float, int, str]] = None,
         accept: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         alt: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
@@ -543,6 +542,7 @@ class TextField(ComponentNamespace):
         multiple: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         pattern: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         src: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        step: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         use_map: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_capitalize: Optional[
