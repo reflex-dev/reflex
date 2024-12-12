@@ -68,7 +68,7 @@ from tests.units.states.mutation import MutableSQLAModel, MutableTestState
 from .states import GenState
 
 CI = bool(os.environ.get("CI", False))
-LOCK_EXPIRATION = 2000 if CI else 300
+LOCK_EXPIRATION = 2500 if CI else 300
 LOCK_WARNING_THRESHOLD = 1000 if CI else 100
 LOCK_WARN_SLEEP = 1.5 if CI else 0.15
 LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.4
