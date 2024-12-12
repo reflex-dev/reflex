@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
+from contextlib import suppress
 from typing import Any, ClassVar, Optional, Type, Union
 
 import alembic.autogenerate
@@ -290,11 +291,10 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         relationships = {}
         # SQLModel relationships do not appear in __fields__, but should be included if present.
         for name in self.__sqlmodel_relationships__:
-            try:
+            with suppress(
+                sqlalchemy.orm.exc.DetachedInstanceError  # This happens when the relationship was never loaded and the session is closed.
+            ):
                 relationships[name] = self._dict_recursive(getattr(self, name))
-            except sqlalchemy.orm.exc.DetachedInstanceError:
-                # This happens when the relationship was never loaded and the session is closed.
-                continue
         return {
             **base_fields,
             **relationships,

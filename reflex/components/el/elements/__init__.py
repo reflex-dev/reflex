@@ -127,7 +127,7 @@ _MAPPING = {
 
 
 EXCLUDE = ["del_", "Del", "image"]
-for _, v in _MAPPING.items():
+for v in _MAPPING.values():
     v.extend([mod.capitalize() for mod in v if mod not in EXCLUDE])
 
 _SUBMOD_ATTRS: dict[str, list[str]] = _MAPPING

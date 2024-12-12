@@ -58,7 +58,9 @@ def get_process_on_port(port) -> Optional[psutil.Process]:
         The process on the given port.
     """
     for proc in psutil.process_iter(["pid", "name", "cmdline"]):
-        try:
+        with contextlib.suppress(
+            psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess
+        ):
             if importlib.metadata.version("psutil") >= "6.0.0":
                 conns = proc.net_connections(kind="inet")  # type: ignore
             else:
@@ -66,8 +68,6 @@ def get_process_on_port(port) -> Optional[psutil.Process]:
             for conn in conns:
                 if conn.laddr.port == int(port):
                     return proc
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            pass
     return None
 
 
