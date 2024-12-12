@@ -17,6 +17,7 @@ import sys
 import traceback
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -363,6 +364,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
                 ping_interval=constants.Ping.INTERVAL,
                 ping_timeout=constants.Ping.TIMEOUT,
+                json=SimpleNamespace(
+                    dumps=staticmethod(format.json_dumps),
+                    loads=staticmethod(json.loads),
+                ),
                 transports=["websocket"],
             )
         elif getattr(self.sio, "async_mode", "") != "asgi":
@@ -1543,7 +1548,7 @@ class EventNamespace(AsyncNamespace):
         """
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
+            self.emit(str(constants.SocketEvent.EVENT), update, to=sid)
         )
 
     async def on_event(self, sid, data):
@@ -1556,7 +1561,7 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
             data: The event data.
         """
-        fields = json.loads(data)
+        fields = data
         # Get the event.
         event = Event(
             **{k: v for k, v in fields.items() if k not in ("handler", "event_actions")}
