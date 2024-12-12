@@ -384,6 +384,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     # A special event handler for setting base vars.
     setvar: ClassVar[EventHandler]
 
+    # Track if computed vars have changed since last serialization
+    _changed_computed_vars: Set[str] = set()
+
+    # Track which computed vars have already been computed
+    _ready_computed_vars: Set[str] = set()
+
     def __init__(
         self,
         parent_state: BaseState | None = None,
@@ -1841,11 +1847,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         while dirty_vars:
             calc_vars, dirty_vars = dirty_vars, set()
             for cvar in self._dirty_computed_vars(from_vars=calc_vars):
-                self.dirty_vars.add(cvar)
-                dirty_vars.add(cvar)
                 actual_var = self.computed_vars.get(cvar)
-                if actual_var is not None:
+                assert actual_var is not None
+                if actual_var.has_changed(instance=self):
                     actual_var.mark_dirty(instance=self)
+                    self.dirty_vars.add(cvar)
+                    dirty_vars.add(cvar)
 
     def _expired_computed_vars(self) -> set[str]:
         """Determine ComputedVars that need to be recalculated based on the expiration time.
@@ -2125,10 +2132,27 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         state["__dict__"]["parent_state"] = None
         state["__dict__"]["substates"] = {}
         state["__dict__"].pop("_was_touched", None)
+        state["__dict__"].pop("_changed_computed_vars", None)
+        state["__dict__"].pop("_ready_computed_vars", None)
+        state["__fields_set__"].discard("_changed_computed_vars")
+        state["__fields_set__"].discard("_ready_computed_vars")
         # Remove all inherited vars.
         for inherited_var_name in self.inherited_vars:
             state["__dict__"].pop(inherited_var_name, None)
         return state
+
+    def __setstate__(self, state):
+        """Set the state from redis deserialization.
+
+        This method is called by pickle to deserialize the object.
+
+        Args:
+            state: The state dict for deserialization.
+        """
+        super().__setstate__(state)
+        self._was_touched = False
+        self._changed_computed_vars = set()
+        self._ready_computed_vars = set()
 
     def _check_state_size(
         self,
@@ -3109,6 +3133,8 @@ class StateManagerDisk(StateManager):
         root_state = self.states.get(client_token)
         if root_state is not None:
             # Retrieved state from memory.
+            root_state._changed_computed_vars = set()
+            root_state._ready_computed_vars = set()
             return root_state
 
         # Deserialize root state from disk.
