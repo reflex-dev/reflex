@@ -64,7 +64,6 @@ class BaseList(Component, MarkdownComponentMap):
 
         Returns:
             The list component.
-
         """
         items = props.pop("items", None)
         list_style_type = props.pop("list_style_type", "none")
@@ -114,7 +113,6 @@ class UnorderedList(BaseList, Ul):
 
         Returns:
             The list component.
-
         """
         items = props.pop("items", None)
         list_style_type = props.pop("list_style_type", "disc")
@@ -144,7 +142,6 @@ class OrderedList(BaseList, Ol):
 
         Returns:
             The list component.
-
         """
         items = props.pop("items", None)
         list_style_type = props.pop("list_style_type", "decimal")
@@ -168,7 +165,6 @@ class ListItem(Li, MarkdownComponentMap):
 
         Returns:
             The list item component.
-
         """
         for child in children:
             if isinstance(child, Text):

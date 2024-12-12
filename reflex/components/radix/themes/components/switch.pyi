@@ -157,7 +157,7 @@ class Switch(RadixThemesComponent):
             color_scheme: Override theme color for switch
             high_contrast: Whether to render the switch with higher contrast color against background
             radius: Override theme radius for switch: "none" | "small" | "full"
-            on_change: Props to rename  Fired when the value of the switch changes
+            on_change: Fired when the value of the switch changes
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

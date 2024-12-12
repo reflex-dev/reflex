@@ -106,7 +106,7 @@ class ClientStateVar(Var):
             default_var = default
         setter_name = f"set{var_name.capitalize()}"
         hooks = {
-            f"const [{var_name}, {setter_name}] = useState({str(default_var)})": None,
+            f"const [{var_name}, {setter_name}] = useState({default_var!s})": None,
         }
         imports = {
             "react": [ImportVar(tag="useState")],
@@ -242,4 +242,5 @@ class ClientStateVar(Var):
         """
         if not self._global_ref:
             raise ValueError("ClientStateVar must be global to push the value.")
+        value = Var.create(value)
         return run_script(f"{_client_state_ref(self._setter_name)}({value})")

@@ -63,6 +63,10 @@ class UploadValueError(ReflexError, ValueError):
     """Custom ValueError for upload related errors."""
 
 
+class PageValueError(ReflexError, ValueError):
+    """Custom ValueError for page related errors."""
+
+
 class RouteValueError(ReflexError, ValueError):
     """Custom ValueError for route related errors."""
 
@@ -153,6 +157,10 @@ class InvalidPropValueError(ReflexError):
 
 class StateTooLargeError(ReflexError):
     """Raised when the state is too large to be serialized."""
+
+
+class StateSerializationError(ReflexError):
+    """Raised when the state cannot be serialized."""
 
 
 class SystemPackageMissingError(ReflexError):

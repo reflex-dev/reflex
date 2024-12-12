@@ -55,7 +55,11 @@ from reflex.state import (
 )
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
-from reflex.utils.exceptions import ReflexRuntimeError, SetUndefinedStateVarError
+from reflex.utils.exceptions import (
+    ReflexRuntimeError,
+    SetUndefinedStateVarError,
+    StateSerializationError,
+)
 from reflex.utils.format import json_dumps
 from reflex.vars.base import Var, computed_var
 from tests.units.states.mutation import MutableSQLAModel, MutableTestState
@@ -787,7 +791,6 @@ async def test_process_event_simple(test_state):
     assert test_state.num1 == 69
 
     # The delta should contain the changes, including computed vars.
-    # assert update.delta == {"test_state": {"num1": 69, "sum": 72.14}}
     assert update.delta == {
         TestState.get_full_name(): {"num1": 69, "sum": 72.14, "upper": ""},
         GrandchildState3.get_full_name(): {"computed": ""},
@@ -1698,7 +1701,7 @@ async def test_state_manager_modify_state(
         assert not state_manager._states_locks[token].locked()
 
         # separate instances should NOT share locks
-        sm2 = state_manager.__class__(state=TestState)
+        sm2 = type(state_manager)(state=TestState)
         assert sm2._state_manager_lock is state_manager._state_manager_lock
         assert not sm2._states_locks
         if state_manager._states_locks:
@@ -2552,7 +2555,7 @@ def test_duplicate_substate_class(mocker):
         class TestState(BaseState):
             pass
 
-        class ChildTestState(TestState):  # type: ignore # noqa
+        class ChildTestState(TestState):  # type: ignore
             pass
 
         class ChildTestState(TestState):  # type: ignore # noqa
@@ -2669,23 +2672,23 @@ def test_state_union_optional():
         c3r: Custom3 = Custom3(c2r=Custom2(c1r=Custom1(foo="")))
         custom_union: Union[Custom1, Custom2, Custom3] = Custom1(foo="")
 
-    assert str(UnionState.c3.c2) == f'{str(UnionState.c3)}?.["c2"]'  # type: ignore
-    assert str(UnionState.c3.c2.c1) == f'{str(UnionState.c3)}?.["c2"]?.["c1"]'  # type: ignore
+    assert str(UnionState.c3.c2) == f'{UnionState.c3!s}?.["c2"]'  # type: ignore
+    assert str(UnionState.c3.c2.c1) == f'{UnionState.c3!s}?.["c2"]?.["c1"]'  # type: ignore
     assert (
-        str(UnionState.c3.c2.c1.foo) == f'{str(UnionState.c3)}?.["c2"]?.["c1"]?.["foo"]'  # type: ignore
+        str(UnionState.c3.c2.c1.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1"]?.["foo"]'  # type: ignore
     )
     assert (
-        str(UnionState.c3.c2.c1r.foo) == f'{str(UnionState.c3)}?.["c2"]?.["c1r"]["foo"]'  # type: ignore
+        str(UnionState.c3.c2.c1r.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1r"]["foo"]'  # type: ignore
     )
-    assert str(UnionState.c3.c2r.c1) == f'{str(UnionState.c3)}?.["c2r"]["c1"]'  # type: ignore
+    assert str(UnionState.c3.c2r.c1) == f'{UnionState.c3!s}?.["c2r"]["c1"]'  # type: ignore
     assert (
-        str(UnionState.c3.c2r.c1.foo) == f'{str(UnionState.c3)}?.["c2r"]["c1"]?.["foo"]'  # type: ignore
+        str(UnionState.c3.c2r.c1.foo) == f'{UnionState.c3!s}?.["c2r"]["c1"]?.["foo"]'  # type: ignore
     )
     assert (
-        str(UnionState.c3.c2r.c1r.foo) == f'{str(UnionState.c3)}?.["c2r"]["c1r"]["foo"]'  # type: ignore
+        str(UnionState.c3.c2r.c1r.foo) == f'{UnionState.c3!s}?.["c2r"]["c1r"]["foo"]'  # type: ignore
     )
-    assert str(UnionState.c3i.c2) == f'{str(UnionState.c3i)}["c2"]'  # type: ignore
-    assert str(UnionState.c3r.c2) == f'{str(UnionState.c3r)}["c2"]'  # type: ignore
+    assert str(UnionState.c3i.c2) == f'{UnionState.c3i!s}["c2"]'  # type: ignore
+    assert str(UnionState.c3r.c2) == f'{UnionState.c3r!s}["c2"]'  # type: ignore
     assert UnionState.custom_union.foo is not None  # type: ignore
     assert UnionState.custom_union.c1 is not None  # type: ignore
     assert UnionState.custom_union.c1r is not None  # type: ignore
@@ -3442,8 +3445,9 @@ def test_fallback_pickle():
     # Some object, like generator, are still unpicklable with dill.
     state3 = DillState(_reflex_internal_init=True)  # type: ignore
     state3._g = (i for i in range(10))
-    pk3 = state3._serialize()
-    assert len(pk3) == 0
+
+    with pytest.raises(StateSerializationError):
+        _ = state3._serialize()
 
 
 def test_typed_state() -> None:
@@ -3494,10 +3498,10 @@ def test_mutable_models():
     state.dirty_vars.clear()
 
     # Not yet supported ENG-4083
-    # assert isinstance(state.dc, MutableProxy)
-    # state.dc.foo = "baz"
-    # assert state.dirty_vars == {"dc"}
-    # state.dirty_vars.clear()
+    # assert isinstance(state.dc, MutableProxy) #noqa: ERA001
+    # state.dc.foo = "baz" #noqa: ERA001
+    # assert state.dirty_vars == {"dc"} #noqa: ERA001
+    # state.dirty_vars.clear() #noqa: ERA001
 
 
 def test_get_value():
