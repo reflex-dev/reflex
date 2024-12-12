@@ -693,6 +693,9 @@ class Config(Base):
     # Path to file containing key-values pairs to override in the environment; Dotenv format.
     env_file: Optional[str] = None
 
+    # Whether to automatically create setters for state base vars
+    state_auto_setters: bool = True
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 
