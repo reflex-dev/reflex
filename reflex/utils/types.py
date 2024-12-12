@@ -97,7 +97,6 @@ StateIterVar = Union[list, set, tuple]
 if TYPE_CHECKING:
     from reflex.vars.base import Var
 
-    # ArgsSpec = Callable[[Var], list[Var]]
     ArgsSpec = (
         Callable[[], Sequence[Var]]
         | Callable[[Var], Sequence[Var]]
@@ -331,7 +330,11 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
         type_ = field.outer_type_
         if isinstance(type_, ModelField):
             type_ = type_.type_
-        if not field.required and field.default is None:
+        if (
+            not field.required
+            and field.default is None
+            and field.default_factory is None
+        ):
             # Ensure frontend uses null coalescing when accessing.
             type_ = Optional[type_]
         return type_
@@ -783,7 +786,7 @@ def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
             )
             value_str = f"'{value}'" if isinstance(value, str) else value
             raise ValueError(
-                f"prop value for {str(key)} of the `{comp_name}` component should be one of the following: {allowed_value_str}. Got {value_str} instead"
+                f"prop value for {key!s} of the `{comp_name}` component should be one of the following: {allowed_value_str}. Got {value_str} instead"
             )
 
 

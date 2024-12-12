@@ -204,7 +204,7 @@ class Radar(Recharts):
             dot: If false set, dots will not be drawn. Default: True
             stroke: Stoke color. Default: rx.color("accent", 9)
             fill: Fill color. Default: rx.color("accent", 3)
-            fill_opacity: opacity. Default: 0.6
+            fill_opacity: The opacity to fill the chart. Default: 0.6
             legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. Default: "rect"
             label: If false set, labels will not be drawn. Default: True
             is_animation_active: If set false, animation of polygon will be disabled. Default: True in CSR, and False in SSR

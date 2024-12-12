@@ -74,6 +74,7 @@ from reflex.event import (
     EventSpec,
     EventType,
     IndividualEventType,
+    get_hydrate_event,
     window_alert,
 )
 from reflex.model import Model, get_db_status
@@ -367,6 +368,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     dumps=staticmethod(format.json_dumps),
                     loads=staticmethod(json.loads),
                 ),
+                transports=["websocket"],
             )
         elif getattr(self.sio, "async_mode", "") != "asgi":
             raise RuntimeError(
@@ -471,7 +473,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def add_page(
         self,
-        component: Component | ComponentCallable,
+        component: Component | ComponentCallable | None = None,
         route: str | None = None,
         title: str | Var | None = None,
         description: str | Var | None = None,
@@ -494,16 +496,32 @@ class App(MiddlewareMixin, LifespanMixin):
             meta: The metadata of the page.
 
         Raises:
-            ValueError: When the specified route name already exists.
+            PageValueError: When the component is not set for a non-404 page.
+            RouteValueError: When the specified route name already exists.
         """
         # If the route is not set, get it from the callable.
         if route is None:
             if not isinstance(component, Callable):
-                raise ValueError("Route must be set if component is not a callable.")
+                raise exceptions.RouteValueError(
+                    "Route must be set if component is not a callable."
+                )
             # Format the route.
             route = format.format_route(component.__name__)
         else:
             route = format.format_route(route, format_case=False)
+
+        if route == constants.Page404.SLUG:
+            if component is None:
+                component = Default404Page.create()
+            component = wait_for_client_redirect(self._generate_component(component))
+            title = title or constants.Page404.TITLE
+            description = description or constants.Page404.DESCRIPTION
+            image = image or constants.Page404.IMAGE
+        else:
+            if component is None:
+                raise exceptions.PageValueError(
+                    "Component must be set for a non-404 page."
+                )
 
         # Check if the route given is valid
         verify_route_validity(route)
@@ -520,7 +538,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 if route == constants.PageNames.INDEX_ROUTE
                 else f"`{route}`"
             )
-            raise ValueError(
+            raise exceptions.RouteValueError(
                 f"Duplicate page route {route_name} already exists. Make sure you do not have two"
                 f" pages with the same route"
             )
@@ -637,10 +655,14 @@ class App(MiddlewareMixin, LifespanMixin):
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
         """
-        if component is None:
-            component = Default404Page.create()
+        console.deprecate(
+            feature_name="App.add_custom_404_page",
+            reason=f"Use app.add_page(component, route='/{constants.Page404.SLUG}') instead.",
+            deprecation_version="0.6.7",
+            removal_version="0.8.0",
+        )
         self.add_page(
-            component=wait_for_client_redirect(self._generate_component(component)),
+            component=component,
             route=constants.Page404.SLUG,
             title=title or constants.Page404.TITLE,
             image=image or constants.Page404.IMAGE,
@@ -841,7 +863,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Render a default 404 page if the user didn't supply one
         if constants.Page404.SLUG not in self.unevaluated_pages:
-            self.add_custom_404_page()
+            self.add_page(route=constants.Page404.SLUG)
 
         # Fix up the style.
         self.style = evaluate_style_namespaces(self.style)
@@ -951,12 +973,12 @@ class App(MiddlewareMixin, LifespanMixin):
             is not None
         ):
             executor = concurrent.futures.ProcessPoolExecutor(
-                max_workers=number_of_processes,
+                max_workers=number_of_processes or None,
                 mp_context=multiprocessing.get_context("fork"),
             )
         else:
             executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=environment.REFLEX_COMPILE_THREADS.get()
+                max_workers=environment.REFLEX_COMPILE_THREADS.get() or None
             )
 
         for route, component in zip(self.pages, page_components):
@@ -969,7 +991,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
             def _submit_work(fn, *args, **kwargs):
                 f = executor.submit(fn, *args, **kwargs)
-                # f = executor.apipe(fn, *args, **kwargs)
                 result_futures.append(f)
 
             # Compile the pre-compiled pages.
@@ -1161,7 +1182,7 @@ class App(MiddlewareMixin, LifespanMixin):
             if hasattr(handler_fn, "__name__"):
                 _fn_name = handler_fn.__name__
             else:
-                _fn_name = handler_fn.__class__.__name__
+                _fn_name = type(handler_fn).__name__
 
             if isinstance(handler_fn, functools.partial):
                 raise ValueError(
@@ -1264,6 +1285,21 @@ async def process(
         )
         # Get the state for the session exclusively.
         async with app.state_manager.modify_state(event.substate_token) as state:
+            # When this is a brand new instance of the state, signal the
+            # frontend to reload before processing it.
+            if (
+                not state.router_data
+                and event.name != get_hydrate_event(state)
+                and app.event_namespace is not None
+            ):
+                await asyncio.create_task(
+                    app.event_namespace.emit(
+                        "reload",
+                        data=format.json_dumps(event),
+                        to=sid,
+                    )
+                )
+                return
             # re-assign only when the value is different
             if state.router_data != router_data:
                 # assignment will recurse into substates and force recalculation of

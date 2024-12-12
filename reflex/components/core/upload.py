@@ -61,7 +61,7 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     id_var = LiteralStringVar.create(id_)
     var_name = f"""e => setFilesById(filesById => {{
     const updatedFilesById = Object.assign({{}}, filesById);
-    updatedFilesById[{str(id_var)}] = e;
+    updatedFilesById[{id_var!s}] = e;
     return updatedFilesById;
   }})
     """
@@ -87,7 +87,7 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     """
     id_var = LiteralStringVar.create(id_)
     return Var(
-        _js_expr=f"(filesById[{str(id_var)}] ? filesById[{str(id_var)}].map((f) => (f.path || f.name)) : [])",
+        _js_expr=f"(filesById[{id_var!s}] ? filesById[{id_var!s}].map((f) => (f.path || f.name)) : [])",
         _var_type=List[str],
         _var_data=VarData.merge(
             upload_files_context_var_data, id_var._get_all_var_data()
@@ -120,9 +120,7 @@ def cancel_upload(upload_id: str) -> EventSpec:
     Returns:
         An event spec that cancels the upload when triggered.
     """
-    return run_script(
-        f"upload_controllers[{str(LiteralVar.create(upload_id))}]?.abort()"
-    )
+    return run_script(f"upload_controllers[{LiteralVar.create(upload_id)!s}]?.abort()")
 
 
 def get_upload_dir() -> Path:
@@ -293,13 +291,15 @@ class Upload(MemoizationLeaf):
             format.to_camel_case(key): value for key, value in upload_props.items()
         }
 
-        use_dropzone_arguments = {
-            "onDrop": event_var,
-            **upload_props,
-        }
+        use_dropzone_arguments = Var.create(
+            {
+                "onDrop": event_var,
+                **upload_props,
+            }
+        )
 
         left_side = f"const {{getRootProps: {root_props_unique_name}, getInputProps: {input_props_unique_name}}} "
-        right_side = f"useDropzone({str(Var.create(use_dropzone_arguments))})"
+        right_side = f"useDropzone({use_dropzone_arguments!s})"
 
         var_data = VarData.merge(
             VarData(
@@ -307,6 +307,7 @@ class Upload(MemoizationLeaf):
                 hooks={Hooks.EVENTS: None},
             ),
             event_var._get_all_var_data(),
+            use_dropzone_arguments._get_all_var_data(),
             VarData(
                 hooks={
                     callback_str: None,

@@ -1,5 +1,5 @@
 # This Dockerfile is used to deploy a simple single-container Reflex app instance.
-FROM python:3.12
+FROM python:3.13
 
 RUN apt-get update && apt-get install -y redis-server && rm -rf /var/lib/apt/lists/*
 ENV REDIS_URL=redis://localhost PYTHONUNBUFFERED=1

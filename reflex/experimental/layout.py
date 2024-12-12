@@ -33,12 +33,6 @@ class Sidebar(Box, MemoizationLeaf):
         Returns:
             The sidebar component.
         """
-        # props.setdefault("border_right", f"1px solid {color('accent', 12)}")
-        # props.setdefault("background_color", color("accent", 1))
-        # props.setdefault("width", "20vw")
-        # props.setdefault("height", "100vh")
-        # props.setdefault("position", "fixed")
-
         return super().create(
             Box.create(*children, **props),  # sidebar for content
             Box.create(width=props.get("width")),  # spacer for layout
