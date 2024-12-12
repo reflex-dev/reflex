@@ -69,8 +69,8 @@ from .states import GenState
 
 CI = bool(os.environ.get("CI", False))
 LOCK_EXPIRATION = 2000 if CI else 300
-LOCK_WARNING_THRESHOLD = 1000 if CI else 200
-LOCK_WARN_SLEEP = 1.5 if CI else 0.25
+LOCK_WARNING_THRESHOLD = 1000 if CI else 100
+LOCK_WARN_SLEEP = 1.5 if CI else 0.15
 LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.4
 
 
@@ -1790,6 +1790,7 @@ async def test_state_manager_lock_expire(
         substate_token_redis: A token + substate name for looking up in state manager.
     """
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
+    state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
 
     async with state_manager_redis.modify_state(substate_token_redis):
         await asyncio.sleep(0.01)
@@ -1814,6 +1815,7 @@ async def test_state_manager_lock_expire_contend(
     unexp_num1 = 666
 
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
+    state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
 
     order = []
 
@@ -3391,6 +3393,7 @@ config = rx.Config(
 
         with pytest.raises(InvalidLockWarningThresholdError):
             StateManager.create(state=State)
+        del sys.modules[constants.Config.MODULE]
 
 
 class MixinState(State, mixin=True):

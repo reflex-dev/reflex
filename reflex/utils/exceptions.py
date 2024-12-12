@@ -185,5 +185,5 @@ def raise_system_package_missing_error(package: str) -> NoReturn:
     )
 
 
-class InvalidLockWarningThresholdError(ReflexError, ValueError):
+class InvalidLockWarningThresholdError(ReflexError):
     """Raised when an invalid lock warning threshold is provided."""

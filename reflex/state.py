@@ -71,6 +71,11 @@ try:
 except ModuleNotFoundError:
     BaseModelV1 = BaseModelV2
 
+try:
+    from pydantic.v1 import validator
+except ModuleNotFoundError:
+    from pydantic import validator
+
 import wrapt
 from redis.asyncio import Redis
 from redis.exceptions import ResponseError
@@ -2835,6 +2840,7 @@ class StateManager(Base, ABC):
                     redis=redis,
                     token_expiration=config.redis_token_expiration,
                     lock_expiration=config.redis_lock_expiration,
+                    lock_warning_threshold=config.redis_lock_warning_threshold,
                 )
         raise InvalidStateManagerMode(
             f"Expected one of: DISK, MEMORY, REDIS, got {config.state_manager_mode}"
@@ -3210,22 +3216,7 @@ def _default_lock_warning_threshold() -> int:
     Returns:
         The default lock warning threshold.
     """
-    lock_warning_threshold = get_config().redis_lock_warning_threshold
-    _validate_lock_warning_threshold(lock_warning_threshold, _default_lock_expiration())
-    return lock_warning_threshold
-
-
-def _validate_lock_warning_threshold(lock_warning_threshold: int, lock_expiration: int):
-    """Validate the lock warning threshold.
-
-    Args:
-        lock_warning_threshold: The lock warning threshold.
-        lock_expiration: The lock expiration time.
-    """
-    if lock_warning_threshold >= lock_expiration:
-        raise InvalidLockWarningThresholdError(
-            f"The lock warning threshold({lock_warning_threshold}) must be less than the lock expiration time({lock_expiration})."
-        )
+    return get_config().redis_lock_warning_threshold
 
 
 class StateManagerRedis(StateManager):
@@ -3436,6 +3427,9 @@ class StateManagerRedis(StateManager):
             time_taken = self.lock_expiration / 1000 - (
                 await self.redis.ttl(self._lock_key(token))
             )
+            print(
+                f"Time taken to set state: {time_taken} - {self.lock_warning_threshold}"
+            )
             if time_taken > self.lock_warning_threshold / 1000:
                 console.warn(
                     f"Lock for token {token} was held too long {time_taken=}s, "
@@ -3491,6 +3485,21 @@ class StateManagerRedis(StateManager):
             state = await self.get_state(token)
             yield state
             await self.set_state(token, state, lock_id)
+
+    @validator("lock_warning_threshold")
+    @classmethod
+    def validate_lock_warning_threshold(cls, lock_warning_threshold: int, values):
+        """Validate the lock warning threshold.
+
+        Args:
+            lock_warning_threshold: The lock warning threshold.
+            values: The validated attributes.
+        """
+        if lock_warning_threshold >= (lock_expiration := values["lock_expiration"]):
+            raise InvalidLockWarningThresholdError(
+                f"The lock warning threshold({lock_warning_threshold}) must be less than the lock expiration time({lock_expiration})."
+            )
+        return lock_warning_threshold
 
     @staticmethod
     def _lock_key(token: str) -> bytes:
