@@ -25,6 +25,7 @@ from typing import (
     overload,
 )
 
+import typing_extensions
 from typing_extensions import (
     Concatenate,
     ParamSpec,
@@ -721,14 +722,16 @@ def redirect(
     replace: bool = False,
 ) -> EventSpec: ...
 
+
 @overload
-@typing_extensions.deprecated("`external` is deprecated use `is_external` instead") 
+@typing_extensions.deprecated("`external` is deprecated use `is_external` instead")
 def redirect(
     path: str | Var[str],
     is_external: Optional[bool] = None,
     replace: bool = False,
     external: Optional[bool] = None,
 ) -> EventSpec: ...
+
 
 def redirect(
     path: str | Var[str],
