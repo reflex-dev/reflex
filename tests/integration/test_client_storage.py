@@ -628,8 +628,7 @@ async def test_client_side_state(
     assert await AppHarness._poll_for_async(poll_for_not_hydrated)
 
     # Trigger event to get a new instance of the state since the old was expired.
-    state_var_input = driver.find_element(By.ID, "state_var")
-    state_var_input.send_keys("re-triggering")
+    set_sub("c1", "c1 post expire")
 
     # get new references to all cookie and local storage elements (again)
     c1 = driver.find_element(By.ID, "c1")
@@ -650,7 +649,7 @@ async def test_client_side_state(
     l1s = driver.find_element(By.ID, "l1s")
     s1s = driver.find_element(By.ID, "s1s")
 
-    assert c1.text == "c1 value"
+    assert c1.text == "c1 post expire"
     assert c2.text == "c2 value"
     assert c3.text == ""  # temporary cookie expired after reset state!
     assert c4.text == "c4 value"
@@ -680,11 +679,11 @@ async def test_client_side_state(
 
     async def poll_for_c1_set():
         sub_state = await get_sub_state()
-        return sub_state.c1 == "c1 value"
+        return sub_state.c1 == "c1 post expire"
 
     assert await AppHarness._poll_for_async(poll_for_c1_set)
     sub_state = await get_sub_state()
-    assert sub_state.c1 == "c1 value"
+    assert sub_state.c1 == "c1 post expire"
     assert sub_state.c2 == "c2 value"
     assert sub_state.c3 == ""
     assert sub_state.c4 == "c4 value"
