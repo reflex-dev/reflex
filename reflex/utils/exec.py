@@ -117,7 +117,7 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
                         console.print("New packages detected: Updating app...")
                 else:
                     if any(
-                        [x in line for x in ("bin executable does not exist on disk",)]
+                        x in line for x in ("bin executable does not exist on disk",)
                     ):
                         console.error(
                             "Try setting `REFLEX_USE_NPM=1` and re-running `reflex init` and `reflex run` to use npm instead of bun:\n"

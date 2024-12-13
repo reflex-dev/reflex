@@ -701,7 +701,7 @@ def _update_next_config(
     }
     if transpile_packages:
         next_config["transpilePackages"] = list(
-            set((format_library_name(p) for p in transpile_packages))
+            {format_library_name(p) for p in transpile_packages}
         )
     if export:
         next_config["output"] = "export"
@@ -927,7 +927,7 @@ def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
 
 @cached_procedure(
     cache_file=str(get_web_dir() / "reflex.install_frontend_packages.cached"),
-    payload_fn=lambda p, c: f"{sorted(list(p))!r},{c.json()}",
+    payload_fn=lambda p, c: f"{sorted(p)!r},{c.json()}",
 )
 def install_frontend_packages(packages: set[str], config: Config):
     """Installs the base and custom frontend packages.
@@ -1302,7 +1302,7 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
     for tp in templates_data:
         if tp["hidden"] or tp["code_url"] is None:
             continue
-        known_fields = set(f.name for f in dataclasses.fields(Template))
+        known_fields = {f.name for f in dataclasses.fields(Template)}
         filtered_templates[tp["name"]] = Template(
             **{k: v for k, v in tp.items() if k in known_fields}
         )

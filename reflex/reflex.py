@@ -442,13 +442,13 @@ def deploy(
         hidden=True,
     ),
     regions: List[str] = typer.Option(
-        list(),
+        [],
         "-r",
         "--region",
         help="The regions to deploy to. `reflex cloud regions` For multiple envs, repeat this option, e.g. --region sjc --region iad",
     ),
     envs: List[str] = typer.Option(
-        list(),
+        [],
         "--env",
         help="The environment variables to set: <key>=<value>. For multiple envs, repeat this option, e.g. --env k1=v2 --env k2=v2.",
     ),
