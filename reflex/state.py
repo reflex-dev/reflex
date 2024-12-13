@@ -3438,17 +3438,16 @@ class StateManagerRedis(StateManager):
             )
 
         # Recursively set_state on all known substates.
-        tasks = []
-        for substate in state.substates.values():
-            tasks.append(
-                asyncio.create_task(
-                    self.set_state(
-                        token=_substate_key(client_token, substate),
-                        state=substate,
-                        lock_id=lock_id,
-                    )
+        tasks = [
+            asyncio.create_task(
+                self.set_state(
+                    _substate_key(client_token, substate),
+                    substate,
+                    lock_id,
                 )
             )
+            for substate in state.substates.values()
+        ]
         # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
         if state._get_was_touched():
             pickle_state = state._serialize()

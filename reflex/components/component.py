@@ -1403,8 +1403,9 @@ class Component(BaseComponent, ABC):
             if not isinstance(list_of_import_dict, list):
                 list_of_import_dict = [list_of_import_dict]
 
-            for import_dict in list_of_import_dict:
-                added_import_dicts.append(parse_imports(import_dict))
+            added_import_dicts.extend(
+                [parse_imports(import_dict) for import_dict in list_of_import_dict]
+            )
 
         return imports.merge_imports(
             *self._get_props_imports(),
@@ -1586,8 +1587,7 @@ class Component(BaseComponent, ABC):
         if hooks is not None:
             code[hooks] = None
 
-        for hook, var_data in self._get_added_hooks().items():
-            code[hook] = var_data
+        code.update(self._get_added_hooks())
 
         # Add the hook code for the children.
         for child in self.children:
