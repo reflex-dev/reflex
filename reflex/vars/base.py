@@ -42,7 +42,8 @@ from typing_extensions import ParamSpec, TypeGuard, deprecated, get_type_hints, 
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import console, imports, serializers, types
+from reflex.constants.compiler import Hooks
+from reflex.utils import console, exceptions, imports, serializers, types
 from reflex.utils.exceptions import (
     VarAttributeError,
     VarDependencyError,
@@ -115,12 +116,20 @@ class VarData:
     # Hooks that need to be present in the component to render this var
     hooks: Tuple[str, ...] = dataclasses.field(default_factory=tuple)
 
+    # Dependencies of the var
+    deps: Tuple[Var, ...] = dataclasses.field(default_factory=tuple)
+
+    # Position of the hook in the component
+    position: Hooks.HookPosition | None = None
+
     def __init__(
         self,
         state: str = "",
         field_name: str = "",
         imports: ImportDict | ParsedImportDict | None = None,
         hooks: dict[str, None] | None = None,
+        deps: list[Var] | None = None,
+        position: Hooks.HookPosition | None = None,
     ):
         """Initialize the var data.
 
@@ -129,6 +138,8 @@ class VarData:
             field_name: The name of the field in the state.
             imports: Imports needed to render this var.
             hooks: Hooks that need to be present in the component to render this var.
+            deps: Dependencies of the var for useCallback.
+            position: Position of the hook in the component.
         """
         immutable_imports: ImmutableParsedImportDict = tuple(
             sorted(
@@ -139,6 +150,8 @@ class VarData:
         object.__setattr__(self, "field_name", field_name)
         object.__setattr__(self, "imports", immutable_imports)
         object.__setattr__(self, "hooks", tuple(hooks or {}))
+        object.__setattr__(self, "deps", tuple(deps or []))
+        object.__setattr__(self, "position", position or None)
 
     def old_school_imports(self) -> ImportDict:
         """Return the imports as a mutable dict.
@@ -153,6 +166,9 @@ class VarData:
 
         Args:
             *all: The var data objects to merge.
+
+        Raises:
+            ReflexError: If trying to merge VarData with different positions.
 
         Returns:
             The merged var data object.
@@ -184,12 +200,32 @@ class VarData:
             *(var_data.imports for var_data in all_var_datas)
         )
 
-        if state or _imports or hooks or field_name:
+        deps = [dep for var_data in all_var_datas for dep in var_data.deps]
+
+        positions = list(
+            {
+                var_data.position
+                for var_data in all_var_datas
+                if var_data.position is not None
+            }
+        )
+        if positions:
+            if len(positions) > 1:
+                raise exceptions.ReflexError(
+                    f"Cannot merge var data with different positions: {positions}"
+                )
+            position = positions[0]
+        else:
+            position = None
+
+        if state or _imports or hooks or field_name or deps or position:
             return VarData(
                 state=state,
                 field_name=field_name,
                 imports=_imports,
                 hooks=hooks,
+                deps=deps,
+                position=position,
             )
 
         return None
@@ -200,7 +236,14 @@ class VarData:
         Returns:
             True if any field is set to a non-default value.
         """
-        return bool(self.state or self.imports or self.hooks or self.field_name)
+        return bool(
+            self.state
+            or self.imports
+            or self.hooks
+            or self.field_name
+            or self.deps
+            or self.position
+        )
 
     @classmethod
     def from_state(cls, state: Type[BaseState] | str, field_name: str = "") -> VarData:
@@ -480,7 +523,6 @@ class Var(Generic[VAR_TYPE]):
             raise TypeError(
                 "The _var_full_name_needs_state_prefix argument is not supported for Var."
             )
-
         value_with_replaced = dataclasses.replace(
             self,
             _var_type=_var_type or self._var_type,
