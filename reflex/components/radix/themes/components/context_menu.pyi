@@ -12,6 +12,7 @@ from reflex.style import Style
 from reflex.vars.base import Var
 
 from ..base import RadixThemesComponent
+from .checkbox import Checkbox
 
 LiteralDirType = Literal["ltr", "rtl"]
 LiteralSizeType = Literal["1", "2"]
@@ -672,6 +673,159 @@ class ContextMenuSeparator(RadixThemesComponent):
         """
         ...
 
+class ContextMenuCheckbox(Checkbox):
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        shortcut: Optional[Union[Var[str], str]] = None,
+        as_child: Optional[Union[Var[bool], bool]] = None,
+        size: Optional[
+            Union[
+                Breakpoints[str, Literal["1", "2", "3"]],
+                Literal["1", "2", "3"],
+                Var[
+                    Union[
+                        Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
+                    ]
+                ],
+            ]
+        ] = None,
+        variant: Optional[
+            Union[
+                Literal["classic", "soft", "surface"],
+                Var[Literal["classic", "soft", "surface"]],
+            ]
+        ] = None,
+        color_scheme: Optional[
+            Union[
+                Literal[
+                    "amber",
+                    "blue",
+                    "bronze",
+                    "brown",
+                    "crimson",
+                    "cyan",
+                    "gold",
+                    "grass",
+                    "gray",
+                    "green",
+                    "indigo",
+                    "iris",
+                    "jade",
+                    "lime",
+                    "mint",
+                    "orange",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "red",
+                    "ruby",
+                    "sky",
+                    "teal",
+                    "tomato",
+                    "violet",
+                    "yellow",
+                ],
+                Var[
+                    Literal[
+                        "amber",
+                        "blue",
+                        "bronze",
+                        "brown",
+                        "crimson",
+                        "cyan",
+                        "gold",
+                        "grass",
+                        "gray",
+                        "green",
+                        "indigo",
+                        "iris",
+                        "jade",
+                        "lime",
+                        "mint",
+                        "orange",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "red",
+                        "ruby",
+                        "sky",
+                        "teal",
+                        "tomato",
+                        "violet",
+                        "yellow",
+                    ]
+                ],
+            ]
+        ] = None,
+        high_contrast: Optional[Union[Var[bool], bool]] = None,
+        default_checked: Optional[Union[Var[bool], bool]] = None,
+        checked: Optional[Union[Var[bool], bool]] = None,
+        disabled: Optional[Union[Var[bool], bool]] = None,
+        required: Optional[Union[Var[bool], bool]] = None,
+        name: Optional[Union[Var[str], str]] = None,
+        value: Optional[Union[Var[str], str]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_change: Optional[
+            Union[EventType[[], BASE_STATE], EventType[[bool], BASE_STATE]]
+        ] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
+        **props,
+    ) -> "ContextMenuCheckbox":
+        """Create a new component instance.
+
+        Will prepend "RadixThemes" to the component tag to avoid conflicts with
+        other UI libraries for common names, like Text and Button.
+
+        Args:
+            *children: Child components.
+            shortcut: Text to render as shortcut.
+            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
+            size: Checkbox size "1" - "3"
+            variant: Variant of checkbox: "classic" | "surface" | "soft"
+            color_scheme: Override theme color for checkbox
+            high_contrast: Whether to render the checkbox with higher contrast color against background
+            default_checked: Whether the checkbox is checked by default
+            checked: Whether the checkbox is checked
+            disabled: Whether the checkbox is disabled
+            required: Whether the checkbox is required
+            name: The name of the checkbox control when submitting the form.
+            value: The value of the checkbox control when submitting the form.
+            on_change: Fired when the checkbox is checked or unchecked.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: Component properties.
+
+        Returns:
+            A new component instance.
+        """
+        ...
+
 class ContextMenu(ComponentNamespace):
     root = staticmethod(ContextMenuRoot.create)
     trigger = staticmethod(ContextMenuTrigger.create)
@@ -681,5 +835,6 @@ class ContextMenu(ComponentNamespace):
     sub_content = staticmethod(ContextMenuSubContent.create)
     item = staticmethod(ContextMenuItem.create)
     separator = staticmethod(ContextMenuSeparator.create)
+    checkbox = staticmethod(ContextMenuCheckbox.create)
 
 context_menu = ContextMenu()
