@@ -4,26 +4,19 @@ version = "0.6.7dev1"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [
-    "Nikhil Rao <nikhil@reflex.dev>",
-    "Alek Petuskey <alek@reflex.dev>",
-    "Masen Furer <masen@reflex.dev>",
-    "Elijah Ahianyo <elijah@reflex.dev>",
-    "Thomas Brandého <thomas@reflex.dev>",
+  "Nikhil Rao <nikhil@reflex.dev>",
+  "Alek Petuskey <alek@reflex.dev>",
+  "Masen Furer <masen@reflex.dev>",
+  "Elijah Ahianyo <elijah@reflex.dev>",
+  "Thomas Brandého <thomas@reflex.dev>",
 ]
 readme = "README.md"
 homepage = "https://reflex.dev"
 repository = "https://github.com/reflex-dev/reflex"
 documentation = "https://reflex.dev/docs/getting-started/introduction"
-keywords = [
-    "web",
-    "framework",
-]
-classifiers = [
-    "Development Status :: 4 - Beta",
-]
-packages = [
-    {include = "reflex"}
-]
+keywords = ["web", "framework"]
+classifiers = ["Development Status :: 4 - Beta"]
+packages = [{ include = "reflex" }]
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -42,11 +35,11 @@ uvicorn = ">=0.20.0"
 starlette-admin = ">=0.11.0,<1.0"
 alembic = ">=1.11.1,<2.0"
 platformdirs = ">=3.10.0,<5.0"
-distro = {version = ">=1.8.0,<2.0", platform = "linux"}
+distro = { version = ">=1.8.0,<2.0", platform = "linux" }
 python-engineio = "!=4.6.0"
 wrapt = [
-    {version = ">=1.14.0,<2.0", python = ">=3.11"},
-    {version = ">=1.11.0,<2.0", python = "<3.11"},
+  { version = ">=1.14.0,<2.0", python = ">=3.11" },
+  { version = ">=1.11.0,<2.0", python = "<3.11" },
 ]
 packaging = ">=23.1,<25.0"
 reflex-hosting-cli = ">=0.1.29,<2.0"
@@ -93,7 +86,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.ruff]
 target-version = "py39"
 lint.isort.split-on-trailing-comma = false
-lint.select = ["B", "C4", "D", "E", "ERA", "F", "FURB", "I", "RUF", "SIM", "W"]
+lint.select = ["B", "C4", "D", "E", "ERA", "F", "FURB", "I", "PTH", "RUF", "SIM", "W"]
 lint.ignore = ["B008", "D205", "E501", "F403", "SIM115", "RUF006", "RUF012"]
 lint.pydocstyle.convention = "google"
 

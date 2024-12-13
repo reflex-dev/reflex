@@ -15,6 +15,7 @@ from .utils import SessionStorage
 
 def CallScript():
     """A test app for browser javascript integration."""
+    from pathlib import Path
     from typing import Dict, List, Optional, Union
 
     import reflex as rx
@@ -186,8 +187,7 @@ def CallScript():
             self.reset()
 
     app = rx.App(state=rx.State)
-    with open("assets/external.js", "w") as f:
-        f.write(external_scripts)
+    Path("assets/external.js").write_text(external_scripts)
 
     @app.add_page
     def index():
