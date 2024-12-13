@@ -5,7 +5,7 @@ export function {{tag_name}} () {
   {{ hook }}
   {% endfor %}
 
-  {% for hook, data in component._get_all_hooks().items() if not data.position or data.position == hook_positions.PRE_TRIGGER %}
+  {% for hook, data in component._get_all_hooks().items() if not data.position or data.position == const.hook_positions.PRE_TRIGGER %}
   {{ hook }}
   {% endfor %}
 
@@ -13,7 +13,7 @@ export function {{tag_name}} () {
   {{ hook }}
   {% endfor %}
 
-  {% for hook,data in component._get_all_hooks().items() if data.position and data.position == hook_positions.POST_TRIGGER %}
+  {% for hook,data in component._get_all_hooks().items() if data.position and data.position == const.hook_positions.POST_TRIGGER %}
   {{ hook }}
   {% endfor %}
 
