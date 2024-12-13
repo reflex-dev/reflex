@@ -24,7 +24,6 @@ from typing import (
 )
 
 import reflex.state
-from reflex import constants
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
 from reflex.components.core.breakpoints import Breakpoints
@@ -2169,7 +2168,6 @@ class StatefulComponent(BaseComponent):
             tag_name=tag_name,
             memo_trigger_hooks=memo_trigger_hooks,
             component=component,
-            positions=constants.Hooks.HookPosition,
         )
 
     @staticmethod
