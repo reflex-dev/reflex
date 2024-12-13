@@ -281,7 +281,19 @@ def true_type_for_pydantic_field(f: ModelField):
     """
     if not isinstance(f.annotation, (str, ForwardRef)):
         return f.annotation
-    return f.outer_type_
+
+    type_ = f.outer_type_
+
+    if (
+        (isinstance(f.annotation, str) and f.annotation.startswith("Optional"))
+        or (
+            isinstance(f.annotation, ForwardRef)
+            and f.annotation.__forward_arg__.startswith("Optional")
+        )
+    ) and not is_optional(type_):
+        return Optional[type_]
+
+    return type_
 
 
 def value_inside_optional(cls: GenericType) -> GenericType:
