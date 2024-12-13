@@ -14,6 +14,7 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    ForwardRef,
     FrozenSet,
     Iterable,
     List,
@@ -278,14 +279,9 @@ def true_type_for_pydantic_field(f: ModelField):
     Returns:
         The type for the field.
     """
-    outer_type = f.outer_type_
-    if (
-        f.allow_none
-        and not is_optional(outer_type)
-        and outer_type not in (None, type(None))
-    ):
-        return Optional[outer_type]
-    return outer_type
+    if not isinstance(f.annotation, (str, ForwardRef)):
+        return f.annotation
+    return f.outer_type_
 
 
 def value_inside_optional(cls: GenericType) -> GenericType:
