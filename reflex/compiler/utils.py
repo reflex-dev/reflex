@@ -115,7 +115,7 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
         default, rest = compile_import_statement(fields)
 
         # prevent lib from being rendered on the page if all imports are non rendered kind
-        if not any({f.render for f in fields}):  # type: ignore
+        if not any(f.render for f in fields):  # type: ignore
             continue
 
         if not lib:

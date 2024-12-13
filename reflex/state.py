@@ -437,9 +437,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 )
 
         # Create a fresh copy of the backend variables for this instance
-        self._backend_vars = copy.deepcopy(
-            {name: item for name, item in self.backend_vars.items()}
-        )
+        self._backend_vars = copy.deepcopy(self.backend_vars)
 
     def __repr__(self) -> str:
         """Get the string representation of the state.
@@ -523,9 +521,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cls.inherited_backend_vars = parent_state.backend_vars
 
             # Check if another substate class with the same name has already been defined.
-            if cls.get_name() in set(
-                c.get_name() for c in parent_state.class_subclasses
-            ):
+            if cls.get_name() in {c.get_name() for c in parent_state.class_subclasses}:
                 # This should not happen, since we have added module prefix to state names in #3214
                 raise StateValueError(
                     f"The substate class '{cls.get_name()}' has been defined multiple times. "
@@ -788,11 +784,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                         )
 
         # ComputedVar with cache=False always need to be recomputed
-        cls._always_dirty_computed_vars = set(
+        cls._always_dirty_computed_vars = {
             cvar_name
             for cvar_name, cvar in cls.computed_vars.items()
             if not cvar._cache
-        )
+        }
 
         # Any substate containing a ComputedVar with cache=False always needs to be recomputed
         if cls._always_dirty_computed_vars:
@@ -1862,11 +1858,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             Set of computed vars to include in the delta.
         """
-        return set(
+        return {
             cvar
             for cvar in self.computed_vars
             if self.computed_vars[cvar].needs_update(instance=self)
-        )
+        }
 
     def _dirty_computed_vars(
         self, from_vars: set[str] | None = None, include_backend: bool = True
@@ -1880,12 +1876,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             Set of computed vars to include in the delta.
         """
-        return set(
+        return {
             cvar
             for dirty_var in from_vars or self.dirty_vars
             for cvar in self._computed_var_dependencies[dirty_var]
             if include_backend or not self.computed_vars[cvar]._backend
-        )
+        }
 
     @classmethod
     def _potentially_dirty_substates(cls) -> set[Type[BaseState]]:
@@ -1895,16 +1891,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             Set of State classes that may need to be fetched to recalc computed vars.
         """
         # _always_dirty_substates need to be fetched to recalc computed vars.
-        fetch_substates = set(
+        fetch_substates = {
             cls.get_class_substate((cls.get_name(), *substate_name.split(".")))
             for substate_name in cls._always_dirty_substates
-        )
+        }
         for dependent_substates in cls._substate_var_dependencies.values():
             fetch_substates.update(
-                set(
+                {
                     cls.get_class_substate((cls.get_name(), *substate_name.split(".")))
                     for substate_name in dependent_substates
-                )
+                }
             )
         return fetch_substates
 
@@ -2206,7 +2202,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         return md5(
             pickle.dumps(
-                list(sorted(_field_tuple(field_name) for field_name in cls.base_vars))
+                sorted(_field_tuple(field_name) for field_name in cls.base_vars)
             )
         ).hexdigest()
 
@@ -3354,7 +3350,7 @@ class StateManagerRedis(StateManager):
             state_cls = self.state.get_class_substate(state_path)
         else:
             raise RuntimeError(
-                "StateManagerRedis requires token to be specified in the form of {token}_{state_full_name}"
+                f"StateManagerRedis requires token to be specified in the form of {{token}}_{{state_full_name}}, but got {token}"
             )
 
         # The deserialized or newly created (sub)state instance.
@@ -3653,33 +3649,30 @@ class MutableProxy(wrapt.ObjectProxy):
     """A proxy for a mutable object that tracks changes."""
 
     # Methods on wrapped objects which should mark the state as dirty.
-    __mark_dirty_attrs__ = set(
-        [
-            "add",
-            "append",
-            "clear",
-            "difference_update",
-            "discard",
-            "extend",
-            "insert",
-            "intersection_update",
-            "pop",
-            "popitem",
-            "remove",
-            "reverse",
-            "setdefault",
-            "sort",
-            "symmetric_difference_update",
-            "update",
-        ]
-    )
+    __mark_dirty_attrs__ = {
+        "add",
+        "append",
+        "clear",
+        "difference_update",
+        "discard",
+        "extend",
+        "insert",
+        "intersection_update",
+        "pop",
+        "popitem",
+        "remove",
+        "reverse",
+        "setdefault",
+        "sort",
+        "symmetric_difference_update",
+        "update",
+    }
+
     # Methods on wrapped objects might return mutable objects that should be tracked.
-    __wrap_mutable_attrs__ = set(
-        [
-            "get",
-            "setdefault",
-        ]
-    )
+    __wrap_mutable_attrs__ = {
+        "get",
+        "setdefault",
+    }
 
     # These internal attributes on rx.Base should NOT be wrapped in a MutableProxy.
     __never_wrap_base_attrs__ = set(Base.__dict__) - {"set"} | set(
@@ -3722,7 +3715,7 @@ class MutableProxy(wrapt.ObjectProxy):
         self,
         wrapped=None,
         instance=None,
-        args=tuple(),
+        args=(),
         kwargs=None,
     ) -> Any:
         """Mark the state as dirty, then call a wrapped function.
@@ -3978,7 +3971,7 @@ class ImmutableMutableProxy(MutableProxy):
         self,
         wrapped=None,
         instance=None,
-        args=tuple(),
+        args=(),
         kwargs=None,
     ) -> Any:
         """Raise an exception when an attempt is made to modify the object.

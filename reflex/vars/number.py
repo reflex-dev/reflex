@@ -51,7 +51,7 @@ def raise_unsupported_operand_types(
         VarTypeError: The operand types are unsupported.
     """
     raise VarTypeError(
-        f"Unsupported Operand type(s) for {operator}: {', '.join(map(lambda t: t.__name__, operands_types))}"
+        f"Unsupported Operand type(s) for {operator}: {', '.join(t.__name__ for t in operands_types)}"
     )
 
 
