@@ -19,6 +19,7 @@ from . import vars as vars
 from .admin import AdminDash as AdminDash
 from .app import App as App
 from .app import UploadFile as UploadFile
+from .assets import asset as asset
 from .base import Base as Base
 from .components import el as el
 from .components import lucide as lucide
@@ -185,6 +186,7 @@ from .istate.wrappers import get_state as get_state
 from .middleware import Middleware as Middleware
 from .middleware import middleware as middleware
 from .model import Model as Model
+from .model import asession as asession
 from .model import session as session
 from .page import page as page
 from .state import ComponentState as ComponentState

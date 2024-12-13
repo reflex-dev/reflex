@@ -5,6 +5,7 @@
 
 from . import elements as elements
 from .elements.forms import Button as Button
+from .elements.forms import Datalist as Datalist
 from .elements.forms import Fieldset as Fieldset
 from .elements.forms import Form as Form
 from .elements.forms import Input as Input
@@ -18,6 +19,7 @@ from .elements.forms import Progress as Progress
 from .elements.forms import Select as Select
 from .elements.forms import Textarea as Textarea
 from .elements.forms import button as button
+from .elements.forms import datalist as datalist
 from .elements.forms import fieldset as fieldset
 from .elements.forms import form as form
 from .elements.forms import input as input

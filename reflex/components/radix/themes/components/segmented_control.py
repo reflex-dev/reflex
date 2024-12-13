@@ -12,7 +12,9 @@ from reflex.vars.base import Var
 from ..base import LiteralAccentColor, RadixThemesComponent
 
 
-def on_value_change(value: Var[str | List[str]]) -> Tuple[Var[str | List[str]]]:
+def on_value_change(
+    value: Var[Union[str, List[str]]],
+) -> Tuple[Var[Union[str, List[str]]]]:
     """Handle the on_value_change event.
 
     Args:

@@ -81,7 +81,7 @@ class SelectRoot(RadixThemesComponent):
             name: The name of the select control when submitting the form.
             disabled: When True, prevents the user from interacting with select.
             required: When True, indicates that the user must select a value before the owning form can be submitted.
-            on_change: Props to rename  Fired when the value of the select changes.
+            on_change: Fired when the value of the select changes.
             on_open_change: Fired when the select is opened or closed.
             style: The style of the component.
             key: A unique key for the component.
@@ -732,7 +732,7 @@ class HighLevelSelect(SelectRoot):
             name: The name of the select control when submitting the form.
             disabled: When True, prevents the user from interacting with select.
             required: When True, indicates that the user must select a value before the owning form can be submitted.
-            on_change: Props to rename  Fired when the value of the select changes.
+            on_change: Fired when the value of the select changes.
             on_open_change: Fired when the select is opened or closed.
             style: The style of the component.
             key: A unique key for the component.
@@ -912,7 +912,7 @@ class Select(ComponentNamespace):
             name: The name of the select control when submitting the form.
             disabled: When True, prevents the user from interacting with select.
             required: When True, indicates that the user must select a value before the owning form can be submitted.
-            on_change: Props to rename  Fired when the value of the select changes.
+            on_change: Fired when the value of the select changes.
             on_open_change: Fired when the select is opened or closed.
             style: The style of the component.
             key: A unique key for the component.

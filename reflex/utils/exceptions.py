@@ -63,6 +63,10 @@ class UploadValueError(ReflexError, ValueError):
     """Custom ValueError for upload related errors."""
 
 
+class PageValueError(ReflexError, ValueError):
+    """Custom ValueError for page related errors."""
+
+
 class RouteValueError(ReflexError, ValueError):
     """Custom ValueError for route related errors."""
 
@@ -151,6 +155,14 @@ class InvalidPropValueError(ReflexError):
     """Raised when a prop value is invalid."""
 
 
+class StateTooLargeError(ReflexError):
+    """Raised when the state is too large to be serialized."""
+
+
+class StateSerializationError(ReflexError):
+    """Raised when the state cannot be serialized."""
+
+
 class SystemPackageMissingError(ReflexError):
     """Raised when a system package is missing."""
 
@@ -171,3 +183,7 @@ def raise_system_package_missing_error(package: str) -> NoReturn:
         " Please install it through your system package manager."
         + (f" You can do so by running 'brew install {package}'." if IS_MACOS else "")
     )
+
+
+class InvalidLockWarningThresholdError(ReflexError):
+    """Raised when an invalid lock warning threshold is provided."""

@@ -264,6 +264,7 @@ _MAPPING: dict = {
     "experimental": ["_x"],
     "admin": ["AdminDash"],
     "app": ["App", "UploadFile"],
+    "assets": ["asset"],
     "base": ["Base"],
     "components.component": [
         "Component",
@@ -330,7 +331,7 @@ _MAPPING: dict = {
         "SessionStorage",
     ],
     "middleware": ["middleware", "Middleware"],
-    "model": ["session", "Model"],
+    "model": ["asession", "session", "Model"],
     "state": [
         "var",
         "ComponentState",
