@@ -8,6 +8,8 @@ import multiprocessing
 import platform
 import warnings
 
+from reflex.config import environment
+
 try:
     from datetime import UTC, datetime
 except ImportError:
@@ -20,7 +22,6 @@ import psutil
 
 from reflex import constants
 from reflex.utils import console
-from reflex.utils.exec import should_skip_compile
 from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
 
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
@@ -50,7 +51,8 @@ def get_python_version() -> str:
     Returns:
         The Python version.
     """
-    return platform.python_version()
+    # Remove the "+" from the version string in case user is using a pre-release version.
+    return platform.python_version().rstrip("+")
 
 
 def get_reflex_version() -> str:
@@ -94,9 +96,7 @@ def _raise_on_missing_project_hash() -> bool:
         False when compilation should be skipped (i.e. no .web directory is required).
         Otherwise return True.
     """
-    if should_skip_compile():
-        return False
-    return True
+    return not environment.REFLEX_SKIP_COMPILE.get()
 
 
 def _prepare_event(event: str, **kwargs) -> dict:
@@ -129,7 +129,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
 
     cpuinfo = get_cpu_info()
 
-    additional_keys = ["template", "context", "detail"]
+    additional_keys = ["template", "context", "detail", "user_uuid"]
     additional_fields = {
         key: value for key in additional_keys if (value := kwargs.get(key)) is not None
     }

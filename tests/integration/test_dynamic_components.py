@@ -65,7 +65,9 @@ def DynamicComponents():
             DynamicComponentsState.client_token_component,
             DynamicComponentsState.button,
             rx.text(
-                DynamicComponentsState._evaluate(lambda state: factorial(state.value)),
+                DynamicComponentsState._evaluate(
+                    lambda state: factorial(state.value), of_type=int
+                ),
                 id="factorial",
             ),
         )
@@ -83,7 +85,7 @@ def dynamic_components(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("dynamic_components"),
-        app_source=DynamicComponents,  # type: ignore
+        app_source=DynamicComponents,
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
         yield harness

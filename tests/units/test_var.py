@@ -1,5 +1,6 @@
 import json
 import math
+import sys
 import typing
 from typing import Dict, List, Optional, Set, Tuple, Union, cast
 
@@ -21,12 +22,12 @@ from reflex.vars.base import (
     var_operation,
     var_operation_return,
 )
-from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar
-from reflex.vars.number import (
-    LiteralBooleanVar,
-    LiteralNumberVar,
-    NumberVar,
+from reflex.vars.function import (
+    ArgsFunctionOperation,
+    DestructuredArg,
+    FunctionStringVar,
 )
+from reflex.vars.number import LiteralBooleanVar, LiteralNumberVar, NumberVar
 from reflex.vars.object import LiteralObjectVar, ObjectVar
 from reflex.vars.sequence import (
     ArrayVar,
@@ -214,7 +215,7 @@ def test_str(prop, expected):
 
 
 @pytest.mark.parametrize(
-    "prop,expected",
+    ("prop", "expected"),
     [
         (Var(_js_expr="p", _var_type=int), 0),
         (Var(_js_expr="p", _var_type=float), 0.0),
@@ -226,14 +227,14 @@ def test_str(prop, expected):
         (Var(_js_expr="p", _var_type=set), set()),
     ],
 )
-def test_default_value(prop, expected):
+def test_default_value(prop: Var, expected):
     """Test that the default value of a var is correct.
 
     Args:
         prop: The var to test.
         expected: The expected default value.
     """
-    assert prop.get_default_value() == expected
+    assert prop._get_default_value() == expected
 
 
 @pytest.mark.parametrize(
@@ -249,14 +250,14 @@ def test_default_value(prop, expected):
         ],
     ),
 )
-def test_get_setter(prop, expected):
+def test_get_setter(prop: Var, expected):
     """Test that the name of the setter function of a var is correct.
 
     Args:
         prop: The var to test.
         expected: The expected name of the setter function.
     """
-    assert prop.get_setter_name() == expected
+    assert prop._get_setter_name() == expected
 
 
 @pytest.mark.parametrize(
@@ -398,6 +399,44 @@ def test_list_tuple_contains(var, expected):
     assert str(var.contains(other_var)) == f"{expected}.includes(other)"
 
 
+class Foo(rx.Base):
+    """Foo class."""
+
+    bar: int
+    baz: str
+
+
+class Bar(rx.Base):
+    """Bar class."""
+
+    bar: str
+    baz: str
+    foo: int
+
+
+@pytest.mark.parametrize(
+    ("var", "var_type"),
+    (
+        [
+            (Var(_js_expr="", _var_type=Foo | Bar).guess_type(), Foo | Bar),
+            (Var(_js_expr="", _var_type=Foo | Bar).guess_type().bar, Union[int, str]),
+        ]
+        if sys.version_info >= (3, 10)
+        else []
+    )
+    + [
+        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type(), Union[Foo, Bar]),
+        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().baz, str),
+        (
+            Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().foo,
+            Union[int, None],
+        ),
+    ],
+)
+def test_var_types(var, var_type):
+    assert var._var_type == var_type
+
+
 @pytest.mark.parametrize(
     "var, expected",
     [
@@ -480,8 +519,8 @@ def test_var_indexing_types(var, type_):
         type_ : The type on indexed object.
 
     """
-    assert var[2]._var_type == type_[0]
-    assert var[3]._var_type == type_[1]
+    assert var[0]._var_type == type_[0]
+    assert var[1]._var_type == type_[1]
 
 
 def test_var_indexing_str():
@@ -490,7 +529,7 @@ def test_var_indexing_str():
 
     # Test that indexing gives a type of Var[str].
     assert isinstance(str_var[0], Var)
-    assert str_var[0]._var_type == str
+    assert str_var[0]._var_type is str
 
     # Test basic indexing.
     assert str(str_var[0]) == "str.at(0)"
@@ -623,7 +662,7 @@ def test_str_var_slicing():
 
     # Test that slicing gives a type of Var[str].
     assert isinstance(str_var[:1], Var)
-    assert str_var[:1]._var_type == str
+    assert str_var[:1]._var_type is str
 
     # Test basic slicing.
     assert str(str_var[:1]) == 'str.split("").slice(undefined, 1).join("")'
@@ -886,13 +925,13 @@ def test_function_var():
     )
     assert (
         str(manual_addition_func.call(1, 2))
-        == '(((a, b) => (({ ["args"] : [a, b], ["result"] : a + b })))(1, 2))'
+        == '(((a, b) => ({ ["args"] : [a, b], ["result"] : a + b }))(1, 2))'
     )
 
-    increment_func = addition_func(1)
+    increment_func = addition_func.partial(1)
     assert (
         str(increment_func.call(2))
-        == "(((...args) => ((((a, b) => a + b)(1, ...args))))(2))"
+        == "(((...args) => (((a, b) => a + b)(1, ...args)))(2))"
     )
 
     create_hello_statement = ArgsFunctionOperation.create(
@@ -902,8 +941,24 @@ def test_function_var():
     last_name = LiteralStringVar.create("Universe")
     assert (
         str(create_hello_statement.call(f"{first_name} {last_name}"))
-        == '(((name) => (("Hello, "+name+"!")))("Steven Universe"))'
+        == '(((name) => ("Hello, "+name+"!"))("Steven Universe"))'
     )
+
+    # Test with destructured arguments
+    destructured_func = ArgsFunctionOperation.create(
+        (DestructuredArg(fields=("a", "b")),),
+        Var(_js_expr="a + b"),
+    )
+    assert (
+        str(destructured_func.call({"a": 1, "b": 2}))
+        == '((({a, b}) => a + b)(({ ["a"] : 1, ["b"] : 2 })))'
+    )
+
+    # Test with explicit return
+    explicit_return_func = ArgsFunctionOperation.create(
+        ("a", "b"), Var(_js_expr="return a + b"), explicit_return=True
+    )
+    assert str(explicit_return_func.call(1, 2)) == "(((a, b) => {return a + b})(1, 2))"
 
 
 def test_var_operation():
@@ -1267,7 +1322,6 @@ def test_fstring_roundtrip(value):
         Var(_js_expr="var", _var_type=float).guess_type(),
         Var(_js_expr="var", _var_type=str).guess_type(),
         Var(_js_expr="var", _var_type=bool).guess_type(),
-        Var(_js_expr="var", _var_type=dict).guess_type(),
         Var(_js_expr="var", _var_type=None).guess_type(),
     ],
 )
@@ -1279,7 +1333,7 @@ def test_unsupported_types_for_reverse(var):
     """
     with pytest.raises(TypeError) as err:
         var.reverse()
-    assert err.value.args[0] == f"Cannot reverse non-list var."
+    assert err.value.args[0] == "Cannot reverse non-list var."
 
 
 @pytest.mark.parametrize(
@@ -1288,10 +1342,10 @@ def test_unsupported_types_for_reverse(var):
         Var(_js_expr="var", _var_type=int).guess_type(),
         Var(_js_expr="var", _var_type=float).guess_type(),
         Var(_js_expr="var", _var_type=bool).guess_type(),
-        Var(_js_expr="var", _var_type=None).guess_type(),
+        Var(_js_expr="var", _var_type=type(None)).guess_type(),
     ],
 )
-def test_unsupported_types_for_contains(var):
+def test_unsupported_types_for_contains(var: Var):
     """Test that unsupported types for contains throw a type error.
 
     Args:
@@ -1441,8 +1495,6 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
         )
         eval(f"operand1_var {operator} operand2_var")
         eval(f"operand2_var {operator} operand1_var")
-        # operand1_var.operation(op=operator, other=operand2_var)
-        # operand1_var.operation(op=operator, other=operand2_var, flip=True)
 
 
 @pytest.mark.parametrize(
@@ -1716,14 +1768,12 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
 )
 def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List[str]):
     for operator in operators:
-        print(f"testing {operator} on {str(operand1_var)} and {str(operand2_var)}")
+        print(f"testing {operator} on {operand1_var!s} and {operand2_var!s}")
         with pytest.raises(TypeError):
             print(eval(f"operand1_var {operator} operand2_var"))
-            # operand1_var.operation(op=operator, other=operand2_var)
 
         with pytest.raises(TypeError):
             print(eval(f"operand2_var {operator} operand1_var"))
-            # operand1_var.operation(op=operator, other=operand2_var, flip=True)
 
 
 @pytest.mark.parametrize(
@@ -1809,3 +1859,6 @@ def test_to_string_operation():
 
     assert cast(Var, TestState.email)._var_type == Email
     assert cast(Var, TestState.optional_email)._var_type == Optional[Email]
+
+    single_var = Var.create(Email())
+    assert single_var._var_type == Email

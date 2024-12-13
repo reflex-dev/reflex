@@ -3,33 +3,21 @@
 from typing import Dict, Literal
 
 from reflex.components.component import Component, MemoizationLeaf, NoSSRComponent
-from reflex.utils import console
 
 
 class Recharts(Component):
     """A component that wraps a recharts lib."""
 
-    library = "recharts@2.12.7"
+    library = "recharts@2.13.0"
 
-    def render(self) -> Dict:
-        """Render the tag.
-
-        Returns:
-            The rendered tag.
-        """
-        tag = super().render()
-        if any(p.startswith("css") for p in tag["props"]):
-            console.warn(
-                f"CSS props do not work for {self.__class__.__name__}. Consult docs to style it with its own prop."
-            )
-        tag["props"] = [p for p in tag["props"] if not p.startswith("css")]
-        return tag
+    def _get_style(self) -> Dict:
+        return {"wrapperStyle": self.style}
 
 
 class RechartsCharts(NoSSRComponent, MemoizationLeaf):
     """A component that wraps a recharts lib."""
 
-    library = "recharts@2.12.7"
+    library = "recharts@2.13.0"
 
 
 LiteralAnimationEasing = Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
@@ -60,6 +48,7 @@ LiteralScale = Literal[
     "sequential",
     "threshold",
 ]
+LiteralTextAnchor = Literal["start", "middle", "end"]
 LiteralLayout = Literal["horizontal", "vertical"]
 LiteralPolarRadiusType = Literal["number", "category"]
 LiteralGridType = Literal["polygon", "circle"]
@@ -131,6 +120,9 @@ LiteralAreaType = Literal[
     "stepBefore",
     "stepAfter",
 ]
-LiteralDirection = Literal["x", "y", "both"]
+LiteralDirection = Literal["x", "y"]
 LiteralInterval = Literal["preserveStart", "preserveEnd", "preserveStartEnd"]
+LiteralIntervalAxis = Literal[
+    "preserveStart", "preserveEnd", "preserveStartEnd", "equidistantPreserveStart"
+]
 LiteralSyncMethod = Literal["index", "value"]

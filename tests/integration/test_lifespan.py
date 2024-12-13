@@ -51,6 +51,7 @@ def LifespanApp():
         def context_global(self) -> int:
             return lifespan_context_global
 
+        @rx.event
         def tick(self, date):
             pass
 
@@ -79,7 +80,7 @@ def lifespan_app(tmp_path) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path,
-        app_source=LifespanApp,  # type: ignore
+        app_source=LifespanApp,
     ) as harness:
         yield harness
 

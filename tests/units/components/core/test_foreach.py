@@ -1,8 +1,10 @@
 from typing import Dict, List, Set, Tuple, Union
 
+import pydantic.v1
 import pytest
 
 from reflex import el
+from reflex.base import Base
 from reflex.components.component import Component
 from reflex.components.core.foreach import (
     Foreach,
@@ -16,6 +18,12 @@ from reflex.state import BaseState, ComponentState
 from reflex.vars.base import Var
 from reflex.vars.number import NumberVar
 from reflex.vars.sequence import ArrayVar
+
+
+class ForEachTag(Base):
+    """A tag for testing the ForEach component."""
+
+    name: str = ""
 
 
 class ForEachState(BaseState):
@@ -46,8 +54,10 @@ class ForEachState(BaseState):
     bad_annotation_list: list = [["red", "orange"], ["yellow", "blue"]]
     color_index_tuple: Tuple[int, str] = (0, "red")
 
+    default_factory_list: list[ForEachTag] = pydantic.v1.Field(default_factory=list)
 
-class TestComponentState(ComponentState):
+
+class ComponentStateTest(ComponentState):
     """A test component state."""
 
     foo: bool
@@ -67,7 +77,7 @@ class TestComponentState(ComponentState):
 
 
 def display_color(color):
-    assert color._var_type == str
+    assert color._var_type is str
     return box(text(color))
 
 
@@ -106,18 +116,18 @@ def display_nested_color_with_shades_v2(color):
 
 
 def display_color_tuple(color):
-    assert color._var_type == str
+    assert color._var_type is str
     return box(text(color))
 
 
 def display_colors_set(color):
-    assert color._var_type == str
+    assert color._var_type is str
     return box(text(color))
 
 
 def display_nested_list_element(element: ArrayVar[List[str]], index: NumberVar[int]):
     assert element._var_type == List[str]
-    assert index._var_type == int
+    assert index._var_type is int
     return box(text(element[index]))
 
 
@@ -240,7 +250,7 @@ def test_foreach_render(state_var, render_fn, render_dict):
     arg_index = rend["arg_index"]
     assert isinstance(arg_index, Var)
     assert arg_index._js_expr not in seen_index_vars
-    assert arg_index._var_type == int
+    assert arg_index._var_type is int
     seen_index_vars.add(arg_index._js_expr)
 
 
@@ -288,5 +298,13 @@ def test_foreach_component_state():
     with pytest.raises(TypeError):
         Foreach.create(
             ForEachState.colors_list,
-            TestComponentState.create,
+            ComponentStateTest.create,
         )
+
+
+def test_foreach_default_factory():
+    """Test that the default factory is called."""
+    _ = Foreach.create(
+        ForEachState.default_factory_list,
+        lambda tag: text(tag.name),
+    )

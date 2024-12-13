@@ -1,15 +1,20 @@
 """Interactive components provided by @radix-ui/themes."""
 
+from __future__ import annotations
+
 from typing import List, Literal, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
-from reflex.event import EventHandler
+from reflex.event import EventHandler, passthrough_event_spec
 from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    RadixThemesComponent,
+from ..base import LiteralAccentColor, RadixThemesComponent
+
+on_value_event_spec = (
+    passthrough_event_spec(list[Union[int, float]]),
+    passthrough_event_spec(list[int]),
+    passthrough_event_spec(list[float]),
 )
 
 
@@ -45,6 +50,9 @@ class Slider(RadixThemesComponent):
     # The name of the slider. Submitted with its owning form as part of a name/value pair.
     name: Var[str]
 
+    # The width of the slider.
+    width: Var[Optional[str]] = Var.create("100%")
+
     # The minimum value of the slider.
     min: Var[Union[float, int]]
 
@@ -64,29 +72,28 @@ class Slider(RadixThemesComponent):
     _rename_props = {"onChange": "onValueChange"}
 
     # Fired when the value of the slider changes.
-    on_change: EventHandler[lambda e0: [e0]]
+    on_change: EventHandler[on_value_event_spec]
 
     # Fired when a thumb is released after being dragged.
-    on_value_commit: EventHandler[lambda e0: [e0]]
+    on_value_commit: EventHandler[on_value_event_spec]
 
     @classmethod
     def create(
         cls,
         *children,
-        width: Optional[str] = "100%",
         **props,
     ) -> Component:
         """Create a Slider component.
 
         Args:
             *children: The children of the component.
-            width: The width of the slider.
             **props: The properties of the component.
 
         Returns:
             The component.
         """
         default_value = props.pop("default_value", [50])
+        width = props.pop("width", "100%")
 
         if isinstance(default_value, Var):
             if issubclass(default_value._var_type, (int, float)):

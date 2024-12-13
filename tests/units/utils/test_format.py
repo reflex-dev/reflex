@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 import pytest
 
 from reflex.components.tags.tag import Tag
-from reflex.event import EventChain, EventHandler, EventSpec, FrontendEvent
+from reflex.event import EventChain, EventHandler, EventSpec, JavascriptInputEvent
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.serializers import serialize_figure
@@ -374,7 +374,7 @@ def test_format_match(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))],
                 args_spec=lambda: [],
             ),
-            '((...args) => ((addEvents([(Event("mock_event", ({  })))], args, ({  })))))',
+            '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({  }))))',
         ),
         (
             EventChain(
@@ -387,7 +387,7 @@ def test_format_match(
                                 Var(
                                     _js_expr="_e",
                                 )
-                                .to(ObjectVar, FrontendEvent)
+                                .to(ObjectVar, JavascriptInputEvent)
                                 .target.value,
                             ),
                         ),
@@ -395,7 +395,7 @@ def test_format_match(
                 ],
                 args_spec=lambda e: [e.target.value],
             ),
-            '((_e) => ((addEvents([(Event("mock_event", ({ ["arg"] : _e["target"]["value"] })))], [_e], ({  })))))',
+            '((_e) => (addEvents([(Event("mock_event", ({ ["arg"] : _e["target"]["value"] }), ({  })))], [_e], ({  }))))',
         ),
         (
             EventChain(
@@ -403,7 +403,19 @@ def test_format_match(
                 args_spec=lambda: [],
                 event_actions={"stopPropagation": True},
             ),
-            '((...args) => ((addEvents([(Event("mock_event", ({  })))], args, ({ ["stopPropagation"] : true })))))',
+            '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({ ["stopPropagation"] : true }))))',
+        ),
+        (
+            EventChain(
+                events=[
+                    EventSpec(
+                        handler=EventHandler(fn=mock_event),
+                        event_actions={"stopPropagation": True},
+                    )
+                ],
+                args_spec=lambda: [],
+            ),
+            '((...args) => (addEvents([(Event("mock_event", ({  }), ({ ["stopPropagation"] : true })))], args, ({  }))))',
         ),
         (
             EventChain(
@@ -411,7 +423,7 @@ def test_format_match(
                 args_spec=lambda: [],
                 event_actions={"preventDefault": True},
             ),
-            '((...args) => ((addEvents([(Event("mock_event", ({  })))], args, ({ ["preventDefault"] : true })))))',
+            '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({ ["preventDefault"] : true }))))',
         ),
         ({"a": "red", "b": "blue"}, '({ ["a"] : "red", ["b"] : "blue" })'),
         (Var(_js_expr="var", _var_type=int).guess_type(), "var"),
@@ -519,7 +531,7 @@ def test_format_event_handler(input, output):
     [
         (
             EventSpec(handler=EventHandler(fn=mock_event)),
-            '(Event("mock_event", ({  })))',
+            '(Event("mock_event", ({  }), ({  })))',
         ),
     ],
 )
@@ -589,6 +601,7 @@ formatted_router = {
                     "sum": 3.14,
                     "upper": "",
                     "router": formatted_router,
+                    "asynctest": 0,
                 },
                 ChildState.get_full_name(): {
                     "count": 23,

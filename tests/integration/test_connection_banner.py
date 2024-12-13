@@ -20,6 +20,7 @@ def ConnectionBanner():
     class State(rx.State):
         foo: int = 0
 
+        @rx.event
         async def delay(self):
             await asyncio.sleep(5)
 
@@ -51,7 +52,7 @@ def connection_banner(tmp_path) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path,
-        app_source=ConnectionBanner,  # type: ignore
+        app_source=ConnectionBanner,
     ) as harness:
         yield harness
 

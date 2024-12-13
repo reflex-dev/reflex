@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
@@ -29,7 +28,8 @@ from reflex.components.base import (
     Title,
 )
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.state import BaseState, Cookie, LocalStorage, SessionStorage
+from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
+from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
 from reflex.utils.imports import ImportVar, ParsedImportDict
@@ -83,6 +83,12 @@ def validate_imports(import_dict: ParsedImportDict):
                 f"{_import.tag}/{_import.alias}" if _import.alias else _import.tag
             )
             if import_name in used_tags:
+                already_imported = used_tags[import_name]
+                if (already_imported[0] == "$" and already_imported[1:] == lib) or (
+                    lib[0] == "$" and lib[1:] == already_imported
+                ):
+                    used_tags[import_name] = lib if lib[0] == "$" else already_imported
+                    continue
                 raise ValueError(
                     f"Can not compile, the tag {import_name} is used multiple time from {lib} and {used_tags[import_name]}"
                 )
@@ -457,16 +463,16 @@ def add_meta(
     return page
 
 
-def write_page(path: str, code: str):
+def write_page(path: str | Path, code: str):
     """Write the given code to the given path.
 
     Args:
         path: The path to write the code to.
         code: The code to write.
     """
-    path_ops.mkdir(os.path.dirname(path))
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(code)
+    path = Path(path)
+    path_ops.mkdir(path.parent)
+    path.write_text(code, encoding="utf-8")
 
 
 def empty_dir(path: str | Path, keep_files: list[str] | None = None):

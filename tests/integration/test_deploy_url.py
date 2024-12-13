@@ -17,6 +17,7 @@ def DeployUrlSample() -> None:
     import reflex as rx
 
     class State(rx.State):
+        @rx.event
         def goto_self(self):
             return rx.redirect(rx.config.get_config().deploy_url)  # type: ignore
 
@@ -43,7 +44,7 @@ def deploy_url_sample(
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("deploy_url_sample"),
-        app_source=DeployUrlSample,  # type: ignore
+        app_source=DeployUrlSample,
     ) as harness:
         yield harness
 

@@ -2,7 +2,7 @@ import os
 import typing
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, List, Literal, Type, Union
+from typing import Any, ClassVar, Dict, List, Literal, Type, Union
 
 import pytest
 import typer
@@ -10,15 +10,12 @@ from packaging import version
 
 from reflex import constants
 from reflex.base import Base
+from reflex.config import environment
 from reflex.event import EventHandler
 from reflex.state import BaseState
-from reflex.utils import (
-    build,
-    prerequisites,
-    types,
-)
+from reflex.utils import build, prerequisites, types
 from reflex.utils import exec as utils_exec
-from reflex.utils.exceptions import ReflexError
+from reflex.utils.exceptions import ReflexError, SystemPackageMissingError
 from reflex.vars.base import Var
 
 
@@ -77,6 +74,47 @@ def test_is_generic_alias(cls: type, expected: bool):
     assert types.is_generic_alias(cls) == expected
 
 
+@pytest.mark.parametrize(
+    ("subclass", "superclass", "expected"),
+    [
+        *[
+            (base_type, base_type, True)
+            for base_type in [int, float, str, bool, list, dict]
+        ],
+        *[
+            (one_type, another_type, False)
+            for one_type in [int, float, str, list, dict]
+            for another_type in [int, float, str, list, dict]
+            if one_type != another_type
+        ],
+        (bool, int, True),
+        (int, bool, False),
+        (list, List, True),
+        (list, List[str], True),  # this is wrong, but it's a limitation of the function
+        (List, list, True),
+        (List[int], list, True),
+        (List[int], List, True),
+        (List[int], List[str], False),
+        (List[int], List[int], True),
+        (List[int], List[float], False),
+        (List[int], List[Union[int, float]], True),
+        (List[int], List[Union[float, str]], False),
+        (Union[int, float], List[Union[int, float]], False),
+        (Union[int, float], Union[int, float, str], True),
+        (Union[int, float], Union[str, float], False),
+        (Dict[str, int], Dict[str, int], True),
+        (Dict[str, bool], Dict[str, int], True),
+        (Dict[str, int], Dict[str, bool], False),
+        (Dict[str, Any], dict[str, str], False),
+        (Dict[str, str], dict[str, str], True),
+        (Dict[str, str], dict[str, Any], True),
+        (Dict[str, Any], dict[str, Any], True),
+    ],
+)
+def test_typehint_issubclass(subclass, superclass, expected):
+    assert types.typehint_issubclass(subclass, superclass) == expected
+
+
 def test_validate_invalid_bun_path(mocker):
     """Test that an error is thrown when a custom specified bun path is not valid
     or does not exist.
@@ -117,7 +155,7 @@ def test_remove_existing_bun_installation(mocker):
     Args:
         mocker: Pytest mocker.
     """
-    mocker.patch("reflex.utils.prerequisites.os.path.exists", return_value=True)
+    mocker.patch("reflex.utils.prerequisites.Path.exists", return_value=True)
     rm = mocker.patch("reflex.utils.prerequisites.path_ops.rm", mocker.Mock())
 
     prerequisites.remove_existing_bun_installation()
@@ -260,7 +298,7 @@ def tmp_working_dir(tmp_path):
     Yields:
         subdirectory of tmp_path which is now the current working directory.
     """
-    old_pwd = Path(".").resolve()
+    old_pwd = Path.cwd()
     working_dir = tmp_path / "working_dir"
     working_dir.mkdir()
     os.chdir(working_dir)
@@ -458,10 +496,10 @@ def test_bun_install_without_unzip(mocker):
         mocker: Pytest mocker object.
     """
     mocker.patch("reflex.utils.path_ops.which", return_value=None)
-    mocker.patch("os.path.exists", return_value=False)
+    mocker.patch("pathlib.Path.exists", return_value=False)
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
 
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(SystemPackageMissingError):
         prerequisites.install_bun()
 
 
@@ -476,7 +514,7 @@ def test_bun_install_version(mocker, bun_version):
 
     """
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
-    mocker.patch("os.path.exists", return_value=True)
+    mocker.patch("pathlib.Path.exists", return_value=True)
     mocker.patch(
         "reflex.utils.prerequisites.get_bun_version",
         return_value=version.parse(bun_version),
@@ -542,7 +580,9 @@ def test_style_prop_with_event_handler_value(callable):
 
     style = {
         "color": (
-            EventHandler(fn=callable) if type(callable) != EventHandler else callable
+            EventHandler(fn=callable)
+            if type(callable) is not EventHandler
+            else callable
         )
     }
 
@@ -550,3 +590,11 @@ def test_style_prop_with_event_handler_value(callable):
         rx.box(
             style=style,  # type: ignore
         )
+
+
+def test_is_prod_mode() -> None:
+    """Test that the prod mode is correctly determined."""
+    environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
+    assert utils_exec.is_prod_mode()
+    environment.REFLEX_ENV_MODE.set(None)
+    assert not utils_exec.is_prod_mode()

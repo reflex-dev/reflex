@@ -8,12 +8,7 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAlign,
-    LiteralJustify,
-    LiteralSpacing,
-    RadixThemesComponent,
-)
+from ..base import LiteralAlign, LiteralJustify, LiteralSpacing, RadixThemesComponent
 
 LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 LiteralFlexWrap = Literal["nowrap", "wrap", "wrap-reverse"]

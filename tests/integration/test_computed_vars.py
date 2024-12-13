@@ -58,9 +58,11 @@ def ComputedVars():
         def depends_on_count3(self) -> int:
             return self.count
 
+        @rx.event
         def increment(self):
             self.count += 1
 
+        @rx.event
         def mark_dirty(self):
             self._mark_dirty()
 
@@ -104,7 +106,6 @@ def ComputedVars():
             ),
         )
 
-    # raise Exception(State.count3._deps(objclass=State))
     app = rx.App()
     app.add_page(index)
 
@@ -122,8 +123,8 @@ def computed_vars(
         running AppHarness instance
     """
     with AppHarness.create(
-        root=tmp_path_factory.mktemp(f"computed_vars"),
-        app_source=ComputedVars,  # type: ignore
+        root=tmp_path_factory.mktemp("computed_vars"),
+        app_source=ComputedVars,
     ) as harness:
         yield harness
 

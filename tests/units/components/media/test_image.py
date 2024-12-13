@@ -42,7 +42,7 @@ def test_set_src_str():
         "`pic2.jpeg`",
     )
     # For plain rx.el.img, an explicit var is not created, so the quoting happens later
-    # assert str(image.src) == "pic2.jpeg"  # type: ignore
+    # assert str(image.src) == "pic2.jpeg"  # type: ignore #noqa: ERA001
 
 
 def test_set_src_img(pil_image: Img):

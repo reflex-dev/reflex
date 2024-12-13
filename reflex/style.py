@@ -10,6 +10,7 @@ from reflex.event import EventChain, EventHandler
 from reflex.utils import format
 from reflex.utils.exceptions import ReflexError
 from reflex.utils.imports import ImportVar
+from reflex.utils.types import get_origin
 from reflex.vars import VarData
 from reflex.vars.base import CallableVar, LiteralVar, Var
 from reflex.vars.function import FunctionVar
@@ -22,7 +23,7 @@ LiteralColorMode = Literal["system", "light", "dark"]
 
 # Reference the global ColorModeContext
 color_mode_imports = {
-    f"/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="ColorModeContext")],
+    f"$/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="ColorModeContext")],
     "react": [ImportVar(tag="useContext")],
 }
 
@@ -73,7 +74,7 @@ def set_color_mode(
         new_color_mode = LiteralVar.create(new_color_mode)
 
     return Var(
-        f"() => {str(base_setter)}({str(new_color_mode)})",
+        f"() => {base_setter!s}({new_color_mode!s})",
         _var_data=VarData.merge(
             base_setter._get_all_var_data(), new_color_mode._get_all_var_data()
         ),
@@ -137,9 +138,6 @@ def convert_item(
     if isinstance(style_item, Var):
         return style_item, style_item._get_all_var_data()
 
-    # if isinstance(style_item, str) and REFLEX_VAR_OPENING_TAG not in style_item:
-    #     return style_item, None
-
     # Otherwise, convert to Var to collapse VarData encoded in f-string.
     new_var = LiteralVar.create(style_item)
     var_data = new_var._get_all_var_data() if new_var is not None else None
@@ -195,6 +193,10 @@ def convert(
             or (
                 isinstance(value, Breakpoints)
                 and all(not isinstance(v, dict) for v in value.values())
+            )
+            or (
+                isinstance(value, ObjectVar)
+                and not issubclass(get_origin(value._var_type) or value._var_type, dict)
             )
             else (key,)
         )

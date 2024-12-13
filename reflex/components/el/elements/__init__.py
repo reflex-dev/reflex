@@ -7,6 +7,7 @@ from reflex.utils import lazy_loader
 _MAPPING = {
     "forms": [
         "button",
+        "datalist",
         "fieldset",
         "form",
         "input",

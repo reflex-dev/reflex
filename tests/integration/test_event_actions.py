@@ -24,6 +24,7 @@ def TestEventAction():
         def on_click(self, ev):
             self.order.append(f"on_click:{ev}")
 
+        @rx.event
         def on_click2(self):
             self.order.append("on_click2")
 
@@ -170,8 +171,8 @@ def event_action(tmp_path_factory) -> Generator[AppHarness, None, None]:
         running AppHarness instance
     """
     with AppHarness.create(
-        root=tmp_path_factory.mktemp(f"event_action"),
-        app_source=TestEventAction,  # type: ignore
+        root=tmp_path_factory.mktemp("event_action"),
+        app_source=TestEventAction,
     ) as harness:
         yield harness
 

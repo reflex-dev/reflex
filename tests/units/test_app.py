@@ -237,9 +237,12 @@ def test_add_page_default_route(app: App, index_page, about_page):
         about_page: The about page.
     """
     assert app.pages == {}
+    assert app.unevaluated_pages == {}
     app.add_page(index_page)
+    app._compile_page("index")
     assert app.pages.keys() == {"index"}
     app.add_page(about_page)
+    app._compile_page("about")
     assert app.pages.keys() == {"index", "about"}
 
 
@@ -252,8 +255,9 @@ def test_add_page_set_route(app: App, index_page, windows_platform: bool):
         windows_platform: Whether the system is windows.
     """
     route = "test" if windows_platform else "/test"
-    assert app.pages == {}
+    assert app.unevaluated_pages == {}
     app.add_page(index_page, route=route)
+    app._compile_page("test")
     assert app.pages.keys() == {"test"}
 
 
@@ -267,8 +271,9 @@ def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
     app = App(state=EmptyState)
     assert app.state is not None
     route = "/test/[dynamic]"
-    assert app.pages == {}
+    assert app.unevaluated_pages == {}
     app.add_page(index_page, route=route)
+    app._compile_page("test/[dynamic]")
     assert app.pages.keys() == {"test/[dynamic]"}
     assert "dynamic" in app.state.computed_vars
     assert app.state.computed_vars["dynamic"]._deps(objclass=EmptyState) == {
@@ -286,9 +291,9 @@ def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool)
         windows_platform: Whether the system is windows.
     """
     route = "test\\nested" if windows_platform else "/test/nested"
-    assert app.pages == {}
+    assert app.unevaluated_pages == {}
     app.add_page(index_page, route=route)
-    assert app.pages.keys() == {route.strip(os.path.sep)}
+    assert app.unevaluated_pages.keys() == {route.strip(os.path.sep)}
 
 
 def test_add_page_invalid_api_route(app: App, index_page):
@@ -765,7 +770,8 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
     )
     state._tmp_path = tmp_path
     # The App state must be the "root" of the state tree
-    app = App(state=State)
+    app = App()
+    app._enable_state()
     app.event_namespace.emit = AsyncMock()  # type: ignore
     current_state = await app.state_manager.get_state(_substate_key(token, state))
     data = b"This is binary data"
@@ -781,11 +787,11 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
     }
 
     file1 = UploadFile(
-        filename=f"image1.jpg",
+        filename="image1.jpg",
         file=bio,
     )
     file2 = UploadFile(
-        filename=f"image2.jpg",
+        filename="image2.jpg",
         file=bio,
     )
     upload_fn = upload(app)
@@ -868,7 +874,7 @@ async def test_upload_file_background(state, tmp_path, token):
         await fn(request_mock, [file_mock])
     assert (
         err.value.args[0]
-        == f"@rx.background is not supported for upload handler `{state.get_full_name()}.bg_upload`."
+        == f"@rx.event(background=True) is not supported for upload handler `{state.get_full_name()}.bg_upload`."
     )
 
     if isinstance(app.state_manager, StateManagerRedis):
@@ -893,12 +899,11 @@ class DynamicState(BaseState):
     loaded: int = 0
     counter: int = 0
 
-    # side_effect_counter: int = 0
-
     def on_load(self):
         """Event handler for page on_load, should trigger for all navigation events."""
         self.loaded = self.loaded + 1
 
+    @rx.event
     def on_counter(self):
         """Increment the counter var."""
         self.counter = self.counter + 1
@@ -910,7 +915,6 @@ class DynamicState(BaseState):
         Returns:
             same as self.dynamic
         """
-        # self.side_effect_counter = self.side_effect_counter + 1
         return self.dynamic
 
     on_load_internal = OnLoadInternalState.on_load_internal.fn
@@ -1000,8 +1004,9 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     substate_token = _substate_key(token, DynamicState)
     sid = "mock_sid"
     client_ip = "127.0.0.1"
-    state = await app.state_manager.get_state(substate_token)
-    assert state.dynamic == ""
+    async with app.state_manager.modify_state(substate_token) as state:
+        state.router_data = {"simulate": "hydrated"}
+        assert state.dynamic == ""
     exp_vals = ["foo", "foobar", "baz"]
 
     def _event(name, val, **kwargs):
@@ -1051,7 +1056,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     arg_name: exp_val,
                     f"comp_{arg_name}": exp_val,
                     constants.CompileVars.IS_HYDRATED: False,
-                    # "side_effect_counter": exp_index,
                     "router": exp_router,
                 }
             },
@@ -1147,8 +1151,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     state = await app.state_manager.get_state(substate_token)
     assert state.loaded == len(exp_vals)
     assert state.counter == len(exp_vals)
-    # print(f"Expected {exp_vals} rendering side effects, got {state.side_effect_counter}")
-    # assert state.side_effect_counter == len(exp_vals)
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()
@@ -1173,6 +1175,7 @@ async def test_process_events(mocker, token: str):
         "ip": "127.0.0.1",
     }
     app = App(state=GenState)
+
     mocker.patch.object(app, "_postprocess", AsyncMock())
     event = Event(
         token=token,
@@ -1180,6 +1183,8 @@ async def test_process_events(mocker, token: str):
         payload={"c": 5},
         router_data=router_data,
     )
+    async with app.state_manager.modify_state(event.substate_token) as state:
+        state.router_data = {"simulate": "hydrated"}
 
     async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):
         pass
@@ -1204,7 +1209,7 @@ async def test_process_events(mocker, token: str):
     ],
 )
 def test_overlay_component(
-    state: State | None,
+    state: Type[State] | None,
     overlay_component: Component | ComponentCallable | None,
     exp_page_child: Type[Component] | None,
 ):
@@ -1236,6 +1241,7 @@ def test_overlay_component(
 
     app.add_page(rx.box("Index"), route="/test")
     # overlay components are wrapped during compile only
+    app._compile_page("test")
     app._setup_overlay_component()
     page = app.pages["test"]
 
@@ -1363,6 +1369,7 @@ def test_app_state_determination():
 
     # Add a page with `on_load` enables state.
     a1.add_page(rx.box("About"), route="/about", on_load=rx.console_log(""))
+    a1._compile_page("about")
     assert a1.state is not None
 
     a2 = App()
@@ -1370,6 +1377,7 @@ def test_app_state_determination():
 
     # Referencing a state Var enables state.
     a2.add_page(rx.box(rx.text(GenState.value)), route="/")
+    a2._compile_page("index")
     assert a2.state is not None
 
     a3 = App()
@@ -1377,6 +1385,7 @@ def test_app_state_determination():
 
     # Referencing router enables state.
     a3.add_page(rx.box(rx.text(State.router.page.full_path)), route="/")
+    a3._compile_page("index")
     assert a3.state is not None
 
     a4 = App()
@@ -1388,14 +1397,8 @@ def test_app_state_determination():
     a4.add_page(
         rx.box(rx.button("Click", on_click=DynamicState.on_counter)), route="/page2"
     )
+    a4._compile_page("page2")
     assert a4.state is not None
-
-
-# for coverage
-def test_raise_on_connect_error():
-    """Test that the connect_error function is called."""
-    with pytest.raises(ValueError):
-        App(connect_error_component="Foo")
 
 
 def test_raise_on_state():
@@ -1467,17 +1470,23 @@ def test_add_page_component_returning_tuple():
     app.add_page(index)  # type: ignore
     app.add_page(page2)  # type: ignore
 
-    assert isinstance((fragment_wrapper := app.pages["index"].children[0]), Fragment)
-    assert isinstance((first_text := fragment_wrapper.children[0]), Text)
+    app._compile_page("index")
+    app._compile_page("page2")
+
+    fragment_wrapper = app.pages["index"].children[0]
+    assert isinstance(fragment_wrapper, Fragment)
+    first_text = fragment_wrapper.children[0]
+    assert isinstance(first_text, Text)
     assert str(first_text.children[0].contents) == '"first"'  # type: ignore
-    assert isinstance((second_text := fragment_wrapper.children[1]), Text)
+    second_text = fragment_wrapper.children[1]
+    assert isinstance(second_text, Text)
     assert str(second_text.children[0].contents) == '"second"'  # type: ignore
 
     # Test page with trailing comma.
-    assert isinstance(
-        (page2_fragment_wrapper := app.pages["page2"].children[0]), Fragment
-    )
-    assert isinstance((third_text := page2_fragment_wrapper.children[0]), Text)
+    page2_fragment_wrapper = app.pages["page2"].children[0]
+    assert isinstance(page2_fragment_wrapper, Fragment)
+    third_text = page2_fragment_wrapper.children[0]
+    assert isinstance(third_text, Text)
     assert str(third_text.children[0].contents) == '"third"'  # type: ignore
 
 

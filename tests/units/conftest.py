@@ -1,5 +1,6 @@
 """Test fixtures."""
 
+import asyncio
 import contextlib
 import os
 import platform
@@ -22,6 +23,11 @@ from .states import (
     SubUploadState,
     UploadState,
 )
+
+
+def pytest_configure(config):
+    if config.getoption("asyncio_mode") == "auto":
+        asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
 
 
 @pytest.fixture
@@ -200,7 +206,7 @@ class chdir(contextlib.AbstractContextManager):
 
     def __enter__(self):
         """Save current directory and perform chdir."""
-        self._old_cwd.append(Path(".").resolve())
+        self._old_cwd.append(Path.cwd())
         os.chdir(self.path)
 
     def __exit__(self, *excinfo):

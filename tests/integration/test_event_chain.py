@@ -27,45 +27,55 @@ def EventChain():
         event_order: List[str] = []
         interim_value: str = ""
 
+        @rx.event
         def event_no_args(self):
             self.event_order.append("event_no_args")
 
+        @rx.event
         def event_arg(self, arg):
             self.event_order.append(f"event_arg:{arg}")
 
+        @rx.event
         def event_arg_repr_type(self, arg):
             self.event_order.append(f"event_arg_repr:{arg!r}_{type(arg).__name__}")
 
+        @rx.event
         def event_nested_1(self):
             self.event_order.append("event_nested_1")
             yield State.event_nested_2
             yield State.event_arg("nested_1")  # type: ignore
 
+        @rx.event
         def event_nested_2(self):
             self.event_order.append("event_nested_2")
             yield State.event_nested_3
             yield rx.console_log("event_nested_2")
             yield State.event_arg("nested_2")  # type: ignore
 
+        @rx.event
         def event_nested_3(self):
             self.event_order.append("event_nested_3")
             yield State.event_no_args
             yield State.event_arg("nested_3")  # type: ignore
 
+        @rx.event
         def on_load_return_chain(self):
             self.event_order.append("on_load_return_chain")
             return [State.event_arg(1), State.event_arg(2), State.event_arg(3)]  # type: ignore
 
+        @rx.event
         def on_load_yield_chain(self):
             self.event_order.append("on_load_yield_chain")
             yield State.event_arg(4)  # type: ignore
             yield State.event_arg(5)  # type: ignore
             yield State.event_arg(6)  # type: ignore
 
+        @rx.event
         def click_return_event(self):
             self.event_order.append("click_return_event")
             return State.event_no_args
 
+        @rx.event
         def click_return_events(self):
             self.event_order.append("click_return_events")
             return [
@@ -75,6 +85,7 @@ def EventChain():
                 State.event_arg(9),  # type: ignore
             ]
 
+        @rx.event
         def click_yield_chain(self):
             self.event_order.append("click_yield_chain:0")
             yield State.event_arg(10)  # type: ignore
@@ -85,6 +96,7 @@ def EventChain():
             yield State.event_arg(12)  # type: ignore
             self.event_order.append("click_yield_chain:3")
 
+        @rx.event
         def click_yield_many_events(self):
             self.event_order.append("click_yield_many_events")
             for ix in range(MANY_EVENTS):
@@ -92,33 +104,40 @@ def EventChain():
                 yield rx.console_log(f"many_events_{ix}")
             self.event_order.append("click_yield_many_events_done")
 
+        @rx.event
         def click_yield_nested(self):
             self.event_order.append("click_yield_nested")
             yield State.event_nested_1
             yield State.event_arg("yield_nested")  # type: ignore
 
+        @rx.event
         def redirect_return_chain(self):
             self.event_order.append("redirect_return_chain")
             yield rx.redirect("/on-load-return-chain")
 
+        @rx.event
         def redirect_yield_chain(self):
             self.event_order.append("redirect_yield_chain")
             yield rx.redirect("/on-load-yield-chain")
 
+        @rx.event
         def click_return_int_type(self):
             self.event_order.append("click_return_int_type")
             return State.event_arg_repr_type(1)  # type: ignore
 
+        @rx.event
         def click_return_dict_type(self):
             self.event_order.append("click_return_dict_type")
             return State.event_arg_repr_type({"a": 1})  # type: ignore
 
+        @rx.event
         async def click_yield_interim_value_async(self):
             self.interim_value = "interim"
             yield
             await asyncio.sleep(0.5)
             self.interim_value = "final"
 
+        @rx.event
         def click_yield_interim_value(self):
             self.interim_value = "interim"
             yield
@@ -258,7 +277,7 @@ def event_chain(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("event_chain"),
-        app_source=EventChain,  # type: ignore
+        app_source=EventChain,
     ) as harness:
         yield harness
 

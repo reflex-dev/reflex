@@ -1,4 +1,4 @@
-from typing import Any, List, Literal, Tuple, Union
+from typing import Any, Dict, List, Literal, Tuple, Union
 
 import pytest
 
@@ -17,7 +17,7 @@ def test_validate_literal_error_msg(params, allowed_value_str, value_str):
         types.validate_literal(*params)
 
     assert (
-        err.value.args[0] == f"prop value for {str(params[0])} of the `{params[-1]}` "
+        err.value.args[0] == f"prop value for {params[0]!s} of the `{params[-1]}` "
         f"component should be one of the following: {allowed_value_str}. Got {value_str} instead"
     )
 
@@ -45,3 +45,48 @@ def test_issubclass(
     cls: types.GenericType, cls_check: types.GenericType, expected: bool
 ) -> None:
     assert types._issubclass(cls, cls_check) == expected
+
+
+class CustomDict(dict[str, str]):
+    """A custom dict with generic arguments."""
+
+    pass
+
+
+class ChildCustomDict(CustomDict):
+    """A child of CustomDict."""
+
+    pass
+
+
+class GenericDict(dict):
+    """A generic dict with no generic arguments."""
+
+    pass
+
+
+class ChildGenericDict(GenericDict):
+    """A child of GenericDict."""
+
+    pass
+
+
+@pytest.mark.parametrize(
+    "cls,expected",
+    [
+        (int, False),
+        (str, False),
+        (float, False),
+        (Tuple[int], True),
+        (List[int], True),
+        (Union[int, str], True),
+        (Union[str, int], True),
+        (Dict[str, int], True),
+        (CustomDict, True),
+        (ChildCustomDict, True),
+        (GenericDict, False),
+        (ChildGenericDict, False),
+    ],
+)
+def test_has_args(cls, expected: bool) -> None:
+    assert types.has_args(cls) == expected

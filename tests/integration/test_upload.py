@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from pathlib import Path
 from typing import Generator
 
 import pytest
@@ -18,10 +19,14 @@ def UploadFile():
 
     import reflex as rx
 
+    LARGE_DATA = "DUMMY" * 1024 * 512
+
     class UploadState(rx.State):
         _file_data: Dict[str, str] = {}
         event_order: List[str] = []
         progress_dicts: List[dict] = []
+        disabled: bool = False
+        large_data: str = ""
 
         async def handle_upload(self, files: List[rx.UploadFile]):
             for file in files:
@@ -32,6 +37,7 @@ def UploadFile():
             for file in files:
                 upload_data = await file.read()
                 self._file_data[file.filename or ""] = upload_data.decode("utf-8")
+                self.large_data = LARGE_DATA
                 yield UploadState.chain_event
 
         def upload_progress(self, progress):
@@ -40,13 +46,15 @@ def UploadFile():
             self.progress_dicts.append(progress)
 
         def chain_event(self):
+            assert self.large_data == LARGE_DATA
+            self.large_data = ""
             self.event_order.append("chain_event")
 
     def index():
         return rx.vstack(
             rx.input(
                 value=UploadState.router.session.client_token,
-                is_read_only=True,
+                read_only=True,
                 id="token",
             ),
             rx.heading("Default Upload"),
@@ -55,6 +63,7 @@ def UploadFile():
                     rx.button("Select File"),
                     rx.text("Drag and drop files here or click to select files"),
                 ),
+                disabled=UploadState.disabled,
             ),
             rx.button(
                 "Upload",
@@ -132,7 +141,7 @@ def upload_file(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("upload_file"),
-        app_source=UploadFile,  # type: ignore
+        app_source=UploadFile,
     ) as harness:
         yield harness
 
@@ -205,11 +214,12 @@ async def test_upload_file(
 
     file_data = await AppHarness._poll_for_async(get_file_data)
     assert isinstance(file_data, dict)
-    assert file_data[exp_name] == exp_contents
+    normalized_file_data = {Path(k).name: v for k, v in file_data.items()}
+    assert normalized_file_data[Path(exp_name).name] == exp_contents
 
     # check that the selected files are displayed
     selected_files = driver.find_element(By.ID, f"selected_files{suffix}")
-    assert selected_files.text == exp_name
+    assert Path(selected_files.text).name == Path(exp_name).name
 
     state = await upload_file.get_state(substate_token)
     if secondary:
@@ -256,7 +266,9 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
 
     # check that the selected files are displayed
     selected_files = driver.find_element(By.ID, "selected_files")
-    assert selected_files.text == "\n".join(exp_files)
+    assert [Path(name).name for name in selected_files.text.split("\n")] == [
+        Path(name).name for name in exp_files
+    ]
 
     # do the upload
     upload_button.click()
@@ -271,8 +283,9 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
 
     file_data = await AppHarness._poll_for_async(get_file_data)
     assert isinstance(file_data, dict)
+    normalized_file_data = {Path(k).name: v for k, v in file_data.items()}
     for exp_name, exp_contents in exp_files.items():
-        assert file_data[exp_name] == exp_contents
+        assert normalized_file_data[Path(exp_name).name] == exp_contents
 
 
 @pytest.mark.parametrize("secondary", [False, True])
@@ -317,7 +330,9 @@ def test_clear_files(
 
     # check that the selected files are displayed
     selected_files = driver.find_element(By.ID, f"selected_files{suffix}")
-    assert selected_files.text == "\n".join(exp_files)
+    assert [Path(name).name for name in selected_files.text.split("\n")] == [
+        Path(name).name for name in exp_files
+    ]
 
     clear_button = driver.find_element(By.ID, f"clear_button{suffix}")
     assert clear_button
@@ -352,8 +367,8 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
     substate_token = f"{token}_{state_full_name}"
 
     upload_box = driver.find_elements(By.XPATH, "//input[@type='file']")[1]
-    upload_button = driver.find_element(By.ID, f"upload_button_secondary")
-    cancel_button = driver.find_element(By.ID, f"cancel_button_secondary")
+    upload_button = driver.find_element(By.ID, "upload_button_secondary")
+    cancel_button = driver.find_element(By.ID, "cancel_button_secondary")
 
     exp_name = "large.txt"
     target_file = tmp_path / exp_name
@@ -366,9 +381,25 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
     await asyncio.sleep(0.3)
     cancel_button.click()
 
-    # look up the backend state and assert on progress
+    # Wait a bit for the upload to get cancelled.
+    await asyncio.sleep(0.5)
+
+    # Get interim progress dicts saved in the on_upload_progress handler.
+    async def _progress_dicts():
+        state = await upload_file.get_state(substate_token)
+        return state.substates[state_name].progress_dicts
+
+    # We should have _some_ progress
+    assert await AppHarness._poll_for_async(_progress_dicts)
+
+    # But there should never be a final progress record for a cancelled upload.
+    for p in await _progress_dicts():
+        assert p["progress"] != 1
+
     state = await upload_file.get_state(substate_token)
-    assert state.substates[state_name].progress_dicts
-    assert exp_name not in state.substates[state_name]._file_data
+    file_data = state.substates[state_name]._file_data
+    assert isinstance(file_data, dict)
+    normalized_file_data = {Path(k).name: v for k, v in file_data.items()}
+    assert Path(exp_name).name not in normalized_file_data
 
     target_file.unlink()

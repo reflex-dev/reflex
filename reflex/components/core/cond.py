@@ -15,7 +15,7 @@ from reflex.vars.base import LiteralVar, Var
 from reflex.vars.number import ternary_operation
 
 _IS_TRUE_IMPORT: ImportDict = {
-    f"/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
 }
 
 
@@ -49,9 +49,9 @@ class Cond(MemoizationLeaf):
             The conditional component.
         """
         # Wrap everything in fragments.
-        if comp1.__class__.__name__ != "Fragment":
+        if type(comp1).__name__ != "Fragment":
             comp1 = Fragment.create(comp1)
-        if comp2 is None or comp2.__class__.__name__ != "Fragment":
+        if comp2 is None or type(comp2).__name__ != "Fragment":
             comp2 = Fragment.create(comp2) if comp2 else Fragment.create()
         return Fragment.create(
             cls(
@@ -94,7 +94,7 @@ class Cond(MemoizationLeaf):
             ).set(
                 props=tag.format_props(),
             ),
-            cond_state=f"isTrue({str(self.cond)})",
+            cond_state=f"isTrue({self.cond!s})",
         )
 
     def add_imports(self) -> ImportDict:
@@ -169,6 +169,14 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
         c1,
         c2,
     )
+
+
+@overload
+def color_mode_cond(light: Component, dark: Component | None = None) -> Component: ...  # type: ignore
+
+
+@overload
+def color_mode_cond(light: Any, dark: Any = None) -> Var: ...
 
 
 def color_mode_cond(light: Any, dark: Any = None) -> Var | Component:

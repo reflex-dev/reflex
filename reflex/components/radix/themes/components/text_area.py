@@ -6,14 +6,9 @@ from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
-from reflex.event import EventHandler
 from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    LiteralRadius,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
 LiteralTextAreaSize = Literal["1", "2", "3"]
 
@@ -45,6 +40,9 @@ class TextArea(RadixThemesComponent, elements.Textarea):
 
     # Automatically focuses the textarea when the page loads
     auto_focus: Var[bool]
+
+    # The default value of the textarea when initially rendered
+    default_value: Var[str]
 
     # Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted
     dirname: Var[str]
@@ -81,21 +79,6 @@ class TextArea(RadixThemesComponent, elements.Textarea):
 
     # How the text in the textarea is to be wrapped when submitting the form
     wrap: Var[str]
-
-    # Fired when the value of the textarea changes.
-    on_change: EventHandler[lambda e0: [e0.target.value]]
-
-    # Fired when the textarea is focused.
-    on_focus: EventHandler[lambda e0: [e0.target.value]]
-
-    # Fired when the textarea is blurred.
-    on_blur: EventHandler[lambda e0: [e0.target.value]]
-
-    # Fired when a key is pressed down.
-    on_key_down: EventHandler[lambda e0: [e0.key]]
-
-    # Fired when a key is released.
-    on_key_up: EventHandler[lambda e0: [e0.key]]
 
     @classmethod
     def create(cls, *children, **props) -> Component:

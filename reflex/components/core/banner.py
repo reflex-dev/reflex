@@ -66,8 +66,8 @@ class WebsocketTargetURL(Var):
             _js_expr="getBackendURL(env.EVENT).href",
             _var_data=VarData(
                 imports={
-                    "/env.json": [ImportVar(tag="env", is_default=True)],
-                    f"/{Dirs.STATE_PATH}": [ImportVar(tag="getBackendURL")],
+                    "$/env.json": [ImportVar(tag="env", is_default=True)],
+                    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="getBackendURL")],
                 },
             ),
             _var_type=WebsocketTargetURL,
@@ -109,8 +109,8 @@ class ConnectionToaster(Toaster):
         )
 
         individual_hooks = [
-            f"const toast_props = {str(LiteralVar.create(props))};",
-            f"const [userDismissed, setUserDismissed] = useState(false);",
+            f"const toast_props = {LiteralVar.create(props)!s};",
+            "const [userDismissed, setUserDismissed] = useState(false);",
             FunctionStringVar(
                 "useEffect",
                 _var_data=VarData(
@@ -124,7 +124,7 @@ class ConnectionToaster(Toaster):
                 Var(
                     _js_expr=f"""
 () => {{
-    if ({str(has_too_many_connection_errors)}) {{
+    if ({has_too_many_connection_errors!s}) {{
         if (!userDismissed) {{
             toast.error(
                 `Cannot connect to server: ${{{connection_error}}}.`,

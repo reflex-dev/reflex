@@ -63,7 +63,7 @@ def fully_controlled_input(tmp_path) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path,
-        app_source=FullyControlledInput,  # type: ignore
+        app_source=FullyControlledInput,
     ) as harness:
         yield harness
 
@@ -183,6 +183,6 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     clear_button.click()
     assert AppHarness._poll_for(lambda: on_change_input.get_attribute("value") == "")
     # potential bug: clearing the on_change field doesn't itself trigger on_change
-    # assert backend_state.text == ""
-    # assert debounce_input.get_attribute("value") == ""
-    # assert value_input.get_attribute("value") == ""
+    # assert backend_state.text == "" #noqa: ERA001
+    # assert debounce_input.get_attribute("value") == "" #noqa: ERA001
+    # assert value_input.get_attribute("value") == "" #noqa: ERA001

@@ -21,9 +21,11 @@ def LoginSample():
     class State(rx.State):
         auth_token: str = rx.LocalStorage("")
 
+        @rx.event
         def logout(self):
             self.set_auth_token("")
 
+        @rx.event
         def login(self):
             self.set_auth_token("12345")
             yield rx.redirect("/")
@@ -60,7 +62,7 @@ def login_sample(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("login_sample"),
-        app_source=LoginSample,  # type: ignore
+        app_source=LoginSample,
     ) as harness:
         yield harness
 

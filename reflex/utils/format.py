@@ -6,15 +6,16 @@ import inspect
 import json
 import os
 import re
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from reflex import constants
+from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import exceptions
 from reflex.utils.console import deprecate
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
-    from reflex.event import ArgsSpec, EventChain, EventHandler, EventSpec
+    from reflex.event import ArgsSpec, EventChain, EventHandler, EventSpec, EventType
 
 WRAP_MAP = {
     "{": "}",
@@ -197,8 +198,16 @@ def make_default_page_title(app_name: str, route: str) -> str:
     Returns:
         The default page title.
     """
-    title = constants.DefaultPage.TITLE.format(app_name, route)
-    return to_title_case(title, " ")
+    route_parts = [
+        part
+        for part in route.split("/")
+        if part and not (part.startswith("[") and part.endswith("]"))
+    ]
+
+    title = constants.DefaultPage.TITLE.format(
+        app_name, route_parts[-1] if route_parts else constants.PageNames.INDEX_ROUTE
+    )
+    return to_title_case(title)
 
 
 def _escape_js_string(string: str) -> str:
@@ -320,12 +329,12 @@ def format_match(
         return_value = case[-1]
 
         case_conditions = " ".join(
-            [f"case JSON.stringify({str(condition)}):" for condition in conditions]
+            [f"case JSON.stringify({condition!s}):" for condition in conditions]
         )
-        case_code = f"{case_conditions}  return ({str(return_value)});  break;"
+        case_code = f"{case_conditions}  return ({return_value!s});  break;"
         switch_code += case_code
 
-    switch_code += f"default:  return ({str(default)});  break;"
+    switch_code += f"default:  return ({default!s});  break;"
     switch_code += "};})()"
 
     return switch_code
@@ -359,19 +368,7 @@ def format_prop(
 
         # Handle event props.
         if isinstance(prop, EventChain):
-            sig = inspect.signature(prop.args_spec)  # type: ignore
-            if sig.parameters:
-                arg_def = ",".join(f"_{p}" for p in sig.parameters)
-                arg_def_expr = f"[{arg_def}]"
-            else:
-                # add a default argument for addEvents if none were specified in prop.args_spec
-                # used to trigger the preventDefault() on the event.
-                arg_def = "...args"
-                arg_def_expr = "args"
-
-            chain = ",".join([format_event(event) for event in prop.events])
-            event = f"addEvents([{chain}], {arg_def_expr}, {json_dumps(prop.event_actions)})"
-            prop = f"({arg_def}) => {event}"
+            return str(Var.create(prop))
 
         # Handle other types.
         elif isinstance(prop, str):
@@ -416,7 +413,7 @@ def format_props(*single_props, **key_value_props) -> list[str]:
         )
         for name, prop in sorted(key_value_props.items())
         if prop is not None
-    ] + [(f"{str(LiteralVar.create(prop))}") for prop in single_props]
+    ] + [(f"{LiteralVar.create(prop)!s}") for prop in single_props]
 
 
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
@@ -443,7 +440,7 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
 
     from reflex.state import State
 
-    if state_full_name == "state" and name not in State.__dict__:
+    if state_full_name == FRONTEND_EVENT_STATE and name not in State.__dict__:
         return ("", to_snake_case(handler.fn.__qualname__))
 
     return (state_full_name, name)
@@ -537,13 +534,7 @@ def format_event_chain(
 
 
 def format_queue_events(
-    events: (
-        EventSpec
-        | EventHandler
-        | Callable
-        | List[EventSpec | EventHandler | Callable]
-        | None
-    ) = None,
+    events: EventType | None = None,
     args_spec: Optional[ArgsSpec] = None,
 ) -> Var[EventChain]:
     """Format a list of event handler / event spec as a javascript callback.
@@ -673,18 +664,22 @@ def format_library_name(library_fullname: str):
     return lib
 
 
-def json_dumps(obj: Any) -> str:
+def json_dumps(obj: Any, **kwargs) -> str:
     """Takes an object and returns a jsonified string.
 
     Args:
         obj: The object to be serialized.
+        kwargs: Additional keyword arguments to pass to json.dumps.
 
     Returns:
         A string
     """
     from reflex.utils import serializers
 
-    return json.dumps(obj, ensure_ascii=False, default=serializers.serialize)
+    kwargs.setdefault("ensure_ascii", False)
+    kwargs.setdefault("default", serializers.serialize)
+
+    return json.dumps(obj, **kwargs)
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
@@ -721,8 +716,7 @@ def format_array_ref(refs: str, idx: Var | None) -> str:
     """
     clean_ref = re.sub(r"[^\w]+", "_", refs)
     if idx is not None:
-        # idx._var_is_local = True
-        return f"refs_{clean_ref}[{str(idx)}]"
+        return f"refs_{clean_ref}[{idx!s}]"
     return f"refs_{clean_ref}"
 
 

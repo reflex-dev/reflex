@@ -89,6 +89,8 @@ from reflex.utils import (
     lazy_loader,
 )
 
+from .event import event as event
+
 # import this here explicitly to avoid returning the page module since page attr has the
 # same name as page module(page.py)
 from .page import page as page
@@ -262,6 +264,7 @@ _MAPPING: dict = {
     "experimental": ["_x"],
     "admin": ["AdminDash"],
     "app": ["App", "UploadFile"],
+    "assets": ["asset"],
     "base": ["Base"],
     "components.component": [
         "Component",
@@ -296,15 +299,19 @@ _MAPPING: dict = {
     "components.moment": ["MomentDelta", "moment"],
     "config": ["Config", "DBConfig"],
     "constants": ["Env"],
+    "constants.colors": ["Color"],
     "event": [
         "EventChain",
         "EventHandler",
         "background",
         "call_script",
+        "call_function",
+        "run_script",
         "clear_local_storage",
         "clear_session_storage",
         "console_log",
         "download",
+        "noop",
         "prevent_default",
         "redirect",
         "remove_cookie",
@@ -318,25 +325,28 @@ _MAPPING: dict = {
         "upload_files",
         "window_alert",
     ],
-    "middleware": ["middleware", "Middleware"],
-    "model": ["session", "Model"],
-    "state": [
-        "var",
+    "istate.storage": [
         "Cookie",
         "LocalStorage",
         "SessionStorage",
+    ],
+    "middleware": ["middleware", "Middleware"],
+    "model": ["asession", "session", "Model"],
+    "state": [
+        "var",
         "ComponentState",
         "State",
+        "dynamic",
     ],
+    "istate.wrappers": ["get_state"],
     "style": ["Style", "toggle_color_mode"],
-    "utils.imports": ["ImportVar"],
+    "utils.imports": ["ImportDict", "ImportVar"],
     "utils.serializers": ["serializer"],
-    "vars": ["Var"],
+    "vars": ["Var", "field", "Field"],
 }
 
 _SUBMODULES: set[str] = {
     "components",
-    "event",
     "app",
     "style",
     "admin",

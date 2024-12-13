@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from typing import List
 
 import pytest
@@ -130,12 +130,12 @@ def test_compile_stylesheets(tmp_path, mocker):
     ]
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
-        os.path.join(".web", "styles", "styles.css"),
-        f"@import url('./tailwind.css'); \n"
-        f"@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
-        f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
-        f"@import url('../public/styles.css'); \n"
-        f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
+        str(Path(".web") / "styles" / "styles.css"),
+        "@import url('./tailwind.css'); \n"
+        "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
+        "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
+        "@import url('../public/styles.css'); \n"
+        "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
     )
 
 
@@ -164,7 +164,7 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
     ]
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
-        os.path.join(".web", "styles", "styles.css"),
+        str(Path(".web") / "styles" / "styles.css"),
         "@import url('../public/styles.css'); \n",
     )
 

@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+
+from typing_extensions import TypedDict
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
-from reflex.event import EventHandler
+from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.utils import console, format, types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
@@ -49,27 +51,6 @@ class GridColumnIcons(Enum):
     VideoUri = "video_uri"
 
 
-# @serializer
-# def serialize_gridcolumn_icon(icon: GridColumnIcons) -> str:
-#     """Serialize grid column icon.
-
-#     Args:
-#         icon: the Icon to serialize.
-
-#     Returns:
-#         The serialized value.
-#     """
-#     return "prefix" + str(icon)
-
-
-# class DataEditorColumn(Base):
-#     """Column."""
-
-#     title: str
-#     id: Optional[str] = None
-#     type_: str = "str"
-
-
 class DataEditorTheme(Base):
     """The theme for the DataEditor component."""
 
@@ -107,17 +88,76 @@ class DataEditorTheme(Base):
     text_medium: Optional[str] = None
 
 
-def on_edit_spec(pos, data: dict[str, Any]):
-    """The on edit spec function.
+class Bounds(TypedDict):
+    """The bounds of the group header."""
 
-    Args:
-        pos: The position of the edit event.
-        data: The data of the edit event.
+    x: int
+    y: int
+    width: int
+    height: int
 
-    Returns:
-        The position and data.
-    """
-    return [pos, data]
+
+class CompatSelection(TypedDict):
+    """The selection."""
+
+    items: list
+
+
+class Rectangle(TypedDict):
+    """The bounds of the group header."""
+
+    x: int
+    y: int
+    width: int
+    height: int
+
+
+class GridSelectionCurrent(TypedDict):
+    """The current selection."""
+
+    cell: tuple[int, int]
+    range: Rectangle
+    rangeStack: list[Rectangle]
+
+
+class GridSelection(TypedDict):
+    """The grid selection."""
+
+    current: Optional[GridSelectionCurrent]
+    columns: CompatSelection
+    rows: CompatSelection
+
+
+class GroupHeaderClickedEventArgs(TypedDict):
+    """The arguments for the group header clicked event."""
+
+    kind: str
+    group: str
+    location: tuple[int, int]
+    bounds: Bounds
+    isEdge: bool
+    shiftKey: bool
+    ctrlKey: bool
+    metaKey: bool
+    isTouch: bool
+    localEventX: int
+    localEventY: int
+    button: int
+    buttons: int
+    scrollEdge: tuple[int, int]
+
+
+class GridCell(TypedDict):
+    """The grid cell."""
+
+    span: Optional[List[int]]
+
+
+class GridColumn(TypedDict):
+    """The grid column."""
+
+    title: str
+    group: Optional[str]
 
 
 class DataEditor(NoSSRComponent):
@@ -125,10 +165,9 @@ class DataEditor(NoSSRComponent):
 
     tag = "DataEditor"
     is_default = True
-    library: str = "@glideapps/glide-data-grid@^5.3.0"
+    library: str = "@glideapps/glide-data-grid@^6.0.3"
     lib_dependencies: List[str] = [
         "lodash@^4.17.21",
-        "marked@^4.0.10",
         "react-responsive-carousel@^3.2.7",
     ]
 
@@ -145,7 +184,7 @@ class DataEditor(NoSSRComponent):
     get_cell_content: Var[str]
 
     # Allow selection for copying.
-    get_cell_for_selection: Var[bool]
+    get_cells_for_selection: Var[bool]
 
     # Allow paste.
     on_paste: Var[bool]
@@ -169,7 +208,7 @@ class DataEditor(NoSSRComponent):
     header_height: Var[int]
 
     # Additional header icons:
-    # header_icons: Var[Any] # (TODO: must be a map of name: svg)
+    # header_icons: Var[Any] # (TODO: must be a map of name: svg) #noqa: ERA001
 
     # The maximum width a column can be automatically sized to.
     max_column_auto_width: Var[int]
@@ -223,52 +262,58 @@ class DataEditor(NoSSRComponent):
     theme: Var[Union[DataEditorTheme, Dict]]
 
     # Fired when a cell is activated.
-    on_cell_activated: EventHandler[lambda pos: [pos]]
+    on_cell_activated: EventHandler[passthrough_event_spec(Tuple[int, int])]
 
     # Fired when a cell is clicked.
-    on_cell_clicked: EventHandler[lambda pos: [pos]]
+    on_cell_clicked: EventHandler[passthrough_event_spec(Tuple[int, int])]
 
     # Fired when a cell is right-clicked.
-    on_cell_context_menu: EventHandler[lambda pos: [pos]]
+    on_cell_context_menu: EventHandler[passthrough_event_spec(Tuple[int, int])]
 
     # Fired when a cell is edited.
-    on_cell_edited: EventHandler[on_edit_spec]
+    on_cell_edited: EventHandler[passthrough_event_spec(Tuple[int, int], GridCell)]
 
     # Fired when a group header is clicked.
-    on_group_header_clicked: EventHandler[on_edit_spec]
+    on_group_header_clicked: EventHandler[
+        passthrough_event_spec(Tuple[int, int], GridCell)
+    ]
 
     # Fired when a group header is right-clicked.
-    on_group_header_context_menu: EventHandler[lambda grp_idx, data: [grp_idx, data]]
+    on_group_header_context_menu: EventHandler[
+        passthrough_event_spec(int, GroupHeaderClickedEventArgs)
+    ]
 
     # Fired when a group header is renamed.
-    on_group_header_renamed: EventHandler[lambda idx, val: [idx, val]]
+    on_group_header_renamed: EventHandler[passthrough_event_spec(str, str)]
 
     # Fired when a header is clicked.
-    on_header_clicked: EventHandler[lambda pos: [pos]]
+    on_header_clicked: EventHandler[passthrough_event_spec(Tuple[int, int])]
 
     # Fired when a header is right-clicked.
-    on_header_context_menu: EventHandler[lambda pos: [pos]]
+    on_header_context_menu: EventHandler[passthrough_event_spec(Tuple[int, int])]
 
     # Fired when a header menu item is clicked.
-    on_header_menu_click: EventHandler[lambda col, pos: [col, pos]]
+    on_header_menu_click: EventHandler[passthrough_event_spec(int, Rectangle)]
 
     # Fired when an item is hovered.
-    on_item_hovered: EventHandler[lambda pos: [pos]]
+    on_item_hovered: EventHandler[passthrough_event_spec(Tuple[int, int])]
 
     # Fired when a selection is deleted.
-    on_delete: EventHandler[lambda selection: [selection]]
+    on_delete: EventHandler[passthrough_event_spec(GridSelection)]
 
     # Fired when editing is finished.
-    on_finished_editing: EventHandler[lambda new_value, movement: [new_value, movement]]
+    on_finished_editing: EventHandler[
+        passthrough_event_spec(Union[GridCell, None], tuple[int, int])
+    ]
 
     # Fired when a row is appended.
-    on_row_appended: EventHandler[lambda: []]
+    on_row_appended: EventHandler[no_args_event_spec]
 
     # Fired when the selection is cleared.
-    on_selection_cleared: EventHandler[lambda: []]
+    on_selection_cleared: EventHandler[no_args_event_spec]
 
     # Fired when a column is resized.
-    on_column_resize: EventHandler[lambda col, width: [col, width]]
+    on_column_resize: EventHandler[passthrough_event_spec(GridColumn, int)]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the component.
@@ -279,7 +324,7 @@ class DataEditor(NoSSRComponent):
         return {
             "": f"{format.format_library_name(self.library)}/dist/index.css",
             self.library: "GridCellKind",
-            "/utils/helpers/dataeditor.js": ImportVar(
+            "$/utils/helpers/dataeditor.js": ImportVar(
                 tag="formatDataEditorCells", is_default=False, install=False
             ),
         }
@@ -329,7 +374,7 @@ class DataEditor(NoSSRComponent):
 
         columns = props.get("columns", [])
         data = props.get("data", [])
-        rows = props.get("rows", None)
+        rows = props.get("rows")
 
         # If rows is not provided, determine from data.
         if rows is None:
@@ -340,10 +385,8 @@ class DataEditor(NoSSRComponent):
             props["rows"] = data.length() if isinstance(data, Var) else len(data)
 
         if not isinstance(columns, Var) and len(columns):
-            if (
-                types.is_dataframe(type(data))
-                or isinstance(data, Var)
-                and types.is_dataframe(data._var_type)
+            if types.is_dataframe(type(data)) or (
+                isinstance(data, Var) and types.is_dataframe(data._var_type)
             ):
                 raise ValueError(
                     "Cannot pass in both a pandas dataframe and columns to the data_editor component."
@@ -359,7 +402,7 @@ class DataEditor(NoSSRComponent):
                 props["theme"] = DataEditorTheme(**theme)
 
         # Allow by default to select a region of cells in the grid.
-        props.setdefault("get_cell_for_selection", True)
+        props.setdefault("get_cells_for_selection", True)
 
         # Disable on_paste by default if not provided.
         props.setdefault("on_paste", False)
