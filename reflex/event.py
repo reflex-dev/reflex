@@ -702,6 +702,22 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     )
 
 
+@overload
+def redirect(
+    path: str | Var[str],
+    is_external: Optional[bool] = None,
+    replace: bool = False,
+) -> EventSpec: ...
+
+@overload
+@typing_extensions.deprecated("`external` is deprecated use `is_external` instead") 
+def redirect(
+    path: str | Var[str],
+    is_external: Optional[bool] = None,
+    replace: bool = False,
+    external: Optional[bool] = None,
+) -> EventSpec: ...
+
 def redirect(
     path: str | Var[str],
     is_external: Optional[bool] = None,
