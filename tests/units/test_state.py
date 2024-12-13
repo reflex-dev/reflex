@@ -55,7 +55,12 @@ from reflex.state import (
 )
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
-from reflex.utils.exceptions import ReflexRuntimeError, SetUndefinedStateVarError
+from reflex.utils.exceptions import (
+    InvalidLockWarningThresholdError,
+    ReflexRuntimeError,
+    SetUndefinedStateVarError,
+    StateSerializationError,
+)
 from reflex.utils.format import json_dumps
 from reflex.vars.base import Var, computed_var
 from tests.units.states.mutation import MutableSQLAModel, MutableTestState
@@ -63,7 +68,9 @@ from tests.units.states.mutation import MutableSQLAModel, MutableTestState
 from .states import GenState
 
 CI = bool(os.environ.get("CI", False))
-LOCK_EXPIRATION = 2000 if CI else 300
+LOCK_EXPIRATION = 2500 if CI else 300
+LOCK_WARNING_THRESHOLD = 1000 if CI else 100
+LOCK_WARN_SLEEP = 1.5 if CI else 0.15
 LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.4
 
 
@@ -787,7 +794,6 @@ async def test_process_event_simple(test_state):
     assert test_state.num1 == 69
 
     # The delta should contain the changes, including computed vars.
-    # assert update.delta == {"test_state": {"num1": 69, "sum": 72.14}}
     assert update.delta == {
         TestState.get_full_name(): {"num1": 69, "sum": 72.14, "upper": ""},
         GrandchildState3.get_full_name(): {"computed": ""},
@@ -1698,7 +1704,7 @@ async def test_state_manager_modify_state(
         assert not state_manager._states_locks[token].locked()
 
         # separate instances should NOT share locks
-        sm2 = state_manager.__class__(state=TestState)
+        sm2 = type(state_manager)(state=TestState)
         assert sm2._state_manager_lock is state_manager._state_manager_lock
         assert not sm2._states_locks
         if state_manager._states_locks:
@@ -1784,6 +1790,7 @@ async def test_state_manager_lock_expire(
         substate_token_redis: A token + substate name for looking up in state manager.
     """
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
+    state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
 
     async with state_manager_redis.modify_state(substate_token_redis):
         await asyncio.sleep(0.01)
@@ -1808,6 +1815,7 @@ async def test_state_manager_lock_expire_contend(
     unexp_num1 = 666
 
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
+    state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
 
     order = []
 
@@ -1837,6 +1845,57 @@ async def test_state_manager_lock_expire_contend(
     assert (await state_manager_redis.get_state(substate_token_redis)).num1 == exp_num1
 
 
+@pytest.mark.asyncio
+async def test_state_manager_lock_warning_threshold_contend(
+    state_manager_redis: StateManager, token: str, substate_token_redis: str, mocker
+):
+    """Test that the state manager triggers a warning when lock contention exceeds the warning threshold.
+
+    Args:
+        state_manager_redis: A state manager instance.
+        token: A token.
+        substate_token_redis: A token + substate name for looking up in state manager.
+        mocker: Pytest mocker object.
+    """
+    console_warn = mocker.patch("reflex.utils.console.warn")
+
+    state_manager_redis.lock_expiration = LOCK_EXPIRATION
+    state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
+
+    order = []
+
+    async def _coro_blocker():
+        async with state_manager_redis.modify_state(substate_token_redis):
+            order.append("blocker")
+            await asyncio.sleep(LOCK_WARN_SLEEP)
+
+    tasks = [
+        asyncio.create_task(_coro_blocker()),
+    ]
+
+    await tasks[0]
+    console_warn.assert_called()
+    assert console_warn.call_count == 7
+
+
+class CopyingAsyncMock(AsyncMock):
+    """An AsyncMock, but deepcopy the args and kwargs first."""
+
+    def __call__(self, *args, **kwargs):
+        """Call the mock.
+
+        Args:
+            args: the arguments passed to the mock
+            kwargs: the keyword arguments passed to the mock
+
+        Returns:
+            The result of the mock call
+        """
+        args = copy.deepcopy(args)
+        kwargs = copy.deepcopy(kwargs)
+        return super().__call__(*args, **kwargs)
+
+
 @pytest.fixture(scope="function")
 def mock_app_simple(monkeypatch) -> rx.App:
     """Simple Mock app fixture.
@@ -1853,7 +1912,7 @@ def mock_app_simple(monkeypatch) -> rx.App:
 
     setattr(app_module, CompileVars.APP, app)
     app.state = TestState
-    app.event_namespace.emit = AsyncMock()  # type: ignore
+    app.event_namespace.emit = CopyingAsyncMock()  # type: ignore
 
     def _mock_get_app(*args, **kwargs):
         return app_module
@@ -1957,21 +2016,19 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     mock_app.event_namespace.emit.assert_called_once()
     mcall = mock_app.event_namespace.emit.mock_calls[0]
     assert mcall.args[0] == str(SocketEvent.EVENT)
-    assert json.loads(mcall.args[1]) == dataclasses.asdict(
-        StateUpdate(
-            delta={
-                parent_state.get_full_name(): {
-                    "upper": "",
-                    "sum": 3.14,
-                },
-                grandchild_state.get_full_name(): {
-                    "value2": "42",
-                },
-                GrandchildState3.get_full_name(): {
-                    "computed": "",
-                },
-            }
-        )
+    assert mcall.args[1] == StateUpdate(
+        delta={
+            parent_state.get_full_name(): {
+                "upper": "",
+                "sum": 3.14,
+            },
+            grandchild_state.get_full_name(): {
+                "value2": "42",
+            },
+            GrandchildState3.get_full_name(): {
+                "computed": "",
+            },
+        }
     )
     assert mcall.kwargs["to"] == grandchild_state.router.session.session_id
 
@@ -2153,51 +2210,51 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     assert mock_app.event_namespace is not None
     emit_mock = mock_app.event_namespace.emit
 
-    first_ws_message = json.loads(emit_mock.mock_calls[0].args[1])
+    first_ws_message = emit_mock.mock_calls[0].args[1]
     assert (
-        first_ws_message["delta"][BackgroundTaskState.get_full_name()].pop("router")
+        first_ws_message.delta[BackgroundTaskState.get_full_name()].pop("router")
         is not None
     )
-    assert first_ws_message == {
-        "delta": {
+    assert first_ws_message == StateUpdate(
+        delta={
             BackgroundTaskState.get_full_name(): {
                 "order": ["background_task:start"],
                 "computed_order": ["background_task:start"],
             }
         },
-        "events": [],
-        "final": True,
-    }
+        events=[],
+        final=True,
+    )
     for call in emit_mock.mock_calls[1:5]:
-        assert json.loads(call.args[1]) == {
-            "delta": {
+        assert call.args[1] == StateUpdate(
+            delta={
                 BackgroundTaskState.get_full_name(): {
                     "computed_order": ["background_task:start"],
                 }
             },
-            "events": [],
-            "final": True,
-        }
-    assert json.loads(emit_mock.mock_calls[-2].args[1]) == {
-        "delta": {
+            events=[],
+            final=True,
+        )
+    assert emit_mock.mock_calls[-2].args[1] == StateUpdate(
+        delta={
             BackgroundTaskState.get_full_name(): {
                 "order": exp_order,
                 "computed_order": exp_order,
                 "dict_list": {},
             }
         },
-        "events": [],
-        "final": True,
-    }
-    assert json.loads(emit_mock.mock_calls[-1].args[1]) == {
-        "delta": {
+        events=[],
+        final=True,
+    )
+    assert emit_mock.mock_calls[-1].args[1] == StateUpdate(
+        delta={
             BackgroundTaskState.get_full_name(): {
                 "computed_order": exp_order,
             },
         },
-        "events": [],
-        "final": True,
-    }
+        events=[],
+        final=True,
+    )
 
 
 @pytest.mark.asyncio
@@ -2552,7 +2609,7 @@ def test_duplicate_substate_class(mocker):
         class TestState(BaseState):
             pass
 
-        class ChildTestState(TestState):  # type: ignore # noqa
+        class ChildTestState(TestState):  # type: ignore
             pass
 
         class ChildTestState(TestState):  # type: ignore # noqa
@@ -2669,23 +2726,23 @@ def test_state_union_optional():
         c3r: Custom3 = Custom3(c2r=Custom2(c1r=Custom1(foo="")))
         custom_union: Union[Custom1, Custom2, Custom3] = Custom1(foo="")
 
-    assert str(UnionState.c3.c2) == f'{str(UnionState.c3)}?.["c2"]'  # type: ignore
-    assert str(UnionState.c3.c2.c1) == f'{str(UnionState.c3)}?.["c2"]?.["c1"]'  # type: ignore
+    assert str(UnionState.c3.c2) == f'{UnionState.c3!s}?.["c2"]'  # type: ignore
+    assert str(UnionState.c3.c2.c1) == f'{UnionState.c3!s}?.["c2"]?.["c1"]'  # type: ignore
     assert (
-        str(UnionState.c3.c2.c1.foo) == f'{str(UnionState.c3)}?.["c2"]?.["c1"]?.["foo"]'  # type: ignore
+        str(UnionState.c3.c2.c1.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1"]?.["foo"]'  # type: ignore
     )
     assert (
-        str(UnionState.c3.c2.c1r.foo) == f'{str(UnionState.c3)}?.["c2"]?.["c1r"]["foo"]'  # type: ignore
+        str(UnionState.c3.c2.c1r.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1r"]["foo"]'  # type: ignore
     )
-    assert str(UnionState.c3.c2r.c1) == f'{str(UnionState.c3)}?.["c2r"]["c1"]'  # type: ignore
+    assert str(UnionState.c3.c2r.c1) == f'{UnionState.c3!s}?.["c2r"]["c1"]'  # type: ignore
     assert (
-        str(UnionState.c3.c2r.c1.foo) == f'{str(UnionState.c3)}?.["c2r"]["c1"]?.["foo"]'  # type: ignore
+        str(UnionState.c3.c2r.c1.foo) == f'{UnionState.c3!s}?.["c2r"]["c1"]?.["foo"]'  # type: ignore
     )
     assert (
-        str(UnionState.c3.c2r.c1r.foo) == f'{str(UnionState.c3)}?.["c2r"]["c1r"]["foo"]'  # type: ignore
+        str(UnionState.c3.c2r.c1r.foo) == f'{UnionState.c3!s}?.["c2r"]["c1r"]["foo"]'  # type: ignore
     )
-    assert str(UnionState.c3i.c2) == f'{str(UnionState.c3i)}["c2"]'  # type: ignore
-    assert str(UnionState.c3r.c2) == f'{str(UnionState.c3r)}["c2"]'  # type: ignore
+    assert str(UnionState.c3i.c2) == f'{UnionState.c3i!s}["c2"]'  # type: ignore
+    assert str(UnionState.c3r.c2) == f'{UnionState.c3r!s}["c2"]'  # type: ignore
     assert UnionState.custom_union.foo is not None  # type: ignore
     assert UnionState.custom_union.c1 is not None  # type: ignore
     assert UnionState.custom_union.c1r is not None  # type: ignore
@@ -3234,12 +3291,42 @@ async def test_setvar_async_setter():
 @pytest.mark.parametrize(
     "expiration_kwargs, expected_values",
     [
-        ({"redis_lock_expiration": 20000}, (20000, constants.Expiration.TOKEN)),
+        (
+            {"redis_lock_expiration": 20000},
+            (
+                20000,
+                constants.Expiration.TOKEN,
+                constants.Expiration.LOCK_WARNING_THRESHOLD,
+            ),
+        ),
         (
             {"redis_lock_expiration": 50000, "redis_token_expiration": 5600},
-            (50000, 5600),
+            (50000, 5600, constants.Expiration.LOCK_WARNING_THRESHOLD),
         ),
-        ({"redis_token_expiration": 7600}, (constants.Expiration.LOCK, 7600)),
+        (
+            {"redis_token_expiration": 7600},
+            (
+                constants.Expiration.LOCK,
+                7600,
+                constants.Expiration.LOCK_WARNING_THRESHOLD,
+            ),
+        ),
+        (
+            {"redis_lock_expiration": 50000, "redis_lock_warning_threshold": 1500},
+            (50000, constants.Expiration.TOKEN, 1500),
+        ),
+        (
+            {"redis_token_expiration": 5600, "redis_lock_warning_threshold": 3000},
+            (constants.Expiration.LOCK, 5600, 3000),
+        ),
+        (
+            {
+                "redis_lock_expiration": 50000,
+                "redis_token_expiration": 5600,
+                "redis_lock_warning_threshold": 2000,
+            },
+            (50000, 5600, 2000),
+        ),
     ],
 )
 def test_redis_state_manager_config_knobs(tmp_path, expiration_kwargs, expected_values):
@@ -3269,6 +3356,44 @@ config = rx.Config(
         state_manager = StateManager.create(state=State)
         assert state_manager.lock_expiration == expected_values[0]  # type: ignore
         assert state_manager.token_expiration == expected_values[1]  # type: ignore
+        assert state_manager.lock_warning_threshold == expected_values[2]  # type: ignore
+
+
+@pytest.mark.skipif("REDIS_URL" not in os.environ, reason="Test requires redis")
+@pytest.mark.parametrize(
+    "redis_lock_expiration, redis_lock_warning_threshold",
+    [
+        (10000, 10000),
+        (20000, 30000),
+    ],
+)
+def test_redis_state_manager_config_knobs_invalid_lock_warning_threshold(
+    tmp_path, redis_lock_expiration, redis_lock_warning_threshold
+):
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+
+    config_string = f"""
+import reflex as rx
+config = rx.Config(
+    app_name="project1",
+    redis_url="redis://localhost:6379",
+    state_manager_mode="redis",
+    redis_lock_expiration = {redis_lock_expiration},
+    redis_lock_warning_threshold = {redis_lock_warning_threshold},
+)
+    """
+
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
+    with chdir(proj_root):
+        # reload config for each parameter to avoid stale values
+        reflex.config.get_config(reload=True)
+        from reflex.state import State, StateManager
+
+        with pytest.raises(InvalidLockWarningThresholdError):
+            StateManager.create(state=State)
+        del sys.modules[constants.Config.MODULE]
 
 
 class MixinState(State, mixin=True):
@@ -3433,8 +3558,9 @@ def test_fallback_pickle():
     # Some object, like generator, are still unpicklable with dill.
     state3 = DillState(_reflex_internal_init=True)  # type: ignore
     state3._g = (i for i in range(10))
-    pk3 = state3._serialize()
-    assert len(pk3) == 0
+
+    with pytest.raises(StateSerializationError):
+        _ = state3._serialize()
 
 
 def test_typed_state() -> None:
@@ -3485,10 +3611,10 @@ def test_mutable_models():
     state.dirty_vars.clear()
 
     # Not yet supported ENG-4083
-    # assert isinstance(state.dc, MutableProxy)
-    # state.dc.foo = "baz"
-    # assert state.dirty_vars == {"dc"}
-    # state.dirty_vars.clear()
+    # assert isinstance(state.dc, MutableProxy) #noqa: ERA001
+    # state.dc.foo = "baz" #noqa: ERA001
+    # assert state.dirty_vars == {"dc"} #noqa: ERA001
+    # state.dirty_vars.clear() #noqa: ERA001
 
 
 def test_get_value():

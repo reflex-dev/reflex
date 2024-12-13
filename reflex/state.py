@@ -11,6 +11,7 @@ import inspect
 import json
 import pickle
 import sys
+import time
 import typing
 import uuid
 from abc import ABC, abstractmethod
@@ -39,6 +40,7 @@ from typing import (
     get_type_hints,
 )
 
+from redis.asyncio.client import PubSub
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
@@ -69,6 +71,11 @@ try:
 except ModuleNotFoundError:
     BaseModelV1 = BaseModelV2
 
+try:
+    from pydantic.v1 import validator
+except ModuleNotFoundError:
+    from pydantic import validator
+
 import wrapt
 from redis.asyncio import Redis
 from redis.exceptions import ResponseError
@@ -92,11 +99,13 @@ from reflex.utils.exceptions import (
     DynamicRouteArgShadowsStateVar,
     EventHandlerShadowsBuiltInStateMethod,
     ImmutableStateError,
+    InvalidLockWarningThresholdError,
     InvalidStateManagerMode,
     LockExpiredError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSchemaMismatchError,
+    StateSerializationError,
     StateTooLargeError,
 )
 from reflex.utils.exec import is_testing_env
@@ -104,6 +113,7 @@ from reflex.utils.serializers import serializer
 from reflex.utils.types import (
     _isinstance,
     get_origin,
+    is_optional,
     is_union,
     override,
     value_inside_optional,
@@ -278,6 +288,22 @@ if TYPE_CHECKING:
     from pydantic.v1.fields import ModelField
 
 
+def _unwrap_field_type(type_: Type) -> Type:
+    """Unwrap rx.Field type annotations.
+
+    Args:
+        type_: The type to unwrap.
+
+    Returns:
+        The unwrapped type.
+    """
+    from reflex.vars import Field
+
+    if get_origin(type_) is Field:
+        return get_args(type_)[0]
+    return type_
+
+
 def get_var_for_field(cls: Type[BaseState], f: ModelField):
     """Get a Var instance for a Pydantic field.
 
@@ -288,16 +314,12 @@ def get_var_for_field(cls: Type[BaseState], f: ModelField):
     Returns:
         The Var instance.
     """
-    from reflex.vars import Field
-
     field_name = format.format_state_name(cls.get_full_name()) + "." + f.name
 
     return dispatch(
         field_name=field_name,
         var_data=VarData.from_state(cls, f.name),
-        result_var_type=f.outer_type_
-        if get_origin(f.outer_type_) is not Field
-        else get_args(f.outer_type_)[0],
+        result_var_type=_unwrap_field_type(f.outer_type_),
     )
 
 
@@ -425,7 +447,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The string representation of the state.
         """
-        return f"{self.__class__.__name__}({self.dict()})"
+        return f"{type(self).__name__}({self.dict()})"
 
     @classmethod
     def _get_computed_vars(cls) -> list[ComputedVar]:
@@ -436,7 +458,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         return [
             v
-            for mixin in cls._mixins() + [cls]
+            for mixin in [*cls._mixins(), cls]
             for name, v in mixin.__dict__.items()
             if is_computed_var(v) and name not in cls.inherited_vars
         ]
@@ -1081,6 +1103,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if (
             not field.required
             and field.default is None
+            and field.default_factory is None
             and not types.is_optional(prop._var_type)
         ):
             # Ensure frontend uses null coalescing when accessing.
@@ -1288,6 +1311,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return
 
         if name in self.backend_vars:
+            # abort if unchanged
+            if self._backend_vars.get(name) == value:
+                return
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
@@ -1310,8 +1336,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         if name in fields:
             field = fields[name]
-            field_type = field.outer_type_
-            if field.allow_none:
+            field_type = _unwrap_field_type(field.outer_type_)
+            if field.allow_none and not is_optional(field_type):
                 field_type = Union[field_type, None]
             if not _isinstance(value, field_type):
                 console.deprecate(
@@ -2105,13 +2131,25 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             state["__dict__"].pop("router", None)
             state["__dict__"].pop("router_data", None)
         # Never serialize parent_state or substates.
-        state["__dict__"]["parent_state"] = None
-        state["__dict__"]["substates"] = {}
+        state["__dict__"].pop("parent_state", None)
+        state["__dict__"].pop("substates", None)
         state["__dict__"].pop("_was_touched", None)
         # Remove all inherited vars.
         for inherited_var_name in self.inherited_vars:
             state["__dict__"].pop(inherited_var_name, None)
         return state
+
+    def __setstate__(self, state: dict[str, Any]):
+        """Set the state from redis deserialization.
+
+        This method is called by pickle to deserialize the object.
+
+        Args:
+            state: The state dict for deserialization.
+        """
+        state["__dict__"]["parent_state"] = None
+        state["__dict__"]["substates"] = {}
+        super().__setstate__(state)
 
     def _check_state_size(
         self,
@@ -2177,8 +2215,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Returns:
             The serialized state.
+
+        Raises:
+            StateSerializationError: If the state cannot be serialized.
         """
         payload = b""
+        error = ""
         try:
             payload = pickle.dumps((self._to_schema(), self))
         except HANDLED_PICKLE_ERRORS as og_pickle_error:
@@ -2198,8 +2240,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             except HANDLED_PICKLE_ERRORS as ex:
                 error += f"Dill was also unable to pickle the state: {ex}"
             console.warn(error)
+
         if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
             self._check_state_size(len(payload))
+
+        if not payload:
+            raise StateSerializationError(error)
+
         return payload
 
     @classmethod
@@ -2793,6 +2840,7 @@ class StateManager(Base, ABC):
                     redis=redis,
                     token_expiration=config.redis_token_expiration,
                     lock_expiration=config.redis_lock_expiration,
+                    lock_warning_threshold=config.redis_lock_warning_threshold,
                 )
         raise InvalidStateManagerMode(
             f"Expected one of: DISK, MEMORY, REDIS, got {config.state_manager_mode}"
@@ -3162,6 +3210,15 @@ def _default_lock_expiration() -> int:
     return get_config().redis_lock_expiration
 
 
+def _default_lock_warning_threshold() -> int:
+    """Get the default lock warning threshold.
+
+    Returns:
+        The default lock warning threshold.
+    """
+    return get_config().redis_lock_warning_threshold
+
+
 class StateManagerRedis(StateManager):
     """A state manager that stores states in redis."""
 
@@ -3173,6 +3230,11 @@ class StateManagerRedis(StateManager):
 
     # The maximum time to hold a lock (ms).
     lock_expiration: int = pydantic.Field(default_factory=_default_lock_expiration)
+
+    # The maximum time to hold a lock (ms) before warning.
+    lock_warning_threshold: int = pydantic.Field(
+        default_factory=_default_lock_warning_threshold
+    )
 
     # The keyspace subscription string when redis is waiting for lock to be released
     _redis_notify_keyspace_events: str = (
@@ -3361,6 +3423,17 @@ class StateManagerRedis(StateManager):
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
                 "or use `@rx.event(background=True)` decorator for long-running tasks."
             )
+        elif lock_id is not None:
+            time_taken = self.lock_expiration / 1000 - (
+                await self.redis.ttl(self._lock_key(token))
+            )
+            if time_taken > self.lock_warning_threshold / 1000:
+                console.warn(
+                    f"Lock for token {token} was held too long {time_taken=}s, "
+                    f"use `@rx.event(background=True)` decorator for long-running tasks.",
+                    dedupe=True,
+                )
+
         client_token, substate_name = _split_substate_key(token)
         # If the substate name on the token doesn't match the instance name, it cannot have a parent.
         if state.parent_state is not None and state.get_full_name() != substate_name:
@@ -3410,6 +3483,27 @@ class StateManagerRedis(StateManager):
             yield state
             await self.set_state(token, state, lock_id)
 
+    @validator("lock_warning_threshold")
+    @classmethod
+    def validate_lock_warning_threshold(cls, lock_warning_threshold: int, values):
+        """Validate the lock warning threshold.
+
+        Args:
+            lock_warning_threshold: The lock warning threshold.
+            values: The validated attributes.
+
+        Returns:
+            The lock warning threshold.
+
+        Raises:
+            InvalidLockWarningThresholdError: If the lock warning threshold is invalid.
+        """
+        if lock_warning_threshold >= (lock_expiration := values["lock_expiration"]):
+            raise InvalidLockWarningThresholdError(
+                f"The lock warning threshold({lock_warning_threshold}) must be less than the lock expiration time({lock_expiration})."
+            )
+        return lock_warning_threshold
+
     @staticmethod
     def _lock_key(token: str) -> bytes:
         """Get the redis key for a token's lock.
@@ -3441,6 +3535,35 @@ class StateManagerRedis(StateManager):
             nx=True,  # only set if it doesn't exist
         )
 
+    async def _get_pubsub_message(
+        self, pubsub: PubSub, timeout: float | None = None
+    ) -> None:
+        """Get lock release events from the pubsub.
+
+        Args:
+            pubsub: The pubsub to get a message from.
+            timeout: Remaining time to wait for a message.
+
+        Returns:
+            The message.
+        """
+        if timeout is None:
+            timeout = self.lock_expiration / 1000.0
+
+        started = time.time()
+        message = await pubsub.get_message(
+            ignore_subscribe_messages=True,
+            timeout=timeout,
+        )
+        if (
+            message is None
+            or message["data"] not in self._redis_keyspace_lock_release_events
+        ):
+            remaining = timeout - (time.time() - started)
+            if remaining <= 0:
+                return
+            await self._get_pubsub_message(pubsub, timeout=remaining)
+
     async def _wait_lock(self, lock_key: bytes, lock_id: bytes) -> None:
         """Wait for a redis lock to be released via pubsub.
 
@@ -3453,7 +3576,6 @@ class StateManagerRedis(StateManager):
         Raises:
             ResponseError: when the keyspace config cannot be set.
         """
-        state_is_locked = False
         lock_key_channel = f"__keyspace@0__:{lock_key.decode()}"
         # Enable keyspace notifications for the lock key, so we know when it is available.
         try:
@@ -3467,20 +3589,13 @@ class StateManagerRedis(StateManager):
                 raise
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(lock_key_channel)
-            while not state_is_locked:
-                # wait for the lock to be released
-                while True:
-                    if not await self.redis.exists(lock_key):
-                        break  # key was removed, try to get the lock again
-                    message = await pubsub.get_message(
-                        ignore_subscribe_messages=True,
-                        timeout=self.lock_expiration / 1000.0,
-                    )
-                    if message is None:
-                        continue
-                    if message["data"] in self._redis_keyspace_lock_release_events:
-                        break
-                state_is_locked = await self._try_get_lock(lock_key, lock_id)
+            # wait for the lock to be released
+            while True:
+                # fast path
+                if await self._try_get_lock(lock_key, lock_id):
+                    return
+                # wait for lock events
+                await self._get_pubsub_message(pubsub)
 
     @contextlib.asynccontextmanager
     async def _lock(self, token: str):
@@ -3595,6 +3710,14 @@ class MutableProxy(wrapt.ObjectProxy):
         super().__init__(wrapped)
         self._self_state = state
         self._self_field_name = field_name
+
+    def __repr__(self) -> str:
+        """Get the representation of the wrapped object.
+
+        Returns:
+            The representation of the wrapped object.
+        """
+        return f"{type(self).__name__}({self.__wrapped__})"
 
     def _mark_dirty(
         self,

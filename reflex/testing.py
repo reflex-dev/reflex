@@ -206,7 +206,7 @@ class AppHarness:
             The full state name
         """
         # NOTE: using State.get_name() somehow causes trouble here
-        # path = [State.get_name()] + [self.get_state_name(p) for p in path]
+        # path = [State.get_name()] + [self.get_state_name(p) for p in path] # noqa: ERA001
         path = ["reflex___state____state"] + [self.get_state_name(p) for p in path]
         return ".".join(path)
 
@@ -436,7 +436,6 @@ class AppHarness:
 
         Returns:
             The rendered app global code.
-
         """
         if not inspect.isclass(value) and not inspect.isfunction(value):
             return f"{key} = {value!r}"
@@ -879,7 +878,7 @@ class Subdir404TCPServer(socketserver.TCPServer):
 
         Args:
             request: the requesting socket
-            client_address: (host, port) referring to the client’s address.
+            client_address: (host, port) referring to the client's address.
         """
         self.RequestHandlerClass(
             request,

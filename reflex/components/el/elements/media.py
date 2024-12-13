@@ -1,4 +1,4 @@
-"""Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+"""Media classes."""
 
 from typing import Any, Union
 
@@ -129,7 +129,6 @@ class Img(BaseHTML):
 
         Returns:
             The component.
-
         """
         return (
             super().create(src=children[0], **props)
@@ -274,14 +273,12 @@ class Picture(BaseHTML):
     """Display the picture element."""
 
     tag = "picture"
-    # No unique attributes, only common ones are inherited
 
 
 class Portal(BaseHTML):
     """Display the portal element."""
 
     tag = "portal"
-    # No unique attributes, only common ones are inherited
 
 
 class Source(BaseHTML):
