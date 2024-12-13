@@ -92,8 +92,9 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 target-version = "py39"
+output-format = "concise"
 lint.isort.split-on-trailing-comma = false
-lint.select = ["B", "D", "E", "F", "I", "SIM", "W", "RUF", "FURB", "PERF"]
+lint.select = ["B", "D", "E", "F", "I", "SIM", "W", "RUF", "FURB", "PERF", "ERA"]
 lint.ignore = ["B008", "D205", "E501", "F403", "SIM115", "RUF006", "RUF012"]
 lint.pydocstyle.convention = "google"
 

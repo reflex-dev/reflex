@@ -40,9 +40,6 @@ let event_processing = false;
 // Array holding pending events to be processed.
 const event_queue = [];
 
-// Pending upload promises, by id
-const upload_controllers = {};
-
 /**
  * Generate a UUID (Used for session tokens).
  * Taken from: https://stackoverflow.com/questions/105034/how-do-i-create-a-guid-uuid
@@ -300,7 +297,7 @@ export const applyEvent = async (event, socket) => {
   if (socket) {
     socket.emit(
       "event",
-      JSON.stringify(event, (k, v) => (v === undefined ? null : v))
+      event,
     );
     return true;
   }
@@ -407,6 +404,8 @@ export const connect = async (
     transports: transports,
     autoUnref: false,
   });
+  // Ensure undefined fields in events are sent as null instead of removed
+  socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v)
 
   function checkVisibility() {
     if (document.visibilityState === "visible") {
@@ -443,8 +442,7 @@ export const connect = async (
   });
 
   // On each received message, queue the updates and events.
-  socket.current.on("event", async (message) => {
-    const update = JSON5.parse(message);
+  socket.current.on("event", async (update) => {
     for (const substate in update.delta) {
       dispatch[substate](update.delta[substate]);
     }
@@ -456,7 +454,7 @@ export const connect = async (
   });
   socket.current.on("reload", async (event) => {
     event_processing = false;
-    queueEvents([...initialEvents(), JSON5.parse(event)], socket);
+    queueEvents([...initialEvents(), event], socket);
   });
 
   document.addEventListener("visibilitychange", checkVisibility);
@@ -485,7 +483,9 @@ export const uploadFiles = async (
     return false;
   }
 
-  if (upload_controllers[upload_id]) {
+  const upload_ref_name = `__upload_controllers_${upload_id}`
+
+  if (refs[upload_ref_name]) {
     console.log("Upload already in progress for ", upload_id);
     return false;
   }
@@ -497,23 +497,31 @@ export const uploadFiles = async (
     // Whenever called, responseText will contain the entire response so far.
     const chunks = progressEvent.event.target.responseText.trim().split("\n");
     // So only process _new_ chunks beyond resp_idx.
-    chunks.slice(resp_idx).map((chunk) => {
-      event_callbacks.map((f, ix) => {
-        f(chunk)
-          .then(() => {
-            if (ix === event_callbacks.length - 1) {
-              // Mark this chunk as processed.
-              resp_idx += 1;
-            }
-          })
-          .catch((e) => {
-            if (progressEvent.progress === 1) {
-              // Chunk may be incomplete, so only report errors when full response is available.
-              console.log("Error parsing chunk", chunk, e);
-            }
-            return;
-          });
-      });
+    chunks.slice(resp_idx).map((chunk_json) => {
+      try {
+        const chunk = JSON5.parse(chunk_json);
+        event_callbacks.map((f, ix) => {
+          f(chunk)
+            .then(() => {
+              if (ix === event_callbacks.length - 1) {
+                // Mark this chunk as processed.
+                resp_idx += 1;
+              }
+            })
+            .catch((e) => {
+              if (progressEvent.progress === 1) {
+                // Chunk may be incomplete, so only report errors when full response is available.
+                console.log("Error processing chunk", chunk, e);
+              }
+              return;
+            });
+        });
+      } catch (e) {
+        if (progressEvent.progress === 1) {
+          console.log("Error parsing chunk", chunk_json, e);
+        }
+        return;
+      }
     });
   };
 
@@ -537,7 +545,7 @@ export const uploadFiles = async (
   });
 
   // Send the file to the server.
-  upload_controllers[upload_id] = controller;
+  refs[upload_ref_name] = controller;
 
   try {
     return await axios.post(getBackendURL(UPLOADURL), formdata, config);
@@ -557,7 +565,7 @@ export const uploadFiles = async (
     }
     return false;
   } finally {
-    delete upload_controllers[upload_id];
+    delete refs[upload_ref_name];
   }
 };
 
@@ -799,7 +807,7 @@ export const useEventLoop = (
         connect(
           socket,
           dispatch,
-          ["websocket", "polling"],
+          ["websocket"],
           setConnectErrors,
           client_storage
         );

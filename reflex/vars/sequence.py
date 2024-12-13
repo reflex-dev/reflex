@@ -667,7 +667,7 @@ class LiteralStringVar(LiteralVar, StringVar[str]):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self._var_value))
+        return hash((type(self).__name__, self._var_value))
 
     def json(self) -> str:
         """Get the JSON representation of the var.

@@ -148,7 +148,7 @@ class RadioGroupRoot(RadixThemesComponent):
             disabled: Whether the radio group is disabled
             name: The name of the group. Submitted with its owning form as part of a name/value pair.
             required: Whether the radio group is required
-            on_change: Props to rename  Fired when the value of the radio group changes.
+            on_change: Fired when the value of the radio group changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
