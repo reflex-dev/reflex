@@ -82,7 +82,7 @@ class DBConfig(Base):
         )
 
     @classmethod
-    def postgresql_psycopg2(
+    def postgresql_psycopg(
         cls,
         database: str,
         username: str,
@@ -90,7 +90,7 @@ class DBConfig(Base):
         host: str | None = None,
         port: int | None = 5432,
     ) -> DBConfig:
-        """Create an instance with postgresql+psycopg2 engine.
+        """Create an instance with postgresql+psycopg engine.
 
         Args:
             database: Database name.
@@ -103,7 +103,7 @@ class DBConfig(Base):
             DBConfig instance.
         """
         return cls(
-            engine="postgresql+psycopg2",
+            engine="postgresql+psycopg",
             username=username,
             password=password,
             host=host,
@@ -683,6 +683,9 @@ class Config(Base):
 
     # Maximum expiration lock time for redis state manager
     redis_lock_expiration: int = constants.Expiration.LOCK
+
+    # Maximum lock time before warning for redis state manager.
+    redis_lock_warning_threshold: int = constants.Expiration.LOCK_WARNING_THRESHOLD
 
     # Token expiration time for redis state manager
     redis_token_expiration: int = constants.Expiration.TOKEN

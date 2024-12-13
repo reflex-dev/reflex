@@ -17,6 +17,7 @@ import sys
 import traceback
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -363,6 +364,11 @@ class App(MiddlewareMixin, LifespanMixin):
                 max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
                 ping_interval=constants.Ping.INTERVAL,
                 ping_timeout=constants.Ping.TIMEOUT,
+                json=SimpleNamespace(
+                    dumps=staticmethod(format.json_dumps),
+                    loads=staticmethod(json.loads),
+                ),
+                transports=["websocket"],
             )
         elif getattr(self.sio, "async_mode", "") != "asgi":
             raise RuntimeError(
@@ -467,7 +473,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def add_page(
         self,
-        component: Component | ComponentCallable,
+        component: Component | ComponentCallable | None = None,
         route: str | None = None,
         title: str | Var | None = None,
         description: str | Var | None = None,
@@ -490,16 +496,32 @@ class App(MiddlewareMixin, LifespanMixin):
             meta: The metadata of the page.
 
         Raises:
-            ValueError: When the specified route name already exists.
+            PageValueError: When the component is not set for a non-404 page.
+            RouteValueError: When the specified route name already exists.
         """
         # If the route is not set, get it from the callable.
         if route is None:
             if not isinstance(component, Callable):
-                raise ValueError("Route must be set if component is not a callable.")
+                raise exceptions.RouteValueError(
+                    "Route must be set if component is not a callable."
+                )
             # Format the route.
             route = format.format_route(component.__name__)
         else:
             route = format.format_route(route, format_case=False)
+
+        if route == constants.Page404.SLUG:
+            if component is None:
+                component = Default404Page.create()
+            component = wait_for_client_redirect(self._generate_component(component))
+            title = title or constants.Page404.TITLE
+            description = description or constants.Page404.DESCRIPTION
+            image = image or constants.Page404.IMAGE
+        else:
+            if component is None:
+                raise exceptions.PageValueError(
+                    "Component must be set for a non-404 page."
+                )
 
         # Check if the route given is valid
         verify_route_validity(route)
@@ -516,7 +538,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 if route == constants.PageNames.INDEX_ROUTE
                 else f"`{route}`"
             )
-            raise ValueError(
+            raise exceptions.RouteValueError(
                 f"Duplicate page route {route_name} already exists. Make sure you do not have two"
                 f" pages with the same route"
             )
@@ -633,10 +655,14 @@ class App(MiddlewareMixin, LifespanMixin):
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
         """
-        if component is None:
-            component = Default404Page.create()
+        console.deprecate(
+            feature_name="App.add_custom_404_page",
+            reason=f"Use app.add_page(component, route='/{constants.Page404.SLUG}') instead.",
+            deprecation_version="0.6.7",
+            removal_version="0.8.0",
+        )
         self.add_page(
-            component=wait_for_client_redirect(self._generate_component(component)),
+            component=component,
             route=constants.Page404.SLUG,
             title=title or constants.Page404.TITLE,
             image=image or constants.Page404.IMAGE,
@@ -837,7 +863,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Render a default 404 page if the user didn't supply one
         if constants.Page404.SLUG not in self.unevaluated_pages:
-            self.add_custom_404_page()
+            self.add_page(route=constants.Page404.SLUG)
 
         # Fix up the style.
         self.style = evaluate_style_namespaces(self.style)
@@ -965,7 +991,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
             def _submit_work(fn, *args, **kwargs):
                 f = executor.submit(fn, *args, **kwargs)
-                # f = executor.apipe(fn, *args, **kwargs)
                 result_futures.append(f)
 
             # Compile the pre-compiled pages.
@@ -1270,7 +1295,7 @@ async def process(
                 await asyncio.create_task(
                     app.event_namespace.emit(
                         "reload",
-                        data=format.json_dumps(event),
+                        data=event,
                         to=sid,
                     )
                 )
@@ -1523,7 +1548,7 @@ class EventNamespace(AsyncNamespace):
         """
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
+            self.emit(str(constants.SocketEvent.EVENT), update, to=sid)
         )
 
     async def on_event(self, sid, data):
@@ -1536,7 +1561,7 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
             data: The event data.
         """
-        fields = json.loads(data)
+        fields = data
         # Get the event.
         event = Event(
             **{k: v for k, v in fields.items() if k not in ("handler", "event_actions")}

@@ -63,6 +63,10 @@ class UploadValueError(ReflexError, ValueError):
     """Custom ValueError for upload related errors."""
 
 
+class PageValueError(ReflexError, ValueError):
+    """Custom ValueError for page related errors."""
+
+
 class RouteValueError(ReflexError, ValueError):
     """Custom ValueError for route related errors."""
 
@@ -179,3 +183,7 @@ def raise_system_package_missing_error(package: str) -> NoReturn:
         " Please install it through your system package manager."
         + (f" You can do so by running 'brew install {package}'." if IS_MACOS else "")
     )
+
+
+class InvalidLockWarningThresholdError(ReflexError):
+    """Raised when an invalid lock warning threshold is provided."""

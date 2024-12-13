@@ -1,4 +1,4 @@
-"""Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+"""Forms classes."""
 
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from reflex.event import (
     prevent_default,
 )
 from reflex.utils.imports import ImportDict
+from reflex.utils.types import is_optional
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 
@@ -84,7 +85,6 @@ class Datalist(BaseHTML):
     """Display the datalist element."""
 
     tag = "datalist"
-    # No unique attributes, only common ones are inherited
 
 
 class Fieldset(Element):
@@ -250,7 +250,6 @@ class Form(BaseHTML):
                     _js_expr=f"getRefValue({ref_var!s})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
-        # print(repr(form_refs))
         return form_refs
 
     def _get_vars(self, include_children: bool = True) -> Iterator[Var]:
@@ -384,6 +383,33 @@ class Input(BaseHTML):
     # Fired when a key is released
     on_key_up: EventHandler[key_event]
 
+    @classmethod
+    def create(cls, *children, **props):
+        """Create an Input component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The component.
+        """
+        from reflex.vars.number import ternary_operation
+
+        value = props.get("value")
+
+        # React expects an empty string(instead of null) for controlled inputs.
+        if value is not None and is_optional(
+            (value_var := Var.create(value))._var_type
+        ):
+            props["value"] = ternary_operation(
+                (value_var != Var.create(None))  # pyright: ignore [reportGeneralTypeIssues]
+                & (value_var != Var(_js_expr="undefined")),
+                value,
+                Var.create(""),
+            )
+        return super().create(*children, **props)
+
 
 class Label(BaseHTML):
     """Display the label element."""
@@ -401,7 +427,6 @@ class Legend(BaseHTML):
     """Display the legend element."""
 
     tag = "legend"
-    # No unique attributes, only common ones are inherited
 
 
 class Meter(BaseHTML):
