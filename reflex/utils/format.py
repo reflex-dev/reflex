@@ -664,18 +664,22 @@ def format_library_name(library_fullname: str):
     return lib
 
 
-def json_dumps(obj: Any) -> str:
+def json_dumps(obj: Any, **kwargs) -> str:
     """Takes an object and returns a jsonified string.
 
     Args:
         obj: The object to be serialized.
+        kwargs: Additional keyword arguments to pass to json.dumps.
 
     Returns:
         A string
     """
     from reflex.utils import serializers
 
-    return json.dumps(obj, ensure_ascii=False, default=serializers.serialize)
+    kwargs.setdefault("ensure_ascii", False)
+    kwargs.setdefault("default", serializers.serialize)
+
+    return json.dumps(obj, **kwargs)
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
@@ -712,7 +716,6 @@ def format_array_ref(refs: str, idx: Var | None) -> str:
     """
     clean_ref = re.sub(r"[^\w]+", "_", refs)
     if idx is not None:
-        # idx._var_is_local = True
         return f"refs_{clean_ref}[{idx!s}]"
     return f"refs_{clean_ref}"
 

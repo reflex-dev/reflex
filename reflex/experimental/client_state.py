@@ -242,4 +242,5 @@ class ClientStateVar(Var):
         """
         if not self._global_ref:
             raise ValueError("ClientStateVar must be global to push the value.")
+        value = Var.create(value)
         return run_script(f"{_client_state_ref(self._setter_name)}({value})")
