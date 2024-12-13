@@ -372,7 +372,7 @@ def test_basic_operations(TestObj):
     "var, expected",
     [
         (v([1, 2, 3]), "[1, 2, 3]"),
-        (v(set([1, 2, 3])), "[1, 2, 3]"),
+        (v({1, 2, 3}), "[1, 2, 3]"),
         (v(["1", "2", "3"]), '["1", "2", "3"]'),
         (
             Var(_js_expr="foo")._var_set_state("state").to(list),
@@ -903,7 +903,7 @@ def test_literal_var():
             True,
             False,
             None,
-            set([1, 2, 3]),
+            {1, 2, 3},
         ]
     )
     assert (

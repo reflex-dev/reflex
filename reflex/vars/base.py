@@ -146,7 +146,7 @@ class VarData:
         Returns:
             The imports as a mutable dict.
         """
-        return dict((k, list(v)) for k, v in self.imports)
+        return {k: list(v) for k, v in self.imports}
 
     def merge(*all: VarData | None) -> VarData | None:
         """Merge multiple var data objects.
@@ -1591,14 +1591,12 @@ class CachedVarOperation:
             The cached VarData.
         """
         return VarData.merge(
-            *map(
-                lambda value: (
-                    value._get_all_var_data() if isinstance(value, Var) else None
-                ),
-                map(
-                    lambda field: getattr(self, field.name),
-                    dataclasses.fields(self),  # type: ignore
-                ),
+            *(
+                value._get_all_var_data() if isinstance(value, Var) else None
+                for value in (
+                    getattr(self, field.name)
+                    for field in dataclasses.fields(self)  # type: ignore
+                )
             ),
             self._var_data,
         )
@@ -1889,20 +1887,20 @@ class ComputedVar(Var[RETURN_TYPE]):
         Raises:
             TypeError: If kwargs contains keys that are not allowed.
         """
-        field_values = dict(
-            fget=kwargs.pop("fget", self._fget),
-            initial_value=kwargs.pop("initial_value", self._initial_value),
-            cache=kwargs.pop("cache", self._cache),
-            deps=kwargs.pop("deps", self._static_deps),
-            auto_deps=kwargs.pop("auto_deps", self._auto_deps),
-            interval=kwargs.pop("interval", self._update_interval),
-            backend=kwargs.pop("backend", self._backend),
-            _js_expr=kwargs.pop("_js_expr", self._js_expr),
-            _var_type=kwargs.pop("_var_type", self._var_type),
-            _var_data=kwargs.pop(
+        field_values = {
+            "fget": kwargs.pop("fget", self._fget),
+            "initial_value": kwargs.pop("initial_value", self._initial_value),
+            "cache": kwargs.pop("cache", self._cache),
+            "deps": kwargs.pop("deps", self._static_deps),
+            "auto_deps": kwargs.pop("auto_deps", self._auto_deps),
+            "interval": kwargs.pop("interval", self._update_interval),
+            "backend": kwargs.pop("backend", self._backend),
+            "_js_expr": kwargs.pop("_js_expr", self._js_expr),
+            "_var_type": kwargs.pop("_var_type", self._var_type),
+            "_var_data": kwargs.pop(
                 "_var_data", VarData.merge(self._var_data, merge_var_data)
             ),
-        )
+        }
 
         if kwargs:
             unexpected_kwargs = ", ".join(kwargs.keys())
@@ -2371,10 +2369,7 @@ class CustomVarOperation(CachedVarOperation, Var[T]):
             The cached VarData.
         """
         return VarData.merge(
-            *map(
-                lambda arg: arg[1]._get_all_var_data(),
-                self._args,
-            ),
+            *(arg[1]._get_all_var_data() for arg in self._args),
             self._return._get_all_var_data(),
             self._var_data,
         )

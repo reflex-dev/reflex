@@ -297,7 +297,7 @@ class EventSpec(EventActionsMixin):
         handler: EventHandler,
         event_actions: Dict[str, Union[bool, int]] | None = None,
         client_handler_name: str = "",
-        args: Tuple[Tuple[Var, Var], ...] = tuple(),
+        args: Tuple[Tuple[Var, Var], ...] = (),
     ):
         """Initialize an EventSpec.
 
@@ -312,7 +312,7 @@ class EventSpec(EventActionsMixin):
         object.__setattr__(self, "event_actions", event_actions)
         object.__setattr__(self, "handler", handler)
         object.__setattr__(self, "client_handler_name", client_handler_name)
-        object.__setattr__(self, "args", args or tuple())
+        object.__setattr__(self, "args", args or ())
 
     def with_args(self, args: Tuple[Tuple[Var, Var], ...]) -> EventSpec:
         """Copy the event spec, with updated args.
@@ -514,7 +514,7 @@ def no_args_event_spec() -> Tuple[()]:
     Returns:
         An empty tuple.
     """
-    return tuple()  # type: ignore
+    return ()  # type: ignore
 
 
 # These chains can be used for their side effects when no other events are desired.
@@ -1137,9 +1137,7 @@ def run_script(
         Var(javascript_code) if isinstance(javascript_code, str) else javascript_code
     )
 
-    return call_function(
-        ArgsFunctionOperation.create(tuple(), javascript_code), callback
-    )
+    return call_function(ArgsFunctionOperation.create((), javascript_code), callback)
 
 
 def get_event(state, event):
@@ -1491,7 +1489,7 @@ def get_handler_args(
     """
     args = inspect.getfullargspec(event_spec.handler.fn).args
 
-    return event_spec.args if len(args) > 1 else tuple()
+    return event_spec.args if len(args) > 1 else ()
 
 
 def fix_events(
