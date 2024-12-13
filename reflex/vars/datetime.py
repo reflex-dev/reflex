@@ -210,7 +210,7 @@ class LiteralDatetimeVar(LiteralVar, DateTimeVar):
         Returns:
             LiteralDatetimeVar: The new instance of the class.
         """
-        js_expr = f'"{str(value)}"'
+        js_expr = f'"{value!s}"'
         return cls(
             _js_expr=js_expr,
             _var_type=type(value),

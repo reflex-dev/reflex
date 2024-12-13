@@ -205,14 +205,14 @@ def update_json_file(file_path: str | Path, update_dict: dict[str, int | str]):
     # Read the existing json object from the file.
     json_object = {}
     if fp.stat().st_size:
-        with open(fp) as f:
+        with fp.open() as f:
             json_object = json.load(f)
 
     # Update the json object with the new data.
     json_object.update(update_dict)
 
     # Write the updated json object to the file
-    with open(fp, "w") as f:
+    with fp.open("w") as f:
         json.dump(json_object, f, ensure_ascii=False)
 
 
