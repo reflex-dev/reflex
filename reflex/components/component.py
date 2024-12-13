@@ -1208,7 +1208,7 @@ class Component(BaseComponent, ABC):
         Yields:
             The parent classes that define the method (differently than the base).
         """
-        seen_methods = set([getattr(Component, method)])
+        seen_methods = {getattr(Component, method)}
         for clz in cls.mro():
             if clz is Component:
                 break
@@ -1390,15 +1390,9 @@ class Component(BaseComponent, ABC):
 
         # Collect imports from Vars used directly by this component.
         var_datas = [var._get_all_var_data() for var in self._get_vars()]
-        var_imports: List[ImmutableParsedImportDict] = list(
-            map(
-                lambda var_data: var_data.imports,
-                filter(
-                    None,
-                    var_datas,
-                ),
-            )
-        )
+        var_imports: List[ImmutableParsedImportDict] = [
+            var_data.imports for var_data in var_datas if var_data is not None
+        ]
 
         added_import_dicts: list[ParsedImportDict] = []
         for clz in self._iter_parent_classes_with_method("add_imports"):
