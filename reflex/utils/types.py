@@ -308,6 +308,13 @@ def get_field_type(cls: GenericType, field_name: str) -> GenericType | None:
     Returns:
         The type of the field, if it exists, else None.
     """
+    if (
+        hasattr(cls, "__fields__")
+        and field_name in cls.__fields__
+        and hasattr(cls.__fields__[field_name], "annotation")
+        and not isinstance(cls.__fields__[field_name].annotation, (str, ForwardRef))
+    ):
+        return cls.__fields__[field_name].annotation
     type_hints = get_type_hints(cls)
     if field_name in type_hints:
         return type_hints[field_name]
