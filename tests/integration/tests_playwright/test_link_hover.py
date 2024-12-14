@@ -24,7 +24,7 @@ def LinkApp():
     app.add_page(index, "/")
 
 
-@pytest.fixture
+@pytest.fixture()
 def link_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     with AppHarness.create(
         root=tmp_path_factory.mktemp("link_app"),
@@ -34,7 +34,7 @@ def link_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-def test_link(link_app: AppHarness, page: Page):
+def test_link_hover(link_app: AppHarness, page: Page):
     assert link_app.frontend_url is not None
     page.goto(link_app.frontend_url)
 
