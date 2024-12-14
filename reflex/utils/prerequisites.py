@@ -290,7 +290,7 @@ def get_app(reload: bool = False) -> ModuleType:
                 "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
             )
         module = config.module
-        sys.path.insert(0, os.getcwd())
+        sys.path.insert(0, str(Path.cwd()))
         app = __import__(module, fromlist=(constants.CompileVars.APP,))
 
         if reload:
@@ -436,9 +436,11 @@ def create_config(app_name: str):
     from reflex.compiler import templates
 
     config_name = f"{re.sub(r'[^a-zA-Z]', '', app_name).capitalize()}Config"
-    with open(constants.Config.FILE, "w") as f:
-        console.debug(f"Creating {constants.Config.FILE}")
-        f.write(templates.RXCONFIG.render(app_name=app_name, config_name=config_name))
+
+    console.debug(f"Creating {constants.Config.FILE}")
+    constants.Config.FILE.write_text(
+        templates.RXCONFIG.render(app_name=app_name, config_name=config_name)
+    )
 
 
 def initialize_gitignore(
@@ -492,14 +494,14 @@ def initialize_requirements_txt():
         console.debug(f"Detected encoding for {fp} as {encoding}.")
     try:
         other_requirements_exist = False
-        with open(fp, "r", encoding=encoding) as f:
+        with fp.open("r", encoding=encoding) as f:
             for req in f:
                 # Check if we have a package name that is reflex
                 if re.match(r"^reflex[^a-zA-Z0-9]", req):
                     console.debug(f"{fp} already has reflex as dependency.")
                     return
                 other_requirements_exist = True
-        with open(fp, "a", encoding=encoding) as f:
+        with fp.open("a", encoding=encoding) as f:
             preceding_newline = "\n" if other_requirements_exist else ""
             f.write(
                 f"{preceding_newline}{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
@@ -697,7 +699,7 @@ def _update_next_config(
     }
     if transpile_packages:
         next_config["transpilePackages"] = list(
-            set((format_library_name(p) for p in transpile_packages))
+            {format_library_name(p) for p in transpile_packages}
         )
     if export:
         next_config["output"] = "export"
@@ -730,13 +732,13 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         response.raise_for_status()
 
     # Save the script to a temporary file.
-    script = tempfile.NamedTemporaryFile()
-    with open(script.name, "w") as f:
-        f.write(response.text)
+    script = Path(tempfile.NamedTemporaryFile().name)
+
+    script.write_text(response.text)
 
     # Run the script.
     env = {**os.environ, **env}
-    process = processes.new_process(["bash", f.name, *args], env=env)
+    process = processes.new_process(["bash", str(script), *args], env=env)
     show = processes.show_status if show_status else processes.show_logs
     show(f"Installing {url}", process)
 
@@ -750,14 +752,14 @@ def download_and_extract_fnm_zip():
     # Download the zip file
     url = constants.Fnm.INSTALL_URL
     console.debug(f"Downloading {url}")
-    fnm_zip_file = constants.Fnm.DIR / f"{constants.Fnm.FILENAME}.zip"
+    fnm_zip_file: Path = constants.Fnm.DIR / f"{constants.Fnm.FILENAME}.zip"
     # Function to download and extract the FNM zip release.
     try:
         # Download the FNM zip release.
         # TODO: show progress to improve UX
         response = net.get(url, follow_redirects=True)
         response.raise_for_status()
-        with open(fnm_zip_file, "wb") as output_file:
+        with fnm_zip_file.open("wb") as output_file:
             for chunk in response.iter_bytes():
                 output_file.write(chunk)
 
@@ -805,7 +807,7 @@ def install_node():
         )
     else:  # All other platforms (Linux, MacOS).
         # Add execute permissions to fnm executable.
-        os.chmod(constants.Fnm.EXE, stat.S_IXUSR)
+        constants.Fnm.EXE.chmod(stat.S_IXUSR)
         # Install node.
         # Specify arm64 arch explicitly for M1s and M2s.
         architecture_arg = (
@@ -923,7 +925,7 @@ def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
 
 @cached_procedure(
     cache_file=str(get_web_dir() / "reflex.install_frontend_packages.cached"),
-    payload_fn=lambda p, c: f"{sorted(list(p))!r},{c.json()}",
+    payload_fn=lambda p, c: f"{sorted(p)!r},{c.json()}",
 )
 def install_frontend_packages(packages: set[str], config: Config):
     """Installs the base and custom frontend packages.
@@ -1298,7 +1300,7 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
     for tp in templates_data:
         if tp["hidden"] or tp["code_url"] is None:
             continue
-        known_fields = set(f.name for f in dataclasses.fields(Template))
+        known_fields = {f.name for f in dataclasses.fields(Template)}
         filtered_templates[tp["name"]] = Template(
             **{k: v for k, v in tp.items() if k in known_fields}
         )
@@ -1324,7 +1326,7 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         raise typer.Exit(1) from ose
 
     # Use httpx GET with redirects to download the zip file.
-    zip_file_path = Path(temp_dir) / "template.zip"
+    zip_file_path: Path = Path(temp_dir) / "template.zip"
     try:
         # Note: following redirects can be risky. We only allow this for reflex built templates at the moment.
         response = net.get(template_url, follow_redirects=True)
@@ -1334,9 +1336,8 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         console.error(f"Failed to download the template: {he}")
         raise typer.Exit(1) from he
     try:
-        with open(zip_file_path, "wb") as f:
-            f.write(response.content)
-            console.debug(f"Downloaded the zip to {zip_file_path}")
+        zip_file_path.write_bytes(response.content)
+        console.debug(f"Downloaded the zip to {zip_file_path}")
     except OSError as ose:
         console.error(f"Unable to write the downloaded zip to disk {ose}")
         raise typer.Exit(1) from ose

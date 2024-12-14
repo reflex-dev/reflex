@@ -150,7 +150,7 @@ def zip_app(
         _zip(
             component_name=constants.ComponentName.BACKEND,
             target=zip_dest_dir / constants.ComponentName.BACKEND.zip(),
-            root_dir=Path("."),
+            root_dir=Path.cwd(),
             dirs_to_exclude={"__pycache__"},
             files_to_exclude=files_to_exclude,
             top_level_dirs_to_exclude={"assets"},

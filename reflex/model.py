@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
+from contextlib import suppress
 from typing import Any, ClassVar, Optional, Type, Union
 
 import alembic.autogenerate
@@ -52,12 +53,12 @@ def get_engine_args(url: str | None = None) -> dict[str, Any]:
     Returns:
         The database engine arguments as a dict.
     """
-    kwargs: dict[str, Any] = dict(
+    kwargs: dict[str, Any] = {
         # Print the SQL queries if the log level is INFO or lower.
-        echo=environment.SQLALCHEMY_ECHO.get(),
+        "echo": environment.SQLALCHEMY_ECHO.get(),
         # Check connections before returning them.
-        pool_pre_ping=environment.SQLALCHEMY_POOL_PRE_PING.get(),
-    )
+        "pool_pre_ping": environment.SQLALCHEMY_POOL_PRE_PING.get(),
+    }
     conf = get_config()
     url = url or conf.db_url
     if url is not None and url.startswith("sqlite"):
@@ -290,11 +291,10 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         relationships = {}
         # SQLModel relationships do not appear in __fields__, but should be included if present.
         for name in self.__sqlmodel_relationships__:
-            try:
+            with suppress(
+                sqlalchemy.orm.exc.DetachedInstanceError  # This happens when the relationship was never loaded and the session is closed.
+            ):
                 relationships[name] = self._dict_recursive(getattr(self, name))
-            except sqlalchemy.orm.exc.DetachedInstanceError:
-                # This happens when the relationship was never loaded and the session is closed.
-                continue
         return {
             **base_fields,
             **relationships,

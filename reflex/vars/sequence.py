@@ -1177,7 +1177,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
         if num_args == 0:
             return_value = fn()
-            function_var = ArgsFunctionOperation.create(tuple(), return_value)
+            function_var = ArgsFunctionOperation.create((), return_value)
         else:
             # generic number var
             number_var = Var("").to(NumberVar, int)

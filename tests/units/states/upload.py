@@ -61,14 +61,13 @@ class FileUploadState(State):
         """
         for file in files:
             upload_data = await file.read()
-            outfile = f"{self._tmp_path}/{file.filename}"
+            assert file.filename is not None
+            outfile = self._tmp_path / file.filename
 
             # Save the file.
-            with open(outfile, "wb") as file_object:
-                file_object.write(upload_data)
+            outfile.write_bytes(upload_data)
 
             # Update the img var.
-            assert file.filename is not None
             self.img_list.append(file.filename)
 
     @rx.event(background=True)
@@ -109,14 +108,13 @@ class ChildFileUploadState(FileStateBase1):
         """
         for file in files:
             upload_data = await file.read()
-            outfile = f"{self._tmp_path}/{file.filename}"
+            assert file.filename is not None
+            outfile = self._tmp_path / file.filename
 
             # Save the file.
-            with open(outfile, "wb") as file_object:
-                file_object.write(upload_data)
+            outfile.write_bytes(upload_data)
 
             # Update the img var.
-            assert file.filename is not None
             self.img_list.append(file.filename)
 
     @rx.event(background=True)
@@ -157,14 +155,13 @@ class GrandChildFileUploadState(FileStateBase2):
         """
         for file in files:
             upload_data = await file.read()
-            outfile = f"{self._tmp_path}/{file.filename}"
+            assert file.filename is not None
+            outfile = self._tmp_path / file.filename
 
             # Save the file.
-            with open(outfile, "wb") as file_object:
-                file_object.write(upload_data)
+            outfile.write_bytes(upload_data)
 
             # Update the img var.
-            assert file.filename is not None
             self.img_list.append(file.filename)
 
     @rx.event(background=True)

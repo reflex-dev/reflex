@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from pathlib import Path
 
 from utils import send_data_to_posthog
 
@@ -18,7 +19,7 @@ def extract_stats_from_json(json_file: str) -> list[dict]:
     Returns:
         list[dict]: The stats for each test.
     """
-    with open(json_file, "r") as file:
+    with Path(json_file).open() as file:
         json_data = json.load(file)
 
     # Load the JSON data if it is a string, otherwise assume it's already a dictionary
