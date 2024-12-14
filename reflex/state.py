@@ -1499,20 +1499,21 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         root_state = self._get_root_state()
         d = {root_state.get_full_name(): root_state}
-        d.update(root_state._get_loaded_substates())
+        root_state._get_loaded_substates(d)
         return d
 
-    def _get_loaded_substates(self) -> dict[str, BaseState]:
+    def _get_loaded_substates(
+        self,
+        loaded_substates: dict[str, BaseState],
+    ) -> None:
         """Get all loaded substates of this state.
 
-        Returns:
-            A list of all loaded substates of this state.
+        Args:
+            loaded_substates: A dictionary of loaded substates which will be updated with the substates of this state.
         """
-        loaded_substates = {}
         for substate in self.substates.values():
             loaded_substates[substate.get_full_name()] = substate
-            loaded_substates.update(substate._get_loaded_substates())
-        return loaded_substates
+            substate._get_loaded_substates(loaded_substates)
 
     def _get_root_state(self) -> BaseState:
         """Get the root state of the state tree.
