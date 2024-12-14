@@ -64,7 +64,7 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
     required: Var[bool]
 
     # Specifies the type of input
-    type: Var[str]
+    type: Var[str] = Var.create("text")  # Default to "text"
 
     # Value of the input
     value: Var[Union[str, int, float]]
@@ -87,35 +87,50 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
     # Fired when a key is released.
     on_key_up: EventHandler[key_event]
 
+    # Whether the password toggle is enabled (for type="password")
+    enable_password_toggle: Var[bool] = Var.create(False)
+
+    # Tracks whether the password is visible
+    is_password_visible: Var[bool] = Var.create(False)
+
     @classmethod
     def create(cls, *children, **props) -> Component:
-        """Create an Input component.
+        """Create a TextField component with optional password toggle.
 
         Args:
             *children: The children of the component.
             **props: The properties of the component.
 
         Returns:
-            The component.
+            The TextField component.
         """
-        value = props.get("value")
+        # Check if the input type is "password" and toggle is enabled
+        enable_password_toggle = props.get("enable_password_toggle", False)
+        is_password_visible = props.get("is_password_visible", Var.create(False))
 
-        # React expects an empty string(instead of null) for controlled inputs.
-        if value is not None and is_optional(
-            (value_var := Var.create(value))._var_type
-        ):
-            props["value"] = ternary_operation(
-                (value_var != Var.create(None))  # pyright: ignore [reportGeneralTypeIssues]
-                & (value_var != Var(_js_expr="undefined")),
-                value,
-                Var.create(""),
+        if enable_password_toggle and props.get("type") == "password":
+            # Adjust the type based on visibility
+            props["type"] = Var.create("text") if is_password_visible else Var.create("password")
+
+            # Create the base input field
+            text_field = super().create(*children, **props)
+
+            # Add an eye icon for toggling password visibility
+            toggle_icon = elements.Button.create(
+                "👁️" if not is_password_visible else "👁️‍🗨️",
+                on_click=toggle(is_password_visible),
+                style={"cursor": "pointer", "margin-left": "0.5rem"},
             )
 
-        component = super().create(*children, **props)
-        if props.get("value") is not None and props.get("on_change") is not None:
-            # create a debounced input if the user requests full control to avoid typing jank
-            return DebounceInput.create(component)
-        return component
+            # Wrap input and toggle button together
+            return elements.Div.create(
+                text_field,
+                toggle_icon,
+                style={"display": "flex", "align-items": "center"},
+            )
+
+        # For all other cases, return the regular input field
+        return super().create(*children, **props)
 
 
 class TextFieldSlot(RadixThemesComponent):
