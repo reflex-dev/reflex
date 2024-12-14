@@ -3532,7 +3532,7 @@ class StateManagerRedis(StateManager):
             client_token: The name of the hash.
             redis_hashset: The keys and values to set.
         """
-        pipe = self.redis.pipeline()
+        pipe = self.redis.pipeline(transaction=False)
         pipe.hset(name=client_token, mapping=redis_hashset)
         if self._hexpire_not_supported:
             pipe.expire(client_token, self.token_expiration)
