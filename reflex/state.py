@@ -1976,16 +1976,24 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return fetch_substates
 
     @classmethod
-    def _recursive_potentially_dirty_substates(cls) -> set[str]:
+    def _recursive_potentially_dirty_substates(
+        cls,
+        already_selected: Type[BaseState] | None = None,
+    ) -> set[str]:
         """Recursively determine substates which could be affected by dirty vars in this state.
+
+        Args:
+            already_selected: The class of the state that has already been selected and needs no further processing.
 
         Returns:
             Set of full state names that may need to be fetched to recalc computed vars.
         """
+        if already_selected is not None and already_selected == cls:
+            return set()
         fetch_substates = cls._potentially_dirty_substates()
         for substate_cls in cls.get_substates():
             fetch_substates.update(
-                substate_cls._recursive_potentially_dirty_substates()
+                substate_cls._recursive_potentially_dirty_substates(already_selected)
             )
         return fetch_substates
 
@@ -3376,7 +3384,6 @@ class StateManagerRedis(StateManager):
             walk_state_path = walk_state_path.rpartition(".")[0]
             state_tokens.add(walk_state_path)
 
-        state_tokens.update(self.state._recursive_potentially_dirty_substates())
         if get_substates:
             state_tokens.update(
                 {
@@ -3384,6 +3391,13 @@ class StateManagerRedis(StateManager):
                     for substate in state_cls.get_all_substate_classes()
                 }
             )
+            state_tokens.update(
+                self.state._recursive_potentially_dirty_substates(
+                    already_selected=state_cls,
+                )
+            )
+        else:
+            state_tokens.update(self.state._recursive_potentially_dirty_substates())
 
         loaded_states = {}
         if parent_state is not None:
