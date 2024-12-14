@@ -1304,8 +1304,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             value = value.__wrapped__
 
         # Set the var on the parent state.
-        inherited_vars = {**self.inherited_vars, **self.inherited_backend_vars}
-        if name in inherited_vars:
+        if name in self.inherited_vars or name in self.inherited_backend_vars:
             setattr(self.parent_state, name, value)
             return
 
