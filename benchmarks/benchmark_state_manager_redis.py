@@ -43,6 +43,7 @@ class GrandChildState(ChildState):
     """Grandchild state class for testing."""
 
     grand_child_counter: int = 0
+    float_dict: dict[str, float] = {}
 
     @computed_var
     def double_counter(self):
@@ -145,6 +146,7 @@ def grand_child_state_big(grand_child_state: GrandChildState) -> GrandChildState
     grand_child_state.child_counter = 200
     grand_child_state.grand_child_counter = 300
     grand_child_state.int_dict = {str(i): i for i in range(10000)}
+    grand_child_state.float_dict = {str(i): i + 0.5 for i in range(10000)}
     return grand_child_state
 
 
