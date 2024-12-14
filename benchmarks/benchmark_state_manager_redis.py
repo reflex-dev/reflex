@@ -91,7 +91,7 @@ def grand_child_state_token(token: str) -> str:
 
 
 @pytest.fixture
-def base_state_token(token: str) -> str:
+def state_token(token: str) -> str:
     """Fixture for the base state token.
 
     Args:
@@ -148,7 +148,7 @@ def grand_child_state_big(grand_child_state: GrandChildState) -> GrandChildState
     return grand_child_state
 
 
-def test_set_base_state(
+def test_set_state(
     benchmark: BenchmarkFixture,
     state_manager: StateManagerRedis,
     event_loop: asyncio.AbstractEventLoop,
@@ -170,11 +170,11 @@ def test_set_base_state(
     benchmark(func)
 
 
-def test_get_base_state(
+def test_get_state(
     benchmark: BenchmarkFixture,
     state_manager: StateManagerRedis,
     event_loop: asyncio.AbstractEventLoop,
-    base_state_token: str,
+    state_token: str,
 ) -> None:
     """Benchmark getting state with minimal data.
 
@@ -182,17 +182,15 @@ def test_get_base_state(
         benchmark: The benchmark fixture.
         state_manager: The state manager fixture.
         event_loop: The event loop fixture.
-        base_state_token: The base state token fixture.
+        state_token: The base state token fixture.
     """
     state = State()
     event_loop.run_until_complete(
-        state_manager.set_state(token=base_state_token, state=state)
+        state_manager.set_state(token=state_token, state=state)
     )
 
     def func():
-        _ = event_loop.run_until_complete(
-            state_manager.get_state(token=base_state_token)
-        )
+        _ = event_loop.run_until_complete(state_manager.get_state(token=state_token))
 
     benchmark(func)
 
