@@ -1240,13 +1240,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if not super().__getattribute__("__dict__"):
             return super().__getattribute__(name)
 
-        inherited_vars = {
-            **super().__getattribute__("inherited_vars"),
-            **super().__getattribute__("inherited_backend_vars"),
-        }
-
         # For now, handle router_data updates as a special case.
-        if name in inherited_vars or name == constants.ROUTER_DATA:
+        if (
+            name == constants.ROUTER_DATA
+            or name in super().__getattribute__("inherited_vars")
+            or name in super().__getattribute__("inherited_backend_vars")
+        ):
             parent_state = super().__getattribute__("parent_state")
             if parent_state is not None:
                 return getattr(parent_state, name)
