@@ -25,6 +25,7 @@ from typing import (
     overload,
 )
 
+import typing_extensions
 from typing_extensions import (
     Concatenate,
     ParamSpec,
@@ -296,7 +297,7 @@ class EventSpec(EventActionsMixin):
         handler: EventHandler,
         event_actions: Dict[str, Union[bool, int]] | None = None,
         client_handler_name: str = "",
-        args: Tuple[Tuple[Var, Var], ...] = tuple(),
+        args: Tuple[Tuple[Var, Var], ...] = (),
     ):
         """Initialize an EventSpec.
 
@@ -311,7 +312,7 @@ class EventSpec(EventActionsMixin):
         object.__setattr__(self, "event_actions", event_actions)
         object.__setattr__(self, "handler", handler)
         object.__setattr__(self, "client_handler_name", client_handler_name)
-        object.__setattr__(self, "args", args or tuple())
+        object.__setattr__(self, "args", args or ())
 
     def with_args(self, args: Tuple[Tuple[Var, Var], ...]) -> EventSpec:
         """Copy the event spec, with updated args.
@@ -349,13 +350,14 @@ class EventSpec(EventActionsMixin):
 
         # Construct the payload.
         values = []
-        for arg in args:
-            try:
-                values.append(LiteralVar.create(arg))
-            except TypeError as e:
-                raise EventHandlerTypeError(
-                    f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
-                ) from e
+        arg = None
+        try:
+            for arg in args:
+                values.append(LiteralVar.create(value=arg))  # noqa: PERF401
+        except TypeError as e:
+            raise EventHandlerTypeError(
+                f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
+            ) from e
         new_payload = tuple(zip(fn_args, values))
         return self.with_args(self.args + new_payload)
 
@@ -447,7 +449,7 @@ class JavascriptHTMLInputElement:
 class JavascriptInputEvent:
     """Interface for a Javascript InputEvent https://developer.mozilla.org/en-US/docs/Web/API/InputEvent."""
 
-    target: JavascriptHTMLInputElement = JavascriptHTMLInputElement()
+    target: JavascriptHTMLInputElement = JavascriptHTMLInputElement()  # noqa: RUF009
 
 
 @dataclasses.dataclass(
@@ -513,7 +515,7 @@ def no_args_event_spec() -> Tuple[()]:
     Returns:
         An empty tuple.
     """
-    return tuple()  # type: ignore
+    return ()  # type: ignore
 
 
 # These chains can be used for their side effects when no other events are desired.
@@ -714,26 +716,61 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     )
 
 
+@overload
 def redirect(
     path: str | Var[str],
-    external: Optional[bool] = False,
-    replace: Optional[bool] = False,
+    is_external: Optional[bool] = None,
+    replace: bool = False,
+) -> EventSpec: ...
+
+
+@overload
+@typing_extensions.deprecated("`external` is deprecated use `is_external` instead")
+def redirect(
+    path: str | Var[str],
+    is_external: Optional[bool] = None,
+    replace: bool = False,
+    external: Optional[bool] = None,
+) -> EventSpec: ...
+
+
+def redirect(
+    path: str | Var[str],
+    is_external: Optional[bool] = None,
+    replace: bool = False,
+    external: Optional[bool] = None,
 ) -> EventSpec:
     """Redirect to a new path.
 
     Args:
         path: The path to redirect to.
-        external: Whether to open in new tab or not.
+        is_external: Whether to open in new tab or not.
         replace: If True, the current page will not create a new history entry.
+        external(Deprecated): Whether to open in new tab or not.
 
     Returns:
         An event to redirect to the path.
     """
+    if external is not None:
+        console.deprecate(
+            "The `external` prop in `rx.redirect`",
+            "use `is_external` instead.",
+            "0.6.6",
+            "0.7.0",
+        )
+
+    # is_external should take precedence over external.
+    is_external = (
+        (False if external is None else external)
+        if is_external is None
+        else is_external
+    )
+
     return server_side(
         "_redirect",
         get_fn_signature(redirect),
         path=path,
-        external=external,
+        external=is_external,
         replace=replace,
     )
 
@@ -1101,9 +1138,7 @@ def run_script(
         Var(javascript_code) if isinstance(javascript_code, str) else javascript_code
     )
 
-    return call_function(
-        ArgsFunctionOperation.create(tuple(), javascript_code), callback
-    )
+    return call_function(ArgsFunctionOperation.create((), javascript_code), callback)
 
 
 def get_event(state, event):
@@ -1222,7 +1257,7 @@ def call_event_handler(
                 except TypeError:
                     # TODO: In 0.7.0, remove this block and raise the exception
                     # raise TypeError(
-                    #     f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_handler.fn.__qualname__} provided for {key}."
+                    #     f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_handler.fn.__qualname__} provided for {key}." # noqa: ERA001
                     # ) from e
                     console.warn(
                         f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_callback.fn.__qualname__} provided for {key}."
@@ -1455,7 +1490,7 @@ def get_handler_args(
     """
     args = inspect.getfullargspec(event_spec.handler.fn).args
 
-    return event_spec.args if len(args) > 1 else tuple()
+    return event_spec.args if len(args) > 1 else ()
 
 
 def fix_events(
@@ -1556,7 +1591,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self._js_expr))
+        return hash((type(self).__name__, self._js_expr))
 
     @classmethod
     def create(
@@ -1620,7 +1655,7 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self._js_expr))
+        return hash((type(self).__name__, self._js_expr))
 
     @classmethod
     def create(

@@ -51,7 +51,7 @@ def raise_unsupported_operand_types(
         VarTypeError: The operand types are unsupported.
     """
     raise VarTypeError(
-        f"Unsupported Operand type(s) for {operator}: {', '.join(map(lambda t: t.__name__, operands_types))}"
+        f"Unsupported Operand type(s) for {operator}: {', '.join(t.__name__ for t in operands_types)}"
     )
 
 
@@ -1012,7 +1012,7 @@ class LiteralNumberVar(LiteralVar, NumberVar):
         Returns:
             int: The hash value of the object.
         """
-        return hash((self.__class__.__name__, self._var_value))
+        return hash((type(self).__name__, self._var_value))
 
     @classmethod
     def create(cls, value: float | int, _var_data: VarData | None = None):
@@ -1064,7 +1064,7 @@ class LiteralBooleanVar(LiteralVar, BooleanVar):
         Returns:
             int: The hash value of the object.
         """
-        return hash((self.__class__.__name__, self._var_value))
+        return hash((type(self).__name__, self._var_value))
 
     @classmethod
     def create(cls, value: bool, _var_data: VarData | None = None):

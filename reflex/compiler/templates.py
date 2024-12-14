@@ -45,6 +45,7 @@ class ReflexJinjaEnvironment(Environment):
             "on_load_internal": constants.CompileVars.ON_LOAD_INTERNAL,
             "update_vars_internal": constants.CompileVars.UPDATE_VARS_INTERNAL,
             "frontend_exception_state": constants.CompileVars.FRONTEND_EXCEPTION_STATE_FULL,
+            "hook_position": constants.Hooks.HookPosition,
         }
 
 

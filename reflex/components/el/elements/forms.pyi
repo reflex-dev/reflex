@@ -103,7 +103,7 @@ class Button(BaseHTML):
             name: Name of the button, used when sending form data
             type: Type of the button (submit, reset, or button)
             value: Value of the button, used when sending form data
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -189,7 +189,7 @@ class Datalist(BaseHTML):
 
         Args:
             *children: The children of the component.
-            access_key: No unique attributes, only common ones are inherited   Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -367,7 +367,7 @@ class Form(BaseHTML):
             reset_on_submit: If true, the form will be cleared after submit.
             handle_submit_unique_name: The name used to make this form's submit handler function unique.
             on_submit: Fired when the form is submitted
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -512,7 +512,7 @@ class Input(BaseHTML):
         on_unmount: Optional[EventType[[], BASE_STATE]] = None,
         **props,
     ) -> "Input":
-        """Create the component.
+        """Create an Input component.
 
         Args:
             *children: The children of the component.
@@ -554,7 +554,7 @@ class Input(BaseHTML):
             on_blur: Fired when the input loses focus
             on_key_down: Fired when a key is pressed down
             on_key_up: Fired when a key is released
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -576,7 +576,7 @@ class Input(BaseHTML):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: The properties of the component.
 
         Returns:
             The component.
@@ -644,7 +644,7 @@ class Label(BaseHTML):
             *children: The children of the component.
             html_for: ID of a form control with which the label is associated
             form: Associates the label with a form (by id)
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -730,7 +730,7 @@ class Legend(BaseHTML):
 
         Args:
             *children: The children of the component.
-            access_key: No unique attributes, only common ones are inherited   Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -830,7 +830,7 @@ class Meter(BaseHTML):
             min: Minimum value of the range
             optimum: Optimum value in the range
             value: Current value of the meter
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -920,7 +920,7 @@ class Optgroup(BaseHTML):
             *children: The children of the component.
             disabled: Disables the optgroup
             label: Label for the optgroup
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -1014,7 +1014,7 @@ class Option(BaseHTML):
             label: Label for the option, if the text is not the label
             selected: Indicates that the option is initially selected
             value: Value to be sent as form data
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -1106,7 +1106,7 @@ class Output(BaseHTML):
             html_for: Associates the output with one or more elements (by their IDs)
             form: Associates the output with a form (by id)
             name: Name of the output element for form submission
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -1198,7 +1198,7 @@ class Progress(BaseHTML):
             form: Associates the progress element with a form (by id)
             max: Maximum value of the progress indicator
             value: Current value of the progress indicator
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -1306,7 +1306,7 @@ class Select(BaseHTML):
             required: Indicates that the select control must have a selected option
             size: Number of visible options in a drop-down list
             on_change: Fired when the select value changes
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -1350,6 +1350,7 @@ class Textarea(BaseHTML):
         auto_focus: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_height: Optional[Union[Var[bool], bool]] = None,
         cols: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        default_value: Optional[Union[Var[str], str]] = None,
         dirname: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         disabled: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         enter_key_submit: Optional[Union[Var[bool], bool]] = None,
@@ -1439,6 +1440,7 @@ class Textarea(BaseHTML):
             auto_focus: Automatically focuses the textarea when the page loads
             auto_height: Automatically fit the content height to the text (use min-height with this prop)
             cols: Visible width of the text control, in average character widths
+            default_value: The default value of the textarea when initially rendered
             dirname: Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted
             disabled: Disables the textarea
             enter_key_submit: Enter key submits form (shift-enter adds new line)
@@ -1457,7 +1459,7 @@ class Textarea(BaseHTML):
             on_blur: Fired when the input loses focus
             on_key_down: Fired when a key is pressed down
             on_key_up: Fired when a key is released
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.

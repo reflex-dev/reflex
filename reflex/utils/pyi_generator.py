@@ -24,7 +24,7 @@ from reflex.vars.base import Var
 
 logger = logging.getLogger("pyi_generator")
 
-PWD = Path(".").resolve()
+PWD = Path.cwd()
 
 EXCLUDED_FILES = [
     "app.py",
@@ -196,12 +196,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
     elif isinstance(value, str):
         ev = eval(value, type_hint_globals)
         if rx_types.is_optional(ev):
-            # hints = {
-            #     _get_type_hint(arg, type_hint_globals, is_optional=False)
-            #     for arg in ev.__args__
-            # }
             return _get_type_hint(ev, type_hint_globals, is_optional=False)
-            # return f"Optional[{', '.join(hints)}]"
 
         if rx_types.is_union(ev):
             res = [
@@ -260,8 +255,15 @@ def _generate_docstrings(clzs: list[Type[Component]], props: list[str]) -> str:
                 # We've reached the functions, so stop.
                 break
 
+            if line == "":
+                # We hit a blank line, so clear comments to avoid commented out prop appearing in next prop docs.
+                comments.clear()
+                continue
+
             # Get comments for prop
             if line.strip().startswith("#"):
+                # Remove noqa from the comments.
+                line = line.partition(" # noqa")[0]
                 comments.append(line)
                 continue
 
@@ -285,10 +287,9 @@ def _generate_docstrings(clzs: list[Type[Component]], props: list[str]) -> str:
     for line in (clz.create.__doc__ or "").splitlines():
         if "**" in line:
             indent = line.split("**")[0]
-            for nline in [
-                f"{indent}{n}:{' '.join(c)}" for n, c in props_comments.items()
-            ]:
-                new_docstring.append(nline)
+            new_docstring.extend(
+                [f"{indent}{n}:{' '.join(c)}" for n, c in props_comments.items()]
+            )
         new_docstring.append(line)
     return "\n".join(new_docstring)
 
@@ -835,7 +836,7 @@ class StubGenerator(ast.NodeTransformer):
             self.inserted_imports = True
             default_imports = _generate_imports(self.typing_imports)
             self.import_statements.extend(ast.unparse(i) for i in default_imports)
-            return default_imports + [node]
+            return [*default_imports, node]
         return node
 
     def visit_ImportFrom(

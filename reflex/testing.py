@@ -8,7 +8,6 @@ import dataclasses
 import functools
 import inspect
 import os
-import pathlib
 import platform
 import re
 import signal
@@ -20,6 +19,7 @@ import threading
 import time
 import types
 from http.server import SimpleHTTPRequestHandler
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -100,7 +100,7 @@ class chdir(contextlib.AbstractContextManager):
 
     def __enter__(self):
         """Save current directory and perform chdir."""
-        self._old_cwd.append(os.getcwd())
+        self._old_cwd.append(Path.cwd())
         os.chdir(self.path)
 
     def __exit__(self, *excinfo):
@@ -120,8 +120,8 @@ class AppHarness:
     app_source: Optional[
         Callable[[], None] | types.ModuleType | str | functools.partial[Any]
     ]
-    app_path: pathlib.Path
-    app_module_path: pathlib.Path
+    app_path: Path
+    app_module_path: Path
     app_module: Optional[types.ModuleType] = None
     app_instance: Optional[reflex.App] = None
     frontend_process: Optional[subprocess.Popen] = None
@@ -136,7 +136,7 @@ class AppHarness:
     @classmethod
     def create(
         cls,
-        root: pathlib.Path,
+        root: Path,
         app_source: Optional[
             Callable[[], None] | types.ModuleType | str | functools.partial[Any]
         ] = None,
@@ -206,7 +206,7 @@ class AppHarness:
             The full state name
         """
         # NOTE: using State.get_name() somehow causes trouble here
-        # path = [State.get_name()] + [self.get_state_name(p) for p in path]
+        # path = [State.get_name()] + [self.get_state_name(p) for p in path] # noqa: ERA001
         path = ["reflex___state____state"] + [self.get_state_name(p) for p in path]
         return ".".join(path)
 
@@ -436,7 +436,6 @@ class AppHarness:
 
         Returns:
             The rendered app global code.
-
         """
         if not inspect.isclass(value) and not inspect.isfunction(value):
             return f"{key} = {value!r}"
@@ -815,7 +814,7 @@ class AppHarness:
 class SimpleHTTPRequestHandlerCustomErrors(SimpleHTTPRequestHandler):
     """SimpleHTTPRequestHandler with custom error page handling."""
 
-    def __init__(self, *args, error_page_map: dict[int, pathlib.Path], **kwargs):
+    def __init__(self, *args, error_page_map: dict[int, Path], **kwargs):
         """Initialize the handler.
 
         Args:
@@ -858,8 +857,8 @@ class Subdir404TCPServer(socketserver.TCPServer):
     def __init__(
         self,
         *args,
-        root: pathlib.Path,
-        error_page_map: dict[int, pathlib.Path] | None,
+        root: Path,
+        error_page_map: dict[int, Path] | None,
         **kwargs,
     ):
         """Initialize the server.
@@ -879,7 +878,7 @@ class Subdir404TCPServer(socketserver.TCPServer):
 
         Args:
             request: the requesting socket
-            client_address: (host, port) referring to the client’s address.
+            client_address: (host, port) referring to the client's address.
         """
         self.RequestHandlerClass(
             request,

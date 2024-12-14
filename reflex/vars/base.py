@@ -42,7 +42,8 @@ from typing_extensions import ParamSpec, TypeGuard, deprecated, get_type_hints, 
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import console, imports, serializers, types
+from reflex.constants.compiler import Hooks
+from reflex.utils import console, exceptions, imports, serializers, types
 from reflex.utils.exceptions import (
     VarAttributeError,
     VarDependencyError,
@@ -115,12 +116,20 @@ class VarData:
     # Hooks that need to be present in the component to render this var
     hooks: Tuple[str, ...] = dataclasses.field(default_factory=tuple)
 
+    # Dependencies of the var
+    deps: Tuple[Var, ...] = dataclasses.field(default_factory=tuple)
+
+    # Position of the hook in the component
+    position: Hooks.HookPosition | None = None
+
     def __init__(
         self,
         state: str = "",
         field_name: str = "",
         imports: ImportDict | ParsedImportDict | None = None,
         hooks: dict[str, None] | None = None,
+        deps: list[Var] | None = None,
+        position: Hooks.HookPosition | None = None,
     ):
         """Initialize the var data.
 
@@ -129,6 +138,8 @@ class VarData:
             field_name: The name of the field in the state.
             imports: Imports needed to render this var.
             hooks: Hooks that need to be present in the component to render this var.
+            deps: Dependencies of the var for useCallback.
+            position: Position of the hook in the component.
         """
         immutable_imports: ImmutableParsedImportDict = tuple(
             sorted(
@@ -139,6 +150,8 @@ class VarData:
         object.__setattr__(self, "field_name", field_name)
         object.__setattr__(self, "imports", immutable_imports)
         object.__setattr__(self, "hooks", tuple(hooks or {}))
+        object.__setattr__(self, "deps", tuple(deps or []))
+        object.__setattr__(self, "position", position or None)
 
     def old_school_imports(self) -> ImportDict:
         """Return the imports as a mutable dict.
@@ -146,13 +159,16 @@ class VarData:
         Returns:
             The imports as a mutable dict.
         """
-        return dict((k, list(v)) for k, v in self.imports)
+        return {k: list(v) for k, v in self.imports}
 
     def merge(*all: VarData | None) -> VarData | None:
         """Merge multiple var data objects.
 
         Args:
             *all: The var data objects to merge.
+
+        Raises:
+            ReflexError: If trying to merge VarData with different positions.
 
         Returns:
             The merged var data object.
@@ -184,12 +200,32 @@ class VarData:
             *(var_data.imports for var_data in all_var_datas)
         )
 
-        if state or _imports or hooks or field_name:
+        deps = [dep for var_data in all_var_datas for dep in var_data.deps]
+
+        positions = list(
+            {
+                var_data.position
+                for var_data in all_var_datas
+                if var_data.position is not None
+            }
+        )
+        if positions:
+            if len(positions) > 1:
+                raise exceptions.ReflexError(
+                    f"Cannot merge var data with different positions: {positions}"
+                )
+            position = positions[0]
+        else:
+            position = None
+
+        if state or _imports or hooks or field_name or deps or position:
             return VarData(
                 state=state,
                 field_name=field_name,
                 imports=_imports,
                 hooks=hooks,
+                deps=deps,
+                position=position,
             )
 
         return None
@@ -200,7 +236,14 @@ class VarData:
         Returns:
             True if any field is set to a non-default value.
         """
-        return bool(self.state or self.imports or self.hooks or self.field_name)
+        return bool(
+            self.state
+            or self.imports
+            or self.hooks
+            or self.field_name
+            or self.deps
+            or self.position
+        )
 
     @classmethod
     def from_state(cls, state: Type[BaseState] | str, field_name: str = "") -> VarData:
@@ -480,7 +523,6 @@ class Var(Generic[VAR_TYPE]):
             raise TypeError(
                 "The _var_full_name_needs_state_prefix argument is not supported for Var."
             )
-
         value_with_replaced = dataclasses.replace(
             self,
             _var_type=_var_type or self._var_type,
@@ -1057,7 +1099,7 @@ class Var(Generic[VAR_TYPE]):
 
         if self._var_type is Any:
             raise TypeError(
-                f"You must provide an annotation for the state var `{str(self)}`. Annotation cannot be `{self._var_type}`."
+                f"You must provide an annotation for the state var `{self!s}`. Annotation cannot be `{self._var_type}`."
             )
 
         if name in REPLACED_NAMES:
@@ -1569,7 +1611,7 @@ class CachedVarOperation:
         if name == "_js_expr":
             return self._cached_var_name
 
-        parent_classes = inspect.getmro(self.__class__)
+        parent_classes = inspect.getmro(type(self))
 
         next_class = parent_classes[parent_classes.index(CachedVarOperation) + 1]
 
@@ -1591,14 +1633,12 @@ class CachedVarOperation:
             The cached VarData.
         """
         return VarData.merge(
-            *map(
-                lambda value: (
-                    value._get_all_var_data() if isinstance(value, Var) else None
-                ),
-                map(
-                    lambda field: getattr(self, field.name),
-                    dataclasses.fields(self),  # type: ignore
-                ),
+            *(
+                value._get_all_var_data() if isinstance(value, Var) else None
+                for value in (
+                    getattr(self, field.name)
+                    for field in dataclasses.fields(self)  # type: ignore
+                )
             ),
             self._var_data,
         )
@@ -1611,7 +1651,7 @@ class CachedVarOperation:
         """
         return hash(
             (
-                self.__class__.__name__,
+                type(self).__name__,
                 *[
                     getattr(self, field.name)
                     for field in dataclasses.fields(self)  # type: ignore
@@ -1733,7 +1773,7 @@ class CallableVar(Var):
         Returns:
             The hash of the object.
         """
-        return hash((self.__class__.__name__, self.original_var))
+        return hash((type(self).__name__, self.original_var))
 
 
 RETURN_TYPE = TypeVar("RETURN_TYPE")
@@ -1889,20 +1929,20 @@ class ComputedVar(Var[RETURN_TYPE]):
         Raises:
             TypeError: If kwargs contains keys that are not allowed.
         """
-        field_values = dict(
-            fget=kwargs.pop("fget", self._fget),
-            initial_value=kwargs.pop("initial_value", self._initial_value),
-            cache=kwargs.pop("cache", self._cache),
-            deps=kwargs.pop("deps", self._static_deps),
-            auto_deps=kwargs.pop("auto_deps", self._auto_deps),
-            interval=kwargs.pop("interval", self._update_interval),
-            backend=kwargs.pop("backend", self._backend),
-            _js_expr=kwargs.pop("_js_expr", self._js_expr),
-            _var_type=kwargs.pop("_var_type", self._var_type),
-            _var_data=kwargs.pop(
+        field_values = {
+            "fget": kwargs.pop("fget", self._fget),
+            "initial_value": kwargs.pop("initial_value", self._initial_value),
+            "cache": kwargs.pop("cache", self._cache),
+            "deps": kwargs.pop("deps", self._static_deps),
+            "auto_deps": kwargs.pop("auto_deps", self._auto_deps),
+            "interval": kwargs.pop("interval", self._update_interval),
+            "backend": kwargs.pop("backend", self._backend),
+            "_js_expr": kwargs.pop("_js_expr", self._js_expr),
+            "_var_type": kwargs.pop("_var_type", self._var_type),
+            "_var_data": kwargs.pop(
                 "_var_data", VarData.merge(self._var_data, merge_var_data)
             ),
-        )
+        }
 
         if kwargs:
             unexpected_kwargs = ", ".join(kwargs.keys())
@@ -2117,7 +2157,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                     ref_obj = None
                 if instruction.argval in invalid_names:
                     raise VarValueError(
-                        f"Cached var {str(self)} cannot access arbitrary state via `{instruction.argval}`."
+                        f"Cached var {self!s} cannot access arbitrary state via `{instruction.argval}`."
                     )
                 if callable(ref_obj):
                     # recurse into callable attributes
@@ -2371,10 +2411,7 @@ class CustomVarOperation(CachedVarOperation, Var[T]):
             The cached VarData.
         """
         return VarData.merge(
-            *map(
-                lambda arg: arg[1]._get_all_var_data(),
-                self._args,
-            ),
+            *(arg[1]._get_all_var_data() for arg in self._args),
             self._return._get_all_var_data(),
             self._var_data,
         )
@@ -2492,7 +2529,7 @@ class StateOperation(CachedVarOperation, Var):
         Returns:
             The cached var name.
         """
-        return f"{str(self._state_name)}.{str(self._field)}"
+        return f"{self._state_name!s}.{self._field!s}"
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.
@@ -2804,9 +2841,9 @@ def dispatch(
 
     if result_origin_var_type in dispatchers:
         fn = dispatchers[result_origin_var_type]
-        fn_first_arg_type = list(inspect.signature(fn).parameters.values())[
-            0
-        ].annotation
+        fn_first_arg_type = next(
+            iter(inspect.signature(fn).parameters.values())
+        ).annotation
 
         fn_return = inspect.signature(fn).return_annotation
 

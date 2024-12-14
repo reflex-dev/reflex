@@ -1,4 +1,4 @@
-"""Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+"""Forms classes."""
 
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from reflex.event import (
     prevent_default,
 )
 from reflex.utils.imports import ImportDict
+from reflex.utils.types import is_optional
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 
@@ -84,7 +85,6 @@ class Datalist(BaseHTML):
     """Display the datalist element."""
 
     tag = "datalist"
-    # No unique attributes, only common ones are inherited
 
 
 class Fieldset(Element):
@@ -241,16 +241,15 @@ class Form(BaseHTML):
             if ref.startswith("refs_"):
                 ref_var = Var(_js_expr=ref[:-3])._as_ref()
                 form_refs[ref[len("refs_") : -3]] = Var(
-                    _js_expr=f"getRefValues({str(ref_var)})",
+                    _js_expr=f"getRefValues({ref_var!s})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
             else:
                 ref_var = Var(_js_expr=ref)._as_ref()
                 form_refs[ref[4:]] = Var(
-                    _js_expr=f"getRefValue({str(ref_var)})",
+                    _js_expr=f"getRefValue({ref_var!s})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
-        # print(repr(form_refs))
         return form_refs
 
     def _get_vars(self, include_children: bool = True) -> Iterator[Var]:
@@ -258,7 +257,8 @@ class Form(BaseHTML):
         yield from self._get_form_refs().values()
 
     def _exclude_props(self) -> list[str]:
-        return super()._exclude_props() + [
+        return [
+            *super()._exclude_props(),
             "reset_on_submit",
             "handle_submit_unique_name",
         ]
@@ -383,6 +383,33 @@ class Input(BaseHTML):
     # Fired when a key is released
     on_key_up: EventHandler[key_event]
 
+    @classmethod
+    def create(cls, *children, **props):
+        """Create an Input component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The component.
+        """
+        from reflex.vars.number import ternary_operation
+
+        value = props.get("value")
+
+        # React expects an empty string(instead of null) for controlled inputs.
+        if value is not None and is_optional(
+            (value_var := Var.create(value))._var_type
+        ):
+            props["value"] = ternary_operation(
+                (value_var != Var.create(None))  # pyright: ignore [reportGeneralTypeIssues]
+                & (value_var != Var(_js_expr="undefined")),
+                value,
+                Var.create(""),
+            )
+        return super().create(*children, **props)
+
 
 class Label(BaseHTML):
     """Display the label element."""
@@ -400,7 +427,6 @@ class Legend(BaseHTML):
     """Display the legend element."""
 
     tag = "legend"
-    # No unique attributes, only common ones are inherited
 
 
 class Meter(BaseHTML):
@@ -570,6 +596,9 @@ class Textarea(BaseHTML):
     # Visible width of the text control, in average character widths
     cols: Var[Union[str, int, bool]]
 
+    # The default value of the textarea when initially rendered
+    default_value: Var[str]
+
     # Name part of the textarea to submit in 'dir' and 'name' pair when form is submitted
     dirname: Var[Union[str, int, bool]]
 
@@ -649,19 +678,20 @@ class Textarea(BaseHTML):
                     "Cannot combine `enter_key_submit` with `on_key_down`.",
                 )
             custom_attrs["on_key_down"] = Var(
-                _js_expr=f"(e) => enterKeySubmitOnKeyDown(e, {str(enter_key_submit)})",
+                _js_expr=f"(e) => enterKeySubmitOnKeyDown(e, {enter_key_submit!s})",
                 _var_data=VarData.merge(enter_key_submit._get_all_var_data()),
             )
         if auto_height is not None:
             auto_height = Var.create(auto_height)
             custom_attrs["on_input"] = Var(
-                _js_expr=f"(e) => autoHeightOnInput(e, {str(auto_height)})",
+                _js_expr=f"(e) => autoHeightOnInput(e, {auto_height!s})",
                 _var_data=VarData.merge(auto_height._get_all_var_data()),
             )
         return super().create(*children, **props)
 
     def _exclude_props(self) -> list[str]:
-        return super()._exclude_props() + [
+        return [
+            *super()._exclude_props(),
             "auto_height",
             "enter_key_submit",
         ]

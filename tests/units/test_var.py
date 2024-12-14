@@ -372,7 +372,7 @@ def test_basic_operations(TestObj):
     "var, expected",
     [
         (v([1, 2, 3]), "[1, 2, 3]"),
-        (v(set([1, 2, 3])), "[1, 2, 3]"),
+        (v({1, 2, 3}), "[1, 2, 3]"),
         (v(["1", "2", "3"]), '["1", "2", "3"]'),
         (
             Var(_js_expr="foo")._var_set_state("state").to(list),
@@ -903,7 +903,7 @@ def test_literal_var():
             True,
             False,
             None,
-            set([1, 2, 3]),
+            {1, 2, 3},
         ]
     )
     assert (
@@ -1495,8 +1495,6 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
         )
         eval(f"operand1_var {operator} operand2_var")
         eval(f"operand2_var {operator} operand1_var")
-        # operand1_var.operation(op=operator, other=operand2_var)
-        # operand1_var.operation(op=operator, other=operand2_var, flip=True)
 
 
 @pytest.mark.parametrize(
@@ -1770,14 +1768,12 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
 )
 def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List[str]):
     for operator in operators:
-        print(f"testing {operator} on {str(operand1_var)} and {str(operand2_var)}")
+        print(f"testing {operator} on {operand1_var!s} and {operand2_var!s}")
         with pytest.raises(TypeError):
             print(eval(f"operand1_var {operator} operand2_var"))
-            # operand1_var.operation(op=operator, other=operand2_var)
 
         with pytest.raises(TypeError):
             print(eval(f"operand2_var {operator} operand1_var"))
-            # operand1_var.operation(op=operator, other=operand2_var, flip=True)
 
 
 @pytest.mark.parametrize(

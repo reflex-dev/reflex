@@ -30,15 +30,16 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
 
     # can't use reflex.config.environment here cause of circular import
     reload = os.getenv("__RELOAD_CONFIG", "").lower() == "true"
-    for base in bases:
-        try:
+    base = None
+    try:
+        for base in bases:
             if not reload and getattr(base, field_name, None):
                 pass
-        except TypeError as te:
-            raise VarNameError(
-                f'State var "{field_name}" in {base} has been shadowed by a substate var; '
-                f'use a different field name instead".'
-            ) from te
+    except TypeError as te:
+        raise VarNameError(
+            f'State var "{field_name}" in {base} has been shadowed by a substate var; '
+            f'use a different field name instead".'
+        ) from te
 
 
 # monkeypatch pydantic validate_field_name method to skip validating
