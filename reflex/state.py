@@ -1240,6 +1240,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if not super().__getattribute__("__dict__"):
             return super().__getattribute__(name)
 
+        # Fast path for dunder
+        if name.startswith("__"):
+            return super().__getattribute__(name)
+
         # For now, handle router_data updates as a special case.
         if (
             name == constants.ROUTER_DATA
