@@ -1491,7 +1491,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             parent_states_with_name.append((parent_state.get_full_name(), parent_state))
         return parent_states_with_name
 
-    def _get_all_loaded_states(self) -> dict[str, BaseState]:
+    def _get_loaded_states(self) -> dict[str, BaseState]:
         """Get all loaded states in the state tree.
 
         Returns:
@@ -3354,7 +3354,7 @@ class StateManagerRedis(StateManager):
 
         loaded_states = {}
         if parent_state is not None:
-            loaded_states = parent_state._get_all_loaded_states()
+            loaded_states = parent_state._get_loaded_states()
             # remove all states that are already loaded
             state_tokens = state_tokens.difference(loaded_states.keys())
 
@@ -3466,7 +3466,7 @@ class StateManagerRedis(StateManager):
 
         redis_hashset = {}
 
-        for state_name, substate in state._get_all_loaded_states().items():
+        for state_name, substate in state._get_loaded_states().items():
             if not substate._get_was_touched():
                 continue
             pickle_state = substate._serialize()
