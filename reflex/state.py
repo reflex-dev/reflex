@@ -1928,16 +1928,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             Set of State full names that may need to be fetched to recalc computed vars.
         """
         # _always_dirty_substates need to be fetched to recalc computed vars.
-        fetch_substates = set(
+        fetch_substates = {
             f"{cls.get_full_name()}.{substate_name}"
             for substate_name in cls._always_dirty_substates
-        )
+        }
         for dependent_substates in cls._substate_var_dependencies.values():
             fetch_substates.update(
-                set(
+                {
                     f"{cls.get_full_name()}.{substate_name}"
                     for substate_name in dependent_substates
-                )
+                }
             )
         return fetch_substates
 
