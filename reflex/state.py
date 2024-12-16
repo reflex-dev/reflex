@@ -1307,9 +1307,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return
 
         if name in self.backend_vars:
-            # abort if unchanged
-            if self._backend_vars.get(name) == value:
-                return
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
