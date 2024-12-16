@@ -66,4 +66,4 @@ class Default404Page(Component):
     tag = "Error"
     is_default = True
 
-    status_code: Var[int] = 404  # type: ignore
+    status_code: Var[int] = Var.create(404)

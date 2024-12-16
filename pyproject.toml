@@ -1,29 +1,22 @@
 [tool.poetry]
 name = "reflex"
-version = "0.6.6dev1"
+version = "0.6.7dev1"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [
-    "Nikhil Rao <nikhil@reflex.dev>",
-    "Alek Petuskey <alek@reflex.dev>",
-    "Masen Furer <masen@reflex.dev>",
-    "Elijah Ahianyo <elijah@reflex.dev>",
-    "Thomas Brandého <thomas@reflex.dev>",
+  "Nikhil Rao <nikhil@reflex.dev>",
+  "Alek Petuskey <alek@reflex.dev>",
+  "Masen Furer <masen@reflex.dev>",
+  "Elijah Ahianyo <elijah@reflex.dev>",
+  "Thomas Brandého <thomas@reflex.dev>",
 ]
 readme = "README.md"
 homepage = "https://reflex.dev"
 repository = "https://github.com/reflex-dev/reflex"
 documentation = "https://reflex.dev/docs/getting-started/introduction"
-keywords = [
-    "web",
-    "framework",
-]
-classifiers = [
-    "Development Status :: 4 - Beta",
-]
-packages = [
-    {include = "reflex"}
-]
+keywords = ["web", "framework"]
+classifiers = ["Development Status :: 4 - Beta"]
+packages = [{ include = "reflex" }]
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -42,20 +35,20 @@ uvicorn = ">=0.20.0"
 starlette-admin = ">=0.11.0,<1.0"
 alembic = ">=1.11.1,<2.0"
 platformdirs = ">=3.10.0,<5.0"
-distro = {version = ">=1.8.0,<2.0", platform = "linux"}
+distro = { version = ">=1.8.0,<2.0", platform = "linux" }
 python-engineio = "!=4.6.0"
 wrapt = [
-    {version = ">=1.14.0,<2.0", python = ">=3.11"},
-    {version = ">=1.11.0,<2.0", python = "<3.11"},
+  { version = ">=1.14.0,<2.0", python = ">=3.11" },
+  { version = ">=1.11.0,<2.0", python = "<3.11" },
 ]
 packaging = ">=23.1,<25.0"
-reflex-hosting-cli = ">=0.1.17,<2.0"
+reflex-hosting-cli = ">=0.1.29,<2.0"
 charset-normalizer = ">=3.3.2,<4.0"
 wheel = ">=0.42.0,<1.0"
 build = ">=1.0.3,<2.0"
 setuptools = ">=75.0"
 httpx = ">=0.25.1,<1.0"
-twine = ">=4.0.0,<6.0"
+twine = ">=4.0.0,<7.0"
 tomlkit = ">=0.12.4,<1.0"
 lazy_loader = ">=0.4"
 reflex-chakra = ">=0.6.0"
@@ -70,7 +63,7 @@ dill = ">=0.3.8"
 toml = ">=0.10.2,<1.0"
 pytest-asyncio = ">=0.24.0"
 pytest-cov = ">=4.0.0,<7.0"
-ruff = "0.7.4"
+ruff = "0.8.2"
 pandas = ">=2.1.1,<3.0"
 pillow = ">=10.0.0,<12.0"
 plotly = ">=5.13.0,<6.0"
@@ -92,15 +85,15 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 target-version = "py39"
-output-format="concise"
+output-format = "concise"
 lint.isort.split-on-trailing-comma = false
-lint.select = ["B", "D", "E", "F", "I", "SIM", "W", "ANN001"]
-lint.ignore = ["B008", "D205", "E501", "F403", "SIM115"]
+lint.select = ["ANN001", "B", "C4", "D", "E", "ERA", "F", "FURB", "I", "PERF", "PTH", "RUF", "SIM", "W"]
+lint.ignore = ["B008", "D205", "E501", "F403", "SIM115", "RUF006", "RUF012"]
 lint.pydocstyle.convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/*.py" = ["D100", "D103", "D104", "B018", "ANN001"]
+"tests/*.py" = ["ANN001", "D100", "D103", "D104", "B018", "PERF"]
 "benchmarks/*.py" = ["ANN001"]
 "reflex/.templates/*.py" = ["D100", "D103", "D104"]
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742"]

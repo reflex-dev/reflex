@@ -10,6 +10,13 @@ from selenium.webdriver import Firefox
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
+from reflex.state import (
+    State,
+    StateManagerDisk,
+    StateManagerMemory,
+    StateManagerRedis,
+    _substate_key,
+)
 from reflex.testing import AppHarness
 
 from . import utils
@@ -74,7 +81,7 @@ def ClientSide():
         return rx.fragment(
             rx.input(
                 value=ClientSideState.router.session.client_token,
-                is_read_only=True,
+                read_only=True,
                 id="token",
             ),
             rx.input(
@@ -603,6 +610,109 @@ async def test_client_side_state(
     assert AppHarness._poll_for(lambda: s1.text == "s1 value")
     assert s2.text == "s2 value"
     assert s3.text == "s3 value"
+
+    # Simulate state expiration
+    if isinstance(client_side.state_manager, StateManagerRedis):
+        await client_side.state_manager.redis.delete(
+            _substate_key(token, State.get_full_name())
+        )
+        await client_side.state_manager.redis.delete(_substate_key(token, state_name))
+        await client_side.state_manager.redis.delete(
+            _substate_key(token, sub_state_name)
+        )
+        await client_side.state_manager.redis.delete(
+            _substate_key(token, sub_sub_state_name)
+        )
+    elif isinstance(client_side.state_manager, (StateManagerMemory, StateManagerDisk)):
+        del client_side.state_manager.states[token]
+    if isinstance(client_side.state_manager, StateManagerDisk):
+        client_side.state_manager.token_expiration = 0
+        client_side.state_manager._purge_expired_states()
+
+    # Ensure the state is gone (not hydrated)
+    async def poll_for_not_hydrated():
+        state = await client_side.get_state(_substate_key(token or "", state_name))
+        return not state.is_hydrated
+
+    assert await AppHarness._poll_for_async(poll_for_not_hydrated)
+
+    # Trigger event to get a new instance of the state since the old was expired.
+    set_sub("c1", "c1 post expire")
+
+    # get new references to all cookie and local storage elements (again)
+    c1 = driver.find_element(By.ID, "c1")
+    c2 = driver.find_element(By.ID, "c2")
+    c3 = driver.find_element(By.ID, "c3")
+    c4 = driver.find_element(By.ID, "c4")
+    c5 = driver.find_element(By.ID, "c5")
+    c6 = driver.find_element(By.ID, "c6")
+    c7 = driver.find_element(By.ID, "c7")
+    l1 = driver.find_element(By.ID, "l1")
+    l2 = driver.find_element(By.ID, "l2")
+    l3 = driver.find_element(By.ID, "l3")
+    l4 = driver.find_element(By.ID, "l4")
+    s1 = driver.find_element(By.ID, "s1")
+    s2 = driver.find_element(By.ID, "s2")
+    s3 = driver.find_element(By.ID, "s3")
+    c1s = driver.find_element(By.ID, "c1s")
+    l1s = driver.find_element(By.ID, "l1s")
+    s1s = driver.find_element(By.ID, "s1s")
+
+    assert c1.text == "c1 post expire"
+    assert c2.text == "c2 value"
+    assert c3.text == ""  # temporary cookie expired after reset state!
+    assert c4.text == "c4 value"
+    assert c5.text == "c5 value"
+    assert c6.text == "c6 value"
+    assert c7.text == "c7 value"
+    assert l1.text == "l1 value"
+    assert l2.text == "l2 value"
+    assert l3.text == "l3 value"
+    assert l4.text == "l4 value"
+    assert s1.text == "s1 value"
+    assert s2.text == "s2 value"
+    assert s3.text == "s3 value"
+    assert c1s.text == "c1s value"
+    assert l1s.text == "l1s value"
+    assert s1s.text == "s1s value"
+
+    # Get the backend state and ensure the values are still set
+    async def get_sub_state():
+        root_state = await client_side.get_state(
+            _substate_key(token or "", sub_state_name)
+        )
+        state = root_state.substates[client_side.get_state_name("_client_side_state")]
+        sub_state = state.substates[
+            client_side.get_state_name("_client_side_sub_state")
+        ]
+        return sub_state
+
+    async def poll_for_c1_set():
+        sub_state = await get_sub_state()
+        return sub_state.c1 == "c1 post expire"
+
+    assert await AppHarness._poll_for_async(poll_for_c1_set)
+    sub_state = await get_sub_state()
+    assert sub_state.c1 == "c1 post expire"
+    assert sub_state.c2 == "c2 value"
+    assert sub_state.c3 == ""
+    assert sub_state.c4 == "c4 value"
+    assert sub_state.c5 == "c5 value"
+    assert sub_state.c6 == "c6 value"
+    assert sub_state.c7 == "c7 value"
+    assert sub_state.l1 == "l1 value"
+    assert sub_state.l2 == "l2 value"
+    assert sub_state.l3 == "l3 value"
+    assert sub_state.l4 == "l4 value"
+    assert sub_state.s1 == "s1 value"
+    assert sub_state.s2 == "s2 value"
+    assert sub_state.s3 == "s3 value"
+    sub_sub_state = sub_state.substates[
+        client_side.get_state_name("_client_side_sub_sub_state")
+    ]
+    assert sub_sub_state.c1s == "c1s value"
+    assert sub_sub_state.l1s == "l1s value"
+    assert sub_sub_state.s1s == "s1s value"
 
     # clear the cookie jar and local storage, ensure state reset to default
     driver.delete_all_cookies()

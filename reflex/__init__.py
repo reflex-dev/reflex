@@ -334,7 +334,7 @@ _MAPPING: dict = {
         "SessionStorage",
     ],
     "middleware": ["middleware", "Middleware"],
-    "model": ["session", "Model"],
+    "model": ["asession", "session", "Model"],
     "state": [
         "var",
         "ComponentState",

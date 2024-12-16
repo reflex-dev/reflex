@@ -59,7 +59,9 @@ def get_process_on_port(port: int) -> Optional[psutil.Process]:
         The process on the given port.
     """
     for proc in psutil.process_iter(["pid", "name", "cmdline"]):
-        try:
+        with contextlib.suppress(
+            psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess
+        ):
             if importlib.metadata.version("psutil") >= "6.0.0":
                 conns = proc.net_connections(kind="inet")  # type: ignore
             else:
@@ -67,8 +69,6 @@ def get_process_on_port(port: int) -> Optional[psutil.Process]:
             for conn in conns:
                 if conn.laddr.port == int(port):
                     return proc
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            pass
     return None
 
 
@@ -370,7 +370,7 @@ def get_command_with_loglevel(command: list[str]) -> list[str]:
     npm_path = str(Path(npm_path).resolve()) if npm_path else npm_path
 
     if command[0] == npm_path:
-        return command + ["--loglevel", "silly"]
+        return [*command, "--loglevel", "silly"]
     return command
 
 

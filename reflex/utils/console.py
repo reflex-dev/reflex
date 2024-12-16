@@ -20,13 +20,46 @@ _EMITTED_DEPRECATION_WARNINGS = set()
 # Info messages which have been printed.
 _EMITTED_INFO = set()
 
+# Warnings which have been printed.
+_EMIITED_WARNINGS = set()
+
+# Errors which have been printed.
+_EMITTED_ERRORS = set()
+
+# Success messages which have been printed.
+_EMITTED_SUCCESS = set()
+
+# Debug messages which have been printed.
+_EMITTED_DEBUG = set()
+
+# Logs which have been printed.
+_EMITTED_LOGS = set()
+
+# Prints which have been printed.
+_EMITTED_PRINTS = set()
+
 
 def set_log_level(log_level: LogLevel):
     """Set the log level.
 
     Args:
         log_level: The log level to set.
+
+    Raises:
+        ValueError: If the log level is invalid.
     """
+    if not isinstance(log_level, LogLevel):
+        deprecate(
+            feature_name="Passing a string to set_log_level",
+            reason="use reflex.constants.LogLevel enum instead",
+            deprecation_version="0.6.6",
+            removal_version="0.7.0",
+        )
+        try:
+            log_level = getattr(LogLevel, log_level.upper())
+        except AttributeError as ae:
+            raise ValueError(f"Invalid log level: {log_level}") from ae
+
     global _LOG_LEVEL
     _LOG_LEVEL = log_level
 
@@ -40,25 +73,37 @@ def is_debug() -> bool:
     return _LOG_LEVEL <= LogLevel.DEBUG
 
 
-def print(msg: str, **kwargs):
+def print(msg: str, dedupe: bool = False, **kwargs):
     """Print a message.
 
     Args:
         msg: The message to print.
+        dedupe: If True, suppress multiple console logs of print message.
         kwargs: Keyword arguments to pass to the print function.
     """
+    if dedupe:
+        if msg in _EMITTED_PRINTS:
+            return
+        else:
+            _EMITTED_PRINTS.add(msg)
     _console.print(msg, **kwargs)
 
 
-def debug(msg: str, **kwargs):
+def debug(msg: str, dedupe: bool = False, **kwargs):
     """Print a debug message.
 
     Args:
         msg: The debug message.
+        dedupe: If True, suppress multiple console logs of debug message.
         kwargs: Keyword arguments to pass to the print function.
     """
     if is_debug():
         msg_ = f"[purple]Debug: {msg}[/purple]"
+        if dedupe:
+            if msg_ in _EMITTED_DEBUG:
+                return
+            else:
+                _EMITTED_DEBUG.add(msg_)
         if progress := kwargs.pop("progress", None):
             progress.console.print(msg_, **kwargs)
         else:
@@ -82,25 +127,37 @@ def info(msg: str, dedupe: bool = False, **kwargs):
         print(f"[cyan]Info: {msg}[/cyan]", **kwargs)
 
 
-def success(msg: str, **kwargs):
+def success(msg: str, dedupe: bool = False, **kwargs):
     """Print a success message.
 
     Args:
         msg: The success message.
+        dedupe: If True, suppress multiple console logs of success message.
         kwargs: Keyword arguments to pass to the print function.
     """
     if _LOG_LEVEL <= LogLevel.INFO:
+        if dedupe:
+            if msg in _EMITTED_SUCCESS:
+                return
+            else:
+                _EMITTED_SUCCESS.add(msg)
         print(f"[green]Success: {msg}[/green]", **kwargs)
 
 
-def log(msg: str, **kwargs):
+def log(msg: str, dedupe: bool = False, **kwargs):
     """Takes a string and logs it to the console.
 
     Args:
         msg: The message to log.
+        dedupe: If True, suppress multiple console logs of log message.
         kwargs: Keyword arguments to pass to the print function.
     """
     if _LOG_LEVEL <= LogLevel.INFO:
+        if dedupe:
+            if msg in _EMITTED_LOGS:
+                return
+            else:
+                _EMITTED_LOGS.add(msg)
         _console.log(msg, **kwargs)
 
 
@@ -114,14 +171,20 @@ def rule(title: str, **kwargs):
     _console.rule(title, **kwargs)
 
 
-def warn(msg: str, **kwargs):
+def warn(msg: str, dedupe: bool = False, **kwargs):
     """Print a warning message.
 
     Args:
         msg: The warning message.
+        dedupe: If True, suppress multiple console logs of warning message.
         kwargs: Keyword arguments to pass to the print function.
     """
     if _LOG_LEVEL <= LogLevel.WARNING:
+        if dedupe:
+            if msg in _EMIITED_WARNINGS:
+                return
+            else:
+                _EMIITED_WARNINGS.add(msg)
         print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
 
 
@@ -154,14 +217,20 @@ def deprecate(
             _EMITTED_DEPRECATION_WARNINGS.add(feature_name)
 
 
-def error(msg: str, **kwargs):
+def error(msg: str, dedupe: bool = False, **kwargs):
     """Print an error message.
 
     Args:
         msg: The error message.
+        dedupe: If True, suppress multiple console logs of error message.
         kwargs: Keyword arguments to pass to the print function.
     """
     if _LOG_LEVEL <= LogLevel.ERROR:
+        if dedupe:
+            if msg in _EMITTED_ERRORS:
+                return
+            else:
+                _EMITTED_ERRORS.add(msg)
         print(f"[red]{msg}[/red]", **kwargs)
 
 

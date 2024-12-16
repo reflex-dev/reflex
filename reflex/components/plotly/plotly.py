@@ -255,7 +255,7 @@ const extractPoints = (points) => {
 
     def _render(self):
         tag = super()._render()
-        figure = self.data.to(dict)
+        figure = self.data.to(dict) if self.data is not None else Var.create({})
         merge_dicts = []  # Data will be merged and spread from these dict Vars
         if self.layout is not None:
             # Why is this not a literal dict? Great question... it didn't work
@@ -270,11 +270,11 @@ const extractPoints = (points) => {
             tag.special_props.append(
                 # Merge all dictionaries and spread the result over props.
                 Var(
-                    _js_expr=f"{{...mergician({str(figure)},"
+                    _js_expr=f"{{...mergician({figure!s},"
                     f"{','.join(str(md) for md in merge_dicts)})}}",
                 ),
             )
         else:
             # Spread the figure dict over props, nothing to merge.
-            tag.special_props.append(Var(_js_expr=f"{{...{str(figure)}}}"))
+            tag.special_props.append(Var(_js_expr=f"{{...{figure!s}}}"))
         return tag
