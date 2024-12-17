@@ -1,11 +1,13 @@
 {% import 'web/pages/utils.js.jinja2' as utils %}
 
+{% set all_hooks = component._get_all_hooks().items() %}
+
 export function {{tag_name}} () {
-  {% for hook in component._get_all_hooks_internal() %}
+  {% for hook, data in all_hooks if data and data.position and data.position == const.hook_position.INTERNAL %}
   {{ hook }}
   {% endfor %}
 
-  {% for hook, data in component._get_all_hooks().items() if not data.position or data.position == const.hook_position.PRE_TRIGGER %}
+  {% for hook, data in all_hooks if not data or (not data.position or data.position == const.hook_position.PRE_TRIGGER) %}
   {{ hook }}
   {% endfor %}
 
@@ -13,7 +15,7 @@ export function {{tag_name}} () {
   {{ hook }}
   {% endfor %}
 
-  {% for hook, data in component._get_all_hooks().items() if data.position and data.position == const.hook_position.POST_TRIGGER %}
+  {% for hook, data in all_hooks if data and data.position and data.position == const.hook_position.POST_TRIGGER %}
   {{ hook }}
   {% endfor %}
 
