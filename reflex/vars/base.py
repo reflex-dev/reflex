@@ -2210,8 +2210,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             return True
         if self._js_expr in instance._changed_computed_vars:
             return True
-        if not self.already_computed(instance):
-            self.get_value(instance)
+        # TODO: prime the cache if it's not already? creates side effects and breaks order of computed var execution
         return self._js_expr in instance._changed_computed_vars
 
     def _determine_var_type(self) -> Type:
