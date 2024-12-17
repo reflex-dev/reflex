@@ -9,7 +9,9 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
 from reflex.event import EventHandler, input_event, key_event
+from reflex.utils.types import is_optional
 from reflex.vars.base import Var
+from reflex.vars.number import ternary_operation
 
 from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
@@ -17,7 +19,7 @@ LiteralTextFieldSize = Literal["1", "2", "3"]
 LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
 
 
-class TextFieldRoot(elements.Div, RadixThemesComponent):
+class TextFieldRoot(elements.Input, RadixThemesComponent):
     """Captures user input with an optional slot for buttons and icons."""
 
     tag = "TextField.Root"
@@ -96,6 +98,19 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
         Returns:
             The component.
         """
+        value = props.get("value")
+
+        # React expects an empty string(instead of null) for controlled inputs.
+        if value is not None and is_optional(
+            (value_var := Var.create(value))._var_type
+        ):
+            props["value"] = ternary_operation(
+                (value_var != Var.create(None))  # pyright: ignore [reportGeneralTypeIssues]
+                & (value_var != Var(_js_expr="undefined")),
+                value,
+                Var.create(""),
+            )
+
         component = super().create(*children, **props)
         if props.get("value") is not None and props.get("on_change") is not None:
             # create a debounced input if the user requests full control to avoid typing jank

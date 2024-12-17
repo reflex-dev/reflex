@@ -287,10 +287,9 @@ def _generate_docstrings(clzs: list[Type[Component]], props: list[str]) -> str:
     for line in (clz.create.__doc__ or "").splitlines():
         if "**" in line:
             indent = line.split("**")[0]
-            for nline in [
-                f"{indent}{n}:{' '.join(c)}" for n, c in props_comments.items()
-            ]:
-                new_docstring.append(nline)
+            new_docstring.extend(
+                [f"{indent}{n}:{' '.join(c)}" for n, c in props_comments.items()]
+            )
         new_docstring.append(line)
     return "\n".join(new_docstring)
 

@@ -71,6 +71,11 @@ try:
 except ModuleNotFoundError:
     BaseModelV1 = BaseModelV2
 
+try:
+    from pydantic.v1 import validator
+except ModuleNotFoundError:
+    from pydantic import validator
+
 import wrapt
 from redis.asyncio import Redis
 from redis.exceptions import ResponseError
@@ -94,6 +99,7 @@ from reflex.utils.exceptions import (
     DynamicRouteArgShadowsStateVar,
     EventHandlerShadowsBuiltInStateMethod,
     ImmutableStateError,
+    InvalidLockWarningThresholdError,
     InvalidStateManagerMode,
     LockExpiredError,
     ReflexRuntimeError,
@@ -431,9 +437,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 )
 
         # Create a fresh copy of the backend variables for this instance
-        self._backend_vars = copy.deepcopy(
-            {name: item for name, item in self.backend_vars.items()}
-        )
+        self._backend_vars = copy.deepcopy(self.backend_vars)
 
     def __repr__(self) -> str:
         """Get the string representation of the state.
@@ -517,9 +521,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cls.inherited_backend_vars = parent_state.backend_vars
 
             # Check if another substate class with the same name has already been defined.
-            if cls.get_name() in set(
-                c.get_name() for c in parent_state.class_subclasses
-            ):
+            if cls.get_name() in {c.get_name() for c in parent_state.class_subclasses}:
                 # This should not happen, since we have added module prefix to state names in #3214
                 raise StateValueError(
                     f"The substate class '{cls.get_name()}' has been defined multiple times. "
@@ -782,11 +784,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                         )
 
         # ComputedVar with cache=False always need to be recomputed
-        cls._always_dirty_computed_vars = set(
+        cls._always_dirty_computed_vars = {
             cvar_name
             for cvar_name, cvar in cls.computed_vars.items()
             if not cvar._cache
-        )
+        }
 
         # Any substate containing a ComputedVar with cache=False always needs to be recomputed
         if cls._always_dirty_computed_vars:
@@ -1305,9 +1307,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return
 
         if name in self.backend_vars:
-            # abort if unchanged
-            if self._backend_vars.get(name) == value:
-                return
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
@@ -1856,11 +1855,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             Set of computed vars to include in the delta.
         """
-        return set(
+        return {
             cvar
             for cvar in self.computed_vars
             if self.computed_vars[cvar].needs_update(instance=self)
-        )
+        }
 
     def _dirty_computed_vars(
         self, from_vars: set[str] | None = None, include_backend: bool = True
@@ -1874,12 +1873,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             Set of computed vars to include in the delta.
         """
-        return set(
+        return {
             cvar
             for dirty_var in from_vars or self.dirty_vars
             for cvar in self._computed_var_dependencies[dirty_var]
             if include_backend or not self.computed_vars[cvar]._backend
-        )
+        }
 
     @classmethod
     def _potentially_dirty_substates(cls) -> set[Type[BaseState]]:
@@ -1889,16 +1888,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             Set of State classes that may need to be fetched to recalc computed vars.
         """
         # _always_dirty_substates need to be fetched to recalc computed vars.
-        fetch_substates = set(
+        fetch_substates = {
             cls.get_class_substate((cls.get_name(), *substate_name.split(".")))
             for substate_name in cls._always_dirty_substates
-        )
+        }
         for dependent_substates in cls._substate_var_dependencies.values():
             fetch_substates.update(
-                set(
+                {
                     cls.get_class_substate((cls.get_name(), *substate_name.split(".")))
                     for substate_name in dependent_substates
-                )
+                }
             )
         return fetch_substates
 
@@ -2200,7 +2199,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         return md5(
             pickle.dumps(
-                list(sorted(_field_tuple(field_name) for field_name in cls.base_vars))
+                sorted(_field_tuple(field_name) for field_name in cls.base_vars)
             )
         ).hexdigest()
 
@@ -2834,6 +2833,7 @@ class StateManager(Base, ABC):
                     redis=redis,
                     token_expiration=config.redis_token_expiration,
                     lock_expiration=config.redis_lock_expiration,
+                    lock_warning_threshold=config.redis_lock_warning_threshold,
                 )
         raise InvalidStateManagerMode(
             f"Expected one of: DISK, MEMORY, REDIS, got {config.state_manager_mode}"
@@ -3203,6 +3203,15 @@ def _default_lock_expiration() -> int:
     return get_config().redis_lock_expiration
 
 
+def _default_lock_warning_threshold() -> int:
+    """Get the default lock warning threshold.
+
+    Returns:
+        The default lock warning threshold.
+    """
+    return get_config().redis_lock_warning_threshold
+
+
 class StateManagerRedis(StateManager):
     """A state manager that stores states in redis."""
 
@@ -3214,6 +3223,11 @@ class StateManagerRedis(StateManager):
 
     # The maximum time to hold a lock (ms).
     lock_expiration: int = pydantic.Field(default_factory=_default_lock_expiration)
+
+    # The maximum time to hold a lock (ms) before warning.
+    lock_warning_threshold: int = pydantic.Field(
+        default_factory=_default_lock_warning_threshold
+    )
 
     # The keyspace subscription string when redis is waiting for lock to be released
     _redis_notify_keyspace_events: str = (
@@ -3333,7 +3347,7 @@ class StateManagerRedis(StateManager):
             state_cls = self.state.get_class_substate(state_path)
         else:
             raise RuntimeError(
-                "StateManagerRedis requires token to be specified in the form of {token}_{state_full_name}"
+                f"StateManagerRedis requires token to be specified in the form of {{token}}_{{state_full_name}}, but got {token}"
             )
 
         # The deserialized or newly created (sub)state instance.
@@ -3402,6 +3416,17 @@ class StateManagerRedis(StateManager):
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
                 "or use `@rx.event(background=True)` decorator for long-running tasks."
             )
+        elif lock_id is not None:
+            time_taken = self.lock_expiration / 1000 - (
+                await self.redis.ttl(self._lock_key(token))
+            )
+            if time_taken > self.lock_warning_threshold / 1000:
+                console.warn(
+                    f"Lock for token {token} was held too long {time_taken=}s, "
+                    f"use `@rx.event(background=True)` decorator for long-running tasks.",
+                    dedupe=True,
+                )
+
         client_token, substate_name = _split_substate_key(token)
         # If the substate name on the token doesn't match the instance name, it cannot have a parent.
         if state.parent_state is not None and state.get_full_name() != substate_name:
@@ -3410,17 +3435,16 @@ class StateManagerRedis(StateManager):
             )
 
         # Recursively set_state on all known substates.
-        tasks = []
-        for substate in state.substates.values():
-            tasks.append(
-                asyncio.create_task(
-                    self.set_state(
-                        token=_substate_key(client_token, substate),
-                        state=substate,
-                        lock_id=lock_id,
-                    )
+        tasks = [
+            asyncio.create_task(
+                self.set_state(
+                    _substate_key(client_token, substate),
+                    substate,
+                    lock_id,
                 )
             )
+            for substate in state.substates.values()
+        ]
         # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
         if state._get_was_touched():
             pickle_state = state._serialize()
@@ -3450,6 +3474,27 @@ class StateManagerRedis(StateManager):
             state = await self.get_state(token)
             yield state
             await self.set_state(token, state, lock_id)
+
+    @validator("lock_warning_threshold")
+    @classmethod
+    def validate_lock_warning_threshold(cls, lock_warning_threshold: int, values):
+        """Validate the lock warning threshold.
+
+        Args:
+            lock_warning_threshold: The lock warning threshold.
+            values: The validated attributes.
+
+        Returns:
+            The lock warning threshold.
+
+        Raises:
+            InvalidLockWarningThresholdError: If the lock warning threshold is invalid.
+        """
+        if lock_warning_threshold >= (lock_expiration := values["lock_expiration"]):
+            raise InvalidLockWarningThresholdError(
+                f"The lock warning threshold({lock_warning_threshold}) must be less than the lock expiration time({lock_expiration})."
+            )
+        return lock_warning_threshold
 
     @staticmethod
     def _lock_key(token: str) -> bytes:
@@ -3601,33 +3646,30 @@ class MutableProxy(wrapt.ObjectProxy):
     """A proxy for a mutable object that tracks changes."""
 
     # Methods on wrapped objects which should mark the state as dirty.
-    __mark_dirty_attrs__ = set(
-        [
-            "add",
-            "append",
-            "clear",
-            "difference_update",
-            "discard",
-            "extend",
-            "insert",
-            "intersection_update",
-            "pop",
-            "popitem",
-            "remove",
-            "reverse",
-            "setdefault",
-            "sort",
-            "symmetric_difference_update",
-            "update",
-        ]
-    )
+    __mark_dirty_attrs__ = {
+        "add",
+        "append",
+        "clear",
+        "difference_update",
+        "discard",
+        "extend",
+        "insert",
+        "intersection_update",
+        "pop",
+        "popitem",
+        "remove",
+        "reverse",
+        "setdefault",
+        "sort",
+        "symmetric_difference_update",
+        "update",
+    }
+
     # Methods on wrapped objects might return mutable objects that should be tracked.
-    __wrap_mutable_attrs__ = set(
-        [
-            "get",
-            "setdefault",
-        ]
-    )
+    __wrap_mutable_attrs__ = {
+        "get",
+        "setdefault",
+    }
 
     # These internal attributes on rx.Base should NOT be wrapped in a MutableProxy.
     __never_wrap_base_attrs__ = set(Base.__dict__) - {"set"} | set(
@@ -3670,7 +3712,7 @@ class MutableProxy(wrapt.ObjectProxy):
         self,
         wrapped=None,
         instance=None,
-        args=tuple(),
+        args=(),
         kwargs=None,
     ) -> Any:
         """Mark the state as dirty, then call a wrapped function.
@@ -3926,7 +3968,7 @@ class ImmutableMutableProxy(MutableProxy):
         self,
         wrapped=None,
         instance=None,
-        args=tuple(),
+        args=(),
         kwargs=None,
     ) -> Any:
         """Raise an exception when an attempt is made to modify the object.

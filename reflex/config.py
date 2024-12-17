@@ -684,6 +684,9 @@ class Config(Base):
     # Maximum expiration lock time for redis state manager
     redis_lock_expiration: int = constants.Expiration.LOCK
 
+    # Maximum lock time before warning for redis state manager.
+    redis_lock_warning_threshold: int = constants.Expiration.LOCK_WARNING_THRESHOLD
+
     # Token expiration time for redis state manager
     redis_token_expiration: int = constants.Expiration.TOKEN
 
@@ -870,7 +873,7 @@ def get_config(reload: bool = False) -> Config:
     with _config_lock:
         sys_path = sys.path.copy()
         sys.path.clear()
-        sys.path.append(os.getcwd())
+        sys.path.append(str(Path.cwd()))
         try:
             # Try to import the module with only the current directory in the path.
             return _get_config()

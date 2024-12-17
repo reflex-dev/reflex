@@ -51,11 +51,10 @@ def main():
     parser.add_argument("--server-pid", type=int)
     args = parser.parse_args()
     executor = ThreadPoolExecutor(max_workers=len(args.port))
-    futures = []
-    for p in args.port:
-        futures.append(
-            executor.submit(_wait_for_port, p, args.server_pid, args.timeout)
-        )
+    futures = [
+        executor.submit(_wait_for_port, p, args.server_pid, args.timeout)
+        for p in args.port
+    ]
     for f in as_completed(futures):
         ok, msg = f.result()
         if ok:
