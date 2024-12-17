@@ -479,6 +479,11 @@ def deploy(
         "--project",
         help="project id to deploy to",
     ),
+    project_name: Optional[str] = typer.Option(
+        None,
+        "--project-name",
+        help="The name of the project to deploy under.",
+    ),
     token: Optional[str] = typer.Option(
         None,
         "--token",
@@ -539,6 +544,7 @@ def deploy(
         loglevel=type(loglevel).INFO,  # type: ignore
         token=token,
         project=project,
+        project_name=project_name
     )
 
 
