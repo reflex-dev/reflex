@@ -285,7 +285,8 @@ def true_type_for_pydantic_field(f: ModelField):
     type_ = f.outer_type_
 
     if (
-        (isinstance(f.annotation, str) and f.annotation.startswith("Optional"))
+        f.field_info.default is None
+        or (isinstance(f.annotation, str) and f.annotation.startswith("Optional"))
         or (
             isinstance(f.annotation, ForwardRef)
             and f.annotation.__forward_arg__.startswith("Optional")
