@@ -97,4 +97,5 @@ def test_table(page: Page, table_app: AppHarness):
     # Check cells
     rows = table.get_by_role("cell").all_inner_texts()
     for i, expected_row in enumerate(expected_cells_data):
-        assert [rows[idx := i * 2], rows[idx + 1]] == expected_row
+        idx = i * 2
+        assert [rows[idx], rows[idx + 1]] == expected_row

@@ -446,7 +446,7 @@ def deploy(
         list(),
         "-r",
         "--region",
-        help="The regions to deploy to. `reflex apps regions` For multiple envs, repeat this option, e.g. --region sjc --region iad",
+        help="The regions to deploy to. `reflex cloud regions` For multiple envs, repeat this option, e.g. --region sjc --region iad",
     ),
     envs: List[str] = typer.Option(
         list(),
@@ -456,7 +456,7 @@ def deploy(
     vmtype: Optional[str] = typer.Option(
         None,
         "--vmtype",
-        help="Vm type id. Run `reflex apps vmtypes` to get options.",
+        help="Vm type id. Run `reflex cloud vmtypes` to get options.",
     ),
     hostname: Optional[str] = typer.Option(
         None,

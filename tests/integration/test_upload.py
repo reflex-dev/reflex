@@ -381,9 +381,22 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
     await asyncio.sleep(0.3)
     cancel_button.click()
 
-    # look up the backend state and assert on progress
+    # Wait a bit for the upload to get cancelled.
+    await asyncio.sleep(0.5)
+
+    # Get interim progress dicts saved in the on_upload_progress handler.
+    async def _progress_dicts():
+        state = await upload_file.get_state(substate_token)
+        return state.substates[state_name].progress_dicts
+
+    # We should have _some_ progress
+    assert await AppHarness._poll_for_async(_progress_dicts)
+
+    # But there should never be a final progress record for a cancelled upload.
+    for p in await _progress_dicts():
+        assert p["progress"] != 1
+
     state = await upload_file.get_state(substate_token)
-    assert state.substates[state_name].progress_dicts
     file_data = state.substates[state_name]._file_data
     assert isinstance(file_data, dict)
     normalized_file_data = {Path(k).name: v for k, v in file_data.items()}
