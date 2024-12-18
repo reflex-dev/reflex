@@ -83,7 +83,7 @@ class DBConfig(Base):
         )
 
     @classmethod
-    def postgresql_psycopg2(
+    def postgresql_psycopg(
         cls,
         database: str,
         username: str,
@@ -91,7 +91,7 @@ class DBConfig(Base):
         host: str | None = None,
         port: int | None = 5432,
     ) -> DBConfig:
-        """Create an instance with postgresql+psycopg2 engine.
+        """Create an instance with postgresql+psycopg engine.
 
         Args:
             database: Database name.
@@ -104,7 +104,7 @@ class DBConfig(Base):
             DBConfig instance.
         """
         return cls(
-            engine="postgresql+psycopg2",
+            engine="postgresql+psycopg",
             username=username,
             password=password,
             host=host,
