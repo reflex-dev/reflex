@@ -125,8 +125,8 @@ def _run(
     env: constants.Env = constants.Env.DEV,
     frontend: bool = True,
     backend: bool = True,
-    frontend_port: str = str(config.frontend_port),
-    backend_port: str = str(config.backend_port),
+    frontend_port: int = config.frontend_port,
+    backend_port: int = config.backend_port,
     backend_host: str = config.backend_host,
     loglevel: constants.LogLevel = config.loglevel,
 ):
@@ -160,18 +160,22 @@ def _run(
     # Find the next available open port if applicable.
     if frontend:
         frontend_port = processes.handle_port(
-            "frontend", frontend_port, str(constants.DefaultPorts.FRONTEND_PORT)
+            "frontend",
+            frontend_port,
+            constants.DefaultPorts.FRONTEND_PORT,
         )
 
     if backend:
         backend_port = processes.handle_port(
-            "backend", backend_port, str(constants.DefaultPorts.BACKEND_PORT)
+            "backend",
+            backend_port,
+            constants.DefaultPorts.BACKEND_PORT,
         )
 
     # Apply the new ports to the config.
-    if frontend_port != str(config.frontend_port):
+    if frontend_port != config.frontend_port:
         config._set_persistent(frontend_port=frontend_port)
-    if backend_port != str(config.backend_port):
+    if backend_port != config.backend_port:
         config._set_persistent(backend_port=backend_port)
 
     # Reload the config to make sure the env vars are persistent.
@@ -262,10 +266,10 @@ def run(
         help="Execute only backend.",
         envvar=environment.REFLEX_BACKEND_ONLY.name,
     ),
-    frontend_port: str = typer.Option(
+    frontend_port: int = typer.Option(
         config.frontend_port, help="Specify a different frontend port."
     ),
-    backend_port: str = typer.Option(
+    backend_port: int = typer.Option(
         config.backend_port, help="Specify a different backend port."
     ),
     backend_host: str = typer.Option(

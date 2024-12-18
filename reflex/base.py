@@ -80,7 +80,7 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
             default=serialize,
         )
 
-    def set(self, **kwargs):
+    def set(self, **kwargs: Any):
         """Set multiple fields and return the object.
 
         Args:

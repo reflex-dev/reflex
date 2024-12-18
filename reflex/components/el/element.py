@@ -6,7 +6,7 @@ from reflex.components.component import Component
 class Element(Component):
     """The base class for all raw HTML elements."""
 
-    def __eq__(self, other):
+    def __eq__(self, other: object):
         """Two elements are equal if they have the same tag.
 
         Args:

@@ -17,7 +17,7 @@ rx.text(
 
 from __future__ import annotations
 
-from typing import Dict, List, Literal, Optional, Union, get_args
+from typing import Any, Dict, List, Literal, Optional, Union, get_args
 
 from reflex.components.component import BaseComponent
 from reflex.components.core.cond import Cond, color_mode_cond, cond
@@ -78,17 +78,19 @@ position_map: Dict[str, List[str]] = {
 
 
 # needed to inverse contains for find
-def _find(const: List[str], var):
+def _find(const: List[str], var: Any):
     return LiteralArrayVar.create(const).contains(var)
 
 
-def _set_var_default(props, position, prop, default1, default2=""):
+def _set_var_default(
+    props: dict, position: Any, prop: str, default1: str, default2: str = ""
+):
     props.setdefault(
         prop, cond(_find(position_map[prop], position), default1, default2)
     )
 
 
-def _set_static_default(props, position, prop, default):
+def _set_static_default(props: dict, position: Any, prop: str, default: str):
     if prop in position:
         props.setdefault(prop, default)
 
@@ -142,7 +144,7 @@ class ColorModeIconButton(IconButton):
 
         if allow_system:
 
-            def color_mode_item(_color_mode):
+            def color_mode_item(_color_mode: str):
                 return dropdown_menu.item(
                     _color_mode.title(), on_click=set_color_mode(_color_mode)
                 )
