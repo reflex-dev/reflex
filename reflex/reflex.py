@@ -439,7 +439,6 @@ def deploy(
         config.app_name,
         "--app-name",
         help="The name of the App to deploy under.",
-        hidden=True,
     ),
     app_id: str = typer.Option(
         None,
@@ -493,6 +492,11 @@ def deploy(
         None,
         "--token",
         help="token to use for auth",
+    ),
+    config_page: Optional[str] = typer.Option(
+        "cloud.yml",
+        "--config",
+        help="The path to the config file to use.",
     ),
 ):
     """Deploy the app to the Reflex hosting service."""
@@ -551,6 +555,7 @@ def deploy(
         token=token,
         project=project,
         project_name=project_name,
+        config_path=config_page,
     )
 
 
