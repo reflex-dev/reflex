@@ -440,7 +440,6 @@ def deploy(
         config.app_name,
         "--app-name",
         help="The name of the App to deploy under.",
-        hidden=True,
     ),
     app_id: str = typer.Option(
         None,
