@@ -439,7 +439,11 @@ def deploy(
         config.app_name,
         "--app-name",
         help="The name of the App to deploy under.",
-        hidden=True,
+    ),
+    app_id: str = typer.Option(
+        None,
+        "--app-id",
+        help="The ID of the App to deploy under.",
     ),
     regions: List[str] = typer.Option(
         [],
@@ -479,10 +483,20 @@ def deploy(
         "--project",
         help="project id to deploy to",
     ),
+    project_name: Optional[str] = typer.Option(
+        None,
+        "--project-name",
+        help="The name of the project to deploy under.",
+    ),
     token: Optional[str] = typer.Option(
         None,
         "--token",
         help="token to use for auth",
+    ),
+    config_page: Optional[str] = typer.Option(
+        "cloud.yml",
+        "--config",
+        help="The path to the config file to use.",
     ),
 ):
     """Deploy the app to the Reflex hosting service."""
@@ -516,6 +530,7 @@ def deploy(
 
     hosting_cli.deploy(
         app_name=app_name,
+        app_id=app_id,
         export_fn=lambda zip_dest_dir,
         api_url,
         deploy_url,
@@ -539,6 +554,8 @@ def deploy(
         loglevel=type(loglevel).INFO,  # type: ignore
         token=token,
         project=project,
+        project_name=project_name,
+        config_path=config_page,
     )
 
 
