@@ -1,5 +1,5 @@
 {% extends "web/pages/base_page.js.jinja2" %}
-
+{% from "web/pages/macros.js.jinja2" import renderHooks %}
 {% block export %}
 {% for component in components %}
 
@@ -8,9 +8,8 @@
 {% endfor %}
 
 export const {{component.name}} = memo(({ {{-component.props|join(", ")-}} }) => {
-    {% for hook in component.hooks %}
-    {{ hook }}
-    {% endfor %}
+    {{ renderHooks(component.hooks) }}
+
     return(
         {{utils.render(component.render)}}
       )
