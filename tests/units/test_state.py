@@ -60,6 +60,7 @@ from reflex.utils.exceptions import (
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSerializationError,
+    UnretrievableVarValueError,
 )
 from reflex.utils.format import json_dumps
 from reflex.vars.base import Var, computed_var
@@ -3764,3 +3765,32 @@ async def test_upcast_event_handler_arg(handler, payload):
     state = UpcastState()
     async for update in state._process_event(handler, state, payload):
         assert update.delta == {UpcastState.get_full_name(): {"passed": True}}
+
+
+@pytest.mark.asyncio
+async def test_get_var_value(state_manager, token):
+    """Test that get_var_value works correctly.
+
+    Args:
+        state_manager: The state manager to use.
+        token: A token.
+    """
+    state = await state_manager.get_state(_substate_key(token, TestState))
+
+    # State Var from same state
+    assert await state.get_var_value(TestState.num1) == 0
+    state.num1 = 42
+    assert await state.get_var_value(TestState.num1) == 42
+
+    # State Var from another state
+    child_state = await state.get_state(ChildState)
+    assert await state.get_var_value(ChildState.count) == 23
+    child_state.count = 66
+    assert await state.get_var_value(ChildState.count) == 66
+
+    # LiteralVar with known value
+    assert await state.get_var_value(rx.Var.create([1, 2, 3])) == [1, 2, 3]
+
+    # Generic Var with no state
+    with pytest.raises(UnretrievableVarValueError):
+        await state.get_var_value(rx.Var("undefined"))

@@ -107,6 +107,7 @@ from reflex.utils.exceptions import (
     StateSchemaMismatchError,
     StateSerializationError,
     StateTooLargeError,
+    UnretrievableVarValueError,
 )
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import serializer
@@ -1595,6 +1596,36 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Slow case - fetch missing parent states from redis.
         return await self._get_state_from_redis(state_cls)
+
+    async def get_var_value(self, var: Var) -> Any:
+        """Get the value of an rx.Var from another state.
+
+        Args:
+            var: The var to get the value for.
+
+        Returns:
+            The value of the var.
+
+        Raises:
+            UnretrievableVarValueError: If the var does not have a literal value
+                or associated state.
+        """
+        # Fast case: this is a literal var and the value is known.
+        if hasattr(var, "_var_value"):
+            return var._var_value
+        var_data = var._get_all_var_data()
+        if var_data is None or not var_data.state:
+            raise UnretrievableVarValueError(
+                f"Unable to retrieve value for {var._js_expr}: not associated with any state."
+            )
+        # Fastish case: this var belongs to this state
+        if var_data.state == self.get_full_name():
+            return getattr(self, var_data.field_name)
+        # Slow case: this var belongs to another state
+        other_state = await self.get_state(
+            self._get_root_state().get_class_substate(var_data.state)
+        )
+        return getattr(other_state, var_data.field_name)
 
     def _get_event_handler(
         self, event: Event
