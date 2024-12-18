@@ -11,7 +11,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
 from reflex.state import (
-    State,
     StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
@@ -278,6 +277,7 @@ async def test_client_side_state(
         set_sub_sub_state_button.click()
 
     token = poll_for_token()
+    assert token is not None
 
     # get a reference to all cookie and local storage elements
     c1 = driver.find_element(By.ID, "c1")
@@ -613,16 +613,7 @@ async def test_client_side_state(
 
     # Simulate state expiration
     if isinstance(client_side.state_manager, StateManagerRedis):
-        await client_side.state_manager.redis.delete(
-            _substate_key(token, State.get_full_name())
-        )
-        await client_side.state_manager.redis.delete(_substate_key(token, state_name))
-        await client_side.state_manager.redis.delete(
-            _substate_key(token, sub_state_name)
-        )
-        await client_side.state_manager.redis.delete(
-            _substate_key(token, sub_sub_state_name)
-        )
+        await client_side.state_manager.redis.delete(token)
     elif isinstance(client_side.state_manager, (StateManagerMemory, StateManagerDisk)):
         del client_side.state_manager.states[token]
     if isinstance(client_side.state_manager, StateManagerDisk):
@@ -678,9 +669,8 @@ async def test_client_side_state(
 
     # Get the backend state and ensure the values are still set
     async def get_sub_state():
-        root_state = await client_side.get_state(
-            _substate_key(token or "", sub_state_name)
-        )
+        assert token is not None
+        root_state = await client_side.get_state(_substate_key(token, sub_state_name))
         state = root_state.substates[client_side.get_state_name("_client_side_state")]
         sub_state = state.substates[
             client_side.get_state_name("_client_side_sub_state")
