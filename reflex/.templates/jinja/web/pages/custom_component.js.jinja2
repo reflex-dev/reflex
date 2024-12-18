@@ -8,7 +8,7 @@
 {% endfor %}
 
 export const {{component.name}} = memo(({ {{-component.props|join(", ")-}} }) => {
-    {{ renderHooks(component.hooks.items()) }}
+    {{ renderHooks(component.hooks) }}
 
     return(
         {{utils.render(component.render)}}

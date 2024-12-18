@@ -5,9 +5,10 @@ from jinja2 import Environment, FileSystemLoader, Template
 from reflex import constants
 from reflex.constants import Hooks
 from reflex.utils.format import format_state_name, json_dumps
+from reflex.vars.base import VarData
 
 
-def _sort_hooks(hooks):
+def _sort_hooks(hooks: dict[str, VarData | None]):
     """Sort the hooks by their position.
 
     Args:
@@ -22,7 +23,7 @@ def _sort_hooks(hooks):
         Hooks.HookPosition.POST_TRIGGER: [],
     }
 
-    for hook, data in hooks:
+    for hook, data in hooks.items():
         if data and data.position and data.position == Hooks.HookPosition.INTERNAL:
             sorted_hooks[Hooks.HookPosition.INTERNAL].append((hook, data))
         elif not data or (
