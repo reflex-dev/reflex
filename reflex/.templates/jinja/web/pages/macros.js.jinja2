@@ -1,0 +1,54 @@
+{% macro sortHooks(hooks) %}
+    {% set internal_hooks = [] %}
+    {% set pre_trigger_hooks = [] %}
+    {% set post_trigger_hooks = [] %}
+
+    {% for hook, data in hooks %}
+        {% if data and data.position and data.position == const.hook_position.INTERNAL %}
+            {% set internal_hooks = internal_hooks + [hook] %}
+        {% elif data and data.position and data.position == const.hook_position.POST_TRIGGER %}
+            {% set post_trigger_hooks = post_trigger_hooks+ [hook] %}
+        {% else %}
+            {% set pre_trigger_hooks = pre_trigger_hooks + [hook] %}
+        {% endif %}
+    {% endfor %}
+{% endmacro %}
+
+{% macro renderHooks(hooks) %}
+  {{ sortHooks(hooks) }}
+
+  {# Render the grouped hooks #}
+  {% for hook in internal_hooks %}
+  {{ hook }}
+  {% endfor %}
+
+  {% for hook in pre_trigger_hooks %}
+  {{ hook }}
+  {% endfor %}
+
+  {% for hook in post_trigger_hooks %}
+  {{ hook }}
+  {% endfor %}
+{% endmacro %}
+
+{% macro renderHooksWithMemo(hooks, memo)%}
+  {{ sortHooks(hooks) }}
+  
+  {# Render the grouped hooks #}
+  {% for hook in internal_hooks %}
+  {{ hook }}
+  {% endfor %}
+
+  {% for hook in pre_trigger_hooks %}
+  {{ hook }}
+  {% endfor %}
+
+  {% for hook in memo %}
+  {{ hook }}
+  {% endfor %}
+
+  {% for hook in post_trigger_hooks %}
+  {{ hook }}
+  {% endfor %}
+
+{% endmacro %}
