@@ -141,6 +141,9 @@ STYLE = get_template("web/styles/styles.css.jinja2")
 # Code that generate the package json file
 PACKAGE_JSON = get_template("web/package.json.jinja2")
 
+# Template containing some macros used in the web pages.
+MACROS = get_template("web/pages/macros.js.jinja2")
+
 # Code that generate the pyproject.toml file for custom components.
 CUSTOM_COMPONENTS_PYPROJECT_TOML = get_template(
     "custom_components/pyproject.toml.jinja2"
