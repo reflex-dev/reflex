@@ -1,5 +1,7 @@
 """Templates to use in the reflex compiler."""
 
+from __future__ import annotations
+
 from jinja2 import Environment, FileSystemLoader, Template
 
 from reflex import constants
