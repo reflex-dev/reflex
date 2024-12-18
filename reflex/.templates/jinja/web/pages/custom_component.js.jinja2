@@ -8,9 +8,18 @@
 {% endfor %}
 
 export const {{component.name}} = memo(({ {{-component.props|join(", ")-}} }) => {
-    {% for hook in component.hooks %}
+    {% for hook, data in component.hooks if data and data.position and data.position == const.hook_position.INTERNAL %}
     {{ hook }}
     {% endfor %}
+
+    {% for hook, data in component.hooks if not data or (not data.position or data.position == const.hook_position.PRE_TRIGGER) %}
+    {{ hook }}
+    {% endfor %}
+
+    {% for hook, data in component.hooks if data and data.position and data.position == const.hook_position.POST_TRIGGER %}
+    {{ hook }}
+    {% endfor %}
+
     return(
         {{utils.render(component.render)}}
       )

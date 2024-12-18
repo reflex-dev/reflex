@@ -1595,7 +1595,7 @@ class Component(BaseComponent, ABC):
         code = {}
 
         # Add the internal hooks for this component.
-        code.update(self._get_all_hooks_internal())
+        code.update(self._get_hooks_internal())
 
         # Add the hook code for this component.
         hooks = self._get_hooks()

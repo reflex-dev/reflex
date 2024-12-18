@@ -19,7 +19,15 @@ import * as {{library_alias}} from "{{library_path}}";
 {% block export %}
 function AppWrap({children}) {
 
-  {% for hook in hooks %}
+  {% for hook, data in hooks if data and data.position and data.position == const.hook_position.INTERNAL %}
+  {{ hook }}
+  {% endfor %}
+
+  {% for hook, data in hooks if not data or (not data.position or data.position == const.hook_position.PRE_TRIGGER) %}
+  {{ hook }}
+  {% endfor %}
+
+  {% for hook, data in hooks if data and data.position and data.position == const.hook_position.POST_TRIGGER %}
   {{ hook }}
   {% endfor %}
 

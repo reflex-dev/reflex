@@ -8,7 +8,15 @@
 
 {% block export %}
 export default function Component() {
-  {% for hook in hooks %}
+  {% for hook, data in hooks.items() if data and data.position and data.position == const.hook_position.INTERNAL %}
+  {{ hook }}
+  {% endfor %}
+
+  {% for hook, data in hooks.items() if not data or (not data.position or data.position == const.hook_position.PRE_TRIGGER) %}
+  {{ hook }}
+  {% endfor %}
+
+  {% for hook, data in hooks.items() if data and data.position and data.position == const.hook_position.POST_TRIGGER %}
   {{ hook }}
   {% endfor %}
 
