@@ -424,7 +424,6 @@ const {_LANGUAGE!s} = match ? match[1] : '';
 
         for _component in self.component_map.values():
             comp = _component(_MOCK_ARG)
-            hooks.update(comp._get_all_hooks_internal())
             hooks.update(comp._get_all_hooks())
         formatted_hooks = MACROS.module.renderHooks(hooks)  # type: ignore
         return f"""

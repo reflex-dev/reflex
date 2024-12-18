@@ -2418,7 +2418,7 @@ class MemoizationLeaf(Component):
             The memoization leaf
         """
         comp = super().create(*children, **props)
-        if comp._get_all_hooks() or comp._get_all_hooks_internal():
+        if comp._get_all_hooks():
             comp._memoization_mode = cls._memoization_mode.copy(
                 update={"disposition": MemoizationDisposition.ALWAYS}
             )
