@@ -12,6 +12,7 @@ import threading
 import urllib.parse
 from importlib.util import find_spec
 from pathlib import Path
+from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -82,7 +83,7 @@ class DBConfig(Base):
         )
 
     @classmethod
-    def postgresql_psycopg(
+    def postgresql_psycopg2(
         cls,
         database: str,
         username: str,
@@ -90,7 +91,7 @@ class DBConfig(Base):
         host: str | None = None,
         port: int | None = 5432,
     ) -> DBConfig:
-        """Create an instance with postgresql+psycopg engine.
+        """Create an instance with postgresql+psycopg2 engine.
 
         Args:
             database: Database name.
@@ -103,7 +104,7 @@ class DBConfig(Base):
             DBConfig instance.
         """
         return cls(
-            engine="postgresql+psycopg",
+            engine="postgresql+psycopg2",
             username=username,
             password=password,
             host=host,
@@ -604,6 +605,9 @@ class Config(Base):
     # The name of the app (should match the name of the app directory).
     app_name: str
 
+    # The path to the app module.
+    app_module_path: Optional[str] = None
+
     # The log level to use.
     loglevel: constants.LogLevel = constants.LogLevel.DEFAULT
 
@@ -684,9 +688,6 @@ class Config(Base):
     # Maximum expiration lock time for redis state manager
     redis_lock_expiration: int = constants.Expiration.LOCK
 
-    # Maximum lock time before warning for redis state manager.
-    redis_lock_warning_threshold: int = constants.Expiration.LOCK_WARNING_THRESHOLD
-
     # Token expiration time for redis state manager
     redis_token_expiration: int = constants.Expiration.TOKEN
 
@@ -727,12 +728,33 @@ class Config(Base):
             )
 
     @property
+    def app_module(self) -> ModuleType | None:
+        """Get the app module.
+
+        Returns:
+            The app module.
+        """
+
+        def load_via_spec(path):
+            module_name = Path(path).stem
+            spec = importlib.util.spec_from_file_location(module_name, path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return module
+
+        if self.app_module_path:
+            return load_via_spec(self.app_module_path)
+        return None
+
+    @property
     def module(self) -> str:
         """Get the module name of the app.
 
         Returns:
             The module name.
         """
+        if self.app_module:
+            return f"{Path(self.app_module.__file__).parent.name}.{Path(self.app_module.__file__).stem}"
         return ".".join([self.app_name, self.app_name])
 
     def update_from_env(self) -> dict[str, Any]:

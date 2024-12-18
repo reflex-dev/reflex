@@ -291,7 +291,11 @@ def get_app(reload: bool = False) -> ModuleType:
             )
         module = config.module
         sys.path.insert(0, str(Path.cwd()))
-        app = __import__(module, fromlist=(constants.CompileVars.APP,))
+        app = (
+            __import__(module, fromlist=(constants.CompileVars.APP,))
+            if not config.app_module
+            else config.app_module
+        )
 
         if reload:
             from reflex.state import reload_state_module
@@ -306,6 +310,21 @@ def get_app(reload: bool = False) -> ModuleType:
     except Exception as ex:
         telemetry.send_error(ex, context="frontend")
         raise
+
+
+def get_and_validate_app(reload: bool = False):
+    """Get the app module based on the default config and validate it.
+
+    Args:
+        reload: Re-import the app module from disk
+    """
+    from reflex.app import App
+
+    app_module = get_app(reload=reload)
+    app = getattr(app_module, constants.CompileVars.APP)
+    if not isinstance(app, App):
+        raise RuntimeError("The app object in rxconfig must be an instance of rx.App.")
+    return app
 
 
 def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
