@@ -3,7 +3,41 @@
 from jinja2 import Environment, FileSystemLoader, Template
 
 from reflex import constants
+from reflex.constants import Hooks
 from reflex.utils.format import format_state_name, json_dumps
+
+
+def _sort_hooks(hooks):
+    """Sort the hooks by their position.
+
+    Args:
+        hooks: The hooks to sort.
+
+    Returns:
+        The sorted hooks.
+    """
+    sorted_hooks = {
+        Hooks.HookPosition.INTERNAL: [],
+        Hooks.HookPosition.PRE_TRIGGER: [],
+        Hooks.HookPosition.POST_TRIGGER: [],
+    }
+
+    for hook, data in hooks:
+        if data and data.position and data.position == Hooks.HookPosition.INTERNAL:
+            sorted_hooks[Hooks.HookPosition.INTERNAL].append((hook, data))
+        elif not data or (
+            not data.position
+            or data.position == constants.Hooks.HookPosition.PRE_TRIGGER
+        ):
+            sorted_hooks[Hooks.HookPosition.PRE_TRIGGER].append((hook, data))
+        elif (
+            data
+            and data.position
+            and data.position == constants.Hooks.HookPosition.POST_TRIGGER
+        ):
+            sorted_hooks[Hooks.HookPosition.POST_TRIGGER].append((hook, data))
+
+    return sorted_hooks
 
 
 class ReflexJinjaEnvironment(Environment):
@@ -47,6 +81,7 @@ class ReflexJinjaEnvironment(Environment):
             "frontend_exception_state": constants.CompileVars.FRONTEND_EXCEPTION_STATE_FULL,
             "hook_position": constants.Hooks.HookPosition,
         }
+        self.globals["sort_hooks"] = _sort_hooks
 
 
 def get_template(name: str) -> Template:
