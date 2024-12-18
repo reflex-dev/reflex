@@ -441,6 +441,11 @@ def deploy(
         help="The name of the App to deploy under.",
         hidden=True,
     ),
+    app_id: str = typer.Option(
+        None,
+        "--app-id",
+        help="The ID of the App to deploy under.",
+    ),
     regions: List[str] = typer.Option(
         [],
         "-r",
@@ -521,6 +526,7 @@ def deploy(
 
     hosting_cli.deploy(
         app_name=app_name,
+        app_id=app_id,
         export_fn=lambda zip_dest_dir,
         api_url,
         deploy_url,
@@ -544,7 +550,7 @@ def deploy(
         loglevel=type(loglevel).INFO,  # type: ignore
         token=token,
         project=project,
-        project_name=project_name
+        project_name=project_name,
     )
 
 
