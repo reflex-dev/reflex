@@ -336,6 +336,7 @@ def login(loglevel: constants.LogLevel = typer.Option(config.loglevel)):
 
     validated_info = hosting_cli.login()
     if validated_info is not None:
+        _skip_compile()  # Allow running outside of an app dir
         telemetry.send("login", user_uuid=validated_info.get("user_id"))
 
 
