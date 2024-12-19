@@ -113,41 +113,41 @@ class Plotly(NoSSRComponent):
         """Create the Plotly component.
 
         Args:
-        *children: The children of the component.
-        data: The figure to display. This can be a plotly figure or a plotly data json.
-        layout: The layout of the graph.
-        template: The template for visual appearance of the graph.
-        config: The config of the graph.
-        use_resize_handler: If true, the graph will resize when the window is resized.
-        on_after_plot: Fired after the plot is redrawn.
-        on_animated: Fired after the plot was animated.
-        on_animating_frame: Fired while animating a single frame (does not currently pass data through).
-        on_animation_interrupted: Fired when an animation is interrupted (to start a new animation for example).
-        on_autosize: Fired when the plot is responsively sized.
-        on_before_hover: Fired whenever mouse moves over a plot.
-        on_button_clicked: Fired when a plotly UI button is clicked.
-        on_click: Fired when the plot is clicked.
-        on_deselect: Fired when a selection is cleared (via double click).
-        on_double_click: Fired when the plot is double clicked.
-        on_hover: Fired when a plot element is hovered over.
-        on_relayout: Fired after the plot is laid out (zoom, pan, etc).
-        on_relayouting: Fired while the plot is being laid out.
-        on_restyle: Fired after the plot style is changed.
-        on_redraw: Fired after the plot is redrawn.
-        on_selected: Fired after selecting plot elements.
-        on_selecting: Fired while dragging a selection.
-        on_transitioning: Fired while an animation is occurring.
-        on_transition_interrupted: Fired when a transition is stopped early.
-        on_unhover: Fired when a hovered element is no longer hovered.
-        style: The style of the component.
-        key: A unique key for the component.
-        id: The id for the component.
-        class_name: The class name for the component.
-        autofocus: Whether the component should take the focus once the page is loaded
-        custom_attrs: custom attribute
-        **props: The properties of the component.
+            *children: The children of the component.
+            data: The figure to display. This can be a plotly figure or a plotly data json.
+            layout: The layout of the graph.
+            template: The template for visual appearance of the graph.
+            config: The config of the graph.
+            use_resize_handler: If true, the graph will resize when the window is resized.
+            on_after_plot: Fired after the plot is redrawn.
+            on_animated: Fired after the plot was animated.
+            on_animating_frame: Fired while animating a single frame (does not currently pass data through).
+            on_animation_interrupted: Fired when an animation is interrupted (to start a new animation for example).
+            on_autosize: Fired when the plot is responsively sized.
+            on_before_hover: Fired whenever mouse moves over a plot.
+            on_button_clicked: Fired when a plotly UI button is clicked.
+            on_click: Fired when the plot is clicked.
+            on_deselect: Fired when a selection is cleared (via double click).
+            on_double_click: Fired when the plot is double clicked.
+            on_hover: Fired when a plot element is hovered over.
+            on_relayout: Fired after the plot is laid out (zoom, pan, etc).
+            on_relayouting: Fired while the plot is being laid out.
+            on_restyle: Fired after the plot style is changed.
+            on_redraw: Fired after the plot is redrawn.
+            on_selected: Fired after selecting plot elements.
+            on_selecting: Fired while dragging a selection.
+            on_transitioning: Fired while an animation is occurring.
+            on_transition_interrupted: Fired when a transition is stopped early.
+            on_unhover: Fired when a hovered element is no longer hovered.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the component.
 
         Returns:
-        The Plotly component.
+            The Plotly component.
         """
         ...

@@ -126,7 +126,7 @@ class Stack(Flex):
             spacing: Gap between children: "0" - "9"
             align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
+            direction: How child items are laid out: "row" | "column" | "row-reverse" | "column-reverse"
             justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
             wrap: Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
             access_key: Provides a hint for generating a keyboard shortcut for the current element.
@@ -258,7 +258,7 @@ class VStack(Stack):
 
         Args:
             *children: The children of the stack.
-            direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
+            direction: How child items are laid out: "row" | "column" | "row-reverse" | "column-reverse"
             spacing: Gap between children: "0" - "9"
             align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
@@ -393,7 +393,7 @@ class HStack(Stack):
 
         Args:
             *children: The children of the stack.
-            direction: How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
+            direction: How child items are laid out: "row" | "column" | "row-reverse" | "column-reverse"
             spacing: Gap between children: "0" - "9"
             align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
