@@ -1202,4 +1202,3 @@ class PyiGenerator:
                         or "Var[Template]" in line
                     ):
                         line = line.rstrip() + "  # type: ignore\n"
-                    print(line, end="")
