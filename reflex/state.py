@@ -144,6 +144,9 @@ HANDLED_PICKLE_ERRORS = (
     ValueError,
 )
 
+# For BaseState.get_var_value
+VAR_TYPE = TypeVar("VAR_TYPE", bound=Var)
+
 
 def _no_chain_background_task(
     state_cls: Type["BaseState"], name: str, fn: Callable
@@ -1597,7 +1600,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Slow case - fetch missing parent states from redis.
         return await self._get_state_from_redis(state_cls)
 
-    async def get_var_value(self, var: Var) -> Any:
+    async def get_var_value(self, var: Var[VAR_TYPE]) -> VAR_TYPE:
         """Get the value of an rx.Var from another state.
 
         Args:
