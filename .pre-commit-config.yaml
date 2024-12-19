@@ -11,6 +11,11 @@ repos:
         args: ["--fix", "--exit-non-zero-on-fix"]
         exclude: '^integration/benchmarks/'
 
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.4
+    hooks:
+      - id: codespell
+
   # Run pyi check before pyright because pyright can fail if pyi files are wrong.
   - repo: local
     hooks:
