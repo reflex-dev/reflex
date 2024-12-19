@@ -70,7 +70,7 @@ def get_decorated_pages(omit_implicit_routes=True) -> list[dict[str, Any]]:
     """Get the decorated pages.
 
     Args:
-        omit_implicit_routes: Whether to omit pages where the route will be implicitely guessed later.
+        omit_implicit_routes: Whether to omit pages where the route will be implicitly guessed later.
 
     Returns:
         The decorated pages.

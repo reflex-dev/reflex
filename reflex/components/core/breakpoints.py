@@ -58,7 +58,7 @@ class Breakpoints(Dict[K, V]):
 
         Args:
             custom: Custom mapping using CSS values or variables.
-            initial: Styling when in the inital width
+            initial: Styling when in the initial width
             xs: Styling when in the extra-small width
             sm: Styling when in the small width
             md: Styling when in the medium width

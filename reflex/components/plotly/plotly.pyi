@@ -130,13 +130,13 @@ class Plotly(NoSSRComponent):
             on_deselect: Fired when a selection is cleared (via double click).
             on_double_click: Fired when the plot is double clicked.
             on_hover: Fired when a plot element is hovered over.
-            on_relayout: Fired after the plot is layed out (zoom, pan, etc).
-            on_relayouting: Fired while the plot is being layed out.
+            on_relayout: Fired after the plot is laid out (zoom, pan, etc).
+            on_relayouting: Fired while the plot is being laid out.
             on_restyle: Fired after the plot style is changed.
             on_redraw: Fired after the plot is redrawn.
             on_selected: Fired after selecting plot elements.
             on_selecting: Fired while dragging a selection.
-            on_transitioning: Fired while an animation is occuring.
+            on_transitioning: Fired while an animation is occurring.
             on_transition_interrupted: Fired when a transition is stopped early.
             on_unhover: Fired when a hovered element is no longer hovered.
             style: The style of the component.

@@ -135,7 +135,7 @@ def test_cond_computed_var():
 
     comp = cond(True, CondStateComputed.computed_int, CondStateComputed.computed_str)
 
-    # TODO: shouln't this be a ComputedVar?
+    # TODO: shouldn't this be a ComputedVar?
     assert isinstance(comp, Var)
 
     state_name = format_state_name(CondStateComputed.get_full_name())

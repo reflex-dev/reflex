@@ -27,7 +27,7 @@ FROM python:3.13 as init
 
 ARG uv=/root/.local/bin/uv
 
-# Install `uv` for faster package boostrapping
+# Install `uv` for faster package bootstrapping
 ADD --chmod=755 https://astral.sh/uv/install.sh /install.sh
 RUN /install.sh && rm /install.sh
 

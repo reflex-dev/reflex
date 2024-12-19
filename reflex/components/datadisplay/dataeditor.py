@@ -219,7 +219,7 @@ class DataEditor(NoSSRComponent):
     # The minimum width a column can be resized to.
     min_column_width: Var[int]
 
-    # Determins the height of each row.
+    # Determines the height of each row.
     row_height: Var[int]
 
     # Kind of row markers.

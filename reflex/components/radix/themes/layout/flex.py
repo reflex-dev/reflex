@@ -22,7 +22,7 @@ class Flex(elements.Div, RadixThemesComponent):
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]
 
-    # How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
+    # How child items are laid out: "row" | "column" | "row-reverse" | "column-reverse"
     direction: Var[Responsive[LiteralFlexDirection]]
 
     # Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"

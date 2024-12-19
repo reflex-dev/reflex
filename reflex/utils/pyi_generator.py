@@ -1023,7 +1023,7 @@ class InitStubGenerator(StubGenerator):
 
 class PyiGenerator:
     """A .pyi file generator that will scan all defined Component in Reflex and
-    generate the approriate stub.
+    generate the appropriate stub.
     """
 
     modules: list = []

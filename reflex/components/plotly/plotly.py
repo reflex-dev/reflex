@@ -149,10 +149,10 @@ class Plotly(NoSSRComponent):
     # Fired when a plot element is hovered over.
     on_hover: EventHandler[_event_points_data_signature]
 
-    # Fired after the plot is layed out (zoom, pan, etc).
+    # Fired after the plot is laid out (zoom, pan, etc).
     on_relayout: EventHandler[no_args_event_spec]
 
-    # Fired while the plot is being layed out.
+    # Fired while the plot is being laid out.
     on_relayouting: EventHandler[no_args_event_spec]
 
     # Fired after the plot style is changed.
@@ -167,7 +167,7 @@ class Plotly(NoSSRComponent):
     # Fired while dragging a selection.
     on_selecting: EventHandler[_event_points_data_signature]
 
-    # Fired while an animation is occuring.
+    # Fired while an animation is occurring.
     on_transitioning: EventHandler[no_args_event_spec]
 
     # Fired when a transition is stopped early.

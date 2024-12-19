@@ -241,7 +241,7 @@ class WifiOffPulse(Icon):
             size=props.pop("size", 32),
             z_index=props.pop("z_index", 9999),
             position=props.pop("position", "fixed"),
-            bottom=props.pop("botton", "33px"),
+            bottom=props.pop("bottom", "33px"),
             right=props.pop("right", "33px"),
             animation=LiteralVar.create(f"{pulse_var} 1s infinite"),
             **props,

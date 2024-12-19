@@ -262,7 +262,7 @@ def test_to_kebab_case(input: str, output: str):
     ],
 )
 def test_format_string(input: str, output: str):
-    """Test formating the input as JS string literal.
+    """Test formatting the input as JS string literal.
 
     Args:
         input: the input string.
@@ -680,7 +680,7 @@ def test_format_array_ref(input, output):
     ],
 )
 def test_format_library_name(input: str, output: str):
-    """Test formating a library name to remove the @version part.
+    """Test formatting a library name to remove the @version part.
 
     Args:
         input: the input string.

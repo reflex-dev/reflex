@@ -27,7 +27,7 @@ class Grid(elements.Div, RadixThemesComponent):
     # Number of rows
     rows: Var[Responsive[str]]
 
-    # How the grid items are layed out: "row" | "column" | "dense" | "row-dense" | "column-dense"
+    # How the grid items are laid out: "row" | "column" | "dense" | "row-dense" | "column-dense"
     flow: Var[Responsive[LiteralGridFlow]]
 
     # Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
