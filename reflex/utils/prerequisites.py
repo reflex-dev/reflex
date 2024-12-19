@@ -1174,6 +1174,24 @@ def initialize_frontend_dependencies():
     initialize_web_directory()
 
 
+def check_db_used() -> bool:
+    """Check if the database is used.
+
+    Returns:
+        True if the database is used.
+    """
+    return bool(get_config().db_url)
+
+
+def check_redis_used() -> bool:
+    """Check if Redis is used.
+
+    Returns:
+        True if Redis is used.
+    """
+    return bool(get_config().redis_url)
+
+
 def check_db_initialized() -> bool:
     """Check if the database migrations are initialized.
 

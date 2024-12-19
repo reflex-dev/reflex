@@ -1358,9 +1358,9 @@ async def health() -> JSONResponse:
 
     tasks = []
 
-    if get_config().db_url:
+    if prerequisites.check_db_used():
         tasks.append(get_db_status())
-    if get_config().redis_url:
+    if prerequisites.check_redis_used():
         tasks.append(prerequisites.get_redis_status())
 
     results = await asyncio.gather(*tasks)
