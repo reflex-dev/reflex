@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 from urllib.parse import urlparse
 
+import aiohttp
 from fastapi import FastAPI
-from starlette.types import ASGIApp
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from .config import get_config
 from .utils import console
@@ -15,6 +17,7 @@ from .utils import console
 try:
     from asgiproxy.config import BaseURLProxyConfigMixin, ProxyConfig
     from asgiproxy.context import ProxyContext
+    from asgiproxy.proxies.http import proxy_http
     from asgiproxy.simple_proxy import make_simple_proxy_app
 except ImportError:
 
@@ -32,6 +35,32 @@ except ImportError:
         yield
 else:
 
+    async def proxy_http_with_retry(
+        *,
+        context: ProxyContext,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> None:
+        """Proxy an HTTP request with retries.
+
+        Args:
+            context: The proxy context.
+            scope: The ASGI scope.
+            receive: The receive channel.
+            send: The send channel.
+        """
+        for _attempt in range(100):
+            try:
+                return await proxy_http(
+                    context=context, scope=scope, receive=receive, send=send
+                )
+            except aiohttp.client_exceptions.ClientError as err:  # noqa: PERF203
+                console.debug(
+                    f"Retrying request {scope['path']} due to client error {err!r}."
+                )
+                await asyncio.sleep(0.3)
+
     def _get_proxy_app_with_context(frontend_host: str) -> tuple[ProxyContext, ASGIApp]:
         """Get the proxy app with the given frontend host.
 
@@ -47,7 +76,9 @@ else:
             rewrite_host_header = urlparse(upstream_base_url).netloc
 
         proxy_context = ProxyContext(LocalProxyConfig())
-        proxy_app = make_simple_proxy_app(proxy_context)
+        proxy_app = make_simple_proxy_app(
+            proxy_context, proxy_http_handler=proxy_http_with_retry
+        )
         return proxy_context, proxy_app
 
     @asynccontextmanager
