@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 from urllib.parse import urlparse
 
 import aiohttp
@@ -34,6 +34,7 @@ except ImportError:
         """
         yield
 else:
+    MAX_PROXY_RETRY = 25
 
     async def proxy_http_with_retry(
         *,
@@ -41,23 +42,34 @@ else:
         scope: Scope,
         receive: Receive,
         send: Send,
-    ) -> None:
+    ) -> Any:
         """Proxy an HTTP request with retries.
 
         Args:
             context: The proxy context.
-            scope: The ASGI scope.
+            scope: The request scope.
             receive: The receive channel.
             send: The send channel.
+
+        Returns:
+            The response from `proxy_http`.
         """
-        for _attempt in range(100):
+        for _attempt in range(MAX_PROXY_RETRY):
             try:
                 return await proxy_http(
-                    context=context, scope=scope, receive=receive, send=send
+                    context=context,
+                    scope=scope,
+                    receive=receive,
+                    send=send,
                 )
-            except aiohttp.client_exceptions.ClientError as err:  # noqa: PERF203
+            except aiohttp.ClientError as err:  # noqa: PERF203
                 console.debug(
                     f"Retrying request {scope['path']} due to client error {err!r}."
+                )
+                await asyncio.sleep(0.3)
+            except Exception as ex:
+                console.debug(
+                    f"Retrying request {scope['path']} due to unhandled exception {ex!r}."
                 )
                 await asyncio.sleep(0.3)
 
