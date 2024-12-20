@@ -398,6 +398,11 @@ export const connect = async (
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
 
+  // Disconnect old socket
+  if (socket.current && socket.current.connected) {
+    socket.current.disconnect();
+  }
+
   // Create the socket.
   socket.current = io(endpoint.href, {
     path: endpoint["pathname"],
@@ -429,6 +434,7 @@ export const connect = async (
   socket.current.on("connect", () => {
     setConnectErrors([]);
     window.addEventListener("pagehide", pagehideHandler);
+    document.addEventListener("visibilitychange", checkVisibility);
   });
 
   socket.current.on("connect_error", (error) => {
@@ -438,7 +444,10 @@ export const connect = async (
   // When the socket disconnects reset the event_processing flag
   socket.current.on("disconnect", () => {
     event_processing = false;
+    socket.current.io.skipReconnect = true;
+    socket.current = null;
     window.removeEventListener("pagehide", pagehideHandler);
+    document.removeEventListener("visibilitychange", checkVisibility);
   });
 
   // On each received message, queue the updates and events.
@@ -457,7 +466,6 @@ export const connect = async (
     queueEvents([...initialEvents(), event], socket);
   });
 
-  document.addEventListener("visibilitychange", checkVisibility);
 };
 
 /**
