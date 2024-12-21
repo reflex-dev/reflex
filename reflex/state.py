@@ -2256,7 +2256,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 prefix = STATE_COMPRESSED
             else:
                 prefix = STATE_NOT_COMPRESSED
-            payload = prefix + payload
+            payload = prefix + payload  # type: ignore
 
         return payload
 
@@ -2288,7 +2288,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 if is_compressed:
                     from blosc2 import decompress
 
-                    data = decompress(data)
+                    data = decompress(data)  # type: ignore
             data = pickle.loads(data)  # type: ignore
         elif fp is not None and data is None:
             if environment.REFLEX_COMPRESS_STATE.get():
@@ -2305,7 +2305,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     fp = BytesIO()
 
                     for chunk_index in range(schunk.nchunks):
-                        fp.write(schunk.decompress_chunk(chunk_index))
+                        fp.write(schunk.decompress_chunk(chunk_index))  # type: ignore
 
             data = pickle.load(fp)
         else:

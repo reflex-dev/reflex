@@ -109,10 +109,10 @@ def test_pickle(
             pytest.skip("Blosc is not available.")
 
         def dump(obj: State) -> bytes:
-            return compress(pickle.dumps(obj, protocol=protocol))
+            return compress(pickle.dumps(obj, protocol=protocol))  # type: ignore
 
         def load(data: bytes) -> State:
-            return pickle.loads(decompress(data))
+            return pickle.loads(decompress(data))  # type: ignore
 
     else:
 
