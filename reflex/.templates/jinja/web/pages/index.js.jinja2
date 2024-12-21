@@ -1,4 +1,5 @@
 {% extends "web/pages/base_page.js.jinja2" %}
+{% from "web/pages/macros.js.jinja2" import renderHooks %}
 
 {% block declaration %}
 {% for custom_code in custom_codes %}
@@ -8,9 +9,7 @@
 
 {% block export %}
 export default function Component() {
-  {% for hook in hooks %}
-  {{ hook }}
-  {% endfor %}
+    {{ renderHooks(hooks)}}
 
   return (
     {{utils.render(render, indent_width=0)}}
