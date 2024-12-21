@@ -2223,8 +2223,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         error = ""
         try:
             payload = pickle.dumps((self._to_schema(), self))
-            if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
-                self._check_state_size(len(payload))
         except HANDLED_PICKLE_ERRORS as og_pickle_error:
             error = (
                 f"Failed to serialize state {self.get_full_name()} due to unpicklable object. "
