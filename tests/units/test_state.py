@@ -1936,6 +1936,14 @@ def mock_app(mock_app_simple: rx.App, state_manager: StateManager) -> rx.App:
     return mock_app_simple
 
 
+@dataclasses.dataclass
+class ModelDC:
+    """A dataclass."""
+
+    foo: str = "bar"
+    ls: list[dict] = dataclasses.field(default_factory=list)
+
+
 @pytest.mark.asyncio
 async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     """Test that the state proxy works.
@@ -2038,6 +2046,7 @@ class BackgroundTaskState(BaseState):
 
     order: List[str] = []
     dict_list: Dict[str, List[int]] = {"foo": [1, 2, 3]}
+    dc: ModelDC = ModelDC()
 
     def __init__(self, **kwargs):  # noqa: D107
         super().__init__(**kwargs)
@@ -2064,8 +2073,16 @@ class BackgroundTaskState(BaseState):
             self.order.append("bad idea")
 
         with pytest.raises(ImmutableStateError):
+            # Cannot manipulate dataclass attributes.
+            self.dc.foo = "baz"
+
+        with pytest.raises(ImmutableStateError):
             # Even nested access to mutables raises an exception.
             self.dict_list["foo"].append(42)
+
+        with pytest.raises(ImmutableStateError):
+            # Cannot modify dataclass list attribute.
+            self.dc.ls.append({"foo": "bar"})
 
         with pytest.raises(ImmutableStateError):
             # Direct calling another handler that modifies state raises an exception.
@@ -3582,13 +3599,6 @@ class ModelV2(BaseModelV2):
     foo: str = "bar"
 
 
-@dataclasses.dataclass
-class ModelDC:
-    """A dataclass."""
-
-    foo: str = "bar"
-
-
 class PydanticState(rx.State):
     """A state with pydantic BaseModel vars."""
 
@@ -3610,11 +3620,22 @@ def test_mutable_models():
     assert state.dirty_vars == {"v2"}
     state.dirty_vars.clear()
 
-    # Not yet supported ENG-4083
-    # assert isinstance(state.dc, MutableProxy) #noqa: ERA001
-    # state.dc.foo = "baz" #noqa: ERA001
-    # assert state.dirty_vars == {"dc"} #noqa: ERA001
-    # state.dirty_vars.clear() #noqa: ERA001
+    assert isinstance(state.dc, MutableProxy)
+    state.dc.foo = "baz"
+    assert state.dirty_vars == {"dc"}
+    state.dirty_vars.clear()
+    assert state.dirty_vars == set()
+    state.dc.ls.append({"hi": "reflex"})
+    assert state.dirty_vars == {"dc"}
+    state.dirty_vars.clear()
+    assert state.dirty_vars == set()
+    assert dataclasses.asdict(state.dc) == {"foo": "baz", "ls": [{"hi": "reflex"}]}
+    assert dataclasses.astuple(state.dc) == ("baz", [{"hi": "reflex"}])
+    # creating a new instance shouldn't mark the state dirty
+    assert dataclasses.replace(state.dc, foo="quuc") == ModelDC(
+        foo="quuc", ls=[{"hi": "reflex"}]
+    )
+    assert state.dirty_vars == set()
 
 
 def test_get_value():
