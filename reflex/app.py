@@ -331,6 +331,12 @@ class App(MiddlewareMixin, LifespanMixin):
 
             self.register_lifespan_task(windows_hot_reload_lifespan_hack)
 
+        # Enable proxying to frontend server.
+        if not environment.REFLEX_BACKEND_ONLY.get():
+            from reflex.proxy import proxy_middleware
+
+            self.register_lifespan_task(proxy_middleware)
+
     def _enable_state(self) -> None:
         """Enable state for the app."""
         if not self.state:

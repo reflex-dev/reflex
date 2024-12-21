@@ -26,6 +26,7 @@ from typing import (
 
 from typing_extensions import Annotated, get_type_hints
 
+from reflex.utils.console import set_log_level
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
 from reflex.utils.types import GenericType, is_union, value_inside_optional
 
@@ -599,6 +600,7 @@ class Config(Base):
     class Config:
         """Pydantic config for the config."""
 
+        use_enum_values = False
         validate_assignment = True
 
     # The name of the app (should match the name of the app directory).
@@ -717,6 +719,9 @@ class Config(Base):
         kwargs.update(env_kwargs)
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
+
+        # Set the log level for this process
+        set_log_level(self.loglevel)
 
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS
