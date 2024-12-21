@@ -200,7 +200,7 @@ class Radar(Recharts):
         Args:
             *children: The children of the component.
             data_key: The key of a group of data which should be unique in a radar chart.
-            points: The coordinates of all the vertexes of the radar shape, like [{ x, y }].
+            points: The coordinates of all the vertices of the radar shape, like [{ x, y }].
             dot: If false set, dots will not be drawn. Default: True
             stroke: Stoke color. Default: rx.color("accent", 9)
             fill: Fill color. Default: rx.color("accent", 3)
@@ -574,7 +574,7 @@ class PolarRadiusAxis(Recharts):
             axis_line: If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option. Default: True
             tick: If false set, ticks will not be drawn. If true set, ticks will be drawn which have the props calculated internally. If object set, ticks will be drawn which have the props mergered by the internal calculated props and the option. Default: True
             tick_count: The count of axis ticks. Not used if 'type' is 'category'. Default: 5
-            scale: If 'auto' set, the scale funtion is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'. Default: "auto"
+            scale: If 'auto' set, the scale function is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'. Default: "auto"
             domain: The domain of the polar radius axis, specifying the minimum and maximum values. Default: [0, "auto"]
             stroke: The stroke color of axis. Default: rx.color("gray", 10)
             style: The style of the component.

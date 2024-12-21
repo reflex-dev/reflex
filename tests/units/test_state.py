@@ -976,7 +976,7 @@ class InterdependentState(BaseState):
     """A state with 3 vars and 3 computed vars.
 
     x: a variable that no computed var depends on
-    v1: a varable that one computed var directly depeneds on
+    v1: a variable that one computed var directly depends on
     _v2: a backend variable that one computed var directly depends on
 
     v1x2: a computed var that depends on v1
@@ -2685,7 +2685,7 @@ class Custom1(Base):
         self.foo = val
 
     def double_foo(self) -> str:
-        """Concantenate foo with foo.
+        """Concatenate foo with foo.
 
         Returns:
             foo + foo
@@ -3267,9 +3267,9 @@ async def test_setvar(mock_app: rx.App, token: str):
             print(update)
     assert state.array == [43]
 
-    # Cannot setvar for non-existant var
+    # Cannot setvar for non-existent var
     with pytest.raises(AttributeError):
-        TestState.setvar("non_existant_var")
+        TestState.setvar("non_existent_var")
 
     # Cannot setvar for computed vars
     with pytest.raises(AttributeError):

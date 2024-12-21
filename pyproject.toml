@@ -101,3 +101,7 @@ lint.pydocstyle.convention = "google"
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
+
+[tool.codespell]
+skip = "docs/*,*.html,examples/*, *.pyi"
+ignore-words-list = "te, TreeE"
