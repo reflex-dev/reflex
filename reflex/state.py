@@ -2254,7 +2254,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if size > environment.REFLEX_COMPRESS_THRESHOLD.get():
                 from blosc2 import compress
 
-                payload = compress(payload)
+                payload = compress(payload, _ignore_multiple_size=True)
                 prefix = STATE_COMPRESSED
             else:
                 prefix = STATE_NOT_COMPRESSED
