@@ -1356,20 +1356,22 @@ async def health() -> JSONResponse:
     health_status = {"status": True}
     status_code = 200
 
-    db_status, redis_status = await asyncio.gather(
-        get_db_status(), prerequisites.get_redis_status()
-    )
+    tasks = []
 
-    health_status["db"] = db_status
+    if prerequisites.check_db_used():
+        tasks.append(get_db_status())
+    if prerequisites.check_redis_used():
+        tasks.append(prerequisites.get_redis_status())
 
-    if redis_status is None:
+    results = await asyncio.gather(*tasks)
+
+    for result in results:
+        health_status |= result
+
+    if "redis" in health_status and health_status["redis"] is None:
         health_status["redis"] = False
-    else:
-        health_status["redis"] = redis_status
 
-    if not health_status["db"] or (
-        not health_status["redis"] and redis_status is not None
-    ):
+    if not all(health_status.values()):
         health_status["status"] = False
         status_code = 503
 

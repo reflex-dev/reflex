@@ -372,16 +372,13 @@ def parse_redis_url() -> str | dict | None:
     return config.redis_url
 
 
-async def get_redis_status() -> bool | None:
+async def get_redis_status() -> dict[str, bool | None]:
     """Checks the status of the Redis connection.
 
     Attempts to connect to Redis and send a ping command to verify connectivity.
 
     Returns:
-        bool or None: The status of the Redis connection:
-            - True: Redis is accessible and responding.
-            - False: Redis is not accessible due to a connection error.
-            - None: Redis not used i.e redis_url is not set in rxconfig.
+        The status of the Redis connection.
     """
     try:
         status = True
@@ -393,7 +390,7 @@ async def get_redis_status() -> bool | None:
     except exceptions.RedisError:
         status = False
 
-    return status
+    return {"redis": status}
 
 
 def validate_app_name(app_name: str | None = None) -> str:
@@ -1175,6 +1172,24 @@ def initialize_frontend_dependencies():
     CURRENTLY_INSTALLING_NODE = False
     # Set up the web directory.
     initialize_web_directory()
+
+
+def check_db_used() -> bool:
+    """Check if the database is used.
+
+    Returns:
+        True if the database is used.
+    """
+    return bool(get_config().db_url)
+
+
+def check_redis_used() -> bool:
+    """Check if Redis is used.
+
+    Returns:
+        True if Redis is used.
+    """
+    return bool(get_config().redis_url)
 
 
 def check_db_initialized() -> bool:
