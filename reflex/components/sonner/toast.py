@@ -132,7 +132,7 @@ class ToastProps(PropsBase, NoExtrasAllowedProps):
     # Function that gets called when the toast disappears automatically after it's timeout (duration` prop).
     on_auto_close: Optional[Any]
 
-    def dict(self, *args, **kwargs) -> dict[str, Any]:
+    def dict(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         """Convert the object to a dictionary.
 
         Args:
@@ -167,7 +167,7 @@ class ToastProps(PropsBase, NoExtrasAllowedProps):
 class Toaster(Component):
     """A Toaster Component for displaying toast notifications."""
 
-    library: str = "sonner@1.5.0"
+    library = "sonner@1.5.0"
 
     tag = "Toaster"
 
@@ -228,7 +228,7 @@ class Toaster(Component):
                 imports={
                     "$/utils/state": [ImportVar(tag="refs")],
                     self.library: [ImportVar(tag="toast", install=False)],
-                }
+                }  # type: ignore
             ),
         )
         return [hook]
@@ -274,12 +274,12 @@ class Toaster(Component):
         return run_script(toast)
 
     @staticmethod
-    def toast_info(message: str | Var = "", **kwargs):
+    def toast_info(message: str | Var = "", **kwargs: Any):
         """Display an info toast message.
 
         Args:
             message: The message to display.
-            kwargs: Additional toast props.
+            **kwargs: Additional toast props.
 
         Returns:
             The toast event.
@@ -287,12 +287,12 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="info", **kwargs)
 
     @staticmethod
-    def toast_warning(message: str | Var = "", **kwargs):
+    def toast_warning(message: str | Var = "", **kwargs: Any):
         """Display a warning toast message.
 
         Args:
             message: The message to display.
-            kwargs: Additional toast props.
+            **kwargs: Additional toast props.
 
         Returns:
             The toast event.
@@ -300,12 +300,12 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="warning", **kwargs)
 
     @staticmethod
-    def toast_error(message: str | Var = "", **kwargs):
+    def toast_error(message: str | Var = "", **kwargs: Any):
         """Display an error toast message.
 
         Args:
             message: The message to display.
-            kwargs: Additional toast props.
+            **kwargs: Additional toast props.
 
         Returns:
             The toast event.
@@ -313,12 +313,12 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="error", **kwargs)
 
     @staticmethod
-    def toast_success(message: str | Var = "", **kwargs):
+    def toast_success(message: str | Var = "", **kwargs: Any):
         """Display a success toast message.
 
         Args:
             message: The message to display.
-            kwargs: Additional toast props.
+            **kwargs: Additional toast props.
 
         Returns:
             The toast event.
@@ -350,7 +350,7 @@ class Toaster(Component):
         return run_script(dismiss_action)
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(cls, *children: Any, **props: Any) -> Component:
         """Create a toaster component.
 
         Args:

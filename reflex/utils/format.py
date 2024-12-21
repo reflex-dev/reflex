@@ -221,7 +221,7 @@ def _escape_js_string(string: str) -> str:
     """
 
     # TODO: we may need to re-vist this logic after new Var API is implemented.
-    def escape_outside_segments(segment):
+    def escape_outside_segments(segment: str):
         """Escape backticks in segments outside of `${}`.
 
         Args:
@@ -284,7 +284,7 @@ def format_var(var: Var) -> str:
     return str(var)
 
 
-def format_route(route: str, format_case=True) -> str:
+def format_route(route: str, format_case: bool = True) -> str:
     """Format the given route.
 
     Args:
