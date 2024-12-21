@@ -75,13 +75,13 @@ def main():
     parser.add_argument("port", type=int, nargs="+")
     parser.add_argument("--timeout", type=int, required=True)
     parser.add_argument("--server-pid", type=int)
-    parser.add_argument("--path", type=str, default="/")
+    parser.add_argument("--request-uri", type=str, default="/")
     args = parser.parse_args()
     start = time.time()
     executor = ThreadPoolExecutor(max_workers=len(args.port))
     futures = [
         executor.submit(
-            _wait_for_http_response, p, args.server_pid, args.timeout, args.path
+            _wait_for_http_response, p, args.server_pid, args.timeout, args.request_uri
         )
         for p in args.port
     ]

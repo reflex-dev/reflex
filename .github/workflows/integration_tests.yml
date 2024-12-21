@@ -80,7 +80,7 @@ jobs:
           poetry run reflex export --backend-only
       - name: Check run --backend-only before init for counter example
         env:
-          WAIT_FOR_LISTENING_PORT_ARGS: "--path" /ping
+          WAIT_FOR_LISTENING_PORT_ARGS: --request-uri /ping
         run: |
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev 8001 --backend-only --backend-port 8001
       - name: Init Website for counter example
