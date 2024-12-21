@@ -46,6 +46,10 @@ def _wait_for_port(port, server_pid, timeout) -> Tuple[bool, str]:
 
 def _wait_for_http_response(port, server_pid, timeout, path) -> Tuple[bool, str, str]:
     start = time.time()
+    if path[0] != "/":
+        # This is a hack for passing the path on windows without a leading slash
+        # which mangles it https://stackoverflow.com/a/49013604
+        path = "/" + path
     url = f"http://localhost:{port}{path}"
     print(f"Waiting for up to {timeout} seconds for {url} to return HTTP response.")
     while True:
@@ -75,13 +79,17 @@ def main():
     parser.add_argument("port", type=int, nargs="+")
     parser.add_argument("--timeout", type=int, required=True)
     parser.add_argument("--server-pid", type=int)
-    parser.add_argument("--request-uri", type=str, default="/")
+    parser.add_argument("--path", type=str, default="/")
     args = parser.parse_args()
     start = time.time()
     executor = ThreadPoolExecutor(max_workers=len(args.port))
     futures = [
         executor.submit(
-            _wait_for_http_response, p, args.server_pid, args.timeout, args.request_uri
+            _wait_for_http_response,
+            p,
+            args.server_pid,
+            args.timeout,
+            args.path,
         )
         for p in args.port
     ]
