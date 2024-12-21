@@ -3783,6 +3783,24 @@ class MutableProxy(wrapt.ObjectProxy):
             dataclasses.is_dataclass(value) and not isinstance(value, Var)
         )
 
+    @staticmethod
+    def _is_called_from_dataclasses_internal() -> bool:
+        """Check if the current function is called from dataclasses helper.
+
+        Returns:
+            Whether the current function is called from dataclasses internal code.
+        """
+        # Walk up the stack a bit to see if we are called from dataclasses
+        # internal code, for example `asdict` or `astuple`.
+        frame = inspect.currentframe()
+        for _ in range(5):
+            # Why not `inspect.stack()` -- this is much faster!
+            if not (frame := frame and frame.f_back):
+                break
+            if inspect.getfile(frame) == dataclasses.__file__:
+                return True
+        return False
+
     def _wrap_recursive(self, value: Any) -> Any:
         """Wrap a value recursively if it is mutable.
 
@@ -3792,6 +3810,9 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The wrapped value.
         """
+        # When called from dataclasses internal code, return the unwrapped value
+        if self._is_called_from_dataclasses_internal():
+            return value
         # Recursively wrap mutable types, but do not re-wrap MutableProxy instances.
         if self._is_mutable_type(value) and not isinstance(value, MutableProxy):
             base_cls = globals()[self.__base_proxy__]

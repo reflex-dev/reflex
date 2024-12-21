@@ -3624,6 +3624,18 @@ def test_mutable_models():
     state.dc.foo = "baz"
     assert state.dirty_vars == {"dc"}
     state.dirty_vars.clear()
+    assert state.dirty_vars == set()
+    state.dc.ls.append({"hi": "reflex"})
+    assert state.dirty_vars == {"dc"}
+    state.dirty_vars.clear()
+    assert state.dirty_vars == set()
+    assert dataclasses.asdict(state.dc) == {"foo": "baz", "ls": [{"hi": "reflex"}]}
+    assert dataclasses.astuple(state.dc) == ("baz", [{"hi": "reflex"}])
+    # creating a new instance shouldn't mark the state dirty
+    assert dataclasses.replace(state.dc, foo="quuc") == ModelDC(
+        foo="quuc", ls=[{"hi": "reflex"}]
+    )
+    assert state.dirty_vars == set()
 
 
 def test_get_value():
