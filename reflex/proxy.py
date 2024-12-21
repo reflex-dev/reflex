@@ -7,7 +7,6 @@ from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator
 from urllib.parse import urlparse
 
-import aiohttp
 from fastapi import FastAPI
 from starlette.types import ASGIApp, Receive, Scope, Send
 
@@ -15,6 +14,7 @@ from .config import get_config
 from .utils import console
 
 try:
+    import aiohttp
     from asgiproxy.config import BaseURLProxyConfigMixin, ProxyConfig
     from asgiproxy.context import ProxyContext
     from asgiproxy.proxies.http import proxy_http
