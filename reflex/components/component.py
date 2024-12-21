@@ -23,6 +23,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import deprecated
+
 import reflex.state
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
@@ -43,17 +45,13 @@ from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.event import (
     EventCallback,
     EventChain,
-    EventChainVar,
     EventHandler,
     EventSpec,
     EventVar,
-    call_event_fn,
-    call_event_handler,
-    get_handler_args,
     no_args_event_spec,
 )
 from reflex.style import Style, format_as_emotion
-from reflex.utils import format, imports, types
+from reflex.utils import console, format, imports, types
 from reflex.utils.imports import (
     ImmutableParsedImportDict,
     ImportDict,
@@ -493,8 +491,7 @@ class Component(BaseComponent, ABC):
                     )
             # Check if the key is an event trigger.
             if key in component_specific_triggers:
-                # Temporarily disable full control for event triggers.
-                kwargs["event_triggers"][key] = self._create_event_chain(
+                kwargs["event_triggers"][key] = EventChain.create(
                     value=value,  # type: ignore
                     args_spec=component_specific_triggers[key],
                     key=key,
@@ -548,6 +545,7 @@ class Component(BaseComponent, ABC):
         # Construct the component.
         super().__init__(*args, **kwargs)
 
+    @deprecated("Use rx.EventChain.create instead.")
     def _create_event_chain(
         self,
         args_spec: types.ArgsSpec | Sequence[types.ArgsSpec],
@@ -569,82 +567,18 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The event chain.
-
-        Raises:
-            ValueError: If the value is not a valid event chain.
         """
-        # If it's an event chain var, return it.
-        if isinstance(value, Var):
-            if isinstance(value, EventChainVar):
-                return value
-            elif isinstance(value, EventVar):
-                value = [value]
-            elif issubclass(value._var_type, (EventChain, EventSpec)):
-                return self._create_event_chain(args_spec, value.guess_type(), key=key)
-            else:
-                raise ValueError(
-                    f"Invalid event chain: {value!s} of type {value._var_type}"
-                )
-        elif isinstance(value, EventChain):
-            # Trust that the caller knows what they're doing passing an EventChain directly
-            return value
-
-        # If the input is a single event handler, wrap it in a list.
-        if isinstance(value, (EventHandler, EventSpec)):
-            value = [value]
-
-        # If the input is a list of event handlers, create an event chain.
-        if isinstance(value, List):
-            events: List[Union[EventSpec, EventVar]] = []
-            for v in value:
-                if isinstance(v, (EventHandler, EventSpec)):
-                    # Call the event handler to get the event.
-                    events.append(call_event_handler(v, args_spec, key=key))
-                elif isinstance(v, Callable):
-                    # Call the lambda to get the event chain.
-                    result = call_event_fn(v, args_spec, key=key)
-                    if isinstance(result, Var):
-                        raise ValueError(
-                            f"Invalid event chain: {v}. Cannot use a Var-returning "
-                            "lambda inside an EventChain list."
-                        )
-                    events.extend(result)
-                elif isinstance(v, EventVar):
-                    events.append(v)
-                else:
-                    raise ValueError(f"Invalid event: {v}")
-
-        # If the input is a callable, create an event chain.
-        elif isinstance(value, Callable):
-            result = call_event_fn(value, args_spec, key=key)
-            if isinstance(result, Var):
-                # Recursively call this function if the lambda returned an EventChain Var.
-                return self._create_event_chain(args_spec, result, key=key)
-            events = [*result]
-
-        # Otherwise, raise an error.
-        else:
-            raise ValueError(f"Invalid event chain: {value}")
-
-        # Add args to the event specs if necessary.
-        events = [
-            (e.with_args(get_handler_args(e)) if isinstance(e, EventSpec) else e)
-            for e in events
-        ]
-
-        # Return the event chain.
-        if isinstance(args_spec, Var):
-            return EventChain(
-                events=events,
-                args_spec=None,
-                event_actions={},
-            )
-        else:
-            return EventChain(
-                events=events,
-                args_spec=args_spec,
-                event_actions={},
-            )
+        console.deprecate(
+            "Component._create_event_chain",
+            "Use rx.EventChain.create instead.",
+            deprecation_version="0.6.8",
+            removal_version="0.7.0",
+        )
+        return EventChain.create(
+            value=value,  # type: ignore
+            args_spec=args_spec,
+            key=key,
+        )
 
     def get_event_triggers(
         self,
@@ -1737,7 +1671,7 @@ class CustomComponent(Component):
 
             # Handle event chains.
             if types._issubclass(type_, EventChain):
-                value = self._create_event_chain(
+                value = EventChain.create(
                     value=value,
                     args_spec=event_triggers_in_component_declaration.get(
                         key, no_args_event_spec
