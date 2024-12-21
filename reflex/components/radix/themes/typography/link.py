@@ -76,7 +76,7 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
         Returns:
             Component: The link component
         """
-        props.setdefault(":hover", {"color": color("accent", 8)})
+        props.setdefault("_hover", {"color": color("accent", 8)})
         href = props.get("href")
 
         is_external = props.pop("is_external", None)
