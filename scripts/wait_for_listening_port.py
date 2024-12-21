@@ -44,9 +44,9 @@ def _wait_for_port(port, server_pid, timeout) -> Tuple[bool, str]:
             time.sleep(5)
 
 
-def _wait_for_http_response(port, server_pid, timeout) -> Tuple[bool, str, str]:
+def _wait_for_http_response(port, server_pid, timeout, path) -> Tuple[bool, str, str]:
     start = time.time()
-    url = f"http://localhost:{port}"
+    url = f"http://localhost:{port}{path}"
     print(f"Waiting for up to {timeout} seconds for {url} to return HTTP response.")
     while True:
         try:
@@ -75,11 +75,14 @@ def main():
     parser.add_argument("port", type=int, nargs="+")
     parser.add_argument("--timeout", type=int, required=True)
     parser.add_argument("--server-pid", type=int)
+    parser.add_argument("--path", type=str, default="/")
     args = parser.parse_args()
     start = time.time()
     executor = ThreadPoolExecutor(max_workers=len(args.port))
     futures = [
-        executor.submit(_wait_for_http_response, p, args.server_pid, args.timeout)
+        executor.submit(
+            _wait_for_http_response, p, args.server_pid, args.timeout, args.path
+        )
         for p in args.port
     ]
     base_content = None
