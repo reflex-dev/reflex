@@ -333,10 +333,9 @@ def get_redis() -> Redis | None:
     Returns:
         The asynchronous redis client.
     """
-    if isinstance((redis_url_or_options := parse_redis_url()), str):
-        return Redis.from_url(redis_url_or_options)
-    elif isinstance(redis_url_or_options, dict):
-        return Redis(**redis_url_or_options)
+    redis_url = parse_redis_url()
+    if redis_url is not None:
+        return Redis.from_url(redis_url)
     return None
 
 
@@ -346,14 +345,13 @@ def get_redis_sync() -> RedisSync | None:
     Returns:
         The synchronous redis client.
     """
-    if isinstance((redis_url_or_options := parse_redis_url()), str):
-        return RedisSync.from_url(redis_url_or_options)
-    elif isinstance(redis_url_or_options, dict):
-        return RedisSync(**redis_url_or_options)
+    redis_url = parse_redis_url()
+    if redis_url is not None:
+        return RedisSync.from_url(redis_url)
     return None
 
 
-def parse_redis_url() -> str | dict | None:
+def parse_redis_url() -> str | None:
     """Parse the REDIS_URL in config if applicable.
 
     Returns:

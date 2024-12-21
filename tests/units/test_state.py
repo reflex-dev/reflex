@@ -31,6 +31,7 @@ from pydantic.v1 import BaseModel as BaseModelV1
 
 import reflex as rx
 import reflex.config
+import reflex.utils.console
 from reflex import constants
 from reflex.app import App
 from reflex.base import Base
@@ -1857,7 +1858,7 @@ async def test_state_manager_lock_warning_threshold_contend(
         substate_token_redis: A token + substate name for looking up in state manager.
         mocker: Pytest mocker object.
     """
-    console_warn = mocker.patch("reflex.utils.console.warn")
+    console_warn = mocker.spy(reflex.utils.console, "warn")
 
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
     state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
@@ -1875,7 +1876,7 @@ async def test_state_manager_lock_warning_threshold_contend(
 
     await tasks[0]
     console_warn.assert_called()
-    assert console_warn.call_count == 7
+    assert console_warn.call_count == 1
 
 
 class CopyingAsyncMock(AsyncMock):
@@ -3192,9 +3193,16 @@ def test_potentially_dirty_substates():
         def bar(self) -> str:
             return ""
 
-    assert RxState._potentially_dirty_substates() == {State}
-    assert State._potentially_dirty_substates() == {C1}
+    assert RxState._potentially_dirty_substates() == {State.get_full_name()}
+    assert State._potentially_dirty_substates() == {C1.get_full_name()}
     assert C1._potentially_dirty_substates() == set()
+
+    assert RxState._recursive_potentially_dirty_substates() == {
+        State.get_full_name(),
+        C1.get_full_name(),
+    }
+    assert State._recursive_potentially_dirty_substates() == {C1.get_full_name()}
+    assert C1._recursive_potentially_dirty_substates() == set()
 
 
 def test_router_var_dep() -> None:
@@ -3216,7 +3224,9 @@ def test_router_var_dep() -> None:
     State._init_var_dependency_dicts()
 
     assert foo._deps(objclass=RouterVarDepState) == {"router"}
-    assert RouterVarParentState._potentially_dirty_substates() == {RouterVarDepState}
+    assert RouterVarParentState._potentially_dirty_substates() == {
+        RouterVarDepState.get_full_name()
+    }
     assert RouterVarParentState._substate_var_dependencies == {
         "router": {RouterVarDepState.get_name()}
     }
