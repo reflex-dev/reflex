@@ -25,6 +25,7 @@ def _pid_exists(pid):
     return pid in psutil.pids()
 
 
+# Not really used anymore now that we actually check the HTTP response.
 def _wait_for_port(port, server_pid, timeout) -> Tuple[bool, str]:
     start = time.time()
     print(f"Waiting for up to {timeout} seconds for port {port} to start listening.")
@@ -43,6 +44,31 @@ def _wait_for_port(port, server_pid, timeout) -> Tuple[bool, str]:
             time.sleep(5)
 
 
+def _wait_for_http_response(port, server_pid, timeout) -> Tuple[bool, str, str]:
+    start = time.time()
+    url = f"http://localhost:{port}"
+    print(f"Waiting for up to {timeout} seconds for {url} to return HTTP response.")
+    while True:
+        try:
+            if not _pid_exists(server_pid):
+                return False, f"Server PID {server_pid} is not running.", ""
+            response = httpx.get(url, timeout=0.5)
+            response.raise_for_status()
+            return (
+                True,
+                f"{url} returned response after {time.time() - start} seconds",
+                response.text,
+            )
+        except Exception as exc:  # noqa: PERF203
+            if time.time() - start > timeout:
+                return (
+                    False,
+                    f"{url} still returning errors after {timeout} seconds: {exc!r}.",
+                    "",
+                )
+            time.sleep(5)
+
+
 def main():
     """Wait for ports to start listening."""
     parser = argparse.ArgumentParser(description="Wait for ports to start listening.")
@@ -50,24 +76,27 @@ def main():
     parser.add_argument("--timeout", type=int, required=True)
     parser.add_argument("--server-pid", type=int)
     args = parser.parse_args()
+    start = time.time()
     executor = ThreadPoolExecutor(max_workers=len(args.port))
     futures = [
-        executor.submit(_wait_for_port, p, args.server_pid, args.timeout)
+        executor.submit(_wait_for_http_response, p, args.server_pid, args.timeout)
         for p in args.port
     ]
+    base_content = None
     for f in as_completed(futures):
-        ok, msg = f.result()
+        ok, msg, content = f.result()
         if ok:
             print(f"OK: {msg}")
+            if base_content is None:
+                base_content = content
+            else:
+                assert (
+                    content == base_content
+                ), f"HTTP responses are not equal {content!r} != {base_content!r}."
         else:
             print(f"FAIL: {msg}")
             exit(1)
-    # Make sure the HTTP response for both ports is the same (proxy frontend to backend).
-    responses = [(port, httpx.get(f"http://localhost:{port}")) for port in args.port]
-    n_port, n_resp = responses[0]
-    for port, resp in responses[1:]:
-        assert resp.content == n_resp.content, f"HTTP response on {port} is not equal."
-        print(f"OK: HTTP responses for :{n_port}/ and :{port}/ are equal.")
+    print(f"OK: All HTTP responses are equal after {time.time() - start} sec.")
 
 
 if __name__ == "__main__":
