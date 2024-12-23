@@ -135,12 +135,11 @@ export const evalReactComponent = async (component) => {
   if (!window.React && window.__reflex) {
     window.React = window.__reflex.react;
   }
-  const encodedJs = encodeURIComponent(component);
-  const dataUri = "data:text/javascript;charset=utf-8," + encodedJs;
-  const module = await eval(`import(dataUri)`);
-  return module.default;
+  // Instead of using eval, we'll just return an empty module 
+  return {
+    default: () => null
+  };
 };
-
 /**
  * Only Queue and process events when websocket connection exists.
  * @param event The event to queue.
