@@ -1,26 +1,28 @@
 """Moment component for humanized date rendering."""
 
-from typing import List, Optional
+import dataclasses
+from datetime import date, datetime, time, timedelta
+from typing import List, Optional, Union
 
-from reflex.base import Base
-from reflex.components.component import Component, NoSSRComponent
-from reflex.event import EventHandler
+from reflex.components.component import NoSSRComponent
+from reflex.event import EventHandler, passthrough_event_spec
 from reflex.utils.imports import ImportDict
-from reflex.vars import Var
+from reflex.vars.base import LiteralVar, Var
 
 
-class MomentDelta(Base):
+@dataclasses.dataclass(frozen=True)
+class MomentDelta:
     """A delta used for add/subtract prop in Moment."""
 
-    years: Optional[int]
-    quarters: Optional[int]
-    months: Optional[int]
-    weeks: Optional[int]
-    days: Optional[int]
-    hours: Optional[int]
-    minutess: Optional[int]
-    seconds: Optional[int]
-    milliseconds: Optional[int]
+    years: Optional[int] = dataclasses.field(default=None)
+    quarters: Optional[int] = dataclasses.field(default=None)
+    months: Optional[int] = dataclasses.field(default=None)
+    weeks: Optional[int] = dataclasses.field(default=None)
+    days: Optional[int] = dataclasses.field(default=None)
+    hours: Optional[int] = dataclasses.field(default=None)
+    minutes: Optional[int] = dataclasses.field(default=None)
+    seconds: Optional[int] = dataclasses.field(default=None)
+    milliseconds: Optional[int] = dataclasses.field(default=None)
 
 
 class Moment(NoSSRComponent):
@@ -77,7 +79,7 @@ class Moment(NoSSRComponent):
     duration: Var[str]
 
     # The date to display (also work if passed as children).
-    date: Var[str]
+    date: Var[Union[str, datetime, date, time, timedelta]]
 
     # Shows the duration (elapsed time) between now and the provided datetime.
     duration_from_now: Var[bool]
@@ -91,8 +93,11 @@ class Moment(NoSSRComponent):
     # Display the date in the given timezone.
     tz: Var[str]
 
+    # The locale to use when rendering.
+    locale: Var[str]
+
     # Fires when the date changes.
-    on_change: EventHandler[lambda date: [date]]
+    on_change: EventHandler[passthrough_event_spec(str)]
 
     def add_imports(self) -> ImportDict:
         """Add the imports for the Moment component.
@@ -100,22 +105,15 @@ class Moment(NoSSRComponent):
         Returns:
             The import dict for the component.
         """
+        imports = {}
+
+        if isinstance(self.locale, LiteralVar):
+            imports[""] = f"moment/locale/{self.locale._var_value}"
+        elif self.locale is not None:
+            # If the user is using a variable for the locale, we can't know the
+            # value at compile time so import all locales available.
+            imports[""] = "moment/min/locales"
         if self.tz is not None:
-            return {"moment-timezone": ""}
-        return {}
+            imports["moment-timezone"] = ""
 
-    @classmethod
-    def create(cls, *children, **props) -> Component:
-        """Create a Moment component.
-
-        Args:
-            *children: The children of the component.
-            **props: The properties of the component.
-
-        Returns:
-            The Moment Component.
-        """
-        comp = super().create(*children, **props)
-        if "tz" in props:
-            comp.lib_dependencies.append("moment-timezone")
-        return comp
+        return imports

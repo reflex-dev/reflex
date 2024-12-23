@@ -2,9 +2,9 @@
 
 from typing import Any, Literal, Optional, Union
 
-from reflex.event import EventHandler
+from reflex.event import EventHandler, no_args_event_spec
 from reflex.utils import types
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from .base import NextComponent
 
@@ -47,7 +47,7 @@ class Image(NextComponent):
     placeholder: Var[str]
 
     # Allows passing CSS styles to the underlying image element.
-    # style: Var[Any]
+    # style: Var[Any] #noqa: ERA001
 
     # The loading behavior of the image. Defaults to lazy. Can hurt performance, recommended to use `priority` instead.
     loading: Var[Literal["lazy", "eager"]]
@@ -56,10 +56,10 @@ class Image(NextComponent):
     blurDataURL: Var[str]
 
     # Fires when the image has loaded.
-    on_load: EventHandler[lambda: []]
+    on_load: EventHandler[no_args_event_spec]
 
     # Fires when the image has an error.
-    on_error: EventHandler[lambda: []]
+    on_error: EventHandler[no_args_event_spec]
 
     @classmethod
     def create(
@@ -101,9 +101,5 @@ class Image(NextComponent):
 
         # mysteriously, following `sizes` prop is needed to avoid blury images.
         props["sizes"] = "100vw"
-
-        src = props.get("src", None)
-        if src is not None and not isinstance(src, (Var)):
-            props["src"] = Var.create(value=src, _var_is_string=True)
 
         return super().create(*children, **props)

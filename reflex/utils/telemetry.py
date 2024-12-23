@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import multiprocessing
 import platform
 import warnings
+from contextlib import suppress
+
+from reflex.config import environment
 
 try:
     from datetime import UTC, datetime
@@ -19,7 +23,6 @@ import psutil
 
 from reflex import constants
 from reflex.utils import console
-from reflex.utils.exec import should_skip_compile
 from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
 
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
@@ -49,7 +52,8 @@ def get_python_version() -> str:
     Returns:
         The Python version.
     """
-    return platform.python_version()
+    # Remove the "+" from the version string in case user is using a pre-release version.
+    return platform.python_version().rstrip("+")
 
 
 def get_reflex_version() -> str:
@@ -93,9 +97,7 @@ def _raise_on_missing_project_hash() -> bool:
         False when compilation should be skipped (i.e. no .web directory is required).
         Otherwise return True.
     """
-    if should_skip_compile():
-        return False
-    return True
+    return not environment.REFLEX_SKIP_COMPILE.get()
 
 
 def _prepare_event(event: str, **kwargs) -> dict:
@@ -120,7 +122,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
         return {}
 
     if UTC is None:
-        # for python 3.8, 3.9 & 3.10
+        # for python 3.9 & 3.10
         stamp = datetime.utcnow().isoformat()
     else:
         # for python 3.11 & 3.12
@@ -128,7 +130,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
 
     cpuinfo = get_cpu_info()
 
-    additional_keys = ["template", "context", "detail"]
+    additional_keys = ["template", "context", "detail", "user_uuid"]
     additional_fields = {
         key: value for key in additional_keys if (value := kwargs.get(key)) is not None
     }
@@ -144,7 +146,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
             "python_version": get_python_version(),
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
-            "cpu_info": dict(cpuinfo) if cpuinfo else {},
+            "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
             **additional_fields,
         },
         "timestamp": stamp,
@@ -170,10 +172,11 @@ def _send(event, telemetry_enabled, **kwargs):
     if not telemetry_enabled:
         return False
 
-    event_data = _prepare_event(event, **kwargs)
-    if not event_data:
-        return False
-    return _send_event(event_data)
+    with suppress(Exception):
+        event_data = _prepare_event(event, **kwargs)
+        if not event_data:
+            return False
+        return _send_event(event_data)
 
 
 def send(event: str, telemetry_enabled: bool | None = None, **kwargs):

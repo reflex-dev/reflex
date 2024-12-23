@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import os
+import re
 from collections import defaultdict
-from pathlib import Path
+from contextlib import suppress
 from typing import Any, ClassVar, Optional, Type, Union
 
 import alembic.autogenerate
@@ -15,13 +15,56 @@ import alembic.runtime.environment
 import alembic.script
 import alembic.util
 import sqlalchemy
+import sqlalchemy.exc
+import sqlalchemy.ext.asyncio
 import sqlalchemy.orm
 
-from reflex import constants
 from reflex.base import Base
-from reflex.config import get_config
+from reflex.config import environment, get_config
 from reflex.utils import console
-from reflex.utils.compat import sqlmodel
+from reflex.utils.compat import sqlmodel, sqlmodel_field_has_primary_key
+
+_ENGINE: dict[str, sqlalchemy.engine.Engine] = {}
+_ASYNC_ENGINE: dict[str, sqlalchemy.ext.asyncio.AsyncEngine] = {}
+_AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] = {}
+
+# Import AsyncSession _after_ reflex.utils.compat
+from sqlmodel.ext.asyncio.session import AsyncSession  # noqa: E402
+
+
+def _safe_db_url_for_logging(url: str) -> str:
+    """Remove username and password from the database URL for logging.
+
+    Args:
+        url: The database URL.
+
+    Returns:
+        The database URL with the username and password removed.
+    """
+    return re.sub(r"://[^@]+@", "://<username>:<password>@", url)
+
+
+def get_engine_args(url: str | None = None) -> dict[str, Any]:
+    """Get the database engine arguments.
+
+    Args:
+        url: The database url.
+
+    Returns:
+        The database engine arguments as a dict.
+    """
+    kwargs: dict[str, Any] = {
+        # Print the SQL queries if the log level is INFO or lower.
+        "echo": environment.SQLALCHEMY_ECHO.get(),
+        # Check connections before returning them.
+        "pool_pre_ping": environment.SQLALCHEMY_POOL_PRE_PING.get(),
+    }
+    conf = get_config()
+    url = url or conf.db_url
+    if url is not None and url.startswith("sqlite"):
+        # Needed for the admin dash on sqlite.
+        kwargs["connect_args"] = {"check_same_thread": False}
+    return kwargs
 
 
 def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
@@ -40,15 +83,81 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     url = url or conf.db_url
     if url is None:
         raise ValueError("No database url configured")
-    if not Path(constants.ALEMBIC_CONFIG).exists():
+
+    global _ENGINE
+    if url in _ENGINE:
+        return _ENGINE[url]
+
+    if not environment.ALEMBIC_CONFIG.get().exists():
         console.warn(
             "Database is not initialized, run [bold]reflex db init[/bold] first."
         )
-    # Print the SQL queries if the log level is INFO or lower.
-    echo_db_query = os.environ.get("SQLALCHEMY_ECHO") == "True"
-    # Needed for the admin dash on sqlite.
-    connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-    return sqlmodel.create_engine(url, echo=echo_db_query, connect_args=connect_args)
+    _ENGINE[url] = sqlmodel.create_engine(
+        url,
+        **get_engine_args(url),
+    )
+    return _ENGINE[url]
+
+
+def get_async_engine(url: str | None) -> sqlalchemy.ext.asyncio.AsyncEngine:
+    """Get the async database engine.
+
+    Args:
+        url: The database url.
+
+    Returns:
+        The async database engine.
+
+    Raises:
+        ValueError: If the async database url is None.
+    """
+    if url is None:
+        conf = get_config()
+        url = conf.async_db_url
+        if url is not None and conf.db_url is not None:
+            async_db_url_tail = url.partition("://")[2]
+            db_url_tail = conf.db_url.partition("://")[2]
+            if async_db_url_tail != db_url_tail:
+                console.warn(
+                    f"async_db_url `{_safe_db_url_for_logging(url)}` "
+                    "should reference the same database as "
+                    f"db_url `{_safe_db_url_for_logging(conf.db_url)}`."
+                )
+    if url is None:
+        raise ValueError("No async database url configured")
+
+    global _ASYNC_ENGINE
+    if url in _ASYNC_ENGINE:
+        return _ASYNC_ENGINE[url]
+
+    if not environment.ALEMBIC_CONFIG.get().exists():
+        console.warn(
+            "Database is not initialized, run [bold]reflex db init[/bold] first."
+        )
+    _ASYNC_ENGINE[url] = sqlalchemy.ext.asyncio.create_async_engine(
+        url,
+        **get_engine_args(url),
+    )
+    return _ASYNC_ENGINE[url]
+
+
+async def get_db_status() -> dict[str, bool]:
+    """Checks the status of the database connection.
+
+    Attempts to connect to the database and execute a simple query to verify connectivity.
+
+    Returns:
+        The status of the database connection.
+    """
+    status = True
+    try:
+        engine = get_engine()
+        with engine.connect() as connection:
+            connection.execute(sqlalchemy.text("SELECT 1"))
+    except sqlalchemy.exc.OperationalError:
+        status = False
+
+    return {"db": status}
 
 
 SQLModelOrSqlAlchemy = Union[
@@ -144,8 +253,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         non_default_primary_key_fields = [
             field_name
             for field_name, field in cls.__fields__.items()
-            if field_name != "id"
-            and getattr(field.field_info, "primary_key", None) is True
+            if field_name != "id" and sqlmodel_field_has_primary_key(field)
         ]
         if non_default_primary_key_fields:
             cls.__fields__.pop("id", None)
@@ -181,11 +289,10 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         relationships = {}
         # SQLModel relationships do not appear in __fields__, but should be included if present.
         for name in self.__sqlmodel_relationships__:
-            try:
+            with suppress(
+                sqlalchemy.orm.exc.DetachedInstanceError  # This happens when the relationship was never loaded and the session is closed.
+            ):
                 relationships[name] = self._dict_recursive(getattr(self, name))
-            except sqlalchemy.orm.exc.DetachedInstanceError:
-                # This happens when the relationship was never loaded and the session is closed.
-                continue
         return {
             **base_fields,
             **relationships,
@@ -213,7 +320,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         Returns:
             tuple of (config, script_directory)
         """
-        config = alembic.config.Config(constants.ALEMBIC_CONFIG)
+        config = alembic.config.Config(environment.ALEMBIC_CONFIG.get())
         return config, alembic.script.ScriptDirectory(
             config.get_main_option("script_location", default="version"),
         )
@@ -248,8 +355,8 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
     def alembic_init(cls):
         """Initialize alembic for the project."""
         alembic.command.init(
-            config=alembic.config.Config(constants.ALEMBIC_CONFIG),
-            directory=str(Path(constants.ALEMBIC_CONFIG).parent / "alembic"),
+            config=alembic.config.Config(environment.ALEMBIC_CONFIG.get()),
+            directory=str(environment.ALEMBIC_CONFIG.get().parent / "alembic"),
         )
 
     @classmethod
@@ -269,7 +376,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         Returns:
             True when changes have been detected.
         """
-        if not Path(constants.ALEMBIC_CONFIG).exists():
+        if not environment.ALEMBIC_CONFIG.get().exists():
             return False
 
         config, script_directory = cls._alembic_config()
@@ -370,7 +477,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
             True - indicating the process was successful.
             None - indicating the process was skipped.
         """
-        if not Path(constants.ALEMBIC_CONFIG).exists():
+        if not environment.ALEMBIC_CONFIG.get().exists():
             return
 
         with cls.get_db_engine().connect() as connection:
@@ -405,6 +512,31 @@ def session(url: str | None = None) -> sqlmodel.Session:
         A database session.
     """
     return sqlmodel.Session(get_engine(url))
+
+
+def asession(url: str | None = None) -> AsyncSession:
+    """Get an async sqlmodel session to interact with the database.
+
+    async with rx.asession() as asession:
+        ...
+
+    Most operations against the `asession` must be awaited.
+
+    Args:
+        url: The database url.
+
+    Returns:
+        An async database session.
+    """
+    global _AsyncSessionLocal
+    if url not in _AsyncSessionLocal:
+        _AsyncSessionLocal[url] = sqlalchemy.ext.asyncio.async_sessionmaker(
+            bind=get_async_engine(url),
+            class_=AsyncSession,
+            autocommit=False,
+            autoflush=False,
+        )
+    return _AsyncSessionLocal[url]()
 
 
 def sqla_session(url: str | None = None) -> sqlalchemy.orm.Session:

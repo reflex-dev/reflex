@@ -1,15 +1,15 @@
-"""Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+"""Base classes."""
 
 from typing import Union
 
 from reflex.components.el.element import Element
-from reflex.vars import Var as Var
+from reflex.vars.base import Var
 
 
 class BaseHTML(Element):
     """Base class for common attributes."""
 
-    #  Provides a hint for generating a keyboard shortcut for the current element.
+    # Provides a hint for generating a keyboard shortcut for the current element.
     access_key: Var[Union[str, int, bool]]
 
     # Controls whether and how text input is automatically capitalized as it is entered/edited by the user.

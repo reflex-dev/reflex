@@ -1,8 +1,8 @@
-"""Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+"""Tables classes."""
 
 from typing import Union
 
-from reflex.vars import Var as Var
+from reflex.vars.base import Var
 
 from .base import BaseHTML
 

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import contextlib
+import dataclasses
 import functools
-import glob
 import importlib
 import importlib.metadata
-import inspect
 import json
 import os
 import platform
@@ -16,10 +16,9 @@ import shutil
 import stat
 import sys
 import tempfile
-import textwrap
+import time
 import zipfile
 from datetime import datetime
-from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
 from typing import Callable, List, Optional
@@ -29,21 +28,25 @@ import typer
 from alembic.util.exc import CommandError
 from packaging import version
 from redis import Redis as RedisSync
+from redis import exceptions
 from redis.asyncio import Redis
 
-import reflex
 from reflex import constants, model
-from reflex.base import Base
 from reflex.compiler import templates
-from reflex.config import Config, get_config
-from reflex.utils import console, path_ops, processes
+from reflex.config import Config, environment, get_config
+from reflex.utils import console, net, path_ops, processes, redir
+from reflex.utils.exceptions import (
+    GeneratedCodeHasNoFunctionDefs,
+    raise_system_package_missing_error,
+)
 from reflex.utils.format import format_library_name
-from reflex.utils.registry import _get_best_registry
+from reflex.utils.registry import _get_npm_registry
 
 CURRENTLY_INSTALLING_NODE = False
 
 
-class Template(Base):
+@dataclasses.dataclass(frozen=True)
+class Template:
     """A template for a Reflex app."""
 
     name: str
@@ -52,7 +55,8 @@ class Template(Base):
     demo_url: str
 
 
-class CpuInfo(Base):
+@dataclasses.dataclass(frozen=True)
+class CpuInfo:
     """Model to save cpu info."""
 
     manufacturer_id: Optional[str]
@@ -68,8 +72,19 @@ def get_web_dir() -> Path:
     Returns:
         The working directory.
     """
-    workdir = Path(os.getenv("REFLEX_WEB_WORKDIR", constants.Dirs.WEB))
-    return workdir
+    return environment.REFLEX_WEB_WORKDIR.get()
+
+
+def _python_version_check():
+    """Emit deprecation warning for deprecated python versions."""
+    # Check for end-of-life python versions.
+    if sys.version_info < (3, 10):
+        console.deprecate(
+            feature_name="Support for Python 3.9 and older",
+            reason="please upgrade to Python 3.10 or newer",
+            deprecation_version="0.6.0",
+            removal_version="0.7.0",
+        )
 
 
 def check_latest_package_version(package_name: str):
@@ -78,21 +93,24 @@ def check_latest_package_version(package_name: str):
     Args:
         package_name: The name of the package.
     """
+    if environment.REFLEX_CHECK_LATEST_VERSION.get() is False:
+        return
     try:
         # Get the latest version from PyPI
         current_version = importlib.metadata.version(package_name)
         url = f"https://pypi.org/pypi/{package_name}/json"
-        response = httpx.get(url)
+        response = net.get(url)
         latest_version = response.json()["info"]["version"]
-        if (
-            version.parse(current_version) < version.parse(latest_version)
-            and not get_or_set_last_reflex_version_check_datetime()
-        ):
-            # only show a warning when the host version is outdated and
-            # the last_version_check_datetime is not set in reflex.json
+        if get_or_set_last_reflex_version_check_datetime():
+            # Versions were already checked and saved in reflex.json, no need to warn again
+            return
+        if version.parse(current_version) < version.parse(latest_version):
+            # Show a warning when the host version is older than PyPI version
             console.warn(
                 f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
             )
+        # Check for deprecated python versions
+        _python_version_check()
     except Exception:
         pass
 
@@ -117,6 +135,14 @@ def get_or_set_last_reflex_version_check_datetime():
     return last_version_check_datetime
 
 
+def set_last_reflex_run_time():
+    """Set the last Reflex run time."""
+    path_ops.update_json_file(
+        get_web_dir() / constants.Reflex.JSON,
+        {"last_reflex_run_datetime": str(datetime.now())},
+    )
+
+
 def check_node_version() -> bool:
     """Check the version of Node.js.
 
@@ -124,14 +150,9 @@ def check_node_version() -> bool:
         Whether the version of Node.js is valid.
     """
     current_version = get_node_version()
-    if current_version:
-        # Compare the version numbers
-        return (
-            current_version >= version.parse(constants.Node.MIN_VERSION)
-            if constants.IS_WINDOWS
-            else current_version == version.parse(constants.Node.VERSION)
-        )
-    return False
+    return current_version is not None and current_version >= version.parse(
+        constants.Node.MIN_VERSION
+    )
 
 
 def get_node_version() -> version.Version | None:
@@ -177,7 +198,7 @@ def get_bun_version() -> version.Version | None:
     """
     try:
         # Run the bun -v command and capture the output
-        result = processes.new_process([get_config().bun_path, "-v"], run=True)
+        result = processes.new_process([str(get_config().bun_path), "-v"], run=True)
         return version.parse(result.stdout)  # type: ignore
     except FileNotFoundError:
         return None
@@ -188,34 +209,44 @@ def get_bun_version() -> version.Version | None:
         return None
 
 
-def get_install_package_manager() -> str | None:
+def get_install_package_manager(on_failure_return_none: bool = False) -> str | None:
     """Get the package manager executable for installation.
       Currently, bun is used for installation only.
 
+    Args:
+        on_failure_return_none: Whether to return None on failure.
+
     Returns:
         The path to the package manager.
     """
-    if (
-        constants.IS_WINDOWS
-        and not is_windows_bun_supported()
+    if constants.IS_WINDOWS and (
+        not is_windows_bun_supported()
         or windows_check_onedrive_in_path()
         or windows_npm_escape_hatch()
     ):
-        return get_package_manager()
-    return get_config().bun_path
+        return get_package_manager(on_failure_return_none)
+    return str(get_config().bun_path)
 
 
-def get_package_manager() -> str | None:
+def get_package_manager(on_failure_return_none: bool = False) -> str | None:
     """Get the package manager executable for running app.
       Currently on unix systems, npm is used for running the app only.
 
+    Args:
+        on_failure_return_none: Whether to return None on failure.
+
     Returns:
         The path to the package manager.
+
+    Raises:
+        FileNotFoundError: If the package manager is not found.
     """
     npm_path = path_ops.get_npm_path()
     if npm_path is not None:
-        npm_path = str(Path(npm_path).resolve())
-    return npm_path
+        return str(Path(npm_path).resolve())
+    if on_failure_return_none:
+        return None
+    raise FileNotFoundError("NPM not found. You may need to run `reflex init`.")
 
 
 def windows_check_onedrive_in_path() -> bool:
@@ -233,7 +264,7 @@ def windows_npm_escape_hatch() -> bool:
     Returns:
         If the user has set REFLEX_USE_NPM.
     """
-    return os.environ.get("REFLEX_USE_NPM", "").lower() in ["true", "1", "yes"]
+    return environment.REFLEX_USE_NPM.get()
 
 
 def get_app(reload: bool = False) -> ModuleType:
@@ -251,7 +282,7 @@ def get_app(reload: bool = False) -> ModuleType:
     from reflex.utils import telemetry
 
     try:
-        os.environ[constants.RELOAD_CONFIG] = str(reload)
+        environment.RELOAD_CONFIG.set(reload)
         config = get_config()
         if not config.app_name:
             raise RuntimeError(
@@ -259,7 +290,7 @@ def get_app(reload: bool = False) -> ModuleType:
                 "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
             )
         module = config.module
-        sys.path.insert(0, os.getcwd())
+        sys.path.insert(0, str(Path.cwd()))
         app = __import__(module, fromlist=(constants.CompileVars.APP,))
 
         if reload:
@@ -289,7 +320,7 @@ def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     """
     app_module = get_app(reload=reload)
     app = getattr(app_module, constants.CompileVars.APP)
-    # For py3.8 and py3.9 compatibility when redis is used, we MUST add any decorator pages
+    # For py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).
     app._apply_decorated_pages()
     app._compile(export=export)
@@ -326,24 +357,40 @@ def parse_redis_url() -> str | dict | None:
     """Parse the REDIS_URL in config if applicable.
 
     Returns:
-        If redis-py syntax, return the URL as it is. Otherwise, return the host/port/db as a dict.
+        If url is non-empty, return the URL as it is.
+
+    Raises:
+        ValueError: If the REDIS_URL is not a supported scheme.
     """
     config = get_config()
     if not config.redis_url:
         return None
-    if config.redis_url.startswith(("redis://", "rediss://", "unix://")):
-        return config.redis_url
-    console.deprecate(
-        feature_name="host[:port] style redis urls",
-        reason="redis-py url syntax is now being used",
-        deprecation_version="0.3.6",
-        removal_version="0.6.0",
-    )
-    redis_url, has_port, redis_port = config.redis_url.partition(":")
-    if not has_port:
-        redis_port = 6379
-    console.info(f"Using redis at {config.redis_url}")
-    return dict(host=redis_url, port=int(redis_port), db=0)
+    if not config.redis_url.startswith(("redis://", "rediss://", "unix://")):
+        raise ValueError(
+            "REDIS_URL must start with 'redis://', 'rediss://', or 'unix://'."
+        )
+    return config.redis_url
+
+
+async def get_redis_status() -> dict[str, bool | None]:
+    """Checks the status of the Redis connection.
+
+    Attempts to connect to Redis and send a ping command to verify connectivity.
+
+    Returns:
+        The status of the Redis connection.
+    """
+    try:
+        status = True
+        redis_client = get_redis_sync()
+        if redis_client is not None:
+            redis_client.ping()
+        else:
+            status = None
+    except exceptions.RedisError:
+        status = False
+
+    return {"redis": status}
 
 
 def validate_app_name(app_name: str | None = None) -> str:
@@ -360,9 +407,7 @@ def validate_app_name(app_name: str | None = None) -> str:
     Raises:
         Exit: if the app directory name is reflex or if the name is not standard for a python package name.
     """
-    app_name = (
-        app_name if app_name else os.getcwd().split(os.path.sep)[-1].replace("-", "_")
-    )
+    app_name = app_name if app_name else Path.cwd().name.replace("-", "_")
     # Make sure the app is not named "reflex".
     if app_name.lower() == constants.Reflex.MODULE_NAME:
         console.error(
@@ -390,14 +435,16 @@ def create_config(app_name: str):
     from reflex.compiler import templates
 
     config_name = f"{re.sub(r'[^a-zA-Z]', '', app_name).capitalize()}Config"
-    with open(constants.Config.FILE, "w") as f:
-        console.debug(f"Creating {constants.Config.FILE}")
-        f.write(templates.RXCONFIG.render(app_name=app_name, config_name=config_name))
+
+    console.debug(f"Creating {constants.Config.FILE}")
+    constants.Config.FILE.write_text(
+        templates.RXCONFIG.render(app_name=app_name, config_name=config_name)
+    )
 
 
 def initialize_gitignore(
-    gitignore_file: str = constants.GitIgnore.FILE,
-    files_to_ignore: set[str] = constants.GitIgnore.DEFAULTS,
+    gitignore_file: Path = constants.GitIgnore.FILE,
+    files_to_ignore: set[str] | list[str] = constants.GitIgnore.DEFAULTS,
 ):
     """Initialize the template .gitignore file.
 
@@ -406,20 +453,20 @@ def initialize_gitignore(
         files_to_ignore: The files to add to the .gitignore file.
     """
     # Combine with the current ignored files.
-    current_ignore: set[str] = set()
-    if os.path.exists(gitignore_file):
-        with open(gitignore_file, "r") as f:
-            current_ignore |= set([line.strip() for line in f.readlines()])
+    current_ignore: list[str] = []
+    if gitignore_file.exists():
+        current_ignore = [ln.strip() for ln in gitignore_file.read_text().splitlines()]
 
     if files_to_ignore == current_ignore:
         console.debug(f"{gitignore_file} already up to date.")
         return
-    files_to_ignore |= current_ignore
+    files_to_ignore = [ln for ln in files_to_ignore if ln not in current_ignore]
+    files_to_ignore += current_ignore
 
     # Write files to the .gitignore file.
-    with open(gitignore_file, "w", newline="\n") as f:
-        console.debug(f"Creating {gitignore_file}")
-        f.write(f"{(path_ops.join(sorted(files_to_ignore))).lstrip()}\n")
+    gitignore_file.touch(exist_ok=True)
+    console.debug(f"Creating {gitignore_file}")
+    gitignore_file.write_text("\n".join(files_to_ignore) + "\n")
 
 
 def initialize_requirements_txt():
@@ -446,14 +493,14 @@ def initialize_requirements_txt():
         console.debug(f"Detected encoding for {fp} as {encoding}.")
     try:
         other_requirements_exist = False
-        with open(fp, "r", encoding=encoding) as f:
-            for req in f.readlines():
+        with fp.open("r", encoding=encoding) as f:
+            for req in f:
                 # Check if we have a package name that is reflex
                 if re.match(r"^reflex[^a-zA-Z0-9]", req):
                     console.debug(f"{fp} already has reflex as dependency.")
                     return
                 other_requirements_exist = True
-        with open(fp, "a", encoding=encoding) as f:
+        with fp.open("a", encoding=encoding) as f:
             preceding_newline = "\n" if other_requirements_exist else ""
             f.write(
                 f"{preceding_newline}{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
@@ -512,8 +559,8 @@ def initialize_app_directory(
     # Rename the template app to the app name.
     path_ops.mv(template_code_dir_name, app_name)
     path_ops.mv(
-        os.path.join(app_name, template_name + constants.Ext.PY),
-        os.path.join(app_name, app_name + constants.Ext.PY),
+        Path(app_name) / (template_name + constants.Ext.PY),
+        Path(app_name) / (app_name + constants.Ext.PY),
     )
 
     # Fix up the imports.
@@ -544,12 +591,14 @@ def initialize_web_directory():
     """Initialize the web directory on reflex init."""
     console.log("Initializing the web directory.")
 
-    # Re-use the hash if one is already created, so we don't over-write it when running reflex init
+    # Reuse the hash if one is already created, so we don't over-write it when running reflex init
     project_hash = get_project_hash()
 
     path_ops.cp(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
 
     initialize_package_json()
+
+    initialize_bun_config()
 
     path_ops.mkdir(get_web_dir() / constants.Dirs.PUBLIC)
 
@@ -575,23 +624,27 @@ def _compile_package_json():
 def initialize_package_json():
     """Render and write in .web the package.json file."""
     output_path = get_web_dir() / constants.PackageJson.PATH
-    code = _compile_package_json()
-    output_path.write_text(code)
+    output_path.write_text(_compile_package_json())
 
-    best_registry = _get_best_registry()
+
+def initialize_bun_config():
+    """Initialize the bun config file."""
     bun_config_path = get_web_dir() / constants.Bun.CONFIG_PATH
-    bun_config_path.write_text(
-        f"""
-[install]
-registry = "{best_registry}"
-"""
-    )
+
+    if (custom_bunfig := Path(constants.Bun.CONFIG_PATH)).exists():
+        bunfig_content = custom_bunfig.read_text()
+        console.info(f"Copying custom bunfig.toml inside {get_web_dir()} folder")
+    else:
+        best_registry = _get_npm_registry()
+        bunfig_content = constants.Bun.DEFAULT_CONFIG.format(registry=best_registry)
+
+    bun_config_path.write_text(bunfig_content)
 
 
 def init_reflex_json(project_hash: int | None):
     """Write the hash of the Reflex project to a REFLEX_JSON.
 
-    Re-use the hash if one is already created, therefore do not
+    Reuse the hash if one is already created, therefore do not
     overwrite it every time we run the reflex init command
     .
 
@@ -641,10 +694,11 @@ def _update_next_config(
         "compress": config.next_compression,
         "reactStrictMode": config.react_strict_mode,
         "trailingSlash": True,
+        "staticPageGenerationTimeout": config.static_page_generation_timeout,
     }
     if transpile_packages:
         next_config["transpilePackages"] = list(
-            set((format_library_name(p) for p in transpile_packages))
+            {format_library_name(p) for p in transpile_packages}
         )
     if export:
         next_config["output"] = "export"
@@ -657,7 +711,7 @@ def _update_next_config(
 def remove_existing_bun_installation():
     """Remove existing bun installation."""
     console.debug("Removing existing bun installation.")
-    if os.path.exists(get_config().bun_path):
+    if Path(get_config().bun_path).exists():
         path_ops.rm(constants.Bun.ROOT_PATH)
 
 
@@ -672,18 +726,18 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
     """
     # Download the script
     console.debug(f"Downloading {url}")
-    response = httpx.get(url)
+    response = net.get(url)
     if response.status_code != httpx.codes.OK:
         response.raise_for_status()
 
     # Save the script to a temporary file.
-    script = tempfile.NamedTemporaryFile()
-    with open(script.name, "w") as f:
-        f.write(response.text)
+    script = Path(tempfile.NamedTemporaryFile().name)
+
+    script.write_text(response.text)
 
     # Run the script.
     env = {**os.environ, **env}
-    process = processes.new_process(["bash", f.name, *args], env=env)
+    process = processes.new_process(["bash", str(script), *args], env=env)
     show = processes.show_status if show_status else processes.show_logs
     show(f"Installing {url}", process)
 
@@ -697,16 +751,16 @@ def download_and_extract_fnm_zip():
     # Download the zip file
     url = constants.Fnm.INSTALL_URL
     console.debug(f"Downloading {url}")
-    fnm_zip_file = os.path.join(constants.Fnm.DIR, f"{constants.Fnm.FILENAME}.zip")
+    fnm_zip_file: Path = constants.Fnm.DIR / f"{constants.Fnm.FILENAME}.zip"
     # Function to download and extract the FNM zip release.
     try:
         # Download the FNM zip release.
         # TODO: show progress to improve UX
-        with httpx.stream("GET", url, follow_redirects=True) as response:
-            response.raise_for_status()
-            with open(fnm_zip_file, "wb") as output_file:
-                for chunk in response.iter_bytes():
-                    output_file.write(chunk)
+        response = net.get(url, follow_redirects=True)
+        response.raise_for_status()
+        with fnm_zip_file.open("wb") as output_file:
+            for chunk in response.iter_bytes():
+                output_file.write(chunk)
 
         # Extract the downloaded zip file.
         with zipfile.ZipFile(fnm_zip_file, "r") as zip_ref:
@@ -736,7 +790,7 @@ def install_node():
         return
 
     path_ops.mkdir(constants.Fnm.DIR)
-    if not os.path.exists(constants.Fnm.EXE):
+    if not constants.Fnm.EXE.exists():
         download_and_extract_fnm_zip()
 
     if constants.IS_WINDOWS:
@@ -752,7 +806,7 @@ def install_node():
         )
     else:  # All other platforms (Linux, MacOS).
         # Add execute permissions to fnm executable.
-        os.chmod(constants.Fnm.EXE, stat.S_IXUSR)
+        constants.Fnm.EXE.chmod(stat.S_IXUSR)
         # Install node.
         # Specify arm64 arch explicitly for M1s and M2s.
         architecture_arg = (
@@ -775,14 +829,10 @@ def install_node():
 
 
 def install_bun():
-    """Install bun onto the user's system.
-
-    Raises:
-        FileNotFoundError: If required packages are not found.
-    """
+    """Install bun onto the user's system."""
     win_supported = is_windows_bun_supported()
     one_drive_in_path = windows_check_onedrive_in_path()
-    if constants.IS_WINDOWS and not win_supported or one_drive_in_path:
+    if constants.IS_WINDOWS and (not win_supported or one_drive_in_path):
         if not win_supported:
             console.warn(
                 "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
@@ -793,7 +843,7 @@ def install_bun():
             )
 
     # Skip if bun is already installed.
-    if os.path.exists(get_config().bun_path) and get_bun_version() == version.parse(
+    if Path(get_config().bun_path).exists() and get_bun_version() == version.parse(
         constants.Bun.VERSION
     ):
         console.debug("Skipping bun installation as it is already installed.")
@@ -808,7 +858,7 @@ def install_bun():
                 f"irm {constants.Bun.WINDOWS_INSTALL_URL}|iex",
             ],
             env={
-                "BUN_INSTALL": constants.Bun.ROOT_PATH,
+                "BUN_INSTALL": str(constants.Bun.ROOT_PATH),
                 "BUN_VERSION": constants.Bun.VERSION,
             },
             shell=True,
@@ -818,31 +868,32 @@ def install_bun():
     else:
         unzip_path = path_ops.which("unzip")
         if unzip_path is None:
-            raise FileNotFoundError("Reflex requires unzip to be installed.")
+            raise_system_package_missing_error("unzip")
 
         # Run the bun install script.
         download_and_run(
             constants.Bun.INSTALL_URL,
             f"bun-v{constants.Bun.VERSION}",
-            BUN_INSTALL=constants.Bun.ROOT_PATH,
+            BUN_INSTALL=str(constants.Bun.ROOT_PATH),
         )
 
 
-def _write_cached_procedure_file(payload: str, cache_file: str):
-    with open(cache_file, "w") as f:
-        f.write(payload)
+def _write_cached_procedure_file(payload: str, cache_file: str | Path):
+    cache_file = Path(cache_file)
+    cache_file.write_text(payload)
 
 
-def _read_cached_procedure_file(cache_file: str) -> str | None:
-    if os.path.exists(cache_file):
-        with open(cache_file, "r") as f:
-            return f.read()
+def _read_cached_procedure_file(cache_file: str | Path) -> str | None:
+    cache_file = Path(cache_file)
+    if cache_file.exists():
+        return cache_file.read_text()
     return None
 
 
-def _clear_cached_procedure_file(cache_file: str):
-    if os.path.exists(cache_file):
-        os.remove(cache_file)
+def _clear_cached_procedure_file(cache_file: str | Path):
+    cache_file = Path(cache_file)
+    if cache_file.exists():
+        cache_file.unlink()
 
 
 def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
@@ -873,7 +924,7 @@ def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
 
 @cached_procedure(
     cache_file=str(get_web_dir() / "reflex.install_frontend_packages.cached"),
-    payload_fn=lambda p, c: f"{repr(sorted(list(p)))},{c.json()}",
+    payload_fn=lambda p, c: f"{sorted(p)!r},{c.json()}",
 )
 def install_frontend_packages(packages: set[str], config: Config):
     """Installs the base and custom frontend packages.
@@ -882,20 +933,42 @@ def install_frontend_packages(packages: set[str], config: Config):
         packages: A list of package names to be installed.
         config: The config object.
 
+    Raises:
+        FileNotFoundError: If the package manager is not found.
+
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
     # unsupported archs(arm and 32bit machines) will use npm anyway. so we dont have to run npm twice
     fallback_command = (
-        get_package_manager()
-        if not constants.IS_WINDOWS
-        or constants.IS_WINDOWS
-        and is_windows_bun_supported()
-        and not windows_check_onedrive_in_path()
+        get_package_manager(on_failure_return_none=True)
+        if (
+            not constants.IS_WINDOWS
+            or (
+                constants.IS_WINDOWS
+                and (
+                    is_windows_bun_supported() and not windows_check_onedrive_in_path()
+                )
+            )
+        )
         else None
     )
+
+    install_package_manager = (
+        get_install_package_manager(on_failure_return_none=True) or fallback_command
+    )
+
+    if install_package_manager is None:
+        raise FileNotFoundError(
+            "Could not find a package manager to install frontend packages. You may need to run `reflex init`."
+        )
+
+    fallback_command = (
+        fallback_command if fallback_command is not install_package_manager else None
+    )
+
     processes.run_process_with_fallback(
-        [get_install_package_manager(), "install"],  # type: ignore
+        [install_package_manager, "install"],  # type: ignore
         fallback=fallback_command,
         analytics_enabled=True,
         show_status_message="Installing base frontend packages",
@@ -906,7 +979,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     if config.tailwind is not None:
         processes.run_process_with_fallback(
             [
-                get_install_package_manager(),
+                install_package_manager,
                 "add",
                 "-d",
                 constants.Tailwind.VERSION,
@@ -922,7 +995,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
         processes.run_process_with_fallback(
-            [get_install_package_manager(), "add", *packages],
+            [install_package_manager, "add", *packages],
             fallback=fallback_command,
             analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",
@@ -943,7 +1016,7 @@ def needs_reinit(frontend: bool = True) -> bool:
     Raises:
         Exit: If the app is not initialized.
     """
-    if not os.path.exists(constants.Config.FILE):
+    if not constants.Config.FILE.exists():
         console.error(
             f"[cyan]{constants.Config.FILE}[/cyan] not found. Move to the root folder of your project, or run [bold]{constants.Reflex.MODULE_NAME} init[/bold] to start a new project."
         )
@@ -954,7 +1027,7 @@ def needs_reinit(frontend: bool = True) -> bool:
         return False
 
     # Make sure the .reflex directory exists.
-    if not os.path.exists(constants.Reflex.DIR):
+    if not environment.REFLEX_DIR.get().exists():
         return True
 
     # Make sure the .web directory exists in frontend mode.
@@ -1000,6 +1073,8 @@ def validate_bun():
     # if a custom bun path is provided, make sure its valid
     # This is specific to non-FHS OS
     bun_path = get_config().bun_path
+    if path_ops.use_system_bun():
+        bun_path = path_ops.which("bun")
     if bun_path != constants.Bun.DEFAULT_PATH:
         console.info(f"Using custom Bun path: {bun_path}")
         bun_version = get_bun_version()
@@ -1057,25 +1132,21 @@ def ensure_reflex_installation_id() -> Optional[int]:
     """
     try:
         initialize_reflex_user_directory()
-        installation_id_file = os.path.join(constants.Reflex.DIR, "installation_id")
+        installation_id_file = environment.REFLEX_DIR.get() / "installation_id"
 
         installation_id = None
-        if os.path.exists(installation_id_file):
-            try:
-                with open(installation_id_file, "r") as f:
-                    installation_id = int(f.read())
-            except Exception:
+        if installation_id_file.exists():
+            with contextlib.suppress(Exception):
+                installation_id = int(installation_id_file.read_text())
                 # If anything goes wrong at all... just regenerate.
                 # Like what? Examples:
                 #     - file not exists
                 #     - file not readable
                 #     - content not parseable as an int
-                pass
 
         if installation_id is None:
             installation_id = random.getrandbits(128)
-            with open(installation_id_file, "w") as f:
-                f.write(str(installation_id))
+            installation_id_file.write_text(str(installation_id))
         # If we get here, installation_id is definitely set
         return installation_id
     except Exception as e:
@@ -1086,7 +1157,7 @@ def ensure_reflex_installation_id() -> Optional[int]:
 def initialize_reflex_user_directory():
     """Initialize the reflex user directory."""
     # Create the reflex directory.
-    path_ops.mkdir(constants.Reflex.DIR)
+    path_ops.mkdir(environment.REFLEX_DIR.get())
 
 
 def initialize_frontend_dependencies():
@@ -1103,13 +1174,34 @@ def initialize_frontend_dependencies():
     initialize_web_directory()
 
 
+def check_db_used() -> bool:
+    """Check if the database is used.
+
+    Returns:
+        True if the database is used.
+    """
+    return bool(get_config().db_url)
+
+
+def check_redis_used() -> bool:
+    """Check if Redis is used.
+
+    Returns:
+        True if Redis is used.
+    """
+    return bool(get_config().redis_url)
+
+
 def check_db_initialized() -> bool:
     """Check if the database migrations are initialized.
 
     Returns:
         True if alembic is initialized (or if database is not used).
     """
-    if get_config().db_url is not None and not Path(constants.ALEMBIC_CONFIG).exists():
+    if (
+        get_config().db_url is not None
+        and not environment.ALEMBIC_CONFIG.get().exists()
+    ):
         console.error(
             "Database is not initialized. Run [bold]reflex db init[/bold] first."
         )
@@ -1119,7 +1211,7 @@ def check_db_initialized() -> bool:
 
 def check_schema_up_to_date():
     """Check if the sqlmodel metadata matches the current database schema."""
-    if get_config().db_url is None or not Path(constants.ALEMBIC_CONFIG).exists():
+    if get_config().db_url is None or not environment.ALEMBIC_CONFIG.get().exists():
         return
     with model.Model.get_db_engine().connect() as connection:
         try:
@@ -1138,7 +1230,7 @@ def check_schema_up_to_date():
                 )
 
 
-def prompt_for_template(templates: list[Template]) -> str:
+def prompt_for_template_options(templates: list[Template]) -> str:
     """Prompt the user to specify a template.
 
     Args:
@@ -1150,9 +1242,14 @@ def prompt_for_template(templates: list[Template]) -> str:
     # Show the user the URLs of each template to preview.
     console.print("\nGet started with a template:")
 
+    def format_demo_url_str(url: str) -> str:
+        return f" ({url})" if url else ""
+
     # Prompt the user to select a template.
     id_to_name = {
-        str(idx): f"{template.name} ({template.demo_url}) - {template.description}"
+        str(
+            idx
+        ): f"{template.name.replace('_', ' ').replace('-', ' ')}{format_demo_url_str(template.demo_url)} - {template.description}"
         for idx, template in enumerate(templates)
     }
     for id in range(len(id_to_name)):
@@ -1169,158 +1266,6 @@ def prompt_for_template(templates: list[Template]) -> str:
     return templates[int(template)].name
 
 
-def should_show_rx_chakra_migration_instructions() -> bool:
-    """Should we show the migration instructions for rx.chakra.* => rx.*?.
-
-    Returns:
-        bool: True if we should show the migration instructions.
-    """
-    if os.getenv("REFLEX_PROMPT_MIGRATE_TO_RX_CHAKRA") == "yes":
-        return True
-
-    if not Path(constants.Config.FILE).exists():
-        # They are running reflex init for the first time.
-        return False
-
-    existing_init_reflex_version = None
-    reflex_json = get_web_dir() / constants.Dirs.REFLEX_JSON
-    if reflex_json.exists():
-        with reflex_json.open("r") as f:
-            data = json.load(f)
-        existing_init_reflex_version = data.get("version", None)
-
-    if existing_init_reflex_version is None:
-        # They clone a reflex app from git for the first time.
-        # That app may or may not be 0.4 compatible.
-        # So let's just show these instructions THIS TIME.
-        return True
-
-    if constants.Reflex.VERSION < "0.4":
-        return False
-    else:
-        return existing_init_reflex_version < "0.4"
-
-
-def show_rx_chakra_migration_instructions():
-    """Show the migration instructions for rx.chakra.* => rx.*."""
-    console.log(
-        "Prior to reflex 0.4.0, rx.* components are based on Chakra UI. They are now based on Radix UI. To stick to Chakra UI, use rx.chakra.*."
-    )
-    console.log("")
-    console.log(
-        "[bold]Run `reflex script keep-chakra` to automatically update your app."
-    )
-    console.log("")
-    console.log(
-        "For more details, please see https://reflex.dev/blog/2024-02-16-reflex-v0.4.0/"
-    )
-
-
-def migrate_to_rx_chakra():
-    """Migrate rx.button => r.chakra.button, etc."""
-    file_pattern = os.path.join(get_config().app_name, "**/*.py")
-    file_list = glob.glob(file_pattern, recursive=True)
-
-    # Populate with all rx.<x> components that have been moved to rx.chakra.<x>
-    patterns = {
-        rf"\brx\.{name}\b": f"rx.chakra.{name}"
-        for name in _get_rx_chakra_component_to_migrate()
-    }
-
-    for file_path in file_list:
-        with FileInput(file_path, inplace=True) as file:
-            for _line_num, line in enumerate(file):
-                for old, new in patterns.items():
-                    line = re.sub(old, new, line)
-                print(line, end="")
-
-
-def _get_rx_chakra_component_to_migrate() -> set[str]:
-    from reflex.components.chakra import ChakraComponent
-
-    rx_chakra_names = set(dir(reflex.chakra))
-
-    names_to_migrate = set()
-
-    # whitelist names will always be rewritten as rx.chakra.<x>
-    whitelist = {
-        "ColorModeIcon",
-        "MultiSelect",
-        "MultiSelectOption",
-        "color_mode_icon",
-        "multi_select",
-        "multi_select_option",
-    }
-
-    for rx_chakra_name in sorted(rx_chakra_names):
-        if rx_chakra_name.startswith("_"):
-            continue
-
-        rx_chakra_object = getattr(reflex.chakra, rx_chakra_name)
-        try:
-            if (
-                (
-                    inspect.ismethod(rx_chakra_object)
-                    and inspect.isclass(rx_chakra_object.__self__)
-                    and issubclass(rx_chakra_object.__self__, ChakraComponent)
-                )
-                or (
-                    inspect.isclass(rx_chakra_object)
-                    and issubclass(rx_chakra_object, ChakraComponent)
-                )
-                or rx_chakra_name in whitelist
-            ):
-                names_to_migrate.add(rx_chakra_name)
-
-        except Exception:
-            raise
-    return names_to_migrate
-
-
-def migrate_to_reflex():
-    """Migration from Pynecone to Reflex."""
-    # Check if the old config file exists.
-    if not os.path.exists(constants.Config.PREVIOUS_FILE):
-        return
-
-    # Ask the user if they want to migrate.
-    action = console.ask(
-        "Pynecone project detected. Automatically upgrade to Reflex?",
-        choices=["y", "n"],
-    )
-    if action == "n":
-        return
-
-    # Rename pcconfig to rxconfig.
-    console.log(
-        f"[bold]Renaming {constants.Config.PREVIOUS_FILE} to {constants.Config.FILE}"
-    )
-    os.rename(constants.Config.PREVIOUS_FILE, constants.Config.FILE)
-
-    # Find all python files in the app directory.
-    file_pattern = os.path.join(get_config().app_name, "**/*.py")
-    file_list = glob.glob(file_pattern, recursive=True)
-
-    # Add the config file to the list of files to be migrated.
-    file_list.append(constants.Config.FILE)
-
-    # Migrate all files.
-    updates = {
-        "Pynecone": "Reflex",
-        "pynecone as pc": "reflex as rx",
-        "pynecone.io": "reflex.dev",
-        "pynecone": "reflex",
-        "pc.": "rx.",
-        "pcconfig": "rxconfig",
-    }
-    for file_path in file_list:
-        with FileInput(file_path, inplace=True) as file:
-            for line in file:
-                for old, new in updates.items():
-                    line = line.replace(old, new)
-                print(line, end="")
-
-
 def fetch_app_templates(version: str) -> dict[str, Template]:
     """Fetch a dict of templates from the templates repo using github API.
 
@@ -1332,7 +1277,7 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
     """
 
     def get_release_by_tag(tag: str) -> dict | None:
-        response = httpx.get(constants.Reflex.RELEASES_URL)
+        response = net.get(constants.Reflex.RELEASES_URL)
         response.raise_for_status()
         releases = response.json()
         for release in releases:
@@ -1353,7 +1298,7 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
     else:
         templates_url = asset["browser_download_url"]
 
-    templates_data = httpx.get(templates_url, follow_redirects=True).json()["templates"]
+    templates_data = net.get(templates_url, follow_redirects=True).json()["templates"]
 
     for template in templates_data:
         if template["name"] == "blank":
@@ -1367,11 +1312,16 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
             ),
             None,
         )
-    return {
-        tp["name"]: Template.parse_obj(tp)
-        for tp in templates_data
-        if not tp["hidden"] and tp["code_url"] is not None
-    }
+
+    filtered_templates = {}
+    for tp in templates_data:
+        if tp["hidden"] or tp["code_url"] is None:
+            continue
+        known_fields = {f.name for f in dataclasses.fields(Template)}
+        filtered_templates[tp["name"]] = Template(
+            **{k: v for k, v in tp.items() if k in known_fields}
+        )
+    return filtered_templates
 
 
 def create_config_init_app_from_remote_template(app_name: str, template_url: str):
@@ -1393,19 +1343,18 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         raise typer.Exit(1) from ose
 
     # Use httpx GET with redirects to download the zip file.
-    zip_file_path = Path(temp_dir) / "template.zip"
+    zip_file_path: Path = Path(temp_dir) / "template.zip"
     try:
         # Note: following redirects can be risky. We only allow this for reflex built templates at the moment.
-        response = httpx.get(template_url, follow_redirects=True)
+        response = net.get(template_url, follow_redirects=True)
         console.debug(f"Server responded download request: {response}")
         response.raise_for_status()
     except httpx.HTTPError as he:
         console.error(f"Failed to download the template: {he}")
         raise typer.Exit(1) from he
     try:
-        with open(zip_file_path, "wb") as f:
-            f.write(response.content)
-            console.debug(f"Downloaded the zip to {zip_file_path}")
+        zip_file_path.write_bytes(response.content)
+        console.debug(f"Downloaded the zip to {zip_file_path}")
     except OSError as ose:
         console.error(f"Unable to write the downloaded zip to disk {ose}")
         raise typer.Exit(1) from ose
@@ -1454,69 +1403,196 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
     shutil.rmtree(unzip_dir)
 
 
-def initialize_app(app_name: str, template: str | None = None):
+def initialize_default_app(app_name: str):
+    """Initialize the default app.
+
+    Args:
+        app_name: The name of the app.
+    """
+    create_config(app_name)
+    initialize_app_directory(app_name)
+
+
+def validate_and_create_app_using_remote_template(app_name, template, templates):
+    """Validate and create an app using a remote template.
+
+    Args:
+        app_name: The name of the app.
+        template: The name of the template.
+        templates: The available templates.
+
+    Raises:
+        Exit: If the template is not found.
+    """
+    # If user selects a template, it needs to exist.
+    if template in templates:
+        from reflex_cli.v2.utils import hosting
+
+        authenticated_token = hosting.authenticated_token()
+        if not authenticated_token or not authenticated_token[0]:
+            console.print(
+                f"Please use `reflex login` to access the '{template}' template."
+            )
+            raise typer.Exit(3)
+
+        template_url = templates[template].code_url
+    else:
+        # Check if the template is a github repo.
+        if template.startswith("https://github.com"):
+            template_url = f"{template.strip('/').replace('.git', '')}/archive/main.zip"
+        else:
+            console.error(f"Template `{template}` not found or invalid.")
+            raise typer.Exit(1)
+
+    if template_url is None:
+        return
+
+    create_config_init_app_from_remote_template(
+        app_name=app_name, template_url=template_url
+    )
+
+
+def generate_template_using_ai(template: str | None = None) -> str:
+    """Generate a template using AI(Flexgen).
+
+    Args:
+        template: The name of the template.
+
+    Returns:
+        The generation hash.
+
+    Raises:
+        Exit: If the template and ai flags are used.
+    """
+    if template is None:
+        # If AI is requested and no template specified, redirect the user to reflex.build.
+        return redir.reflex_build_redirect()
+    elif is_generation_hash(template):
+        # Otherwise treat the template as a generation hash.
+        return template
+    else:
+        console.error(
+            "Cannot use `--template` option with `--ai` option. Please remove `--template` option."
+        )
+        raise typer.Exit(2)
+
+
+def fetch_remote_templates(
+    template: str,
+) -> tuple[str, dict[str, Template]]:
+    """Fetch the available remote templates.
+
+    Args:
+        template: The name of the template.
+
+    Returns:
+        The selected template and the available templates.
+    """
+    available_templates = {}
+
+    try:
+        # Get the available templates
+        available_templates = fetch_app_templates(constants.Reflex.VERSION)
+    except Exception as e:
+        console.warn("Failed to fetch templates. Falling back to default template.")
+        console.debug(f"Error while fetching templates: {e}")
+        template = constants.Templates.DEFAULT
+
+    return template, available_templates
+
+
+def initialize_app(
+    app_name: str, template: str | None = None, ai: bool = False
+) -> str | None:
     """Initialize the app either from a remote template or a blank app. If the config file exists, it is considered as reinit.
 
     Args:
         app_name: The name of the app.
         template: The name of the template to use.
+        ai: Whether to use AI to generate the template.
+
+    Returns:
+        The name of the template.
 
     Raises:
-        Exit: If template is directly provided in the command flag and is invalid.
+        Exit: If the template is not valid or unspecified.
     """
     # Local imports to avoid circular imports.
     from reflex.utils import telemetry
 
     # Check if the app is already initialized.
-    if os.path.exists(constants.Config.FILE):
+    if constants.Config.FILE.exists():
         telemetry.send("reinit")
         return
+
+    generation_hash = None
+    if ai:
+        generation_hash = generate_template_using_ai(template)
+        template = constants.Templates.DEFAULT
 
     templates: dict[str, Template] = {}
 
     # Don't fetch app templates if the user directly asked for DEFAULT.
-    if template is None or (template != constants.Templates.DEFAULT):
-        try:
-            # Get the available templates
-            templates = fetch_app_templates(constants.Reflex.VERSION)
-            if template is None and len(templates) > 0:
-                template = prompt_for_template(list(templates.values()))
-        except Exception as e:
-            console.warn("Failed to fetch templates. Falling back to default template.")
-            console.debug(f"Error while fetching templates: {e}")
-        finally:
-            template = template or constants.Templates.DEFAULT
+    if template is not None and (template not in (constants.Templates.DEFAULT,)):
+        template, templates = fetch_remote_templates(template)
+
+    if template is None:
+        template = prompt_for_template_options(get_init_cli_prompt_options())
+        if template == constants.Templates.AI:
+            generation_hash = generate_template_using_ai()
+            # change to the default to allow creation of default app
+            template = constants.Templates.DEFAULT
+        elif template == constants.Templates.CHOOSE_TEMPLATES:
+            console.print(
+                f"Go to the templates page ({constants.Templates.REFLEX_TEMPLATES_URL}) and copy the command to init with a template."
+            )
+            raise typer.Exit(0)
 
     # If the blank template is selected, create a blank app.
-    if template == constants.Templates.DEFAULT:
+    if template in (constants.Templates.DEFAULT,):
         # Default app creation behavior: a blank app.
-        create_config(app_name)
-        initialize_app_directory(app_name)
+        initialize_default_app(app_name)
     else:
-        # Fetch App templates from the backend server.
-        console.debug(f"Available templates: {templates}")
-
-        # If user selects a template, it needs to exist.
-        if template in templates:
-            template_url = templates[template].code_url
-        else:
-            # Check if the template is a github repo.
-            if template.startswith("https://github.com"):
-                template_url = (
-                    f"{template.strip('/').replace('.git', '')}/archive/main.zip"
-                )
-            else:
-                console.error(f"Template `{template}` not found.")
-                raise typer.Exit(1)
-
-        if template_url is None:
-            return
-
-        create_config_init_app_from_remote_template(
-            app_name=app_name, template_url=template_url
+        validate_and_create_app_using_remote_template(
+            app_name=app_name, template=template, templates=templates
         )
 
+    # If a reflex.build generation hash is available, download the code and apply it to the main module.
+    if generation_hash:
+        initialize_main_module_index_from_generation(
+            app_name, generation_hash=generation_hash
+        )
     telemetry.send("init", template=template)
+
+    return template
+
+
+def get_init_cli_prompt_options() -> list[Template]:
+    """Get the CLI options for initializing a Reflex app.
+
+    Returns:
+        The CLI options.
+    """
+    return [
+        Template(
+            name=constants.Templates.DEFAULT,
+            description="A blank Reflex app.",
+            demo_url=constants.Templates.DEFAULT_TEMPLATE_URL,
+            code_url="",
+        ),
+        Template(
+            name=constants.Templates.AI,
+            description="Generate a template using AI [Experimental]",
+            demo_url="",
+            code_url="",
+        ),
+        Template(
+            name=constants.Templates.CHOOSE_TEMPLATES,
+            description="Choose an existing template.",
+            demo_url="",
+            code_url="",
+        ),
+    ]
 
 
 def initialize_main_module_index_from_generation(app_name: str, generation_hash: str):
@@ -1525,19 +1601,37 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
     Args:
         app_name: The name of the app.
         generation_hash: The generation hash from reflex.build.
+
+    Raises:
+        GeneratedCodeHasNoFunctionDefs: If the fetched code has no function definitions
+            (the refactored reflex code is expected to have at least one root function defined).
     """
     # Download the reflex code for the generation.
-    resp = httpx.get(
-        constants.Templates.REFLEX_BUILD_CODE_URL.format(
-            generation_hash=generation_hash
+    url = constants.Templates.REFLEX_BUILD_CODE_URL.format(
+        generation_hash=generation_hash
+    )
+    resp = net.get(url)
+    while resp.status_code == httpx.codes.SERVICE_UNAVAILABLE:
+        console.debug("Waiting for the code to be generated...")
+        time.sleep(1)
+        resp = net.get(url)
+    resp.raise_for_status()
+
+    # Determine the name of the last function, which renders the generated code.
+    defined_funcs = re.findall(r"def ([a-zA-Z_]+)\(", resp.text)
+    if not defined_funcs:
+        raise GeneratedCodeHasNoFunctionDefs(
+            f"No function definitions found in generated code from {url!r}."
         )
-    ).raise_for_status()
+    render_func_name = defined_funcs[-1]
 
     def replace_content(_match):
         return "\n".join(
             [
-                "def index() -> rx.Component:",
-                textwrap.indent("return " + resp.text, "    "),
+                resp.text,
+                "",
+                "" "def index() -> rx.Component:",
+                f"    return {render_func_name}()",
                 "",
                 "",
             ],
@@ -1545,13 +1639,20 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
 
     main_module_path = Path(app_name, app_name + constants.Ext.PY)
     main_module_code = main_module_path.read_text()
-    main_module_path.write_text(
-        re.sub(
-            r"def index\(\).*:\n([^\n]\s+.*\n+)+",
-            replace_content,
-            main_module_code,
-        )
+
+    main_module_code = re.sub(
+        r"def index\(\).*:\n([^\n]\s+.*\n+)+",
+        replace_content,
+        main_module_code,
     )
+    # Make the app use light mode until flexgen enforces the conversion of
+    # tailwind colors to radix colors.
+    main_module_code = re.sub(
+        r"app\s*=\s*rx\.App\(\s*\)",
+        'app = rx.App(theme=rx.theme(color_mode="light"))',
+        main_module_code,
+    )
+    main_module_path.write_text(main_module_code)
 
 
 def format_address_width(address_width) -> int | None:

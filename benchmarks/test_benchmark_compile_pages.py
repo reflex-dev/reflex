@@ -144,7 +144,7 @@ def AppWithOnePage():
 
     def index() -> rx.Component:
         return rx.center(
-            rx.chakra.input(
+            rx.input(
                 id="token", value=State.router.session.client_token, is_read_only=True
             ),
             rx.vstack(
@@ -210,9 +210,9 @@ def app_with_one_page(
     Yields:
         an AppHarness instance
     """
-    root = tmp_path_factory.mktemp(f"app1")
+    root = tmp_path_factory.mktemp("app1")
 
-    yield AppHarness.create(root=root, app_source=AppWithOnePage)  # type: ignore
+    yield AppHarness.create(root=root, app_source=AppWithOnePage)
 
 
 @pytest.fixture(scope="session")
@@ -227,7 +227,7 @@ def app_with_ten_pages(
     Yields:
         an AppHarness instance
     """
-    root = tmp_path_factory.mktemp(f"app10")
+    root = tmp_path_factory.mktemp("app10")
     yield AppHarness.create(
         root=root,
         app_source=functools.partial(
@@ -249,7 +249,7 @@ def app_with_hundred_pages(
     Yields:
         an AppHarness instance
     """
-    root = tmp_path_factory.mktemp(f"app100")
+    root = tmp_path_factory.mktemp("app100")
 
     yield AppHarness.create(
         root=root,
@@ -272,11 +272,11 @@ def app_with_thousand_pages(
     Yields:
         an AppHarness instance
     """
-    root = tmp_path_factory.mktemp(f"app1000")
+    root = tmp_path_factory.mktemp("app1000")
 
     yield AppHarness.create(
         root=root,
-        app_source=functools.partial(  # type: ignore
+        app_source=functools.partial(
             AppWithThousandPages,
             render_comp=render_multiple_pages,  # type: ignore
         ),
@@ -295,7 +295,7 @@ def app_with_ten_thousand_pages(
     Yields:
         running AppHarness instance
     """
-    root = tmp_path_factory.mktemp(f"app10000")
+    root = tmp_path_factory.mktemp("app10000")
 
     yield AppHarness.create(
         root=root,

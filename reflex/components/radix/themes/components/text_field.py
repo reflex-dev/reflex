@@ -4,27 +4,22 @@ from __future__ import annotations
 
 from typing import Literal, Union
 
-from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
-from reflex.event import EventHandler
-from reflex.style import Style, format_as_emotion
-from reflex.utils import console
-from reflex.vars import Var
+from reflex.event import EventHandler, input_event, key_event
+from reflex.utils.types import is_optional
+from reflex.vars.base import Var
+from reflex.vars.number import ternary_operation
 
-from ..base import (
-    LiteralAccentColor,
-    LiteralRadius,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
 LiteralTextFieldSize = Literal["1", "2", "3"]
 LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
 
 
-class TextFieldRoot(elements.Div, RadixThemesComponent):
+class TextFieldRoot(elements.Input, RadixThemesComponent):
     """Captures user input with an optional slot for buttons and icons."""
 
     tag = "TextField.Root"
@@ -74,20 +69,23 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
     # Value of the input
     value: Var[Union[str, int, float]]
 
+    # References a datalist for suggested options
+    list: Var[Union[str, int, bool]]
+
     # Fired when the value of the textarea changes.
-    on_change: EventHandler[lambda e0: [e0.target.value]]
+    on_change: EventHandler[input_event]
 
     # Fired when the textarea is focused.
-    on_focus: EventHandler[lambda e0: [e0.target.value]]
+    on_focus: EventHandler[input_event]
 
     # Fired when the textarea is blurred.
-    on_blur: EventHandler[lambda e0: [e0.target.value]]
+    on_blur: EventHandler[input_event]
 
     # Fired when a key is pressed down.
-    on_key_down: EventHandler[lambda e0: [e0.key]]
+    on_key_down: EventHandler[key_event]
 
     # Fired when a key is released.
-    on_key_up: EventHandler[lambda e0: [e0.key]]
+    on_key_up: EventHandler[key_event]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -100,85 +98,24 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
         Returns:
             The component.
         """
+        value = props.get("value")
+
+        # React expects an empty string(instead of null) for controlled inputs.
+        if value is not None and is_optional(
+            (value_var := Var.create(value))._var_type
+        ):
+            props["value"] = ternary_operation(
+                (value_var != Var.create(None))  # pyright: ignore [reportGeneralTypeIssues]
+                & (value_var != Var(_js_expr="undefined")),
+                value,
+                Var.create(""),
+            )
+
         component = super().create(*children, **props)
         if props.get("value") is not None and props.get("on_change") is not None:
             # create a debounced input if the user requests full control to avoid typing jank
             return DebounceInput.create(component)
         return component
-
-    @classmethod
-    def create_root_deprecated(cls, *children, **props) -> Component:
-        """Create a Fragment component (wrapper for deprecated name).
-
-        Copy the attributes that were previously defined on TextFieldRoot in 0.4.9 to
-        any child input elements (via custom_attrs).
-
-        Args:
-            *children: The children of the component.
-            **props: The properties of the component.
-
-        Returns:
-            The component.
-        """
-        console.deprecate(
-            feature_name="rx.input.root",
-            reason="use rx.input without the .root suffix",
-            deprecation_version="0.5.0",
-            removal_version="0.6.0",
-        )
-        inputs = [
-            child
-            for child in children
-            if isinstance(child, (TextFieldRoot, DebounceInput))
-        ]
-        if not inputs:
-            # Old-style where no explicit child input was provided
-            return cls.create(*children, **props)
-        slots = [child for child in children if isinstance(child, TextFieldSlot)]
-        carry_props = {
-            prop: props.pop(prop)
-            for prop in ["size", "variant", "color_scheme", "radius"]
-            if prop in props
-        }
-        template = cls.create(**props)
-        for child in inputs:
-            child.children.extend(slots)
-            custom_attrs = child.custom_attrs
-            custom_attrs.update(
-                {
-                    prop: value
-                    for prop, value in carry_props.items()
-                    if prop not in custom_attrs and getattr(child, prop) is None
-                }
-            )
-            style = Style(template.style)
-            style.update(child.style)
-            child._get_style = lambda style=style: {
-                "css": Var.create(format_as_emotion(style))
-            }
-            for trigger in template.event_triggers:
-                if trigger not in child.event_triggers:
-                    child.event_triggers[trigger] = template.event_triggers[trigger]
-        return Fragment.create(*inputs)
-
-    @classmethod
-    def create_input_deprecated(cls, *children, **props) -> Component:
-        """Create a TextFieldRoot component (wrapper for deprecated name).
-
-        Args:
-            *children: The children of the component.
-            **props: The properties of the component.
-
-        Returns:
-            The component.
-        """
-        console.deprecate(
-            feature_name="rx.input.input",
-            reason="use rx.input without the .input suffix",
-            deprecation_version="0.5.0",
-            removal_version="0.6.0",
-        )
-        return cls.create(*children, **props)
 
 
 class TextFieldSlot(RadixThemesComponent):
@@ -193,8 +130,6 @@ class TextFieldSlot(RadixThemesComponent):
 class TextField(ComponentNamespace):
     """TextField components namespace."""
 
-    root = staticmethod(TextFieldRoot.create_root_deprecated)
-    input = staticmethod(TextFieldRoot.create_input_deprecated)
     slot = staticmethod(TextFieldSlot.create)
     __call__ = staticmethod(TextFieldRoot.create)
 

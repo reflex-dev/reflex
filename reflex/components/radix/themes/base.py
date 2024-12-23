@@ -5,10 +5,11 @@ from __future__ import annotations
 from typing import Any, Dict, Literal
 
 from reflex.components import Component
+from reflex.components.core.breakpoints import Responsive
 from reflex.components.tags import Tag
 from reflex.config import get_config
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]
@@ -52,7 +53,7 @@ LiteralAccentColor = Literal[
 class CommonMarginProps(Component):
     """Many radix-themes elements accept shorthand margin props."""
 
-    # Margin: "0" - "9"
+    # Margin: "0" - "9" # noqa: ERA001
     m: Var[LiteralSpacing]
 
     # Margin horizontal: "0" - "9"
@@ -74,6 +75,31 @@ class CommonMarginProps(Component):
     ml: Var[LiteralSpacing]
 
 
+class CommonPaddingProps(Component):
+    """Many radix-themes elements accept shorthand padding props."""
+
+    # Padding: "0" - "9" # noqa: ERA001
+    p: Var[Responsive[LiteralSpacing]]
+
+    # Padding horizontal: "0" - "9"
+    px: Var[Responsive[LiteralSpacing]]
+
+    # Padding vertical: "0" - "9"
+    py: Var[Responsive[LiteralSpacing]]
+
+    # Padding top: "0" - "9"
+    pt: Var[Responsive[LiteralSpacing]]
+
+    # Padding right: "0" - "9"
+    pr: Var[Responsive[LiteralSpacing]]
+
+    # Padding bottom: "0" - "9"
+    pb: Var[Responsive[LiteralSpacing]]
+
+    # Padding left: "0" - "9"
+    pl: Var[Responsive[LiteralSpacing]]
+
+
 class RadixLoadingProp(Component):
     """Base class for components that can be in a loading state."""
 
@@ -85,6 +111,9 @@ class RadixThemesComponent(Component):
     """Base class for all @radix-ui/themes components."""
 
     library = "@radix-ui/themes@^3.0.0"
+
+    # Temporary pin < 3.1.5 until radix-ui/themes#627 is resolved.
+    library = library + " && <3.1.5"
 
     # "Fake" prop color_scheme is used to avoid shadowing CSS prop "color".
     _rename_props: Dict[str, str] = {"colorScheme": "color"}
@@ -110,9 +139,7 @@ class RadixThemesComponent(Component):
         component = super().create(*children, **props)
         if component.library is None:
             component.library = RadixThemesComponent.__fields__["library"].default
-        component.alias = "RadixThemes" + (
-            component.tag or component.__class__.__name__
-        )
+        component.alias = "RadixThemes" + (component.tag or type(component).__name__)
         return component
 
     @staticmethod
@@ -216,7 +243,7 @@ class Theme(RadixThemesComponent):
             The import dict.
         """
         _imports: ImportDict = {
-            "/utils/theme.js": [ImportVar(tag="theme", is_default=True)],
+            "$/utils/theme.js": [ImportVar(tag="theme", is_default=True)],
         }
         if get_config().tailwind is None:
             # When tailwind is disabled, import the radix-ui styles directly because they will
@@ -230,12 +257,11 @@ class Theme(RadixThemesComponent):
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         tag = super()._render(props)
         tag.add_props(
-            css=Var.create(
-                "{{...theme.styles.global[':root'], ...theme.styles.global.body}}",
-                _var_is_local=False,
-                _var_is_string=False,
+            css=Var(
+                _js_expr="{...theme.styles.global[':root'], ...theme.styles.global.body}"
             ),
         )
+        tag.remove_props("appearance")
         return tag
 
 
@@ -258,31 +284,11 @@ class ThemePanel(RadixThemesComponent):
         """
         return {"react": "useEffect"}
 
-    def add_hooks(self) -> list[str]:
-        """Add a hook on the ThemePanel to clear chakra-ui-color-mode.
-
-        Returns:
-            The hooks to render.
-        """
-        # The panel freezes the tab if the user color preference differs from the
-        # theme "appearance", so clear it out when theme panel is used.
-        return [
-            """
-            useEffect(() => {
-                if (typeof window !== 'undefined') {
-                    window.onbeforeunload = () => {
-                        localStorage.removeItem('chakra-ui-color-mode');
-                    }
-                    window.onbeforeunload();
-                }
-            }, [])"""
-        ]
-
 
 class RadixThemesColorModeProvider(Component):
     """Next-themes integration for radix themes components."""
 
-    library = "/components/reflex/radix_themes_color_mode_provider.js"
+    library = "$/components/reflex/radix_themes_color_mode_provider.js"
     tag = "RadixThemesColorModeProvider"
     is_default = True
 

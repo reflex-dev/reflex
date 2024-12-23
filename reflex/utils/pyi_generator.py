@@ -16,15 +16,15 @@ from itertools import chain
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
-from typing import Any, Callable, Iterable, Type, get_args
+from typing import Any, Callable, Iterable, Sequence, Type, get_args, get_origin
 
 from reflex.components.component import Component
 from reflex.utils import types as rx_types
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 logger = logging.getLogger("pyi_generator")
 
-PWD = Path(".").resolve()
+PWD = Path.cwd()
 
 EXCLUDED_FILES = [
     "app.py",
@@ -69,10 +69,17 @@ DEFAULT_TYPING_IMPORTS = {
 # TODO: fix import ordering and unused imports with ruff later
 DEFAULT_IMPORTS = {
     "typing": sorted(DEFAULT_TYPING_IMPORTS),
-    "reflex.vars": ["Var", "BaseVar", "ComputedVar"],
     "reflex.components.core.breakpoints": ["Breakpoints"],
-    "reflex.event": ["EventChain", "EventHandler", "EventSpec"],
+    "reflex.event": [
+        "EventChain",
+        "EventHandler",
+        "EventSpec",
+        "EventType",
+        "BASE_STATE",
+        "KeyInputInfo",
+    ],
     "reflex.style": ["Style"],
+    "reflex.vars.base": ["Var"],
 }
 
 
@@ -150,7 +157,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
 
     if args:
         inner_container_type_args = (
-            [repr(arg) for arg in args]
+            sorted((repr(arg) for arg in args))
             if rx_types.is_literal(value)
             else [
                 _get_type_hint(arg, type_hint_globals, is_optional=False)
@@ -184,17 +191,12 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 if arg is not type(None)
             ]
             if len(types) > 1:
-                res = ", ".join(types)
+                res = ", ".join(sorted(types))
                 res = f"Union[{res}]"
     elif isinstance(value, str):
         ev = eval(value, type_hint_globals)
         if rx_types.is_optional(ev):
-            # hints = {
-            #     _get_type_hint(arg, type_hint_globals, is_optional=False)
-            #     for arg in ev.__args__
-            # }
             return _get_type_hint(ev, type_hint_globals, is_optional=False)
-            # return f"Optional[{', '.join(hints)}]"
 
         if rx_types.is_union(ev):
             res = [
@@ -214,7 +216,9 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
     return res
 
 
-def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
+def _generate_imports(
+    typing_imports: Iterable[str],
+) -> list[ast.ImportFrom | ast.Import]:
     """Generate the import statements for the stub file.
 
     Args:
@@ -228,6 +232,7 @@ def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
             ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])
             for name, values in DEFAULT_IMPORTS.items()
         ],
+        ast.Import([ast.alias("reflex")]),
     ]
 
 
@@ -250,8 +255,15 @@ def _generate_docstrings(clzs: list[Type[Component]], props: list[str]) -> str:
                 # We've reached the functions, so stop.
                 break
 
+            if line == "":
+                # We hit a blank line, so clear comments to avoid commented out prop appearing in next prop docs.
+                comments.clear()
+                continue
+
             # Get comments for prop
             if line.strip().startswith("#"):
+                # Remove noqa from the comments.
+                line = line.partition(" # noqa")[0]
                 comments.append(line)
                 continue
 
@@ -275,10 +287,9 @@ def _generate_docstrings(clzs: list[Type[Component]], props: list[str]) -> str:
     for line in (clz.create.__doc__ or "").splitlines():
         if "**" in line:
             indent = line.split("**")[0]
-            for nline in [
-                f"{indent}{n}:{' '.join(c)}" for n, c in props_comments.items()
-            ]:
-                new_docstring.append(nline)
+            new_docstring.extend(
+                [f"{indent}{n}:{' '.join(c)}" for n, c in props_comments.items()]
+            )
         new_docstring.append(line)
     return "\n".join(new_docstring)
 
@@ -372,6 +383,64 @@ def _extract_class_props_as_ast_nodes(
     return kwargs
 
 
+def type_to_ast(typ, cls: type) -> ast.AST:
+    """Converts any type annotation into its AST representation.
+    Handles nested generic types, unions, etc.
+
+    Args:
+        typ: The type annotation to convert.
+        cls: The class where the type annotation is used.
+
+    Returns:
+        The AST representation of the type annotation.
+    """
+    if typ is type(None):
+        return ast.Name(id="None")
+
+    origin = get_origin(typ)
+
+    # Handle plain types (int, str, custom classes, etc.)
+    if origin is None:
+        if hasattr(typ, "__name__"):
+            if typ.__module__.startswith("reflex."):
+                typ_parts = typ.__module__.split(".")
+                cls_parts = cls.__module__.split(".")
+
+                zipped = list(zip(typ_parts, cls_parts, strict=False))
+
+                if all(a == b for a, b in zipped) and len(typ_parts) == len(cls_parts):
+                    return ast.Name(id=typ.__name__)
+
+                return ast.Name(id=typ.__module__ + "." + typ.__name__)
+            return ast.Name(id=typ.__name__)
+        elif hasattr(typ, "_name"):
+            return ast.Name(id=typ._name)
+        return ast.Name(id=str(typ))
+
+    # Get the base type name (List, Dict, Optional, etc.)
+    base_name = origin._name if hasattr(origin, "_name") else origin.__name__
+
+    # Get type arguments
+    args = get_args(typ)
+
+    # Handle empty type arguments
+    if not args:
+        return ast.Name(id=base_name)
+
+    # Convert all type arguments recursively
+    arg_nodes = [type_to_ast(arg, cls) for arg in args]
+
+    # Special case for single-argument types (like List[T] or Optional[T])
+    if len(arg_nodes) == 1:
+        slice_value = arg_nodes[0]
+    else:
+        slice_value = ast.Tuple(elts=arg_nodes, ctx=ast.Load())
+
+    return ast.Subscript(
+        value=ast.Name(id=base_name), slice=ast.Index(value=slice_value), ctx=ast.Load()
+    )
+
+
 def _get_parent_imports(func):
     _imports = {"reflex.vars": ["Var"]}
     for type_hint in inspect.get_annotations(func).values():
@@ -427,19 +496,117 @@ def _generate_component_create_functiondef(
     all_props = [arg[0].arg for arg in prop_kwargs]
     kwargs.extend(prop_kwargs)
 
+    def figure_out_return_type(annotation: Any):
+        if inspect.isclass(annotation) and issubclass(annotation, inspect._empty):
+            return ast.Name(id="EventType[..., BASE_STATE]")
+
+        if not isinstance(annotation, str) and get_origin(annotation) is tuple:
+            arguments = get_args(annotation)
+
+            arguments_without_var = [
+                get_args(argument)[0] if get_origin(argument) == Var else argument
+                for argument in arguments
+            ]
+
+            # Convert each argument type to its AST representation
+            type_args = [type_to_ast(arg, cls=clz) for arg in arguments_without_var]
+
+            # Get all prefixes of the type arguments
+            all_count_args_type = [
+                ast.Name(
+                    f"EventType[[{', '.join([ast.unparse(arg) for arg in type_args[:i]])}], BASE_STATE]"
+                )
+                for i in range(len(type_args) + 1)
+            ]
+
+            # Create EventType using the joined string
+            return ast.Name(
+                id=f"Union[{', '.join(map(ast.unparse, all_count_args_type))}]"
+            )
+
+        if isinstance(annotation, str) and annotation.startswith("Tuple["):
+            inside_of_tuple = annotation.removeprefix("Tuple[").removesuffix("]")
+
+            if inside_of_tuple == "()":
+                return ast.Name(id="EventType[[], BASE_STATE]")
+
+            arguments = [""]
+
+            bracket_count = 0
+
+            for char in inside_of_tuple:
+                if char == "[":
+                    bracket_count += 1
+                elif char == "]":
+                    bracket_count -= 1
+
+                if char == "," and bracket_count == 0:
+                    arguments.append("")
+                else:
+                    arguments[-1] += char
+
+            arguments = [argument.strip() for argument in arguments]
+
+            arguments_without_var = [
+                argument.removeprefix("Var[").removesuffix("]")
+                if argument.startswith("Var[")
+                else argument
+                for argument in arguments
+            ]
+
+            all_count_args_type = [
+                ast.Name(
+                    f"EventType[[{', '.join(arguments_without_var[:i])}], BASE_STATE]"
+                )
+                for i in range(len(arguments) + 1)
+            ]
+
+            return ast.Name(
+                id=f"Union[{', '.join(map(ast.unparse, all_count_args_type))}]"
+            )
+        return ast.Name(id="EventType[..., BASE_STATE]")
+
+    event_triggers = clz().get_event_triggers()
+
     # event handler kwargs
     kwargs.extend(
         (
             ast.arg(
                 arg=trigger,
-                annotation=ast.Name(
-                    id="Optional[Union[EventHandler, EventSpec, list, Callable, BaseVar]]"
+                annotation=ast.Subscript(
+                    ast.Name("Optional"),
+                    ast.Index(  # type: ignore
+                        value=ast.Name(
+                            id=ast.unparse(
+                                figure_out_return_type(
+                                    inspect.signature(event_specs).return_annotation
+                                )
+                                if not isinstance(
+                                    event_specs := event_triggers[trigger], Sequence
+                                )
+                                else ast.Subscript(
+                                    ast.Name("Union"),
+                                    ast.Tuple(
+                                        [
+                                            figure_out_return_type(
+                                                inspect.signature(
+                                                    event_spec
+                                                ).return_annotation
+                                            )
+                                            for event_spec in event_specs
+                                        ]
+                                    ),
+                                )
+                            )
+                        )
+                    ),
                 ),
             ),
             ast.Constant(value=None),
         )
-        for trigger in sorted(clz().get_event_triggers())
+        for trigger in sorted(event_triggers)
     )
+
     logger.debug(f"Generated {clz.__name__}.create method with {len(kwargs)} kwargs")
     create_args = ast.arguments(
         args=[ast.arg(arg="cls")],
@@ -450,12 +617,17 @@ def _generate_component_create_functiondef(
         kwarg=ast.arg(arg="props"),
         defaults=[],
     )
+
     definition = ast.FunctionDef(
         name="create",
         args=create_args,
         body=[
             ast.Expr(
-                value=ast.Constant(value=_generate_docstrings(all_classes, all_props))
+                value=ast.Constant(
+                    value=_generate_docstrings(
+                        all_classes, [*all_props, *event_triggers]
+                    )
+                ),
             ),
             ast.Expr(
                 value=ast.Ellipsis(),
@@ -664,7 +836,7 @@ class StubGenerator(ast.NodeTransformer):
             self.inserted_imports = True
             default_imports = _generate_imports(self.typing_imports)
             self.import_statements.extend(ast.unparse(i) for i in default_imports)
-            return default_imports + [node]
+            return [*default_imports, node]
         return node
 
     def visit_ImportFrom(
@@ -851,7 +1023,7 @@ class InitStubGenerator(StubGenerator):
 
 class PyiGenerator:
     """A .pyi file generator that will scan all defined Component in Reflex and
-    generate the approriate stub.
+    generate the appropriate stub.
     """
 
     modules: list = []
@@ -902,7 +1074,13 @@ class PyiGenerator:
             # construct the import statement and handle special cases for aliases
             sub_mod_attrs_imports = [
                 f"from .{path} import {mod if not isinstance(mod, tuple) else mod[0]} as {mod if not isinstance(mod, tuple) else mod[1]}"
-                + ("  # type: ignore" if mod in pyright_ignore_imports else "")
+                + (
+                    "  # type: ignore"
+                    if mod in pyright_ignore_imports
+                    else "  # noqa"  # ignore ruff formatting here for cases like rx.list.
+                    if isinstance(mod, tuple)
+                    else ""
+                )
                 for mod, path in sub_mod_attrs.items()
             ]
             sub_mod_attrs_imports.append("")

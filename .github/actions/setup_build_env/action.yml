@@ -6,7 +6,7 @@
 #
 # Exit conditions:
 # - Python of version `python-version` is ready to be invoked as `python`.
-# - Poetry of version `poetry-version` is ready ot be invoked as `poetry`.
+# - Poetry of version `poetry-version` is ready to be invoked as `poetry`.
 # - If `run-poetry-install` is true, deps as defined in `pyproject.toml` will have been installed into the venv at `create-venv-at-path`.
 
 name: 'Setup Reflex build environment'
@@ -18,7 +18,7 @@ inputs:
   poetry-version:
     description: 'Poetry version to install'
     required: false
-    default: '1.3.1'
+    default: '1.8.3'
   run-poetry-install:
     description: 'Whether to run poetry install on current dir'
     required: false

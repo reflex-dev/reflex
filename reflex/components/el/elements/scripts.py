@@ -1,8 +1,8 @@
-"""Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+"""Scripts classes."""
 
 from typing import Union
 
-from reflex.vars import Var as Var
+from reflex.vars.base import Var
 
 from .base import BaseHTML
 
@@ -17,7 +17,6 @@ class Noscript(BaseHTML):
     """Display the noscript element."""
 
     tag = "noscript"
-    # No unique attributes, only common ones are inherited
 
 
 class Script(BaseHTML):

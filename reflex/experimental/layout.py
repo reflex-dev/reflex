@@ -12,11 +12,11 @@ from reflex.components.radix.themes.components.icon_button import IconButton
 from reflex.components.radix.themes.layout.box import Box
 from reflex.components.radix.themes.layout.container import Container
 from reflex.components.radix.themes.layout.stack import HStack
-from reflex.event import call_script
+from reflex.event import run_script
 from reflex.experimental import hooks
 from reflex.state import ComponentState
 from reflex.style import Style
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 
 class Sidebar(Box, MemoizationLeaf):
@@ -33,12 +33,6 @@ class Sidebar(Box, MemoizationLeaf):
         Returns:
             The sidebar component.
         """
-        # props.setdefault("border_right", f"1px solid {color('accent', 12)}")
-        # props.setdefault("background_color", color("accent", 1))
-        # props.setdefault("width", "20vw")
-        # props.setdefault("height", "100vh")
-        # props.setdefault("position", "fixed")
-
         return super().create(
             Box.create(*children, **props),  # sidebar for content
             Box.create(width=props.get("width")),  # spacer for layout
@@ -55,7 +49,7 @@ class Sidebar(Box, MemoizationLeaf):
         open = (
             self.State.open  # type: ignore
             if self.State
-            else Var.create_safe("open", _var_is_string=False)
+            else Var(_js_expr="open")
         )
         sidebar.style["display"] = spacer.style["display"] = cond(open, "block", "none")
 
@@ -172,8 +166,8 @@ class SidebarTrigger(Fragment):
             open, toggle = sidebar.State.open, sidebar.State.toggle  # type: ignore
         else:
             open, toggle = (
-                Var.create_safe("open", _var_is_string=False),
-                call_script(Var.create_safe("setOpen(!open)", _var_is_string=False)),
+                Var(_js_expr="open"),
+                run_script("setOpen(!open)"),
             )
 
         trigger_props["left"] = cond(open, f"calc({sidebar_width} - 32px)", "0")

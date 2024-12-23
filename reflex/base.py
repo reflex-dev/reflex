@@ -16,9 +16,6 @@ except ModuleNotFoundError:
         from pydantic.fields import ModelField  # type: ignore
 
 
-from reflex import constants
-
-
 def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None:
     """Ensure that the field's name does not shadow an existing attribute of the model.
 
@@ -31,21 +28,26 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
     """
     from reflex.utils.exceptions import VarNameError
 
-    reload = os.getenv(constants.RELOAD_CONFIG) == "True"
-    for base in bases:
-        try:
+    # can't use reflex.config.environment here cause of circular import
+    reload = os.getenv("__RELOAD_CONFIG", "").lower() == "true"
+    base = None
+    try:
+        for base in bases:
             if not reload and getattr(base, field_name, None):
                 pass
-        except TypeError as te:
-            raise VarNameError(
-                f'State var "{field_name}" in {base} has been shadowed by a substate var; '
-                f'use a different field name instead".'
-            ) from te
+    except TypeError as te:
+        raise VarNameError(
+            f'State var "{field_name}" in {base} has been shadowed by a substate var; '
+            f'use a different field name instead".'
+        ) from te
 
 
 # monkeypatch pydantic validate_field_name method to skip validating
 # shadowed state vars when reloading app via utils.prerequisites.get_app(reload=True)
 pydantic_main.validate_field_name = validate_field_name  # type: ignore
+
+if TYPE_CHECKING:
+    from reflex.vars import Var
 
 
 class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
@@ -92,7 +94,7 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
         return self
 
     @classmethod
-    def get_fields(cls) -> dict[str, Any]:
+    def get_fields(cls) -> dict[str, ModelField]:
         """Get the fields of the object.
 
         Returns:
@@ -101,7 +103,7 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
         return cls.__fields__
 
     @classmethod
-    def add_field(cls, var: Any, default_value: Any):
+    def add_field(cls, var: Var, default_value: Any):
         """Add a pydantic field after class definition.
 
         Used by State.add_var() to correctly handle the new variable.
@@ -110,14 +112,15 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
             var: The variable to add a pydantic field for.
             default_value: The default value of the field
         """
+        var_name = var._var_field_name
         new_field = ModelField.infer(
-            name=var._var_name,
+            name=var_name,
             value=default_value,
             annotation=var._var_type,
             class_validators=None,
             config=cls.__config__,  # type: ignore
         )
-        cls.__fields__.update({var._var_name: new_field})
+        cls.__fields__.update({var_name: new_field})
 
     def get_value(self, key: str) -> Any:
         """Get the value of a field.
@@ -128,17 +131,8 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
         Returns:
             The value of the field.
         """
-        if isinstance(key, str) and key in self.__fields__:
+        if isinstance(key, str):
             # Seems like this function signature was wrong all along?
             # If the user wants a field that we know of, get it and pass it off to _get_value
-            key = getattr(self, key)
-        return self._get_value(
-            key,
-            to_dict=True,
-            by_alias=False,
-            include=None,
-            exclude=None,
-            exclude_unset=False,
-            exclude_defaults=False,
-            exclude_none=False,
-        )
+            return getattr(self, key, key)
+        return key
