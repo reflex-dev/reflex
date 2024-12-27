@@ -16,33 +16,31 @@ def index() -> rx.Component:
     return rx.container(
         rx.color_mode.button(position="top-right"),
         rx.vstack(
-            rx.heading("Welcome to Reflex 🦕", size="9"),
-            rx.text("Need help? 🤔 Check out the documentation."),
+            rx.heading("Welcome to Reflex ✨", size="9"),
             rx.text(
-                "You can edit this page by modifying the code in the file below. Happy coding 🎉",
+                "You can edit this page by modifying the code in the file below.",
             ),
+            rx.text("Need help? 🤔 Check out the documentation."),
             rx.code(f"{config.app_name}/{config.app_name}.py"),
-            rx.flex(
-                rx.card(
-                    rx.link(
-                        rx.flex(
-                            rx.avatar(src="https://reflex.dev/reflex_banner.png"),
-                            rx.box(
-                                rx.heading("Quick Start 🚀"),
-                                rx.text("Get started with Reflex before your coffee ☕"),
-                            ),
-                            spacing="3",
+            rx.text("Happy coding! 🎉"),
+            rx.card(
+                rx.link(
+                    rx.flex(
+                        rx.avatar(src="https://reflex.dev/reflex_banner.png"),
+                        rx.box(
+                            rx.heading("Quick Start 🚀"),
+                            rx.text("Get started with Reflex before your coffee ☕"),
                         ),
-                        href="https://reflex.dev/docs/getting-started/introduction/",
-                        target="_blank",
-                        underline="none"
+                        spacing="3",
                     ),
-                    as_child=True,
-                )
+                    href="https://reflex.dev/docs/getting-started/introduction/",
+                    target="_blank",
+                    underline="none",
+                ),
+                as_child=True,
             ),
             spacing="5",
             justify="center",
-            align="center",
             min_height="85vh",
         ),
         rx.logo(),
