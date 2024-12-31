@@ -261,19 +261,32 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         super().__init_subclass__()
 
     @classmethod
-    def _dict_recursive(cls, value):
+    def _dict_recursive(cls, value, seen_objects: set | None = None):
         """Recursively serialize the relationship object(s).
 
         Args:
             value: The value to serialize.
 
         Returns:
-            The serialized value.
+            The serialized value,
+                or Empty value when the relationship cannot be followed,
+                or None if the value has already been serialized in this descent.
         """
-        if hasattr(value, "dict"):
-            return value.dict()
-        elif isinstance(value, list):
-            return [cls._dict_recursive(item) for item in value]
+        if seen_objects is None:
+            seen_objects = set()
+        if id(value) in seen_objects:
+            return None
+        seen_objects.add(id(value))
+        try:
+            if hasattr(value, "dict"):
+                return value.dict()
+        except sqlalchemy.orm.exc.DetachedInstanceError:
+            return {}
+        if isinstance(value, list):
+            return [
+                cls._dict_recursive(item, seen_objects=seen_objects)
+                for item in value
+            ]
         return value
 
     def dict(self, **kwargs):
