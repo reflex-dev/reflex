@@ -287,10 +287,9 @@ def _generate_docstrings(clzs: list[Type[Component]], props: list[str]) -> str:
     for line in (clz.create.__doc__ or "").splitlines():
         if "**" in line:
             indent = line.split("**")[0]
-            for nline in [
-                f"{indent}{n}:{' '.join(c)}" for n, c in props_comments.items()
-            ]:
-                new_docstring.append(nline)
+            new_docstring.extend(
+                [f"{indent}{n}:{' '.join(c)}" for n, c in props_comments.items()]
+            )
         new_docstring.append(line)
     return "\n".join(new_docstring)
 
@@ -1024,7 +1023,7 @@ class InitStubGenerator(StubGenerator):
 
 class PyiGenerator:
     """A .pyi file generator that will scan all defined Component in Reflex and
-    generate the approriate stub.
+    generate the appropriate stub.
     """
 
     modules: list = []

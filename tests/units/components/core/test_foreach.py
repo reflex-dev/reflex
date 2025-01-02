@@ -1,8 +1,10 @@
 from typing import Dict, List, Sequence, Set, Tuple, Union
 
+import pydantic.v1
 import pytest
 
 from reflex import el
+from reflex.base import Base
 from reflex.components.component import Component
 from reflex.components.core.foreach import (
     Foreach,
@@ -16,6 +18,12 @@ from reflex.state import BaseState, ComponentState
 from reflex.vars.base import Var
 from reflex.vars.number import NumberVar
 from reflex.vars.sequence import ArrayVar
+
+
+class ForEachTag(Base):
+    """A tag for testing the ForEach component."""
+
+    name: str = ""
 
 
 class ForEachState(BaseState):
@@ -45,6 +53,8 @@ class ForEachState(BaseState):
     colors_set: Set[str] = {"red", "green"}
     bad_annotation_list: list = [["red", "orange"], ["yellow", "blue"]]
     color_index_tuple: Tuple[int, str] = (0, "red")
+
+    default_factory_list: list[ForEachTag] = pydantic.v1.Field(default_factory=list)
 
 
 class ComponentStateTest(ComponentState):
@@ -292,3 +302,11 @@ def test_foreach_component_state():
             ForEachState.colors_list,
             ComponentStateTest.create,
         )
+
+
+def test_foreach_default_factory():
+    """Test that the default factory is called."""
+    _ = Foreach.create(
+        ForEachState.default_factory_list,
+        lambda tag: text(tag.name),
+    )

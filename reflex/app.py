@@ -17,6 +17,7 @@ import sys
 import traceback
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -363,6 +364,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
                 ping_interval=constants.Ping.INTERVAL,
                 ping_timeout=constants.Ping.TIMEOUT,
+                json=SimpleNamespace(
+                    dumps=staticmethod(format.json_dumps),
+                    loads=staticmethod(json.loads),
+                ),
                 transports=["websocket"],
             )
         elif getattr(self.sio, "async_mode", "") != "asgi":
@@ -431,7 +436,7 @@ class App(MiddlewareMixin, LifespanMixin):
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
-            allow_origins=["*"],
+            allow_origins=get_config().cors_allowed_origins,
         )
 
     @property
@@ -1290,7 +1295,7 @@ async def process(
                 await asyncio.create_task(
                     app.event_namespace.emit(
                         "reload",
-                        data=format.json_dumps(event),
+                        data=event,
                         to=sid,
                     )
                 )
@@ -1351,20 +1356,22 @@ async def health() -> JSONResponse:
     health_status = {"status": True}
     status_code = 200
 
-    db_status, redis_status = await asyncio.gather(
-        get_db_status(), prerequisites.get_redis_status()
-    )
+    tasks = []
 
-    health_status["db"] = db_status
+    if prerequisites.check_db_used():
+        tasks.append(get_db_status())
+    if prerequisites.check_redis_used():
+        tasks.append(prerequisites.get_redis_status())
 
-    if redis_status is None:
+    results = await asyncio.gather(*tasks)
+
+    for result in results:
+        health_status |= result
+
+    if "redis" in health_status and health_status["redis"] is None:
         health_status["redis"] = False
-    else:
-        health_status["redis"] = redis_status
 
-    if not health_status["db"] or (
-        not health_status["redis"] and redis_status is not None
-    ):
+    if not all(health_status.values()):
         health_status["status"] = False
         status_code = 503
 
@@ -1543,7 +1550,7 @@ class EventNamespace(AsyncNamespace):
         """
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
+            self.emit(str(constants.SocketEvent.EVENT), update, to=sid)
         )
 
     async def on_event(self, sid, data):
@@ -1556,7 +1563,7 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
             data: The event data.
         """
-        fields = json.loads(data)
+        fields = data
         # Get the event.
         event = Event(
             **{k: v for k, v in fields.items() if k not in ("handler", "event_actions")}

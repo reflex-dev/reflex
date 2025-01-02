@@ -547,7 +547,7 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
 class DestructuredArg:
     """Class for destructured arguments."""
 
-    fields: Tuple[str, ...] = tuple()
+    fields: Tuple[str, ...] = ()
     rest: Optional[str] = None
 
     def to_javascript(self) -> str:
@@ -569,7 +569,7 @@ class DestructuredArg:
 class FunctionArgs:
     """Class for function arguments."""
 
-    args: Tuple[Union[str, DestructuredArg], ...] = tuple()
+    args: Tuple[Union[str, DestructuredArg], ...] = ()
     rest: Optional[str] = None
 
 

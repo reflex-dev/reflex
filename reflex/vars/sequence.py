@@ -918,7 +918,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
         if num_args == 0:
             return_value = fn()  # type: ignore
             simple_function_var: FunctionVar[ReflexCallable[[], ANOTHER_ARRAY_VAR]] = (
-                ArgsFunctionOperation.create(tuple(), return_value)
+                ArgsFunctionOperation.create((), return_value)
             )
             return map_array_operation(self, simple_function_var).guess_type()
 

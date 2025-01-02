@@ -280,7 +280,7 @@ def test_unsupported_literals(cls: type):
         ("appname2.io", "AppnameioConfig"),
     ],
 )
-def test_create_config(app_name, expected_config_name, mocker):
+def test_create_config(app_name: str, expected_config_name: str, mocker):
     """Test templates.RXCONFIG is formatted with correct app name and config class name.
 
     Args:
@@ -288,7 +288,7 @@ def test_create_config(app_name, expected_config_name, mocker):
         expected_config_name: Expected config name.
         mocker: Mocker object.
     """
-    mocker.patch("builtins.open")
+    mocker.patch("pathlib.Path.write_text")
     tmpl_mock = mocker.patch("reflex.compiler.templates.RXCONFIG")
     prerequisites.create_config(app_name)
     tmpl_mock.render.assert_called_with(
@@ -474,7 +474,7 @@ def test_node_install_unix(tmp_path, mocker, machine, system):
     mocker.patch("httpx.stream", return_value=Resp())
     download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
     process = mocker.patch("reflex.utils.processes.new_process")
-    chmod = mocker.patch("reflex.utils.prerequisites.os.chmod")
+    chmod = mocker.patch("pathlib.Path.chmod")
     mocker.patch("reflex.utils.processes.stream_logs")
 
     prerequisites.install_node()

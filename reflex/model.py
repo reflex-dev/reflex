@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
+from contextlib import suppress
 from typing import Any, ClassVar, Optional, Type, Union
 
 import alembic.autogenerate
@@ -52,12 +53,12 @@ def get_engine_args(url: str | None = None) -> dict[str, Any]:
     Returns:
         The database engine arguments as a dict.
     """
-    kwargs: dict[str, Any] = dict(
+    kwargs: dict[str, Any] = {
         # Print the SQL queries if the log level is INFO or lower.
-        echo=environment.SQLALCHEMY_ECHO.get(),
+        "echo": environment.SQLALCHEMY_ECHO.get(),
         # Check connections before returning them.
-        pool_pre_ping=environment.SQLALCHEMY_POOL_PRE_PING.get(),
-    )
+        "pool_pre_ping": environment.SQLALCHEMY_POOL_PRE_PING.get(),
+    }
     conf = get_config()
     url = url or conf.db_url
     if url is not None and url.startswith("sqlite"):
@@ -140,15 +141,13 @@ def get_async_engine(url: str | None) -> sqlalchemy.ext.asyncio.AsyncEngine:
     return _ASYNC_ENGINE[url]
 
 
-async def get_db_status() -> bool:
+async def get_db_status() -> dict[str, bool]:
     """Checks the status of the database connection.
 
     Attempts to connect to the database and execute a simple query to verify connectivity.
 
     Returns:
-        bool: The status of the database connection:
-            - True: The database is accessible.
-            - False: The database is not accessible.
+        The status of the database connection.
     """
     status = True
     try:
@@ -158,7 +157,7 @@ async def get_db_status() -> bool:
     except sqlalchemy.exc.OperationalError:
         status = False
 
-    return status
+    return {"db": status}
 
 
 SQLModelOrSqlAlchemy = Union[
@@ -290,11 +289,10 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         relationships = {}
         # SQLModel relationships do not appear in __fields__, but should be included if present.
         for name in self.__sqlmodel_relationships__:
-            try:
+            with suppress(
+                sqlalchemy.orm.exc.DetachedInstanceError  # This happens when the relationship was never loaded and the session is closed.
+            ):
                 relationships[name] = self._dict_recursive(getattr(self, name))
-            except sqlalchemy.orm.exc.DetachedInstanceError:
-                # This happens when the relationship was never loaded and the session is closed.
-                continue
         return {
             **base_fields,
             **relationships,

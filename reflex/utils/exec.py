@@ -24,7 +24,7 @@ from reflex.utils.prerequisites import get_web_dir
 frontend_process = None
 
 
-def detect_package_change(json_file_path: str) -> str:
+def detect_package_change(json_file_path: Path) -> str:
     """Calculates the SHA-256 hash of a JSON file and returns it as a hexadecimal string.
 
     Args:
@@ -37,7 +37,7 @@ def detect_package_change(json_file_path: str) -> str:
         >>> detect_package_change("package.json")
         'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2'
     """
-    with open(json_file_path, "r") as file:
+    with json_file_path.open("r") as file:
         json_data = json.load(file)
 
     # Calculate the hash
@@ -81,7 +81,7 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
     from reflex.utils import processes
 
     json_file_path = get_web_dir() / constants.PackageJson.PATH
-    last_hash = detect_package_change(str(json_file_path))
+    last_hash = detect_package_change(json_file_path)
     process = None
     first_run = True
 
@@ -117,14 +117,14 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
                         console.print("New packages detected: Updating app...")
                 else:
                     if any(
-                        [x in line for x in ("bin executable does not exist on disk",)]
+                        x in line for x in ("bin executable does not exist on disk",)
                     ):
                         console.error(
                             "Try setting `REFLEX_USE_NPM=1` and re-running `reflex init` and `reflex run` to use npm instead of bun:\n"
                             "`REFLEX_USE_NPM=1 reflex init`\n"
                             "`REFLEX_USE_NPM=1 reflex run`"
                         )
-                    new_hash = detect_package_change(str(json_file_path))
+                    new_hash = detect_package_change(json_file_path)
                     if new_hash != last_hash:
                         last_hash = new_hash
                         kill(process.pid)

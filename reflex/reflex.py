@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import atexit
-import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -298,7 +297,7 @@ def export(
         True, "--frontend-only", help="Export only frontend.", show_default=False
     ),
     zip_dest_dir: str = typer.Option(
-        os.getcwd(),
+        str(Path.cwd()),
         help="The directory to export the zip files to.",
         show_default=False,
     ),
@@ -330,13 +329,14 @@ def export(
 
 @cli.command()
 def login(loglevel: constants.LogLevel = typer.Option(config.loglevel)):
-    """Authenicate with experimental Reflex hosting service."""
+    """Authenticate with experimental Reflex hosting service."""
     from reflex_cli.v2 import cli as hosting_cli
 
     check_version()
 
     validated_info = hosting_cli.login()
     if validated_info is not None:
+        _skip_compile()  # Allow running outside of an app dir
         telemetry.send("login", user_uuid=validated_info.get("user_id"))
 
 
@@ -443,13 +443,13 @@ def deploy(
         hidden=True,
     ),
     regions: List[str] = typer.Option(
-        list(),
+        [],
         "-r",
         "--region",
         help="The regions to deploy to. `reflex cloud regions` For multiple envs, repeat this option, e.g. --region sjc --region iad",
     ),
     envs: List[str] = typer.Option(
-        list(),
+        [],
         "--env",
         help="The environment variables to set: <key>=<value>. For multiple envs, repeat this option, e.g. --env k1=v2 --env k2=v2.",
     ),
