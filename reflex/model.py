@@ -533,6 +533,7 @@ def asession(url: str | None = None) -> AsyncSession:
         _AsyncSessionLocal[url] = sqlalchemy.ext.asyncio.async_sessionmaker(
             bind=get_async_engine(url),
             class_=AsyncSession,
+            expire_on_commit=False,
             autocommit=False,
             autoflush=False,
         )
