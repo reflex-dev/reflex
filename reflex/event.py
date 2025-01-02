@@ -40,7 +40,11 @@ from typing_extensions import (
 from reflex import constants
 from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import console, format
-from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgTypeMismatch
+from reflex.utils.exceptions import (
+    EventFnArgMismatch,
+    EventHandlerArgTypeMismatch,
+    VarAnnotationError,
+)
 from reflex.utils.types import ArgsSpec, GenericType, typehint_issubclass
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -1330,19 +1334,15 @@ def resolve_annotation(annotations: dict[str, Any], arg_name: str):
         annotations: The annotations.
         arg_name: The argument name.
 
+    Raises:
+        VarAnnotationError: If the annotation for given arg_name is None.
+
     Returns:
         The resolved annotation.
     """
     annotation = annotations.get(arg_name)
     if annotation is None:
-        console.deprecate(
-            feature_name="Unannotated event handler arguments",
-            reason="Provide type annotations for event handler arguments.",
-            deprecation_version="0.6.3",
-            removal_version="0.7.0",
-        )
-        # Allow arbitrary attribute access two levels deep until removed.
-        return Dict[str, dict]
+        raise VarAnnotationError(var_name=arg_name, annotation_value=annotation)
     return annotation
 
 

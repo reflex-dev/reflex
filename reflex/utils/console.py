@@ -49,16 +49,7 @@ def set_log_level(log_level: LogLevel):
         ValueError: If the log level is invalid.
     """
     if not isinstance(log_level, LogLevel):
-        deprecate(
-            feature_name="Passing a string to set_log_level",
-            reason="use reflex.constants.LogLevel enum instead",
-            deprecation_version="0.6.6",
-            removal_version="0.7.0",
-        )
-        try:
-            log_level = getattr(LogLevel, log_level.upper())
-        except AttributeError as ae:
-            raise ValueError(f"Invalid log level: {log_level}") from ae
+        raise ValueError("Invalid log level")
 
     global _LOG_LEVEL
     _LOG_LEVEL = log_level

@@ -5,9 +5,9 @@
 # ------------------------------------------------------
 from typing import Any, Dict, List, Literal, Optional, Union, overload
 
-from reflex import color
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
+from reflex.components.core import color
 from reflex.components.radix.primitives.drawer import DrawerRoot
 from reflex.components.radix.themes.layout.box import Box
 from reflex.event import BASE_STATE, EventType
