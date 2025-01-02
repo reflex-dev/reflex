@@ -777,7 +777,7 @@ class LiteralSliceVar(CachedVarOperation, LiteralVar, SliceVar):
         Returns:
             The name of the var.
         """
-        return f"[{str(LiteralVar.create(self._var_value.start))}, {str(LiteralVar.create(self._var_value.stop))}, {str(LiteralVar.create(self._var_value.step))}]"
+        return f"[{LiteralVar.create(self._var_value.start)!s}, {LiteralVar.create(self._var_value.stop)!s}, {LiteralVar.create(self._var_value.step)!s}]"
 
     @cached_property_no_lock
     def _cached_get_all_var_data(self) -> VarData | None:
