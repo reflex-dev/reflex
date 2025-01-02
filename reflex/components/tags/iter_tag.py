@@ -131,7 +131,7 @@ class IterTag(Tag):
             component = self.render_fn(arg, index)
 
         # Nested foreach components or cond must be wrapped in fragments.
-        if isinstance(component, (Foreach, Cond)):
+        if isinstance(component, (Foreach, Cond, Var)):
             component = Fragment.create(component)
 
         # Set the component key.

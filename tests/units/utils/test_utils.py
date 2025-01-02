@@ -2,7 +2,7 @@ import os
 import typing
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Literal, Type, Union
+from typing import Any, ClassVar, Dict, List, Literal, Sequence, Tuple, Type, Union
 
 import pytest
 import typer
@@ -109,10 +109,20 @@ def test_is_generic_alias(cls: type, expected: bool):
         (Dict[str, str], dict[str, str], True),
         (Dict[str, str], dict[str, Any], True),
         (Dict[str, Any], dict[str, Any], True),
+        (List[int], Sequence[int], True),
+        (List[str], Sequence[int], False),
+        (Tuple[int], Sequence[int], True),
+        (Tuple[int, str], Sequence[int], False),
+        (Tuple[int, ...], Sequence[int], True),
+        (str, Sequence[int], False),
+        (str, Sequence[str], True),
     ],
 )
 def test_typehint_issubclass(subclass, superclass, expected):
-    assert types.typehint_issubclass(subclass, superclass) == expected
+    if expected:
+        assert types.typehint_issubclass(subclass, superclass)
+    else:
+        assert not types.typehint_issubclass(subclass, superclass)
 
 
 def test_validate_invalid_bun_path(mocker):
