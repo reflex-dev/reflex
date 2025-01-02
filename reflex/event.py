@@ -431,6 +431,96 @@ class EventChain(EventActionsMixin):
 
     invocation: Optional[Var] = dataclasses.field(default=None)
 
+    @classmethod
+    def create(
+        cls,
+        value: EventType,
+        args_spec: ArgsSpec | Sequence[ArgsSpec],
+        key: Optional[str] = None,
+    ) -> Union[EventChain, Var]:
+        """Create an event chain from a variety of input types.
+
+        Args:
+            value: The value to create the event chain from.
+            args_spec: The args_spec of the event trigger being bound.
+            key: The key of the event trigger being bound.
+
+        Returns:
+            The event chain.
+
+        Raises:
+            ValueError: If the value is not a valid event chain.
+        """
+        # If it's an event chain var, return it.
+        if isinstance(value, Var):
+            if isinstance(value, EventChainVar):
+                return value
+            elif isinstance(value, EventVar):
+                value = [value]
+            elif issubclass(value._var_type, (EventChain, EventSpec)):
+                return cls.create(
+                    value=value.guess_type(),
+                    args_spec=args_spec,
+                    key=key,
+                )
+            else:
+                raise ValueError(
+                    f"Invalid event chain: {value!s} of type {value._var_type}"
+                )
+        elif isinstance(value, EventChain):
+            # Trust that the caller knows what they're doing passing an EventChain directly
+            return value
+
+        # If the input is a single event handler, wrap it in a list.
+        if isinstance(value, (EventHandler, EventSpec)):
+            value = [value]
+
+        # If the input is a list of event handlers, create an event chain.
+        if isinstance(value, List):
+            events: List[Union[EventSpec, EventVar]] = []
+            for v in value:
+                if isinstance(v, (EventHandler, EventSpec)):
+                    # Call the event handler to get the event.
+                    events.append(call_event_handler(v, args_spec, key=key))
+                elif isinstance(v, Callable):
+                    # Call the lambda to get the event chain.
+                    result = call_event_fn(v, args_spec, key=key)
+                    if isinstance(result, Var):
+                        raise ValueError(
+                            f"Invalid event chain: {v}. Cannot use a Var-returning "
+                            "lambda inside an EventChain list."
+                        )
+                    events.extend(result)
+                elif isinstance(v, EventVar):
+                    events.append(v)
+                else:
+                    raise ValueError(f"Invalid event: {v}")
+
+        # If the input is a callable, create an event chain.
+        elif isinstance(value, Callable):
+            result = call_event_fn(value, args_spec, key=key)
+            if isinstance(result, Var):
+                # Recursively call this function if the lambda returned an EventChain Var.
+                return cls.create(value=result, args_spec=args_spec, key=key)
+            events = [*result]
+
+        # Otherwise, raise an error.
+        else:
+            raise ValueError(f"Invalid event chain: {value}")
+
+        # Add args to the event specs if necessary.
+        events = [
+            (e.with_args(get_handler_args(e)) if isinstance(e, EventSpec) else e)
+            for e in events
+        ]
+
+        # Return the event chain.
+        return cls(
+            events=events,
+            args_spec=args_spec,
+            event_actions={},
+        )
+
 
 @dataclasses.dataclass(
     init=True,
