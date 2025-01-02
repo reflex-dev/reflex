@@ -541,38 +541,17 @@ class Var(Generic[VAR_TYPE]):
     def create(
         cls,
         value: Any,
-        _var_is_local: bool | None = None,
-        _var_is_string: bool | None = None,
         _var_data: VarData | None = None,
     ) -> Var:
         """Create a var from a value.
 
         Args:
             value: The value to create the var from.
-            _var_is_local: Whether the var is local. Deprecated.
-            _var_is_string: Whether the var is a string literal. Deprecated.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
             The var.
         """
-        if _var_is_local is not None:
-            console.deprecate(
-                feature_name="_var_is_local",
-                reason="The _var_is_local argument is not supported for Var."
-                "If you want to create a Var from a raw Javascript expression, use the constructor directly",
-                deprecation_version="0.6.0",
-                removal_version="0.7.0",
-            )
-        if _var_is_string is not None:
-            console.deprecate(
-                feature_name="_var_is_string",
-                reason="The _var_is_string argument is not supported for Var."
-                "If you want to create a Var from a raw Javascript expression, use the constructor directly",
-                deprecation_version="0.6.0",
-                removal_version="0.7.0",
-            )
-
         # If the value is already a var, do nothing.
         if isinstance(value, Var):
             return value
@@ -580,12 +559,6 @@ class Var(Generic[VAR_TYPE]):
         # Try to pull the imports and hooks from contained values.
         if not isinstance(value, str):
             return LiteralVar.create(value)
-
-        if _var_is_string is False or _var_is_local is True:
-            return cls(
-                _js_expr=value,
-                _var_data=_var_data,
-            )
 
         return LiteralVar.create(value, _var_data=_var_data)
 

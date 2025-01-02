@@ -122,10 +122,10 @@ def _prepare_event(event: str, **kwargs) -> dict:
         return {}
 
     if UTC is None:
-        # for python 3.9 & 3.10
+        # for python 3.10
         stamp = datetime.utcnow().isoformat()
     else:
-        # for python 3.11 & 3.12
+        # for python 3.11 & later
         stamp = datetime.now(UTC).isoformat()
 
     cpuinfo = get_cpu_info()
