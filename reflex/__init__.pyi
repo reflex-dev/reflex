@@ -56,6 +56,7 @@ from .components.core.upload import get_upload_dir as get_upload_dir
 from .components.core.upload import get_upload_url as get_upload_url
 from .components.core.upload import selected_files as selected_files
 from .components.core.upload import upload as upload
+from .components.core.watermark import watermark as watermark
 from .components.datadisplay.code import code_block as code_block
 from .components.datadisplay.dataeditor import data_editor as data_editor
 from .components.datadisplay.dataeditor import data_editor_theme as data_editor_theme
