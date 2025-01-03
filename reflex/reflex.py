@@ -329,13 +329,14 @@ def export(
 
 @cli.command()
 def login(loglevel: constants.LogLevel = typer.Option(config.loglevel)):
-    """Authenicate with experimental Reflex hosting service."""
+    """Authenticate with experimental Reflex hosting service."""
     from reflex_cli.v2 import cli as hosting_cli
 
     check_version()
 
     validated_info = hosting_cli.login()
     if validated_info is not None:
+        _skip_compile()  # Allow running outside of an app dir
         telemetry.send("login", user_uuid=validated_info.get("user_id"))
 
 

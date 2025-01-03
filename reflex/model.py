@@ -141,15 +141,13 @@ def get_async_engine(url: str | None) -> sqlalchemy.ext.asyncio.AsyncEngine:
     return _ASYNC_ENGINE[url]
 
 
-async def get_db_status() -> bool:
+async def get_db_status() -> dict[str, bool]:
     """Checks the status of the database connection.
 
     Attempts to connect to the database and execute a simple query to verify connectivity.
 
     Returns:
-        bool: The status of the database connection:
-            - True: The database is accessible.
-            - False: The database is not accessible.
+        The status of the database connection.
     """
     status = True
     try:
@@ -159,7 +157,7 @@ async def get_db_status() -> bool:
     except sqlalchemy.exc.OperationalError:
         status = False
 
-    return status
+    return {"db": status}
 
 
 SQLModelOrSqlAlchemy = Union[
@@ -535,6 +533,7 @@ def asession(url: str | None = None) -> AsyncSession:
         _AsyncSessionLocal[url] = sqlalchemy.ext.asyncio.async_sessionmaker(
             bind=get_async_engine(url),
             class_=AsyncSession,
+            expire_on_commit=False,
             autocommit=False,
             autoflush=False,
         )

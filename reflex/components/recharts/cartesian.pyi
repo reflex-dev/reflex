@@ -144,13 +144,13 @@ class Axis(Recharts):
             data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart. Default: False
             width: The width of axis which is usually calculated internally.
-            height: The height of axis, which can be setted by user.
+            height: The height of axis, which can be set by user.
             type_: The type of axis 'number' | 'category'
             interval: If set 0, all the ticks will be shown. If set preserveStart", "preserveEnd" or "preserveStartEnd", the ticks which is to be shown or hidden will be calculated automatically. Default: "preserveEnd"
             allow_decimals: Allow the ticks of Axis to be decimals or not. Default: True
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain. Default: False
             allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
-            domain: The range of the axis. Work best in conjuction with allow_data_overflow. Default: [0, "auto"]
+            domain: The range of the axis. Work best in conjunction with allow_data_overflow. Default: [0, "auto"]
             axis_line: If set false, no axis line will be drawn. Default: True
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside. Default: False
             reversed: Reverse the ticks or not. Default: False
@@ -330,13 +330,13 @@ class XAxis(Axis):
             data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart. Default: False
             width: The width of axis which is usually calculated internally.
-            height: The height of axis, which can be setted by user.
+            height: The height of axis, which can be set by user.
             type_: The type of axis 'number' | 'category'
             interval: If set 0, all the ticks will be shown. If set preserveStart", "preserveEnd" or "preserveStartEnd", the ticks which is to be shown or hidden will be calculated automatically. Default: "preserveEnd"
             allow_decimals: Allow the ticks of Axis to be decimals or not. Default: True
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain. Default: False
             allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
-            domain: The range of the axis. Work best in conjuction with allow_data_overflow. Default: [0, "auto"]
+            domain: The range of the axis. Work best in conjunction with allow_data_overflow. Default: [0, "auto"]
             axis_line: If set false, no axis line will be drawn. Default: True
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside. Default: False
             reversed: Reverse the ticks or not. Default: False
@@ -512,13 +512,13 @@ class YAxis(Axis):
             data_key: The key of data displayed in the axis.
             hide: If set true, the axis do not display in the chart. Default: False
             width: The width of axis which is usually calculated internally.
-            height: The height of axis, which can be setted by user.
+            height: The height of axis, which can be set by user.
             type_: The type of axis 'number' | 'category'
             interval: If set 0, all the ticks will be shown. If set preserveStart", "preserveEnd" or "preserveStartEnd", the ticks which is to be shown or hidden will be calculated automatically. Default: "preserveEnd"
             allow_decimals: Allow the ticks of Axis to be decimals or not. Default: True
             allow_data_overflow: When domain of the axis is specified and the type of the axis is 'number', if allowDataOverflow is set to be false, the domain will be adjusted when the minimum value of data is smaller than domain[0] or the maximum value of data is greater than domain[1] so that the axis displays all data values. If set to true, graphic elements (line, area, bars) will be clipped to conform to the specified domain. Default: False
             allow_duplicated_category: Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
-            domain: The range of the axis. Work best in conjuction with allow_data_overflow. Default: [0, "auto"]
+            domain: The range of the axis. Work best in conjunction with allow_data_overflow. Default: [0, "auto"]
             axis_line: If set false, no axis line will be drawn. Default: True
             mirror: If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside. Default: False
             reversed: Reverse the ticks or not. Default: False

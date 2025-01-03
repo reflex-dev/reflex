@@ -34,7 +34,7 @@ def on_value_event_spec(
 
 
 class SliderRoot(SliderComponent):
-    """The Slider component comtaining all slider parts."""
+    """The Slider component containing all slider parts."""
 
     tag = "Root"
     alias = "RadixSliderRoot"

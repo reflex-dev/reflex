@@ -118,7 +118,7 @@ def handle_port(service_name: str, port: str, default_port: str) -> str:
     """Change port if the specified port is in use and is not explicitly specified as a CLI arg or config arg.
     otherwise tell the user the port is in use and exit the app.
 
-    We make an assumption that when port is the default port,then it hasnt been explicitly set since its not straightforward
+    We make an assumption that when port is the default port,then it hasn't been explicitly set since its not straightforward
     to know whether a port was explicitly provided by the user unless its any other than the default.
 
     Args:
@@ -351,7 +351,7 @@ def atexit_handler():
 
 def get_command_with_loglevel(command: list[str]) -> list[str]:
     """Add the right loglevel flag to the designated command.
-     npm uses --loglevel <level>, Bun doesnt use the --loglevel flag and
+     npm uses --loglevel <level>, Bun doesn't use the --loglevel flag and
      runs in debug mode by default.
 
     Args:

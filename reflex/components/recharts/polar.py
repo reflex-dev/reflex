@@ -124,7 +124,7 @@ class Radar(Recharts):
     # The key of a group of data which should be unique in a radar chart.
     data_key: Var[Union[str, int]]
 
-    # The coordinates of all the vertexes of the radar shape, like [{ x, y }].
+    # The coordinates of all the vertices of the radar shape, like [{ x, y }].
     points: Var[List[Dict[str, Any]]]
 
     # If false set, dots will not be drawn. Default: True
@@ -373,7 +373,7 @@ class PolarRadiusAxis(Recharts):
     # The count of axis ticks. Not used if 'type' is 'category'. Default: 5
     tick_count: Var[int]
 
-    # If 'auto' set, the scale funtion is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'. Default: "auto"
+    # If 'auto' set, the scale function is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'. Default: "auto"
     scale: Var[LiteralScale]
 
     # Valid children components

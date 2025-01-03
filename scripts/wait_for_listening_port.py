@@ -28,7 +28,7 @@ def _pid_exists(pid):
 # Not really used anymore now that we actually check the HTTP response.
 def _wait_for_port(port, server_pid, timeout) -> Tuple[bool, str]:
     start = time.time()
-    print(f"Waiting for up to {timeout} seconds for port {port} to start listening.")
+    print(f"Waiting for up to {timeout} seconds for port {port} to start listening.")  # noqa: T201
     while True:
         if not _pid_exists(server_pid):
             return False, f"Server PID {server_pid} is not running."
@@ -51,7 +51,7 @@ def _wait_for_http_response(port, server_pid, timeout, path) -> Tuple[bool, str,
         # which mangles it https://stackoverflow.com/a/49013604
         path = "/" + path
     url = f"http://localhost:{port}{path}"
-    print(f"Waiting for up to {timeout} seconds for {url} to return HTTP response.")
+    print(f"Waiting for up to {timeout} seconds for {url} to return HTTP response.")  # noqa: T201
     while True:
         try:
             if not _pid_exists(server_pid):
@@ -97,7 +97,7 @@ def main():
     for f in as_completed(futures):
         ok, msg, content = f.result()
         if ok:
-            print(f"OK: {msg}")
+            print(f"OK: {msg}")  # noqa: T201
             if base_content is None:
                 base_content = content
             else:
@@ -105,9 +105,9 @@ def main():
                     content == base_content
                 ), f"HTTP responses are not equal {content!r} != {base_content!r}."
         else:
-            print(f"FAIL: {msg}")
+            print(f"FAIL: {msg}")  # noqa: T201
             exit(1)
-    print(f"OK: All HTTP responses are equal after {time.time() - start} sec.")
+    print(f"OK: All HTTP responses are equal after {time.time() - start} sec.")  # noqa: T201
 
 
 if __name__ == "__main__":
