@@ -11,7 +11,10 @@ import reflex as rx
 from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.state import BaseState
-from reflex.utils.exceptions import PrimitiveUnserializableToJSON
+from reflex.utils.exceptions import (
+    PrimitiveUnserializableToJSON,
+    UntypedComputedVarError,
+)
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import (
@@ -804,7 +807,7 @@ def test_shadow_computed_var_error(request: pytest.FixtureRequest, fixture: str)
         request: Fixture Request.
         fixture: The state fixture.
     """
-    with pytest.raises(NameError):
+    with pytest.raises(UntypedComputedVarError):
         state = request.getfixturevalue(fixture)
         state.var_without_annotation.foo
 
