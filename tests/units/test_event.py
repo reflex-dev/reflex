@@ -199,16 +199,15 @@ def test_event_redirect(input, output):
         input: The input for running the test.
         output: The expected output to validate the test.
     """
-    path, external, replace = input
+    path, is_external, replace = input
     kwargs = {}
-    if external is not None:
-        kwargs["external"] = external
+    if is_external is not None:
+        kwargs["is_external"] = is_external
     if replace is not None:
         kwargs["replace"] = replace
     spec = event.redirect(path, **kwargs)
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_redirect"
-
     assert format.format_event(spec) == output
 
 

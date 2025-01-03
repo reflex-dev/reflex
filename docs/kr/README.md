@@ -20,7 +20,7 @@
 ---
 ## ⚙️ 설치
 
-터미널을 열고 실행하세요. (Python 3.9+ 필요):
+터미널을 열고 실행하세요. (Python 3.10+ 필요):
 
 ```bash
 pip install reflex

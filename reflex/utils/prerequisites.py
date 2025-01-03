@@ -75,18 +75,6 @@ def get_web_dir() -> Path:
     return environment.REFLEX_WEB_WORKDIR.get()
 
 
-def _python_version_check():
-    """Emit deprecation warning for deprecated python versions."""
-    # Check for end-of-life python versions.
-    if sys.version_info < (3, 10):
-        console.deprecate(
-            feature_name="Support for Python 3.9 and older",
-            reason="please upgrade to Python 3.10 or newer",
-            deprecation_version="0.6.0",
-            removal_version="0.7.0",
-        )
-
-
 def check_latest_package_version(package_name: str):
     """Check if the latest version of the package is installed.
 
@@ -109,8 +97,6 @@ def check_latest_package_version(package_name: str):
             console.warn(
                 f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
             )
-        # Check for deprecated python versions
-        _python_version_check()
     except Exception:
         pass
 

@@ -1,7 +1,5 @@
 """Data display component tests fixtures."""
 
-from typing import List
-
 import pandas as pd
 import pytest
 
@@ -54,11 +52,11 @@ def data_table_state3():
     """
 
     class DataTableState(BaseState):
-        _data: List = []
-        _columns: List = ["col1", "col2"]
+        _data: list = []
+        _columns: list = ["col1", "col2"]
 
         @rx.var
-        def data(self) -> List:
+        def data(self) -> list:
             return self._data
 
         @rx.var
@@ -77,15 +75,15 @@ def data_table_state4():
     """
 
     class DataTableState(BaseState):
-        _data: List = []
-        _columns: List = ["col1", "col2"]
+        _data: list = []
+        _columns: list[str] = ["col1", "col2"]
 
         @rx.var
         def data(self):
             return self._data
 
         @rx.var
-        def columns(self) -> List:
+        def columns(self) -> list:
             return self._columns
 
     return DataTableState

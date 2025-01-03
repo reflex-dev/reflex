@@ -34,7 +34,7 @@ Reflex 是一个使用纯Python构建全栈web应用的库。
 
 ## ⚙️ 安装
 
-打开一个终端并且运行(要求Python3.9+):
+打开一个终端并且运行(要求Python3.10+):
 
 ```bash
 pip install reflex
