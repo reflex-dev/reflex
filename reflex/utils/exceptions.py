@@ -59,6 +59,21 @@ class VarAttributeError(ReflexError, AttributeError):
     """Custom AttributeError for var related errors."""
 
 
+class VarAnnotationError(ReflexError, TypeError):
+    """Custom AttributeError for var annotation related errors."""
+
+    def __init__(self, var_name, annotation_value):
+        """Initialize the VarAnnotationError.
+
+        Args:
+            var_name: The name of the var.
+            annotation_value: The value of the annotation.
+        """
+        super().__init__(
+            f"Invalid annotation '{annotation_value}' for var '{var_name}'."
+        )
+
+
 class UploadValueError(ReflexError, ValueError):
     """Custom ValueError for upload related errors."""
 

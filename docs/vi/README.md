@@ -34,7 +34,7 @@ Các tính năng chính:
 
 ## ⚙️ Cài đặt
 
-Mở cửa sổ lệnh và chạy (Yêu cầu Python phiên bản 3.9+):
+Mở cửa sổ lệnh và chạy (Yêu cầu Python phiên bản 3.10+):
 
 ```bash
 pip install reflex

@@ -1772,7 +1772,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if (
                 isinstance(value, dict)
                 and inspect.isclass(hinted_args)
-                and not types.is_generic_alias(hinted_args)  # py3.9-py3.10
+                and not types.is_generic_alias(hinted_args)  # py3.10
             ):
                 if issubclass(hinted_args, Model):
                     # Remove non-fields from the payload
