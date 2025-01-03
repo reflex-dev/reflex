@@ -303,7 +303,6 @@ _MAPPING: dict = {
     "event": [
         "EventChain",
         "EventHandler",
-        "background",
         "call_script",
         "call_function",
         "run_script",

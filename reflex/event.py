@@ -25,7 +25,6 @@ from typing import (
     overload,
 )
 
-import typing_extensions
 from typing_extensions import (
     Concatenate,
     ParamSpec,
@@ -96,32 +95,6 @@ class Event:
 
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
-
-
-def background(fn, *, __internal_reflex_call: bool = False):
-    """Decorator to mark event handler as running in the background.
-
-    Args:
-        fn: The function to decorate.
-
-    Returns:
-        The same function, but with a marker set.
-
-
-    Raises:
-        TypeError: If the function is not a coroutine function or async generator.
-    """
-    if not __internal_reflex_call:
-        console.deprecate(
-            "background-decorator",
-            "Use `rx.event(background=True)` instead.",
-            "0.6.5",
-            "0.7.0",
-        )
-    if not inspect.iscoroutinefunction(fn) and not inspect.isasyncgenfunction(fn):
-        raise TypeError("Background task must be async function or generator.")
-    setattr(fn, BACKGROUND_TASK_MARKER, True)
-    return fn
 
 
 @dataclasses.dataclass(
@@ -810,29 +783,10 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     )
 
 
-@overload
 def redirect(
     path: str | Var[str],
     is_external: Optional[bool] = None,
     replace: bool = False,
-) -> EventSpec: ...
-
-
-@overload
-@typing_extensions.deprecated("`external` is deprecated use `is_external` instead")
-def redirect(
-    path: str | Var[str],
-    is_external: Optional[bool] = None,
-    replace: bool = False,
-    external: Optional[bool] = None,
-) -> EventSpec: ...
-
-
-def redirect(
-    path: str | Var[str],
-    is_external: Optional[bool] = None,
-    replace: bool = False,
-    external: Optional[bool] = None,
 ) -> EventSpec:
     """Redirect to a new path.
 
@@ -840,31 +794,15 @@ def redirect(
         path: The path to redirect to.
         is_external: Whether to open in new tab or not.
         replace: If True, the current page will not create a new history entry.
-        external(Deprecated): Whether to open in new tab or not.
 
     Returns:
         An event to redirect to the path.
     """
-    if external is not None:
-        console.deprecate(
-            "The `external` prop in `rx.redirect`",
-            "use `is_external` instead.",
-            "0.6.6",
-            "0.7.0",
-        )
-
-    # is_external should take precedence over external.
-    is_external = (
-        (False if external is None else external)
-        if is_external is None
-        else is_external
-    )
-
     return server_side(
         "_redirect",
         get_fn_signature(redirect),
         path=path,
-        external=is_external,
+        external=False if is_external is None else is_external,
         replace=replace,
     )
 
@@ -1788,8 +1726,6 @@ V3 = TypeVar("V3")
 V4 = TypeVar("V4")
 V5 = TypeVar("V5")
 
-background_event_decorator = background
-
 
 class EventCallback(Generic[P, T]):
     """A descriptor that wraps a function to be used as an event."""
@@ -1962,6 +1898,9 @@ class EventNamespace(types.SimpleNamespace):
             func: The function to wrap.
             background: Whether the event should be run in the background. Defaults to False.
 
+        Raises:
+            TypeError: If background is True and the function is not a coroutine or async generator. # noqa: DAR402
+
         Returns:
             The wrapped function.
         """
@@ -1970,7 +1909,13 @@ class EventNamespace(types.SimpleNamespace):
             func: Callable[Concatenate[BASE_STATE, P], T],
         ) -> EventCallback[P, T]:
             if background is True:
-                return background_event_decorator(func, __internal_reflex_call=True)  # type: ignore
+                if not inspect.iscoroutinefunction(
+                    func
+                ) and not inspect.isasyncgenfunction(func):
+                    raise TypeError(
+                        "Background task must be async function or generator."
+                    )
+                setattr(func, BACKGROUND_TASK_MARKER, True)
             return func  # type: ignore
 
         if func is not None:

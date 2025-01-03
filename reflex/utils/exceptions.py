@@ -74,6 +74,50 @@ class VarAnnotationError(ReflexError, TypeError):
         )
 
 
+class MismatchedArgumentTypeError(ReflexError, TypeError):
+    """Custom TypeError for mismatched argument type errors."""
+
+    def __init__(self, value, field_name, expected_type):
+        """Initialize the MismatchedArgumentError.
+
+        Args:
+            value: The name of the argument received.
+            field_name: The expected argument name.
+            expected_type: The expected argument type.
+        """
+        super().__init__(
+            f"Expected field '{field_name}' to receive type '{expected_type}', but got '{value}' of type '{type(value)}'."
+        )
+
+
+class MismatchedComputedVarReturn(ReflexError, TypeError):
+    """Custom TypeError for mismatched computed var return type errors."""
+
+    def __init__(self, var_name, return_type, expected_type):
+        """Initialize the MismatchedComputedVarReturn.
+
+        Args:
+            var_name: The name of the computed var.
+            return_type: The return type of the computed var.
+            expected_type: The expected return type.
+        """
+        super().__init__(
+            f"Computed var '{var_name}' must return type '{expected_type}', got '{return_type}'."
+        )
+
+
+class UntypedComputedVarError(ReflexError, TypeError):
+    """Custom TypeError for untyped computed var errors."""
+
+    def __init__(self, var_name):
+        """Initialize the UntypedComputedVarError.
+
+        Args:
+            var_name: The name of the computed var.
+        """
+        super().__init__(f"Computed var '{var_name}' must have a type annotation.")
+
+
 class UploadValueError(ReflexError, ValueError):
     """Custom ValueError for upload related errors."""
 
