@@ -187,3 +187,7 @@ def raise_system_package_missing_error(package: str) -> NoReturn:
 
 class InvalidLockWarningThresholdError(ReflexError):
     """Raised when an invalid lock warning threshold is provided."""
+
+
+class UnretrievableVarValueError(ReflexError):
+    """Raised when the value of a var is not retrievable."""
