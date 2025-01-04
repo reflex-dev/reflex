@@ -127,7 +127,7 @@ class VarData:
         state: str = "",
         field_name: str = "",
         imports: ImportDict | ParsedImportDict | None = None,
-        hooks: dict[str, None] | None = None,
+        hooks: dict[str, VarData | None] | None = None,
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
     ):
@@ -194,7 +194,9 @@ class VarData:
             (var_data.state for var_data in all_var_datas if var_data.state), ""
         )
 
-        hooks = {hook: None for var_data in all_var_datas for hook in var_data.hooks}
+        hooks: dict[str, VarData | None] = {
+            hook: None for var_data in all_var_datas for hook in var_data.hooks
+        }
 
         _imports = imports.merge_imports(
             *(var_data.imports for var_data in all_var_datas)
