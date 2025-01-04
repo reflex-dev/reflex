@@ -78,7 +78,8 @@ class Reflex(SimpleNamespace):
     # The root directory of the reflex library.
     ROOT_DIR = Path(__file__).parents[2]
 
-    RELEASES_URL = "https://api.github.com/repos/reflex-dev/templates/releases"
+    RELEASES_URL = "https://templates-releases.reflex.dev"
+    RELEASES_URL_FALLBACK = "https://api.github.com/repos/reflex-dev/templates/releases"
 
 
 class ReflexHostingCLI(SimpleNamespace):
