@@ -13,6 +13,8 @@ from reflex.components.component import (
     StatefulComponent,
 )
 from reflex.components.el.elements.forms import Input
+from reflex.components.lucide import icon
+from reflex.components.radix.themes.components.button import button
 from reflex.components.radix.themes.layout.box import Box
 from reflex.config import environment
 from reflex.constants import Dirs
@@ -387,9 +389,8 @@ class StyledUpload(Upload):
             The styled upload component.
         """
         # Set default props.
-        props.setdefault("border", "1px dashed var(--accent-12)")
-        props.setdefault("padding", "5em")
-        props.setdefault("textAlign", "center")
+        if not children:
+            children = [button("Upload Files", icon("upload", size=12), align_items="center")]
 
         # Mark the Upload component as used in the app.
         Upload.is_used = True
