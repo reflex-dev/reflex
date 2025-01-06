@@ -2276,7 +2276,7 @@ def computed_var(
 def computed_var(
     fget: Callable[[BASE_STATE], Any] | None = None,
     initial_value: Any | types.Unset = types.Unset(),
-    cache: bool = False,
+    cache: Optional[bool] = None,
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
@@ -2302,6 +2302,15 @@ def computed_var(
         ValueError: If caching is disabled and an update interval is set.
         VarDependencyError: If user supplies dependencies without caching.
     """
+    if cache is None:
+        cache = False
+        console.deprecate(
+            "Default non-cached rx.var",
+            "the default value will be `@rx.var(cache=True)` in a future release. "
+            "To retain uncached var, explicitly pass `@rx.var(cache=False)`",
+            deprecation_version="0.6.8",
+            removal_version="0.7.0",
+        )
     if cache is False and interval is not None:
         raise ValueError("Cannot set update interval without caching.")
 
