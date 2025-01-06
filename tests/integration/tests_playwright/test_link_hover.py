@@ -13,12 +13,13 @@ def LinkApp():
 
     def index():
         return rx.vstack(
+            rx.box(height="10em"),  # spacer, so the link isn't hovered initially
             rx.link(
                 "Click me",
                 href="#",
                 color="blue",
                 _hover=rx.Style({"color": "red"}),
-            )
+            ),
         )
 
     app.add_page(index, "/")
