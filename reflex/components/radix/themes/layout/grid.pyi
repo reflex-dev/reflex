@@ -184,7 +184,7 @@ class Grid(elements.Div, RadixThemesComponent):
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             columns: Number of columns
             rows: Number of rows
-            flow: How the grid items are layed out: "row" | "column" | "dense" | "row-dense" | "column-dense"
+            flow: How the grid items are laid out: "row" | "column" | "dense" | "row-dense" | "column-dense"
             align: Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
             justify: Alignment of children along the cross axis: "start" | "center" | "end" | "between"
             spacing: Gap between children: "0" - "9"

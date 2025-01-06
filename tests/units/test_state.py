@@ -60,6 +60,7 @@ from reflex.utils.exceptions import (
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSerializationError,
+    UnretrievableVarValueError,
 )
 from reflex.utils.format import json_dumps
 from reflex.vars.base import Var, computed_var
@@ -115,7 +116,7 @@ class TestState(BaseState):
     # Set this class as not test one
     __test__ = False
 
-    num1: int
+    num1: rx.Field[int]
     num2: float = 3.14
     key: str
     map_key: str = "a"
@@ -163,7 +164,7 @@ class ChildState(TestState):
     """A child state fixture."""
 
     value: str
-    count: int = 23
+    count: rx.Field[int] = rx.field(23)
 
     def change_both(self, value: str, count: int):
         """Change both the value and count.
@@ -976,7 +977,7 @@ class InterdependentState(BaseState):
     """A state with 3 vars and 3 computed vars.
 
     x: a variable that no computed var depends on
-    v1: a varable that one computed var directly depeneds on
+    v1: a variable that one computed var directly depends on
     _v2: a backend variable that one computed var directly depends on
 
     v1x2: a computed var that depends on v1
@@ -1663,7 +1664,7 @@ async def state_manager(request) -> AsyncGenerator[StateManager, None]:
 
 
 @pytest.fixture()
-def substate_token(state_manager, token):
+def substate_token(state_manager, token) -> str:
     """A token + substate name for looking up in state manager.
 
     Args:
@@ -1936,6 +1937,14 @@ def mock_app(mock_app_simple: rx.App, state_manager: StateManager) -> rx.App:
     return mock_app_simple
 
 
+@dataclasses.dataclass
+class ModelDC:
+    """A dataclass."""
+
+    foo: str = "bar"
+    ls: list[dict] = dataclasses.field(default_factory=list)
+
+
 @pytest.mark.asyncio
 async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     """Test that the state proxy works.
@@ -2038,6 +2047,7 @@ class BackgroundTaskState(BaseState):
 
     order: List[str] = []
     dict_list: Dict[str, List[int]] = {"foo": [1, 2, 3]}
+    dc: ModelDC = ModelDC()
 
     def __init__(self, **kwargs):  # noqa: D107
         super().__init__(**kwargs)
@@ -2064,8 +2074,16 @@ class BackgroundTaskState(BaseState):
             self.order.append("bad idea")
 
         with pytest.raises(ImmutableStateError):
+            # Cannot manipulate dataclass attributes.
+            self.dc.foo = "baz"
+
+        with pytest.raises(ImmutableStateError):
             # Even nested access to mutables raises an exception.
             self.dict_list["foo"].append(42)
+
+        with pytest.raises(ImmutableStateError):
+            # Cannot modify dataclass list attribute.
+            self.dc.ls.append({"foo": "bar"})
 
         with pytest.raises(ImmutableStateError):
             # Direct calling another handler that modifies state raises an exception.
@@ -2685,7 +2703,7 @@ class Custom1(Base):
         self.foo = val
 
     def double_foo(self) -> str:
-        """Concantenate foo with foo.
+        """Concatenate foo with foo.
 
         Returns:
             foo + foo
@@ -3267,9 +3285,9 @@ async def test_setvar(mock_app: rx.App, token: str):
             print(update)
     assert state.array == [43]
 
-    # Cannot setvar for non-existant var
+    # Cannot setvar for non-existent var
     with pytest.raises(AttributeError):
-        TestState.setvar("non_existant_var")
+        TestState.setvar("non_existent_var")
 
     # Cannot setvar for computed vars
     with pytest.raises(AttributeError):
@@ -3582,13 +3600,6 @@ class ModelV2(BaseModelV2):
     foo: str = "bar"
 
 
-@dataclasses.dataclass
-class ModelDC:
-    """A dataclass."""
-
-    foo: str = "bar"
-
-
 class PydanticState(rx.State):
     """A state with pydantic BaseModel vars."""
 
@@ -3610,11 +3621,22 @@ def test_mutable_models():
     assert state.dirty_vars == {"v2"}
     state.dirty_vars.clear()
 
-    # Not yet supported ENG-4083
-    # assert isinstance(state.dc, MutableProxy) #noqa: ERA001
-    # state.dc.foo = "baz" #noqa: ERA001
-    # assert state.dirty_vars == {"dc"} #noqa: ERA001
-    # state.dirty_vars.clear() #noqa: ERA001
+    assert isinstance(state.dc, MutableProxy)
+    state.dc.foo = "baz"
+    assert state.dirty_vars == {"dc"}
+    state.dirty_vars.clear()
+    assert state.dirty_vars == set()
+    state.dc.ls.append({"hi": "reflex"})
+    assert state.dirty_vars == {"dc"}
+    state.dirty_vars.clear()
+    assert state.dirty_vars == set()
+    assert dataclasses.asdict(state.dc) == {"foo": "baz", "ls": [{"hi": "reflex"}]}
+    assert dataclasses.astuple(state.dc) == ("baz", [{"hi": "reflex"}])
+    # creating a new instance shouldn't mark the state dirty
+    assert dataclasses.replace(state.dc, foo="quuc") == ModelDC(
+        foo="quuc", ls=[{"hi": "reflex"}]
+    )
+    assert state.dirty_vars == set()
 
 
 def test_get_value():
@@ -3764,3 +3786,32 @@ async def test_upcast_event_handler_arg(handler, payload):
     state = UpcastState()
     async for update in state._process_event(handler, state, payload):
         assert update.delta == {UpcastState.get_full_name(): {"passed": True}}
+
+
+@pytest.mark.asyncio
+async def test_get_var_value(state_manager: StateManager, substate_token: str):
+    """Test that get_var_value works correctly.
+
+    Args:
+        state_manager: The state manager to use.
+        substate_token: Token for the substate used by state_manager.
+    """
+    state = await state_manager.get_state(substate_token)
+
+    # State Var from same state
+    assert await state.get_var_value(TestState.num1) == 0
+    state.num1 = 42
+    assert await state.get_var_value(TestState.num1) == 42
+
+    # State Var from another state
+    child_state = await state.get_state(ChildState)
+    assert await state.get_var_value(ChildState.count) == 23
+    child_state.count = 66
+    assert await state.get_var_value(ChildState.count) == 66
+
+    # LiteralVar with known value
+    assert await state.get_var_value(rx.Var.create([1, 2, 3])) == [1, 2, 3]
+
+    # Generic Var with no state
+    with pytest.raises(UnretrievableVarValueError):
+        await state.get_var_value(rx.Var("undefined"))

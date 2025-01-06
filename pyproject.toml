@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "reflex"
-version = "0.6.7dev1"
+version = "0.6.8dev1"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [
@@ -50,6 +50,7 @@ setuptools = ">=75.0"
 httpx = ">=0.25.1,<1.0"
 twine = ">=4.0.0,<7.0"
 tomlkit = ">=0.12.4,<1.0"
+asgiproxy = { version = "==0.1.1", optional = true }
 lazy_loader = ">=0.4"
 reflex-chakra = ">=0.6.0"
 typing_extensions = ">=4.6.0"
@@ -73,9 +74,13 @@ selenium = ">=4.11.0,<5.0"
 pytest-benchmark = ">=4.0.0,<6.0"
 playwright = ">=1.46.0"
 pytest-playwright = ">=0.5.1"
+asgiproxy = "==0.1.1"
 
 [tool.poetry.scripts]
 reflex = "reflex.reflex:cli"
+
+[tool.poetry.extras]
+proxy = ["asgiproxy"]
 
 [build-system]
 requires = ["poetry-core>=1.5.1"]
@@ -85,14 +90,15 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 target-version = "py39"
+output-format = "concise"
 lint.isort.split-on-trailing-comma = false
-lint.select = ["B", "C4", "D", "E", "ERA", "F", "FURB", "I", "PTH", "RUF", "SIM", "W"]
+lint.select = ["B", "C4", "D", "E", "ERA", "F", "FURB", "I", "PERF", "PTH", "RUF", "SIM", "T", "W"]
 lint.ignore = ["B008", "D205", "E501", "F403", "SIM115", "RUF006", "RUF012"]
 lint.pydocstyle.convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/*.py" = ["D100", "D103", "D104", "B018"]
+"tests/*.py" = ["D100", "D103", "D104", "B018", "PERF", "T"]
 "reflex/.templates/*.py" = ["D100", "D103", "D104"]
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742"]
 "*/blank.py" = ["I001"]
@@ -100,3 +106,7 @@ lint.pydocstyle.convention = "google"
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
+
+[tool.codespell]
+skip = "docs/*,*.html,examples/*, *.pyi"
+ignore-words-list = "te, TreeE"

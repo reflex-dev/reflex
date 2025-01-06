@@ -42,7 +42,7 @@ class Axis(Recharts):
     # The width of axis which is usually calculated internally.
     width: Var[Union[str, int]]
 
-    # The height of axis, which can be setted by user.
+    # The height of axis, which can be set by user.
     height: Var[Union[str, int]]
 
     # The type of axis 'number' | 'category'
@@ -60,7 +60,7 @@ class Axis(Recharts):
     # Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
     allow_duplicated_category: Var[bool]
 
-    # The range of the axis. Work best in conjuction with allow_data_overflow. Default: [0, "auto"]
+    # The range of the axis. Work best in conjunction with allow_data_overflow. Default: [0, "auto"]
     domain: Var[List]
 
     # If set false, no axis line will be drawn. Default: True

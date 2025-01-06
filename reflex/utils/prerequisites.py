@@ -109,7 +109,7 @@ def check_latest_package_version(package_name: str):
             console.warn(
                 f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
             )
-        # Check for depreacted python versions
+        # Check for deprecated python versions
         _python_version_check()
     except Exception:
         pass
@@ -372,16 +372,13 @@ def parse_redis_url() -> str | dict | None:
     return config.redis_url
 
 
-async def get_redis_status() -> bool | None:
+async def get_redis_status() -> dict[str, bool | None]:
     """Checks the status of the Redis connection.
 
     Attempts to connect to Redis and send a ping command to verify connectivity.
 
     Returns:
-        bool or None: The status of the Redis connection:
-            - True: Redis is accessible and responding.
-            - False: Redis is not accessible due to a connection error.
-            - None: Redis not used i.e redis_url is not set in rxconfig.
+        The status of the Redis connection.
     """
     try:
         status = True
@@ -393,7 +390,7 @@ async def get_redis_status() -> bool | None:
     except exceptions.RedisError:
         status = False
 
-    return status
+    return {"redis": status}
 
 
 def validate_app_name(app_name: str | None = None) -> str:
@@ -594,7 +591,7 @@ def initialize_web_directory():
     """Initialize the web directory on reflex init."""
     console.log("Initializing the web directory.")
 
-    # Re-use the hash if one is already created, so we don't over-write it when running reflex init
+    # Reuse the hash if one is already created, so we don't over-write it when running reflex init
     project_hash = get_project_hash()
 
     path_ops.cp(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
@@ -647,7 +644,7 @@ def initialize_bun_config():
 def init_reflex_json(project_hash: int | None):
     """Write the hash of the Reflex project to a REFLEX_JSON.
 
-    Re-use the hash if one is already created, therefore do not
+    Reuse the hash if one is already created, therefore do not
     overwrite it every time we run the reflex init command
     .
 
@@ -1175,6 +1172,24 @@ def initialize_frontend_dependencies():
     CURRENTLY_INSTALLING_NODE = False
     # Set up the web directory.
     initialize_web_directory()
+
+
+def check_db_used() -> bool:
+    """Check if the database is used.
+
+    Returns:
+        True if the database is used.
+    """
+    return bool(get_config().db_url)
+
+
+def check_redis_used() -> bool:
+    """Check if Redis is used.
+
+    Returns:
+        True if Redis is used.
+    """
+    return bool(get_config().redis_url)
 
 
 def check_db_initialized() -> bool:
