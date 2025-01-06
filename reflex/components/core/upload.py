@@ -29,7 +29,7 @@ from reflex.event import (
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
-from reflex.vars.base import CallableVar, LiteralVar, Var, get_unique_variable_name
+from reflex.vars.base import CallableVar, Var, get_unique_variable_name
 from reflex.vars.sequence import LiteralStringVar
 
 DEFAULT_UPLOAD_ID: str = "default"
@@ -61,7 +61,7 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     id_var = LiteralStringVar.create(id_)
     var_name = f"""e => setFilesById(filesById => {{
     const updatedFilesById = Object.assign({{}}, filesById);
-    updatedFilesById[{str(id_var)}] = e;
+    updatedFilesById[{id_var!s}] = e;
     return updatedFilesById;
   }})
     """
@@ -87,7 +87,7 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     """
     id_var = LiteralStringVar.create(id_)
     return Var(
-        _js_expr=f"(filesById[{str(id_var)}] ? filesById[{str(id_var)}].map((f) => (f.path || f.name)) : [])",
+        _js_expr=f"(filesById[{id_var!s}] ? filesById[{id_var!s}].map((f) => (f.path || f.name)) : [])",
         _var_type=List[str],
         _var_data=VarData.merge(
             upload_files_context_var_data, id_var._get_all_var_data()
@@ -108,7 +108,8 @@ def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec:
     # UploadFilesProvider assigns a special function to clear selected files
     # into the shared global refs object to make it accessible outside a React
     # component via `run_script` (otherwise backend could never clear files).
-    return run_script(f"refs['__clear_selected_files']({id_!r})")
+    func = Var("__clear_selected_files")._as_ref()
+    return run_script(f"{func}({id_!r})")
 
 
 def cancel_upload(upload_id: str) -> EventSpec:
@@ -120,9 +121,8 @@ def cancel_upload(upload_id: str) -> EventSpec:
     Returns:
         An event spec that cancels the upload when triggered.
     """
-    return run_script(
-        f"upload_controllers[{str(LiteralVar.create(upload_id))}]?.abort()"
-    )
+    controller = Var(f"__upload_controllers_{upload_id}")._as_ref()
+    return run_script(f"{controller}?.abort()")
 
 
 def get_upload_dir() -> Path:
@@ -301,7 +301,7 @@ class Upload(MemoizationLeaf):
         )
 
         left_side = f"const {{getRootProps: {root_props_unique_name}, getInputProps: {input_props_unique_name}}} "
-        right_side = f"useDropzone({str(use_dropzone_arguments)})"
+        right_side = f"useDropzone({use_dropzone_arguments!s})"
 
         var_data = VarData.merge(
             VarData(

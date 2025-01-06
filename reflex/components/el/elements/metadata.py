@@ -1,4 +1,4 @@
-"""Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+"""Metadata classes."""
 
 from typing import List, Union
 
@@ -8,7 +8,7 @@ from reflex.vars.base import Var
 from .base import BaseHTML
 
 
-class Base(BaseHTML):  # noqa: E742
+class Base(BaseHTML):
     """Display the base element."""
 
     tag = "base"
@@ -18,13 +18,13 @@ class Base(BaseHTML):  # noqa: E742
     target: Var[Union[str, int, bool]]
 
 
-class Head(BaseHTML):  # noqa: E742
+class Head(BaseHTML):
     """Display the head element."""
 
     tag = "head"
 
 
-class Link(BaseHTML):  # noqa: E742
+class Link(BaseHTML):
     """Display the link element."""
 
     tag = "link"
@@ -75,14 +75,14 @@ class Meta(BaseHTML):  # Inherits common attributes from BaseHTML
     name: Var[Union[str, int, bool]]
 
 
-class Title(Element):  # noqa: E742
+class Title(Element):
     """Display the title element."""
 
     tag = "title"
 
 
-# Had to be named with an underscore so it doesnt conflict with reflex.style Style in pyi
-class StyleEl(Element):  # noqa: E742
+# Had to be named with an underscore so it doesn't conflict with reflex.style Style in pyi
+class StyleEl(Element):
     """Display the style element."""
 
     tag = "style"

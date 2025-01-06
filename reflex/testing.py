@@ -8,7 +8,6 @@ import dataclasses
 import functools
 import inspect
 import os
-import pathlib
 import platform
 import re
 import signal
@@ -20,6 +19,7 @@ import threading
 import time
 import types
 from http.server import SimpleHTTPRequestHandler
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -44,6 +44,7 @@ import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.config import environment
+from reflex.proxy import proxy_middleware
 from reflex.state import (
     BaseState,
     StateManager,
@@ -52,6 +53,7 @@ from reflex.state import (
     StateManagerRedis,
     reload_state_module,
 )
+from reflex.utils import console
 
 try:
     from selenium import webdriver  # pyright: ignore [reportMissingImports]
@@ -100,7 +102,7 @@ class chdir(contextlib.AbstractContextManager):
 
     def __enter__(self):
         """Save current directory and perform chdir."""
-        self._old_cwd.append(os.getcwd())
+        self._old_cwd.append(Path.cwd())
         os.chdir(self.path)
 
     def __exit__(self, *excinfo):
@@ -120,8 +122,8 @@ class AppHarness:
     app_source: Optional[
         Callable[[], None] | types.ModuleType | str | functools.partial[Any]
     ]
-    app_path: pathlib.Path
-    app_module_path: pathlib.Path
+    app_path: Path
+    app_module_path: Path
     app_module: Optional[types.ModuleType] = None
     app_instance: Optional[reflex.App] = None
     frontend_process: Optional[subprocess.Popen] = None
@@ -136,7 +138,7 @@ class AppHarness:
     @classmethod
     def create(
         cls,
-        root: pathlib.Path,
+        root: Path,
         app_source: Optional[
             Callable[[], None] | types.ModuleType | str | functools.partial[Any]
         ] = None,
@@ -206,7 +208,7 @@ class AppHarness:
             The full state name
         """
         # NOTE: using State.get_name() somehow causes trouble here
-        # path = [State.get_name()] + [self.get_state_name(p) for p in path]
+        # path = [State.get_name()] + [self.get_state_name(p) for p in path] # noqa: ERA001
         path = ["reflex___state____state"] + [self.get_state_name(p) for p in path]
         return ".".join(path)
 
@@ -297,6 +299,9 @@ class AppHarness:
             self.state_manager = StateManagerRedis.create(self.app_instance.state)
         else:
             self.state_manager = self.app_instance._state_manager
+        # Disable proxy for app harness tests.
+        if proxy_middleware in self.app_instance.lifespan_tasks:
+            self.app_instance.lifespan_tasks.remove(proxy_middleware)
 
     def _reload_state_module(self):
         """Reload the rx.State module to avoid conflict when reloading."""
@@ -364,9 +369,12 @@ class AppHarness:
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):
+            backend_host, backend_port = self._poll_for_servers().getsockname()
             config = reflex.config.get_config()
+            config.backend_port = backend_port
             config.api_url = "http://{0}:{1}".format(
-                *self._poll_for_servers().getsockname(),
+                backend_host,
+                backend_port,
             )
             reflex.utils.build.setup_frontend(self.app_path)
 
@@ -385,12 +393,13 @@ class AppHarness:
             )
             if not line:
                 break
-            print(line)  # for pytest diagnosis
+            print(line)  # for pytest diagnosis #noqa: T201
             m = re.search(reflex.constants.Next.FRONTEND_LISTENING_REGEX, line)
             if m is not None:
                 self.frontend_url = m.group(1)
                 config = reflex.config.get_config()
                 config.deploy_url = self.frontend_url
+                config.frontend_port = int(self.frontend_url.rpartition(":")[2])
                 break
         if self.frontend_url is None:
             raise RuntimeError("Frontend did not start")
@@ -403,11 +412,10 @@ class AppHarness:
                     )
                 # catch I/O operation on closed file.
                 except ValueError as e:
-                    print(e)
+                    console.error(str(e))
                     break
                 if not line:
                     break
-                print(line)
 
         self.frontend_output_thread = threading.Thread(target=consume_frontend_output)
         self.frontend_output_thread.start()
@@ -436,7 +444,6 @@ class AppHarness:
 
         Returns:
             The rendered app global code.
-
         """
         if not inspect.isclass(value) and not inspect.isfunction(value):
             return f"{key} = {value!r}"
@@ -815,7 +822,7 @@ class AppHarness:
 class SimpleHTTPRequestHandlerCustomErrors(SimpleHTTPRequestHandler):
     """SimpleHTTPRequestHandler with custom error page handling."""
 
-    def __init__(self, *args, error_page_map: dict[int, pathlib.Path], **kwargs):
+    def __init__(self, *args, error_page_map: dict[int, Path], **kwargs):
         """Initialize the handler.
 
         Args:
@@ -858,8 +865,8 @@ class Subdir404TCPServer(socketserver.TCPServer):
     def __init__(
         self,
         *args,
-        root: pathlib.Path,
-        error_page_map: dict[int, pathlib.Path] | None,
+        root: Path,
+        error_page_map: dict[int, Path] | None,
         **kwargs,
     ):
         """Initialize the server.
@@ -879,7 +886,7 @@ class Subdir404TCPServer(socketserver.TCPServer):
 
         Args:
             request: the requesting socket
-            client_address: (host, port) referring to the client’s address.
+            client_address: (host, port) referring to the client's address.
         """
         self.RequestHandlerClass(
             request,
@@ -916,17 +923,20 @@ class AppHarnessProd(AppHarness):
             root=web_root,
             error_page_map=error_page_map,
         ) as self.frontend_server:
-            self.frontend_url = "http://localhost:{1}".format(
-                *self.frontend_server.socket.getsockname()
-            )
+            config = reflex.config.get_config()
+            config.frontend_port = self.frontend_server.server_address[1]
+            self.frontend_url = f"http://localhost:{config.frontend_port}"
             self.frontend_server.serve_forever()
 
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):
+            backend_host, backend_port = self._poll_for_servers().getsockname()
             config = reflex.config.get_config()
+            config.backend_port = backend_port
             config.api_url = "http://{0}:{1}".format(
-                *self._poll_for_servers().getsockname(),
+                backend_host,
+                backend_port,
             )
             reflex.reflex.export(
                 zipping=False,

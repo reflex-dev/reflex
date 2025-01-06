@@ -1,4 +1,4 @@
-"""Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+"""Inline classes."""
 
 from typing import Union
 

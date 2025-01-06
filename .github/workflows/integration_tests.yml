@@ -43,7 +43,7 @@ jobs:
       matrix:
         # Show OS combos first in GUI
         os: [ubuntu-latest, windows-latest]
-        python-version: ['3.9.18', '3.10.13', '3.11.5', '3.12.0']
+        python-version: ['3.9.18', '3.10.13', '3.11.5', '3.12.0', '3.13.0']
         exclude:
           - os: windows-latest
             python-version: '3.10.13'
@@ -73,12 +73,14 @@ jobs:
         run: |
           poetry run uv pip install -r requirements.txt
       - name: Install additional dependencies for DB access
-        run: poetry run uv pip install psycopg2-binary
+        run: poetry run uv pip install psycopg
       - name: Check export --backend-only before init for counter example
         working-directory: ./reflex-examples/counter
         run: |
           poetry run reflex export --backend-only
       - name: Check run --backend-only before init for counter example
+        env:
+          WAIT_FOR_LISTENING_PORT_ARGS: --path ping
         run: |
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev 8001 --backend-only --backend-port 8001
       - name: Init Website for counter example
@@ -147,7 +149,7 @@ jobs:
         working-directory: ./reflex-web
         run: poetry run uv pip install $(grep -ivE "reflex " requirements.txt)
       - name: Install additional dependencies for DB access
-        run: poetry run uv pip install psycopg2-binary
+        run: poetry run uv pip install psycopg
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: poetry run reflex init
@@ -198,7 +200,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ['3.11.5', '3.12.0']
-    runs-on: macos-12
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_build_env
@@ -216,7 +218,7 @@ jobs:
         working-directory: ./reflex-web
         run: poetry run uv pip install -r requirements.txt
       - name: Install additional dependencies for DB access
-        run: poetry run uv pip install psycopg2-binary
+        run: poetry run uv pip install psycopg
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: poetry run reflex init

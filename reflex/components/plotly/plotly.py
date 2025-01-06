@@ -149,10 +149,10 @@ class Plotly(NoSSRComponent):
     # Fired when a plot element is hovered over.
     on_hover: EventHandler[_event_points_data_signature]
 
-    # Fired after the plot is layed out (zoom, pan, etc).
+    # Fired after the plot is laid out (zoom, pan, etc).
     on_relayout: EventHandler[no_args_event_spec]
 
-    # Fired while the plot is being layed out.
+    # Fired while the plot is being laid out.
     on_relayouting: EventHandler[no_args_event_spec]
 
     # Fired after the plot style is changed.
@@ -167,7 +167,7 @@ class Plotly(NoSSRComponent):
     # Fired while dragging a selection.
     on_selecting: EventHandler[_event_points_data_signature]
 
-    # Fired while an animation is occuring.
+    # Fired while an animation is occurring.
     on_transitioning: EventHandler[no_args_event_spec]
 
     # Fired when a transition is stopped early.
@@ -270,11 +270,11 @@ const extractPoints = (points) => {
             tag.special_props.append(
                 # Merge all dictionaries and spread the result over props.
                 Var(
-                    _js_expr=f"{{...mergician({str(figure)},"
+                    _js_expr=f"{{...mergician({figure!s},"
                     f"{','.join(str(md) for md in merge_dicts)})}}",
                 ),
             )
         else:
             # Spread the figure dict over props, nothing to merge.
-            tag.special_props.append(Var(_js_expr=f"{{...{str(figure)}}}"))
+            tag.special_props.append(Var(_js_expr=f"{{...{figure!s}}}"))
         return tag

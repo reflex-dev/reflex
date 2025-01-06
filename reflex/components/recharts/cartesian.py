@@ -42,7 +42,7 @@ class Axis(Recharts):
     # The width of axis which is usually calculated internally.
     width: Var[Union[str, int]]
 
-    # The height of axis, which can be setted by user.
+    # The height of axis, which can be set by user.
     height: Var[Union[str, int]]
 
     # The type of axis 'number' | 'category'
@@ -60,7 +60,7 @@ class Axis(Recharts):
     # Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
     allow_duplicated_category: Var[bool]
 
-    # The range of the axis. Work best in conjuction with allow_data_overflow. Default: [0, "auto"]
+    # The range of the axis. Work best in conjunction with allow_data_overflow. Default: [0, "auto"]
     domain: Var[List]
 
     # If set false, no axis line will be drawn. Default: True
@@ -416,7 +416,7 @@ class Bar(Cartesian):
     radius: Var[Union[int, List[int]]]
 
     # The active bar is shown when a user enters a bar chart and this chart has tooltip. If set to false, no active bar will be drawn. If set to true, active bar will be drawn with the props calculated internally. If passed an object, active bar will be drawn, and the internally calculated props will be merged with the key value pairs of the passed object.
-    # active_bar: Var[Union[bool, Dict[str, Any]]]
+    # active_bar: Var[Union[bool, Dict[str, Any]]] #noqa: ERA001
 
     # Valid children components
     _valid_children: List[str] = ["Cell", "LabelList", "ErrorBar"]

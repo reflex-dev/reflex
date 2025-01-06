@@ -173,7 +173,7 @@ def load_dynamic_serializer():
                         f"const [{unique_var_name}, set_{unique_var_name}] = useState(null);": None,
                         "useEffect(() => {"
                         "let isMounted = true;"
-                        f"evalReactComponent({str(js_string)})"
+                        f"evalReactComponent({js_string!s})"
                         ".then((component) => {"
                         "if (isMounted) {"
                         f"set_{unique_var_name}(component);"
@@ -183,7 +183,7 @@ def load_dynamic_serializer():
                         "isMounted = false;"
                         "};"
                         "}"
-                        f", [{str(js_string)}]);": None,
+                        f", [{js_string!s}]);": None,
                     },
                 ),
             ),

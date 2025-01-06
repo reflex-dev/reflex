@@ -109,7 +109,7 @@ class ConnectionToaster(Toaster):
         )
 
         individual_hooks = [
-            f"const toast_props = {str(LiteralVar.create(props))};",
+            f"const toast_props = {LiteralVar.create(props)!s};",
             "const [userDismissed, setUserDismissed] = useState(false);",
             FunctionStringVar(
                 "useEffect",
@@ -124,7 +124,7 @@ class ConnectionToaster(Toaster):
                 Var(
                     _js_expr=f"""
 () => {{
-    if ({str(has_too_many_connection_errors)}) {{
+    if ({has_too_many_connection_errors!s}) {{
         if (!userDismissed) {{
             toast.error(
                 `Cannot connect to server: ${{{connection_error}}}.`,
@@ -241,7 +241,7 @@ class WifiOffPulse(Icon):
             size=props.pop("size", 32),
             z_index=props.pop("z_index", 9999),
             position=props.pop("position", "fixed"),
-            bottom=props.pop("botton", "33px"),
+            bottom=props.pop("bottom", "33px"),
             right=props.pop("right", "33px"),
             animation=LiteralVar.create(f"{pulse_var} 1s infinite"),
             **props,

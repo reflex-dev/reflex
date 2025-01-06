@@ -21,7 +21,7 @@ def get_package_size(venv_path: Path, os_name):
         ValueError: when venv does not exist or python version is None.
     """
     python_version = get_python_version(venv_path, os_name)
-    print("Python version:", python_version)
+    print("Python version:", python_version)  # noqa: T201
     if python_version is None:
         raise ValueError("Error: Failed to determine Python version.")
 
