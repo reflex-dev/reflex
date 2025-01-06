@@ -102,7 +102,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def _get_all_hooks_internal(self) -> dict[str, None]:
+    def _get_all_hooks_internal(self) -> dict[str, VarData | None]:
         """Get the reflex internal hooks for the component and its children.
 
         Returns:
@@ -110,7 +110,7 @@ class BaseComponent(Base, ABC):
         """
 
     @abstractmethod
-    def _get_all_hooks(self) -> dict[str, None]:
+    def _get_all_hooks(self) -> dict[str, VarData | None]:
         """Get the React hooks for this component.
 
         Returns:
@@ -1272,7 +1272,7 @@ class Component(BaseComponent, ABC):
         """
         _imports = {}
 
-        if self._get_ref_hook():
+        if self._get_ref_hook() is not None:
             # Handle hooks needed for attaching react refs to DOM nodes.
             _imports.setdefault("react", set()).add(ImportVar(tag="useRef"))
             _imports.setdefault(f"$/{Dirs.STATE_PATH}", set()).add(
@@ -1388,7 +1388,7 @@ class Component(BaseComponent, ABC):
                     }}
                 }}, []);"""
 
-    def _get_ref_hook(self) -> str | None:
+    def _get_ref_hook(self) -> Var | None:
         """Generate the ref hook for the component.
 
         Returns:
@@ -1396,11 +1396,12 @@ class Component(BaseComponent, ABC):
         """
         ref = self.get_ref()
         if ref is not None:
-            return (
-                f"const {ref} = useRef(null); {Var(_js_expr=ref)._as_ref()!s} = {ref};"
+            return Var(
+                f"const {ref} = useRef(null); {Var(_js_expr=ref)._as_ref()!s} = {ref};",
+                _var_data=VarData(position=Hooks.HookPosition.INTERNAL),
             )
 
-    def _get_vars_hooks(self) -> dict[str, None]:
+    def _get_vars_hooks(self) -> dict[str, VarData | None]:
         """Get the hooks required by vars referenced in this component.
 
         Returns:
@@ -1413,27 +1414,38 @@ class Component(BaseComponent, ABC):
                 vars_hooks.update(
                     var_data.hooks
                     if isinstance(var_data.hooks, dict)
-                    else {k: None for k in var_data.hooks}
+                    else {
+                        k: VarData(position=Hooks.HookPosition.INTERNAL)
+                        for k in var_data.hooks
+                    }
                 )
         return vars_hooks
 
-    def _get_events_hooks(self) -> dict[str, None]:
+    def _get_events_hooks(self) -> dict[str, VarData | None]:
         """Get the hooks required by events referenced in this component.
 
         Returns:
             The hooks for the events.
         """
-        return {Hooks.EVENTS: None} if self.event_triggers else {}
+        return (
+            {Hooks.EVENTS: VarData(position=Hooks.HookPosition.INTERNAL)}
+            if self.event_triggers
+            else {}
+        )
 
-    def _get_special_hooks(self) -> dict[str, None]:
+    def _get_special_hooks(self) -> dict[str, VarData | None]:
         """Get the hooks required by special actions referenced in this component.
 
         Returns:
             The hooks for special actions.
         """
-        return {Hooks.AUTOFOCUS: None} if self.autofocus else {}
+        return (
+            {Hooks.AUTOFOCUS: VarData(position=Hooks.HookPosition.INTERNAL)}
+            if self.autofocus
+            else {}
+        )
 
-    def _get_hooks_internal(self) -> dict[str, None]:
+    def _get_hooks_internal(self) -> dict[str, VarData | None]:
         """Get the React hooks for this component managed by the framework.
 
         Downstream components should NOT override this method to avoid breaking
@@ -1444,7 +1456,7 @@ class Component(BaseComponent, ABC):
         """
         return {
             **{
-                hook: None
+                str(hook): VarData(position=Hooks.HookPosition.INTERNAL)
                 for hook in [self._get_ref_hook(), self._get_mount_lifecycle_hook()]
                 if hook is not None
             },
@@ -1493,7 +1505,7 @@ class Component(BaseComponent, ABC):
         """
         return
 
-    def _get_all_hooks_internal(self) -> dict[str, None]:
+    def _get_all_hooks_internal(self) -> dict[str, VarData | None]:
         """Get the reflex internal hooks for the component and its children.
 
         Returns:
@@ -1508,13 +1520,16 @@ class Component(BaseComponent, ABC):
 
         return code
 
-    def _get_all_hooks(self) -> dict[str, None]:
+    def _get_all_hooks(self) -> dict[str, VarData | None]:
         """Get the React hooks for this component and its children.
 
         Returns:
             The code that should appear just before returning the rendered component.
         """
         code = {}
+
+        # Add the internal hooks for this component.
+        code.update(self._get_hooks_internal())
 
         # Add the hook code for this component.
         hooks = self._get_hooks()
@@ -2211,7 +2226,7 @@ class StatefulComponent(BaseComponent):
             )
         return trigger_memo
 
-    def _get_all_hooks_internal(self) -> dict[str, None]:
+    def _get_all_hooks_internal(self) -> dict[str, VarData | None]:
         """Get the reflex internal hooks for the component and its children.
 
         Returns:
@@ -2219,7 +2234,7 @@ class StatefulComponent(BaseComponent):
         """
         return {}
 
-    def _get_all_hooks(self) -> dict[str, None]:
+    def _get_all_hooks(self) -> dict[str, VarData | None]:
         """Get the React hooks for this component.
 
         Returns:
@@ -2337,7 +2352,7 @@ class MemoizationLeaf(Component):
             The memoization leaf
         """
         comp = super().create(*children, **props)
-        if comp._get_all_hooks() or comp._get_all_hooks_internal():
+        if comp._get_all_hooks():
             comp._memoization_mode = cls._memoization_mode.copy(
                 update={"disposition": MemoizationDisposition.ALWAYS}
             )
