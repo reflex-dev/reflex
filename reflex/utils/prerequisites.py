@@ -30,7 +30,7 @@ from packaging import version
 from redis import Redis as RedisSync
 from redis.asyncio import Redis
 from redis.backoff import ExponentialBackoff
-from redis.exceptions import BusyLoadingError, ConnectionError, RedisError, TimeoutError
+from redis.exceptions import RedisError
 from redis.retry import Retry
 
 from reflex import constants, model
@@ -332,7 +332,7 @@ def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
 def _get_common_redis_kwargs() -> dict[str, Any]:
     return {
         "retry": Retry(ExponentialBackoff(), 3),
-        "retry_on_error": [BusyLoadingError, ConnectionError, TimeoutError],
+        "retry_on_error": [RedisError],
     }
 
 
