@@ -16,7 +16,6 @@ repository = "https://github.com/reflex-dev/reflex"
 documentation = "https://reflex.dev/docs/getting-started/introduction"
 keywords = ["web", "framework"]
 classifiers = ["Development Status :: 4 - Beta"]
-packages = [{ include = "reflex" }]
 
 [tool.poetry.dependencies]
 python = "^3.9"
