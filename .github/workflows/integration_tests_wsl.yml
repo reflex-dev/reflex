@@ -49,7 +49,7 @@ jobs:
       - name: Install Poetry
         shell: wsl-bash {0}
         run: |
-          curl -sSL https://install.python-poetry.org | python3 -
+          curl -sSL https://install.python-poetry.org | python3 - --version=1.8.3
           # Symlink seems easier to make work than persisting PATH changes, in WSL
           ln -s /root/.local/bin/poetry /usr/local/bin/poetry
 
