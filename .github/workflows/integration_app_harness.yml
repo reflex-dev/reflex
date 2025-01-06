@@ -48,12 +48,20 @@ jobs:
           run-poetry-install: true
           create-venv-at-path: .venv
       - run: poetry run uv pip install pyvirtualdisplay pillow pytest-split
+      - uses: actions/cache@v3
+        id: playwright-cache
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/poetry.lock') }}
+      - name: Install playwright deps
+        run: poetry run playwright install chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
       - name: Run app harness tests
         env:
           SCREENSHOT_DIR: /tmp/screenshots/${{ matrix.state_manager }}/${{ matrix.python-version }}/${{ matrix.split_index }}
           REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
         run: |
-          poetry run playwright install --with-deps
           poetry run pytest tests/integration --splits 2 --group ${{matrix.split_index}}
       - uses: actions/upload-artifact@v4
         name: Upload failed test screenshots
