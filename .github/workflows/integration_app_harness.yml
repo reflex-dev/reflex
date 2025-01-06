@@ -54,8 +54,6 @@ jobs:
           path: |
             ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('**/poetry.lock') }}
-      - name: Install dependencies
-        run: npm ci
       - name: Install playwright deps
         run: poetry run playwright install chromium
         if: steps.playwright-cache.outputs.cache-hit != 'true'
