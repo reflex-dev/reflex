@@ -21,7 +21,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, List, Optional
+from typing import Callable, List, Optional
 
 import httpx
 import typer
@@ -29,9 +29,7 @@ from alembic.util.exc import CommandError
 from packaging import version
 from redis import Redis as RedisSync
 from redis.asyncio import Redis
-from redis.backoff import ExponentialBackoff
 from redis.exceptions import RedisError
-from redis.retry import Retry
 
 from reflex import constants, model
 from reflex.compiler import templates
@@ -329,13 +327,6 @@ def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     return app_module
 
 
-def _get_common_redis_kwargs() -> dict[str, Any]:
-    return {
-        "retry": Retry(ExponentialBackoff(), 3),
-        "retry_on_error": [RedisError],
-    }
-
-
 def get_redis() -> Redis | None:
     """Get the asynchronous redis client.
 
@@ -345,7 +336,7 @@ def get_redis() -> Redis | None:
     if (redis_url := parse_redis_url()) is not None:
         return Redis.from_url(
             redis_url,
-            **_get_common_redis_kwargs(),
+            retry_on_error=[RedisError],
         )
     return None
 
@@ -359,7 +350,7 @@ def get_redis_sync() -> RedisSync | None:
     if (redis_url := parse_redis_url()) is not None:
         return RedisSync.from_url(
             redis_url,
-            **_get_common_redis_kwargs(),
+            retry_on_error=[RedisError],
         )
     return None
 
