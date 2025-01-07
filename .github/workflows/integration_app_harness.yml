@@ -22,8 +22,8 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        state_manager: ['redis', 'memory']
-        python-version: ['3.11.5', '3.12.0', '3.13.0']
+        state_manager: ["redis", "memory"]
+        python-version: ["3.11.11", "3.12.8", "3.13.1"]
         split_index: [1, 2]
       fail-fast: false
     runs-on: ubuntu-22.04
