@@ -108,11 +108,14 @@ class Bare(Component):
             return Tagless(contents=f"{{{self.contents!s}}}")
         return Tagless(contents=str(self.contents))
 
-    def _get_vars(self, include_children: bool = False) -> Iterator[Var]:
+    def _get_vars(
+        self, include_children: bool = False, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
         """Walk all Vars used in this component.
 
         Args:
             include_children: Whether to include Vars from children.
+            ignore_ids: The ids to ignore.
 
         Yields:
             The contents if it is a Var, otherwise nothing.

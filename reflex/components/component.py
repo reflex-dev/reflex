@@ -1020,18 +1020,22 @@ class Component(BaseComponent, ABC):
                         event_args.append(spec)
                 yield event_trigger, event_args
 
-    def _get_vars(self, include_children: bool = False) -> list[Var]:
+    def _get_vars(
+        self, include_children: bool = False, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
         """Walk all Vars used in this component.
 
         Args:
             include_children: Whether to include Vars from children.
+            ignore_ids: The ids to ignore.
 
-        Returns:
+        Yields:
             Each var referenced by the component (props, styles, event handlers).
         """
-        vars = getattr(self, "__vars", None)
+        ignore_ids = ignore_ids or set()
+        vars: List[Var] | None = getattr(self, "__vars", None)
         if vars is not None:
-            return vars
+            yield from vars
         vars = self.__vars = []
         # Get Vars associated with event trigger arguments.
         for _, event_vars in self._get_vars_from_event_triggers(self.event_triggers):
@@ -1075,12 +1079,15 @@ class Component(BaseComponent, ABC):
         # Get Vars associated with children.
         if include_children:
             for child in self.children:
-                if not isinstance(child, Component):
+                if not isinstance(child, Component) or id(child) in ignore_ids:
                     continue
-                child_vars = child._get_vars(include_children=include_children)
+                ignore_ids.add(id(child))
+                child_vars = child._get_vars(
+                    include_children=include_children, ignore_ids=ignore_ids
+                )
                 vars.extend(child_vars)
 
-        return vars
+        yield from vars
 
     def _event_trigger_values_use_state(self) -> bool:
         """Check if the values of a component's event trigger use state.
@@ -1811,19 +1818,25 @@ class CustomComponent(Component):
             for name, prop in self.props.items()
         ]
 
-    def _get_vars(self, include_children: bool = False) -> list[Var]:
+    def _get_vars(
+        self, include_children: bool = False, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
         """Walk all Vars used in this component.
 
         Args:
             include_children: Whether to include Vars from children.
+            ignore_ids: The ids to ignore.
 
-        Returns:
+        Yields:
             Each var referenced by the component (props, styles, event handlers).
         """
-        return (
-            super()._get_vars(include_children=include_children)
-            + [prop for prop in self.props.values() if isinstance(prop, Var)]
-            + self.get_component(self)._get_vars(include_children=include_children)
+        ignore_ids = ignore_ids or set()
+        yield from super()._get_vars(
+            include_children=include_children, ignore_ids=ignore_ids
+        )
+        yield from filter(lambda prop: isinstance(prop, Var), self.props.values())
+        yield from self.get_component(self)._get_vars(
+            include_children=include_children, ignore_ids=ignore_ids
         )
 
     @lru_cache(maxsize=None)  # noqa
