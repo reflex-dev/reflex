@@ -272,6 +272,25 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         return string_starts_with_operation(self, prefix)
 
     @overload
+    def endswith(self, suffix: StringVar | str) -> BooleanVar: ...
+
+    @overload
+    def endswith(self, suffix: NoReturn) -> NoReturn: ...
+
+    def endswith(self, suffix: Any) -> BooleanVar:
+        """Check if the string ends with a suffix.
+
+        Args:
+            suffix: The suffix.
+
+        Returns:
+            The string ends with operation.
+        """
+        if not isinstance(suffix, (StringVar, str)):
+            raise_unsupported_operand_types("endswith", (type(self), type(suffix)))
+        return string_ends_with_operation(self, suffix)
+
+    @overload
     def __lt__(self, other: StringVar | str) -> BooleanVar: ...
 
     @overload
@@ -502,6 +521,24 @@ def string_starts_with_operation(
 
 
 @var_operation
+def string_ends_with_operation(
+    full_string: StringVar[Any], suffix: StringVar[Any] | str
+):
+    """Check if a string ends with a suffix.
+
+    Args:
+        full_string: The full string.
+        suffix: The suffix.
+
+    Returns:
+        Whether the string ends with the suffix.
+    """
+    return var_operation_return(
+        js_expression=f"{full_string}.endsWith({suffix})", var_type=bool
+    )
+
+
+@var_operation
 def string_item_operation(string: StringVar[Any], index: NumberVar | int):
     """Get an item from a string.
 
@@ -667,7 +704,7 @@ class LiteralStringVar(LiteralVar, StringVar[str]):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self._var_value))
+        return hash((type(self).__name__, self._var_value))
 
     def json(self) -> str:
         """Get the JSON representation of the var.
@@ -1177,7 +1214,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
         if num_args == 0:
             return_value = fn()
-            function_var = ArgsFunctionOperation.create(tuple(), return_value)
+            function_var = ArgsFunctionOperation.create((), return_value)
         else:
             # generic number var
             number_var = Var("").to(NumberVar, int)
@@ -1349,7 +1386,7 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
             LiteralVar.create(end) if end is not None else Var(_js_expr="undefined")
         )
         if step is None:
-            return f"{str(self._array)}.slice({str(normalized_start)}, {str(normalized_end)})"
+            return f"{self._array!s}.slice({normalized_start!s}, {normalized_end!s})"
         if not isinstance(step, Var):
             if step < 0:
                 actual_start = end + 1 if end is not None else 0
@@ -1357,12 +1394,12 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
                 return str(self._array[actual_start:actual_end].reverse()[::-step])
             if step == 0:
                 raise ValueError("slice step cannot be zero")
-            return f"{str(self._array)}.slice({str(normalized_start)}, {str(normalized_end)}).filter((_, i) => i % {str(step)} === 0)"
+            return f"{self._array!s}.slice({normalized_start!s}, {normalized_end!s}).filter((_, i) => i % {step!s} === 0)"
 
         actual_start_reverse = end + 1 if end is not None else 0
         actual_end_reverse = start + 1 if start is not None else self._array.length()
 
-        return f"{str(self.step)} > 0 ? {str(self._array)}.slice({str(normalized_start)}, {str(normalized_end)}).filter((_, i) => i % {str(step)} === 0) : {str(self._array)}.slice({str(actual_start_reverse)}, {str(actual_end_reverse)}).reverse().filter((_, i) => i % {str(-step)} === 0)"
+        return f"{self.step!s} > 0 ? {self._array!s}.slice({normalized_start!s}, {normalized_end!s}).filter((_, i) => i % {step!s} === 0) : {self._array!s}.slice({actual_start_reverse!s}, {actual_end_reverse!s}).reverse().filter((_, i) => i % {-step!s} === 0)"
 
     @classmethod
     def create(
@@ -1535,7 +1572,7 @@ def array_item_operation(array: ArrayVar, index: NumberVar | int):
         element_type = unionize(*args)
 
     return var_operation_return(
-        js_expression=f"{str(array)}.at({str(index)})",
+        js_expression=f"{array!s}.at({index!s})",
         var_type=element_type,
     )
 
@@ -1555,7 +1592,7 @@ def array_range_operation(
         The range of numbers.
     """
     return var_operation_return(
-        js_expression=f"Array.from({{ length: ({str(stop)} - {str(start)}) / {str(step)} }}, (_, i) => {str(start)} + i * {str(step)})",
+        js_expression=f"Array.from({{ length: ({stop!s} - {start!s}) / {step!s} }}, (_, i) => {start!s} + i * {step!s})",
         var_type=List[int],
     )
 

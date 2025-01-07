@@ -288,10 +288,10 @@ class DataEditor(NoSSRComponent):
             freeze_columns: The number of columns which should remain in place when scrolling horizontally. Doesn't include rowMarkers.
             group_header_height: Controls the header of the group header row.
             header_height: Controls the height of the header row.
-            max_column_auto_width: Additional header icons:  header_icons: Var[Any] # (TODO: must be a map of name: svg)  The maximum width a column can be automatically sized to.
+            max_column_auto_width: The maximum width a column can be automatically sized to.
             max_column_width: The maximum width a column can be resized to.
             min_column_width: The minimum width a column can be resized to.
-            row_height: Determins the height of each row.
+            row_height: Determines the height of each row.
             row_markers: Kind of row markers.
             row_marker_start_index: Changes the starting index for row markers.
             row_marker_width: Sets the width of row markers in pixels, if unset row markers will automatically size.

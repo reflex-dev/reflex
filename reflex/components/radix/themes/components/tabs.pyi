@@ -72,7 +72,7 @@ class TabsRoot(RadixThemesComponent):
             orientation: The orientation of the tabs.
             dir: Reading direction of the tabs.
             activation_mode: The mode of activation for the tabs. "automatic" will activate the tab when focused. "manual" will activate the tab when clicked.
-            on_change: Props to rename  Fired when the value of the tabs changes.
+            on_change: Fired when the value of the tabs changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -374,7 +374,7 @@ class Tabs(ComponentNamespace):
             orientation: The orientation of the tabs.
             dir: Reading direction of the tabs.
             activation_mode: The mode of activation for the tabs. "automatic" will activate the tab when focused. "manual" will activate the tab when clicked.
-            on_change: Props to rename  Fired when the value of the tabs changes.
+            on_change: Fired when the value of the tabs changes.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

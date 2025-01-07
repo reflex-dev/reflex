@@ -445,7 +445,7 @@ class CodeBlock(Component, MarkdownComponentMap):
                 dark=Theme.one_dark,
             )
 
-        # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
+        # react-syntax-highlighter doesn't have an explicit "light" or "dark" theme so we use one-light and one-dark
         # themes respectively to ensure code compatibility.
         if "theme" in props and not isinstance(props["theme"], Var):
             props["theme"] = getattr(Theme, format.to_snake_case(props["theme"]))  # type: ignore
@@ -519,13 +519,13 @@ class CodeBlock(Component, MarkdownComponentMap):
             The hook to register the language.
         """
         return f"""
- if ({str(_LANGUAGE)}) {{
+ if ({_LANGUAGE!s}) {{
     (async () => {{
       try {{
-        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{str(_LANGUAGE)}}}`);
-        SyntaxHighlighter.registerLanguage({str(_LANGUAGE)}, module.default);
+        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{_LANGUAGE!s}}}`);
+        SyntaxHighlighter.registerLanguage({_LANGUAGE!s}, module.default);
       }} catch (error) {{
-        console.error(`Error importing language module for ${{{str(_LANGUAGE)}}}:`, error);
+        console.error(`Error importing language module for ${{{_LANGUAGE!s}}}:`, error);
       }}
     }})();
   }}
@@ -547,7 +547,7 @@ class CodeBlock(Component, MarkdownComponentMap):
             The hooks for the component.
         """
         return [
-            f"const {str(_LANGUAGE)} = {str(self.language)}",
+            f"const {_LANGUAGE!s} = {self.language!s}",
             self._get_language_registration_hook(),
         ]
 

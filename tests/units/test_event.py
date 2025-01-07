@@ -209,10 +209,6 @@ def test_event_redirect(input, output):
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_redirect"
 
-    # this asserts need comment about what it's testing (they fail with Var as input)
-    # assert spec.args[0][0].equals(Var(_js_expr="path"))
-    # assert spec.args[0][1].equals(Var(_js_expr="/path"))
-
     assert format.format_event(spec) == output
 
 
@@ -227,12 +223,17 @@ def test_event_console_log():
     )
     assert (
         format.format_event(spec)
-        == 'Event("_call_function", {function:(() => (console["log"]("message")))})'
+        == 'Event("_call_function", {function:(() => (console["log"]("message"))),callback:null})'
     )
     spec = event.console_log(Var(_js_expr="message"))
     assert (
         format.format_event(spec)
-        == 'Event("_call_function", {function:(() => (console["log"](message)))})'
+        == 'Event("_call_function", {function:(() => (console["log"](message))),callback:null})'
+    )
+    spec2 = event.console_log(Var(_js_expr="message2")).add_args(Var("throwaway"))
+    assert (
+        format.format_event(spec2)
+        == 'Event("_call_function", {function:(() => (console["log"](message2))),callback:null})'
     )
 
 
@@ -247,12 +248,17 @@ def test_event_window_alert():
     )
     assert (
         format.format_event(spec)
-        == 'Event("_call_function", {function:(() => (window["alert"]("message")))})'
+        == 'Event("_call_function", {function:(() => (window["alert"]("message"))),callback:null})'
     )
     spec = event.window_alert(Var(_js_expr="message"))
     assert (
         format.format_event(spec)
-        == 'Event("_call_function", {function:(() => (window["alert"](message)))})'
+        == 'Event("_call_function", {function:(() => (window["alert"](message))),callback:null})'
+    )
+    spec2 = event.window_alert(Var(_js_expr="message2")).add_args(Var("throwaway"))
+    assert (
+        format.format_event(spec2)
+        == 'Event("_call_function", {function:(() => (window["alert"](message2))),callback:null})'
     )
 
 
@@ -319,7 +325,7 @@ def test_remove_cookie_with_options():
     assert spec.args[1][1].equals(LiteralVar.create(options))
     assert (
         format.format_event(spec)
-        == f'Event("_remove_cookie", {{key:"testkey",options:{str(LiteralVar.create(options))}}})'
+        == f'Event("_remove_cookie", {{key:"testkey",options:{LiteralVar.create(options)!s}}})'
     )
 
 
