@@ -1033,9 +1033,9 @@ class Component(BaseComponent, ABC):
             Each var referenced by the component (props, styles, event handlers).
         """
         ignore_ids = ignore_ids or set()
-        vars = getattr(self, "__vars", None)
+        vars: List[Var] | None = getattr(self, "__vars", None)
         if vars is not None:
-            return vars
+            yield from vars
         vars = self.__vars = []
         # Get Vars associated with event trigger arguments.
         for _, event_vars in self._get_vars_from_event_triggers(self.event_triggers):
@@ -1087,7 +1087,7 @@ class Component(BaseComponent, ABC):
                 )
                 vars.extend(child_vars)
 
-        return vars
+        yield from vars
 
     def _event_trigger_values_use_state(self) -> bool:
         """Check if the values of a component's event trigger use state.
@@ -1831,12 +1831,12 @@ class CustomComponent(Component):
             Each var referenced by the component (props, styles, event handlers).
         """
         ignore_ids = ignore_ids or set()
-        return (
-            super()._get_vars(include_children=include_children, ignore_ids=ignore_ids)
-            + [prop for prop in self.props.values() if isinstance(prop, Var)]
-            + self.get_component(self)._get_vars(
-                include_children=include_children, ignore_ids=ignore_ids
-            )
+        yield from super()._get_vars(
+            include_children=include_children, ignore_ids=ignore_ids
+        )
+        yield from filter(lambda prop: isinstance(prop, Var), self.props.values())
+        yield from self.get_component(self)._get_vars(
+            include_children=include_children, ignore_ids=ignore_ids
         )
 
     @lru_cache(maxsize=None)  # noqa
