@@ -92,8 +92,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Note: py39, py310 versions chosen due to available arm64 darwin builds.
-        python-version: ["3.9.21", "3.10.16", "3.11.11", "3.12.8", "3.13.1"]
+        # Note: py39, py310, py311 versions chosen due to available arm64 darwin builds.
+        python-version: ["3.9.13", "3.10.11", "3.11.9", "3.12.8", "3.13.1"]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4

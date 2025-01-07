@@ -201,7 +201,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11.11", "3.12.8"]
+        # Note: py311 version chosen due to available arm64 darwin builds.
+        python-version: ["3.11.9", "3.12.8"]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
