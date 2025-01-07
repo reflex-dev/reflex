@@ -1,0 +1,38 @@
+{% macro renderHooks(hooks) %}
+  {% set sorted_hooks = sort_hooks(hooks) %}
+
+  {# Render the grouped hooks #}
+   {% for hook, _ in sorted_hooks[const.hook_position.INTERNAL] %}
+  {{ hook }}
+  {% endfor %}
+
+  {% for hook, _ in sorted_hooks[const.hook_position.PRE_TRIGGER] %}
+  {{ hook }}
+  {% endfor %}
+
+  {% for hook, _ in sorted_hooks[const.hook_position.POST_TRIGGER] %}
+  {{ hook }}
+  {% endfor %}
+{% endmacro %}
+
+{% macro renderHooksWithMemo(hooks, memo)%}
+  {% set sorted_hooks = sort_hooks(hooks) %}
+
+  {# Render the grouped hooks #}
+  {% for hook, _ in sorted_hooks[const.hook_position.INTERNAL] %}
+  {{ hook }}
+  {% endfor %}
+
+  {% for hook, _ in sorted_hooks[const.hook_position.PRE_TRIGGER] %}
+  {{ hook }}
+  {% endfor %}
+
+  {% for hook in memo %}
+  {{ hook }}
+  {% endfor %}
+
+  {% for hook, _ in sorted_hooks[const.hook_position.POST_TRIGGER] %}
+  {{ hook }}
+  {% endfor %}
+
+{% endmacro %}

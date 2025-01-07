@@ -107,7 +107,7 @@ class ClientStateVar(Var):
         else:
             default_var = default
         setter_name = f"set{var_name.capitalize()}"
-        hooks = {
+        hooks: dict[str, VarData | None] = {
             f"const {id_name} = useId()": None,
             f"const [{var_name}, {setter_name}] = useState({default_var!s})": None,
         }
