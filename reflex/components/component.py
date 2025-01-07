@@ -1020,15 +1020,19 @@ class Component(BaseComponent, ABC):
                         event_args.append(spec)
                 yield event_trigger, event_args
 
-    def _get_vars(self, include_children: bool = False) -> list[Var]:
+    def _get_vars(
+        self, include_children: bool = False, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
         """Walk all Vars used in this component.
 
         Args:
             include_children: Whether to include Vars from children.
+            ignore_ids: The ids to ignore.
 
         Returns:
             Each var referenced by the component (props, styles, event handlers).
         """
+        ignore_ids = ignore_ids or set()
         vars = getattr(self, "__vars", None)
         if vars is not None:
             return vars
@@ -1075,9 +1079,12 @@ class Component(BaseComponent, ABC):
         # Get Vars associated with children.
         if include_children:
             for child in self.children:
-                if not isinstance(child, Component):
+                if not isinstance(child, Component) or id(child) in ignore_ids:
                     continue
-                child_vars = child._get_vars(include_children=include_children)
+                ignore_ids.add(id(child))
+                child_vars = child._get_vars(
+                    include_children=include_children, ignore_ids=ignore_ids
+                )
                 vars.extend(child_vars)
 
         return vars
@@ -1811,19 +1818,25 @@ class CustomComponent(Component):
             for name, prop in self.props.items()
         ]
 
-    def _get_vars(self, include_children: bool = False) -> list[Var]:
+    def _get_vars(
+        self, include_children: bool = False, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
         """Walk all Vars used in this component.
 
         Args:
             include_children: Whether to include Vars from children.
+            ignore_ids: The ids to ignore.
 
         Returns:
             Each var referenced by the component (props, styles, event handlers).
         """
+        ignore_ids = ignore_ids or set()
         return (
-            super()._get_vars(include_children=include_children)
+            super()._get_vars(include_children=include_children, ignore_ids=ignore_ids)
             + [prop for prop in self.props.values() if isinstance(prop, Var)]
-            + self.get_component(self)._get_vars(include_children=include_children)
+            + self.get_component(self)._get_vars(
+                include_children=include_children, ignore_ids=ignore_ids
+            )
         )
 
     @lru_cache(maxsize=None)  # noqa

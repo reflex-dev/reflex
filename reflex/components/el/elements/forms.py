@@ -250,8 +250,12 @@ class Form(BaseHTML):
                 )
         return form_refs
 
-    def _get_vars(self, include_children: bool = True) -> Iterator[Var]:
-        yield from super()._get_vars(include_children=include_children)
+    def _get_vars(
+        self, include_children: bool = True, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
+        yield from super()._get_vars(
+            include_children=include_children, ignore_ids=ignore_ids
+        )
         yield from self._get_form_refs().values()
 
     def _exclude_props(self) -> list[str]:
