@@ -1029,7 +1029,7 @@ class Component(BaseComponent, ABC):
             include_children: Whether to include Vars from children.
             ignore_ids: The ids to ignore.
 
-        Returns:
+        Yields:
             Each var referenced by the component (props, styles, event handlers).
         """
         ignore_ids = ignore_ids or set()
@@ -1827,7 +1827,7 @@ class CustomComponent(Component):
             include_children: Whether to include Vars from children.
             ignore_ids: The ids to ignore.
 
-        Returns:
+        Yields:
             Each var referenced by the component (props, styles, event handlers).
         """
         ignore_ids = ignore_ids or set()
