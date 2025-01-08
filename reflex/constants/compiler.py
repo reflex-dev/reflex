@@ -135,6 +135,7 @@ class Hooks(SimpleNamespace):
     class HookPosition(enum.Enum):
         """The position of the hook in the component."""
 
+        INTERNAL = "internal"
         PRE_TRIGGER = "pre_trigger"
         POST_TRIGGER = "post_trigger"
 
