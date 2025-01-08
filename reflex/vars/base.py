@@ -1462,7 +1462,7 @@ def get_python_literal(value: Union[LiteralVar, Any]) -> Any | None:
 
 
 P = ParamSpec("P")
-T = TypeVar("T", covariant=True)
+T = TypeVar("T")
 
 
 # NoReturn is used to match CustomVarOperationReturn with no type hint.
@@ -2928,11 +2928,14 @@ V = TypeVar("V")
 
 BASE_TYPE = TypeVar("BASE_TYPE", bound=Base)
 
+FIELD_TYPE = TypeVar("FIELD_TYPE")
+MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping)
 
-class Field(Generic[T]):
+
+class Field(Generic[FIELD_TYPE]):
     """Shadow class for Var to allow for type hinting in the IDE."""
 
-    def __set__(self, instance, value: T):  # pyright: ignore[reportGeneralTypeIssues]
+    def __set__(self, instance, value: FIELD_TYPE):
         """Set the Var.
 
         Args:
@@ -2944,7 +2947,9 @@ class Field(Generic[T]):
     def __get__(self: Field[bool], instance: None, owner) -> BooleanVar: ...
 
     @overload
-    def __get__(self: Field[int], instance: None, owner) -> NumberVar: ...
+    def __get__(
+        self: Field[int] | Field[float] | Field[int | float], instance: None, owner
+    ) -> NumberVar: ...
 
     @overload
     def __get__(self: Field[str], instance: None, owner) -> StringVar: ...
@@ -2961,8 +2966,8 @@ class Field(Generic[T]):
 
     @overload
     def __get__(
-        self: Field[Mapping[str, V]], instance: None, owner
-    ) -> ObjectVar[Mapping[str, V]]: ...
+        self: Field[MAPPING_TYPE], instance: None, owner
+    ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
@@ -2970,10 +2975,10 @@ class Field(Generic[T]):
     ) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
-    def __get__(self, instance: None, owner) -> Var[T]: ...
+    def __get__(self, instance: None, owner) -> Var[FIELD_TYPE]: ...
 
     @overload
-    def __get__(self, instance, owner) -> T: ...
+    def __get__(self, instance, owner) -> FIELD_TYPE: ...
 
     def __get__(self, instance, owner):  # type: ignore
         """Get the Var.
@@ -2984,7 +2989,7 @@ class Field(Generic[T]):
         """
 
 
-def field(value: T) -> Field[T]:
+def field(value: FIELD_TYPE) -> Field[FIELD_TYPE]:
     """Create a Field with a value.
 
     Args:
