@@ -987,7 +987,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
             raise_unsupported_operand_types("[]", (type(self), type(i)))
         return array_item_operation(self, i)
 
-    def length(self) -> NumberVar:
+    def length(self) -> NumberVar[int]:
         """Get the length of the array.
 
         Returns:

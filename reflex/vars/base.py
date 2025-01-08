@@ -64,6 +64,7 @@ from reflex.utils.types import (
     _isinstance,
     get_origin,
     has_args,
+    safe_issubclass,
     unionize,
 )
 
@@ -686,7 +687,9 @@ class Var(Generic[VAR_TYPE]):
 
         # If the first argument is a python type, we map it to the corresponding Var type.
         for var_subclass in _var_subclasses[::-1]:
-            if fixed_output_type in var_subclass.python_types:
+            if fixed_output_type in var_subclass.python_types or safe_issubclass(
+                fixed_output_type, var_subclass.python_types
+            ):
                 return self.to(var_subclass.var_subclass, output)
 
         if fixed_output_type is None:
