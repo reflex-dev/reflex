@@ -437,6 +437,7 @@ class EventChain(EventActionsMixin):
         value: EventType,
         args_spec: ArgsSpec | Sequence[ArgsSpec],
         key: Optional[str] = None,
+        **event_chain_kwargs,
     ) -> Union[EventChain, Var]:
         """Create an event chain from a variety of input types.
 
@@ -444,6 +445,7 @@ class EventChain(EventActionsMixin):
             value: The value to create the event chain from.
             args_spec: The args_spec of the event trigger being bound.
             key: The key of the event trigger being bound.
+            **event_chain_kwargs: Additional kwargs to pass to the EventChain constructor.
 
         Returns:
             The event chain.
@@ -462,6 +464,7 @@ class EventChain(EventActionsMixin):
                     value=value.guess_type(),
                     args_spec=args_spec,
                     key=key,
+                    **event_chain_kwargs,
                 )
             else:
                 raise ValueError(
@@ -501,7 +504,9 @@ class EventChain(EventActionsMixin):
             result = call_event_fn(value, args_spec, key=key)
             if isinstance(result, Var):
                 # Recursively call this function if the lambda returned an EventChain Var.
-                return cls.create(value=result, args_spec=args_spec, key=key)
+                return cls.create(
+                    value=result, args_spec=args_spec, key=key, **event_chain_kwargs
+                )
             events = [*result]
 
         # Otherwise, raise an error.
@@ -518,7 +523,7 @@ class EventChain(EventActionsMixin):
         return cls(
             events=events,
             args_spec=args_spec,
-            event_actions={},
+            **event_chain_kwargs,
         )
 
 
