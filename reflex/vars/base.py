@@ -2932,7 +2932,7 @@ BASE_TYPE = TypeVar("BASE_TYPE", bound=Base)
 class Field(Generic[T]):
     """Shadow class for Var to allow for type hinting in the IDE."""
 
-    def __set__(self, instance, value: T):
+    def __set__(self, instance, value: T):  # pyright: ignore[reportGeneralTypeIssues]
         """Set the Var.
 
         Args:
