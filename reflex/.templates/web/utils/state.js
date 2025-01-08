@@ -300,10 +300,7 @@ export const applyEvent = async (event, socket) => {
 
   // Send the event to the server.
   if (socket) {
-    socket.emit(
-      "event",
-      event,
-    );
+    socket.emit("event", event);
     return true;
   }
 
@@ -408,9 +405,10 @@ export const connect = async (
     path: endpoint["pathname"],
     transports: transports,
     autoUnref: false,
+    query: { token: getToken() },
   });
   // Ensure undefined fields in events are sent as null instead of removed
-  socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v)
+  socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
 
   function checkVisibility() {
     if (document.visibilityState === "visible") {
@@ -461,6 +459,10 @@ export const connect = async (
     event_processing = false;
     queueEvents([...initialEvents(), event], socket);
   });
+  socket.current.on("new_token", async (new_token) => {
+    token = new_token;
+    window.sessionStorage.setItem(TOKEN_KEY, new_token);
+  });
 
   document.addEventListener("visibilitychange", checkVisibility);
 };
@@ -488,7 +490,7 @@ export const uploadFiles = async (
     return false;
   }
 
-  const upload_ref_name = `__upload_controllers_${upload_id}`
+  const upload_ref_name = `__upload_controllers_${upload_id}`;
 
   if (refs[upload_ref_name]) {
     console.log("Upload already in progress for ", upload_id);
