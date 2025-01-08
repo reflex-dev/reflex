@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Mapping
 
 import pytest
 
@@ -379,7 +379,7 @@ class StyleState(rx.State):
             {
                 "css": Var(
                     _js_expr=f'({{ ["color"] : ("dark"+{StyleState.color}) }})'
-                ).to(Dict[str, str])
+                ).to(Mapping[str, str])
             },
         ),
         (

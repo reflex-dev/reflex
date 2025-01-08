@@ -2,7 +2,7 @@ import json
 import math
 import sys
 import typing
-from typing import Dict, List, Optional, Set, Tuple, Union, cast
+from typing import Dict, List, Mapping, Optional, Set, Tuple, Union, cast
 
 import pytest
 from pandas import DataFrame
@@ -270,7 +270,7 @@ def test_get_setter(prop: Var, expected):
         ([1, 2, 3], Var(_js_expr="[1, 2, 3]", _var_type=List[int])),
         (
             {"a": 1, "b": 2},
-            Var(_js_expr='({ ["a"] : 1, ["b"] : 2 })', _var_type=Dict[str, int]),
+            Var(_js_expr='({ ["a"] : 1, ["b"] : 2 })', _var_type=Mapping[str, int]),
         ),
     ],
 )

@@ -74,7 +74,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         fixed_type = get_origin(self._var_type) or self._var_type
         if not isclass(fixed_type):
             return Any
-        args = get_args(self._var_type) if issubclass(fixed_type, dict) else ()
+        args = get_args(self._var_type) if issubclass(fixed_type, Mapping) else ()
         return args[1] if args else Any
 
     def keys(self) -> ArrayVar[List[str]]:
@@ -272,7 +272,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
             var_type = get_args(var_type)[0]
 
         fixed_type = var_type if isclass(var_type) else get_origin(var_type)
-        if (isclass(fixed_type) and not issubclass(fixed_type, dict)) or (
+        if (isclass(fixed_type) and not issubclass(fixed_type, Mapping)) or (
             fixed_type in types.UnionTypes
         ):
             attribute_type = get_attribute_access_type(var_type, name)
@@ -389,7 +389,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
     @classmethod
     def create(
         cls,
-        _var_value: dict,
+        _var_value: Mapping,
         _var_type: Type[OBJECT_TYPE] | None = None,
         _var_data: VarData | None = None,
     ) -> LiteralObjectVar[OBJECT_TYPE]:

@@ -26,6 +26,7 @@ from typing import (
     Iterable,
     List,
     Literal,
+    Mapping,
     NoReturn,
     Optional,
     Set,
@@ -128,7 +129,7 @@ class VarData:
         state: str = "",
         field_name: str = "",
         imports: ImportDict | ParsedImportDict | None = None,
-        hooks: dict[str, VarData | None] | None = None,
+        hooks: Mapping[str, VarData | None] | None = None,
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
     ):
@@ -644,8 +645,8 @@ class Var(Generic[VAR_TYPE]):
     @overload
     def to(
         self,
-        output: type[dict],
-    ) -> ObjectVar[dict]: ...
+        output: type[Mapping],
+    ) -> ObjectVar[Mapping]: ...
 
     @overload
     def to(
@@ -823,7 +824,7 @@ class Var(Generic[VAR_TYPE]):
             return False
         if issubclass(type_, list):
             return []
-        if issubclass(type_, dict):
+        if issubclass(type_, Mapping):
             return {}
         if issubclass(type_, tuple):
             return ()
@@ -1029,7 +1030,7 @@ class Var(Generic[VAR_TYPE]):
                     f"$/{constants.Dirs.STATE_PATH}": [imports.ImportVar(tag="refs")]
                 }
             ),
-        ).to(ObjectVar, Dict[str, str])
+        ).to(ObjectVar, Mapping[str, str])
         return refs[LiteralVar.create(str(self))]
 
     @deprecated("Use `.js_type()` instead.")
@@ -1376,7 +1377,7 @@ class LiteralVar(Var):
 
         serialized_value = serializers.serialize(value)
         if serialized_value is not None:
-            if isinstance(serialized_value, dict):
+            if isinstance(serialized_value, Mapping):
                 return LiteralObjectVar.create(
                     serialized_value,
                     _var_type=type(value),
@@ -1461,7 +1462,7 @@ def get_python_literal(value: Union[LiteralVar, Any]) -> Any | None:
 
 
 P = ParamSpec("P")
-T = TypeVar("T")
+T = TypeVar("T", covariant=True)
 
 
 # NoReturn is used to match CustomVarOperationReturn with no type hint.
@@ -1501,7 +1502,7 @@ def var_operation(
 ) -> Callable[P, ArrayVar[LIST_T]]: ...
 
 
-OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Dict)
+OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Mapping)
 
 
 @overload
@@ -1576,8 +1577,8 @@ def figure_out_type(value: Any) -> types.GenericType:
         return Set[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, tuple):
         return Tuple[unionize(*(figure_out_type(v) for v in value)), ...]
-    if isinstance(value, dict):
-        return Dict[
+    if isinstance(value, Mapping):
+        return Mapping[
             unionize(*(figure_out_type(k) for k in value)),
             unionize(*(figure_out_type(v) for v in value.values())),
         ]
@@ -2005,10 +2006,10 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: ComputedVar[dict[DICT_KEY, DICT_VAL]],
+        self: ComputedVar[Mapping[DICT_KEY, DICT_VAL]],
         instance: None,
         owner: Type,
-    ) -> ObjectVar[dict[DICT_KEY, DICT_VAL]]: ...
+    ) -> ObjectVar[Mapping[DICT_KEY, DICT_VAL]]: ...
 
     @overload
     def __get__(
@@ -2960,8 +2961,8 @@ class Field(Generic[T]):
 
     @overload
     def __get__(
-        self: Field[Dict[str, V]], instance: None, owner
-    ) -> ObjectVar[Dict[str, V]]: ...
+        self: Field[Mapping[str, V]], instance: None, owner
+    ) -> ObjectVar[Mapping[str, V]]: ...
 
     @overload
     def __get__(
