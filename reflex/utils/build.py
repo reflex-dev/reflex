@@ -21,7 +21,7 @@ def set_env_json():
         str(prerequisites.get_web_dir() / constants.Dirs.ENV_JSON),
         {
             **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
-            "REFLEX_VERSION": constants.Reflex.VERSION,
+            "TEST_MODE": os.environ.get("PYTEST_CURRENT_TEST", False),
         },
     )
 
