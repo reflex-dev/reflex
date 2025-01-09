@@ -91,6 +91,8 @@ class Event:
         return f"{self.token}_{substate}"
 
 
+_EVENT_FIELDS: set[str] = {f.name for f in dataclasses.fields(Event)}
+
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 
 
