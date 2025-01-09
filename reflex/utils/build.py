@@ -19,7 +19,10 @@ def set_env_json():
     """Write the upload url to a REFLEX_JSON."""
     path_ops.update_json_file(
         str(prerequisites.get_web_dir() / constants.Dirs.ENV_JSON),
-        {endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
+        {
+            **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
+            "REFLEX_VERSION": constants.Reflex.VERSION,
+        },
     )
 
 

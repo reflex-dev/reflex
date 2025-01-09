@@ -407,6 +407,7 @@ export const connect = async (
   socket.current = io(endpoint.href, {
     path: endpoint["pathname"],
     transports: transports,
+    protocols: [env.REFLEX_VERSION],
     autoUnref: false,
   });
   // Ensure undefined fields in events are sent as null instead of removed
