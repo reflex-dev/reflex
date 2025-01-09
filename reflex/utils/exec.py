@@ -114,7 +114,7 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
                             notify_backend()
                         first_run = False
                     else:
-                        console.print("New packages detected: Updating app...")
+                        console.print(f"New packages detected: Updating app... {line}")
                 else:
                     if any(
                         x in line for x in ("bin executable does not exist on disk",)
@@ -127,9 +127,12 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
                     new_hash = detect_package_change(json_file_path)
                     if new_hash != last_hash:
                         last_hash = new_hash
+                        console.print("Reloading app...")
                         kill(process.pid)
                         process = None
                         break  # for line in process.stdout
+                    else:
+                        console.print(f"No change: {line}")
         if process is not None:
             break  # while True
 
