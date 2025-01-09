@@ -1538,7 +1538,7 @@ class EventNamespace(AsyncNamespace):
             environ: The request information, including HTTP headers.
         """
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING"))
-        await self.link_token_to_sid(sid, query_params.get("token"))
+        await self.link_token_to_sid(sid, query_params.get("token", [])[0])
 
     def on_disconnect(self, sid):
         """Event for when the websocket disconnects.
@@ -1611,7 +1611,7 @@ class EventNamespace(AsyncNamespace):
         # Emit the test event.
         await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
 
-    async def link_token_to_sid(self, sid, token):
+    async def link_token_to_sid(self, sid: str, token: str):
         """Link a token to a session id.
 
         Args:
