@@ -487,6 +487,15 @@ def is_testing_env() -> bool:
     return constants.PYTEST_CURRENT_TEST in os.environ
 
 
+def is_in_app_harness() -> bool:
+    """Whether the app is running in the app harness.
+
+    Returns:
+        True if the app is running in the app harness.
+    """
+    return constants.APP_HARNESS_FLAG in os.environ
+
+
 def is_prod_mode() -> bool:
     """Check if the app is running in production mode.
 
