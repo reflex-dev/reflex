@@ -15,6 +15,7 @@ import multiprocessing
 import platform
 import sys
 import traceback
+import urllib.parse
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -1536,10 +1537,7 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
         """
-        query_string = environ.get("QUERY_STRING")
-        query_params = dict(
-            qc.split("=") for qc in query_string.split("&") if "=" in qc
-        )
+        query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING"))
         await self.link_token_to_sid(sid, query_params.get("token"))
 
     def on_disconnect(self, sid):
@@ -1621,7 +1619,7 @@ class EventNamespace(AsyncNamespace):
             token: The client token.
         """
         if token in self.sid_to_token.values() and sid != self.token_to_sid.get(token):
-            token = uuid.uuid4().hex
+            token = str(uuid.uuid4())
             await self.emit("new_token", token, to=sid)
 
         self.token_to_sid[token] = sid
