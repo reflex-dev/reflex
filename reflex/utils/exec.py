@@ -18,7 +18,7 @@ from reflex import constants
 from reflex.config import environment, get_config
 from reflex.constants.base import LogLevel
 from reflex.utils import console, path_ops
-from reflex.utils.prerequisites import get_web_dir
+from reflex.utils.prerequisites import get_package_list, get_web_dir
 
 # For uvicorn windows bug fix (#2335)
 frontend_process = None
@@ -85,14 +85,7 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
     console.print(
         f"DETECT_PACKAGE_CHANGE init {last_hash}, {json.dumps(json.loads(json_file_path.read_text()))}"
     )
-    last_packages = (
-        processes.new_process(
-            ["bun", "pm", "ls"],
-            cwd=get_web_dir(),
-        )
-        .stdout.read()
-        .strip()
-    )
+    last_packages = get_package_list()
     console.print(
         f"DETECT_PACKAGE_CHANGE init {last_packages}",
     )
@@ -145,20 +138,13 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
                             f"DETECT_PACKAGE_CHANGE hit {last_hash} != {new_hash} (new), {new_content}"
                         )
                         last_hash = new_hash
-                        new_packages = (
-                            processes.new_process(
-                                ["bun", "pm", "ls"],
-                                cwd=get_web_dir(),
-                            )
-                            .stdout.read()
-                            .strip()
-                        )
-                        console.print(
-                            f"DETECT_PACKAGE_CHANGE init {new_packages}",
-                        )
+                        new_packages = get_package_list()
                         if new_packages != last_packages:
-                            last_packages = new_packages
                             console.print("Reloading app due to new content...")
+                            console.print(
+                                f"DETECT_PACKAGE_CHANGE init {new_packages}",
+                            )
+                            last_packages = new_packages
                             kill(process.pid)
                             process = None
                             break  # for line in process.stdout

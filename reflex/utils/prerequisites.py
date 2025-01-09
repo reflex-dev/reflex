@@ -267,6 +267,30 @@ def windows_npm_escape_hatch() -> bool:
     return environment.REFLEX_USE_NPM.get()
 
 
+def get_package_list() -> str:
+    """Get the list of installed packages in the current environment.
+
+    Returns:
+        The list of user and framework installed packages.
+    """
+    package_manager = get_package_manager()
+    install_package_manager = get_install_package_manager()
+    if package_manager == install_package_manager:
+        # npm
+        cmd = [install_package_manager, "list"]
+    else:
+        # bun
+        cmd = [install_package_manager, "pm", "ls"]
+    return (
+        processes.new_process(
+            cmd,
+            cwd=get_web_dir(),
+        )
+        .stdout.read()
+        .strip()
+    )
+
+
 def get_app(reload: bool = False) -> ModuleType:
     """Get the app module based on the default config.
 
