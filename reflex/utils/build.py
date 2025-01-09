@@ -13,6 +13,7 @@ from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, path_ops, prerequisites, processes
+from reflex.utils.exec import is_testing_env
 
 
 def set_env_json():
@@ -21,7 +22,7 @@ def set_env_json():
         str(prerequisites.get_web_dir() / constants.Dirs.ENV_JSON),
         {
             **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
-            "TEST_MODE": os.environ.get("PYTEST_CURRENT_TEST", False),
+            "TEST_MODE": is_testing_env(),
         },
     )
 
