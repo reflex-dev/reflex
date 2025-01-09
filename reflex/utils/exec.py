@@ -82,6 +82,9 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
 
     json_file_path = get_web_dir() / constants.PackageJson.PATH
     last_hash = detect_package_change(json_file_path)
+    console.print(
+        f"DETECT_PACKAGE_CHANGE init {last_hash}, {json.dumps(json.loads(json_file_path.read_text()))}"
+    )
     process = None
     first_run = True
 
@@ -126,13 +129,15 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
                         )
                     new_hash = detect_package_change(json_file_path)
                     if new_hash != last_hash:
+                        console.print("Reloading app due to new content...")
+                        new_content = json.dumps(json.loads(json_file_path.read_text()))
+                        console.print(
+                            f"DETECT_PACKAGE_CHANGE hit {last_hash} != {new_hash} (new), {new_content}"
+                        )
                         last_hash = new_hash
-                        console.print("Reloading app...")
                         kill(process.pid)
                         process = None
                         break  # for line in process.stdout
-                    else:
-                        console.print(f"No change: {line}")
         if process is not None:
             break  # while True
 
