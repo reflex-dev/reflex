@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from .forms import Button as Button
+from .forms import Datalist as Datalist
 from .forms import Fieldset as Fieldset
 from .forms import Form as Form
 from .forms import Input as Input
@@ -17,6 +18,7 @@ from .forms import Progress as Progress
 from .forms import Select as Select
 from .forms import Textarea as Textarea
 from .forms import button as button
+from .forms import datalist as datalist
 from .forms import fieldset as fieldset
 from .forms import form as form
 from .forms import input as input
@@ -226,6 +228,7 @@ from .typography import ul as ul
 _MAPPING = {
     "forms": [
         "button",
+        "datalist",
         "fieldset",
         "form",
         "input",
@@ -336,5 +339,5 @@ _MAPPING = {
     ],
 }
 EXCLUDE = ["del_", "Del", "image"]
-for _, v in _MAPPING.items():
+for v in _MAPPING.values():
     v.extend([mod.capitalize() for mod in v if mod not in EXCLUDE])

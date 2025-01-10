@@ -9,6 +9,7 @@ from reflex.components.tags import Tag
 from reflex.components.tags.tagless import Tagless
 from reflex.utils.imports import ParsedImportDict
 from reflex.vars import BooleanVar, ObjectVar, Var
+from reflex.vars.base import VarData
 
 
 class Bare(Component):
@@ -32,7 +33,7 @@ class Bare(Component):
             contents = str(contents) if contents is not None else ""
         return cls(contents=contents)  # type: ignore
 
-    def _get_all_hooks_internal(self) -> dict[str, None]:
+    def _get_all_hooks_internal(self) -> dict[str, VarData | None]:
         """Include the hooks for the component.
 
         Returns:
@@ -43,7 +44,7 @@ class Bare(Component):
             hooks |= self.contents._var_value._get_all_hooks_internal()
         return hooks
 
-    def _get_all_hooks(self) -> dict[str, None]:
+    def _get_all_hooks(self) -> dict[str, VarData | None]:
         """Include the hooks for the component.
 
         Returns:
@@ -103,15 +104,18 @@ class Bare(Component):
     def _render(self) -> Tag:
         if isinstance(self.contents, Var):
             if isinstance(self.contents, (BooleanVar, ObjectVar)):
-                return Tagless(contents=f"{{{str(self.contents.to_string())}}}")
-            return Tagless(contents=f"{{{str(self.contents)}}}")
+                return Tagless(contents=f"{{{self.contents.to_string()!s}}}")
+            return Tagless(contents=f"{{{self.contents!s}}}")
         return Tagless(contents=str(self.contents))
 
-    def _get_vars(self, include_children: bool = False) -> Iterator[Var]:
+    def _get_vars(
+        self, include_children: bool = False, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
         """Walk all Vars used in this component.
 
         Args:
             include_children: Whether to include Vars from children.
+            ignore_ids: The ids to ignore.
 
         Yields:
             The contents if it is a Var, otherwise nothing.

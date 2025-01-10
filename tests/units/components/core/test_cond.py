@@ -96,7 +96,7 @@ def test_prop_cond(c1: Any, c2: Any):
         c1 = json.dumps(c1)
     if not isinstance(c2, Var):
         c2 = json.dumps(c2)
-    assert str(prop_cond) == f"(true ? {str(c1)} : {str(c2)})"
+    assert str(prop_cond) == f"(true ? {c1!s} : {c2!s})"
 
 
 def test_cond_no_mix():
@@ -135,7 +135,7 @@ def test_cond_computed_var():
 
     comp = cond(True, CondStateComputed.computed_int, CondStateComputed.computed_str)
 
-    # TODO: shouln't this be a ComputedVar?
+    # TODO: shouldn't this be a ComputedVar?
     assert isinstance(comp, Var)
 
     state_name = format_state_name(CondStateComputed.get_full_name())

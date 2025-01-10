@@ -76,14 +76,15 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
         Returns:
             Component: The link component
         """
-        props.setdefault(":hover", {"color": color("accent", 8)})
+        props.setdefault("_hover", {"color": color("accent", 8)})
+        href = props.get("href")
 
         is_external = props.pop("is_external", None)
 
         if is_external is not None:
             props["target"] = cond(is_external, "_blank", "")
 
-        if props.get("href") is not None:
+        if href is not None:
             if not len(children):
                 raise ValueError("Link without a child will not display")
 
@@ -101,6 +102,9 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
                     as_child=True,
                     **props,
                 )
+        else:
+            props["href"] = "#"
+
         return super().create(*children, **props)
 
 

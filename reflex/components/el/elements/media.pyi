@@ -94,7 +94,7 @@ class Area(BaseHTML):
             rel: Specifies the relationship of the target object to the link object
             shape: Defines the shape of the area (rectangle, circle, polygon)
             target: Specifies where to open the linked document
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -198,7 +198,7 @@ class Audio(BaseHTML):
             muted: Indicates whether the audio is muted by default
             preload: Specifies how the audio file should be preloaded
             src: URL of the audio to play
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -314,7 +314,7 @@ class Img(BaseHTML):
             src: URL of the image to display
             src_set: A set of source sizes and URLs for responsive images
             use_map: The name of the map to use with the image
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -340,7 +340,6 @@ class Img(BaseHTML):
 
         Returns:
             The component.
-
         """
         ...
 
@@ -403,7 +402,7 @@ class Map(BaseHTML):
         Args:
             *children: The children of the component.
             name: Name of the map, referenced by the 'usemap' attribute in 'img' and 'object' elements
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -499,7 +498,7 @@ class Track(BaseHTML):
             label: Title of the text track, used by the browser when listing available text tracks
             src: URL of the track file
             src_lang: Language of the track text data
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -609,7 +608,7 @@ class Video(BaseHTML):
             poster: URL of an image to show while the video is downloading, or until the user hits the play button
             preload: Specifies how the video file should be preloaded
             src: URL of the video to play
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -699,7 +698,7 @@ class Embed(BaseHTML):
             *children: The children of the component.
             src: URL of the embedded content
             type: Media type of the embedded content
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -805,7 +804,7 @@ class Iframe(BaseHTML):
             sandbox: Security restrictions for the content in the iframe
             src: URL of the document to display in the iframe
             src_doc: HTML content to embed directly within the iframe
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -901,7 +900,7 @@ class Object(BaseHTML):
             name: Name of the object, used for scripting or as a target for forms and links
             type: Media type of the data specified in the data attribute
             use_map: Name of an image map to use with the object
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -987,7 +986,7 @@ class Picture(BaseHTML):
 
         Args:
             *children: The children of the component.
-            access_key: No unique attributes, only common ones are inherited   Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -1073,7 +1072,7 @@ class Portal(BaseHTML):
 
         Args:
             *children: The children of the component.
-            access_key: No unique attributes, only common ones are inherited   Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -1169,7 +1168,7 @@ class Source(BaseHTML):
             src: URL of the media file or an image for the element to use
             src_set: A set of source sizes and URLs for responsive images
             type: Media type of the source
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -1261,7 +1260,7 @@ class Svg(BaseHTML):
             width: The width of the svg.
             height: The height of the svg.
             xmlns: The XML namespace declaration.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -1361,7 +1360,7 @@ class Text(BaseHTML):
             rotate: Rotates orientation of each individual glyph.
             length_adjust: How the text is stretched or compressed to fit the width defined by the text_length attribute.
             text_length: A width that the text should be scaled to fit.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -1457,7 +1456,7 @@ class Line(BaseHTML):
             y1: The y-axis coordinate of the line starting point.
             y2: The y-axis coordinate of the the line ending point.
             path_length: The total path length, in user units.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -1551,7 +1550,7 @@ class Circle(BaseHTML):
             cy: The y-axis coordinate of the center of the circle.
             r: The radius of the circle.
             path_length: The total length for the circle's circumference, in user units.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -1647,7 +1646,7 @@ class Ellipse(BaseHTML):
             rx: The radius of the ellipse on the x axis.
             ry: The radius of the ellipse on the y axis.
             path_length: The total length for the ellipse's circumference, in user units.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -1747,7 +1746,7 @@ class Rect(BaseHTML):
             rx: The horizontal corner radius of the rect. Defaults to ry if it is specified.
             ry: The vertical corner radius of the rect. Defaults to rx if it is specified.
             path_length: The total length of the rectangle's perimeter, in user units.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -1837,7 +1836,7 @@ class Polygon(BaseHTML):
             *children: The children of the component.
             points: defines the list of points (pairs of x,y absolute coordinates) required to draw the polygon.
             path_length: This prop lets specify the total length for the path, in user units.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -1923,7 +1922,7 @@ class Defs(BaseHTML):
 
         Args:
             *children: The children of the component.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -2023,7 +2022,7 @@ class LinearGradient(BaseHTML):
             x2: X coordinate of the ending point of the gradient.
             y1: Y coordinate of the starting point of the gradient.
             y2: Y coordinate of the ending point of the gradient.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -2127,7 +2126,7 @@ class RadialGradient(BaseHTML):
             gradient_transform: Transform applied to the gradient.
             r: The radius of the end circle of the radial gradient.
             spread_method: Method used to spread the gradient.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -2223,7 +2222,7 @@ class Stop(BaseHTML):
             offset: Offset of the gradient stop.
             stop_color: Color of the gradient stop.
             stop_opacity: Opacity of the gradient stop.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -2311,7 +2310,7 @@ class Path(BaseHTML):
         Args:
             *children: The children of the component.
             d: Defines the shape of the path.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -2413,7 +2412,7 @@ class SVG(ComponentNamespace):
             width: The width of the svg.
             height: The height of the svg.
             xmlns: The XML namespace declaration.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.

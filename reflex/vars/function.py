@@ -240,7 +240,7 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
         Returns:
             The name of the var.
         """
-        return f"({str(self._func)}({', '.join([str(LiteralVar.create(arg)) for arg in self._args])}))"
+        return f"({self._func!s}({', '.join([str(LiteralVar.create(arg)) for arg in self._args])}))"
 
     @cached_property_no_lock
     def _cached_get_all_var_data(self) -> VarData | None:
@@ -292,7 +292,7 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
 class DestructuredArg:
     """Class for destructured arguments."""
 
-    fields: Tuple[str, ...] = tuple()
+    fields: Tuple[str, ...] = ()
     rest: Optional[str] = None
 
     def to_javascript(self) -> str:
@@ -314,7 +314,7 @@ class DestructuredArg:
 class FunctionArgs:
     """Class for function arguments."""
 
-    args: Tuple[Union[str, DestructuredArg], ...] = tuple()
+    args: Tuple[Union[str, DestructuredArg], ...] = ()
     rest: Optional[str] = None
 
 

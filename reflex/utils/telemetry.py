@@ -7,6 +7,7 @@ import dataclasses
 import multiprocessing
 import platform
 import warnings
+from contextlib import suppress
 
 from reflex.config import environment
 
@@ -129,7 +130,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
 
     cpuinfo = get_cpu_info()
 
-    additional_keys = ["template", "context", "detail"]
+    additional_keys = ["template", "context", "detail", "user_uuid"]
     additional_fields = {
         key: value for key in additional_keys if (value := kwargs.get(key)) is not None
     }
@@ -171,10 +172,11 @@ def _send(event, telemetry_enabled, **kwargs):
     if not telemetry_enabled:
         return False
 
-    event_data = _prepare_event(event, **kwargs)
-    if not event_data:
-        return False
-    return _send_event(event_data)
+    with suppress(Exception):
+        event_data = _prepare_event(event, **kwargs)
+        if not event_data:
+            return False
+        return _send_event(event_data)
 
 
 def send(event: str, telemetry_enabled: bool | None = None, **kwargs):

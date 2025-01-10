@@ -283,7 +283,7 @@ class Markdown(Component):
         # Format the code to handle inline and block code.
         formatted_code = f"""
 const match = (className || '').match(/language-(?<lang>.*)/);
-const {str(_LANGUAGE)} = match ? match[1] : '';
+const {_LANGUAGE!s} = match ? match[1] : '';
 {codeblock_custom_code};
             return inline ? (
                 {self.format_component("code")}
@@ -340,7 +340,7 @@ const {str(_LANGUAGE)} = match ? match[1] : '';
         # If the children are set as a prop, don't pass them as children.
         children_prop = props.pop("children", None)
         if children_prop is not None:
-            special_props.append(Var(_js_expr=f"children={{{str(children_prop)}}}"))
+            special_props.append(Var(_js_expr=f"children={{{children_prop!s}}}"))
             children = []
         # Get the component.
         component = self.component_map[tag](*children, **props).set(
@@ -420,16 +420,17 @@ const {str(_LANGUAGE)} = match ? match[1] : '';
 
     def _get_custom_code(self) -> str | None:
         hooks = {}
+        from reflex.compiler.templates import MACROS
+
         for _component in self.component_map.values():
             comp = _component(_MOCK_ARG)
-            hooks.update(comp._get_all_hooks_internal())
             hooks.update(comp._get_all_hooks())
-        formatted_hooks = "\n".join(hooks.keys())
+        formatted_hooks = MACROS.module.renderHooks(hooks)  # type: ignore
         return f"""
         function {self._get_component_map_name()} () {{
             {formatted_hooks}
             return (
-                {str(LiteralVar.create(self.format_component_map()))}
+                {LiteralVar.create(self.format_component_map())!s}
             )
         }}
         """

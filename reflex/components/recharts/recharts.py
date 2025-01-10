@@ -3,7 +3,6 @@
 from typing import Dict, Literal
 
 from reflex.components.component import Component, MemoizationLeaf, NoSSRComponent
-from reflex.utils import console
 
 
 class Recharts(Component):
@@ -11,19 +10,8 @@ class Recharts(Component):
 
     library = "recharts@2.13.0"
 
-    def render(self) -> Dict:
-        """Render the tag.
-
-        Returns:
-            The rendered tag.
-        """
-        tag = super().render()
-        if any(p.startswith("css") for p in tag["props"]):
-            console.warn(
-                f"CSS props do not work for {self.__class__.__name__}. Consult docs to style it with its own prop."
-            )
-        tag["props"] = [p for p in tag["props"] if not p.startswith("css")]
-        return tag
+    def _get_style(self) -> Dict:
+        return {"wrapperStyle": self.style}
 
 
 class RechartsCharts(NoSSRComponent, MemoizationLeaf):

@@ -25,6 +25,7 @@ from typing import (
     overload,
 )
 
+import typing_extensions
 from typing_extensions import (
     Concatenate,
     ParamSpec,
@@ -89,6 +90,8 @@ class Event:
         substate = self.name.rpartition(".")[0]
         return f"{self.token}_{substate}"
 
+
+_EVENT_FIELDS: set[str] = {f.name for f in dataclasses.fields(Event)}
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 
@@ -179,6 +182,18 @@ class EventActionsMixin:
         return dataclasses.replace(
             self,
             event_actions={"debounce": delay_ms, **self.event_actions},
+        )
+
+    @property
+    def temporal(self):
+        """Do not queue the event if the backend is down.
+
+        Returns:
+            New EventHandler-like with temporal set to True.
+        """
+        return dataclasses.replace(
+            self,
+            event_actions={"temporal": True, **self.event_actions},
         )
 
 
@@ -284,7 +299,7 @@ class EventSpec(EventActionsMixin):
         handler: EventHandler,
         event_actions: Dict[str, Union[bool, int]] | None = None,
         client_handler_name: str = "",
-        args: Tuple[Tuple[Var, Var], ...] = tuple(),
+        args: Tuple[Tuple[Var, Var], ...] = (),
     ):
         """Initialize an EventSpec.
 
@@ -299,7 +314,7 @@ class EventSpec(EventActionsMixin):
         object.__setattr__(self, "event_actions", event_actions)
         object.__setattr__(self, "handler", handler)
         object.__setattr__(self, "client_handler_name", client_handler_name)
-        object.__setattr__(self, "args", args or tuple())
+        object.__setattr__(self, "args", args or ())
 
     def with_args(self, args: Tuple[Tuple[Var, Var], ...]) -> EventSpec:
         """Copy the event spec, with updated args.
@@ -337,13 +352,14 @@ class EventSpec(EventActionsMixin):
 
         # Construct the payload.
         values = []
-        for arg in args:
-            try:
-                values.append(LiteralVar.create(arg))
-            except TypeError as e:
-                raise EventHandlerTypeError(
-                    f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
-                ) from e
+        arg = None
+        try:
+            for arg in args:
+                values.append(LiteralVar.create(value=arg))  # noqa: PERF401
+        except TypeError as e:
+            raise EventHandlerTypeError(
+                f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
+            ) from e
         new_payload = tuple(zip(fn_args, values))
         return self.with_args(self.args + new_payload)
 
@@ -417,6 +433,101 @@ class EventChain(EventActionsMixin):
 
     invocation: Optional[Var] = dataclasses.field(default=None)
 
+    @classmethod
+    def create(
+        cls,
+        value: EventType,
+        args_spec: ArgsSpec | Sequence[ArgsSpec],
+        key: Optional[str] = None,
+        **event_chain_kwargs,
+    ) -> Union[EventChain, Var]:
+        """Create an event chain from a variety of input types.
+
+        Args:
+            value: The value to create the event chain from.
+            args_spec: The args_spec of the event trigger being bound.
+            key: The key of the event trigger being bound.
+            **event_chain_kwargs: Additional kwargs to pass to the EventChain constructor.
+
+        Returns:
+            The event chain.
+
+        Raises:
+            ValueError: If the value is not a valid event chain.
+        """
+        # If it's an event chain var, return it.
+        if isinstance(value, Var):
+            if isinstance(value, EventChainVar):
+                return value
+            elif isinstance(value, EventVar):
+                value = [value]
+            elif issubclass(value._var_type, (EventChain, EventSpec)):
+                return cls.create(
+                    value=value.guess_type(),
+                    args_spec=args_spec,
+                    key=key,
+                    **event_chain_kwargs,
+                )
+            else:
+                raise ValueError(
+                    f"Invalid event chain: {value!s} of type {value._var_type}"
+                )
+        elif isinstance(value, EventChain):
+            # Trust that the caller knows what they're doing passing an EventChain directly
+            return value
+
+        # If the input is a single event handler, wrap it in a list.
+        if isinstance(value, (EventHandler, EventSpec)):
+            value = [value]
+
+        # If the input is a list of event handlers, create an event chain.
+        if isinstance(value, List):
+            events: List[Union[EventSpec, EventVar]] = []
+            for v in value:
+                if isinstance(v, (EventHandler, EventSpec)):
+                    # Call the event handler to get the event.
+                    events.append(call_event_handler(v, args_spec, key=key))
+                elif isinstance(v, Callable):
+                    # Call the lambda to get the event chain.
+                    result = call_event_fn(v, args_spec, key=key)
+                    if isinstance(result, Var):
+                        raise ValueError(
+                            f"Invalid event chain: {v}. Cannot use a Var-returning "
+                            "lambda inside an EventChain list."
+                        )
+                    events.extend(result)
+                elif isinstance(v, EventVar):
+                    events.append(v)
+                else:
+                    raise ValueError(f"Invalid event: {v}")
+
+        # If the input is a callable, create an event chain.
+        elif isinstance(value, Callable):
+            result = call_event_fn(value, args_spec, key=key)
+            if isinstance(result, Var):
+                # Recursively call this function if the lambda returned an EventChain Var.
+                return cls.create(
+                    value=result, args_spec=args_spec, key=key, **event_chain_kwargs
+                )
+            events = [*result]
+
+        # Otherwise, raise an error.
+        else:
+            raise ValueError(f"Invalid event chain: {value}")
+
+        # Add args to the event specs if necessary.
+        events = [
+            (e.with_args(get_handler_args(e)) if isinstance(e, EventSpec) else e)
+            for e in events
+        ]
+
+        # Return the event chain.
+        return cls(
+            events=events,
+            args_spec=args_spec,
+            **event_chain_kwargs,
+        )
+
 
 @dataclasses.dataclass(
     init=True,
@@ -435,7 +546,7 @@ class JavascriptHTMLInputElement:
 class JavascriptInputEvent:
     """Interface for a Javascript InputEvent https://developer.mozilla.org/en-US/docs/Web/API/InputEvent."""
 
-    target: JavascriptHTMLInputElement = JavascriptHTMLInputElement()
+    target: JavascriptHTMLInputElement = JavascriptHTMLInputElement()  # noqa: RUF009
 
 
 @dataclasses.dataclass(
@@ -501,7 +612,7 @@ def no_args_event_spec() -> Tuple[()]:
     Returns:
         An empty tuple.
     """
-    return tuple()  # type: ignore
+    return ()  # type: ignore
 
 
 # These chains can be used for their side effects when no other events are desired.
@@ -702,26 +813,61 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     )
 
 
+@overload
 def redirect(
     path: str | Var[str],
-    external: Optional[bool] = False,
-    replace: Optional[bool] = False,
+    is_external: Optional[bool] = None,
+    replace: bool = False,
+) -> EventSpec: ...
+
+
+@overload
+@typing_extensions.deprecated("`external` is deprecated use `is_external` instead")
+def redirect(
+    path: str | Var[str],
+    is_external: Optional[bool] = None,
+    replace: bool = False,
+    external: Optional[bool] = None,
+) -> EventSpec: ...
+
+
+def redirect(
+    path: str | Var[str],
+    is_external: Optional[bool] = None,
+    replace: bool = False,
+    external: Optional[bool] = None,
 ) -> EventSpec:
     """Redirect to a new path.
 
     Args:
         path: The path to redirect to.
-        external: Whether to open in new tab or not.
+        is_external: Whether to open in new tab or not.
         replace: If True, the current page will not create a new history entry.
+        external(Deprecated): Whether to open in new tab or not.
 
     Returns:
         An event to redirect to the path.
     """
+    if external is not None:
+        console.deprecate(
+            "The `external` prop in `rx.redirect`",
+            "use `is_external` instead.",
+            "0.6.6",
+            "0.7.0",
+        )
+
+    # is_external should take precedence over external.
+    is_external = (
+        (False if external is None else external)
+        if is_external is None
+        else is_external
+    )
+
     return server_side(
         "_redirect",
         get_fn_signature(redirect),
         path=path,
-        external=external,
+        external=is_external,
         replace=replace,
     )
 
@@ -1051,7 +1197,7 @@ def call_function(
     Returns:
         EventSpec: An event that will execute the client side javascript.
     """
-    callback_kwargs = {}
+    callback_kwargs = {"callback": None}
     if callback is not None:
         callback_kwargs = {
             "callback": format.format_queue_events(
@@ -1089,9 +1235,7 @@ def run_script(
         Var(javascript_code) if isinstance(javascript_code, str) else javascript_code
     )
 
-    return call_function(
-        ArgsFunctionOperation.create(tuple(), javascript_code), callback
-    )
+    return call_function(ArgsFunctionOperation.create((), javascript_code), callback)
 
 
 def get_event(state, event):
@@ -1210,7 +1354,7 @@ def call_event_handler(
                 except TypeError:
                     # TODO: In 0.7.0, remove this block and raise the exception
                     # raise TypeError(
-                    #     f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_handler.fn.__qualname__} provided for {key}."
+                    #     f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_handler.fn.__qualname__} provided for {key}." # noqa: ERA001
                     # ) from e
                     console.warn(
                         f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_callback.fn.__qualname__} provided for {key}."
@@ -1346,6 +1490,10 @@ def check_fn_match_arg_spec(
         EventFnArgMismatch: Raised if the number of mandatory arguments do not match
     """
     user_args = inspect.getfullargspec(user_func).args
+    # Drop the first argument if it's a bound method
+    if inspect.ismethod(user_func) and user_func.__self__ is not None:
+        user_args = user_args[1:]
+
     user_default_args = inspect.getfullargspec(user_func).defaults
     number_of_user_args = len(user_args) - number_of_bound_args
     number_of_user_default_args = len(user_default_args) if user_default_args else 0
@@ -1439,7 +1587,7 @@ def get_handler_args(
     """
     args = inspect.getfullargspec(event_spec.handler.fn).args
 
-    return event_spec.args if len(args) > 1 else tuple()
+    return event_spec.args if len(args) > 1 else ()
 
 
 def fix_events(
@@ -1540,7 +1688,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self._js_expr))
+        return hash((type(self).__name__, self._js_expr))
 
     @classmethod
     def create(
@@ -1604,7 +1752,7 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
         Returns:
             The hash of the var.
         """
-        return hash((self.__class__.__name__, self._js_expr))
+        return hash((type(self).__name__, self._js_expr))
 
     @classmethod
     def create(

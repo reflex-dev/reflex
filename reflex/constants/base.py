@@ -27,7 +27,7 @@ class Dirs(SimpleNamespace):
     UPLOADED_FILES = "uploaded_files"
     # The name of the assets directory.
     APP_ASSETS = "assets"
-    # The name of the assets directory for external ressource (a subfolder of APP_ASSETS).
+    # The name of the assets directory for external resources (a subfolder of APP_ASSETS).
     EXTERNAL_APP_ASSETS = "external"
     # The name of the utils file.
     UTILS = "utils"
@@ -99,6 +99,18 @@ class Templates(SimpleNamespace):
 
     # The default template
     DEFAULT = "blank"
+
+    # The AI template
+    AI = "ai"
+
+    # The option for the user to choose a remote template.
+    CHOOSE_TEMPLATES = "choose-templates"
+
+    # The URL to find reflex templates.
+    REFLEX_TEMPLATES_URL = "https://reflex.dev/templates"
+
+    # Demo url for the default template.
+    DEFAULT_TEMPLATE_URL = "https://blank-template.reflex.run"
 
     # The reflex.build frontend host
     REFLEX_BUILD_FRONTEND = "https://flexgen.reflex.run"

@@ -8,7 +8,9 @@ import importlib
 import inspect
 import os
 import sys
+import threading
 import urllib.parse
+from importlib.util import find_spec
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -80,7 +82,7 @@ class DBConfig(Base):
         )
 
     @classmethod
-    def postgresql_psycopg2(
+    def postgresql_psycopg(
         cls,
         database: str,
         username: str,
@@ -88,7 +90,7 @@ class DBConfig(Base):
         host: str | None = None,
         port: int | None = 5432,
     ) -> DBConfig:
-        """Create an instance with postgresql+psycopg2 engine.
+        """Create an instance with postgresql+psycopg engine.
 
         Args:
             database: Database name.
@@ -101,7 +103,7 @@ class DBConfig(Base):
             DBConfig instance.
         """
         return cls(
-            engine="postgresql+psycopg2",
+            engine="postgresql+psycopg",
             username=username,
             password=password,
             host=host,
@@ -452,6 +454,14 @@ class PathExistsFlag:
 ExistingPath = Annotated[Path, PathExistsFlag]
 
 
+class PerformanceMode(enum.Enum):
+    """Performance mode for the app."""
+
+    WARN = "warn"
+    RAISE = "raise"
+    OFF = "off"
+
+
 class EnvironmentVariables:
     """Environment variables class to instantiate environment variables."""
 
@@ -502,6 +512,9 @@ class EnvironmentVariables:
     # Whether to print the SQL queries if the log level is INFO or lower.
     SQLALCHEMY_ECHO: EnvVar[bool] = env_var(False)
 
+    # Whether to check db connections before using them.
+    SQLALCHEMY_POOL_PRE_PING: EnvVar[bool] = env_var(True)
+
     # Whether to ignore the redis config error. Some redis servers only allow out-of-band configuration.
     REFLEX_IGNORE_REDIS_CONFIG_ERROR: EnvVar[bool] = env_var(False)
 
@@ -545,8 +558,21 @@ class EnvironmentVariables:
     # Where to save screenshots when tests fail.
     SCREENSHOT_DIR: EnvVar[Optional[Path]] = env_var(None)
 
+    # Whether to check for outdated package versions.
+    REFLEX_CHECK_LATEST_VERSION: EnvVar[bool] = env_var(True)
+
+    # In which performance mode to run the app.
+    REFLEX_PERF_MODE: EnvVar[Optional[PerformanceMode]] = env_var(PerformanceMode.WARN)
+
+    # The maximum size of the reflex state in kilobytes.
+    REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
+
 
 environment = EnvironmentVariables()
+
+
+# These vars are not logged because they may contain sensitive information.
+_sensitive_env_vars = {"DB_URL", "ASYNC_DB_URL", "REDIS_URL"}
 
 
 class Config(Base):
@@ -602,6 +628,9 @@ class Config(Base):
     # The database url used by rx.Model.
     db_url: Optional[str] = "sqlite:///reflex.db"
 
+    # The async database url used by rx.Model.
+    async_db_url: Optional[str] = None
+
     # The redis url
     redis_url: Optional[str] = None
 
@@ -633,9 +662,9 @@ class Config(Base):
     frontend_packages: List[str] = []
 
     # The hosting service backend URL.
-    cp_backend_url: str = Hosting.CP_BACKEND_URL
+    cp_backend_url: str = Hosting.HOSTING_SERVICE
     # The hosting service frontend URL.
-    cp_web_url: str = Hosting.CP_WEB_URL
+    cp_web_url: str = Hosting.HOSTING_SERVICE_UI
 
     # The worker class used in production mode
     gunicorn_worker_class: str = "uvicorn.workers.UvicornH11Worker"
@@ -654,6 +683,9 @@ class Config(Base):
 
     # Maximum expiration lock time for redis state manager
     redis_lock_expiration: int = constants.Expiration.LOCK
+
+    # Maximum lock time before warning for redis state manager.
+    redis_lock_warning_threshold: int = constants.Expiration.LOCK_WARNING_THRESHOLD
 
     # Token expiration time for redis state manager
     redis_token_expiration: int = constants.Expiration.TOKEN
@@ -729,17 +761,19 @@ class Config(Base):
 
             # If the env var is set, override the config value.
             if env_var is not None:
-                if key.upper() != "DB_URL":
-                    console.info(
-                        f"Overriding config value {key} with env var {key.upper()}={env_var}",
-                        dedupe=True,
-                    )
-
                 # Interpret the value.
                 value = interpret_env_var_value(env_var, field.outer_type_, field.name)
 
                 # Set the value.
                 updated_values[key] = value
+
+                if key.upper() in _sensitive_env_vars:
+                    env_var = "***"
+
+                console.info(
+                    f"Overriding config value {key} with env var {key.upper()}={env_var}",
+                    dedupe=True,
+                )
 
         return updated_values
 
@@ -798,6 +832,27 @@ class Config(Base):
         self._replace_defaults(**kwargs)
 
 
+def _get_config() -> Config:
+    """Get the app config.
+
+    Returns:
+        The app config.
+    """
+    # only import the module if it exists. If a module spec exists then
+    # the module exists.
+    spec = find_spec(constants.Config.MODULE)
+    if not spec:
+        # we need this condition to ensure that a ModuleNotFound error is not thrown when
+        # running unit/integration tests or during `reflex init`.
+        return Config(app_name="")
+    rxconfig = importlib.import_module(constants.Config.MODULE)
+    return rxconfig.config
+
+
+# Protect sys.path from concurrent modification
+_config_lock = threading.RLock()
+
+
 def get_config(reload: bool = False) -> Config:
     """Get the app config.
 
@@ -807,15 +862,26 @@ def get_config(reload: bool = False) -> Config:
     Returns:
         The app config.
     """
-    sys.path.insert(0, os.getcwd())
-    # only import the module if it exists. If a module spec exists then
-    # the module exists.
-    spec = importlib.util.find_spec(constants.Config.MODULE)  # type: ignore
-    if not spec:
-        # we need this condition to ensure that a ModuleNotFound error is not thrown when
-        # running unit/integration tests.
-        return Config(app_name="")
-    rxconfig = importlib.import_module(constants.Config.MODULE)
-    if reload:
-        importlib.reload(rxconfig)
-    return rxconfig.config
+    cached_rxconfig = sys.modules.get(constants.Config.MODULE, None)
+    if cached_rxconfig is not None:
+        if reload:
+            # Remove any cached module when `reload` is requested.
+            del sys.modules[constants.Config.MODULE]
+        else:
+            return cached_rxconfig.config
+
+    with _config_lock:
+        sys_path = sys.path.copy()
+        sys.path.clear()
+        sys.path.append(str(Path.cwd()))
+        try:
+            # Try to import the module with only the current directory in the path.
+            return _get_config()
+        except Exception:
+            # If the module import fails, try to import with the original sys.path.
+            sys.path.extend(sys_path)
+            return _get_config()
+        finally:
+            # Restore the original sys.path.
+            sys.path.clear()
+            sys.path.extend(sys_path)

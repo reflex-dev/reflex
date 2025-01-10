@@ -54,7 +54,7 @@ class Foreach(Component):
         iterable = LiteralVar.create(iterable)
         if iterable._var_type == Any:
             raise ForeachVarError(
-                f"Could not foreach over var `{str(iterable)}` of type Any. "
+                f"Could not foreach over var `{iterable!s}` of type Any. "
                 "(If you are trying to foreach over a state var, add a type annotation to the var). "
                 "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
             )
