@@ -16,9 +16,10 @@ from typing import (
     TypeVar,
     Union,
     get_args,
-    is_typeddict,
     overload,
 )
+
+from typing_extensions import is_typeddict
 
 from reflex.utils import types
 from reflex.utils.exceptions import VarAttributeError
