@@ -16,6 +16,7 @@ from typing import (
     TypeVar,
     Union,
     get_args,
+    is_typeddict,
     overload,
 )
 
@@ -272,8 +273,11 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
             var_type = get_args(var_type)[0]
 
         fixed_type = var_type if isclass(var_type) else get_origin(var_type)
-        if (isclass(fixed_type) and not issubclass(fixed_type, Mapping)) or (
-            fixed_type in types.UnionTypes
+
+        if (
+            (isclass(fixed_type) and not issubclass(fixed_type, Mapping))
+            or (fixed_type in types.UnionTypes)
+            or is_typeddict(fixed_type)
         ):
             attribute_type = get_attribute_access_type(var_type, name)
             if attribute_type is None:
