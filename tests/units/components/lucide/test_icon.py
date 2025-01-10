@@ -1,13 +1,19 @@
 import pytest
 
-from reflex.components.lucide.icon import LUCIDE_ICON_LIST, Icon
+from reflex.components.lucide.icon import (
+    LUCIDE_ICON_LIST,
+    LUCIDE_ICON_MAPPING_OVERRIDE,
+    Icon,
+)
 from reflex.utils import format
 
 
 @pytest.mark.parametrize("tag", LUCIDE_ICON_LIST)
 def test_icon(tag):
     icon = Icon.create(tag)
-    assert icon.alias == f"Lucide{format.to_title_case(tag)}Icon"
+    assert icon.alias == "Lucide" + LUCIDE_ICON_MAPPING_OVERRIDE.get(
+        tag, f"{format.to_title_case(tag)}Icon"
+    )
 
 
 def test_icon_missing_tag():
