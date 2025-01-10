@@ -44,7 +44,6 @@ import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.config import environment
-from reflex.proxy import proxy_middleware
 from reflex.state import (
     BaseState,
     StateManager,
@@ -299,9 +298,6 @@ class AppHarness:
             self.state_manager = StateManagerRedis.create(self.app_instance.state)
         else:
             self.state_manager = self.app_instance._state_manager
-        # Disable proxy for app harness tests.
-        if proxy_middleware in self.app_instance.lifespan_tasks:
-            self.app_instance.lifespan_tasks.remove(proxy_middleware)
 
     def _reload_state_module(self):
         """Reload the rx.State module to avoid conflict when reloading."""
@@ -369,12 +365,9 @@ class AppHarness:
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):
-            backend_host, backend_port = self._poll_for_servers().getsockname()
             config = reflex.config.get_config()
-            config.backend_port = backend_port
             config.api_url = "http://{0}:{1}".format(
-                backend_host,
-                backend_port,
+                *self._poll_for_servers().getsockname(),
             )
             reflex.utils.build.setup_frontend(self.app_path)
 
@@ -399,7 +392,6 @@ class AppHarness:
                 self.frontend_url = m.group(1)
                 config = reflex.config.get_config()
                 config.deploy_url = self.frontend_url
-                config.frontend_port = int(self.frontend_url.rpartition(":")[2])
                 break
         if self.frontend_url is None:
             raise RuntimeError("Frontend did not start")
@@ -923,20 +915,17 @@ class AppHarnessProd(AppHarness):
             root=web_root,
             error_page_map=error_page_map,
         ) as self.frontend_server:
-            config = reflex.config.get_config()
-            config.frontend_port = self.frontend_server.server_address[1]
-            self.frontend_url = f"http://localhost:{config.frontend_port}"
+            self.frontend_url = "http://localhost:{1}".format(
+                *self.frontend_server.socket.getsockname()
+            )
             self.frontend_server.serve_forever()
 
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):
-            backend_host, backend_port = self._poll_for_servers().getsockname()
             config = reflex.config.get_config()
-            config.backend_port = backend_port
             config.api_url = "http://{0}:{1}".format(
-                backend_host,
-                backend_port,
+                *self._poll_for_servers().getsockname(),
             )
             reflex.reflex.export(
                 zipping=False,
