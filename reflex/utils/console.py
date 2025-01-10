@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import os
-
 from rich.console import Console
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from rich.prompt import Prompt
@@ -14,7 +12,7 @@ from reflex.constants import LogLevel
 _console = Console()
 
 # The current log level.
-_LOG_LEVEL = LogLevel.DEFAULT
+_LOG_LEVEL = LogLevel.INFO
 
 # Deprecated features who's warning has been printed.
 _EMITTED_DEPRECATION_WARNINGS = set()
@@ -63,9 +61,6 @@ def set_log_level(log_level: LogLevel):
             raise ValueError(f"Invalid log level: {log_level}") from ae
 
     global _LOG_LEVEL
-    if log_level != _LOG_LEVEL:
-        # Set the loglevel persistently for subprocesses
-        os.environ["LOGLEVEL"] = log_level.value
     _LOG_LEVEL = log_level
 
 
