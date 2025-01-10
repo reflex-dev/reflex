@@ -431,7 +431,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("<", (type(self), type(other)))
-        return less_than_operation(self, +other)
+        return less_than_operation(+self, +other)
 
     @overload
     def __le__(self, other: number_types) -> BooleanVar: ...
@@ -450,7 +450,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("<=", (type(self), type(other)))
-        return less_than_or_equal_operation(self, +other)
+        return less_than_or_equal_operation(+self, +other)
 
     def __eq__(self, other: Any):
         """Equal comparison.
@@ -462,7 +462,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             The result of the comparison.
         """
         if isinstance(other, NUMBER_TYPES):
-            return equal_operation(self, +other)
+            return equal_operation(+self, +other)
         return equal_operation(self, other)
 
     def __ne__(self, other: Any):
@@ -475,7 +475,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             The result of the comparison.
         """
         if isinstance(other, NUMBER_TYPES):
-            return not_equal_operation(self, +other)
+            return not_equal_operation(+self, +other)
         return not_equal_operation(self, other)
 
     @overload
@@ -495,7 +495,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types(">", (type(self), type(other)))
-        return greater_than_operation(self, +other)
+        return greater_than_operation(+self, +other)
 
     @overload
     def __ge__(self, other: number_types) -> BooleanVar: ...
@@ -514,7 +514,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types(">=", (type(self), type(other)))
-        return greater_than_or_equal_operation(self, +other)
+        return greater_than_or_equal_operation(+self, +other)
 
     def bool(self):
         """Boolean conversion.
