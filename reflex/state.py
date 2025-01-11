@@ -104,6 +104,7 @@ from reflex.utils.exceptions import (
     LockExpiredError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
+    StateMismatchError,
     StateSchemaMismatchError,
     StateSerializationError,
     StateTooLargeError,
@@ -1551,11 +1552,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Returns:
             The instance of state_cls associated with this state's client_token.
+
+        Raises:
+            StateMismatchError: If the state instance is not of the expected type.
         """
         root_state = self._get_root_state()
         substate = root_state.get_substate(state_cls.get_full_name().split("."))
         if not isinstance(substate, state_cls):
-            raise ValueError(
+            raise StateMismatchError(
                 f"Searched for state {state_cls.get_full_name()} but found {substate}."
             )
         return substate
@@ -1571,6 +1575,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Raises:
             RuntimeError: If redis is not used in this backend process.
+            StateMismatchError: If the state instance is not of the expected type.
         """
         # Fetch all missing parent states from redis.
         parent_state_of_state_cls = await self._populate_parent_states(state_cls)
@@ -1591,7 +1596,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         )
 
         if not isinstance(state_in_redis, state_cls):
-            raise ValueError(
+            raise StateMismatchError(
                 f"Searched for state {state_cls.get_full_name()} but found {state_in_redis}."
             )
 
