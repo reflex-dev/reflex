@@ -745,8 +745,11 @@ class Config(Base):
                 "gunicorn_max_requests_jitter",
             )
         ):
-            console.warn(
-                'The following reflex configuration fields are obsolete: "timeout", "gunicorn_worker_class", "gunicorn_workers", "gunicorn_max_requests", "gunicorn_max_requests_jitter"\nplease update your configuration.'
+            console.deprecate(
+                'The following reflex configuration fields are obsolete: "timeout", "gunicorn_worker_class", "gunicorn_workers", "gunicorn_max_requests", "gunicorn_max_requests_jitter"\nplease update your configuration.',
+                reason="Use `config.backend_server_dev` or `config.backend_server_prod` instead in your `rxconfig.py`.",
+                deprecation_version="0.7.x",
+                removal_version="x.x.x",
             )
 
     @property

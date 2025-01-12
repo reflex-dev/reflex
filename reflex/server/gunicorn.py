@@ -1,8 +1,8 @@
 """The GunicornBackendServer."""
+# ruff: noqa: RUF009
 
 from __future__ import annotations
 
-import sys
 from dataclasses import dataclass
 from typing import Any, Callable, Literal
 
@@ -288,7 +288,11 @@ class GunicornBackendServer(CustomBackendServer):
         return host, int(port)
 
     def check_import(self):
-        """Check package importation."""
+        """Check package importation.
+
+        Raises:
+            ImportError: raise when some required packaging missing.
+        """
         from importlib.util import find_spec
 
         errors: list[str] = []
@@ -305,7 +309,7 @@ class GunicornBackendServer(CustomBackendServer):
 
         if errors:
             console.error("\n".join(errors))
-            sys.exit()
+            raise ImportError()
 
     def setup(self, host: str, port: int, loglevel: LogLevel, env: Env):
         """Setup.
@@ -316,27 +320,23 @@ class GunicornBackendServer(CustomBackendServer):
             loglevel (LogLevel): log level
             env (Env): prod/dev environment
         """
+        self.check_import()
         self._app_uri = f"{self.get_app_module()}()"  # type: ignore
         self.loglevel = loglevel.value  # type: ignore
         self.bind = [f"{host}:{port}"]
         self._env = env  # type: ignore
 
-        if env == Env.PROD:
-            if self.workers == self.get_fields()["workers"].default:
-                self.workers = self.get_recommended_workers()
-            else:
-                if self.workers > (max_threads := self.get_max_workers()):
-                    self.workers = max_threads
+        if self.workers == self.get_fields()["workers"].default:
+            self.workers = self.get_recommended_workers()
+        else:
+            if self.workers > (max_threads := self.get_max_workers()):
+                self.workers = max_threads
 
-            if self.threads == self.get_fields()["threads"].default:
-                self.threads = self.get_recommended_threads()
-            else:
-                if self.threads > (max_threads := self.get_max_threads()):
-                    self.threads = max_threads
-            self.preload_app = True
-
-        if env == Env.DEV:
-            self.reload = True
+        if self.threads == self.get_fields()["threads"].default:
+            self.threads = self.get_recommended_threads()
+        else:
+            if self.threads > (max_threads := self.get_max_threads()):
+                self.threads = max_threads
 
     def run_prod(self) -> list[str]:
         """Run in production mode.
@@ -355,7 +355,7 @@ class GunicornBackendServer(CustomBackendServer):
             ):
                 command += field.metadata["cli"](value).split(" ")
 
-        return command + [self._app_uri]
+        return [*command, self._app_uri]
 
     def run_dev(self):
         """Run in development mode."""
@@ -404,7 +404,3 @@ class GunicornBackendServer(CustomBackendServer):
         """Shutdown the backend server."""
         if self._app and self._env == Env.DEV:
             self._app.stop()  # type: ignore
-
-        # TODO: complicated because currently `*BackendServer` don't execute the server command, he just create it
-        # if self._env == Env.PROD:
-        #     pass

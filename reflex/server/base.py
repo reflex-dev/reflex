@@ -1,4 +1,5 @@
 """The base for CustomBackendServer."""
+# ruff: noqa: RUF009
 
 from __future__ import annotations
 
@@ -297,11 +298,7 @@ class CustomBackendServer:
         else:
             need_threads = self.get_max_threads(wait_time_ms, service_time_ms)
 
-        return int(
-            max_available_threads
-            if need_threads > max_available_threads
-            else need_threads
-        )
+        return int(min(need_threads, max_available_threads))
 
     def get_fields(self) -> dict[str, Field]:
         """Return all the fields.

@@ -10,6 +10,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from threading import Barrier, Event
 from urllib.parse import urljoin
 
 import psutil
@@ -22,6 +23,8 @@ from reflex.utils.prerequisites import get_web_dir
 
 # For uvicorn windows bug fix (#2335)
 frontend_process = None
+barrier = Barrier(2)
+failed_start_signal = Event()
 
 
 def detect_package_change(json_file_path: Path) -> str:
@@ -61,8 +64,14 @@ def kill(proc_pid: int):
     process.kill()
 
 
-def notify_backend():
-    """Output a string notifying where the backend is running."""
+def notify_backend(only_backend: bool = False):
+    """Output a string notifying where the backend is running.
+
+    Args:
+        only_backend: Whether the frontend is present.
+    """
+    if not only_backend:
+        barrier.wait()
     console.print(
         f"Backend running at: [bold green]http://0.0.0.0:{get_config().backend_port}[/bold green]"
     )
@@ -110,8 +119,14 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
                         console.print(
                             f"App running at: [bold green]{url}[/bold green]{' (Frontend-only mode)' if not backend_present else ''}"
                         )
+
                         if backend_present:
-                            notify_backend()
+                            barrier.wait()
+                            if failed_start_signal.is_set():
+                                kill(process.pid)
+                                process = None
+                                break
+
                         first_run = False
                     else:
                         console.print("New packages detected: Updating app...")
@@ -130,7 +145,7 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
                         kill(process.pid)
                         process = None
                         break  # for line in process.stdout
-        if process is not None:
+        if (process is not None) or (failed_start_signal.is_set() and process is None):
             break  # while True
 
 
@@ -198,12 +213,17 @@ def run_backend(
     if web_dir.exists():
         (web_dir / constants.NOCOMPILE_FILE).touch()
 
-    if not frontend_present:
-        notify_backend()
-
     # Run the backend in development mode.
     backend_server_dev = config.backend_server_dev
-    backend_server_dev.setup(host, port, loglevel, Env.DEV)
+    try:
+        backend_server_dev.setup(host, port, loglevel, Env.DEV)
+    except ImportError:
+        if frontend_present:
+            failed_start_signal.set()
+            barrier.wait()  # for unlock frontend server
+            return
+
+    notify_backend(not frontend_present)
     backend_server_dev.run_dev()
 
 
@@ -225,12 +245,17 @@ def run_backend_prod(
 
     config = get_config()
 
-    if not frontend_present:
-        notify_backend()
-
     # Run the backend in production mode.
     backend_server_prod = config.backend_server_prod
-    backend_server_prod.setup(host, port, loglevel, Env.PROD)
+    try:
+        backend_server_prod.setup(host, port, loglevel, Env.PROD)
+    except ImportError:
+        if frontend_present:
+            failed_start_signal.set()
+            barrier.wait()  # for unlock frontend server
+            return
+
+    notify_backend(not frontend_present)
     processes.new_process(
         backend_server_prod.run_prod(),
         run=True,

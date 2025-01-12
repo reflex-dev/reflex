@@ -1,8 +1,8 @@
 """The GranianBackendServer."""
+# ruff: noqa: RUF009
 
 from __future__ import annotations
 
-import sys
 from dataclasses import dataclass
 from dataclasses import field as dc_field
 from pathlib import Path
@@ -200,7 +200,11 @@ class GranianBackendServer(CustomBackendServer):
         return self.address, self.port
 
     def check_import(self):
-        """Check package importation."""
+        """Check package importation.
+
+        Raises:
+            ImportError: raise when some required packaging missing.
+        """
         from importlib.util import find_spec
 
         errors: list[str] = []
@@ -217,7 +221,7 @@ class GranianBackendServer(CustomBackendServer):
 
         if errors:
             console.error("\n".join(errors))
-            sys.exit()
+            raise ImportError()
 
     def setup(self, host: str, port: int, loglevel: LogLevel, env: Env):
         """Setup.
@@ -228,6 +232,7 @@ class GranianBackendServer(CustomBackendServer):
             loglevel (LogLevel): log level
             env (Env): prod/dev environment
         """
+        self.check_import()
         self._app_uri = self.get_app_module(for_granian_target=True, add_extra_api=True)  # type: ignore
         self.log_level = loglevel.value  # type: ignore
         self.address = host
@@ -235,25 +240,17 @@ class GranianBackendServer(CustomBackendServer):
         self.interface = "asgi"  # NOTE: prevent obvious error
         self._env = env  # type: ignore
 
-        if env == Env.PROD:
-            if self.workers == self.get_fields()["workers"].default:
-                self.workers = self.get_recommended_workers()
-            else:
-                if self.workers > (max_workers := self.get_max_workers()):
-                    self.workers = max_workers
+        if self.workers == self.get_fields()["workers"].default:
+            self.workers = self.get_recommended_workers()
+        else:
+            if self.workers > (max_workers := self.get_max_workers()):
+                self.workers = max_workers
 
-            if self.threads == self.get_fields()["threads"].default:
-                self.threads = self.get_recommended_threads()
-            else:
-                if self.threads > (max_threads := self.get_max_threads()):
-                    self.threads = max_threads
-
-        if env == Env.DEV:
-            from reflex.config import get_config  # prevent circular import
-
-            self.reload = True
-            self.reload_paths = [Path(get_config().app_name)]
-            self.reload_ignore_dirs = [".web"]
+        if self.threads == self.get_fields()["threads"].default:
+            self.threads = self.get_recommended_threads()
+        else:
+            if self.threads > (max_threads := self.get_max_threads()):
+                self.threads = max_threads
 
     def run_prod(self):
         """Run in production mode.
@@ -272,7 +269,7 @@ class GranianBackendServer(CustomBackendServer):
             ):
                 command += field.metadata["cli"](value).split(" ")
 
-        return command + [self._app_uri]
+        return [*command, self._app_uri]
 
     def run_dev(self):
         """Run in development mode."""

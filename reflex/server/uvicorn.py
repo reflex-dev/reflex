@@ -1,4 +1,5 @@
 """The UvicornBackendServer."""
+# ruff: noqa: RUF009
 
 from __future__ import annotations
 
@@ -6,10 +7,8 @@ from __future__ import annotations
 import asyncio
 import os
 import ssl
-import sys
 from configparser import RawConfigParser
 from dataclasses import dataclass
-from pathlib import Path
 from typing import IO, Any, Awaitable, Callable
 
 from uvicorn import Config, Server
@@ -192,7 +191,11 @@ class UvicornBackendServer(CustomBackendServer):
         return self.host, self.port
 
     def check_import(self):
-        """Check package importation."""
+        """Check package importation.
+
+        Raises:
+            ImportError: raise when some required packaging missing.
+        """
         from importlib.util import find_spec
 
         errors: list[str] = []
@@ -211,7 +214,7 @@ class UvicornBackendServer(CustomBackendServer):
 
         if errors:
             console.error("\n".join(errors))
-            sys.exit()
+            raise ImportError()
 
     def setup(self, host: str, port: int, loglevel: LogLevel, env: Env):
         """Setup.
@@ -222,24 +225,18 @@ class UvicornBackendServer(CustomBackendServer):
             loglevel (LogLevel): log level
             env (Env): prod/dev environment
         """
+        self.check_import()
         self._app_uri = self.get_app_module(add_extra_api=True)  # type: ignore
         self.log_level = loglevel.value
         self.host = host
         self.port = port
         self._env = env  # type: ignore
 
-        if env == Env.PROD:
-            if self.workers == self.get_fields()["workers"].default:
-                self.workers = self.get_recommended_workers()
-            else:
-                if self.workers > (max_workers := self.get_max_workers()):
-                    self.workers = max_workers
-
-        if env == Env.DEV:
-            from reflex.config import get_config  # prevent circular import
-
-            self.reload = True
-            self.reload_dirs = [str(Path(get_config().app_name))]
+        if self.workers == self.get_fields()["workers"].default:
+            self.workers = self.get_recommended_workers()
+        else:
+            if self.workers > (max_workers := self.get_max_workers()):
+                self.workers = max_workers
 
     def run_prod(self) -> list[str]:
         """Run in production mode.
@@ -258,7 +255,7 @@ class UvicornBackendServer(CustomBackendServer):
             ):
                 command += field.metadata["cli"](value).split(" ")
 
-        return command + [self._app_uri]
+        return [*command, self._app_uri]
 
     def run_dev(self):
         """Run in development mode."""
@@ -279,7 +276,3 @@ class UvicornBackendServer(CustomBackendServer):
         """Shutdown the backend server."""
         if self._app and self._env == Env.DEV:
             self._app.shutdown()  # type: ignore
-
-        # TODO: hard because currently `*BackendServer` don't execute the server command, he just create it
-        # if self._env == Env.PROD:
-        #     pass
