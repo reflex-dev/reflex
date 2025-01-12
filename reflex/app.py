@@ -68,6 +68,7 @@ from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
 from reflex.config import environment, get_config
 from reflex.event import (
+    _EVENT_FIELDS,
     BASE_STATE,
     Event,
     EventHandler,
@@ -1565,9 +1566,7 @@ class EventNamespace(AsyncNamespace):
         """
         fields = data
         # Get the event.
-        event = Event(
-            **{k: v for k, v in fields.items() if k not in ("handler", "event_actions")}
-        )
+        event = Event(**{k: v for k, v in fields.items() if k in _EVENT_FIELDS})
 
         self.token_to_sid[event.token] = sid
         self.sid_to_token[sid] = event.token

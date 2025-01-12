@@ -127,7 +127,7 @@ class VarData:
         state: str = "",
         field_name: str = "",
         imports: ImportDict | ParsedImportDict | None = None,
-        hooks: dict[str, None] | None = None,
+        hooks: dict[str, VarData | None] | None = None,
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
     ):
@@ -194,7 +194,9 @@ class VarData:
             (var_data.state for var_data in all_var_datas if var_data.state), ""
         )
 
-        hooks = {hook: None for var_data in all_var_datas for hook in var_data.hooks}
+        hooks: dict[str, VarData | None] = {
+            hook: None for var_data in all_var_datas for hook in var_data.hooks
+        }
 
         _imports = imports.merge_imports(
             *(var_data.imports for var_data in all_var_datas)
@@ -579,7 +581,7 @@ class Var(Generic[VAR_TYPE]):
 
         # Try to pull the imports and hooks from contained values.
         if not isinstance(value, str):
-            return LiteralVar.create(value)
+            return LiteralVar.create(value, _var_data=_var_data)
 
         if _var_is_string is False or _var_is_local is True:
             return cls(
@@ -2276,7 +2278,7 @@ def computed_var(
 def computed_var(
     fget: Callable[[BASE_STATE], Any] | None = None,
     initial_value: Any | types.Unset = types.Unset(),
-    cache: bool = False,
+    cache: Optional[bool] = None,
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
@@ -2302,6 +2304,15 @@ def computed_var(
         ValueError: If caching is disabled and an update interval is set.
         VarDependencyError: If user supplies dependencies without caching.
     """
+    if cache is None:
+        cache = False
+        console.deprecate(
+            "Default non-cached rx.var",
+            "the default value will be `@rx.var(cache=True)` in a future release. "
+            "To retain uncached var, explicitly pass `@rx.var(cache=False)`",
+            deprecation_version="0.6.8",
+            removal_version="0.7.0",
+        )
     if cache is False and interval is not None:
         raise ValueError("Cannot set update interval without caching.")
 
