@@ -688,11 +688,11 @@ class Config(Base):
     # Maximum expiration lock time for redis state manager
     redis_lock_expiration: int = constants.Expiration.LOCK
 
-    # Token expiration time for redis state manager
-    redis_token_expiration: int = constants.Expiration.TOKEN
-
     # Maximum lock time before warning for redis state manager.
     redis_lock_warning_threshold: int = constants.Expiration.LOCK_WARNING_THRESHOLD
+
+    # Token expiration time for redis state manager
+    redis_token_expiration: int = constants.Expiration.TOKEN
 
     # Attributes that were explicitly set by the user.
     _non_default_attributes: Set[str] = pydantic.PrivateAttr(set())
