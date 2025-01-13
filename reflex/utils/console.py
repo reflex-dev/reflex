@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import inspect
+from pathlib import Path
+from types import FrameType
+
 from rich.console import Console
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from rich.prompt import Prompt
@@ -188,6 +192,20 @@ def warn(msg: str, dedupe: bool = False, **kwargs):
         print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
 
 
+def _get_first_non_framework_frame() -> FrameType | None:
+    import reflex as rx
+
+    framework_root = Path(rx.__file__).parent.resolve()
+    frame = inspect.currentframe()
+    while frame := frame and frame.f_back:
+        frame_path = Path(inspect.getfile(frame)).resolve()
+        if frame_path.name == "typing_extensions.py":
+            continue
+        if not frame_path.is_relative_to(framework_root):
+            break
+    return frame
+
+
 def deprecate(
     feature_name: str,
     reason: str,
@@ -206,15 +224,24 @@ def deprecate(
         dedupe: If True, suppress multiple console logs of deprecation message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if feature_name not in _EMITTED_DEPRECATION_WARNINGS:
+    dedupe_key = feature_name
+    loc = ""
+
+    # See if we can find where the deprecation exists in "user code"
+    origin_frame = _get_first_non_framework_frame()
+    if origin_frame is not None:
+        loc = f"{origin_frame.f_code.co_filename}:{origin_frame.f_lineno}"
+        dedupe_key = f"{dedupe_key} {loc}"
+
+    if dedupe_key not in _EMITTED_DEPRECATION_WARNINGS:
         msg = (
             f"{feature_name} has been deprecated in version {deprecation_version} {reason.rstrip('.')}. It will be completely "
-            f"removed in {removal_version}"
+            f"removed in {removal_version}. ({loc})"
         )
         if _LOG_LEVEL <= LogLevel.WARNING:
             print(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
         if dedupe:
-            _EMITTED_DEPRECATION_WARNINGS.add(feature_name)
+            _EMITTED_DEPRECATION_WARNINGS.add(dedupe_key)
 
 
 def error(msg: str, dedupe: bool = False, **kwargs):
