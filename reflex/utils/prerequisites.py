@@ -22,8 +22,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, List, Optional
-from collections import namedtuple
+from typing import Callable, List, NamedTuple, Optional
 
 import httpx
 import typer
@@ -49,7 +48,14 @@ if typing.TYPE_CHECKING:
 
 CURRENTLY_INSTALLING_NODE = False
 
-AppInfo = namedtuple("AppInfo", ["app", "module"])
+
+class AppInfo(NamedTuple):
+    """A tuple containing the app instance and module."""
+
+    app: App
+    module: ModuleType
+
+
 @dataclasses.dataclass(frozen=True)
 class Template:
     """A template for a Reflex app."""
