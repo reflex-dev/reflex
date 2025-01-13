@@ -170,7 +170,7 @@ class PackageJson(SimpleNamespace):
     class Commands(SimpleNamespace):
         """The commands to define in package.json."""
 
-        DEV = "next dev"
+        DEV = "next dev --turbopack"
         EXPORT = "next build"
         EXPORT_SITEMAP = "next build && next-sitemap"
         PROD = "next start"
@@ -182,7 +182,7 @@ class PackageJson(SimpleNamespace):
         "@emotion/react": "11.13.3",
         "axios": "1.7.7",
         "json5": "2.2.3",
-        "next": "14.2.16",
+        "next": "15.1.4",
         "next-sitemap": "4.2.3",
         "next-themes": "0.4.3",
         "react": "18.3.1",
