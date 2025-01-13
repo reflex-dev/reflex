@@ -1759,9 +1759,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         except Exception as ex:
             state._clean()
 
-            app_instance = prerequisites.get_and_validate_app().app
-
-            event_specs = app_instance.backend_exception_handler(ex)
+            event_specs = (
+                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
+            )
 
             if event_specs is None:
                 return StateUpdate()
@@ -1871,9 +1871,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         except Exception as ex:
             telemetry.send_error(ex, context="backend")
 
-            app_instance = prerequisites.get_and_validate_app().app
-
-            event_specs = app_instance.backend_exception_handler(ex)
+            event_specs = (
+                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
+            )
 
             yield state._as_state_update(
                 handler,
@@ -2383,8 +2383,9 @@ class FrontendEventExceptionState(State):
             component_stack: The stack trace of the component where the exception occurred.
 
         """
-        app_instance, _ = prerequisites.get_and_validate_app()
-        app_instance.frontend_exception_handler(Exception(stack))
+        prerequisites.get_and_validate_app().app.frontend_exception_handler(
+            Exception(stack)
+        )
 
 
 class UpdateVarsInternalState(State):
@@ -2422,8 +2423,9 @@ class OnLoadInternalState(State):
             The list of events to queue for on load handling.
         """
         # Do not app._compile()!  It should be already compiled by now.
-        app = prerequisites.get_and_validate_app().app
-        load_events = app.get_load_events(self.router.page.path)
+        load_events = prerequisites.get_and_validate_app().app.get_load_events(
+            self.router.page.path
+        )
         if not load_events:
             self.is_hydrated = True
             return  # Fast path for navigation with no on_load events defined.
@@ -3682,8 +3684,7 @@ def get_state_manager() -> StateManager:
     Returns:
         The state manager.
     """
-    app = prerequisites.get_and_validate_app().app
-    return app.state_manager
+    return prerequisites.get_and_validate_app().app.state_manager
 
 
 class MutableProxy(wrapt.ObjectProxy):
