@@ -10,7 +10,7 @@ import os
 import sys
 import threading
 import urllib.parse
-from importlib.util import find_spec
+from importlib.util import find_spec, module_from_spec, spec_from_file_location
 from pathlib import Path
 from types import ModuleType
 from typing import (
@@ -739,15 +739,20 @@ class Config(Base):
 
         Returns:
             The loaded module.
+
+        Raises:
+            ConfigError: If the module cannot be loaded.
         """
         module_name = Path(path).stem
         module_path = Path(path).resolve()
         sys.path.insert(0, str(module_path.parent.parent))
-        spec = importlib.util.spec_from_file_location(module_name, path)
-        module = importlib.util.module_from_spec(spec)
+        spec = spec_from_file_location(module_name, path)
+        if not spec:
+            raise ConfigError(f"Could not load module from path: {path}")
+        module = module_from_spec(spec)
         # Set the package name to the parent directory of the module (for relative imports)
         module.__package__ = module_path.parent.name
-        spec.loader.exec_module(module)
+        spec.loader.exec_module(module)  # type: ignore
         return module
 
     @property
@@ -768,8 +773,9 @@ class Config(Base):
         Returns:
             The module name.
         """
-        if self.app_module:
-            return f"{Path(self.app_module.__file__).parent.name}.{Path(self.app_module.__file__).stem}"
+        if self.app_module and self.app_module.__file__:
+            module_file = Path(self.app_module.__file__)
+            return f"{module_file.parent.name}.{module_file.stem}"
         return ".".join([self.app_name, self.app_name])
 
     def update_from_env(self) -> dict[str, Any]:
