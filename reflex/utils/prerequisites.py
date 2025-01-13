@@ -610,10 +610,14 @@ def initialize_web_directory():
     init_reflex_json(project_hash=project_hash)
 
 
+def _turbopack_flag() -> str:
+    return " --turbopack" if environment.REFLEX_USE_TURBOPACK.get() else ""
+
+
 def _compile_package_json():
     return templates.PACKAGE_JSON.render(
         scripts={
-            "dev": constants.PackageJson.Commands.DEV,
+            "dev": constants.PackageJson.Commands.DEV + _turbopack_flag(),
             "export": constants.PackageJson.Commands.EXPORT,
             "export_sitemap": constants.PackageJson.Commands.EXPORT_SITEMAP,
             "prod": constants.PackageJson.Commands.PROD,
