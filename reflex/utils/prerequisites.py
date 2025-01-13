@@ -17,11 +17,13 @@ import stat
 import sys
 import tempfile
 import time
+import typing
 import zipfile
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
 from typing import Callable, List, Optional
+from collections import namedtuple
 
 import httpx
 import typer
@@ -42,9 +44,12 @@ from reflex.utils.exceptions import (
 from reflex.utils.format import format_library_name
 from reflex.utils.registry import _get_npm_registry
 
+if typing.TYPE_CHECKING:
+    from reflex.app import App
+
 CURRENTLY_INSTALLING_NODE = False
 
-
+AppInfo = namedtuple("AppInfo", ["app", "module"])
 @dataclasses.dataclass(frozen=True)
 class Template:
     """A template for a Reflex app."""
@@ -296,7 +301,6 @@ def get_app(reload: bool = False) -> ModuleType:
             if not config.app_module
             else config.app_module
         )
-
         if reload:
             from reflex.state import reload_state_module
 
@@ -312,19 +316,24 @@ def get_app(reload: bool = False) -> ModuleType:
         raise
 
 
-def get_and_validate_app(reload: bool = False):
-    """Get the app module based on the default config and validate it.
+def get_and_validate_app(reload: bool = False) -> AppInfo:
+    """Get the app instance based on the default config and validate it.
 
     Args:
         reload: Re-import the app module from disk
+
+    Returns:
+        The app instance and the app module.
     """
     from reflex.app import App
 
     app_module = get_app(reload=reload)
     app = getattr(app_module, constants.CompileVars.APP)
     if not isinstance(app, App):
-        raise RuntimeError("The app object in rxconfig must be an instance of rx.App.")
-    return app
+        raise RuntimeError(
+            "The app instance in the specified app_module_path in rxconfig must be an instance of rx.App."
+        )
+    return AppInfo(app=app, module=app_module)
 
 
 def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
@@ -337,8 +346,7 @@ def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     Returns:
         The compiled app based on the default config.
     """
-    app_module = get_app(reload=reload)
-    app = getattr(app_module, constants.CompileVars.APP)
+    app, app_module = get_and_validate_app(reload=reload)
     # For py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).
     app._apply_decorated_pages()

@@ -240,6 +240,19 @@ def run_backend(
         run_uvicorn_backend(host, port, loglevel)
 
 
+def get_reload_dirs() -> list[str]:
+    """Get the reload directories for the backend.
+
+    Returns:
+        The reload directories for the backend.
+    """
+    config = get_config()
+    reload_dirs = [config.app_name]
+    if app_module_path := config.app_module_path:
+        reload_dirs.append(str(Path(app_module_path).resolve().parent.parent))
+    return reload_dirs
+
+
 def run_uvicorn_backend(host, port, loglevel: LogLevel):
     """Run the backend in development mode using Uvicorn.
 
@@ -256,7 +269,7 @@ def run_uvicorn_backend(host, port, loglevel: LogLevel):
         port=port,
         log_level=loglevel.value,
         reload=True,
-        reload_dirs=[get_config().app_name],
+        reload_dirs=get_reload_dirs(),
     )
 
 
@@ -281,7 +294,7 @@ def run_granian_backend(host, port, loglevel: LogLevel):
             interface=Interfaces.ASGI,
             log_level=LogLevels(loglevel.value),
             reload=True,
-            reload_paths=[Path(get_config().app_name)],
+            reload_paths=get_reload_dirs(),
             reload_ignore_dirs=[".web"],
         ).serve()
     except ImportError:

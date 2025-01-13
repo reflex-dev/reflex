@@ -730,24 +730,36 @@ class Config(Base):
                 "REDIS_URL is required when using the redis state manager."
             )
 
+    @staticmethod
+    def _load_via_spec(path: str) -> ModuleType:
+        """Load a module dynamically using its file path.
+
+        Args:
+            path: The path to the module.
+
+        Returns:
+            The loaded module.
+        """
+        module_name = Path(path).stem
+        module_path = Path(path).resolve()
+        sys.path.insert(0, str(module_path.parent.parent))
+        spec = importlib.util.spec_from_file_location(module_name, path)
+        module = importlib.util.module_from_spec(spec)
+        # Set the package name to the parent directory of the module (for relative imports)
+        module.__package__ = module_path.parent.name
+        spec.loader.exec_module(module)
+        return module
+
     @property
     def app_module(self) -> ModuleType | None:
-        """Get the app module.
+        """Return the app module if `app_module_path` is set.
 
         Returns:
             The app module.
         """
-
-        def load_via_spec(path):
-            module_name = Path(path).stem
-            spec = importlib.util.spec_from_file_location(module_name, path)
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            return module
-
-        if self.app_module_path:
-            return load_via_spec(self.app_module_path)
-        return None
+        return (
+            self._load_via_spec(self.app_module_path) if self.app_module_path else None
+        )
 
     @property
     def module(self) -> str:
