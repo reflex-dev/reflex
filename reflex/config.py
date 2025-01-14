@@ -746,9 +746,9 @@ class Config(Base):
         module_name = Path(path).stem
         module_path = Path(path).resolve()
         sys.path.insert(0, str(module_path.parent.parent))
-        spec = spec_from_file_location(module_name, path)
+        spec = spec_from_file_location(module_name, module_path)
         if not spec:
-            raise ConfigError(f"Could not load module from path: {path}")
+            raise ConfigError(f"Could not load module from path: {module_path}")
         module = module_from_spec(spec)
         # Set the package name to the parent directory of the module (for relative imports)
         module.__package__ = module_path.parent.name
