@@ -2,13 +2,14 @@
 
 from reflex.components.component import Component
 from reflex.utils import format
+from reflex.utils.imports import ImportVar
 from reflex.vars.base import Var
 
 
 class LucideIconComponent(Component):
     """Lucide Icon Component."""
 
-    library = "lucide-react@0.469.0"
+    library = "lucide-react@0.471.1"
 
 
 class Icon(LucideIconComponent):
@@ -47,6 +48,10 @@ class Icon(LucideIconComponent):
         if "tag" not in props:
             raise AttributeError("Missing 'tag' keyword-argument for Icon")
 
+        if isinstance(props["tag"], Var):
+            icon_name = props.pop("tag")
+            return DynamicIcon.create(name=icon_name, **props)
+
         if (
             not isinstance(props["tag"], str)
             or format.to_snake_case(props["tag"]) not in LUCIDE_ICON_LIST
@@ -65,6 +70,21 @@ class Icon(LucideIconComponent):
         props["alias"] = f"Lucide{props['tag']}"
         props.setdefault("color", "var(--current-color)")
         return super().create(*children, **props)
+
+
+class DynamicIcon(LucideIconComponent):
+    """A DynamicIcon component."""
+
+    tag = "DynamicIcon"
+
+    name: Var[str]
+
+    def _get_imports(self):
+        _imports = super()._get_imports()
+        if self.library:
+            _imports.pop(self.library)
+        _imports["lucide-react/dynamic"] = [ImportVar("DynamicIcon", install=False)]
+        return _imports
 
 
 LUCIDE_ICON_LIST = [
@@ -846,6 +866,7 @@ LUCIDE_ICON_LIST = [
     "house",
     "house_plug",
     "house_plus",
+    "house_wifi",
     "ice_cream_bowl",
     "ice_cream_cone",
     "id_card",
@@ -1534,6 +1555,7 @@ LUCIDE_ICON_LIST = [
     "trending_up_down",
     "triangle",
     "triangle_alert",
+    "triangle_dashed",
     "triangle_right",
     "trophy",
     "truck",
