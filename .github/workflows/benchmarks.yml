@@ -81,13 +81,13 @@ jobs:
       matrix:
         # Show OS combos first in GUI
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.10.13', '3.11.5', '3.12.0']
+        python-version: ['3.10.16', '3.11.11', '3.12.8']
         exclude:
           - os: windows-latest
-            python-version: '3.10.13'
+            python-version: '3.10.16'
           # keep only one python version for MacOS
           - os: macos-latest
-            python-version: '3.10.13'
+            python-version: '3.10.16'
           - os: macos-latest
             python-version: "3.11.11"
         include:
