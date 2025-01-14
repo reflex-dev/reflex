@@ -28,8 +28,8 @@ import typer
 from alembic.util.exc import CommandError
 from packaging import version
 from redis import Redis as RedisSync
-from redis import exceptions
 from redis.asyncio import Redis
+from redis.exceptions import RedisError
 
 from reflex import constants, model
 from reflex.compiler import templates
@@ -319,10 +319,11 @@ def get_redis() -> Redis | None:
     Returns:
         The asynchronous redis client.
     """
-    if isinstance((redis_url_or_options := parse_redis_url()), str):
-        return Redis.from_url(redis_url_or_options)
-    elif isinstance(redis_url_or_options, dict):
-        return Redis(**redis_url_or_options)
+    if (redis_url := parse_redis_url()) is not None:
+        return Redis.from_url(
+            redis_url,
+            retry_on_error=[RedisError],
+        )
     return None
 
 
@@ -332,14 +333,15 @@ def get_redis_sync() -> RedisSync | None:
     Returns:
         The synchronous redis client.
     """
-    if isinstance((redis_url_or_options := parse_redis_url()), str):
-        return RedisSync.from_url(redis_url_or_options)
-    elif isinstance(redis_url_or_options, dict):
-        return RedisSync(**redis_url_or_options)
+    if (redis_url := parse_redis_url()) is not None:
+        return RedisSync.from_url(
+            redis_url,
+            retry_on_error=[RedisError],
+        )
     return None
 
 
-def parse_redis_url() -> str | dict | None:
+def parse_redis_url() -> str | None:
     """Parse the REDIS_URL in config if applicable.
 
     Returns:
@@ -373,7 +375,7 @@ async def get_redis_status() -> dict[str, bool | None]:
             redis_client.ping()
         else:
             status = None
-    except exceptions.RedisError:
+    except RedisError:
         status = False
 
     return {"redis": status}

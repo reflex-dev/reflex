@@ -85,8 +85,8 @@ class ChartBase(RechartsCharts):
         cls._ensure_valid_dimension("height", height)
 
         dim_props = {
-            "width": width or "100%",
-            "height": height or "100%",
+            "width": width if width is not None else "100%",
+            "height": height if height is not None else "100%",
         }
         # Provide min dimensions so the graph always appears, even if the outer container is zero-size.
         if width is None:

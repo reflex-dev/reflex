@@ -493,8 +493,8 @@ class CodeBlock(Component, MarkdownComponentMap):
 
         theme = self.theme
 
-        out.add_props(style=theme).remove_props("theme", "code", "language").add_props(
-            children=self.code, language=_LANGUAGE
+        out.add_props(style=theme).remove_props("theme", "code").add_props(
+            children=self.code,
         )
 
         return out
@@ -503,20 +503,25 @@ class CodeBlock(Component, MarkdownComponentMap):
         return ["can_copy", "copy_button"]
 
     @classmethod
-    def _get_language_registration_hook(cls) -> str:
+    def _get_language_registration_hook(cls, language_var: Var = _LANGUAGE) -> str:
         """Get the hook to register the language.
+
+        Args:
+            language_var: The const/literal Var of the language module to import.
+                For markdown, uses the default placeholder _LANGUAGE. For direct use,
+                a LiteralStringVar should be passed via the language prop.
 
         Returns:
             The hook to register the language.
         """
         return f"""
- if ({_LANGUAGE!s}) {{
+ if ({language_var!s}) {{
     (async () => {{
       try {{
-        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{_LANGUAGE!s}}}`);
-        SyntaxHighlighter.registerLanguage({_LANGUAGE!s}, module.default);
+        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{language_var!s}}}`);
+        SyntaxHighlighter.registerLanguage({language_var!s}, module.default);
       }} catch (error) {{
-        console.error(`Error importing language module for ${{{_LANGUAGE!s}}}:`, error);
+        console.error(`Error importing language module for ${{{language_var!s}}}:`, error);
       }}
     }})();
   }}
@@ -538,8 +543,7 @@ class CodeBlock(Component, MarkdownComponentMap):
             The hooks for the component.
         """
         return [
-            f"const {_LANGUAGE!s} = {self.language!s}",
-            self._get_language_registration_hook(),
+            self._get_language_registration_hook(language_var=self.language),
         ]
 
 
