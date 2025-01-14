@@ -19,6 +19,7 @@ from reflex.constants import EventTriggers
 from reflex.event import (
     EventChain,
     EventHandler,
+    JavascriptInputEvent,
     input_event,
     no_args_event_spec,
     parse_args_spec,
@@ -31,6 +32,7 @@ from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgTypeMisma
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
+from reflex.vars.object import ObjectVar
 
 
 @pytest.fixture
@@ -818,10 +820,14 @@ def test_component_create_unpack_tuple_child(test_component, element, expected):
     assert fragment_wrapper.render() == expected
 
 
+class _Obj(Base):
+    custom: int = 0
+
+
 class C1State(BaseState):
     """State for testing C1 component."""
 
-    def mock_handler(self, _e, _bravo, _charlie):
+    def mock_handler(self, _e: JavascriptInputEvent, _bravo: dict, _charlie: _Obj):
         """Mock handler."""
         pass
 
@@ -829,10 +835,12 @@ class C1State(BaseState):
 def test_component_event_trigger_arbitrary_args():
     """Test that we can define arbitrary types for the args of an event trigger."""
 
-    class Obj(Base):
-        custom: int = 0
-
-    def on_foo_spec(_e, alpha: str, bravo: Dict[str, Any], charlie: Obj):
+    def on_foo_spec(
+        _e: Var[JavascriptInputEvent],
+        alpha: Var[str],
+        bravo: ObjectVar[dict[str, Any]],
+        charlie: Var[_Obj],
+    ):
         return [_e.target.value, bravo["nested"], charlie.custom + 42]
 
     class C1(Component):
