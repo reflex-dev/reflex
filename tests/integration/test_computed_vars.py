@@ -58,6 +58,11 @@ def ComputedVars():
         def depends_on_count3(self) -> int:
             return self.count
 
+        # special floats should be properly decoded on the frontend
+        @rx.var(cache=True, initial_value=[])
+        def special_floats(self) -> list[float]:
+            return [42.9, float("nan"), float("inf"), float("-inf")]
+
         @rx.event
         def increment(self):
             self.count += 1
@@ -102,6 +107,11 @@ def ComputedVars():
                 rx.text(
                     State.depends_on_count3,
                     id="depends_on_count3",
+                ),
+                rx.text("special_floats:"),
+                rx.text(
+                    State.special_floats.join(", "),
+                    id="special_floats",
                 ),
             ),
         )
@@ -223,6 +233,10 @@ async def test_computed_vars(
     depends_on_count3 = driver.find_element(By.ID, "depends_on_count3")
     assert depends_on_count3
     assert depends_on_count3.text == "0"
+
+    special_floats = driver.find_element(By.ID, "special_floats")
+    assert special_floats
+    assert special_floats.text == "42.9, NaN, Infinity, -Infinity"
 
     increment = driver.find_element(By.ID, "increment")
     assert increment.is_enabled()
