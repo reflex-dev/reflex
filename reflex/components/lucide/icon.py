@@ -3,7 +3,8 @@
 from reflex.components.component import Component
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
-from reflex.vars.base import Var
+from reflex.vars.base import LiteralVar, Var
+from reflex.vars.sequence import LiteralStringVar
 
 
 class LucideIconComponent(Component):
@@ -33,6 +34,7 @@ class Icon(LucideIconComponent):
         Raises:
             AttributeError: The errors tied to bad usage of the Icon component.
             ValueError: If the icon tag is invalid.
+            TypeError: If the icon name is not a string.
 
         Returns:
             The created component.
@@ -48,8 +50,16 @@ class Icon(LucideIconComponent):
         if "tag" not in props:
             raise AttributeError("Missing 'tag' keyword-argument for Icon")
 
+        if isinstance(props["tag"], LiteralVar):
+            if isinstance(props["tag"], LiteralStringVar):
+                props["tag"] = props["tag"]._var_value
+            else:
+                raise TypeError("Icon name must be a string")
+
         if isinstance(props["tag"], Var):
-            icon_name = props.pop("tag")
+            icon_name: Var = props.pop("tag")
+            if icon_name._var_type is not str:
+                raise TypeError("Icon name must be a string")
             return DynamicIcon.create(name=icon_name, **props)
 
         if (
