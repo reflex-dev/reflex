@@ -16,10 +16,11 @@ def FullyControlledInput():
     import reflex as rx
 
     class State(rx.State):
-        text: rx.Field[Optional[str]] = rx.field("initial")
+        text: str = "initial"
+        optional: rx.Field[Optional[str]] = rx.field("initial")
 
         def set_none(self):
-            self.text = None
+            self.optional = None
 
     app = rx.App(state=rx.State)
 
@@ -52,6 +53,11 @@ def FullyControlledInput():
             ),
             rx.button(
                 "CLEAR", on_click=rx.set_value("on_change_input", ""), id="clear"
+            ),
+            rx.input(
+                value=State.optional | "",
+                # value=State.optional.to_string(),
+                id="optional_input",
             ),
             rx.button("SET NONE", on_click=State.set_none, id="set_none"),
         )
@@ -127,6 +133,7 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
 
     # find the input and wait for it to have the initial state value
     debounce_input = driver.find_element(By.ID, "debounce_input_input")
+    optional_input = driver.find_element(By.ID, "optional_input")
     value_input = driver.find_element(By.ID, "value_input")
     on_change_input = driver.find_element(By.ID, "on_change_input")
     plain_value_input = driver.find_element(By.ID, "plain_value_input")
@@ -195,5 +202,5 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
 
     set_none_button = driver.find_element(By.ID, "set_none")
     set_none_button.click()
-    assert AppHarness._poll_for(lambda: debounce_input.get_attribute("value") == "")
+    assert AppHarness._poll_for(lambda: optional_input.get_attribute("value") == "")
     assert await get_state_text() is None
