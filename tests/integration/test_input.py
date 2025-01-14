@@ -56,7 +56,6 @@ def FullyControlledInput():
             ),
             rx.input(
                 value=State.optional | "",
-                # value=State.optional.to_string(),
                 id="optional_input",
             ),
             rx.button("SET NONE", on_click=State.set_none, id="set_none"),
