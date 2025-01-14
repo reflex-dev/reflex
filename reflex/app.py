@@ -1570,11 +1570,16 @@ class EventNamespace(AsyncNamespace):
         fields = data
 
         if isinstance(fields, str):
-            fields = json.loads(fields)
             console.warn(
                 "Received event data as a string. This generally should not happen and may indicate a bug."
                 f" Event data: {fields}"
             )
+            try:
+                fields = json.loads(fields)
+            except json.JSONDecodeError as ex:
+                raise exceptions.EventDeserializationError(
+                    f"Failed to deserialize event data: {fields}."
+                ) from ex
 
         if not isinstance(fields, dict):
             raise exceptions.EventDeserializationError(
