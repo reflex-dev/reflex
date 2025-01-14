@@ -105,6 +105,10 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
         state = await fully_controlled_input.get_state(f"{token}_{full_state_name}")
         return state.substates[state_name].text
 
+    async def get_state_optional():
+        state = await fully_controlled_input.get_state(f"{token}_{full_state_name}")
+        return state.substates[state_name].optional
+
     # ensure defaults are set correctly
     assert (
         fully_controlled_input.poll_for_value(
@@ -203,4 +207,4 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     set_none_button = driver.find_element(By.ID, "set_none")
     set_none_button.click()
     assert AppHarness._poll_for(lambda: optional_input.get_attribute("value") == "")
-    assert await get_state_text() is None
+    assert await get_state_optional() is None
