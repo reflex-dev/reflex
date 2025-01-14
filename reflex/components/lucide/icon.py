@@ -56,7 +56,12 @@ class Icon(LucideIconComponent):
                 "\nSee full list at https://lucide.dev/icons."
             )
 
-        props["tag"] = format.to_title_case(format.to_snake_case(props["tag"])) + "Icon"
+        if props["tag"] in LUCIDE_ICON_MAPPING_OVERRIDE:
+            props["tag"] = LUCIDE_ICON_MAPPING_OVERRIDE[props["tag"]]
+        else:
+            props["tag"] = (
+                format.to_title_case(format.to_snake_case(props["tag"])) + "Icon"
+            )
         props["alias"] = f"Lucide{props['tag']}"
         props.setdefault("color", "var(--current-color)")
         return super().create(*children, **props)
@@ -1634,3 +1639,10 @@ LUCIDE_ICON_LIST = [
     "zoom_in",
     "zoom_out",
 ]
+
+# The default transformation of some icon names doesn't match how the
+# icons are exported from Lucide. Manual overrides can go here.
+LUCIDE_ICON_MAPPING_OVERRIDE = {
+    "grid_2x_2_check": "Grid2x2Check",
+    "grid_2x_2_x": "Grid2x2X",
+}
