@@ -1914,6 +1914,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             "_var_data": kwargs.pop(
                 "_var_data", VarData.merge(self._var_data, merge_var_data)
             ),
+            "return_type": kwargs.pop("return_type", self._var_type),
         }
 
         if kwargs:
