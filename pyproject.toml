@@ -50,7 +50,6 @@ httpx = ">=0.25.1,<1.0"
 twine = ">=4.0.0,<7.0"
 tomlkit = ">=0.12.4,<1.0"
 lazy_loader = ">=0.4"
-reflex-chakra = ">=0.6.0"
 typing_extensions = ">=4.6.0"
 
 [tool.poetry.group.dev.dependencies]
