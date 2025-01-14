@@ -102,7 +102,6 @@ from reflex.utils.exceptions import (
     InvalidLockWarningThresholdError,
     InvalidStateManagerMode,
     LockExpiredError,
-    MismatchedArgumentTypeError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSchemaMismatchError,
@@ -1305,7 +1304,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Raises:
             SetUndefinedStateVarError: If a value of a var is set without first defining it.
-            MismatchedArgumentTypeError: If the value of a var is not of the correct type.
         """
         if isinstance(value, MutableProxy):
             # unwrap proxy objects when assigning back to the state
@@ -1343,10 +1341,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if field.allow_none and not is_optional(field_type):
                 field_type = Union[field_type, None]
             if not _isinstance(value, field_type):
-                raise MismatchedArgumentTypeError(
-                    value,
-                    f"{type(self).__name__}.{name}",
-                    field_type,
+                console.error(
+                    f"Expected field '{type(self).__name__}.{name}' to receive type '{field_type}',"
+                    f" but got '{value}' of type '{type(value)}'."
                 )
 
         # Set the attribute.

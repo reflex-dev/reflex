@@ -27,11 +27,7 @@ from reflex.event import (
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
-from reflex.utils.exceptions import (
-    EventFnArgMismatch,
-    EventHandlerArgTypeMismatch,
-    VarAnnotationError,
-)
+from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgTypeMismatch
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -849,8 +845,7 @@ def test_component_event_trigger_arbitrary_args():
                 "on_foo": on_foo_spec,
             }
 
-    with pytest.raises(VarAnnotationError):
-        C1.create(on_foo=C1State.mock_handler)
+    C1.create(on_foo=C1State.mock_handler)
 
 
 def test_create_custom_component(my_component):

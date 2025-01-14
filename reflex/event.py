@@ -39,11 +39,7 @@ from typing_extensions import (
 from reflex import constants
 from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import console, format
-from reflex.utils.exceptions import (
-    EventFnArgMismatch,
-    EventHandlerArgTypeMismatch,
-    VarAnnotationError,
-)
+from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgTypeMismatch
 from reflex.utils.types import ArgsSpec, GenericType, typehint_issubclass
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -1352,15 +1348,12 @@ def resolve_annotation(annotations: dict[str, Any], arg_name: str):
         annotations: The annotations.
         arg_name: The argument name.
 
-    Raises:
-        VarAnnotationError: If the annotation is not found.
-
     Returns:
         The resolved annotation.
     """
     annotation = annotations.get(arg_name)
     if annotation is None:
-        raise VarAnnotationError(arg_name, annotation)
+        console.error(f"Invalid annotation '{annotation}' for var '{arg_name}'.")
     return annotation
 
 

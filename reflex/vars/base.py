@@ -45,7 +45,6 @@ from reflex.base import Base
 from reflex.constants.compiler import Hooks
 from reflex.utils import console, exceptions, imports, serializers, types
 from reflex.utils.exceptions import (
-    MismatchedComputedVarReturn,
     UntypedComputedVarError,
     VarAttributeError,
     VarDependencyError,
@@ -2014,9 +2013,6 @@ class ComputedVar(Var[RETURN_TYPE]):
             instance: the instance of the class accessing this computed var.
             owner: the class that this descriptor is attached to.
 
-        Raises:
-            MismatchedComputedVarReturn: If the return type of the getter function does not match the var type.
-
         Returns:
             The value of the var for the given instance.
         """
@@ -2052,11 +2048,11 @@ class ComputedVar(Var[RETURN_TYPE]):
             value = getattr(instance, self._cache_attr)
 
         if not _isinstance(value, self._var_type):
-            raise MismatchedComputedVarReturn(
-                var_name=f"{type(instance).__name__}.{self._js_expr}",
-                return_type=type(value),
-                expected_type=self._var_type,
+            console.error(
+                f"Computed var '{type(instance).__name__}.{self._js_expr}' must return"
+                f" type '{self._var_type}', got '{type(value)}'."
             )
+
         return value
 
     def _deps(
