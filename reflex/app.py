@@ -68,6 +68,7 @@ from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
 from reflex.config import environment, get_config
 from reflex.event import (
+    _EVENT_FIELDS,
     BASE_STATE,
     Event,
     EventHandler,
@@ -1356,20 +1357,22 @@ async def health() -> JSONResponse:
     health_status = {"status": True}
     status_code = 200
 
-    db_status, redis_status = await asyncio.gather(
-        get_db_status(), prerequisites.get_redis_status()
-    )
+    tasks = []
 
-    health_status["db"] = db_status
+    if prerequisites.check_db_used():
+        tasks.append(get_db_status())
+    if prerequisites.check_redis_used():
+        tasks.append(prerequisites.get_redis_status())
 
-    if redis_status is None:
+    results = await asyncio.gather(*tasks)
+
+    for result in results:
+        health_status |= result
+
+    if "redis" in health_status and health_status["redis"] is None:
         health_status["redis"] = False
-    else:
-        health_status["redis"] = redis_status
 
-    if not health_status["db"] or (
-        not health_status["redis"] and redis_status is not None
-    ):
+    if not all(health_status.values()):
         health_status["status"] = False
         status_code = 503
 
@@ -1563,9 +1566,7 @@ class EventNamespace(AsyncNamespace):
         """
         fields = data
         # Get the event.
-        event = Event(
-            **{k: v for k, v in fields.items() if k not in ("handler", "event_actions")}
-        )
+        event = Event(**{k: v for k, v in fields.items() if k in _EVENT_FIELDS})
 
         self.token_to_sid[event.token] = sid
         self.sid_to_token[sid] = event.token

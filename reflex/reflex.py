@@ -329,13 +329,14 @@ def export(
 
 @cli.command()
 def login(loglevel: constants.LogLevel = typer.Option(config.loglevel)):
-    """Authenicate with experimental Reflex hosting service."""
+    """Authenticate with experimental Reflex hosting service."""
     from reflex_cli.v2 import cli as hosting_cli
 
     check_version()
 
     validated_info = hosting_cli.login()
     if validated_info is not None:
+        _skip_compile()  # Allow running outside of an app dir
         telemetry.send("login", user_uuid=validated_info.get("user_id"))
 
 
@@ -484,6 +485,11 @@ def deploy(
         "--token",
         help="token to use for auth",
     ),
+    config_path: Optional[str] = typer.Option(
+        None,
+        "--config",
+        help="path to the config file",
+    ),
 ):
     """Deploy the app to the Reflex hosting service."""
     from reflex_cli.utils import dependency
@@ -539,6 +545,7 @@ def deploy(
         loglevel=type(loglevel).INFO,  # type: ignore
         token=token,
         project=project,
+        config_path=config_path,
     )
 
 

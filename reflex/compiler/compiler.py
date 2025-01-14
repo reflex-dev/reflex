@@ -75,7 +75,7 @@ def _compile_app(app_root: Component) -> str:
     return templates.APP_ROOT.render(
         imports=utils.compile_imports(app_root._get_all_imports()),
         custom_codes=app_root._get_all_custom_code(),
-        hooks={**app_root._get_all_hooks_internal(), **app_root._get_all_hooks()},
+        hooks=app_root._get_all_hooks(),
         window_libraries=window_libraries,
         render=app_root.render(),
     )
@@ -149,7 +149,7 @@ def _compile_page(
         imports=imports,
         dynamic_imports=component._get_all_dynamic_imports(),
         custom_codes=component._get_all_custom_code(),
-        hooks={**component._get_all_hooks_internal(), **component._get_all_hooks()},
+        hooks=component._get_all_hooks(),
         render=component.render(),
         **kwargs,
     )
