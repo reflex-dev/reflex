@@ -773,9 +773,8 @@ class Config(Base):
         Returns:
             The module name.
         """
-        if self.app_module and self.app_module.__file__:
-            module_file = Path(self.app_module.__file__)
-            return f"{module_file.parent.name}.{module_file.stem}"
+        if self.app_module is not None:
+            return self.app_module.__qualname__
         return ".".join([self.app_name, self.app_name])
 
     def update_from_env(self) -> dict[str, Any]:
