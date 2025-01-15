@@ -42,7 +42,6 @@ class Icon(LucideIconComponent):
         if children:
             if len(children) == 1 and isinstance(children[0], str):
                 props["tag"] = children[0]
-                children = []
             else:
                 raise AttributeError(
                     f"Passing multiple children to Icon component is not allowed: remove positional arguments {children[1:]} to fix"
@@ -50,36 +49,31 @@ class Icon(LucideIconComponent):
         if "tag" not in props:
             raise AttributeError("Missing 'tag' keyword-argument for Icon")
 
-        if isinstance(props["tag"], LiteralVar):
-            if isinstance(props["tag"], LiteralStringVar):
-                props["tag"] = props["tag"]._var_value
+        tag: str | Var | LiteralVar = props.pop("tag")
+        if isinstance(tag, LiteralVar):
+            if isinstance(tag, LiteralStringVar):
+                tag = tag._var_value
             else:
-                raise TypeError("Icon name must be a string")
-
-        if isinstance(props["tag"], Var):
-            icon_name: Var = props.pop("tag")
-            if icon_name._var_type is not str:
-                raise TypeError("Icon name must be a string")
-            return DynamicIcon.create(name=icon_name, **props)
+                raise TypeError(f"Icon name must be a string, got {type(tag)}")
+        elif isinstance(tag, Var):
+            return DynamicIcon.create(name=tag, **props)
 
         if (
-            not isinstance(props["tag"], str)
-            or format.to_snake_case(props["tag"]) not in LUCIDE_ICON_LIST
+            not isinstance(tag, str)
+            or format.to_snake_case(tag) not in LUCIDE_ICON_LIST
         ):
             raise ValueError(
-                f"Invalid icon tag: {props['tag']}. Please use one of the following: {', '.join(LUCIDE_ICON_LIST[0:25])}, ..."
+                f"Invalid icon tag: {tag}. Please use one of the following: {', '.join(LUCIDE_ICON_LIST[0:25])}, ..."
                 "\nSee full list at https://lucide.dev/icons."
             )
 
-        if props["tag"] in LUCIDE_ICON_MAPPING_OVERRIDE:
-            props["tag"] = LUCIDE_ICON_MAPPING_OVERRIDE[props["tag"]]
+        if tag in LUCIDE_ICON_MAPPING_OVERRIDE:
+            props["tag"] = LUCIDE_ICON_MAPPING_OVERRIDE[tag]
         else:
-            props["tag"] = (
-                format.to_title_case(format.to_snake_case(props["tag"])) + "Icon"
-            )
+            props["tag"] = format.to_title_case(format.to_snake_case(tag)) + "Icon"
         props["alias"] = f"Lucide{props['tag']}"
         props.setdefault("color", "var(--current-color)")
-        return super().create(*children, **props)
+        return super().create(**props)
 
 
 class DynamicIcon(LucideIconComponent):
