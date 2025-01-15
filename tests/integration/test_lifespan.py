@@ -43,6 +43,8 @@ def LifespanApp():
             lifespan_task_global = 0
 
     class LifespanState(rx.State):
+        interval: int = 100
+
         @rx.var
         def task_global(self) -> int:
             return lifespan_task_global
@@ -59,7 +61,15 @@ def LifespanApp():
         return rx.vstack(
             rx.text(LifespanState.task_global, id="task_global"),
             rx.text(LifespanState.context_global, id="context_global"),
-            rx.moment(interval=100, on_change=LifespanState.tick),
+            rx.button(
+                rx.moment(
+                    interval=LifespanState.interval, on_change=LifespanState.tick
+                ),
+                on_click=LifespanState.set_interval(  # type: ignore
+                    rx.cond(LifespanState.interval, 0, 100)
+                ),
+                id="toggle-tick",
+            ),
         )
 
     app = rx.App()
@@ -108,6 +118,7 @@ async def test_lifespan(lifespan_app: AppHarness):
     original_task_global_text = task_global.text
     original_task_global_value = int(original_task_global_text)
     lifespan_app.poll_for_content(task_global, exp_not_equal=original_task_global_text)
+    driver.find_element(By.ID, "toggle-tick").click()  # avoid teardown errors
     assert lifespan_app.app_module.lifespan_task_global > original_task_global_value  # type: ignore
     assert int(task_global.text) > original_task_global_value
 

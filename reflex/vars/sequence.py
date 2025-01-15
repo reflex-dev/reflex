@@ -230,6 +230,22 @@ def string_starts_with_operation(full_string: Var[str], prefix: Var[str]):
 
 
 @var_operation
+def string_ends_with_operation(full_string: Var[str], suffix: Var[str]):
+    """Check if a string ends with a suffix.
+
+    Args:
+        full_string: The full string.
+        suffix: The suffix.
+
+    Returns:
+        Whether the string ends with the suffix.
+    """
+    return var_operation_return(
+        js_expression=f"{full_string}.endsWith({suffix})", var_type=bool
+    )
+
+
+@var_operation
 def string_item_operation(string: Var[str], index: Var[int]):
     """Get an item from a string.
 

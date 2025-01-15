@@ -182,9 +182,7 @@ class Form(BaseHTML):
         props["handle_submit_unique_name"] = ""
         form = super().create(*children, **props)
         form.handle_submit_unique_name = md5(
-            str({**form._get_all_hooks_internal(), **form._get_all_hooks()}).encode(
-                "utf-8"
-            )
+            str(form._get_all_hooks()).encode("utf-8")
         ).hexdigest()
         return form
 
@@ -252,8 +250,12 @@ class Form(BaseHTML):
                 )
         return form_refs
 
-    def _get_vars(self, include_children: bool = True) -> Iterator[Var]:
-        yield from super()._get_vars(include_children=include_children)
+    def _get_vars(
+        self, include_children: bool = True, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
+        yield from super()._get_vars(
+            include_children=include_children, ignore_ids=ignore_ids
+        )
         yield from self._get_form_refs().values()
 
     def _exclude_props(self) -> list[str]:
