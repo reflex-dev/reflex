@@ -35,7 +35,6 @@ from reflex.utils.exceptions import (
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
-from reflex.vars.object import ObjectVar
 
 
 @pytest.fixture
@@ -841,7 +840,7 @@ def test_component_event_trigger_arbitrary_args():
     def on_foo_spec(
         _e: Var[JavascriptInputEvent],
         alpha: Var[str],
-        bravo: ObjectVar[dict[str, Any]],
+        bravo: dict[str, Any],
         charlie: Var[_Obj],
     ):
         return [_e.target.value, bravo["nested"], charlie.custom + 42]
