@@ -10,6 +10,7 @@ from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
 from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.types import safe_issubclass
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.number import ternary_operation
@@ -140,7 +141,9 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
     cond_var = LiteralVar.create(condition)
 
     # If the first component is a component, create a Fragment if the second component is not set.
-    if isinstance(c1, BaseComponent):
+    if isinstance(c1, BaseComponent) or (
+        isinstance(c1, Var) and safe_issubclass(c1._var_type, BaseComponent)
+    ):
         c2 = c2 if c2 is not None else Fragment.create()
 
     # Check that the second argument is valid.
