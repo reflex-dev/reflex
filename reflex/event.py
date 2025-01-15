@@ -792,7 +792,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
 
 def redirect(
     path: str | Var[str],
-    is_external: Optional[bool] = None,
+    is_external: bool = False,
     replace: bool = False,
 ) -> EventSpec:
     """Redirect to a new path.
@@ -809,7 +809,7 @@ def redirect(
         "_redirect",
         get_fn_signature(redirect),
         path=path,
-        external=False if is_external is None else is_external,
+        external=is_external,
         replace=replace,
     )
 
