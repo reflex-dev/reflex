@@ -37,7 +37,7 @@ def ClientSide():
 
         # cookies with custom settings
         c3: str = rx.Cookie(max_age=2)  # expires after 2 second
-        c4: rx.Cookie = rx.Cookie(same_site="strict")
+        c4: str = rx.Cookie(same_site="strict")
         c5: str = rx.Cookie(path="/foo/")  # only accessible on `/foo/`
         c6: str = rx.Cookie(name="c6")
         c7: str = rx.Cookie("c7 default")
