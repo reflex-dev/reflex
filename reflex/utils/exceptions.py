@@ -163,6 +163,10 @@ class StateSerializationError(ReflexError):
     """Raised when the state cannot be serialized."""
 
 
+class StateMismatchError(ReflexError, ValueError):
+    """Raised when the state retrieved does not match the expected state."""
+
+
 class SystemPackageMissingError(ReflexError):
     """Raised when a system package is missing."""
 
