@@ -36,7 +36,7 @@ class CompileVars(SimpleNamespace):
     # The expected variable name where the rx.App is stored.
     APP = "app"
     # The expected variable name where the API object is stored for deployment.
-    API = "api"
+    API = "_api"
     # The name of the router variable.
     ROUTER = "router"
     # The name of the socket variable.
