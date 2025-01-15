@@ -17,6 +17,7 @@ import typer
 from redis.exceptions import RedisError
 
 from reflex import constants
+from reflex.config import environment
 from reflex.utils import console, path_ops, prerequisites
 
 
@@ -156,24 +157,30 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     Raises:
         Exit: When attempting to run a command with a None value.
     """
-    node_bin_path = str(path_ops.get_node_bin_path())
-    if not node_bin_path and not prerequisites.CURRENTLY_INSTALLING_NODE:
-        console.warn(
-            "The path to the Node binary could not be found. Please ensure that Node is properly "
-            "installed and added to your system's PATH environment variable or try running "
-            "`reflex init` again."
-        )
+    # Check for invalid command first.
     if None in args:
         console.error(f"Invalid command: {args}")
         raise typer.Exit(1)
-    # Add the node bin path to the PATH environment variable.
+
+    path_env: str = os.environ.get("PATH", "")
+
+    # Add node_bin_path to the PATH environment variable.
+    if not environment.REFLEX_BACKEND_ONLY.get():
+        node_bin_path = str(path_ops.get_node_bin_path())
+        if not node_bin_path and not prerequisites.CURRENTLY_INSTALLING_NODE:
+            console.warn(
+                "The path to the Node binary could not be found. Please ensure that Node is properly "
+                "installed and added to your system's PATH environment variable or try running "
+                "`reflex init` again."
+            )
+        path_env = os.pathsep.join([node_bin_path, path_env])
+
     env: dict[str, str] = {
         **os.environ,
-        "PATH": os.pathsep.join(
-            [node_bin_path if node_bin_path else "", os.environ["PATH"]]
-        ),  # type: ignore
+        "PATH": path_env,
         **kwargs.pop("env", {}),
     }
+
     kwargs = {
         "env": env,
         "stderr": None if show_logs else subprocess.STDOUT,
