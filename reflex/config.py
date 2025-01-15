@@ -10,7 +10,7 @@ import os
 import sys
 import threading
 import urllib.parse
-from importlib.util import find_spec, module_from_spec, spec_from_file_location
+from importlib.util import find_spec
 from pathlib import Path
 from types import ModuleType
 from typing import (
@@ -606,7 +606,7 @@ class Config(Base):
     app_name: str
 
     # The path to the app module.
-    app_module_path: Optional[str] = None
+    app_module_import: Optional[str] = None
 
     # The log level to use.
     loglevel: constants.LogLevel = constants.LogLevel.DEFAULT
@@ -730,40 +730,17 @@ class Config(Base):
                 "REDIS_URL is required when using the redis state manager."
             )
 
-    @staticmethod
-    def _load_via_spec(path: str) -> ModuleType:
-        """Load a module dynamically using its file path.
-
-        Args:
-            path: The path to the module.
-
-        Returns:
-            The loaded module.
-
-        Raises:
-            ConfigError: If the module cannot be loaded.
-        """
-        module_name = Path(path).stem
-        module_path = Path(path).resolve()
-        sys.path.insert(0, str(module_path.parent.parent))
-        spec = spec_from_file_location(module_name, module_path)
-        if not spec:
-            raise ConfigError(f"Could not load module from path: {module_path}")
-        module = module_from_spec(spec)
-        # Set the package name to the parent directory of the module (for relative imports)
-        module.__package__ = module_path.parent.name
-        spec.loader.exec_module(module)  # type: ignore
-        return module
-
     @property
     def app_module(self) -> ModuleType | None:
-        """Return the app module if `app_module_path` is set.
+        """Return the app module if `app_module_import` is set.
 
         Returns:
             The app module.
         """
         return (
-            self._load_via_spec(self.app_module_path) if self.app_module_path else None
+            importlib.import_module(self.app_module_import)
+            if self.app_module_import
+            else None
         )
 
     @property
@@ -774,7 +751,7 @@ class Config(Base):
             The module name.
         """
         if self.app_module is not None:
-            return self.app_module.__qualname__
+            return self.app_module.__name__
         return ".".join([self.app_name, self.app_name])
 
     def update_from_env(self) -> dict[str, Any]:

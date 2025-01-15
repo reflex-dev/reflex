@@ -340,7 +340,7 @@ def get_and_validate_app(reload: bool = False) -> AppInfo:
     app = getattr(app_module, constants.CompileVars.APP)
     if not isinstance(app, App):
         raise RuntimeError(
-            "The app instance in the specified app_module_path in rxconfig must be an instance of rx.App."
+            "The app instance in the specified app_module_import in rxconfig must be an instance of rx.App."
         )
     return AppInfo(app=app, module=app_module)
 
