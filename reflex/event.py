@@ -39,7 +39,11 @@ from typing_extensions import (
 from reflex import constants
 from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import console, format
-from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgTypeMismatch
+from reflex.utils.exceptions import (
+    EventFnArgMismatchError,
+    EventHandlerArgTypeMismatchError,
+    MissingAnnotationError,
+)
 from reflex.utils.types import ArgsSpec, GenericType, typehint_issubclass
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -1218,7 +1222,7 @@ def call_event_handler(
         key: The key to pass to the event handler.
 
     Raises:
-        EventHandlerArgTypeMismatch: If the event handler arguments do not match the event spec.
+        EventHandlerArgTypeMismatchError: If the event handler arguments do not match the event spec.
         TypeError: If the event handler arguments are invalid.
 
     Returns:
@@ -1296,7 +1300,7 @@ def call_event_handler(
                 if compare_result:
                     continue
                 else:
-                    raise EventHandlerArgTypeMismatch(
+                    raise EventHandlerArgTypeMismatchError(
                         f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {type_hints_of_provided_callback[arg]} as annotated in {event_callback.fn.__qualname__} instead."
                     )
 
@@ -1341,19 +1345,23 @@ def unwrap_var_annotation(annotation: GenericType):
     return annotation
 
 
-def resolve_annotation(annotations: dict[str, Any], arg_name: str):
+def resolve_annotation(annotations: dict[str, Any], arg_name: str, spec: ArgsSpec):
     """Resolve the annotation for the given argument name.
 
     Args:
         annotations: The annotations.
         arg_name: The argument name.
+        spec: The specs which the annotations come from.
+
+    Raises:
+        MissingAnnotationError: If the annotation is missing for non-lambda methods.
 
     Returns:
         The resolved annotation.
     """
     annotation = annotations.get(arg_name)
-    if annotation is None:
-        console.error(f"Invalid annotation '{annotation}' for var '{arg_name}'.")
+    if annotation is None and not isinstance(spec, types.LambdaType):
+        raise MissingAnnotationError(var_name=arg_name)
     return annotation
 
 
@@ -1375,7 +1383,13 @@ def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
         arg_spec(
             *[
                 Var(f"_{l_arg}").to(
-                    unwrap_var_annotation(resolve_annotation(annotations, l_arg))
+                    unwrap_var_annotation(
+                        resolve_annotation(
+                            annotations,
+                            l_arg,
+                            spec=arg_spec,
+                        )
+                    )
                 )
                 for l_arg in spec.args
             ]
@@ -1391,7 +1405,7 @@ def check_fn_match_arg_spec(
     func_name: str | None = None,
 ):
     """Ensures that the function signature matches the passed argument specification
-    or raises an EventFnArgMismatch if they do not.
+    or raises an EventFnArgMismatchError if they do not.
 
     Args:
         user_func: The function to be validated.
@@ -1401,7 +1415,7 @@ def check_fn_match_arg_spec(
         func_name: The name of the function to be validated.
 
     Raises:
-        EventFnArgMismatch: Raised if the number of mandatory arguments do not match
+        EventFnArgMismatchError: Raised if the number of mandatory arguments do not match
     """
     user_args = inspect.getfullargspec(user_func).args
     # Drop the first argument if it's a bound method
@@ -1417,7 +1431,7 @@ def check_fn_match_arg_spec(
     number_of_event_args = len(parsed_event_args)
 
     if number_of_user_args - number_of_user_default_args > number_of_event_args:
-        raise EventFnArgMismatch(
+        raise EventFnArgMismatchError(
             f"Event {key} only provides {number_of_event_args} arguments, but "
             f"{func_name or user_func} requires at least {number_of_user_args - number_of_user_default_args} "
             "arguments to be passed to the event handler.\n"

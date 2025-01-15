@@ -28,7 +28,10 @@ from reflex.event import (
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
-from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgTypeMismatch
+from reflex.utils.exceptions import (
+    EventFnArgMismatchError,
+    EventHandlerArgTypeMismatchError,
+)
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -910,23 +913,23 @@ def test_invalid_event_handler_args(component2, test_state):
         test_state: A test state.
     """
     # EventHandler args must match
-    with pytest.raises(EventFnArgMismatch):
+    with pytest.raises(EventFnArgMismatchError):
         component2.create(on_click=test_state.do_something_arg)
 
     # Multiple EventHandler args: all must match
-    with pytest.raises(EventFnArgMismatch):
+    with pytest.raises(EventFnArgMismatchError):
         component2.create(
             on_click=[test_state.do_something_arg, test_state.do_something]
         )
 
     # # Event Handler types must match
-    with pytest.raises(EventHandlerArgTypeMismatch):
+    with pytest.raises(EventHandlerArgTypeMismatchError):
         component2.create(
             on_user_visited_count_changed=test_state.do_something_with_bool
         )
-    with pytest.raises(EventHandlerArgTypeMismatch):
+    with pytest.raises(EventHandlerArgTypeMismatchError):
         component2.create(on_user_list_changed=test_state.do_something_with_int)
-    with pytest.raises(EventHandlerArgTypeMismatch):
+    with pytest.raises(EventHandlerArgTypeMismatchError):
         component2.create(on_user_list_changed=test_state.do_something_with_list_int)
 
     component2.create(on_open=test_state.do_something_with_int)
@@ -945,15 +948,15 @@ def test_invalid_event_handler_args(component2, test_state):
         )
 
     # lambda signature must match event trigger.
-    with pytest.raises(EventFnArgMismatch):
+    with pytest.raises(EventFnArgMismatchError):
         component2.create(on_click=lambda _: test_state.do_something_arg(1))
 
     # lambda returning EventHandler must match spec
-    with pytest.raises(EventFnArgMismatch):
+    with pytest.raises(EventFnArgMismatchError):
         component2.create(on_click=lambda: test_state.do_something_arg)
 
     # Mixed EventSpec and EventHandler must match spec.
-    with pytest.raises(EventFnArgMismatch):
+    with pytest.raises(EventFnArgMismatchError):
         component2.create(
             on_click=lambda: [
                 test_state.do_something_arg(1),
