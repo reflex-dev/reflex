@@ -1360,8 +1360,11 @@ def resolve_annotation(annotations: dict[str, Any], arg_name: str, spec: ArgsSpe
         The resolved annotation.
     """
     annotation = annotations.get(arg_name)
-    if annotation is None and not isinstance(spec, types.LambdaType):
-        raise MissingAnnotationError(var_name=arg_name)
+    if annotation is None:
+        if not isinstance(spec, types.LambdaType):
+            raise MissingAnnotationError(var_name=arg_name)
+        else:
+            return dict[str, dict]
     return annotation
 
 
