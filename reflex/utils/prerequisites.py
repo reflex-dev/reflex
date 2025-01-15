@@ -330,6 +330,9 @@ def get_and_validate_app(reload: bool = False) -> AppInfo:
 
     Returns:
         The app instance and the app module.
+
+    Raises:
+        RuntimeError: If the app instance is not an instance of rx.App.
     """
     from reflex.app import App
 
