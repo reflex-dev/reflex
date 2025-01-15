@@ -222,7 +222,7 @@ async def state_manager_redis(
     Yields:
         A state manager instance
     """
-    app_module_mock.app = rx.App(state=Root)
+    app_module_mock.app = rx.App(_state=Root)
     state_manager = app_module_mock.app.state_manager
 
     if not isinstance(state_manager, StateManagerRedis):

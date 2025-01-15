@@ -36,7 +36,7 @@ def ConnectionBanner():
             rx.button("Delay", id="delay", on_click=State.delay),
         )
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     app.add_page(index)
 
 

@@ -212,7 +212,7 @@ def test_default_app(app: App):
     """
     assert app.middleware == [HydrateMiddleware()]
     assert app.style == Style()
-    assert app.admin_dash is None
+    assert app._admin_dash is None
 
 
 def test_multiple_states_error(monkeypatch, test_state, redundant_test_state):
@@ -236,14 +236,14 @@ def test_add_page_default_route(app: App, index_page, about_page):
         index_page: The index page.
         about_page: The about page.
     """
-    assert app.pages == {}
-    assert app.unevaluated_pages == {}
+    assert app._pages == {}
+    assert app._unevaluated_pages == {}
     app.add_page(index_page)
     app._compile_page("index")
-    assert app.pages.keys() == {"index"}
+    assert app._pages.keys() == {"index"}
     app.add_page(about_page)
     app._compile_page("about")
-    assert app.pages.keys() == {"index", "about"}
+    assert app._pages.keys() == {"index", "about"}
 
 
 def test_add_page_set_route(app: App, index_page, windows_platform: bool):
@@ -255,10 +255,10 @@ def test_add_page_set_route(app: App, index_page, windows_platform: bool):
         windows_platform: Whether the system is windows.
     """
     route = "test" if windows_platform else "/test"
-    assert app.unevaluated_pages == {}
+    assert app._unevaluated_pages == {}
     app.add_page(index_page, route=route)
     app._compile_page("test")
-    assert app.pages.keys() == {"test"}
+    assert app._pages.keys() == {"test"}
 
 
 def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
@@ -268,18 +268,18 @@ def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
         index_page: The index page.
         windows_platform: Whether the system is windows.
     """
-    app = App(state=EmptyState)
-    assert app.state is not None
+    app = App(_state=EmptyState)
+    assert app._state is not None
     route = "/test/[dynamic]"
-    assert app.unevaluated_pages == {}
+    assert app._unevaluated_pages == {}
     app.add_page(index_page, route=route)
     app._compile_page("test/[dynamic]")
-    assert app.pages.keys() == {"test/[dynamic]"}
-    assert "dynamic" in app.state.computed_vars
-    assert app.state.computed_vars["dynamic"]._deps(objclass=EmptyState) == {
+    assert app._pages.keys() == {"test/[dynamic]"}
+    assert "dynamic" in app._state.computed_vars
+    assert app._state.computed_vars["dynamic"]._deps(objclass=EmptyState) == {
         constants.ROUTER
     }
-    assert constants.ROUTER in app.state()._computed_var_dependencies
+    assert constants.ROUTER in app._state()._computed_var_dependencies
 
 
 def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool):
@@ -291,9 +291,9 @@ def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool)
         windows_platform: Whether the system is windows.
     """
     route = "test\\nested" if windows_platform else "/test/nested"
-    assert app.unevaluated_pages == {}
+    assert app._unevaluated_pages == {}
     app.add_page(index_page, route=route)
-    assert app.unevaluated_pages.keys() == {route.strip(os.path.sep)}
+    assert app._unevaluated_pages.keys() == {route.strip(os.path.sep)}
 
 
 def test_add_page_invalid_api_route(app: App, index_page):
@@ -357,10 +357,10 @@ def test_initialize_with_admin_dashboard(test_model):
     Args:
         test_model: The default model.
     """
-    app = App(admin_dash=AdminDash(models=[test_model]))
-    assert app.admin_dash is not None
-    assert len(app.admin_dash.models) > 0
-    assert app.admin_dash.models[0] == test_model
+    app = App(_admin_dash=AdminDash(models=[test_model]))
+    assert app._admin_dash is not None
+    assert len(app._admin_dash.models) > 0
+    assert app._admin_dash.models[0] == test_model
 
 
 def test_initialize_with_custom_admin_dashboard(
@@ -377,12 +377,12 @@ def test_initialize_with_custom_admin_dashboard(
     """
     custom_auth_provider = test_custom_auth_admin()
     custom_admin = Admin(engine=test_get_engine, auth_provider=custom_auth_provider)
-    app = App(admin_dash=AdminDash(models=[test_model_auth], admin=custom_admin))
-    assert app.admin_dash is not None
-    assert app.admin_dash.admin is not None
-    assert len(app.admin_dash.models) > 0
-    assert app.admin_dash.models[0] == test_model_auth
-    assert app.admin_dash.admin.auth_provider == custom_auth_provider
+    app = App(_admin_dash=AdminDash(models=[test_model_auth], admin=custom_admin))
+    assert app._admin_dash is not None
+    assert app._admin_dash.admin is not None
+    assert len(app._admin_dash.models) > 0
+    assert app._admin_dash.models[0] == test_model_auth
+    assert app._admin_dash.admin.auth_provider == custom_auth_provider
 
 
 def test_initialize_admin_dashboard_with_view_overrides(test_model):
@@ -396,13 +396,13 @@ def test_initialize_admin_dashboard_with_view_overrides(test_model):
         pass
 
     app = App(
-        admin_dash=AdminDash(
+        _admin_dash=AdminDash(
             models=[test_model], view_overrides={test_model: TestModelView}
         )
     )
-    assert app.admin_dash is not None
-    assert app.admin_dash.models == [test_model]
-    assert app.admin_dash.view_overrides[test_model] == TestModelView
+    assert app._admin_dash is not None
+    assert app._admin_dash.models == [test_model]
+    assert app._admin_dash.view_overrides[test_model] == TestModelView
 
 
 @pytest.mark.asyncio
@@ -413,8 +413,8 @@ async def test_initialize_with_state(test_state: Type[ATestState], token: str):
         test_state: The default state.
         token: a Token.
     """
-    app = App(state=test_state)
-    assert app.state == test_state
+    app = App(_state=test_state)
+    assert app._state == test_state
 
     # Get a state for a given token.
     state = await app.state_manager.get_state(_substate_key(token, test_state))
@@ -432,7 +432,7 @@ async def test_set_and_get_state(test_state):
     Args:
         test_state: The default state.
     """
-    app = App(state=test_state)
+    app = App(_state=test_state)
 
     # Create two tokens.
     token1 = str(uuid.uuid4()) + f"_{test_state.get_full_name()}"
@@ -772,7 +772,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
     # The App state must be the "root" of the state tree
     app = App()
     app._enable_state()
-    app.event_namespace.emit = AsyncMock()  # type: ignore
+    app._event_namespace.emit = AsyncMock()  # type: ignore
     current_state = await app.state_manager.get_state(_substate_key(token, state))
     data = b"This is binary data"
 
@@ -827,7 +827,7 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         token: a Token.
     """
     state._tmp_path = tmp_path
-    app = App(state=State)
+    app = App(_state=State)
 
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
@@ -861,7 +861,7 @@ async def test_upload_file_background(state, tmp_path, token):
         token: a Token.
     """
     state._tmp_path = tmp_path
-    app = App(state=State)
+    app = App(_state=State)
 
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
@@ -938,8 +938,8 @@ def test_dynamic_arg_shadow(
     """
     arg_name = "counter"
     route = f"/test/[{arg_name}]"
-    app = app_module_mock.app = App(state=DynamicState)
-    assert app.state is not None
+    app = app_module_mock.app = App(_state=DynamicState)
+    assert app._state is not None
     with pytest.raises(NameError):
         app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
 
@@ -963,7 +963,7 @@ def test_multiple_dynamic_args(
     arg_name = "my_arg"
     route = f"/test/[{arg_name}]"
     route2 = f"/test2/[{arg_name}]"
-    app = app_module_mock.app = App(state=EmptyState)
+    app = app_module_mock.app = App(_state=EmptyState)
     app.add_page(index_page, route=route)
     app.add_page(index_page, route=route2)
 
@@ -990,16 +990,16 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     """
     arg_name = "dynamic"
     route = f"/test/[{arg_name}]"
-    app = app_module_mock.app = App(state=DynamicState)
-    assert app.state is not None
-    assert arg_name not in app.state.vars
+    app = app_module_mock.app = App(_state=DynamicState)
+    assert app._state is not None
+    assert arg_name not in app._state.vars
     app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
-    assert arg_name in app.state.vars
-    assert arg_name in app.state.computed_vars
-    assert app.state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
+    assert arg_name in app._state.vars
+    assert arg_name in app._state.computed_vars
+    assert app._state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
         constants.ROUTER
     }
-    assert constants.ROUTER in app.state()._computed_var_dependencies
+    assert constants.ROUTER in app._state()._computed_var_dependencies
 
     substate_token = _substate_key(token, DynamicState)
     sid = "mock_sid"
@@ -1174,7 +1174,7 @@ async def test_process_events(mocker, token: str):
         "headers": {},
         "ip": "127.0.0.1",
     }
-    app = App(state=GenState)
+    app = App(_state=GenState)
 
     mocker.patch.object(app, "_postprocess", AsyncMock())
     event = Event(
@@ -1220,7 +1220,7 @@ def test_overlay_component(
         overlay_component: The overlay_component to pass to App.
         exp_page_child: The type of the expected child in the page fragment.
     """
-    app = App(state=state, overlay_component=overlay_component)
+    app = App(_state=state, overlay_component=overlay_component)
     app._setup_overlay_component()
     if exp_page_child is None:
         assert app.overlay_component is None
@@ -1243,7 +1243,7 @@ def test_overlay_component(
     # overlay components are wrapped during compile only
     app._compile_page("test")
     app._setup_overlay_component()
-    page = app.pages["test"]
+    page = app._pages["test"]
 
     if exp_page_child is not None:
         assert len(page.children) == 3
@@ -1361,52 +1361,52 @@ def test_app_wrap_priority(compilable_app: tuple[App, Path]):
 def test_app_state_determination():
     """Test that the stateless status of an app is determined correctly."""
     a1 = App()
-    assert a1.state is None
+    assert a1._state is None
 
     # No state, no router, no event handlers.
     a1.add_page(rx.box("Index"), route="/")
-    assert a1.state is None
+    assert a1._state is None
 
     # Add a page with `on_load` enables state.
     a1.add_page(rx.box("About"), route="/about", on_load=rx.console_log(""))
     a1._compile_page("about")
-    assert a1.state is not None
+    assert a1._state is not None
 
     a2 = App()
-    assert a2.state is None
+    assert a2._state is None
 
     # Referencing a state Var enables state.
     a2.add_page(rx.box(rx.text(GenState.value)), route="/")
     a2._compile_page("index")
-    assert a2.state is not None
+    assert a2._state is not None
 
     a3 = App()
-    assert a3.state is None
+    assert a3._state is None
 
     # Referencing router enables state.
     a3.add_page(rx.box(rx.text(State.router.page.full_path)), route="/")
     a3._compile_page("index")
-    assert a3.state is not None
+    assert a3._state is not None
 
     a4 = App()
-    assert a4.state is None
+    assert a4._state is None
 
     a4.add_page(rx.box(rx.button("Click", on_click=rx.console_log(""))), route="/")
-    assert a4.state is None
+    assert a4._state is None
 
     a4.add_page(
         rx.box(rx.button("Click", on_click=DynamicState.on_counter)), route="/page2"
     )
     a4._compile_page("page2")
-    assert a4.state is not None
+    assert a4._state is not None
 
 
 def test_raise_on_state():
     """Test that the state is set."""
     # state kwargs is deprecated, we just make sure the app is created anyway.
-    _app = App(state=State)
-    assert _app.state is not None
-    assert issubclass(_app.state, State)
+    _app = App(_state=State)
+    assert _app._state is not None
+    assert issubclass(_app._state, State)
 
 
 def test_call_app():
@@ -1473,7 +1473,7 @@ def test_add_page_component_returning_tuple():
     app._compile_page("index")
     app._compile_page("page2")
 
-    fragment_wrapper = app.pages["index"].children[0]
+    fragment_wrapper = app._pages["index"].children[0]
     assert isinstance(fragment_wrapper, Fragment)
     first_text = fragment_wrapper.children[0]
     assert isinstance(first_text, Text)
@@ -1483,7 +1483,7 @@ def test_add_page_component_returning_tuple():
     assert str(second_text.children[0].contents) == '"second"'  # type: ignore
 
     # Test page with trailing comma.
-    page2_fragment_wrapper = app.pages["page2"].children[0]
+    page2_fragment_wrapper = app._pages["page2"].children[0]
     assert isinstance(page2_fragment_wrapper, Fragment)
     third_text = page2_fragment_wrapper.children[0]
     assert isinstance(third_text, Text)
@@ -1557,7 +1557,7 @@ def test_app_with_valid_var_dependencies(compilable_app: tuple[App, Path]):
         def bar(self) -> str:
             return "bar"
 
-    app.state = ValidDepState
+    app._state = ValidDepState
     app._compile()
 
 
@@ -1569,7 +1569,7 @@ def test_app_with_invalid_var_dependencies(compilable_app: tuple[App, Path]):
         def bar(self) -> str:
             return "bar"
 
-    app.state = InvalidDepState
+    app._state = InvalidDepState
     with pytest.raises(exceptions.VarDependencyError):
         app._compile()
 
