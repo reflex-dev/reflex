@@ -136,6 +136,23 @@ def load_dynamic_serializer():
 
         module_code_lines.insert(0, "const React = window.__reflex.react;")
 
+        function_line = next(
+            index
+            for index, line in enumerate(module_code_lines)
+            if line.startswith("export default function")
+        )
+
+        module_code_lines = [
+            line
+            for _, line in sorted(
+                enumerate(module_code_lines),
+                key=lambda x: (
+                    not (x[1].startswith("import ") and x[0] < function_line),
+                    x[0],
+                ),
+            )
+        ]
+
         return "\n".join(
             [
                 "//__reflex_evaluate",

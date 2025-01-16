@@ -36,7 +36,7 @@ def LifespanApp():
         print("Lifespan global started.")
         try:
             while True:
-                lifespan_task_global += inc  # pyright: ignore[reportUnboundVariable]
+                lifespan_task_global += inc  # pyright: ignore[reportUnboundVariable, reportPossiblyUnboundVariable]
                 await asyncio.sleep(0.1)
         except asyncio.CancelledError as ce:
             print(f"Lifespan global cancelled: {ce}.")
@@ -45,11 +45,11 @@ def LifespanApp():
     class LifespanState(rx.State):
         interval: int = 100
 
-        @rx.var
+        @rx.var(cache=False)
         def task_global(self) -> int:
             return lifespan_task_global
 
-        @rx.var
+        @rx.var(cache=False)
         def context_global(self) -> int:
             return lifespan_context_global
 

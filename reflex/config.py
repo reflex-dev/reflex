@@ -567,6 +567,9 @@ class EnvironmentVariables:
     # The maximum size of the reflex state in kilobytes.
     REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
 
+    # Whether to use the turbopack bundler.
+    REFLEX_USE_TURBOPACK: EnvVar[bool] = env_var(True)
+
     # Whether to compress the reflex state.
     REFLEX_COMPRESS_STATE: EnvVar[bool] = env_var(False)
 

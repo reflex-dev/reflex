@@ -74,16 +74,16 @@ def DynamicRoute():
     class ArgState(rx.State):
         """The app state."""
 
-        @rx.var
+        @rx.var(cache=False)
         def arg(self) -> int:
             return int(self.arg_str or 0)
 
     class ArgSubState(ArgState):
-        @rx.var(cache=True)
+        @rx.var
         def cached_arg(self) -> int:
             return self.arg
 
-        @rx.var(cache=True)
+        @rx.var
         def cached_arg_str(self) -> str:
             return self.arg_str
 
