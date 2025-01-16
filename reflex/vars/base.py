@@ -559,10 +559,6 @@ class Var(Generic[VAR_TYPE]):
         if isinstance(value, Var):
             return value
 
-        # Try to pull the imports and hooks from contained values.
-        if not isinstance(value, str):
-            return LiteralVar.create(value, _var_data=_var_data)
-
         return LiteralVar.create(value, _var_data=_var_data)
 
     @classmethod

@@ -523,6 +523,7 @@ def deploy(
     extra: dict[str, str] = (
         {"config_path": config_path} if config_path is not None else {}
     )
+
     hosting_cli.deploy(
         app_name=app_name,
         export_fn=lambda zip_dest_dir,
