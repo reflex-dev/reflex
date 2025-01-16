@@ -52,7 +52,23 @@ OTHER_CALLABLE_TYPE = TypeVar(
 )
 
 
-class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
+def type_is_reflex_callable(type_: Any) -> bool:
+    """Check if a type is a ReflexCallable.
+
+    Args:
+        type_: The type to check.
+
+    Returns:
+        True if the type is a ReflexCallable.
+    """
+    return type_ is ReflexCallable or get_origin(type_) is ReflexCallable
+
+
+class FunctionVar(
+    Var[CALLABLE_TYPE],
+    default_type=ReflexCallable[Any, Any],
+    is_subclass=type_is_reflex_callable,
+):
     """Base class for immutable function vars."""
 
     @overload
@@ -304,15 +320,27 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
         if arg_len is not None:
             if len(args) < required_arg_len:
                 raise VarTypeError(
-                    f"Passed {len(args)} arguments, expected at least {required_arg_len} for {str(self)}"
+                    f"Passed {len(args)} arguments, expected at least {required_arg_len} for {self!s}"
                 )
             if len(args) > arg_len:
                 raise VarTypeError(
-                    f"Passed {len(args)} arguments, expected at most {arg_len} for {str(self)}"
+                    f"Passed {len(args)} arguments, expected at most {arg_len} for {self!s}"
                 )
         args = tuple(map(LiteralVar.create, args))
         self._pre_check(*args)
         return_type = self._return_type(*args)
+        if (
+            isinstance(self, (ArgsFunctionOperation, ArgsFunctionOperationBuilder))
+            and self._raw_js_function
+        ):
+            return VarOperationCall.create(
+                FunctionStringVar.create(
+                    self._raw_js_function, _var_type=self._var_type
+                ),
+                *args,
+                _var_type=return_type,
+            ).guess_type()
+
         return VarOperationCall.create(self, *args, _var_type=return_type).guess_type()
 
     def chain(
@@ -412,7 +440,7 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
         Returns:
             True if the function can be called with the given arguments.
         """
-        return tuple()
+        return ()
 
     @overload
     def __get__(self, instance: None, owner: Any) -> FunctionVar[CALLABLE_TYPE]: ...
@@ -588,7 +616,7 @@ def format_args_function_operation(
         [
             (arg if isinstance(arg, str) else arg.to_javascript())
             + (
-                f" = {str(default_value.default)}"
+                f" = {default_value.default!s}"
                 if i < len(self._default_values)
                 and not isinstance(
                     (default_value := self._default_values[i]), inspect.Parameter.empty
@@ -632,10 +660,10 @@ def pre_check_args(
             arg_name = self._args.args[i] if i < len(self._args.args) else None
             if arg_name is not None:
                 raise VarTypeError(
-                    f"Invalid argument {str(arg)} provided to {arg_name} in {self._function_name or 'var operation'}. {validation_message}"
+                    f"Invalid argument {arg!s} provided to {arg_name} in {self._function_name or 'var operation'}. {validation_message}"
                 )
             raise VarTypeError(
-                f"Invalid argument {str(arg)} provided to argument {i} in {self._function_name or 'var operation'}. {validation_message}"
+                f"Invalid argument {arg!s} provided to argument {i} in {self._function_name or 'var operation'}. {validation_message}"
             )
     return self._validators[len(args) :]
 
@@ -679,6 +707,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar[CALLABLE_TYPE]):
     _function_name: str = dataclasses.field(default="")
     _type_computer: Optional[TypeComputer] = dataclasses.field(default=None)
     _explicit_return: bool = dataclasses.field(default=False)
+    _raw_js_function: str | None = dataclasses.field(default=None)
 
     _cached_var_name = cached_property_no_lock(format_args_function_operation)
 
@@ -698,6 +727,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar[CALLABLE_TYPE]):
         function_name: str = "",
         explicit_return: bool = False,
         type_computer: Optional[TypeComputer] = None,
+        _raw_js_function: str | None = None,
         _var_type: GenericType = Callable,
         _var_data: VarData | None = None,
     ):
@@ -712,6 +742,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar[CALLABLE_TYPE]):
             function_name: The name of the function.
             explicit_return: Whether to use explicit return syntax.
             type_computer: A function to compute the return type.
+            _raw_js_function: If provided, it will be used when the operation is being called with all of its arguments at once.
             _var_type: The type of the var.
             _var_data: Additional hooks and imports associated with the Var.
 
@@ -723,6 +754,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar[CALLABLE_TYPE]):
             _var_type=_var_type,
             _var_data=_var_data,
             _args=FunctionArgs(args=tuple(args_names), rest=rest),
+            _raw_js_function=_raw_js_function,
             _default_values=tuple(default_values),
             _function_name=function_name,
             _validators=tuple(validators),
@@ -753,6 +785,7 @@ class ArgsFunctionOperationBuilder(
     _function_name: str = dataclasses.field(default="")
     _type_computer: Optional[TypeComputer] = dataclasses.field(default=None)
     _explicit_return: bool = dataclasses.field(default=False)
+    _raw_js_function: str | None = dataclasses.field(default=None)
 
     _cached_var_name = cached_property_no_lock(format_args_function_operation)
 
@@ -772,6 +805,7 @@ class ArgsFunctionOperationBuilder(
         function_name: str = "",
         explicit_return: bool = False,
         type_computer: Optional[TypeComputer] = None,
+        _raw_js_function: str | None = None,
         _var_type: GenericType = Callable,
         _var_data: VarData | None = None,
     ):
@@ -788,6 +822,7 @@ class ArgsFunctionOperationBuilder(
             type_computer: A function to compute the return type.
             _var_type: The type of the var.
             _var_data: Additional hooks and imports associated with the Var.
+            _raw_js_function: If provided, it will be used when the operation is being called with all of its arguments at once.
 
         Returns:
             The function var.
@@ -797,6 +832,7 @@ class ArgsFunctionOperationBuilder(
             _var_type=_var_type,
             _var_data=_var_data,
             _args=FunctionArgs(args=tuple(args_names), rest=rest),
+            _raw_js_function=_raw_js_function,
             _default_values=tuple(default_values),
             _function_name=function_name,
             _validators=tuple(validators),

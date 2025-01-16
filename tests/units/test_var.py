@@ -307,30 +307,65 @@ def test_basic_operations(TestObj):
     Args:
         TestObj: The test object.
     """
-    assert str(v(1) == v(2)) == "(1 === 2)"
-    assert str(v(1) != v(2)) == "(1 !== 2)"
-    assert str(LiteralNumberVar.create(1) < 2) == "(1 < 2)"
-    assert str(LiteralNumberVar.create(1) <= 2) == "(1 <= 2)"
-    assert str(LiteralNumberVar.create(1) > 2) == "(1 > 2)"
-    assert str(LiteralNumberVar.create(1) >= 2) == "(1 >= 2)"
-    assert str(LiteralNumberVar.create(1) + 2) == "(1 + 2)"
-    assert str(LiteralNumberVar.create(1) - 2) == "(1 - 2)"
-    assert str(LiteralNumberVar.create(1) * 2) == "(1 * 2)"
-    assert str(LiteralNumberVar.create(1) / 2) == "(1 / 2)"
-    assert str(LiteralNumberVar.create(1) // 2) == "Math.floor(1 / 2)"
-    assert str(LiteralNumberVar.create(1) % 2) == "(1 % 2)"
-    assert str(LiteralNumberVar.create(1) ** 2) == "(1 ** 2)"
-    assert str(LiteralNumberVar.create(1) & v(2)) == "(1 && 2)"
-    assert str(LiteralNumberVar.create(1) | v(2)) == "(1 || 2)"
-    assert str(LiteralArrayVar.create([1, 2, 3])[0]) == "[1, 2, 3].at(0)"
+    assert str(v(1) == v(2)) == "(((_lhs, _rhs) => (_lhs === _rhs))(1, 2))"
+    assert str(v(1) != v(2)) == "(((_lhs, _rhs) => (_lhs !== _rhs))(1, 2))"
+    assert (
+        str(LiteralNumberVar.create(1) < 2) == "(((_lhs, _rhs) => (_lhs < _rhs))(1, 2))"
+    )
+    assert (
+        str(LiteralNumberVar.create(1) <= 2)
+        == "(((_lhs, _rhs) => (_lhs <= _rhs))(1, 2))"
+    )
+    assert (
+        str(LiteralNumberVar.create(1) > 2) == "(((_lhs, _rhs) => (_lhs > _rhs))(1, 2))"
+    )
+    assert (
+        str(LiteralNumberVar.create(1) >= 2)
+        == "(((_lhs, _rhs) => (_lhs >= _rhs))(1, 2))"
+    )
+    assert (
+        str(LiteralNumberVar.create(1) + 2) == "(((_lhs, _rhs) => (_lhs + _rhs))(1, 2))"
+    )
+    assert (
+        str(LiteralNumberVar.create(1) - 2) == "(((_lhs, _rhs) => (_lhs - _rhs))(1, 2))"
+    )
+    assert (
+        str(LiteralNumberVar.create(1) * 2) == "(((_lhs, _rhs) => (_lhs * _rhs))(1, 2))"
+    )
+    assert (
+        str(LiteralNumberVar.create(1) / 2) == "(((_lhs, _rhs) => (_lhs / _rhs))(1, 2))"
+    )
+    assert (
+        str(LiteralNumberVar.create(1) // 2)
+        == "(((_lhs, _rhs) => Math.floor(_lhs / _rhs))(1, 2))"
+    )
+    assert (
+        str(LiteralNumberVar.create(1) % 2) == "(((_lhs, _rhs) => (_lhs % _rhs))(1, 2))"
+    )
+    assert (
+        str(LiteralNumberVar.create(1) ** 2)
+        == "(((_lhs, _rhs) => (_lhs ** _rhs))(1, 2))"
+    )
+    assert str(LiteralNumberVar.create(1) & v(2)) == "(((_a, _b) => (_a && _b))(1, 2))"
+    assert str(LiteralNumberVar.create(1) | v(2)) == "(((_a, _b) => (_a || _b))(1, 2))"
+    assert (
+        str(LiteralArrayVar.create([1, 2, 3])[0])
+        == "(((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))([1, 2, 3], ...args)))(0))"
+    )
     assert (
         str(LiteralObjectVar.create({"a": 1, "b": 2})["a"])
         == '({ ["a"] : 1, ["b"] : 2 })["a"]'
     )
-    assert str(v("foo") == v("bar")) == '("foo" === "bar")'
-    assert str(Var(_js_expr="foo") == Var(_js_expr="bar")) == "(foo === bar)"
     assert (
-        str(LiteralVar.create("foo") == LiteralVar.create("bar")) == '("foo" === "bar")'
+        str(v("foo") == v("bar")) == '(((_lhs, _rhs) => (_lhs === _rhs))("foo", "bar"))'
+    )
+    assert (
+        str(Var(_js_expr="foo") == Var(_js_expr="bar"))
+        == "(((_lhs, _rhs) => (_lhs === _rhs))(foo, bar))"
+    )
+    assert (
+        str(LiteralVar.create("foo") == LiteralVar.create("bar"))
+        == '(((_lhs, _rhs) => (_lhs === _rhs))("foo", "bar"))'
     )
     print(Var(_js_expr="foo").to(ObjectVar, TestObj)._var_set_state("state"))
     assert (
@@ -338,33 +373,39 @@ def test_basic_operations(TestObj):
             Var(_js_expr="foo").to(ObjectVar, TestObj)._var_set_state("state").bar
             == LiteralVar.create("bar")
         )
-        == '(state.foo["bar"] === "bar")'
+        == '(((_lhs, _rhs) => (_lhs === _rhs))(state.foo["bar"], "bar"))'
     )
     assert (
         str(Var(_js_expr="foo").to(ObjectVar, TestObj)._var_set_state("state").bar)
         == 'state.foo["bar"]'
     )
-    assert str(abs(LiteralNumberVar.create(1))) == "Math.abs(1)"
-    assert str(LiteralArrayVar.create([1, 2, 3]).length()) == "[1, 2, 3].length"
+    assert str(abs(LiteralNumberVar.create(1))) == "(Math.abs(1))"
+    assert (
+        str(LiteralArrayVar.create([1, 2, 3]).length())
+        == "(((...args) => (((_array) => _array.length)([1, 2, 3], ...args)))())"
+    )
     assert (
         str(LiteralArrayVar.create([1, 2]) + LiteralArrayVar.create([3, 4]))
-        == "[...[1, 2], ...[3, 4]]"
+        == "(((...args) => (((_lhs, _rhs) => [..._lhs, ..._rhs])([1, 2], ...args)))([3, 4]))"
     )
 
     # Tests for reverse operation
     assert (
         str(LiteralArrayVar.create([1, 2, 3]).reverse())
-        == "[1, 2, 3].slice().reverse()"
+        == "(((...args) => (((_array) => _array.slice().reverse())([1, 2, 3], ...args)))())"
     )
     assert (
         str(LiteralArrayVar.create(["1", "2", "3"]).reverse())
-        == '["1", "2", "3"].slice().reverse()'
+        == '(((...args) => (((_array) => _array.slice().reverse())(["1", "2", "3"], ...args)))())'
     )
     assert (
         str(Var(_js_expr="foo")._var_set_state("state").to(list).reverse())
-        == "state.foo.slice().reverse()"
+        == "(((...args) => (((_array) => _array.slice().reverse())(state.foo, ...args)))())"
     )
-    assert str(Var(_js_expr="foo").to(list).reverse()) == "foo.slice().reverse()"
+    assert (
+        str(Var(_js_expr="foo").to(list).reverse())
+        == "(((...args) => (((_array) => _array.slice().reverse())(foo, ...args)))())"
+    )
     assert str(Var(_js_expr="foo", _var_type=str).js_type()) == "(typeof(foo))"
 
 
@@ -389,14 +430,32 @@ def test_basic_operations(TestObj):
     ],
 )
 def test_list_tuple_contains(var, expected):
-    assert str(var.contains(1)) == f"{expected}.includes(1)"
-    assert str(var.contains("1")) == f'{expected}.includes("1")'
-    assert str(var.contains(v(1))) == f"{expected}.includes(1)"
-    assert str(var.contains(v("1"))) == f'{expected}.includes("1")'
+    assert (
+        str(var.contains(1))
+        == f'(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))({expected!s}, ...args)))(1))'
+    )
+    assert (
+        str(var.contains("1"))
+        == f'(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))({expected!s}, ...args)))("1"))'
+    )
+    assert (
+        str(var.contains(v(1)))
+        == f'(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))({expected!s}, ...args)))(1))'
+    )
+    assert (
+        str(var.contains(v("1")))
+        == f'(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))({expected!s}, ...args)))("1"))'
+    )
     other_state_var = Var(_js_expr="other", _var_type=str)._var_set_state("state")
     other_var = Var(_js_expr="other", _var_type=str)
-    assert str(var.contains(other_state_var)) == f"{expected}.includes(state.other)"
-    assert str(var.contains(other_var)) == f"{expected}.includes(other)"
+    assert (
+        str(var.contains(other_state_var))
+        == f'(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))({expected!s}, ...args)))(state.other))'
+    )
+    assert (
+        str(var.contains(other_var))
+        == f'(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))({expected!s}, ...args)))(other))'
+    )
 
 
 class Foo(rx.Base):
@@ -446,15 +505,27 @@ def test_var_types(var, var_type):
     ],
 )
 def test_str_contains(var, expected):
-    assert str(var.contains("1")) == f'{expected}.includes("1")'
-    assert str(var.contains(v("1"))) == f'{expected}.includes("1")'
+    assert (
+        str(var.contains("1"))
+        == f'(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))({expected!s}, ...args)))("1"))'
+    )
+    assert (
+        str(var.contains(v("1")))
+        == f'(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))({expected!s}, ...args)))("1"))'
+    )
     other_state_var = Var(_js_expr="other")._var_set_state("state").to(str)
     other_var = Var(_js_expr="other").to(str)
-    assert str(var.contains(other_state_var)) == f"{expected}.includes(state.other)"
-    assert str(var.contains(other_var)) == f"{expected}.includes(other)"
+    assert (
+        str(var.contains(other_state_var))
+        == f'(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))({expected!s}, ...args)))(state.other))'
+    )
+    assert (
+        str(var.contains(other_var))
+        == f'(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))({expected!s}, ...args)))(other))'
+    )
     assert (
         str(var.contains("1", "hello"))
-        == f'{expected}.some(obj => obj["hello"] === "1")'
+        == f'(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))({expected!s}, ...args)))("1", "hello"))'
     )
 
 
@@ -467,16 +538,32 @@ def test_str_contains(var, expected):
     ],
 )
 def test_dict_contains(var, expected):
-    assert str(var.contains(1)) == f"{expected}.hasOwnProperty(1)"
-    assert str(var.contains("1")) == f'{expected}.hasOwnProperty("1")'
-    assert str(var.contains(v(1))) == f"{expected}.hasOwnProperty(1)"
-    assert str(var.contains(v("1"))) == f'{expected}.hasOwnProperty("1")'
+    assert (
+        str(var.contains(1))
+        == f"(((_object, _key) => _object.hasOwnProperty(_key))({expected!s}, 1))"
+    )
+    assert (
+        str(var.contains("1"))
+        == f'(((_object, _key) => _object.hasOwnProperty(_key))({expected!s}, "1"))'
+    )
+    assert (
+        str(var.contains(v(1)))
+        == f"(((_object, _key) => _object.hasOwnProperty(_key))({expected!s}, 1))"
+    )
+    assert (
+        str(var.contains(v("1")))
+        == f'(((_object, _key) => _object.hasOwnProperty(_key))({expected!s}, "1"))'
+    )
     other_state_var = Var(_js_expr="other")._var_set_state("state").to(str)
     other_var = Var(_js_expr="other").to(str)
     assert (
-        str(var.contains(other_state_var)) == f"{expected}.hasOwnProperty(state.other)"
+        str(var.contains(other_state_var))
+        == f"(((_object, _key) => _object.hasOwnProperty(_key))({expected!s}, state.other))"
     )
-    assert str(var.contains(other_var)) == f"{expected}.hasOwnProperty(other)"
+    assert (
+        str(var.contains(other_var))
+        == f"(((_object, _key) => _object.hasOwnProperty(_key))({expected!s}, other))"
+    )
 
 
 @pytest.mark.parametrize(
@@ -484,7 +571,6 @@ def test_dict_contains(var, expected):
     [
         Var(_js_expr="list", _var_type=List[int]).guess_type(),
         Var(_js_expr="tuple", _var_type=Tuple[int, int]).guess_type(),
-        Var(_js_expr="str", _var_type=str).guess_type(),
     ],
 )
 def test_var_indexing_lists(var):
@@ -494,11 +580,20 @@ def test_var_indexing_lists(var):
         var : The str, list or tuple base var.
     """
     # Test basic indexing.
-    assert str(var[0]) == f"{var._js_expr}.at(0)"
-    assert str(var[1]) == f"{var._js_expr}.at(1)"
+    assert (
+        str(var[0])
+        == f"(((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))({var!s}, ...args)))(0))"
+    )
+    assert (
+        str(var[1])
+        == f"(((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))({var!s}, ...args)))(1))"
+    )
 
     # Test negative indexing.
-    assert str(var[-1]) == f"{var._js_expr}.at(-1)"
+    assert (
+        str(var[-1])
+        == f"(((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))({var!s}, ...args)))(-1))"
+    )
 
 
 @pytest.mark.parametrize(
@@ -532,11 +627,20 @@ def test_var_indexing_str():
     assert str_var[0]._var_type is str
 
     # Test basic indexing.
-    assert str(str_var[0]) == "str.at(0)"
-    assert str(str_var[1]) == "str.at(1)"
+    assert (
+        str(str_var[0])
+        == "(((...args) => (((_string, _index_or_slice) => Array.prototype.join.apply(atSliceOrIndex(_string, _index_or_slice), ['']))(str, ...args)))(0))"
+    )
+    assert (
+        str(str_var[1])
+        == "(((...args) => (((_string, _index_or_slice) => Array.prototype.join.apply(atSliceOrIndex(_string, _index_or_slice), ['']))(str, ...args)))(1))"
+    )
 
     # Test negative indexing.
-    assert str(str_var[-1]) == "str.at(-1)"
+    assert (
+        str(str_var[-1])
+        == "(((...args) => (((_string, _index_or_slice) => Array.prototype.join.apply(atSliceOrIndex(_string, _index_or_slice), ['']))(str, ...args)))(-1))"
+    )
 
 
 @pytest.mark.parametrize(
@@ -651,9 +755,18 @@ def test_var_list_slicing(var):
     Args:
         var : The str, list or tuple base var.
     """
-    assert str(var[:1]) == f"{var._js_expr}.slice(undefined, 1)"
-    assert str(var[1:]) == f"{var._js_expr}.slice(1, undefined)"
-    assert str(var[:]) == f"{var._js_expr}.slice(undefined, undefined)"
+    assert (
+        str(var[:1])
+        == f"(((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))({var!s}, ...args)))([null, 1, null]))"
+    )
+    assert (
+        str(var[1:])
+        == f"(((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))({var!s}, ...args)))([1, null, null]))"
+    )
+    assert (
+        str(var[:])
+        == f"(((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))({var!s}, ...args)))([null, null, null]))"
+    )
 
 
 def test_str_var_slicing():
@@ -665,16 +778,40 @@ def test_str_var_slicing():
     assert str_var[:1]._var_type is str
 
     # Test basic slicing.
-    assert str(str_var[:1]) == 'str.split("").slice(undefined, 1).join("")'
-    assert str(str_var[1:]) == 'str.split("").slice(1, undefined).join("")'
-    assert str(str_var[:]) == 'str.split("").slice(undefined, undefined).join("")'
-    assert str(str_var[1:2]) == 'str.split("").slice(1, 2).join("")'
+    assert (
+        str(str_var[:1])
+        == "(((...args) => (((_string, _index_or_slice) => Array.prototype.join.apply(atSliceOrIndex(_string, _index_or_slice), ['']))(str, ...args)))([null, 1, null]))"
+    )
+    assert (
+        str(str_var[1:])
+        == "(((...args) => (((_string, _index_or_slice) => Array.prototype.join.apply(atSliceOrIndex(_string, _index_or_slice), ['']))(str, ...args)))([1, null, null]))"
+    )
+    assert (
+        str(str_var[:])
+        == "(((...args) => (((_string, _index_or_slice) => Array.prototype.join.apply(atSliceOrIndex(_string, _index_or_slice), ['']))(str, ...args)))([null, null, null]))"
+    )
+    assert (
+        str(str_var[1:2])
+        == "(((...args) => (((_string, _index_or_slice) => Array.prototype.join.apply(atSliceOrIndex(_string, _index_or_slice), ['']))(str, ...args)))([1, 2, null]))"
+    )
 
     # Test negative slicing.
-    assert str(str_var[:-1]) == 'str.split("").slice(undefined, -1).join("")'
-    assert str(str_var[-1:]) == 'str.split("").slice(-1, undefined).join("")'
-    assert str(str_var[:-2]) == 'str.split("").slice(undefined, -2).join("")'
-    assert str(str_var[-2:]) == 'str.split("").slice(-2, undefined).join("")'
+    assert (
+        str(str_var[:-1])
+        == "(((...args) => (((_string, _index_or_slice) => Array.prototype.join.apply(atSliceOrIndex(_string, _index_or_slice), ['']))(str, ...args)))([null, -1, null]))"
+    )
+    assert (
+        str(str_var[-1:])
+        == "(((...args) => (((_string, _index_or_slice) => Array.prototype.join.apply(atSliceOrIndex(_string, _index_or_slice), ['']))(str, ...args)))([-1, null, null]))"
+    )
+    assert (
+        str(str_var[:-2])
+        == "(((...args) => (((_string, _index_or_slice) => Array.prototype.join.apply(atSliceOrIndex(_string, _index_or_slice), ['']))(str, ...args)))([null, -2, null]))"
+    )
+    assert (
+        str(str_var[-2:])
+        == "(((...args) => (((_string, _index_or_slice) => Array.prototype.join.apply(atSliceOrIndex(_string, _index_or_slice), ['']))(str, ...args)))([-2, null, null]))"
+    )
 
 
 def test_dict_indexing():
@@ -966,8 +1103,8 @@ def test_var_operation():
     def add(a: Var[int], b: Var[int]):
         return var_operation_return(js_expression=f"({a} + {b})", var_type=int)
 
-    assert str(add(1, 2)) == "(1 + 2)"
-    assert str(add(4, -9)) == "(4 + -9)"
+    assert str(add(1, 2)) == "(((_a, _b) => (_a + _b))(1, 2))"
+    assert str(add(4, -9)) == "(((_a, _b) => (_a + _b))(4, -9))"
 
     five = LiteralNumberVar.create(5)
     seven = add(2, five)
@@ -978,13 +1115,29 @@ def test_var_operation():
 def test_string_operations():
     basic_string = LiteralStringVar.create("Hello, World!")
 
-    assert str(basic_string.length()) == '"Hello, World!".split("").length'
-    assert str(basic_string.lower()) == '"Hello, World!".toLowerCase()'
-    assert str(basic_string.upper()) == '"Hello, World!".toUpperCase()'
-    assert str(basic_string.strip()) == '"Hello, World!".trim()'
-    assert str(basic_string.contains("World")) == '"Hello, World!".includes("World")'
     assert (
-        str(basic_string.split(" ").join(",")) == '"Hello, World!".split(" ").join(",")'
+        str(basic_string.length())
+        == '(((...args) => (((...arg) => (((_array) => _array.length)((((_string, _sep = "") => isTrue(_sep) ? _string.split(_sep) : [..._string])(...args)))))("Hello, World!", ...args)))())'
+    )
+    assert (
+        str(basic_string.lower())
+        == '(((...args) => (((_string) => String.prototype.toLowerCase.apply(_string))("Hello, World!", ...args)))())'
+    )
+    assert (
+        str(basic_string.upper())
+        == '(((...args) => (((_string) => String.prototype.toUpperCase.apply(_string))("Hello, World!", ...args)))())'
+    )
+    assert (
+        str(basic_string.strip())
+        == '(((...args) => (((_string) => String.prototype.trim.apply(_string))("Hello, World!", ...args)))())'
+    )
+    assert (
+        str(basic_string.contains("World"))
+        == '(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))("Hello, World!", ...args)))("World"))'
+    )
+    assert (
+        str(basic_string.split(" ").join(","))
+        == '(((...args) => (((_array, _sep = "") => _array.join(_sep))((((...args) => (((_string, _sep = "") => isTrue(_sep) ? _string.split(_sep) : [..._string])("Hello, World!", ...args)))(" ")), ...args)))(","))'
     )
 
 
@@ -995,7 +1148,7 @@ def test_all_number_operations():
 
     assert (
         str(complicated_number)
-        == "((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)"
+        == "(((_lhs, _rhs) => (_lhs ** _rhs))((((_lhs, _rhs) => (_lhs % _rhs))((((_lhs, _rhs) => Math.floor(_lhs / _rhs))((((_lhs, _rhs) => (_lhs / _rhs))((((_lhs, _rhs) => (_lhs * _rhs))((((_value) => -(_value))((((_lhs, _rhs) => (_lhs + _rhs))(-5.4, 1)))), 2)), 3)), 2)), 3)), 2))"
     )
 
     even_more_complicated_number = ~(
@@ -1004,14 +1157,20 @@ def test_all_number_operations():
 
     assert (
         str(even_more_complicated_number)
-        == "!(((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) || (2 && Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)))) !== 0))"
+        == "(((_value) => !(_value))((((_lhs, _rhs) => (_lhs !== _rhs))((((_a, _b) => (_a || _b))((Math.abs((Math.floor((((_lhs, _rhs) => (_lhs ** _rhs))((((_lhs, _rhs) => (_lhs % _rhs))((((_lhs, _rhs) => Math.floor(_lhs / _rhs))((((_lhs, _rhs) => (_lhs / _rhs))((((_lhs, _rhs) => (_lhs * _rhs))((((_value) => -(_value))((((_lhs, _rhs) => (_lhs + _rhs))(-5.4, 1)))), 2)), 3)), 2)), 3)), 2)))))), (((_a, _b) => (_a && _b))(2, (((_value) => Math.round(_value))((((_lhs, _rhs) => (_lhs ** _rhs))((((_lhs, _rhs) => (_lhs % _rhs))((((_lhs, _rhs) => Math.floor(_lhs / _rhs))((((_lhs, _rhs) => (_lhs / _rhs))((((_lhs, _rhs) => (_lhs * _rhs))((((_value) => -(_value))((((_lhs, _rhs) => (_lhs + _rhs))(-5.4, 1)))), 2)), 3)), 2)), 3)), 2)))))))), 0))))"
     )
 
-    assert str(LiteralNumberVar.create(5) > False) == "(5 > 0)"
-    assert str(LiteralBooleanVar.create(False) < 5) == "(Number(false) < 5)"
+    assert (
+        str(LiteralNumberVar.create(5) > False)
+        == "(((_lhs, _rhs) => (_lhs > _rhs))(5, 0))"
+    )
+    assert (
+        str(LiteralBooleanVar.create(False) < 5)
+        == "(((_lhs, _rhs) => (_lhs < _rhs))((Number(false)), 5))"
+    )
     assert (
         str(LiteralBooleanVar.create(False) < LiteralBooleanVar.create(True))
-        == "(Number(false) < Number(true))"
+        == "(((_lhs, _rhs) => (_lhs < _rhs))((Number(false)), (Number(true))))"
     )
 
 
@@ -1020,10 +1179,10 @@ def test_all_number_operations():
     [
         (Var.create(False), "false"),
         (Var.create(True), "true"),
-        (Var.create("false"), 'isTrue("false")'),
-        (Var.create([1, 2, 3]), "isTrue([1, 2, 3])"),
-        (Var.create({"a": 1, "b": 2}), 'isTrue(({ ["a"] : 1, ["b"] : 2 }))'),
-        (Var("mysterious_var"), "isTrue(mysterious_var)"),
+        (Var.create("false"), '(isTrue("false"))'),
+        (Var.create([1, 2, 3]), "(isTrue([1, 2, 3]))"),
+        (Var.create({"a": 1, "b": 2}), '(isTrue(({ ["a"] : 1, ["b"] : 2 })))'),
+        (Var("mysterious_var"), "(isTrue(mysterious_var))"),
     ],
 )
 def test_boolify_operations(var, expected):
@@ -1032,18 +1191,30 @@ def test_boolify_operations(var, expected):
 
 def test_index_operation():
     array_var = LiteralArrayVar.create([1, 2, 3, 4, 5])
-    assert str(array_var[0]) == "[1, 2, 3, 4, 5].at(0)"
-    assert str(array_var[1:2]) == "[1, 2, 3, 4, 5].slice(1, 2)"
+    assert (
+        str(array_var[0])
+        == "(((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))([1, 2, 3, 4, 5], ...args)))(0))"
+    )
+    assert (
+        str(array_var[1:2])
+        == "(((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))([1, 2, 3, 4, 5], ...args)))([1, 2, null]))"
+    )
     assert (
         str(array_var[1:4:2])
-        == "[1, 2, 3, 4, 5].slice(1, 4).filter((_, i) => i % 2 === 0)"
+        == "(((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))([1, 2, 3, 4, 5], ...args)))([1, 4, 2]))"
     )
     assert (
         str(array_var[::-1])
-        == "[1, 2, 3, 4, 5].slice(0, [1, 2, 3, 4, 5].length).slice().reverse().slice(undefined, undefined).filter((_, i) => i % 1 === 0)"
+        == "(((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))([1, 2, 3, 4, 5], ...args)))([null, null, -1]))"
     )
-    assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].slice().reverse()"
-    assert str(array_var[0].to(NumberVar) + 9) == "([1, 2, 3, 4, 5].at(0) + 9)"
+    assert (
+        str(array_var.reverse())
+        == "(((...args) => (((_array) => _array.slice().reverse())([1, 2, 3, 4, 5], ...args)))())"
+    )
+    assert (
+        str(array_var[0].to(NumberVar) + 9)
+        == "(((_lhs, _rhs) => (_lhs + _rhs))((((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))([1, 2, 3, 4, 5], ...args)))(0)), 9))"
+    )
 
 
 @pytest.mark.parametrize(
@@ -1065,24 +1236,33 @@ def test_inf_and_nan(var, expected_js):
 def test_array_operations():
     array_var = LiteralArrayVar.create([1, 2, 3, 4, 5])
 
-    assert str(array_var.length()) == "[1, 2, 3, 4, 5].length"
-    assert str(array_var.contains(3)) == "[1, 2, 3, 4, 5].includes(3)"
-    assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].slice().reverse()"
+    assert (
+        str(array_var.length())
+        == "(((...args) => (((_array) => _array.length)([1, 2, 3, 4, 5], ...args)))())"
+    )
+    assert (
+        str(array_var.contains(3))
+        == '(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))([1, 2, 3, 4, 5], ...args)))(3))'
+    )
+    assert (
+        str(array_var.reverse())
+        == "(((...args) => (((_array) => _array.slice().reverse())([1, 2, 3, 4, 5], ...args)))())"
+    )
     assert (
         str(ArrayVar.range(10))
-        == "Array.from({ length: (10 - 0) / 1 }, (_, i) => 0 + i * 1)"
+        == "(((_e1, _e2 = null, _step = 1) => range(_e1, _e2, _step))(10))"
     )
     assert (
         str(ArrayVar.range(1, 10))
-        == "Array.from({ length: (10 - 1) / 1 }, (_, i) => 1 + i * 1)"
+        == "(((_e1, _e2 = null, _step = 1) => range(_e1, _e2, _step))(1, 10))"
     )
     assert (
         str(ArrayVar.range(1, 10, 2))
-        == "Array.from({ length: (10 - 1) / 2 }, (_, i) => 1 + i * 2)"
+        == "(((_e1, _e2 = null, _step = 1) => range(_e1, _e2, _step))(1, 10, 2))"
     )
     assert (
         str(ArrayVar.range(1, 10, -1))
-        == "Array.from({ length: (10 - 1) / -1 }, (_, i) => 1 + i * -1)"
+        == "(((_e1, _e2 = null, _step = 1) => range(_e1, _e2, _step))(1, 10, -1))"
     )
 
 
@@ -1090,21 +1270,21 @@ def test_object_operations():
     object_var = LiteralObjectVar.create({"a": 1, "b": 2, "c": 3})
 
     assert (
-        str(object_var.keys()) == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+        str(object_var.keys()) == '(Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })))'
     )
     assert (
         str(object_var.values())
-        == 'Object.values(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+        == '(Object.values(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })))'
     )
     assert (
         str(object_var.entries())
-        == 'Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+        == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })))'
     )
     assert str(object_var.a) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
     assert str(object_var["a"]) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
     assert (
         str(object_var.merge(LiteralObjectVar.create({"c": 4, "d": 5})))
-        == '({...({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }), ...({ ["c"] : 4, ["d"] : 5 })})'
+        == '(((_lhs, _rhs) => ({..._lhs, ..._rhs}))(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }), ({ ["c"] : 4, ["d"] : 5 })))'
     )
 
 
@@ -1140,23 +1320,27 @@ def test_type_chains():
     )
     assert (
         str(object_var.keys()[0].upper())  # type: ignore
-        == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(0).toUpperCase()'
+        == '(((...args) => (((_string) => String.prototype.toUpperCase.apply(_string))((((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))((Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))), ...args)))(0)), ...args)))())'
     )
     assert (
         str(object_var.entries()[1][1] - 1)  # type: ignore
-        == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(1).at(1) - 1)'
+        == '(((_lhs, _rhs) => (_lhs - _rhs))((((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))((((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))((Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))), ...args)))(1)), ...args)))(1)), 1))'
     )
     assert (
         str(object_var["c"] + object_var["b"])  # type: ignore
-        == '(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["c"] + ({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["b"])'
+        == '(((_lhs, _rhs) => (_lhs + _rhs))(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["c"], ({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["b"]))'
     )
 
 
 def test_nested_dict():
-    arr = LiteralArrayVar.create([{"bar": ["foo", "bar"]}], List[Dict[str, List[str]]])
+    arr = Var.create([{"bar": ["foo", "bar"]}]).to(List[Dict[str, List[str]]])
+    first_dict = arr.at(0)
+    bar_element = first_dict["bar"]
+    first_bar_element = bar_element[0]
 
     assert (
-        str(arr[0]["bar"][0]) == '[({ ["bar"] : ["foo", "bar"] })].at(0)["bar"].at(0)'
+        str(first_bar_element)
+        == '(((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))((((...args) => (((_array, _index) => _array.at(_index))([({ ["bar"] : ["foo", "bar"] })], ...args)))(0))["bar"], ...args)))(0))'
     )
 
 
@@ -1376,7 +1560,7 @@ def test_unsupported_types_for_string_contains(other):
         assert Var(_js_expr="var").to(str).contains(other)
     assert (
         err.value.args[0]
-        == f"Unsupported Operand type(s) for contains: ToStringOperation, {type(other).__name__}"
+        == f"Invalid argument other provided to argument 0 in var operation. Expected <class 'str'> but got {other._var_type}."
     )
 
 
@@ -1608,17 +1792,12 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
             LiteralVar.create([10, 20]),
             LiteralVar.create("5"),
             [
-                "+",
                 "-",
                 "/",
                 "//",
                 "*",
                 "%",
                 "**",
-                ">",
-                "<",
-                "<=",
-                ">=",
                 "^",
                 "<<",
                 ">>",

@@ -447,7 +447,7 @@ class CodeBlock(Component, MarkdownComponentMap):
 
         # react-syntax-highlighter doesn't have an explicit "light" or "dark" theme so we use one-light and one-dark
         # themes respectively to ensure code compatibility.
-        if "theme" in props and not isinstance(props["theme"], Var):
+        if props.get("theme") is not None and not isinstance(props["theme"], Var):
             props["theme"] = getattr(Theme, format.to_snake_case(props["theme"]))  # type: ignore
             console.deprecate(
                 feature_name="theme prop as string",

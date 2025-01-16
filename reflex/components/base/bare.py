@@ -61,13 +61,13 @@ class Bare(Component):
                     hooks |= component._get_all_hooks()
         return hooks
 
-    def _get_all_imports(self) -> ParsedImportDict:
+    def _get_all_imports(self, collapse: bool = False) -> ParsedImportDict:
         """Include the imports for the component.
 
         Returns:
             The imports for the component.
         """
-        imports = super()._get_all_imports()
+        imports = super()._get_all_imports(collapse=collapse)
         if isinstance(self.contents, Var):
             var_data = self.contents._get_all_var_data()
             if var_data:

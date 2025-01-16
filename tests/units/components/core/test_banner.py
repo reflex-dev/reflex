@@ -25,6 +25,7 @@ def test_connection_banner():
             "react",
             "$/utils/context",
             "$/utils/state",
+            "@emotion/react",
             RadixThemesComponent().library or "",
             "$/env.json",
         )
@@ -43,6 +44,7 @@ def test_connection_modal():
             "react",
             "$/utils/context",
             "$/utils/state",
+            "@emotion/react",
             RadixThemesComponent().library or "",
             "$/env.json",
         )

@@ -530,7 +530,9 @@ def number_abs_operation(
         The number absolute operation.
     """
     return var_operation_return(
-        js_expression=f"Math.abs({value})", type_computer=unary_operation_type_computer
+        js_expression=f"Math.abs({value})",
+        type_computer=unary_operation_type_computer,
+        _raw_js_function="Math.abs",
     )
 
 
@@ -657,7 +659,11 @@ def number_floor_operation(value: Var[int | float]):
     Returns:
         The number floor operation.
     """
-    return var_operation_return(js_expression=f"Math.floor({value})", var_type=int)
+    return var_operation_return(
+        js_expression=f"Math.floor({value})",
+        var_type=int,
+        _raw_js_function="Math.floor",
+    )
 
 
 @var_operation
@@ -763,7 +769,9 @@ def boolean_to_number_operation(value: Var[bool]):
     Returns:
         The boolean to number operation.
     """
-    return var_operation_return(js_expression=f"Number({value})", var_type=int)
+    return var_operation_return(
+        js_expression=f"Number({value})", var_type=int, _raw_js_function="Number"
+    )
 
 
 def comparison_operator(
@@ -1002,6 +1010,10 @@ _AT_SLICE_IMPORT: ImportDict = {
     f"$/{Dirs.STATE_PATH}": [ImportVar(tag="atSlice")],
 }
 
+_AT_SLICE_OR_INDEX: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="atSliceOrIndex")],
+}
+
 _RANGE_IMPORT: ImportDict = {
     f"$/{Dirs.UTILS}/helpers/range": [ImportVar(tag="range", is_default=True)],
 }
@@ -1021,6 +1033,7 @@ def boolify(value: Var):
         js_expression=f"isTrue({value})",
         var_type=bool,
         var_data=VarData(imports=_IS_TRUE_IMPORT),
+        _raw_js_function="isTrue",
     )
 
 

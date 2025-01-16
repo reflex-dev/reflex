@@ -51,7 +51,7 @@ from typing_extensions import (
 from reflex import constants
 from reflex.base import Base
 from reflex.constants.compiler import Hooks
-from reflex.utils import console, exceptions, imports, serializers, types
+from reflex.utils import console, imports, serializers, types
 from reflex.utils.exceptions import (
     VarAttributeError,
     VarDependencyError,
@@ -72,6 +72,7 @@ from reflex.utils.types import (
     _isinstance,
     get_origin,
     has_args,
+    infallible_issubclass,
     typehint_issubclass,
     unionize,
 )
@@ -125,8 +126,25 @@ def unwrap_reflex_callalbe(
     """
     if callable_type is ReflexCallable:
         return Ellipsis, Any
-    if get_origin(callable_type) is not ReflexCallable:
+
+    origin = get_origin(callable_type)
+
+    if origin is not ReflexCallable:
+        if origin in types.UnionTypes:
+            args = get_args(callable_type)
+            params: List[ReflexCallableParams] = []
+            return_types: List[GenericType] = []
+            for arg in args:
+                param, return_type = unwrap_reflex_callalbe(arg)
+                if param not in params:
+                    params.append(param)
+                return_types.append(return_type)
+            return (
+                Ellipsis if len(params) > 1 else params[0],
+                unionize(*return_types),
+            )
         return Ellipsis, Any
+
     args = get_args(callable_type)
     if not args or len(args) != 2:
         return Ellipsis, Any
@@ -143,6 +161,7 @@ class VarSubclassEntry:
     var_subclass: Type[Var]
     to_var_subclass: Type[ToOperation]
     python_types: Tuple[GenericType, ...]
+    is_subclass: Callable[[GenericType], bool] | None
 
 
 _var_subclasses: List[VarSubclassEntry] = []
@@ -208,7 +227,7 @@ class VarData:
         object.__setattr__(self, "imports", immutable_imports)
         object.__setattr__(self, "hooks", tuple(hooks or {}))
         object.__setattr__(
-            self, "components", tuple(components) if components is not None else tuple()
+            self, "components", tuple(components) if components is not None else ()
         )
         object.__setattr__(self, "deps", tuple(deps or []))
         object.__setattr__(self, "position", position or None)
@@ -444,6 +463,7 @@ class Var(Generic[VAR_TYPE]):
         cls,
         python_types: Tuple[GenericType, ...] | GenericType = types.Unset(),
         default_type: GenericType = types.Unset(),
+        is_subclass: Callable[[GenericType], bool] | types.Unset = types.Unset(),
         **kwargs,
     ):
         """Initialize the subclass.
@@ -451,11 +471,12 @@ class Var(Generic[VAR_TYPE]):
         Args:
             python_types: The python types that the var represents.
             default_type: The default type of the var. Defaults to the first python type.
+            is_subclass: A function to check if a type is a subclass of the var.
             **kwargs: Additional keyword arguments.
         """
         super().__init_subclass__(**kwargs)
 
-        if python_types or default_type:
+        if python_types or default_type or is_subclass:
             python_types = (
                 (python_types if isinstance(python_types, tuple) else (python_types,))
                 if python_types
@@ -480,7 +501,14 @@ class Var(Generic[VAR_TYPE]):
 
             ToVarOperation.__name__ = f'To{cls.__name__.removesuffix("Var")}Operation'
 
-            _var_subclasses.append(VarSubclassEntry(cls, ToVarOperation, python_types))
+            _var_subclasses.append(
+                VarSubclassEntry(
+                    cls,
+                    ToVarOperation,
+                    python_types,
+                    is_subclass if not isinstance(is_subclass, types.Unset) else None,
+                )
+            )
 
     def __post_init__(self):
         """Post-initialize the var."""
@@ -726,7 +754,12 @@ class Var(Generic[VAR_TYPE]):
 
         # If the first argument is a python type, we map it to the corresponding Var type.
         for var_subclass in _var_subclasses[::-1]:
-            if fixed_output_type in var_subclass.python_types:
+            if (
+                var_subclass.python_types
+                and infallible_issubclass(fixed_output_type, var_subclass.python_types)
+            ) or (
+                var_subclass.is_subclass and var_subclass.is_subclass(fixed_output_type)
+            ):
                 return self.to(var_subclass.var_subclass, output)
 
         if fixed_output_type is None:
@@ -801,12 +834,13 @@ class Var(Generic[VAR_TYPE]):
         Raises:
             TypeError: If the type is not supported for guessing.
         """
-        from .number import NumberVar
         from .object import ObjectVar
 
         var_type = self._var_type
+
         if var_type is None:
             return self.to(None)
+
         if types.is_optional(var_type):
             var_type = types.get_args(var_type)[0]
 
@@ -818,10 +852,15 @@ class Var(Generic[VAR_TYPE]):
         if fixed_type in types.UnionTypes:
             inner_types = get_args(var_type)
 
-            if all(
-                inspect.isclass(t) and issubclass(t, (int, float)) for t in inner_types
-            ):
-                return self.to(NumberVar, self._var_type)
+            for var_subclass in _var_subclasses:
+                if all(
+                    (
+                        infallible_issubclass(t, var_subclass.python_types)
+                        or (var_subclass.is_subclass and var_subclass.is_subclass(t))
+                    )
+                    for t in inner_types
+                ):
+                    return self.to(var_subclass.var_subclass, self._var_type)
 
             if can_use_in_object_var(var_type):
                 return self.to(ObjectVar, self._var_type)
@@ -839,7 +878,9 @@ class Var(Generic[VAR_TYPE]):
             return self.to(None)
 
         for var_subclass in _var_subclasses[::-1]:
-            if issubclass(fixed_type, var_subclass.python_types):
+            if infallible_issubclass(fixed_type, var_subclass.python_types) or (
+                var_subclass.is_subclass and var_subclass.is_subclass(fixed_type)
+            ):
                 return self.to(var_subclass.var_subclass, self._var_type)
 
         if can_use_in_object_var(fixed_type):
@@ -1799,6 +1840,7 @@ def var_operation(
         ),
         function_name=func_name,
         type_computer=custom_operation_return._type_computer,
+        _raw_js_function=custom_operation_return._raw_js_function,
         _var_type=ReflexCallable[
             tuple(
                 arg_python_type
@@ -2541,15 +2583,17 @@ RETURN = TypeVar("RETURN")
 class CustomVarOperationReturn(Var[RETURN]):
     """Base class for custom var operations."""
 
-    _type_computer: Optional[TypeComputer] = dataclasses.field(default=None)
+    _type_computer: TypeComputer | None = dataclasses.field(default=None)
+    _raw_js_function: str | None = dataclasses.field(default=None)
 
     @classmethod
     def create(
         cls,
         js_expression: str,
         _var_type: Type[RETURN] | None = None,
-        _type_computer: Optional[TypeComputer] = None,
+        _type_computer: TypeComputer | None = None,
         _var_data: VarData | None = None,
+        _raw_js_function: str | None = None,
     ) -> CustomVarOperationReturn[RETURN]:
         """Create a CustomVarOperation.
 
@@ -2558,6 +2602,7 @@ class CustomVarOperationReturn(Var[RETURN]):
             _var_type: The type of the var.
             _type_computer: A function to compute the type of the var given the arguments.
             _var_data: Additional hooks and imports associated with the Var.
+            _raw_js_function: If provided, it will be used when the operation is being called with all of its arguments at once.
 
         Returns:
             The CustomVarOperation.
@@ -2567,6 +2612,7 @@ class CustomVarOperationReturn(Var[RETURN]):
             _var_type=_var_type or Any,
             _type_computer=_type_computer,
             _var_data=_var_data,
+            _raw_js_function=_raw_js_function,
         )
 
 
@@ -2575,6 +2621,7 @@ def var_operation_return(
     var_type: Type[RETURN] | None = None,
     type_computer: Optional[TypeComputer] = None,
     var_data: VarData | None = None,
+    _raw_js_function: str | None = None,
 ) -> CustomVarOperationReturn[RETURN]:
     """Shortcut for creating a CustomVarOperationReturn.
 
@@ -2583,6 +2630,7 @@ def var_operation_return(
         var_type: The type of the var.
         type_computer: A function to compute the type of the var given the arguments.
         var_data: Additional hooks and imports associated with the Var.
+        _raw_js_function: If provided, it will be used when the operation is being called with all of its arguments at once.
 
     Returns:
         The CustomVarOperationReturn.
@@ -2592,6 +2640,7 @@ def var_operation_return(
         _var_type=var_type,
         _type_computer=type_computer,
         _var_data=var_data,
+        _raw_js_function=_raw_js_function,
     )
 
 

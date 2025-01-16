@@ -930,6 +930,7 @@ class Component(BaseComponent, ABC):
             children: The children of the component.
 
         """
+        from reflex.components.base.bare import Bare
         from reflex.components.base.fragment import Fragment
         from reflex.components.core.cond import Cond
         from reflex.components.core.foreach import Foreach
@@ -960,6 +961,16 @@ class Component(BaseComponent, ABC):
                 validate_child(child.comp1)
                 validate_child(child.comp2)
 
+            if (
+                isinstance(child, Bare)
+                and child.contents is not None
+                and isinstance(child.contents, Var)
+            ):
+                var_data = child.contents._get_all_var_data()
+                if var_data is not None:
+                    for c in var_data.components:
+                        validate_child(c)
+
             if isinstance(child, Match):
                 for cases in child.match_cases:
                     validate_child(cases[-1])
@@ -970,10 +981,23 @@ class Component(BaseComponent, ABC):
                     f"The component `{comp_name}` cannot have `{child_name}` as a child component"
                 )
 
-            if self._valid_children and child_name not in [
-                *self._valid_children,
-                *allowed_components,
-            ]:
+            valid_children = self._valid_children + allowed_components
+
+            def child_is_in_valid(child):
+                if type(child).__name__ in valid_children:
+                    return True
+
+                if (
+                    not isinstance(child, Bare)
+                    or child.contents is None
+                    or not isinstance(child.contents, Var)
+                    or (var_data := child.contents._get_all_var_data()) is None
+                ):
+                    return False
+
+                return all(child_is_in_valid(c) for c in var_data.components)
+
+            if self._valid_children and not child_is_in_valid(child):
                 valid_child_list = ", ".join(
                     [f"`{v_child}`" for v_child in self._valid_children]
                 )

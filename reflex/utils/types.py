@@ -850,6 +850,22 @@ def safe_issubclass(cls: Any, class_or_tuple: Any, /) -> bool:
         ) from e
 
 
+def infallible_issubclass(cls: Any, class_or_tuple: Any, /) -> bool:
+    """Check if a class is a subclass of another class or a tuple of classes.
+
+    Args:
+        cls: The class to check.
+        class_or_tuple: The class or tuple of classes to check against.
+
+    Returns:
+        Whether the class is a subclass of the other class or tuple of classes.
+    """
+    try:
+        return issubclass(cls, class_or_tuple)
+    except TypeError:
+        return False
+
+
 def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> bool:
     """Check if a type hint is a subclass of another type hint.
 

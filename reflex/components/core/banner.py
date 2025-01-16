@@ -175,6 +175,8 @@ class ConnectionBanner(Component):
         Returns:
             The connection banner component.
         """
+        from reflex.components.base.bare import Bare
+
         if not comp:
             comp = Flex.create(
                 Text.create(
@@ -189,7 +191,7 @@ class ConnectionBanner(Component):
                 position="fixed",
             )
 
-        return cond(has_connection_errors, comp)
+        return Bare.create(cond(has_connection_errors, comp))
 
 
 class ConnectionModal(Component):
@@ -205,18 +207,22 @@ class ConnectionModal(Component):
         Returns:
             The connection banner component.
         """
+        from reflex.components.base.bare import Bare
+
         if not comp:
             comp = Text.create(*default_connection_error())
-        return cond(
-            has_too_many_connection_errors,
-            DialogRoot.create(
-                DialogContent.create(
-                    DialogTitle.create("Connection Error"),
-                    comp,
+        return Bare.create(
+            cond(
+                has_too_many_connection_errors,
+                DialogRoot.create(
+                    DialogContent.create(
+                        DialogTitle.create("Connection Error"),
+                        comp,
+                    ),
+                    open=has_too_many_connection_errors,
+                    z_index=9999,
                 ),
-                open=has_too_many_connection_errors,
-                z_index=9999,
-            ),
+            )
         )
 
 

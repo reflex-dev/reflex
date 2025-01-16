@@ -415,6 +415,7 @@ def object_keys_operation(value: Var):
     return var_operation_return(
         js_expression=f"Object.keys({value})",
         var_type=List[str],
+        _raw_js_function="Object.keys",
     )
 
 
@@ -435,6 +436,7 @@ def object_values_operation(value: Var):
             lambda x: List[x.to(ObjectVar)._value_type()],
         ),
         var_type=List[Any],
+        _raw_js_function="Object.values",
     )
 
 
@@ -456,6 +458,7 @@ def object_entries_operation(value: Var):
             lambda x: List[Tuple[str, x.to(ObjectVar)._value_type()]],
         ),
         var_type=List[Tuple[str, Any]],
+        _raw_js_function="Object.entries",
     )
 
 

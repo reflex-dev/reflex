@@ -432,12 +432,15 @@ def test_default_setters(test_state):
 def test_class_indexing_with_vars():
     """Test that we can index into a state var with another var."""
     prop = TestState.array[TestState.num1]
-    assert str(prop) == f"{TestState.get_name()}.array.at({TestState.get_name()}.num1)"
+    assert (
+        str(prop)
+        == f"(((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))({TestState.get_name()}.array, ...args)))({TestState.get_name()}.num1))"
+    )
 
     prop = TestState.mapping["a"][TestState.num1]
     assert (
         str(prop)
-        == f'{TestState.get_name()}.mapping["a"].at({TestState.get_name()}.num1)'
+        == f'(((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))({TestState.get_name()}.mapping["a"], ...args)))({TestState.get_name()}.num1))'
     )
 
     prop = TestState.mapping[TestState.map_key]

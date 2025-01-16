@@ -300,10 +300,7 @@ export const applyEvent = async (event, socket) => {
 
   // Send the event to the server.
   if (socket) {
-    socket.emit(
-      "event",
-      event,
-    );
+    socket.emit("event", event);
     return true;
   }
 
@@ -410,7 +407,7 @@ export const connect = async (
     autoUnref: false,
   });
   // Ensure undefined fields in events are sent as null instead of removed
-  socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v)
+  socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
 
   function checkVisibility() {
     if (document.visibilityState === "visible") {
@@ -488,7 +485,7 @@ export const uploadFiles = async (
     return false;
   }
 
-  const upload_ref_name = `__upload_controllers_${upload_id}`
+  const upload_ref_name = `__upload_controllers_${upload_id}`;
 
   if (refs[upload_ref_name]) {
     console.log("Upload already in progress for ", upload_id);
@@ -922,6 +919,18 @@ export const atSlice = (arrayLike, slice) => {
     .slice(actualStart, actualEnd)
     .reverse()
     .filter((_, i) => i % step === 0);
+};
+
+/**
+ * Get the value at a slice or index.
+ * @param {Array | string} arrayLike The array to get the value from.
+ * @param {number | [number, number, number]} sliceOrIndex The slice or index to get the value at.
+ * @returns The value at the slice or index.
+ */
+export const atSliceOrIndex = (arrayLike, sliceOrIndex) => {
+  return Array.isArray(sliceOrIndex)
+    ? atSlice(arrayLike, sliceOrIndex)
+    : arrayLike.at(sliceOrIndex);
 };
 
 /**

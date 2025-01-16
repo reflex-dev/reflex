@@ -30,8 +30,7 @@ from reflex.constants.base import REFLEX_VAR_OPENING_TAG
 from reflex.constants.colors import Color
 from reflex.utils.exceptions import VarTypeError
 from reflex.utils.types import GenericType, get_origin
-
-from .base import (
+from reflex.vars.base import (
     CachedVarOperation,
     CustomVarOperationReturn,
     LiteralVar,
@@ -51,8 +50,10 @@ from .base import (
     var_operation,
     var_operation_return,
 )
+
 from .number import (
     _AT_SLICE_IMPORT,
+    _AT_SLICE_OR_INDEX,
     _IS_TRUE_IMPORT,
     _RANGE_IMPORT,
     LiteralNumberVar,
@@ -88,7 +89,7 @@ def string_lt_operation(lhs: Var[str], rhs: Var[str]):
     Returns:
         The string less than operation.
     """
-    return var_operation_return(js_expression=f"{lhs} < {rhs}", var_type=bool)
+    return var_operation_return(js_expression=f"({lhs} < {rhs})", var_type=bool)
 
 
 @var_operation
@@ -102,7 +103,7 @@ def string_gt_operation(lhs: Var[str], rhs: Var[str]):
     Returns:
         The string greater than operation.
     """
-    return var_operation_return(js_expression=f"{lhs} > {rhs}", var_type=bool)
+    return var_operation_return(js_expression=f"({lhs} > {rhs})", var_type=bool)
 
 
 @var_operation
@@ -116,7 +117,7 @@ def string_le_operation(lhs: Var[str], rhs: Var[str]):
     Returns:
         The string less than or equal operation.
     """
-    return var_operation_return(js_expression=f"{lhs} <= {rhs}", var_type=bool)
+    return var_operation_return(js_expression=f"({lhs} <= {rhs})", var_type=bool)
 
 
 @var_operation
@@ -130,7 +131,7 @@ def string_ge_operation(lhs: Var[str], rhs: Var[str]):
     Returns:
         The string greater than or equal operation.
     """
-    return var_operation_return(js_expression=f"{lhs} >= {rhs}", var_type=bool)
+    return var_operation_return(js_expression=f"({lhs} >= {rhs})", var_type=bool)
 
 
 @var_operation
@@ -143,7 +144,11 @@ def string_lower_operation(string: Var[str]):
     Returns:
         The lowercase string.
     """
-    return var_operation_return(js_expression=f"{string}.toLowerCase()", var_type=str)
+    return var_operation_return(
+        js_expression=f"String.prototype.toLowerCase.apply({string})",
+        var_type=str,
+        _raw_js_function="String.prototype.toLowerCase.apply",
+    )
 
 
 @var_operation
@@ -156,7 +161,11 @@ def string_upper_operation(string: Var[str]):
     Returns:
         The uppercase string.
     """
-    return var_operation_return(js_expression=f"{string}.toUpperCase()", var_type=str)
+    return var_operation_return(
+        js_expression=f"String.prototype.toUpperCase.apply({string})",
+        var_type=str,
+        _raw_js_function="String.prototype.toUpperCase.apply",
+    )
 
 
 @var_operation
@@ -169,7 +178,11 @@ def string_strip_operation(string: Var[str]):
     Returns:
         The stripped string.
     """
-    return var_operation_return(js_expression=f"{string}.trim()", var_type=str)
+    return var_operation_return(
+        js_expression=f"String.prototype.trim.apply({string})",
+        var_type=str,
+        _raw_js_function="String.prototype.trim.apply",
+    )
 
 
 @var_operation
@@ -257,6 +270,59 @@ def string_item_operation(string: Var[str], index: Var[int]):
         The item from the string.
     """
     return var_operation_return(js_expression=f"{string}.at({index})", var_type=str)
+
+
+@var_operation
+def string_slice_operation(
+    string: Var[str], slice: Var[slice]
+) -> CustomVarOperationReturn[str]:
+    """Get a slice from a string.
+
+    Args:
+        string: The string.
+        slice: The slice.
+
+    Returns:
+        The sliced string.
+    """
+    return var_operation_return(
+        js_expression=f'atSlice({string}.split(""), {slice}).join("")',
+        type_computer=nary_type_computer(
+            ReflexCallable[[List[str], slice], str],
+            ReflexCallable[[slice], str],
+            computer=lambda args: str,
+        ),
+        var_data=VarData(
+            imports=_AT_SLICE_IMPORT,
+        ),
+    )
+
+
+@var_operation
+def string_index_or_slice_operation(
+    string: Var[str], index_or_slice: Var[Union[int, slice]]
+) -> CustomVarOperationReturn[Union[str, Sequence[str]]]:
+    """Get an item or slice from a string.
+
+    Args:
+        string: The string.
+        index_or_slice: The index or slice.
+
+    Returns:
+        The item or slice from the string.
+    """
+    return var_operation_return(
+        js_expression=f"Array.prototype.join.apply(atSliceOrIndex({string}, {index_or_slice}), [''])",
+        _raw_js_function="atSliceOrIndex",
+        type_computer=nary_type_computer(
+            ReflexCallable[[List[str], Union[int, slice]], str],
+            ReflexCallable[[Union[int, slice]], str],
+            computer=lambda args: str,
+        ),
+        var_data=VarData(
+            imports=_AT_SLICE_OR_INDEX,
+        ),
+    )
 
 
 @var_operation
@@ -454,7 +520,8 @@ def array_item_or_slice_operation(
         The item or slice from the array.
     """
     return var_operation_return(
-        js_expression=f"Array.isArray({index_or_slice}) ? at_slice({array}, {index_or_slice}) : {array}.at({index_or_slice})",
+        js_expression=f"atSliceOrIndex({array}, {index_or_slice})",
+        _raw_js_function="atSliceOrIndex",
         type_computer=nary_type_computer(
             ReflexCallable[[Sequence, Union[int, slice]], Any],
             ReflexCallable[[Union[int, slice]], Any],
@@ -465,7 +532,7 @@ def array_item_or_slice_operation(
             ),
         ),
         var_data=VarData(
-            imports=_AT_SLICE_IMPORT,
+            imports=_AT_SLICE_OR_INDEX,
         ),
     )
 
@@ -1073,7 +1140,11 @@ class StringVar(Var[STRING_TYPE], python_types=str):
 
     __radd__ = reverse_string_concat_operation
 
-    __getitem__ = string_item_operation
+    __getitem__ = string_index_or_slice_operation
+
+    at = string_item_operation
+
+    slice = string_slice_operation
 
     lower = string_lower_operation
 
