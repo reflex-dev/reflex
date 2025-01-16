@@ -1157,7 +1157,7 @@ def test_all_number_operations():
 
     assert (
         str(even_more_complicated_number)
-        == "(((_value) => !(_value))((((_lhs, _rhs) => (_lhs !== _rhs))((((_a, _b) => (_a || _b))((Math.abs((Math.floor((((_lhs, _rhs) => (_lhs ** _rhs))((((_lhs, _rhs) => (_lhs % _rhs))((((_lhs, _rhs) => Math.floor(_lhs / _rhs))((((_lhs, _rhs) => (_lhs / _rhs))((((_lhs, _rhs) => (_lhs * _rhs))((((_value) => -(_value))((((_lhs, _rhs) => (_lhs + _rhs))(-5.4, 1)))), 2)), 3)), 2)), 3)), 2)))))), (((_a, _b) => (_a && _b))(2, (((_value) => Math.round(_value))((((_lhs, _rhs) => (_lhs ** _rhs))((((_lhs, _rhs) => (_lhs % _rhs))((((_lhs, _rhs) => Math.floor(_lhs / _rhs))((((_lhs, _rhs) => (_lhs / _rhs))((((_lhs, _rhs) => (_lhs * _rhs))((((_value) => -(_value))((((_lhs, _rhs) => (_lhs + _rhs))(-5.4, 1)))), 2)), 3)), 2)), 3)), 2)))))))), 0))))"
+        == "(((_value) => !(_value))((isTrue((((_a, _b) => (_a || _b))((Math.abs((Math.floor((((_lhs, _rhs) => (_lhs ** _rhs))((((_lhs, _rhs) => (_lhs % _rhs))((((_lhs, _rhs) => Math.floor(_lhs / _rhs))((((_lhs, _rhs) => (_lhs / _rhs))((((_lhs, _rhs) => (_lhs * _rhs))((((_value) => -(_value))((((_lhs, _rhs) => (_lhs + _rhs))(-5.4, 1)))), 2)), 3)), 2)), 3)), 2)))))), (((_a, _b) => (_a && _b))(2, (((_value) => Math.round(_value))((((_lhs, _rhs) => (_lhs ** _rhs))((((_lhs, _rhs) => (_lhs % _rhs))((((_lhs, _rhs) => Math.floor(_lhs / _rhs))((((_lhs, _rhs) => (_lhs / _rhs))((((_lhs, _rhs) => (_lhs * _rhs))((((_value) => -(_value))((((_lhs, _rhs) => (_lhs + _rhs))(-5.4, 1)))), 2)), 3)), 2)), 3)), 2))))))))))))"
     )
 
     assert (
