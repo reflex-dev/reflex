@@ -102,6 +102,21 @@ class Bare(Component):
                     custom_code |= component._get_all_custom_code()
         return custom_code
 
+    def _get_all_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        """Get the components that should be wrapped in the app.
+
+        Returns:
+            The components that should be wrapped in the app.
+        """
+        app_wrap_components = super()._get_all_app_wrap_components()
+        if isinstance(self.contents, Var):
+            var_data = self.contents._get_all_var_data()
+            if var_data:
+                for component in var_data.components:
+                    if isinstance(component, Component):
+                        app_wrap_components |= component._get_all_app_wrap_components()
+        return app_wrap_components
+
     def _get_all_refs(self) -> set[str]:
         """Get the refs for the children of the component.
 
