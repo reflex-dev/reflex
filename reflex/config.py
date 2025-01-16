@@ -26,7 +26,6 @@ from typing import (
 
 from typing_extensions import Annotated, get_type_hints
 
-from reflex.utils.console import set_log_level
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
 from reflex.utils.types import GenericType, is_union, value_inside_optional
 
@@ -568,6 +567,9 @@ class EnvironmentVariables:
     # The maximum size of the reflex state in kilobytes.
     REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
 
+    # Whether to use the turbopack bundler.
+    REFLEX_USE_TURBOPACK: EnvVar[bool] = env_var(True)
+
 
 environment = EnvironmentVariables()
 
@@ -600,7 +602,6 @@ class Config(Base):
     class Config:
         """Pydantic config for the config."""
 
-        use_enum_values = False
         validate_assignment = True
 
     # The name of the app (should match the name of the app directory).
@@ -719,9 +720,6 @@ class Config(Base):
         kwargs.update(env_kwargs)
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
-
-        # Set the log level for this process
-        set_log_level(self.loglevel)
 
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS

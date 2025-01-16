@@ -1682,3 +1682,7 @@ LUCIDE_ICON_LIST = [
     "zoom_in",
     "zoom_out",
 ]
+LUCIDE_ICON_MAPPING_OVERRIDE = {
+    "grid_2x_2_check": "Grid2x2Check",
+    "grid_2x_2_x": "Grid2x2X",
+}

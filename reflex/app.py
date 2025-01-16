@@ -68,6 +68,7 @@ from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
 from reflex.config import environment, get_config
 from reflex.event import (
+    _EVENT_FIELDS,
     BASE_STATE,
     Event,
     EventHandler,
@@ -330,12 +331,6 @@ class App(MiddlewareMixin, LifespanMixin):
             from reflex.utils.compat import windows_hot_reload_lifespan_hack
 
             self.register_lifespan_task(windows_hot_reload_lifespan_hack)
-
-        # Enable proxying to frontend server.
-        if not environment.REFLEX_BACKEND_ONLY.get():
-            from reflex.proxy import proxy_middleware
-
-            self.register_lifespan_task(proxy_middleware)
 
     def _enable_state(self) -> None:
         """Enable state for the app."""
@@ -1571,9 +1566,7 @@ class EventNamespace(AsyncNamespace):
         """
         fields = data
         # Get the event.
-        event = Event(
-            **{k: v for k, v in fields.items() if k not in ("handler", "event_actions")}
-        )
+        event = Event(**{k: v for k, v in fields.items() if k in _EVENT_FIELDS})
 
         self.token_to_sid[event.token] = sid
         self.sid_to_token[sid] = event.token
