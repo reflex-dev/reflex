@@ -335,7 +335,9 @@ class FunctionVar(
         ):
             return VarOperationCall.create(
                 FunctionStringVar.create(
-                    self._raw_js_function, _var_type=self._var_type
+                    self._raw_js_function,
+                    _var_type=self._var_type,
+                    _var_data=self._get_all_var_data(),
                 ),
                 *args,
                 _var_type=return_type,
