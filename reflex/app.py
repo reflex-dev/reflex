@@ -463,14 +463,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
         Returns:
             The generated component.
-
-        Raises:
-            exceptions.MatchTypeError: If the return types of match cases in rx.match are different.
         """
-        try:
-            return component if isinstance(component, Component) else component()
-        except exceptions.MatchTypeError:
-            raise
+        return component if isinstance(component, Component) else component()
 
     def add_page(
         self,
