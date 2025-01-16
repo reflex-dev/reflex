@@ -560,18 +560,13 @@ def compile_unevaluated_page(
     """
     # Generate the component if it is a callable.
     component = page.component
-    component = (
-        component
-        if isinstance(component, Component)
-        else (Fragment.create(component) if isinstance(component, Var) else component())
-    )
-
-    # unpack components that return tuples in an rx.fragment.
-    if isinstance(component, tuple):
-        component = Fragment.create(*component)
 
     if isinstance(component, Var):
         component = Fragment.create(component)
+    elif isinstance(component, tuple):
+        component = Fragment.create(*component)
+    elif not isinstance(component, Component):
+        component = component()
 
     component._add_style_recursive(style or {}, theme)
 
