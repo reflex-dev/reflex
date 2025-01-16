@@ -3266,7 +3266,7 @@ def and_operation(a: Var | Any, b: Var | Any) -> Var:
     a = Var.create(a)
     b = Var.create(b)
 
-    return _or_func_operation(
+    return _and_func_operation(
         ArgsFunctionOperation.create((), a, _var_type=ReflexCallable[[], a._var_type]),
         ArgsFunctionOperation.create((), b, _var_type=ReflexCallable[[], b._var_type]),
     )
