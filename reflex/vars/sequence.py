@@ -189,20 +189,18 @@ def string_strip_operation(string: Var[str]):
 def string_contains_field_operation(
     haystack: Var[str],
     needle: Var[str],
-    field: VarWithDefault[str] = VarWithDefault(""),
 ):
     """Check if a string contains another string.
 
     Args:
         haystack: The haystack.
         needle: The needle.
-        field: The field to check.
 
     Returns:
         The string contains operation.
     """
     return var_operation_return(
-        js_expression=f"isTrue({field}) ? {haystack}.some(obj => obj[{field}] === {needle}) : {haystack}.some(obj => obj === {needle})",
+        js_expression=f"{haystack}.includes({needle})",
         var_type=bool,
         var_data=VarData(
             imports=_IS_TRUE_IMPORT,
@@ -360,7 +358,7 @@ def array_pluck_operation(
         The reversed array.
     """
     return var_operation_return(
-        js_expression=f"{array}.map(e=>e?.[{field}])",
+        js_expression=f"Array.prototype.map.apply({array}, [e=>e?.[{field}]])",
         var_type=List[Any],
     )
 
@@ -378,7 +376,9 @@ def array_join_operation(
     Returns:
         The joined elements.
     """
-    return var_operation_return(js_expression=f"{array}.join({sep})", var_type=str)
+    return var_operation_return(
+        js_expression=f"Array.prototype.join.apply({array},[{sep}])", var_type=str
+    )
 
 
 @var_operation
@@ -631,7 +631,7 @@ def array_range_operation(
         The range of numbers.
     """
     return var_operation_return(
-        js_expression=f"range({e1}, {e2}, {step})",
+        js_expression=f"[...range({e1}, {e2}, {step})]",
         var_type=List[int],
         var_data=VarData(
             imports=_RANGE_IMPORT,
@@ -769,7 +769,7 @@ def map_array_operation(
         return (ReflexCallable[[], List[args[0]._var_type]], None)
 
     return var_operation_return(
-        js_expression=f"{array}.map({function})",
+        js_expression=f"Array.prototype.map.apply({array}, [{function}])",
         type_computer=nary_type_computer(
             ReflexCallable[[List[Any], ReflexCallable], List[Any]],
             ReflexCallable[[ReflexCallable], List[Any]],
