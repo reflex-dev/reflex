@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Callable, Dict, Iterable, Optional, Tuple, Type, Union
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -538,6 +538,29 @@ def purge_web_pages_dir():
 if TYPE_CHECKING:
     from reflex.app import UnevaluatedPage
 
+    COMPONENT_TYPE = Union[Component, Var, Tuple[Union[Component, Var], ...]]
+    COMPONENT_TYPE_OR_CALLABLE = Union[COMPONENT_TYPE, Callable[[], COMPONENT_TYPE]]
+
+
+def componentify_unevaluated(
+    possible_component: COMPONENT_TYPE_OR_CALLABLE,
+) -> Component:
+    """Convert a possible component to a component.
+
+    Args:
+        possible_component: The possible component to convert.
+
+    Returns:
+        The component.
+    """
+    if isinstance(possible_component, Var):
+        return Fragment.create(possible_component)
+    if isinstance(possible_component, tuple):
+        return Fragment.create(*possible_component)
+    if isinstance(possible_component, Component):
+        return possible_component
+    return componentify_unevaluated(possible_component())
+
 
 def compile_unevaluated_page(
     route: str,
@@ -559,14 +582,7 @@ def compile_unevaluated_page(
         The compiled component and whether state should be enabled.
     """
     # Generate the component if it is a callable.
-    component = page.component
-
-    if isinstance(component, Var):
-        component = Fragment.create(component)
-    elif isinstance(component, tuple):
-        component = Fragment.create(*component)
-    elif not isinstance(component, Component):
-        component = component()
+    component = componentify_unevaluated(page.component)
 
     component._add_style_recursive(style or {}, theme)
 
