@@ -444,7 +444,7 @@ def deploy(
     app_id: str = typer.Option(
         None,
         "--app-id",
-        help="The ID of the App to deploy under.",
+        help="The ID of the App to deploy over.",
     ),
     regions: List[str] = typer.Option(
         [],
