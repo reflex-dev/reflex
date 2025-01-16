@@ -626,7 +626,7 @@ class Var(Generic[VAR_TYPE]):
         if _var_is_local is not None:
             console.deprecate(
                 feature_name="_var_is_local",
-                reason="The _var_is_local argument is not supported for Var."
+                reason="The _var_is_local argument is not supported for Var. "
                 "If you want to create a Var from a raw Javascript expression, use the constructor directly",
                 deprecation_version="0.6.0",
                 removal_version="0.7.0",
@@ -634,7 +634,7 @@ class Var(Generic[VAR_TYPE]):
         if _var_is_string is not None:
             console.deprecate(
                 feature_name="_var_is_string",
-                reason="The _var_is_string argument is not supported for Var."
+                reason="The _var_is_string argument is not supported for Var. "
                 "If you want to create a Var from a raw Javascript expression, use the constructor directly",
                 deprecation_version="0.6.0",
                 removal_version="0.7.0",

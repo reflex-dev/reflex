@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Any, Callable, NoReturn, TypeVar, Union, overl
 from reflex.constants.base import Dirs
 from reflex.utils.exceptions import PrimitiveUnserializableToJSON, VarTypeError
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.utils.types import is_optional
 
 from .base import (
     CustomVarOperationReturn,
@@ -349,7 +348,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("<", (type(self), type(other)))
-        return less_than_operation(self, +other).guess_type()
+        return less_than_operation(+self, +other).guess_type()
 
     def __le__(self, other: number_types) -> BooleanVar:
         """Less than or equal comparison.
@@ -362,7 +361,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("<=", (type(self), type(other)))
-        return less_than_or_equal_operation(self, +other).guess_type()
+        return less_than_or_equal_operation(+self, +other).guess_type()
 
     def __eq__(self, other: Any) -> BooleanVar:
         """Equal comparison.
@@ -374,7 +373,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             The result of the comparison.
         """
         if isinstance(other, NUMBER_TYPES):
-            return equal_operation(self, +other).guess_type()
+            return equal_operation(+self, +other).guess_type()
         return equal_operation(self, other).guess_type()
 
     def __ne__(self, other: Any) -> BooleanVar:
@@ -387,7 +386,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             The result of the comparison.
         """
         if isinstance(other, NUMBER_TYPES):
-            return not_equal_operation(self, +other).guess_type()
+            return not_equal_operation(+self, +other).guess_type()
         return not_equal_operation(self, other).guess_type()
 
     def __gt__(self, other: number_types) -> BooleanVar:
@@ -401,7 +400,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types(">", (type(self), type(other)))
-        return greater_than_operation(self, +other).guess_type()
+        return greater_than_operation(+self, +other).guess_type()
 
     def __ge__(self, other: number_types) -> BooleanVar:
         """Greater than or equal comparison.
@@ -414,17 +413,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types(">=", (type(self), type(other)))
-        return greater_than_or_equal_operation(self, +other).guess_type()
-
-    def bool(self) -> BooleanVar:
-        """Boolean conversion.
-
-        Returns:
-            The boolean value of the number.
-        """
-        if is_optional(self._var_type):
-            return boolify((self != None) & (self != 0)).guess_type()  # noqa: E711
-        return self != 0
+        return greater_than_or_equal_operation(+self, +other).guess_type()
 
     def _is_strict_float(self) -> bool:
         """Check if the number is a float.
