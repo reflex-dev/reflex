@@ -248,8 +248,17 @@ def get_reload_dirs() -> list[str]:
     """
     config = get_config()
     reload_dirs = [config.app_name]
-    if app_module_path := config.app_module_path:
-        reload_dirs.append(str(Path(app_module_path).resolve().parent.parent))
+    if config.app_module is not None and config.app_module.__file__:
+        module_path = Path(config.app_module.__file__).resolve().parent
+        while module_path.parent.name:
+            for parent_file in module_path.parent.iterdir():
+                if parent_file == "__init__.py":
+                    # go up a level to find dir without `__init__.py`
+                    module_path = module_path.parent
+                    break
+            else:
+                break
+        reload_dirs.append(str(module_path))
     return reload_dirs
 
 
