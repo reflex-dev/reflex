@@ -487,7 +487,7 @@ def deploy(
     project_name: Optional[str] = typer.Option(
         None,
         "--project-name",
-        help="The name of the project to deploy under.",
+        help="The name of the project to deploy to.",
     ),
     token: Optional[str] = typer.Option(
         None,
