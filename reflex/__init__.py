@@ -363,3 +363,7 @@ getattr, __dir__, __all__ = lazy_loader.attach(
     submodules=_SUBMODULES,
     submod_attrs=_SUBMOD_ATTRS,
 )
+
+
+def __getattr__(name):
+    return getattr(name)
