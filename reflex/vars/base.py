@@ -30,6 +30,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    ForwardRef,
     Type,
     TypeVar,
     Union,
@@ -759,6 +760,12 @@ class Var(Generic[VAR_TYPE]):
             return self
 
         fixed_type = get_origin(var_type) or var_type
+
+        if isinstance(fixed_type, ForwardRef):
+            try:
+                fixed_type = fixed_type._evaluate(globals(), locals(), set())
+            except Exception:
+                raise TypeError(f"Could not resolve ForwardRef: {fixed_type}")
 
         if fixed_type in types.UnionTypes:
             inner_types = get_args(var_type)
