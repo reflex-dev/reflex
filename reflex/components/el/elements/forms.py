@@ -102,7 +102,7 @@ class Fieldset(Element):
     name: Var[Union[str, int, bool]]
 
 
-def on_submit_event_spec() -> Tuple[Var[Dict[str, Any]]]:
+def on_submit_event_spec() -> Tuple[Var[dict[str, Any]]]:
     """Event handler spec for the on_submit event.
 
     Returns:
@@ -111,7 +111,7 @@ def on_submit_event_spec() -> Tuple[Var[Dict[str, Any]]]:
     return (FORM_DATA,)
 
 
-def on_submit_string_event_spec() -> Tuple[Var[Dict[str, str]]]:
+def on_submit_string_event_spec() -> Tuple[Var[dict[str, str]]]:
     """Event handler spec for the on_submit event.
 
     Returns:

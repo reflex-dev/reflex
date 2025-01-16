@@ -1222,11 +1222,13 @@ def call_event_handler(
         key: The key to pass to the event handler.
 
     Raises:
-        EventHandlerArgTypeMismatchError: If the event handler arguments do not match the event spec.
+        EventHandlerArgTypeMismatchError: If the event handler arguments do not match the event spec. #noqa: DAR402
         TypeError: If the event handler arguments are invalid.
 
     Returns:
         The event spec from calling the event handler.
+
+    #noqa: DAR401
     """
     event_spec_args = parse_args_spec(event_spec)  # type: ignore
 
@@ -1263,6 +1265,13 @@ def call_event_handler(
             ),
         )
     )
+    type_match_found: dict[str, bool] = {}
+    delayed_exceptions: list[EventHandlerArgTypeMismatchError] = []
+
+    try:
+        type_hints_of_provided_callback = get_type_hints(event_callback.fn)
+    except NameError:
+        type_hints_of_provided_callback = {}
 
     if event_spec_return_types:
         event_callback_spec = inspect.getfullargspec(event_callback.fn)
@@ -1276,17 +1285,12 @@ def call_event_handler(
                 arg if get_origin(arg) is not Var else get_args(arg)[0] for arg in args
             ]
 
-            try:
-                type_hints_of_provided_callback = get_type_hints(event_callback.fn)
-            except NameError:
-                type_hints_of_provided_callback = {}
-
-            failed_type_check = False
-
             # check that args of event handler are matching the spec if type hints are provided
             for i, arg in enumerate(event_callback_spec.args[1:]):
                 if arg not in type_hints_of_provided_callback:
                     continue
+
+                type_match_found.setdefault(arg, False)
 
                 try:
                     compare_result = typehint_issubclass(
@@ -1298,13 +1302,18 @@ def call_event_handler(
                     ) from te
 
                 if compare_result:
+                    type_match_found[arg] = True
                     continue
                 else:
-                    raise EventHandlerArgTypeMismatchError(
-                        f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {type_hints_of_provided_callback[arg]} as annotated in {event_callback.fn.__qualname__} instead."
+                    type_match_found[arg] = False
+                    delayed_exceptions.append(
+                        EventHandlerArgTypeMismatchError(
+                            f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {type_hints_of_provided_callback[arg]} as annotated in {event_callback.fn.__qualname__} instead."
+                        )
                     )
 
-            if not failed_type_check:
+            if all(type_match_found.values()):
+                delayed_exceptions.clear()
                 if event_spec_index:
                     args = get_args(event_spec_return_types[0])
 
@@ -1326,7 +1335,10 @@ def call_event_handler(
                         f"Event handler {key} expects ({expect_string}) -> () but got ({given_string}) -> () as annotated in {event_callback.fn.__qualname__} instead. "
                         f"This may lead to unexpected behavior but is intentionally ignored for {key}."
                     )
-                return event_callback(*event_spec_args)
+                break
+
+    if delayed_exceptions:
+        raise delayed_exceptions[0]
 
     return event_callback(*event_spec_args)  # type: ignore
 
