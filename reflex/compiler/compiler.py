@@ -570,6 +570,9 @@ def compile_unevaluated_page(
     if isinstance(component, tuple):
         component = Fragment.create(*component)
 
+    if isinstance(component, Var):
+        component = Fragment.create(component)
+
     component._add_style_recursive(style or {}, theme)
 
     enable_state = False
