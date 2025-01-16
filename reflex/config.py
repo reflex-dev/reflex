@@ -890,7 +890,7 @@ def get_config(reload: bool = False) -> Config:
             return cached_rxconfig.config
 
     with _config_lock:
-        sys_path = sys.path.copy()
+        orig_sys_path = sys.path.copy()
         sys.path.clear()
         sys.path.append(str(Path.cwd()))
         try:
@@ -898,9 +898,14 @@ def get_config(reload: bool = False) -> Config:
             return _get_config()
         except Exception:
             # If the module import fails, try to import with the original sys.path.
-            sys.path.extend(sys_path)
+            sys.path.extend(orig_sys_path)
             return _get_config()
         finally:
+            # Find any entries added to sys.path by rxconfig.py itself.
+            extra_paths = [
+                p for p in sys.path if p not in orig_sys_path and p != str(Path.cwd())
+            ]
             # Restore the original sys.path.
             sys.path.clear()
-            sys.path.extend(sys_path)
+            sys.path.extend(extra_paths)
+            sys.path.extend(orig_sys_path)
