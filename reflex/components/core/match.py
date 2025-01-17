@@ -3,6 +3,8 @@
 import textwrap
 from typing import Any, List, cast
 
+from typing_extensions import Unpack
+
 from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.utils import types
@@ -10,7 +12,7 @@ from reflex.utils.exceptions import MatchTypeError
 from reflex.vars.base import VAR_TYPE, Var
 from reflex.vars.number import MatchOperation
 
-CASE_TYPE = tuple[*tuple[Any, ...], Var[VAR_TYPE] | VAR_TYPE]
+CASE_TYPE = tuple[Unpack[tuple[Any, ...]], Var[VAR_TYPE] | VAR_TYPE]
 
 
 class Match(MemoizationLeaf):
@@ -29,7 +31,9 @@ class Match(MemoizationLeaf):
     def create(
         cls,
         cond: Any,
-        *cases: *tuple[*tuple[CASE_TYPE[VAR_TYPE], ...], Var[VAR_TYPE] | VAR_TYPE],
+        *cases: Unpack[
+            tuple[Unpack[tuple[CASE_TYPE[VAR_TYPE], ...]], Var[VAR_TYPE] | VAR_TYPE]
+        ],
     ) -> Var[VAR_TYPE]:
         """Create a Match Component.
 

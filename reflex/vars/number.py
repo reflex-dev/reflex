@@ -19,6 +19,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import Unpack
+
 from reflex.constants.base import Dirs
 from reflex.utils.exceptions import PrimitiveUnserializableToJSON, VarTypeError
 from reflex.utils.imports import ImportDict, ImportVar
@@ -1069,11 +1071,11 @@ def ternary_operation(
     return value
 
 
-X = tuple[*tuple[Var, ...], str]
+TUPLE_ENDS_IN_VAR = tuple[Unpack[tuple[Var[Any], ...]], Var[VAR_TYPE]]
 
-TUPLE_ENDS_IN_VAR = tuple[*tuple[Var[Any], ...], Var[VAR_TYPE]]
-
-TUPLE_ENDS_IN_VAR_RELAXED = tuple[*tuple[Var[Any] | Any, ...], Var[VAR_TYPE] | VAR_TYPE]
+TUPLE_ENDS_IN_VAR_RELAXED = tuple[
+    Unpack[tuple[Var[Any] | Any, ...]], Var[VAR_TYPE] | VAR_TYPE
+]
 
 
 @dataclasses.dataclass(

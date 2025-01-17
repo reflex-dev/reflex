@@ -33,6 +33,7 @@ from typing_extensions import (
     TypedDict,
     TypeVar,
     TypeVarTuple,
+    Unpack,
     deprecated,
     get_args,
     get_origin,
@@ -627,10 +628,10 @@ EVENT_U = TypeVar("EVENT_U")
 Ts = TypeVarTuple("Ts")
 
 
-class IdentityEventReturn(Generic[*Ts], Protocol):
+class IdentityEventReturn(Generic[Unpack[Ts]], Protocol):
     """Protocol for an identity event return."""
 
-    def __call__(self, *values: *Ts) -> tuple[*Ts]:
+    def __call__(self, *values: Unpack[Ts]) -> tuple[Unpack[Ts]]:
         """Return the input values.
 
         Args:
@@ -656,13 +657,13 @@ def passthrough_event_spec(
 
 @overload
 def passthrough_event_spec(
-    *event_types: *tuple[Type[EVENT_T]],
-) -> IdentityEventReturn[*tuple[Var[EVENT_T], ...]]: ...
+    *event_types: Unpack[tuple[Type[EVENT_T]]],
+) -> IdentityEventReturn[Unpack[tuple[Var[EVENT_T], ...]]]: ...
 
 
 def passthrough_event_spec(  # pyright: ignore[reportInconsistentOverload]
     *event_types: Type[EVENT_T],
-) -> IdentityEventReturn[*tuple[Var[EVENT_T], ...]]:
+) -> IdentityEventReturn[Unpack[tuple[Var[EVENT_T], ...]]]:
     """A helper function that returns the input event as output.
 
     Args:
