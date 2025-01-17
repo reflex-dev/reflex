@@ -848,6 +848,9 @@ def safe_issubclass(cls: Any, class_or_tuple: Any, /) -> bool:
 
     Returns:
         Whether the class is a subclass of the other class or tuple of classes.
+
+    Raises:
+        TypeError: If the arguments are invalid.
     """
     try:
         return issubclass(cls, class_or_tuple)

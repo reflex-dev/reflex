@@ -241,16 +241,8 @@ class VarData:
     def merge(*all: VarData | None) -> VarData | None:
         """Merge multiple var data objects.
 
-        Args:
-            *all: The var data objects to merge.
-
-        Raises:
-            ReflexError: If trying to merge VarData with different positions.
-
         Returns:
             The merged var data object.
-
-        # noqa: DAR102 *all
         """
         all_var_datas = list(filter(None, all))
 

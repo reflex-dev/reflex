@@ -718,6 +718,9 @@ def _generate_namespace_call_functiondef(
 
     Returns:
         The create functiondef node for the ast.
+
+    Raises:
+        TypeError: If the __call__ method does not have a __func__.
     """
     # add the imports needed by get_type_hint later
     type_hint_globals.update(

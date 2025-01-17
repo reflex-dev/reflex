@@ -97,9 +97,6 @@ class Match(MemoizationLeaf):
         Args:
             cases: The match cases.
 
-        Returns:
-            The processed match cases.
-
         Raises:
             ValueError: If the default case is not the last case or the tuple elements are less than 2.
         """
@@ -165,9 +162,6 @@ class Match(MemoizationLeaf):
 
         Returns:
             The match component wrapped in a fragment or the match var.
-
-        Raises:
-            ValueError: If the return types are not vars when creating a match var for Var types.
         """
         return MatchOperation.create(match_cond_var, match_cases, default)
 

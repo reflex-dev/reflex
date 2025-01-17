@@ -64,6 +64,9 @@ class Bare(Component):
     def _get_all_imports(self, collapse: bool = False) -> ParsedImportDict:
         """Include the imports for the component.
 
+        Args:
+            collapse: Whether to collapse the imports.
+
         Returns:
             The imports for the component.
         """
