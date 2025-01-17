@@ -44,7 +44,7 @@ if TYPE_CHECKING:
     from reflex.vars import Var
 
 
-class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
+class Base(BaseModel):
     """The base class subclassed by all Reflex classes.
 
     This class wraps Pydantic and provides common methods such as
