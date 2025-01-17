@@ -1140,9 +1140,9 @@ class MatchOperation(CachedVarOperation, Var[VAR_TYPE]):
         return VarData.merge(
             self._cond._get_all_var_data(),
             *(
-                case._get_all_var_data()
-                for cond_or_return in self._cases
-                for case in cond_or_return
+                cond_or_return._get_all_var_data()
+                for case in self._cases
+                for cond_or_return in case
             ),
             self._default._get_all_var_data(),
             self._var_data,
