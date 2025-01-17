@@ -3451,12 +3451,11 @@ class StateManagerRedis(StateManager):
             RuntimeError: If the state instance doesn't match the state name in the token.
         """
         # Check that we're holding the lock.
-        if (
-            lock_id is not None
-            and await self.redis.get(self._lock_key(token)) != lock_id
-        ):
+        lock_holder = await self.redis.get(self._lock_key(token))
+        if lock_id is not None and lock_holder != lock_id:
             raise LockExpiredError(
-                f"Lock expired for token {token} while processing. Consider increasing "
+                f"Lock expired for token {token} while processing. My lock id {lock_id} != {lock_holder}. "
+                "Consider increasing "
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
                 "or use `@rx.event(background=True)` decorator for long-running tasks."
             )
