@@ -39,7 +39,7 @@ def create_color_var(color):
             create_color_var(
                 rx.color(ColorState.color, ColorState.shade, ColorState.alpha)  # type: ignore
             ),
-            f'("var(--"+{color_state_name!s}.color+"-"+({color_state_name!s}.alpha ? "a" : "")+(((__to_string) => __to_string.toString())({color_state_name!s}.shade))+")")',
+            f'("var(--"+{color_state_name!s}.color+"-"+(((_condition, _if_true, _if_false) => (_condition ? _if_true : _if_false))({color_state_name!s}.alpha, "a", ""))+(((__to_string) => __to_string.toString())({color_state_name!s}.shade))+")")',
             Color,
         ),
         (
@@ -78,11 +78,11 @@ def test_color(color, expected, expected_type: Union[Type[str], Type[Color]]):
     [
         (
             rx.cond(True, rx.color("mint"), rx.color("tomato", 5)),
-            '(true ? "var(--mint-7)" : "var(--tomato-5)")',
+            '((((_condition, _if_true, _if_false) => (_condition ? _if_true : _if_false))(true, (() => "var(--mint-7)"), (() => "var(--tomato-5)")))())',
         ),
         (
             rx.cond(True, rx.color(ColorState.color), rx.color(ColorState.color, 5)),  # type: ignore
-            f'(true ? ("var(--"+{color_state_name!s}.color+"-7)") : ("var(--"+{color_state_name!s}.color+"-5)"))',
+            f'((((_condition, _if_true, _if_false) => (_condition ? _if_true : _if_false))(true, (() => ("var(--"+{color_state_name!s}.color+"-7)")), (() => ("var(--"+{color_state_name!s}.color+"-5)"))))())',
         ),
         (
             rx.match(

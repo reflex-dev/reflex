@@ -7,18 +7,30 @@ import functools
 import json
 import math
 import sys
-from typing import TYPE_CHECKING, Any, Callable, NoReturn, TypeVar, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    NoReturn,
+    Sequence,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from reflex.constants.base import Dirs
 from reflex.utils.exceptions import PrimitiveUnserializableToJSON, VarTypeError
 from reflex.utils.imports import ImportDict, ImportVar
 
 from .base import (
+    VAR_TYPE,
+    CachedVarOperation,
     CustomVarOperationReturn,
     LiteralVar,
     ReflexCallable,
     Var,
     VarData,
+    cached_property_no_lock,
     nary_type_computer,
     passthrough_unary_type_computer,
     unionize,
@@ -1054,6 +1066,118 @@ def ternary_operation(
         ),
     )
     return value
+
+
+TUPLE_ENDS_IN_VAR = (
+    tuple[Var[VAR_TYPE]]
+    | tuple[Var, Var[VAR_TYPE]]
+    | tuple[Var, Var, Var[VAR_TYPE]]
+    | tuple[Var, Var, Var, Var[VAR_TYPE]]
+    | tuple[Var, Var, Var, Var, Var[VAR_TYPE]]
+    | tuple[Var, Var, Var, Var, Var, Var[VAR_TYPE]]
+    | tuple[Var, Var, Var, Var, Var, Var, Var[VAR_TYPE]]
+    | tuple[Var, Var, Var, Var, Var, Var, Var, Var[VAR_TYPE]]
+    | tuple[Var, Var, Var, Var, Var, Var, Var, Var, Var[VAR_TYPE]]
+    | tuple[Var, Var, Var, Var, Var, Var, Var, Var, Var, Var[VAR_TYPE]]
+    | tuple[Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var[VAR_TYPE]]
+    | tuple[Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var[VAR_TYPE]]
+    | tuple[Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var[VAR_TYPE]]
+    | tuple[
+        Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var[VAR_TYPE]
+    ]
+)
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class MatchOperation(CachedVarOperation, Var[VAR_TYPE]):
+    """Base class for immutable match operations."""
+
+    _cond: Var[bool] = dataclasses.field(
+        default_factory=lambda: LiteralBooleanVar.create(True)
+    )
+    _cases: tuple[TUPLE_ENDS_IN_VAR[VAR_TYPE], ...] = dataclasses.field(
+        default_factory=tuple
+    )
+    _default: Var[VAR_TYPE] = dataclasses.field(
+        default_factory=lambda: Var.create(None)
+    )
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """Get the name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        switch_code = f"(() => {{ switch (JSON.stringify({self._cond!s})) {{"
+
+        for case in self._cases:
+            conditions = case[:-1]
+            return_value = case[-1]
+
+            case_conditions = " ".join(
+                [f"case JSON.stringify({condition!s}):" for condition in conditions]
+            )
+            case_code = f"{case_conditions}  return ({return_value!s});  break;"
+            switch_code += case_code
+
+        switch_code += f"default:  return ({self._default!s});  break;"
+        switch_code += "};})()"
+
+        return switch_code
+
+    @cached_property_no_lock
+    def _cached_get_all_var_data(self) -> VarData | None:
+        """Get the VarData for the var.
+
+        Returns:
+            The VarData for the var.
+        """
+        return VarData.merge(
+            self._cond._get_all_var_data(),
+            *(
+                case._get_all_var_data()
+                for cond_or_return in self._cases
+                for case in cond_or_return
+            ),
+            self._default._get_all_var_data(),
+            self._var_data,
+        )
+
+    @classmethod
+    def create(
+        cls,
+        cond: Any,
+        cases: Sequence[Sequence[Any | Var[VAR_TYPE]]],
+        default: Var[VAR_TYPE] | VAR_TYPE,
+        _var_data: VarData | None = None,
+        _var_type: type[VAR_TYPE] | None = None,
+    ):
+        """Create the match operation.
+
+        Args:
+            cond: The condition.
+            cases: The cases.
+            default: The default case.
+            _var_data: Additional hooks and imports associated with the Var.
+            _var_type: The type of the Var.
+
+        Returns:
+            The match operation.
+        """
+        cases = tuple(tuple(Var.create(c) for c in case) for case in cases)
+        return cls(
+            _js_expr="",
+            _var_data=_var_data,
+            _var_type=_var_type,
+            _cond=Var.create(cond),
+            _cases=cases,
+            _default=Var.create(default),
+        )
 
 
 NUMBER_TYPES = (int, float, NumberVar)

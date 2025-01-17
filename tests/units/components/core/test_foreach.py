@@ -128,7 +128,7 @@ def display_colors_set(color):
 def display_nested_list_element(
     element: ArrayVar[Sequence[str]], index: NumberVar[int]
 ):
-    assert element._var_type == Sequence[str]
+    assert element._var_type == List[str]
     assert index._var_type is int
     return box(text(element[index]))
 
