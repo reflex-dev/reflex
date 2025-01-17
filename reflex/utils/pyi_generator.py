@@ -643,13 +643,7 @@ def _generate_component_create_functiondef(
             ),
         ],
         returns=ast.Constant(value=clz.__name__),
-        **(
-            {
-                "lineno": node.lineno,
-            }
-            if node is not None
-            else {}
-        ),
+        lineno=node.lineno if node is not None else None,  # pyright: ignore[reportArgumentType]
     )
     return definition
 
@@ -703,13 +697,7 @@ def _generate_staticmethod_call_functiondef(
                 type_hint_globals,
             )
         ),
-        **(
-            {
-                "lineno": node.lineno,
-            }
-            if node is not None
-            else {}
-        ),
+        lineno=node.lineno if node is not None else None,  # pyright: ignore[reportArgumentType]
     )
     return definition
 
