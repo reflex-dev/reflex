@@ -1995,10 +1995,7 @@ def cv_fget(state: BaseState) -> int:
     ],
 )
 def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
-    @computed_var(
-        deps=deps,
-        cache=True,
-    )
+    @computed_var(deps=deps)
     def test_var(state) -> int:
         return 1
 
@@ -2016,10 +2013,7 @@ def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
 def test_invalid_computed_var_deps(deps: List):
     with pytest.raises(TypeError):
 
-        @computed_var(
-            deps=deps,
-            cache=True,
-        )
+        @computed_var(deps=deps)
         def test_var(state) -> int:
             return 1
 
