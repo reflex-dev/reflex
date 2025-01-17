@@ -15,6 +15,7 @@ from typing import (
     Sequence,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
@@ -1102,7 +1103,7 @@ class MatchOperation(CachedVarOperation, Var[VAR_TYPE]):
     _cases: tuple[TUPLE_ENDS_IN_VAR[VAR_TYPE], ...] = dataclasses.field(
         default_factory=tuple
     )
-    _default: Var[VAR_TYPE] = dataclasses.field(
+    _default: Var[VAR_TYPE] = dataclasses.field(  # pyright: ignore[reportAssignmentType]
         default_factory=lambda: Var.create(None)
     )
 
@@ -1170,11 +1171,14 @@ class MatchOperation(CachedVarOperation, Var[VAR_TYPE]):
             The match operation.
         """
         cond = Var.create(cond)
-        cases = tuple(tuple(Var.create(c) for c in case) for case in cases)
-        default = Var.create(default)
+        cases = cast(
+            tuple[TUPLE_ENDS_IN_VAR[VAR_TYPE], ...],
+            tuple(tuple(Var.create(c) for c in case) for case in cases),
+        )
+        _default = cast(Var[VAR_TYPE], Var.create(default))
         var_type = _var_type or unionize(
             *(case[-1]._var_type for case in cases),
-            default._var_type,
+            _default._var_type,
         )
         return cls(
             _js_expr="",
@@ -1182,7 +1186,7 @@ class MatchOperation(CachedVarOperation, Var[VAR_TYPE]):
             _var_type=var_type,
             _cond=cond,
             _cases=cases,
-            _default=default,
+            _default=_default,
         )
 
 

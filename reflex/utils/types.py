@@ -69,21 +69,21 @@ else:
 
 
 # Potential GenericAlias types for isinstance checks.
-GenericAliasTypes = [_GenericAlias]
+_GenericAliasTypes: list[type] = [_GenericAlias]
 
 with contextlib.suppress(ImportError):
     # For newer versions of Python.
     from types import GenericAlias  # type: ignore
 
-    GenericAliasTypes.append(GenericAlias)
+    _GenericAliasTypes.append(GenericAlias)
 
 with contextlib.suppress(ImportError):
     # For older versions of Python.
     from typing import _SpecialGenericAlias  # type: ignore
 
-    GenericAliasTypes.append(_SpecialGenericAlias)
+    _GenericAliasTypes.append(_SpecialGenericAlias)
 
-GenericAliasTypes = tuple(GenericAliasTypes)
+GenericAliasTypes = tuple(_GenericAliasTypes)
 
 # Potential Union types for isinstance checks (UnionType added in py3.10).
 UnionTypes = (Union, types.UnionType) if hasattr(types, "UnionType") else (Union,)
@@ -181,7 +181,7 @@ def is_generic_alias(cls: GenericType) -> bool:
     return isinstance(cls, GenericAliasTypes)
 
 
-def unionize(*args: GenericType) -> Type:
+def unionize(*args: GenericType) -> GenericType:
     """Unionize the types.
 
     Args:
@@ -415,7 +415,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
 
 
 @lru_cache()
-def get_base_class(cls: GenericType) -> Type:
+def get_base_class(cls: GenericType) -> Type | tuple[Type, ...]:
     """Get the base class of a class.
 
     Args:
@@ -435,7 +435,14 @@ def get_base_class(cls: GenericType) -> Type:
         return type(get_args(cls)[0])
 
     if is_union(cls):
-        return tuple(get_base_class(arg) for arg in get_args(cls))
+        base_classes = []
+        for arg in get_args(cls):
+            sub_base_classes = get_base_class(arg)
+            if isinstance(sub_base_classes, tuple):
+                base_classes.extend(sub_base_classes)
+            else:
+                base_classes.append(sub_base_classes)
+        return tuple(base_classes)
 
     return get_base_class(cls.__origin__) if is_generic_alias(cls) else cls
 
