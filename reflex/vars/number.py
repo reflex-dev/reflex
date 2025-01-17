@@ -1169,14 +1169,20 @@ class MatchOperation(CachedVarOperation, Var[VAR_TYPE]):
         Returns:
             The match operation.
         """
+        cond = Var.create(cond)
         cases = tuple(tuple(Var.create(c) for c in case) for case in cases)
+        default = Var.create(default)
+        var_type = _var_type or unionize(
+            *(case[-1]._var_type for case in cases),
+            default._var_type,
+        )
         return cls(
             _js_expr="",
             _var_data=_var_data,
-            _var_type=_var_type,
-            _cond=Var.create(cond),
+            _var_type=var_type,
+            _cond=cond,
             _cases=cases,
-            _default=Var.create(default),
+            _default=default,
         )
 
 
