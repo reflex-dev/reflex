@@ -346,8 +346,14 @@ def test_basic_operations(TestObj):
         str(LiteralNumberVar.create(1) ** 2)
         == "(((_lhs, _rhs) => (_lhs ** _rhs))(1, 2))"
     )
-    assert str(LiteralNumberVar.create(1) & v(2)) == "(((_a, _b) => (_a && _b))(1, 2))"
-    assert str(LiteralNumberVar.create(1) | v(2)) == "(((_a, _b) => (_a || _b))(1, 2))"
+    assert (
+        str(LiteralNumberVar.create(1) & v(2))
+        == "(((_a, _b) => (_a() && _b()))((() => 1), (() => 2)))"
+    )
+    assert (
+        str(LiteralNumberVar.create(1) | v(2))
+        == "(((_a, _b) => (_a() || _b()))((() => 1), (() => 2)))"
+    )
     assert (
         str(LiteralArrayVar.create([1, 2, 3])[0])
         == "(((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))([1, 2, 3], ...args)))(0))"
@@ -507,25 +513,21 @@ def test_var_types(var, var_type):
 def test_str_contains(var, expected):
     assert (
         str(var.contains("1"))
-        == f'(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))({expected!s}, ...args)))("1"))'
+        == f'(((...args) => (((_haystack, _needle) => _haystack.includes(_needle))({expected!s}, ...args)))("1"))'
     )
     assert (
         str(var.contains(v("1")))
-        == f'(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))({expected!s}, ...args)))("1"))'
+        == f'(((...args) => (((_haystack, _needle) => _haystack.includes(_needle))({expected!s}, ...args)))("1"))'
     )
     other_state_var = Var(_js_expr="other")._var_set_state("state").to(str)
     other_var = Var(_js_expr="other").to(str)
     assert (
         str(var.contains(other_state_var))
-        == f'(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))({expected!s}, ...args)))(state.other))'
+        == f"(((...args) => (((_haystack, _needle) => _haystack.includes(_needle))({expected!s}, ...args)))(state.other))"
     )
     assert (
         str(var.contains(other_var))
-        == f'(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))({expected!s}, ...args)))(other))'
-    )
-    assert (
-        str(var.contains("1", "hello"))
-        == f'(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))({expected!s}, ...args)))("1", "hello"))'
+        == f"(((...args) => (((_haystack, _needle) => _haystack.includes(_needle))({expected!s}, ...args)))(other))"
     )
 
 
@@ -1133,11 +1135,11 @@ def test_string_operations():
     )
     assert (
         str(basic_string.contains("World"))
-        == '(((...args) => (((_haystack, _needle, _field = "") => isTrue(_field) ? _haystack.some(obj => obj[_field] === _needle) : _haystack.some(obj => obj === _needle))("Hello, World!", ...args)))("World"))'
+        == '(((...args) => (((_haystack, _needle) => _haystack.includes(_needle))("Hello, World!", ...args)))("World"))'
     )
     assert (
         str(basic_string.split(" ").join(","))
-        == '(((...args) => (((_array, _sep = "") => _array.join(_sep))((((...args) => (((_string, _sep = "") => isTrue(_sep) ? _string.split(_sep) : [..._string])("Hello, World!", ...args)))(" ")), ...args)))(","))'
+        == '(((...args) => (((_array, _sep = "") => Array.prototype.join.apply(_array,[_sep]))((((...args) => (((_string, _sep = "") => isTrue(_sep) ? _string.split(_sep) : [..._string])("Hello, World!", ...args)))(" ")), ...args)))(","))'
     )
 
 
@@ -1157,7 +1159,7 @@ def test_all_number_operations():
 
     assert (
         str(even_more_complicated_number)
-        == "(((_value) => !(_value))((isTrue((((_a, _b) => (_a || _b))((Math.abs((Math.floor((((_lhs, _rhs) => (_lhs ** _rhs))((((_lhs, _rhs) => (_lhs % _rhs))((((_lhs, _rhs) => Math.floor(_lhs / _rhs))((((_lhs, _rhs) => (_lhs / _rhs))((((_lhs, _rhs) => (_lhs * _rhs))((((_value) => -(_value))((((_lhs, _rhs) => (_lhs + _rhs))(-5.4, 1)))), 2)), 3)), 2)), 3)), 2)))))), (((_a, _b) => (_a && _b))(2, (((_value) => Math.round(_value))((((_lhs, _rhs) => (_lhs ** _rhs))((((_lhs, _rhs) => (_lhs % _rhs))((((_lhs, _rhs) => Math.floor(_lhs / _rhs))((((_lhs, _rhs) => (_lhs / _rhs))((((_lhs, _rhs) => (_lhs * _rhs))((((_value) => -(_value))((((_lhs, _rhs) => (_lhs + _rhs))(-5.4, 1)))), 2)), 3)), 2)), 3)), 2))))))))))))"
+        == "(((_value) => !(_value))((isTrue((((_a, _b) => (_a() || _b()))((() => (Math.abs((Math.floor((((_lhs, _rhs) => (_lhs ** _rhs))((((_lhs, _rhs) => (_lhs % _rhs))((((_lhs, _rhs) => Math.floor(_lhs / _rhs))((((_lhs, _rhs) => (_lhs / _rhs))((((_lhs, _rhs) => (_lhs * _rhs))((((_value) => -(_value))((((_lhs, _rhs) => (_lhs + _rhs))(-5.4, 1)))), 2)), 3)), 2)), 3)), 2))))))), (() => (((_a, _b) => (_a() && _b()))((() => 2), (() => (((_value) => Math.round(_value))((((_lhs, _rhs) => (_lhs ** _rhs))((((_lhs, _rhs) => (_lhs % _rhs))((((_lhs, _rhs) => Math.floor(_lhs / _rhs))((((_lhs, _rhs) => (_lhs / _rhs))((((_lhs, _rhs) => (_lhs * _rhs))((((_value) => -(_value))((((_lhs, _rhs) => (_lhs + _rhs))(-5.4, 1)))), 2)), 3)), 2)), 3)), 2))))))))))))))"
     )
 
     assert (
@@ -1250,19 +1252,19 @@ def test_array_operations():
     )
     assert (
         str(ArrayVar.range(10))
-        == "(((_e1, _e2 = null, _step = 1) => range(_e1, _e2, _step))(10))"
+        == "(((_e1, _e2 = null, _step = 1) => [...range(_e1, _e2, _step)])(10))"
     )
     assert (
         str(ArrayVar.range(1, 10))
-        == "(((_e1, _e2 = null, _step = 1) => range(_e1, _e2, _step))(1, 10))"
+        == "(((_e1, _e2 = null, _step = 1) => [...range(_e1, _e2, _step)])(1, 10))"
     )
     assert (
         str(ArrayVar.range(1, 10, 2))
-        == "(((_e1, _e2 = null, _step = 1) => range(_e1, _e2, _step))(1, 10, 2))"
+        == "(((_e1, _e2 = null, _step = 1) => [...range(_e1, _e2, _step)])(1, 10, 2))"
     )
     assert (
         str(ArrayVar.range(1, 10, -1))
-        == "(((_e1, _e2 = null, _step = 1) => range(_e1, _e2, _step))(1, 10, -1))"
+        == "(((_e1, _e2 = null, _step = 1) => [...range(_e1, _e2, _step)])(1, 10, -1))"
     )
 
 
