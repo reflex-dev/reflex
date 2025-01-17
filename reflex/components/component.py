@@ -740,22 +740,21 @@ class Component(BaseComponent, ABC):
         # Import here to avoid circular imports.
         from reflex.components.base.bare import Bare
         from reflex.components.base.fragment import Fragment
-        from reflex.utils.exceptions import ComponentTypeError
+        from reflex.utils.exceptions import ChildrenTypeError
 
         # Filter out None props
         props = {key: value for key, value in props.items() if value is not None}
 
         def validate_children(children):
             for child in children:
-                if isinstance(child, tuple):
+                if isinstance(child, (tuple, list)):
                     validate_children(child)
+
                 # Make sure the child is a valid type.
-                if not types._isinstance(child, ComponentChild):
-                    raise ComponentTypeError(
-                        "Children of Reflex components must be other components, "
-                        "state vars, or primitive Python types. "
-                        f"Got child {child} of type {type(child)}.",
-                    )
+                if isinstance(child, dict) or not types._isinstance(
+                    child, ComponentChild
+                ):
+                    raise ChildrenTypeError(component=cls.__name__, child=child)
 
         # Validate all the children.
         validate_children(children)

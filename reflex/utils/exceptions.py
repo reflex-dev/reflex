@@ -1,6 +1,6 @@
 """Custom Exceptions."""
 
-from typing import NoReturn
+from typing import Any, NoReturn
 
 
 class ReflexError(Exception):
@@ -29,6 +29,22 @@ class EnvVarValueError(ReflexError, ValueError):
 
 class ComponentTypeError(ReflexError, TypeError):
     """Custom TypeError for component related errors."""
+
+
+class ChildrenTypeError(ComponentTypeError):
+    """Raised when the children prop of a component is not a valid type."""
+
+    def __init__(self, component: str, child: Any):
+        """Initialize the exception.
+
+        Args:
+            component: The name of the component.
+            child: The child that caused the error.
+        """
+        super().__init__(
+            f"Component {component} received child {child} of type {type(child)}. "
+            "Accepted types are other components, state vars, or primitive Python types (dict excluded)."
+        )
 
 
 class EventHandlerTypeError(ReflexError, TypeError):
