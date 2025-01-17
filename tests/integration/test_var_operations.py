@@ -19,25 +19,27 @@ def VarOperations():
     from reflex.vars.sequence import ArrayVar
 
     class Object(rx.Base):
-        str: str = "hello"
+        name: str = "hello"
 
     class VarOperationState(rx.State):
-        int_var1: int = 10
-        int_var2: int = 5
-        int_var3: int = 7
-        float_var1: float = 10.5
-        float_var2: float = 5.5
-        list1: List = [1, 2]
-        list2: List = [3, 4]
-        list3: List = ["first", "second", "third"]
-        list4: List = [Object(name="obj_1"), Object(name="obj_2")]
-        str_var1: str = "first"
-        str_var2: str = "second"
-        str_var3: str = "ThIrD"
-        str_var4: str = "a long string"
-        dict1: Dict[int, int] = {1: 2}
-        dict2: Dict[int, int] = {3: 4}
-        html_str: str = "<div>hello</div>"
+        int_var1: rx.Field[int] = rx.field(10)
+        int_var2: rx.Field[int] = rx.field(5)
+        int_var3: rx.Field[int] = rx.field(7)
+        float_var1: rx.Field[float] = rx.field(10.5)
+        float_var2: rx.Field[float] = rx.field(5.5)
+        list1: rx.Field[List[int]] = rx.field([1, 2])
+        list2: rx.Field[List[int]] = rx.field([3, 4])
+        list3: rx.Field[List[str]] = rx.field(["first", "second", "third"])
+        list4: rx.Field[List[Object]] = rx.field(
+            [Object(name="obj_1"), Object(name="obj_2")]
+        )
+        str_var1: rx.Field[str] = rx.field("first")
+        str_var2: rx.Field[str] = rx.field("second")
+        str_var3: rx.Field[str] = rx.field("ThIrD")
+        str_var4: rx.Field[str] = rx.field("a long string")
+        dict1: rx.Field[Dict[int, int]] = rx.field({1: 2})
+        dict2: rx.Field[Dict[int, int]] = rx.field({3: 4})
+        html_str: rx.Field[str] = rx.field("<div>hello</div>")
 
     app = rx.App(state=rx.State)
 

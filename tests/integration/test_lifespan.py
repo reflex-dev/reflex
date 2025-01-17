@@ -22,9 +22,9 @@ def LifespanApp():
 
     @asynccontextmanager
     async def lifespan_context(app, inc: int = 1):
-        global lifespan_context_global
+        nonlocal lifespan_context_global
         print(f"Lifespan context entered: {app}.")
-        lifespan_context_global += inc  # pyright: ignore[reportUnboundVariable]
+        lifespan_context_global += inc
         try:
             yield
         finally:
@@ -32,11 +32,11 @@ def LifespanApp():
             lifespan_context_global += inc
 
     async def lifespan_task(inc: int = 1):
-        global lifespan_task_global
+        nonlocal lifespan_task_global
         print("Lifespan global started.")
         try:
             while True:
-                lifespan_task_global += inc  # pyright: ignore[reportUnboundVariable]
+                lifespan_task_global += inc
                 await asyncio.sleep(0.1)
         except asyncio.CancelledError as ce:
             print(f"Lifespan global cancelled: {ce}.")

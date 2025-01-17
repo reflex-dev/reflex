@@ -67,7 +67,7 @@ def test_match_vars(cases, expected):
         cases: The match cases.
         expected: The expected var full name.
     """
-    match_comp = Match.create(MatchState.value, *cases)
+    match_comp = Match.create(MatchState.value, *cases)  # pyright: ignore[reportCallIssue]
     assert isinstance(match_comp, Var)
     assert str(match_comp) == expected
 
@@ -131,7 +131,7 @@ def test_match_default_not_last_arg(match_case):
         ValueError,
         match="rx.match should have tuples of cases and a default case as the last argument.",
     ):
-        Match.create(MatchState.value, *match_case)
+        Match.create(MatchState.value, *match_case)  # pyright: ignore[reportCallIssue]
 
 
 @pytest.mark.parametrize(
@@ -161,7 +161,7 @@ def test_match_case_tuple_elements(match_case):
         ValueError,
         match="A case tuple should have at least a match case element and a return value.",
     ):
-        Match.create(MatchState.value, *match_case)
+        Match.create(MatchState.value, *match_case)  # pyright: ignore[reportCallIssue]
 
 
 @pytest.mark.parametrize(
@@ -203,7 +203,7 @@ def test_match_different_return_types(cases: Tuple, error_msg: str):
         error_msg: Expected error message.
     """
     with pytest.raises(MatchTypeError, match=error_msg):
-        Match.create(MatchState.value, *cases)
+        Match.create(MatchState.value, *cases)  # pyright: ignore[reportCallIssue]
 
 
 @pytest.mark.parametrize(
@@ -235,9 +235,9 @@ def test_match_multiple_default_cases(match_case):
         match_case: the cases to match.
     """
     with pytest.raises(ValueError, match="rx.match can only have one default case."):
-        Match.create(MatchState.value, *match_case)
+        Match.create(MatchState.value, *match_case)  # pyright: ignore[reportCallIssue]
 
 
 def test_match_no_cond():
     with pytest.raises(ValueError):
-        _ = Match.create(None)
+        _ = Match.create(None)  # pyright: ignore[reportCallIssue]

@@ -28,9 +28,11 @@ def TestEventAction():
         def on_click2(self):
             self.order.append("on_click2")
 
+        @rx.event
         def on_click_throttle(self):
             self.order.append("on_click_throttle")
 
+        @rx.event
         def on_click_debounce(self):
             self.order.append("on_click_debounce")
 

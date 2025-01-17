@@ -1069,24 +1069,11 @@ def ternary_operation(
     return value
 
 
-TUPLE_ENDS_IN_VAR = (
-    tuple[Var[VAR_TYPE]]
-    | tuple[Var, Var[VAR_TYPE]]
-    | tuple[Var, Var, Var[VAR_TYPE]]
-    | tuple[Var, Var, Var, Var[VAR_TYPE]]
-    | tuple[Var, Var, Var, Var, Var[VAR_TYPE]]
-    | tuple[Var, Var, Var, Var, Var, Var[VAR_TYPE]]
-    | tuple[Var, Var, Var, Var, Var, Var, Var[VAR_TYPE]]
-    | tuple[Var, Var, Var, Var, Var, Var, Var, Var[VAR_TYPE]]
-    | tuple[Var, Var, Var, Var, Var, Var, Var, Var, Var[VAR_TYPE]]
-    | tuple[Var, Var, Var, Var, Var, Var, Var, Var, Var, Var[VAR_TYPE]]
-    | tuple[Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var[VAR_TYPE]]
-    | tuple[Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var[VAR_TYPE]]
-    | tuple[Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var[VAR_TYPE]]
-    | tuple[
-        Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var, Var[VAR_TYPE]
-    ]
-)
+X = tuple[*tuple[Var, ...], str]
+
+TUPLE_ENDS_IN_VAR = tuple[*tuple[Var[Any], ...], Var[VAR_TYPE]]
+
+TUPLE_ENDS_IN_VAR_RELAXED = tuple[*tuple[Var[Any] | Any, ...], Var[VAR_TYPE] | VAR_TYPE]
 
 
 @dataclasses.dataclass(
@@ -1153,7 +1140,7 @@ class MatchOperation(CachedVarOperation, Var[VAR_TYPE]):
     def create(
         cls,
         cond: Any,
-        cases: Sequence[Sequence[Any | Var[VAR_TYPE]]],
+        cases: Sequence[TUPLE_ENDS_IN_VAR_RELAXED[VAR_TYPE]],
         default: Var[VAR_TYPE] | VAR_TYPE,
         _var_data: VarData | None = None,
         _var_type: type[VAR_TYPE] | None = None,
@@ -1175,6 +1162,7 @@ class MatchOperation(CachedVarOperation, Var[VAR_TYPE]):
             tuple[TUPLE_ENDS_IN_VAR[VAR_TYPE], ...],
             tuple(tuple(Var.create(c) for c in case) for case in cases),
         )
+
         _default = cast(Var[VAR_TYPE], Var.create(default))
         var_type = _var_type or unionize(
             *(case[-1]._var_type for case in cases),

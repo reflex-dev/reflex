@@ -17,6 +17,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Union,
@@ -120,8 +121,8 @@ class TestState(BaseState):
     num2: float = 3.14
     key: str
     map_key: str = "a"
-    array: List[float] = [1, 2, 3.14]
-    mapping: Dict[str, List[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
+    array: rx.Field[List[float]] = rx.field([1, 2, 3.14])
+    mapping: rx.Field[Dict[str, List[int]]] = rx.field({"a": [1, 2, 3], "b": [4, 5, 6]})
     obj: Object = Object()
     complex: Dict[int, Object] = {1: Object(), 2: Object()}
     fig: Figure = Figure()
@@ -1357,6 +1358,7 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
     class HandlerState(BaseState):
         x: int = 42
 
+        @rx.event
         def handler(self):
             self.x = self.x + 1
 
@@ -1367,11 +1369,11 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
             counter += 1
             return counter
 
+    assert isinstance(HandlerState.handler, EventHandler)
     if use_partial:
-        HandlerState.handler = functools.partial(HandlerState.handler.fn)
+        partial_guy = functools.partial(HandlerState.handler.fn)
+        HandlerState.handler = partial_guy  # pyright: ignore[reportAttributeAccessIssue]
         assert isinstance(HandlerState.handler, functools.partial)
-    else:
-        assert isinstance(HandlerState.handler, EventHandler)
 
     s = HandlerState()
     assert "cached_x_side_effect" in s._computed_var_dependencies["x"]
@@ -2025,8 +2027,11 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
 
     # ensure state update was emitted
     assert mock_app.event_namespace is not None
-    mock_app.event_namespace.emit.assert_called_once()
-    mcall = mock_app.event_namespace.emit.mock_calls[0]
+    mock_app.event_namespace.emit.assert_called_once()  # pyright: ignore[reportFunctionMemberAccess]
+    mock_calls = getattr(mock_app.event_namespace.emit, "mock_calls", None)
+    assert mock_calls is not None
+    assert isinstance(mock_calls, Sequence)
+    mcall = mock_calls[0]
     assert mcall.args[0] == str(SocketEvent.EVENT)
     assert mcall.args[1] == StateUpdate(
         delta={
@@ -2231,7 +2236,11 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     assert mock_app.event_namespace is not None
     emit_mock = mock_app.event_namespace.emit
 
-    first_ws_message = emit_mock.mock_calls[0].args[1]
+    mock_calls = getattr(emit_mock, "mock_calls", None)
+    assert mock_calls is not None
+    assert isinstance(mock_calls, Sequence)
+
+    first_ws_message = mock_calls[0].args[1]
     assert (
         first_ws_message.delta[BackgroundTaskState.get_full_name()].pop("router")
         is not None
@@ -2246,7 +2255,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         events=[],
         final=True,
     )
-    for call in emit_mock.mock_calls[1:5]:
+    for call in mock_calls[1:5]:
         assert call.args[1] == StateUpdate(
             delta={
                 BackgroundTaskState.get_full_name(): {
@@ -2256,7 +2265,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
             events=[],
             final=True,
         )
-    assert emit_mock.mock_calls[-2].args[1] == StateUpdate(
+    assert mock_calls[-2].args[1] == StateUpdate(
         delta={
             BackgroundTaskState.get_full_name(): {
                 "order": exp_order,
@@ -2267,7 +2276,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         events=[],
         final=True,
     )
-    assert emit_mock.mock_calls[-1].args[1] == StateUpdate(
+    assert mock_calls[-1].args[1] == StateUpdate(
         delta={
             BackgroundTaskState.get_full_name(): {
                 "computed_order": exp_order,

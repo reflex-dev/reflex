@@ -45,7 +45,7 @@ from .base import (
 from .number import BooleanVar, NumberVar, raise_unsupported_operand_types
 from .sequence import ArrayVar, StringVar
 
-OBJECT_TYPE = TypeVar("OBJECT_TYPE")
+OBJECT_TYPE = TypeVar("OBJECT_TYPE", covariant=True)
 
 KEY_TYPE = TypeVar("KEY_TYPE")
 VALUE_TYPE = TypeVar("VALUE_TYPE")
@@ -164,7 +164,8 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
 
     @overload
     def __getitem__(
-        self: ObjectVar[Dict[Any, Sequence[ARRAY_INNER_TYPE]]],
+        self: ObjectVar[Dict[Any, Sequence[ARRAY_INNER_TYPE]]]
+        | ObjectVar[Dict[Any, List[ARRAY_INNER_TYPE]]],
         key: Var | Any,
     ) -> ArrayVar[Sequence[ARRAY_INNER_TYPE]]: ...
 

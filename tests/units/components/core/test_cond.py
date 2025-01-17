@@ -13,7 +13,7 @@ from reflex.vars.base import LiteralVar, Var, computed_var
 @pytest.fixture
 def cond_state(request):
     class CondState(BaseState):
-        value: request.param["value_type"] = request.param["value"]  # noqa
+        value: request.param["value_type"] = request.param["value"]  # pyright: ignore[reportInvalidTypeForm, reportUndefinedVariable]  # noqa: F821
 
     return CondState
 

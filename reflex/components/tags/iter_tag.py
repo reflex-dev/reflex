@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Tuple, Type, Union, get_args
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Tuple, Union, get_args
 
 from reflex.components.tags.tag import Tag
+from reflex.utils import types
 from reflex.vars import LiteralArrayVar, Var, get_unique_variable_name
 
 if TYPE_CHECKING:
@@ -31,7 +32,7 @@ class IterTag(Tag):
     # The name of the index var.
     index_var_name: str = dataclasses.field(default_factory=get_unique_variable_name)
 
-    def get_iterable_var_type(self) -> Type:
+    def get_iterable_var_type(self) -> types.GenericType:
         """Get the type of the iterable var.
 
         Returns:
@@ -41,10 +42,10 @@ class IterTag(Tag):
         try:
             if iterable._var_type.mro()[0] is dict:
                 # Arg is a tuple of (key, value).
-                return Tuple[get_args(iterable._var_type)]  # type: ignore
+                return Tuple[get_args(iterable._var_type)]
             elif iterable._var_type.mro()[0] is tuple:
                 # Arg is a union of any possible values in the tuple.
-                return Union[get_args(iterable._var_type)]  # type: ignore
+                return Union[get_args(iterable._var_type)]
             else:
                 return get_args(iterable._var_type)[0]
         except Exception:
