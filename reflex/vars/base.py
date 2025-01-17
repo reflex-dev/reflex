@@ -51,7 +51,7 @@ from typing_extensions import (
 from reflex import constants
 from reflex.base import Base
 from reflex.constants.compiler import Hooks
-from reflex.utils import console, imports, serializers, types
+from reflex.utils import console, exceptions, imports, serializers, types
 from reflex.utils.exceptions import (
     VarAttributeError,
     VarDependencyError,
@@ -243,6 +243,9 @@ class VarData:
 
         Returns:
             The merged var data object.
+
+        Raises:
+            ReflexError: If the positions of the var data objects are different.
         """
         all_var_datas = list(filter(None, all))
 
@@ -271,15 +274,36 @@ class VarData:
             *(var_data.imports for var_data in all_var_datas)
         )
 
+        deps = [dep for var_data in all_var_datas for dep in var_data.deps]
+
+        positions = list(
+            {
+                var_data.position
+                for var_data in all_var_datas
+                if var_data.position is not None
+            }
+        )
+
         components = tuple(
             component for var_data in all_var_datas for component in var_data.components
         )
+
+        if positions:
+            if len(positions) > 1:
+                raise exceptions.ReflexError(
+                    f"Cannot merge var data with different positions: {positions}"
+                )
+            position = positions[0]
+        else:
+            position = None
 
         return VarData(
             state=state,
             field_name=field_name,
             imports=_imports,
             hooks=hooks,
+            deps=deps,
+            position=position,
             components=components,
         )
 
