@@ -18,7 +18,7 @@ from .components.icon_button import IconButton
 DEFAULT_LIGHT_ICON: Icon
 DEFAULT_DARK_ICON: Icon
 
-def icon(
+def color_mode_icon(
     light_component: BaseComponent | None = None,
     dark_component: BaseComponent | None = None,
 ): ...
@@ -403,7 +403,7 @@ class ColorModeSwitch(Switch):
         ...
 
 class ColorModeNamespace(Var):
-    icon = icon
+    icon = color_mode_icon
     button = staticmethod(ColorModeIconButton.create)
     switch = staticmethod(ColorModeSwitch.create)
 
