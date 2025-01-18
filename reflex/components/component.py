@@ -931,7 +931,6 @@ class Component(BaseComponent, ABC):
         """
         from reflex.components.base.bare import Bare
         from reflex.components.base.fragment import Fragment
-        from reflex.components.core.foreach import Foreach
 
         no_valid_parents_defined = all(child._valid_parents == [] for child in children)
         if (
@@ -942,7 +941,7 @@ class Component(BaseComponent, ABC):
             return
 
         comp_name = type(self).__name__
-        allowed_components = [comp.__name__ for comp in (Fragment, Foreach)]
+        allowed_components = [comp.__name__ for comp in (Fragment,)]
 
         def validate_child(child):
             child_name = type(child).__name__
@@ -1974,8 +1973,6 @@ class StatefulComponent(BaseComponent):
         Returns:
             The stateful component or None if the component should not be memoized.
         """
-        from reflex.components.core.foreach import Foreach
-
         if component._memoization_mode.disposition == MemoizationDisposition.NEVER:
             # Never memoize this component.
             return None
@@ -2004,10 +2001,6 @@ class StatefulComponent(BaseComponent):
                 # Skip BaseComponent and StatefulComponent children.
                 if not isinstance(child, Component):
                     continue
-                # Always consider Foreach something that must be memoized by the parent.
-                if isinstance(child, Foreach):
-                    should_memoize = True
-                    break
                 child = cls._child_var(child)
                 if isinstance(child, Var) and child._get_all_var_data():
                     should_memoize = True
@@ -2057,12 +2050,9 @@ class StatefulComponent(BaseComponent):
             The Var from the child component or the child itself (for regular cases).
         """
         from reflex.components.base.bare import Bare
-        from reflex.components.core.foreach import Foreach
 
         if isinstance(child, Bare):
             return child.contents
-        if isinstance(child, Foreach):
-            return child.iterable
         return child
 
     @classmethod

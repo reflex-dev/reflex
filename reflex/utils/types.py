@@ -890,12 +890,23 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
     Returns:
         Whether the type hint is a subclass of the other type hint.
     """
+    if isinstance(possible_subclass, Sequence) and isinstance(
+        possible_superclass, Sequence
+    ):
+        return all(
+            typehint_issubclass(subclass, superclass)
+            for subclass, superclass in zip(possible_subclass, possible_superclass)
+        )
     if possible_subclass is possible_superclass:
         return True
     if possible_superclass is Any:
         return True
     if possible_subclass is Any:
         return False
+    if isinstance(
+        possible_subclass, (TypeVar, typing_extensions.TypeVar)
+    ) or isinstance(possible_superclass, (TypeVar, typing_extensions.TypeVar)):
+        return True
 
     provided_type_origin = get_origin(possible_subclass)
     accepted_type_origin = get_origin(possible_superclass)

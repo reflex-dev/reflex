@@ -25,7 +25,6 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
     "debounce": ["DebounceInput", "debounce_input"],
     "foreach": [
         "foreach",
-        "Foreach",
     ],
     "html": ["html", "Html"],
     "match": [

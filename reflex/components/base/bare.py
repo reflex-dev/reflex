@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import Any, Iterator
 
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentStyle
 from reflex.components.tags import Tag
 from reflex.components.tags.tagless import Tagless
 from reflex.utils.imports import ParsedImportDict
 from reflex.vars import BooleanVar, ObjectVar, Var
-from reflex.vars.base import VarData
+from reflex.vars.base import VarData, get_var_caching, set_var_caching
 
 
 class Bare(Component):
@@ -140,6 +140,31 @@ class Bare(Component):
                 return Tagless(contents=f"{{{self.contents.to_string()!s}}}")
             return Tagless(contents=f"{{{self.contents!s}}}")
         return Tagless(contents=str(self.contents))
+
+    def _add_style_recursive(
+        self, style: ComponentStyle, theme: Component | None = None
+    ) -> Component:
+        """Add style to the component and its children.
+
+        Args:
+            style: The style to add.
+            theme: The theme to add.
+
+        Returns:
+            The component with the style added.
+        """
+        new_self = super()._add_style_recursive(style, theme)
+        if isinstance(self.contents, Var):
+            var_data = self.contents._get_all_var_data()
+            if var_data:
+                for component in var_data.components:
+                    if isinstance(component, Component):
+                        component._add_style_recursive(style, theme)
+        if get_var_caching():
+            set_var_caching(False)
+            str(new_self)
+            set_var_caching(True)
+        return new_self
 
     def _get_vars(
         self, include_children: bool = False, ignore_ids: set[int] | None = None

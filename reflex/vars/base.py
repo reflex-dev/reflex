@@ -151,6 +151,28 @@ def unwrap_reflex_callalbe(
     return args
 
 
+_VAR_CACHING = True
+
+
+def get_var_caching() -> bool:
+    """Get the var caching status.
+
+    Returns:
+        The var caching status.
+    """
+    return _VAR_CACHING
+
+
+def set_var_caching(value: bool):
+    """Set the var caching status.
+
+    Args:
+        value: The value to set the var caching status to.
+    """
+    global _VAR_CACHING
+    _VAR_CACHING = value
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
@@ -1185,6 +1207,25 @@ class Var(Generic[VAR_TYPE]):
             The var.
         """
         return self
+
+    def __getattribute__(self, name: str) -> Any:
+        """Get an attribute of the var.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute.
+        """
+        if not _VAR_CACHING:
+            try:
+                self_dict = object.__getattribute__(self, "__dict__")
+                for key in self_dict:
+                    if key.startswith("_cached_"):
+                        del self_dict[key]
+            except Exception:
+                pass
+        return super().__getattribute__(name)
 
     def __getattr__(self, name: str):
         """Get an attribute of the var.

@@ -21,7 +21,6 @@ from .cond import color_mode_cond as color_mode_cond
 from .cond import cond as cond
 from .debounce import DebounceInput as DebounceInput
 from .debounce import debounce_input as debounce_input
-from .foreach import Foreach as Foreach
 from .foreach import foreach as foreach
 from .html import Html as Html
 from .html import html as html

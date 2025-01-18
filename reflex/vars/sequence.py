@@ -741,7 +741,8 @@ if TYPE_CHECKING:
 def map_array_operation(
     array: Var[Sequence[INNER_ARRAY_VAR]],
     function: Var[
-        ReflexCallable[[INNER_ARRAY_VAR], ANOTHER_ARRAY_VAR]
+        ReflexCallable[[INNER_ARRAY_VAR, int], ANOTHER_ARRAY_VAR]
+        | ReflexCallable[[INNER_ARRAY_VAR], ANOTHER_ARRAY_VAR]
         | ReflexCallable[[], ANOTHER_ARRAY_VAR]
     ],
 ) -> CustomVarOperationReturn[Sequence[ANOTHER_ARRAY_VAR]]:
@@ -973,7 +974,8 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
 
     def foreach(
         self: ArrayVar[Sequence[INNER_ARRAY_VAR]],
-        fn: Callable[[Var[INNER_ARRAY_VAR]], ANOTHER_ARRAY_VAR]
+        fn: Callable[[Var[INNER_ARRAY_VAR], NumberVar[int]], ANOTHER_ARRAY_VAR]
+        | Callable[[Var[INNER_ARRAY_VAR]], ANOTHER_ARRAY_VAR]
         | Callable[[], ANOTHER_ARRAY_VAR],
     ) -> ArrayVar[Sequence[ANOTHER_ARRAY_VAR]]:
         """Apply a function to each element of the array.
@@ -987,21 +989,36 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
         Raises:
             VarTypeError: If the function takes more than one argument.
         """
+        from reflex.state import ComponentState
+
         from .function import ArgsFunctionOperation
 
         if not callable(fn):
             raise_unsupported_operand_types("foreach", (type(self), type(fn)))
         # get the number of arguments of the function
         num_args = len(inspect.signature(fn).parameters)
-        if num_args > 1:
+        if num_args > 2:
             raise VarTypeError(
-                "The function passed to foreach should take at most one argument."
+                "The function passed to foreach should take at most two arguments."
+            )
+
+        if (
+            hasattr(fn, "__qualname__")
+            and fn.__qualname__ == ComponentState.create.__qualname__
+        ):
+            raise TypeError(
+                "Using a ComponentState as `render_fn` inside `rx.foreach` is not supported yet."
             )
 
         if num_args == 0:
-            return_value = fn()  # type: ignore
+            fn_result = fn()  # pyright: ignore [reportCallIssue]
+            return_value = Var.create(fn_result)
             simple_function_var: FunctionVar[ReflexCallable[[], ANOTHER_ARRAY_VAR]] = (
-                ArgsFunctionOperation.create((), return_value)
+                ArgsFunctionOperation.create(
+                    (),
+                    return_value,
+                    _var_type=ReflexCallable[[], return_value._var_type],
+                )
             )
             return map_array_operation(self, simple_function_var).guess_type()
 
@@ -1021,11 +1038,40 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
             ).guess_type(),
         )
 
+        if num_args == 1:
+            fn_result = fn(first_arg)  # pyright: ignore [reportCallIssue]
+
+            return_value = Var.create(fn_result)
+
+            function_var = cast(
+                Var[ReflexCallable[[INNER_ARRAY_VAR], ANOTHER_ARRAY_VAR]],
+                ArgsFunctionOperation.create(
+                    (arg_name,),
+                    return_value,
+                    _var_type=ReflexCallable[[first_arg_type], return_value._var_type],
+                ),
+            )
+
+            return map_array_operation.call(self, function_var).guess_type()
+
+        second_arg = cast(
+            NumberVar[int],
+            Var(
+                _js_expr=get_unique_variable_name(),
+                _var_type=int,
+            ).guess_type(),
+        )
+
+        fn_result = fn(first_arg, second_arg)  # pyright: ignore [reportCallIssue]
+
+        return_value = Var.create(fn_result)
+
         function_var = cast(
-            Var[ReflexCallable[[INNER_ARRAY_VAR], ANOTHER_ARRAY_VAR]],
+            Var[ReflexCallable[[INNER_ARRAY_VAR, int], ANOTHER_ARRAY_VAR]],
             ArgsFunctionOperation.create(
-                (arg_name,),
-                Var.create(fn(first_arg)),  # type: ignore
+                (arg_name, second_arg._js_expr),
+                return_value,
+                _var_type=ReflexCallable[[first_arg_type, int], return_value._var_type],
             ),
         )
 
