@@ -32,7 +32,6 @@ def foreach(
 
     Raises:
         ForeachVarError: If the iterable is of type Any.
-        TypeError: If the render function is a ComponentState.
     """
     iterable = LiteralVar.create(iterable)
     if isinstance(iterable, ObjectVar):

@@ -988,6 +988,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
 
         Raises:
             VarTypeError: If the function takes more than one argument.
+            TypeError: If the function is a ComponentState.
         """
         from reflex.state import ComponentState
 
