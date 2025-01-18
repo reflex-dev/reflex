@@ -5,8 +5,8 @@ from __future__ import annotations
 from typing import Literal
 
 from reflex.components.component import Component
-from reflex.components.core import match
 from reflex.components.core.breakpoints import Responsive
+from reflex.components.core.match import match
 from reflex.components.el import elements
 from reflex.components.lucide import Icon
 from reflex.style import Style
