@@ -212,7 +212,7 @@ def test_default_app(app: App):
     """
     assert app.middleware == [HydrateMiddleware()]
     assert app.style == Style()
-    assert app._admin_dash is None
+    assert app.admin_dash is None
 
 
 def test_multiple_states_error(monkeypatch, test_state, redundant_test_state):
@@ -357,10 +357,10 @@ def test_initialize_with_admin_dashboard(test_model):
     Args:
         test_model: The default model.
     """
-    app = App(_admin_dash=AdminDash(models=[test_model]))
-    assert app._admin_dash is not None
-    assert len(app._admin_dash.models) > 0
-    assert app._admin_dash.models[0] == test_model
+    app = App(admin_dash=AdminDash(models=[test_model]))
+    assert app.admin_dash is not None
+    assert len(app.admin_dash.models) > 0
+    assert app.admin_dash.models[0] == test_model
 
 
 def test_initialize_with_custom_admin_dashboard(
@@ -377,12 +377,12 @@ def test_initialize_with_custom_admin_dashboard(
     """
     custom_auth_provider = test_custom_auth_admin()
     custom_admin = Admin(engine=test_get_engine, auth_provider=custom_auth_provider)
-    app = App(_admin_dash=AdminDash(models=[test_model_auth], admin=custom_admin))
-    assert app._admin_dash is not None
-    assert app._admin_dash.admin is not None
-    assert len(app._admin_dash.models) > 0
-    assert app._admin_dash.models[0] == test_model_auth
-    assert app._admin_dash.admin.auth_provider == custom_auth_provider
+    app = App(admin_dash=AdminDash(models=[test_model_auth], admin=custom_admin))
+    assert app.admin_dash is not None
+    assert app.admin_dash.admin is not None
+    assert len(app.admin_dash.models) > 0
+    assert app.admin_dash.models[0] == test_model_auth
+    assert app.admin_dash.admin.auth_provider == custom_auth_provider
 
 
 def test_initialize_admin_dashboard_with_view_overrides(test_model):
@@ -396,13 +396,13 @@ def test_initialize_admin_dashboard_with_view_overrides(test_model):
         pass
 
     app = App(
-        _admin_dash=AdminDash(
+        admin_dash=AdminDash(
             models=[test_model], view_overrides={test_model: TestModelView}
         )
     )
-    assert app._admin_dash is not None
-    assert app._admin_dash.models == [test_model]
-    assert app._admin_dash.view_overrides[test_model] == TestModelView
+    assert app.admin_dash is not None
+    assert app.admin_dash.models == [test_model]
+    assert app.admin_dash.view_overrides[test_model] == TestModelView
 
 
 @pytest.mark.asyncio
@@ -772,7 +772,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
     # The App state must be the "root" of the state tree
     app = App()
     app._enable_state()
-    app._event_namespace.emit = AsyncMock()  # type: ignore
+    app.event_namespace.emit = AsyncMock()  # type: ignore
     current_state = await app.state_manager.get_state(_substate_key(token, state))
     data = b"This is binary data"
 

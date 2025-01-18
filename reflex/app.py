@@ -274,7 +274,7 @@ class App(MiddlewareMixin, LifespanMixin):
     )
 
     # Admin dashboard to view and manage the database.
-    _admin_dash: Optional[AdminDash] = None
+    admin_dash: Optional[AdminDash] = None
 
     # The async server name space. PRIVATE.
     _event_namespace: Optional[EventNamespace] = None
@@ -291,6 +291,24 @@ class App(MiddlewareMixin, LifespanMixin):
     backend_exception_handler: Callable[
         [Exception], Union[EventSpec, List[EventSpec], None]
     ] = default_backend_exception_handler
+
+    @property
+    def api(self) -> FastAPI | None:
+        """Get the backend api.
+
+        Returns:
+            The backend api.
+        """
+        return self._api
+
+    @property
+    def event_namespace(self) -> EventNamespace | None:
+        """Get the event namespace.
+
+        Returns:
+            The event namespace.
+        """
+        return self._event_namespace
 
     def __post_init__(self):
         """Initialize the app.
@@ -384,10 +402,10 @@ class App(MiddlewareMixin, LifespanMixin):
         self._event_namespace = EventNamespace(namespace, self)
 
         # Register the event namespace with the socket.
-        self.sio.register_namespace(self._event_namespace)
+        self.sio.register_namespace(self.event_namespace)
         # Mount the socket app with the API.
-        if self._api:
-            self._api.mount(str(constants.Endpoint.EVENT), socket_app)
+        if self.api:
+            self.api.mount(str(constants.Endpoint.EVENT), socket_app)
 
         # Check the exception handlers
         self._validate_exception_handlers()
@@ -409,44 +427,44 @@ class App(MiddlewareMixin, LifespanMixin):
         Returns:
             The backend api.
         """
-        if not self._api:
+        if not self.api:
             raise ValueError("The app has not been initialized.")
-        return self._api
+        return self.api
 
     def _add_default_endpoints(self):
         """Add default api endpoints (ping)."""
         # To test the server.
-        if not self._api:
+        if not self.api:
             return
 
-        self._api.get(str(constants.Endpoint.PING))(ping)
-        self._api.get(str(constants.Endpoint.HEALTH))(health)
+        self.api.get(str(constants.Endpoint.PING))(ping)
+        self.api.get(str(constants.Endpoint.HEALTH))(health)
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
-        if not self._api:
+        if not self.api:
             return
 
         if Upload.is_used:
             # To upload files.
-            self._api.post(str(constants.Endpoint.UPLOAD))(upload(self))
+            self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
 
             # To access uploaded files.
-            self._api.mount(
+            self.api.mount(
                 str(constants.Endpoint.UPLOAD),
                 StaticFiles(directory=get_upload_dir()),
                 name="uploaded_files",
             )
         if codespaces.is_running_in_codespaces():
-            self._api.get(str(constants.Endpoint.AUTH_CODESPACE))(
+            self.api.get(str(constants.Endpoint.AUTH_CODESPACE))(
                 codespaces.auth_codespace
             )
 
     def _add_cors(self):
         """Add CORS middleware to the app."""
-        if not self._api:
+        if not self.api:
             return
-        self._api.add_middleware(
+        self.api.add_middleware(
             cors.CORSMiddleware,
             allow_credentials=True,
             allow_methods=["*"],
@@ -689,10 +707,10 @@ class App(MiddlewareMixin, LifespanMixin):
     def _setup_admin_dash(self):
         """Setup the admin dash."""
         # Get the admin dash.
-        if not self._api:
+        if not self.api:
             return
 
-        admin_dash = self._admin_dash
+        admin_dash = self.admin_dash
 
         if admin_dash and admin_dash.models:
             # Build the admin dashboard
@@ -710,7 +728,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 view = admin_dash.view_overrides.get(model, ModelView)
                 admin.add_view(view(model))
 
-            admin.mount_to(self._api)
+            admin.mount_to(self.api)
 
     def _get_frontend_packages(self, imports: Dict[str, set[ImportVar]]):
         """Gets the frontend packages to be installed and filters out the unnecessary ones.
@@ -1113,7 +1131,7 @@ class App(MiddlewareMixin, LifespanMixin):
         Raises:
             RuntimeError: If the app has not been initialized yet.
         """
-        if self._event_namespace is None:
+        if self.event_namespace is None:
             raise RuntimeError("App has not been initialized yet.")
 
         # Get exclusive access to the state.
@@ -1124,7 +1142,7 @@ class App(MiddlewareMixin, LifespanMixin):
             if delta:
                 # When the state is modified reset dirty status and emit the delta to the frontend.
                 state._clean()
-                await self._event_namespace.emit_update(
+                await self.event_namespace.emit_update(
                     update=StateUpdate(delta=delta),
                     sid=state.router.session.session_id,
                 )
@@ -1152,7 +1170,7 @@ class App(MiddlewareMixin, LifespanMixin):
             Raises:
                 RuntimeError: If the app has not been initialized yet.
             """
-            if self._event_namespace is None:
+            if self.event_namespace is None:
                 raise RuntimeError("App has not been initialized yet.")
 
             # Process the event.
@@ -1163,7 +1181,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 update = await self._postprocess(state, event, update)
 
                 # Send the update to the client.
-                await self._event_namespace.emit_update(
+                await self.event_namespace.emit_update(
                     update=update,
                     sid=state.router.session.session_id,
                 )
@@ -1308,10 +1326,10 @@ async def process(
             if (
                 not state.router_data
                 and event.name != get_hydrate_event(state)
-                and app._event_namespace is not None
+                and app.event_namespace is not None
             ):
                 await asyncio.create_task(
-                    app._event_namespace.emit(
+                    app.event_namespace.emit(
                         "reload",
                         data=event,
                         to=sid,

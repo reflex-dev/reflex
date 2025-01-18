@@ -1913,7 +1913,7 @@ def mock_app_simple(monkeypatch) -> rx.App:
 
     setattr(app_module, CompileVars.APP, app)
     app._state = TestState
-    app._event_namespace.emit = CopyingAsyncMock()  # type: ignore
+    app.event_namespace.emit = CopyingAsyncMock()  # type: ignore
 
     def _mock_get_app(*args, **kwargs):
         return app_module
@@ -2021,9 +2021,9 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     assert gotten_grandchild_state.value2 == "42"
 
     # ensure state update was emitted
-    assert mock_app._event_namespace is not None
-    mock_app._event_namespace.emit.assert_called_once()
-    mcall = mock_app._event_namespace.emit.mock_calls[0]
+    assert mock_app.event_namespace is not None
+    mock_app.event_namespace.emit.assert_called_once()
+    mcall = mock_app.event_namespace.emit.mock_calls[0]
     assert mcall.args[0] == str(SocketEvent.EVENT)
     assert mcall.args[1] == StateUpdate(
         delta={
@@ -2225,8 +2225,8 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         )
     ).order == exp_order
 
-    assert mock_app._event_namespace is not None
-    emit_mock = mock_app._event_namespace.emit
+    assert mock_app.event_namespace is not None
+    emit_mock = mock_app.event_namespace.emit
 
     first_ws_message = emit_mock.mock_calls[0].args[1]
     assert (

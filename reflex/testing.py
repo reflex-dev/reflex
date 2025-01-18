@@ -323,11 +323,11 @@ class AppHarness:
         return _shutdown_redis
 
     def _start_backend(self, port=0):
-        if self.app_instance is None or self.app_instance._api is None:
+        if self.app_instance is None or self.app_instance.api is None:
             raise RuntimeError("App was not initialized.")
         self.backend = uvicorn.Server(
             uvicorn.Config(
-                app=self.app_instance._api,
+                app=self.app_instance.api,
                 host="127.0.0.1",
                 port=port,
             )
