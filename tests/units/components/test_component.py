@@ -1445,7 +1445,6 @@ def test_instantiate_all_components():
     # These components all have required arguments and cannot be trivially instantiated.
     untested_components = {
         "Card",
-        "Cond",
         "DebounceInput",
         "Foreach",
         "FormControl",

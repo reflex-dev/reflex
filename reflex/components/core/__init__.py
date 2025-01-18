@@ -21,7 +21,7 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
     "colors": [
         "color",
     ],
-    "cond": ["Cond", "color_mode_cond", "cond"],
+    "cond": ["color_mode_cond", "cond"],
     "debounce": ["DebounceInput", "debounce_input"],
     "foreach": [
         "foreach",

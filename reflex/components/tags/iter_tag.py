@@ -114,7 +114,6 @@ class IterTag(Tag):
         """
         # Import here to avoid circular imports.
         from reflex.components.base.fragment import Fragment
-        from reflex.components.core.cond import Cond
         from reflex.components.core.foreach import Foreach
 
         # Get the render function arguments.
@@ -132,7 +131,7 @@ class IterTag(Tag):
             component = self.render_fn(arg, index)
 
         # Nested foreach components or cond must be wrapped in fragments.
-        if isinstance(component, (Foreach, Cond, Var)):
+        if isinstance(component, (Foreach, Var)):
             component = Fragment.create(component)
 
         # Set the component key.

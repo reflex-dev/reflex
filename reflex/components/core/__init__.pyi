@@ -17,7 +17,6 @@ from .breakpoints import set_breakpoints as set_breakpoints
 from .clipboard import Clipboard as Clipboard
 from .clipboard import clipboard as clipboard
 from .colors import color as color
-from .cond import Cond as Cond
 from .cond import color_mode_cond as color_mode_cond
 from .cond import cond as cond
 from .debounce import DebounceInput as DebounceInput

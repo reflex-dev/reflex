@@ -31,7 +31,6 @@ from reflex.app import (
 )
 from reflex.components import Component
 from reflex.components.base.fragment import Fragment
-from reflex.components.core.cond import Cond
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import Event, EventHandler
 from reflex.middleware import HydrateMiddleware
@@ -1228,10 +1227,6 @@ def test_overlay_component(
         assert app.overlay_component is not None
         generated_component = app._generate_component(app.overlay_component)  # type: ignore
         assert isinstance(generated_component, OverlayFragment)
-        assert isinstance(
-            generated_component.children[0],
-            Cond,  # ConnectionModal is a Cond under the hood
-        )
     else:
         assert app.overlay_component is not None
         assert isinstance(

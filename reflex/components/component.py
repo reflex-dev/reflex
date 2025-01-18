@@ -932,7 +932,6 @@ class Component(BaseComponent, ABC):
         """
         from reflex.components.base.bare import Bare
         from reflex.components.base.fragment import Fragment
-        from reflex.components.core.cond import Cond
         from reflex.components.core.foreach import Foreach
 
         no_valid_parents_defined = all(child._valid_parents == [] for child in children)
@@ -944,7 +943,7 @@ class Component(BaseComponent, ABC):
             return
 
         comp_name = type(self).__name__
-        allowed_components = [comp.__name__ for comp in (Fragment, Foreach, Cond)]
+        allowed_components = [comp.__name__ for comp in (Fragment, Foreach)]
 
         def validate_child(child):
             child_name = type(child).__name__
@@ -953,10 +952,6 @@ class Component(BaseComponent, ABC):
             if isinstance(child, Fragment):
                 for c in child.children:
                     validate_child(c)
-
-            if isinstance(child, Cond):
-                validate_child(child.comp1)
-                validate_child(child.comp2)
 
             if (
                 isinstance(child, Bare)
@@ -2063,13 +2058,10 @@ class StatefulComponent(BaseComponent):
             The Var from the child component or the child itself (for regular cases).
         """
         from reflex.components.base.bare import Bare
-        from reflex.components.core.cond import Cond
         from reflex.components.core.foreach import Foreach
 
         if isinstance(child, Bare):
             return child.contents
-        if isinstance(child, Cond):
-            return child.cond
         if isinstance(child, Foreach):
             return child.iterable
         return child

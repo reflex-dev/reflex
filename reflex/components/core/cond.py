@@ -2,114 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, overload
+from typing import Any, overload
 
 from reflex.components.base.fragment import Fragment
-from reflex.components.component import BaseComponent, Component, MemoizationLeaf
-from reflex.components.tags import CondTag, Tag
-from reflex.constants import Dirs
+from reflex.components.component import BaseComponent, Component
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
-from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.types import infallible_issubclass
-from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, ReflexCallable, Var
 from reflex.vars.function import ArgsFunctionOperation
 from reflex.vars.number import ternary_operation
-
-_IS_TRUE_IMPORT: ImportDict = {
-    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
-}
-
-
-class Cond(MemoizationLeaf):
-    """Render one of two components based on a condition."""
-
-    # The cond to determine which component to render.
-    cond: Var[Any]
-
-    # The component to render if the cond is true.
-    comp1: BaseComponent = None  # type: ignore
-
-    # The component to render if the cond is false.
-    comp2: BaseComponent = None  # type: ignore
-
-    @classmethod
-    def create(
-        cls,
-        cond: Var,
-        comp1: BaseComponent,
-        comp2: Optional[BaseComponent] = None,
-    ) -> Component:
-        """Create a conditional component.
-
-        Args:
-            cond: The cond to determine which component to render.
-            comp1: The component to render if the cond is true.
-            comp2: The component to render if the cond is false.
-
-        Returns:
-            The conditional component.
-        """
-        # Wrap everything in fragments.
-        if type(comp1).__name__ != "Fragment":
-            comp1 = Fragment.create(comp1)
-        if comp2 is None or type(comp2).__name__ != "Fragment":
-            comp2 = Fragment.create(comp2) if comp2 else Fragment.create()
-        return Fragment.create(
-            cls(
-                cond=cond,
-                comp1=comp1,
-                comp2=comp2,
-                children=[comp1, comp2],
-            )
-        )
-
-    def _get_props_imports(self):
-        """Get the imports needed for component's props.
-
-        Returns:
-            The imports for the component's props of the component.
-        """
-        return []
-
-    def _render(self) -> Tag:
-        return CondTag(
-            cond=self.cond,
-            true_value=self.comp1.render(),
-            false_value=self.comp2.render(),
-        )
-
-    def render(self) -> Dict:
-        """Render the component.
-
-        Returns:
-            The dictionary for template of component.
-        """
-        tag = self._render()
-        return dict(
-            tag.add_props(
-                **self.event_triggers,
-                key=self.key,
-                sx=self.style,
-                id=self.id,
-                class_name=self.class_name,
-            ).set(
-                props=tag.format_props(),
-            ),
-            cond_state=f"isTrue({self.cond!s})",
-        )
-
-    def add_imports(self) -> ImportDict:
-        """Add imports for the Cond component.
-
-        Returns:
-            The import dict for the component.
-        """
-        var_data = VarData.merge(self.cond._get_all_var_data())
-
-        imports = var_data.old_school_imports() if var_data else {}
-
-        return {**imports, **_IS_TRUE_IMPORT}
 
 
 @overload
