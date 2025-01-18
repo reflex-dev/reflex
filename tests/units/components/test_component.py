@@ -1451,7 +1451,6 @@ def test_instantiate_all_components():
         "FormControl",
         "Html",
         "Icon",
-        "Match",
         "Markdown",
         "MultiSelect",
         "Option",

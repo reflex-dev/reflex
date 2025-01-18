@@ -934,7 +934,6 @@ class Component(BaseComponent, ABC):
         from reflex.components.base.fragment import Fragment
         from reflex.components.core.cond import Cond
         from reflex.components.core.foreach import Foreach
-        from reflex.components.core.match import Match
 
         no_valid_parents_defined = all(child._valid_parents == [] for child in children)
         if (
@@ -945,9 +944,7 @@ class Component(BaseComponent, ABC):
             return
 
         comp_name = type(self).__name__
-        allowed_components = [
-            comp.__name__ for comp in (Fragment, Foreach, Cond, Match)
-        ]
+        allowed_components = [comp.__name__ for comp in (Fragment, Foreach, Cond)]
 
         def validate_child(child):
             child_name = type(child).__name__
@@ -970,11 +967,6 @@ class Component(BaseComponent, ABC):
                 if var_data is not None:
                     for c in var_data.components:
                         validate_child(c)
-
-            if isinstance(child, Match):
-                for cases in child.match_cases:
-                    validate_child(cases[-1])
-                validate_child(child.default)
 
             if self._invalid_children and child_name in self._invalid_children:
                 raise ValueError(
@@ -2073,7 +2065,6 @@ class StatefulComponent(BaseComponent):
         from reflex.components.base.bare import Bare
         from reflex.components.core.cond import Cond
         from reflex.components.core.foreach import Foreach
-        from reflex.components.core.match import Match
 
         if isinstance(child, Bare):
             return child.contents
@@ -2081,8 +2072,6 @@ class StatefulComponent(BaseComponent):
             return child.cond
         if isinstance(child, Foreach):
             return child.iterable
-        if isinstance(child, Match):
-            return child.cond
         return child
 
     @classmethod

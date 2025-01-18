@@ -30,7 +30,6 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
     "html": ["html", "Html"],
     "match": [
         "match",
-        "Match",
     ],
     "breakpoints": ["breakpoints", "set_breakpoints"],
     "responsive": [
