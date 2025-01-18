@@ -26,7 +26,6 @@ from .foreach import Foreach as Foreach
 from .foreach import foreach as foreach
 from .html import Html as Html
 from .html import html as html
-from .match import Match as Match
 from .match import match as match
 from .responsive import desktop_only as desktop_only
 from .responsive import mobile_and_tablet as mobile_and_tablet
