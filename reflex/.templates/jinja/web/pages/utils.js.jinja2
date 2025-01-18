@@ -6,8 +6,6 @@
 {% filter indent(width=indent_width) %}
   {%- if component is not mapping %}
     {{- component }}
-  {%- elif "iterable" in component %}
-    {{- render_iterable_tag(component) }}
   {%- elif component.children|length %}
     {{- render_tag(component) }}
   {%- else %}
@@ -37,30 +35,6 @@
 {{ render(child) }}
 {% endfor %}
 </{{component.name}}>
-{%- endmacro %}
-
-
-{# Rendering condition component. #}
-{# Args: #}
-{#     component: component dictionary #}
-{% macro render_condition_tag(component) %}
-{ {{- component.cond_state }} ? (
-  {{ render(component.true_value) }}
-) : (
-  {{ render(component.false_value) }}
-)}
-{%- endmacro %}
-
-
-{# Rendering iterable component. #}
-{# Args: #}
-{#     component: component dictionary #}
-{% macro render_iterable_tag(component) %}
-<>{ {%- if component.iterable_type == 'dict' -%}Object.entries({{- component.iterable_state }}){%- else -%}{{- component.iterable_state }}{%- endif -%}.map(({{ component.arg_name }}, {{ component.arg_index }}) => (
-  {% for child in component.children %}
-  {{ render(child) }}
-  {% endfor %}
-))}</>
 {%- endmacro %}
 
 

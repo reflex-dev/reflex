@@ -66,7 +66,7 @@ from reflex.vars.base import (
     Var,
     cached_property_no_lock,
 )
-from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar
+from reflex.vars.function import FunctionStringVar
 from reflex.vars.object import ObjectVar
 from reflex.vars.sequence import LiteralArrayVar
 
@@ -2398,26 +2398,6 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
         if isinstance(tag, Component):
             return render_dict_to_var(tag.render(), imported_names)
         return Var.create(tag)
-
-    if "iterable" in tag:
-        function_return = Var.create(
-            [
-                render_dict_to_var(child.render(), imported_names)
-                for child in tag["children"]
-            ]
-        )
-
-        func = ArgsFunctionOperation.create(
-            (tag["arg_var_name"], tag["index_var_name"]),
-            function_return,
-        )
-
-        return FunctionStringVar.create("Array.prototype.map.call").call(
-            tag["iterable"]
-            if not isinstance(tag["iterable"], ObjectVar)
-            else tag["iterable"].items(),
-            func,
-        )
 
     props = {}
 
