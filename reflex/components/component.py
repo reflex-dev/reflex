@@ -67,7 +67,6 @@ from reflex.vars.base import (
     cached_property_no_lock,
 )
 from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar
-from reflex.vars.number import ternary_operation
 from reflex.vars.object import ObjectVar
 from reflex.vars.sequence import LiteralArrayVar
 
@@ -2428,33 +2427,6 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
             if not isinstance(tag["iterable"], ObjectVar)
             else tag["iterable"].items(),
             func,
-        )
-
-    if tag["name"] == "match":
-        element = tag["cond"]
-
-        conditionals = tag["default"]
-
-        for case in tag["match_cases"][::-1]:
-            condition = case[0].to_string() == element.to_string()
-            for pattern in case[1:-1]:
-                condition = condition | (pattern.to_string() == element.to_string())
-
-            conditionals = ternary_operation(
-                condition,
-                case[-1],
-                conditionals,
-            )
-
-        return conditionals
-
-    if "cond" in tag:
-        return ternary_operation(
-            tag["cond"],
-            render_dict_to_var(tag["true_value"], imported_names),
-            render_dict_to_var(tag["false_value"], imported_names)
-            if tag["false_value"] is not None
-            else Var.create(None),
         )
 
     props = {}
