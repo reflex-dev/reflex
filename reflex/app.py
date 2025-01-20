@@ -463,14 +463,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
         Returns:
             The generated component.
-
-        Raises:
-            exceptions.MatchTypeError: If the return types of match cases in rx.match are different.
         """
-        try:
-            return component if isinstance(component, Component) else component()
-        except exceptions.MatchTypeError:
-            raise
+        return component if isinstance(component, Component) else component()
 
     def add_page(
         self,
@@ -1563,10 +1557,36 @@ class EventNamespace(AsyncNamespace):
         Args:
             sid: The Socket.IO session id.
             data: The event data.
+
+        Raises:
+            EventDeserializationError: If the event data is not a dictionary.
         """
         fields = data
-        # Get the event.
-        event = Event(**{k: v for k, v in fields.items() if k in _EVENT_FIELDS})
+
+        if isinstance(fields, str):
+            console.warn(
+                "Received event data as a string. This generally should not happen and may indicate a bug."
+                f" Event data: {fields}"
+            )
+            try:
+                fields = json.loads(fields)
+            except json.JSONDecodeError as ex:
+                raise exceptions.EventDeserializationError(
+                    f"Failed to deserialize event data: {fields}."
+                ) from ex
+
+        if not isinstance(fields, dict):
+            raise exceptions.EventDeserializationError(
+                f"Event data must be a dictionary, but received {fields} of type {type(fields)}."
+            )
+
+        try:
+            # Get the event.
+            event = Event(**{k: v for k, v in fields.items() if k in _EVENT_FIELDS})
+        except (TypeError, ValueError) as ex:
+            raise exceptions.EventDeserializationError(
+                f"Failed to deserialize event data: {fields}."
+            ) from ex
 
         self.token_to_sid[event.token] = sid
         self.sid_to_token[sid] = event.token

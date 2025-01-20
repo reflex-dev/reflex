@@ -12,6 +12,7 @@ import threading
 import urllib.parse
 from importlib.util import find_spec
 from pathlib import Path
+from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -607,6 +608,9 @@ class Config(Base):
     # The name of the app (should match the name of the app directory).
     app_name: str
 
+    # The path to the app module.
+    app_module_import: Optional[str] = None
+
     # The log level to use.
     loglevel: constants.LogLevel = constants.LogLevel.DEFAULT
 
@@ -730,12 +734,27 @@ class Config(Base):
             )
 
     @property
+    def app_module(self) -> ModuleType | None:
+        """Return the app module if `app_module_import` is set.
+
+        Returns:
+            The app module.
+        """
+        return (
+            importlib.import_module(self.app_module_import)
+            if self.app_module_import
+            else None
+        )
+
+    @property
     def module(self) -> str:
         """Get the module name of the app.
 
         Returns:
             The module name.
         """
+        if self.app_module is not None:
+            return self.app_module.__name__
         return ".".join([self.app_name, self.app_name])
 
     def update_from_env(self) -> dict[str, Any]:
@@ -874,7 +893,7 @@ def get_config(reload: bool = False) -> Config:
             return cached_rxconfig.config
 
     with _config_lock:
-        sys_path = sys.path.copy()
+        orig_sys_path = sys.path.copy()
         sys.path.clear()
         sys.path.append(str(Path.cwd()))
         try:
@@ -882,9 +901,14 @@ def get_config(reload: bool = False) -> Config:
             return _get_config()
         except Exception:
             # If the module import fails, try to import with the original sys.path.
-            sys.path.extend(sys_path)
+            sys.path.extend(orig_sys_path)
             return _get_config()
         finally:
+            # Find any entries added to sys.path by rxconfig.py itself.
+            extra_paths = [
+                p for p in sys.path if p not in orig_sys_path and p != str(Path.cwd())
+            ]
             # Restore the original sys.path.
             sys.path.clear()
-            sys.path.extend(sys_path)
+            sys.path.extend(extra_paths)
+            sys.path.extend(orig_sys_path)
