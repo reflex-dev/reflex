@@ -40,7 +40,10 @@ from typing_extensions import (
 from reflex import constants
 from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import console, format
-from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgTypeMismatch
+from reflex.utils.exceptions import (
+    EventFnArgMismatchError,
+    EventHandlerArgTypeMismatchError,
+)
 from reflex.utils.types import ArgsSpec, GenericType, typehint_issubclass
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -557,10 +560,10 @@ class JavasciptKeyboardEvent:
     """Interface for a Javascript KeyboardEvent https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent."""
 
     key: str = ""
-    altKey: bool = False
-    ctrlKey: bool = False
-    metaKey: bool = False
-    shiftKey: bool = False
+    alt_key: bool = False
+    ctrl_key: bool = False
+    meta_key: bool = False
+    shift_key: bool = False
 
 
 def input_event(e: Var[JavascriptInputEvent]) -> Tuple[Var[str]]:
@@ -1364,7 +1367,7 @@ def call_event_handler(
                 if compare_result:
                     continue
                 else:
-                    failure = EventHandlerArgTypeMismatch(
+                    failure = EventHandlerArgTypeMismatchError(
                         f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {type_hints_of_provided_callback[arg]} as annotated in {event_callback.fn.__qualname__} instead."
                     )
                     failures.append(failure)
@@ -1477,7 +1480,7 @@ def check_fn_match_arg_spec(
     func_name: str | None = None,
 ):
     """Ensures that the function signature matches the passed argument specification
-    or raises an EventFnArgMismatch if they do not.
+    or raises an EventFnArgMismatchError if they do not.
 
     Args:
         user_func: The function to be validated.
@@ -1487,7 +1490,7 @@ def check_fn_match_arg_spec(
         func_name: The name of the function to be validated.
 
     Raises:
-        EventFnArgMismatch: Raised if the number of mandatory arguments do not match
+        EventFnArgMismatchError: Raised if the number of mandatory arguments do not match
     """
     user_args = inspect.getfullargspec(user_func).args
     # Drop the first argument if it's a bound method
@@ -1503,7 +1506,7 @@ def check_fn_match_arg_spec(
     number_of_event_args = len(parsed_event_args)
 
     if number_of_user_args - number_of_user_default_args > number_of_event_args:
-        raise EventFnArgMismatch(
+        raise EventFnArgMismatchError(
             f"Event {key} only provides {number_of_event_args} arguments, but "
             f"{func_name or user_func} requires at least {number_of_user_args - number_of_user_default_args} "
             "arguments to be passed to the event handler.\n"

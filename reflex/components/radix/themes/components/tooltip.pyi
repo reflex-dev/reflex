@@ -14,6 +14,7 @@ from ..base import RadixThemesComponent
 LiteralSideType = Literal["top", "right", "bottom", "left"]
 LiteralAlignType = Literal["start", "center", "end"]
 LiteralStickyType = Literal["partial", "always"]
+ARIA_LABEL_KEY = "aria_label"
 
 class Tooltip(RadixThemesComponent):
     @overload
@@ -89,36 +90,36 @@ class Tooltip(RadixThemesComponent):
         Run some additional handling on the props.
 
         Args:
-            *children: The positional arguments
-            content: The content of the tooltip.
-            default_open: The open state of the tooltip when it is initially rendered. Use when you do not need to control its open state.
-            open: The controlled open state of the tooltip. Must be used in conjunction with `on_open_change`.
-            side: The preferred side of the trigger to render against when open. Will be reversed when collisions occur and `avoid_collisions` is enabled.The position of the tooltip. Defaults to "top".
-            side_offset: The distance in pixels from the trigger. Defaults to 0.
-            align: The preferred alignment against the trigger. May change when collisions occur. Defaults to "center".
-            align_offset: An offset in pixels from the "start" or "end" alignment options.
-            avoid_collisions: When true, overrides the side and align preferences to prevent collisions with boundary edges. Defaults to True.
-            collision_padding: The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-            arrow_padding: The padding between the arrow and the edges of the content. If your content has border-radius, this will prevent it from overflowing the corners. Defaults to 0.
-            sticky: The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
-            hide_when_detached: Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
-            delay_duration: Override the duration in milliseconds to customize the open delay for a specific tooltip. Default is 700.
-            disable_hoverable_content: Prevents Tooltip content from remaining open when hovering.
-            force_mount: Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries.
-            aria_label: By default, screenreaders will announce the content inside the component. If this is not descriptive enough, or you have content that cannot be announced, use aria-label as a more descriptive label.
-            on_open_change: Fired when the open state changes.
-            on_escape_key_down: Fired when the escape key is pressed.
-            on_pointer_down_outside: Fired when the pointer is down outside the tooltip.
-            style: The style of the component.
-            key: A unique key for the component.
-            id: The id for the component.
-            class_name: The class name for the component.
-            autofocus: Whether the component should take the focus once the page is loaded
-            custom_attrs: custom attribute
-            **props: The keyword arguments
+        *children: The positional arguments
+        content: The content of the tooltip.
+        default_open: The open state of the tooltip when it is initially rendered. Use when you do not need to control its open state.
+        open: The controlled open state of the tooltip. Must be used in conjunction with `on_open_change`.
+        side: The preferred side of the trigger to render against when open. Will be reversed when collisions occur and `avoid_collisions` is enabled.The position of the tooltip. Defaults to "top".
+        side_offset: The distance in pixels from the trigger. Defaults to 0.
+        align: The preferred alignment against the trigger. May change when collisions occur. Defaults to "center".
+        align_offset: An offset in pixels from the "start" or "end" alignment options.
+        avoid_collisions: When true, overrides the side and align preferences to prevent collisions with boundary edges. Defaults to True.
+        collision_padding: The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
+        arrow_padding: The padding between the arrow and the edges of the content. If your content has border-radius, this will prevent it from overflowing the corners. Defaults to 0.
+        sticky: The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
+        hide_when_detached: Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
+        delay_duration: Override the duration in milliseconds to customize the open delay for a specific tooltip. Default is 700.
+        disable_hoverable_content: Prevents Tooltip content from remaining open when hovering.
+        force_mount: Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries.
+        aria_label: By default, screenreaders will announce the content inside the component. If this is not descriptive enough, or you have content that cannot be announced, use aria-label as a more descriptive label.
+        on_open_change: Fired when the open state changes.
+        on_escape_key_down: Fired when the escape key is pressed.
+        on_pointer_down_outside: Fired when the pointer is down outside the tooltip.
+        style: The style of the component.
+        key: A unique key for the component.
+        id: The id for the component.
+        class_name: The class name for the component.
+        autofocus: Whether the component should take the focus once the page is loaded
+        custom_attrs: custom attribute
+        **props: The keyword arguments
 
         Returns:
-            The created component.
+        The created component.
         """
         ...
 

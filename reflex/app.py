@@ -1164,11 +1164,11 @@ class App(MiddlewareMixin, LifespanMixin):
             ValueError: If the custom exception handlers are invalid.
 
         """
-        FRONTEND_ARG_SPEC = {
+        frontend_arg_spec = {
             "exception": Exception,
         }
 
-        BACKEND_ARG_SPEC = {
+        backend_arg_spec = {
             "exception": Exception,
         }
 
@@ -1176,8 +1176,8 @@ class App(MiddlewareMixin, LifespanMixin):
             ["frontend", "backend"],
             [self.frontend_exception_handler, self.backend_exception_handler],
             [
-                FRONTEND_ARG_SPEC,
-                BACKEND_ARG_SPEC,
+                frontend_arg_spec,
+                backend_arg_spec,
             ],
         ):
             if hasattr(handler_fn, "__name__"):

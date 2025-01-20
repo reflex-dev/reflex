@@ -8,6 +8,8 @@ from reflex.vars.base import Var
 
 from .base import NextComponent
 
+DEFAULT_W_H = "100%"
+
 
 class Image(NextComponent):
     """Display an image."""
@@ -53,7 +55,7 @@ class Image(NextComponent):
     loading: Var[Literal["lazy", "eager"]]
 
     # A Data URL to be used as a placeholder image before the src image successfully loads. Only takes effect when combined with placeholder="blur".
-    blurDataURL: Var[str]
+    blur_data_url: Var[str]
 
     # Fires when the image has loaded.
     on_load: EventHandler[no_args_event_spec]
@@ -81,7 +83,6 @@ class Image(NextComponent):
             _type_: _description_
         """
         style = props.get("style", {})
-        DEFAULT_W_H = "100%"
 
         def check_prop_type(prop_name, prop_value):
             if types.check_prop_in_allowed_types(prop_value, allowed_types=[int]):
