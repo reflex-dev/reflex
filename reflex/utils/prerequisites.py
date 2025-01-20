@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import ast
 import contextlib
 import dataclasses
 import functools
 import importlib
 import importlib.metadata
+import importlib.util
 import json
 import os
 import platform
@@ -23,6 +25,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Callable, List, Optional
 
+import astor
 import httpx
 import typer
 from alembic.util.exc import CommandError
@@ -425,6 +428,111 @@ def validate_app_name(app_name: str | None = None) -> str:
         raise typer.Exit(1)
 
     return app_name
+
+
+class ImportRenamer(ast.NodeTransformer):
+    """Rename imports in a tree."""
+
+    def __init__(self, old_name, new_name):
+        """Initialize the ImportRenamer."""
+        self.old_name = old_name
+        self.new_name = new_name
+
+    def visit_Import(self, node):
+        """Rename imports of the form `import foo`."""
+        for alias in node.names:
+            if alias.name == self.old_name:
+                alias.name = self.new_name
+        return node
+
+    def visit_ImportFrom(self, node):
+        """Rename imports of the form `from foo import bar`."""
+        if node.module == self.old_name:
+            node.module = self.new_name
+        return node
+
+    def visit_Assign(self, node):
+        """Handle assignments like `config = rx.Config(app_name='foo')`."""
+        if (
+            isinstance(node.targets[0], ast.Name)
+            and node.targets[0].id == "config"
+            and isinstance(node.value, ast.Call)
+            and isinstance(node.value.func, ast.Attribute)
+            and node.value.func.attr == "Config"
+        ):
+            for kw in node.value.keywords:
+                if kw.arg == "app_name" and isinstance(kw.value, ast.Constant):
+                    if kw.value.value == self.old_name:
+                        kw.value = ast.Constant(value=self.new_name)
+
+            # Handle positional arguments
+            if node.value.args and isinstance(node.value.args[0], ast.Constant):
+                if node.value.args[0].value == self.old_name:
+                    node.value.args[0] = ast.Constant(value=self.new_name)
+        return node
+
+
+def rename_imports_and_app_name_in_file(file_path, old_name, new_name):
+    """Rename imports and update the app_name in rxconfig.py."""
+    file_path = Path(file_path)
+    content = file_path.read_text()
+
+    tree = ast.parse(content)
+
+    transformer = ImportRenamer(old_name, new_name)
+    new_tree = transformer.visit(tree)
+    ast.fix_missing_locations(new_tree)
+
+    modified_content = astor.to_source(new_tree)
+
+    file_path.write_text(modified_content)
+
+
+def process_directory(directory, old_name, new_name, exclude_dirs=None):
+    """Process all Python files in a directory, excluding specified directories."""
+    exclude_dirs = exclude_dirs or []
+    directory = Path(directory)
+
+    for root in directory.rglob("*.py"):
+        if not any(root.parts[i] in exclude_dirs for i in range(len(root.parts))):
+            rename_imports_and_app_name_in_file(root, old_name, new_name)
+
+
+def rename_path_up_tree(full_path, old_name, new_name):
+    """Rename all instances of `old_name` in the path (file and directories) to `new_name`."""
+    current_path = Path(full_path)
+    new_path = None
+
+    while True:
+        directory, base = current_path.parent, current_path.name
+
+        if old_name in base:
+            new_base = base.replace(old_name, new_name)
+            new_path = directory / new_base
+            current_path.rename(new_path)
+            current_path = new_path
+        else:
+            new_path = current_path
+
+        # Stop if we've reached the root package
+        if old_name not in directory.name:
+            break
+
+        # Move up the directory tree
+        current_path = directory
+
+    return new_path
+
+
+def rename_app(app_name: str):
+    """Rename the app directory."""
+    config = get_config()
+    process_directory(
+        Path.cwd(), config.app_name, app_name, exclude_dirs=["assets", ".web"]
+    )
+
+    full_path = importlib.util.find_spec(config.module).origin
+    rename_path_up_tree(full_path, config.app_name, app_name)
 
 
 def create_config(app_name: str):
