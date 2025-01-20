@@ -1591,7 +1591,7 @@ def get_handler_args(
 
 
 def fix_events(
-    events: list[EventHandler | EventSpec] | None,
+    events: list[EventSpec | EventHandler] | None,
     token: str,
     router_data: dict[str, Any] | None = None,
 ) -> list[Event]:

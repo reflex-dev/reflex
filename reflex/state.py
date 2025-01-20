@@ -1776,9 +1776,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         except Exception as ex:
             state._clean()
 
-            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-
-            event_specs = app_instance.backend_exception_handler(ex)
+            event_specs = (
+                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
+            )
 
             if event_specs is None:
                 return StateUpdate()
@@ -1888,9 +1888,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         except Exception as ex:
             telemetry.send_error(ex, context="backend")
 
-            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-
-            event_specs = app_instance.backend_exception_handler(ex)
+            event_specs = (
+                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
+            )
 
             yield state._as_state_update(
                 handler,
@@ -2403,8 +2403,9 @@ class FrontendEventExceptionState(State):
             component_stack: The stack trace of the component where the exception occurred.
 
         """
-        app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-        app_instance.frontend_exception_handler(Exception(stack))
+        prerequisites.get_and_validate_app().app.frontend_exception_handler(
+            Exception(stack)
+        )
 
 
 class UpdateVarsInternalState(State):
@@ -2442,15 +2443,16 @@ class OnLoadInternalState(State):
             The list of events to queue for on load handling.
         """
         # Do not app._compile()!  It should be already compiled by now.
-        app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-        load_events = app.get_load_events(self.router.page.path)
+        load_events = prerequisites.get_and_validate_app().app.get_load_events(
+            self.router.page.path
+        )
         if not load_events:
             self.is_hydrated = True
             return  # Fast path for navigation with no on_load events defined.
         self.is_hydrated = False
         return [
             *fix_events(
-                load_events,
+                cast(list[Union[EventSpec, EventHandler]], load_events),
                 self.router.session.client_token,
                 router_data=self.router_data,
             ),
@@ -2609,7 +2611,7 @@ class StateProxy(wrapt.ObjectProxy):
         """
         super().__init__(state_instance)
         # compile is not relevant to backend logic
-        self._self_app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+        self._self_app = prerequisites.get_and_validate_app().app
         self._self_substate_path = tuple(state_instance.get_full_name().split("."))
         self._self_actx = None
         self._self_mutable = False
@@ -3702,8 +3704,7 @@ def get_state_manager() -> StateManager:
     Returns:
         The state manager.
     """
-    app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-    return app.state_manager
+    return prerequisites.get_and_validate_app().app.state_manager
 
 
 class MutableProxy(wrapt.ObjectProxy):
