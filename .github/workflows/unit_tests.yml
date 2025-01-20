@@ -64,25 +64,35 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_build_env
         with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
       - name: Run unit tests
-        run: |
-          export PYTHONUNBUFFERED=1
-          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+        uses: CodSpeedHQ/action@v3
+        with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
+          run: |
+            export PYTHONUNBUFFERED=1
+            poetry run pytest tests/units --cov --no-cov-on-fail --cov-report= --codspeed
       - name: Run unit tests w/ redis
         if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: |
-          export PYTHONUNBUFFERED=1
-          export REDIS_URL=redis://localhost:6379
-          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+        uses: CodSpeedHQ/action@v3
+        with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
+          run: |
+            export PYTHONUNBUFFERED=1
+            export REDIS_URL=redis://localhost:6379
+            poetry run pytest tests/units --cov --no-cov-on-fail --cov-report= --codspeed
       # Change to explicitly install v1 when reflex-hosting-cli is compatible with v2
       - name: Run unit tests w/ pydantic v1
-        run: |
-          export PYTHONUNBUFFERED=1
-          poetry run uv pip install "pydantic~=1.10"
-          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+        uses: CodSpeedHQ/action@v3
+        with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
+          run: |
+            export PYTHONUNBUFFERED=1
+            poetry run uv pip install "pydantic~=1.10"
+            poetry run pytest tests/units --cov --no-cov-on-fail --cov-report= --codspeed
       - name: Generate coverage report
         run: poetry run coverage html
 
@@ -103,11 +113,17 @@ jobs:
           run-poetry-install: true
           create-venv-at-path: .venv
       - name: Run unit tests
-        run: |
-          export PYTHONUNBUFFERED=1
-          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+        uses: CodSpeedHQ/action@v3
+        with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
+          run: |
+            export PYTHONUNBUFFERED=1
+            poetry run pytest tests/units --cov --no-cov-on-fail --cov-report= --codspeed
       - name: Run unit tests w/ pydantic v1
-        run: |
-          export PYTHONUNBUFFERED=1
-          poetry run uv pip install "pydantic~=1.10"
-          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+        uses: CodSpeedHQ/action@v3
+        with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
+          run: |
+            export PYTHONUNBUFFERED=1
+            poetry run uv pip install "pydantic~=1.10"
+            poetry run pytest tests/units --cov --no-cov-on-fail --cov-report= --codspeed

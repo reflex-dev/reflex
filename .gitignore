@@ -6,6 +6,7 @@ examples/
 .web
 .idea
 .vscode
+.codspeed
 .coverage
 .coverage.*
 .venv
