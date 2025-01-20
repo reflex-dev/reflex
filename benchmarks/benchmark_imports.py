@@ -7,8 +7,6 @@ import json
 import os
 from pathlib import Path
 
-from utils import send_data_to_posthog
-
 
 def extract_stats_from_json(json_file: str) -> dict:
     """Extracts the stats from the JSON data and returns them as dictionaries.
@@ -65,9 +63,6 @@ def insert_benchmarking_data(
         "performance": performance_data,
         "app_name": app_name,
     }
-
-    send_data_to_posthog("import_benchmark", properties)
-
 
 def main():
     """Runs the benchmarks and inserts the results."""
