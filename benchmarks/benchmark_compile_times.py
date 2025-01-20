@@ -7,6 +7,9 @@ import json
 import os
 from pathlib import Path
 
+from utils import send_data_to_posthog
+
+
 def extract_stats_from_json(json_file: str) -> list[dict]:
     """Extracts the stats from the JSON data and returns them as a list of dictionaries.
 
