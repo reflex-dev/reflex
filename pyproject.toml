@@ -103,4 +103,4 @@ asyncio_mode = "auto"
 
 [tool.codespell]
 skip = "docs/*,*.html,examples/*, *.pyi"
-ignore-words-list = "te, TreeE"
+ignore-words-list = "te, TreeE, crate"
