@@ -73,7 +73,7 @@ jobs:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: |
             export PYTHONUNBUFFERED=1
-            poetry run pytest tests/units --cov --no-cov-on-fail  --codspeed --cov-report= 
+            poetry run pytest tests/units --cov --no-cov-on-fail --codspeed --cov-report= --cov-fail-under=40
       - name: Run unit tests w/ redis
         if: ${{ matrix.os == 'ubuntu-latest' }}
         uses: CodSpeedHQ/action@v3
@@ -82,7 +82,7 @@ jobs:
           run: |
             export PYTHONUNBUFFERED=1
             export REDIS_URL=redis://localhost:6379
-            poetry run pytest tests/units --cov --no-cov-on-fail --codspeed --cov-report=
+            poetry run pytest tests/units --cov --no-cov-on-fail --codspeed --cov-report= --cov-fail-under=40
       # Change to explicitly install v1 when reflex-hosting-cli is compatible with v2
       - name: Run unit tests w/ pydantic v1
         uses: CodSpeedHQ/action@v3
@@ -91,7 +91,7 @@ jobs:
           run: |
             export PYTHONUNBUFFERED=1
             poetry run uv pip install "pydantic~=1.10"
-            poetry run pytest tests/units --cov --no-cov-on-fail --codspeed --cov-report=
+            poetry run pytest tests/units --cov --no-cov-on-fail --codspeed --cov-report= --cov-fail-under=40
       - name: Generate coverage report
         run: poetry run coverage html
 
@@ -114,7 +114,7 @@ jobs:
       - name: Run unit tests
         run: |
           export PYTHONUNBUFFERED=1
-          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report= --cov-fail-under=40
       - name: Run unit tests w/ pydantic v1
         uses: CodSpeedHQ/action@v3
         with: 
@@ -122,4 +122,4 @@ jobs:
           run: |
             export PYTHONUNBUFFERED=1
             poetry run uv pip install "pydantic~=1.10"
-            poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+            poetry run pytest tests/units --cov --no-cov-on-fail --cov-report= --cov-fail-under=40
