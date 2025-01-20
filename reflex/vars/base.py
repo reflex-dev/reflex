@@ -1834,6 +1834,9 @@ class ComputedVar(Var[RETURN_TYPE]):
         default_factory=lambda: lambda _: None
     )  # type: ignore
 
+    # Flag determines whether we are pickling the computed var itself
+    _is_pickling: ClassVar[bool] = False
+
     def __init__(
         self,
         fget: Callable[[BASE_STATE], RETURN_TYPE],
@@ -2227,6 +2230,8 @@ class ComputedVar(Var[RETURN_TYPE]):
         Returns:
             The class of the var.
         """
+        if self._is_pickling:
+            return type(self)
         return FakeComputedVarBaseClass
 
     @property
