@@ -187,6 +187,10 @@ class SystemPackageMissingError(ReflexError):
     """Raised when a system package is missing."""
 
 
+class EventDeserializationError(ReflexError, ValueError):
+    """Raised when an event cannot be deserialized."""
+
+
 def raise_system_package_missing_error(package: str) -> NoReturn:
     """Raise a SystemPackageMissingError.
 
