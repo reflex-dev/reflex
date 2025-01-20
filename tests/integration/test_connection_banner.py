@@ -71,9 +71,10 @@ def has_error_modal(driver: WebDriver) -> bool:
     """
     try:
         driver.find_element(By.XPATH, CONNECTION_ERROR_XPATH)
-        return True
     except NoSuchElementException:
         return False
+    else:
+        return True
 
 
 @pytest.mark.asyncio

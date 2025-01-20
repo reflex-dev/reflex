@@ -278,6 +278,22 @@ def windows_npm_escape_hatch() -> bool:
     return environment.REFLEX_USE_NPM.get()
 
 
+def _check_app_name(config: Config):
+    """Check if the app name is set in the config.
+
+    Args:
+        config: The config object.
+
+    Raises:
+        RuntimeError: If the app name is not set in the config.
+    """
+    if not config.app_name:
+        raise RuntimeError(
+            "Cannot get the app module because `app_name` is not set in rxconfig! "
+            "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
+        )
+
+
 def get_app(reload: bool = False) -> ModuleType:
     """Get the app module based on the default config.
 
@@ -288,18 +304,16 @@ def get_app(reload: bool = False) -> ModuleType:
         The app based on the default config.
 
     Raises:
-        RuntimeError: If the app name is not set in the config.
+        Exception: If an error occurs while getting the app module.
     """
     from reflex.utils import telemetry
 
     try:
         environment.RELOAD_CONFIG.set(reload)
         config = get_config()
-        if not config.app_name:
-            raise RuntimeError(
-                "Cannot get the app module because `app_name` is not set in rxconfig! "
-                "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
-            )
+
+        _check_app_name(config)
+
         module = config.module
         sys.path.insert(0, str(Path.cwd()))
         app = (
@@ -315,11 +329,11 @@ def get_app(reload: bool = False) -> ModuleType:
 
             # Reload the app module.
             importlib.reload(app)
-
-        return app
     except Exception as ex:
         telemetry.send_error(ex, context="frontend")
         raise
+    else:
+        return app
 
 
 def get_and_validate_app(reload: bool = False) -> AppInfo:
@@ -1189,11 +1203,12 @@ def ensure_reflex_installation_id() -> Optional[int]:
         if installation_id is None:
             installation_id = random.getrandbits(128)
             installation_id_file.write_text(str(installation_id))
-        # If we get here, installation_id is definitely set
-        return installation_id
     except Exception as e:
         console.debug(f"Failed to ensure reflex installation id: {e}")
         return None
+    else:
+        # If we get here, installation_id is definitely set
+        return installation_id
 
 
 def initialize_reflex_user_directory():
@@ -1407,18 +1422,21 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
     except OSError as ose:
         console.error(f"Failed to create temp directory for extracting zip: {ose}")
         raise typer.Exit(1) from ose
+
     try:
         zipfile.ZipFile(zip_file_path).extractall(path=unzip_dir)
         # The zip file downloaded from github looks like:
         # repo-name-branch/**/*, so we need to remove the top level directory.
-        if len(subdirs := os.listdir(unzip_dir)) != 1:
-            console.error(f"Expected one directory in the zip, found {subdirs}")
-            raise typer.Exit(1)
-        template_dir = unzip_dir / subdirs[0]
-        console.debug(f"Template folder is located at {template_dir}")
     except Exception as uze:
         console.error(f"Failed to unzip the template: {uze}")
         raise typer.Exit(1) from uze
+
+    if len(subdirs := os.listdir(unzip_dir)) != 1:
+        console.error(f"Expected one directory in the zip, found {subdirs}")
+        raise typer.Exit(1)
+
+    template_dir = unzip_dir / subdirs[0]
+    console.debug(f"Template folder is located at {template_dir}")
 
     # Move the rxconfig file here first.
     path_ops.mv(str(template_dir / constants.Config.FILE), constants.Config.FILE)

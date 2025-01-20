@@ -429,20 +429,22 @@ class Component(BaseComponent, ABC):
             else:
                 continue
 
+            def determine_key(value):
+                # Try to create a var from the value
+                key = value if isinstance(value, Var) else LiteralVar.create(value)
+
+                # Check that the var type is not None.
+                if key is None:
+                    raise TypeError
+
+                return key
+
             # Check whether the key is a component prop.
             if types._issubclass(field_type, Var):
                 # Used to store the passed types if var type is a union.
                 passed_types = None
                 try:
-                    # Try to create a var from the value.
-                    if isinstance(value, Var):
-                        kwargs[key] = value
-                    else:
-                        kwargs[key] = LiteralVar.create(value)
-
-                    # Check that the var type is not None.
-                    if kwargs[key] is None:
-                        raise TypeError
+                    kwargs[key] = determine_key(value)
 
                     expected_type = fields[key].outer_type_.__args__[0]
                     # validate literal fields.
