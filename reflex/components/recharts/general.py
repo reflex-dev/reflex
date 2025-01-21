@@ -241,9 +241,23 @@ class LabelList(Recharts):
     # The stroke color of each label. Default: "none"
     stroke: Var[Union[str, Color]] = LiteralVar.create("none")
 
+class Cell(Recharts):
+    """A Cell component in Recharts."""
+
+    tag = "Cell"
+
+    alias = "RechartsCell"
+
+    # The presentation attribute of a rectangle in bar or a sector in pie.
+    fill: Var[str]
+
+    # The presentation attribute of a rectangle in bar or a sector in pie.
+    stroke: Var[str]
+
 
 responsive_container = ResponsiveContainer.create
 legend = Legend.create
 graphing_tooltip = GraphingTooltip.create
 label = Label.create
 label_list = LabelList.create
+cell = Cell.create
