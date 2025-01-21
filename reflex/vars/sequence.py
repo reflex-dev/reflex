@@ -272,6 +272,25 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         return string_starts_with_operation(self, prefix)
 
     @overload
+    def endswith(self, suffix: StringVar | str) -> BooleanVar: ...
+
+    @overload
+    def endswith(self, suffix: NoReturn) -> NoReturn: ...
+
+    def endswith(self, suffix: Any) -> BooleanVar:
+        """Check if the string ends with a suffix.
+
+        Args:
+            suffix: The suffix.
+
+        Returns:
+            The string ends with operation.
+        """
+        if not isinstance(suffix, (StringVar, str)):
+            raise_unsupported_operand_types("endswith", (type(self), type(suffix)))
+        return string_ends_with_operation(self, suffix)
+
+    @overload
     def __lt__(self, other: StringVar | str) -> BooleanVar: ...
 
     @overload
@@ -498,6 +517,24 @@ def string_starts_with_operation(
     """
     return var_operation_return(
         js_expression=f"{full_string}.startsWith({prefix})", var_type=bool
+    )
+
+
+@var_operation
+def string_ends_with_operation(
+    full_string: StringVar[Any], suffix: StringVar[Any] | str
+):
+    """Check if a string ends with a suffix.
+
+    Args:
+        full_string: The full string.
+        suffix: The suffix.
+
+    Returns:
+        Whether the string ends with the suffix.
+    """
+    return var_operation_return(
+        js_expression=f"{full_string}.endsWith({suffix})", var_type=bool
     )
 
 

@@ -485,6 +485,11 @@ def deploy(
         "--token",
         help="token to use for auth",
     ),
+    config_path: Optional[str] = typer.Option(
+        None,
+        "--config",
+        help="path to the config file",
+    ),
 ):
     """Deploy the app to the Reflex hosting service."""
     from reflex_cli.utils import dependency
@@ -514,7 +519,9 @@ def deploy(
     if prerequisites.needs_reinit(frontend=True):
         _init(name=config.app_name, loglevel=loglevel)
     prerequisites.check_latest_package_version(constants.ReflexHostingCLI.MODULE_NAME)
-
+    extra: dict[str, str] = (
+        {"config_path": config_path} if config_path is not None else {}
+    )
     hosting_cli.deploy(
         app_name=app_name,
         export_fn=lambda zip_dest_dir,
@@ -540,6 +547,7 @@ def deploy(
         loglevel=type(loglevel).INFO,  # type: ignore
         token=token,
         project=project,
+        **extra,
     )
 
 

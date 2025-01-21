@@ -104,9 +104,11 @@ from reflex.utils.exceptions import (
     LockExpiredError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
+    StateMismatchError,
     StateSchemaMismatchError,
     StateSerializationError,
     StateTooLargeError,
+    UnretrievableVarValueError,
 )
 from reflex.utils.exec import is_testing_env
 from reflex.utils.serializers import serializer
@@ -142,6 +144,9 @@ HANDLED_PICKLE_ERRORS = (
     TypeError,
     ValueError,
 )
+
+# For BaseState.get_var_value
+VAR_TYPE = TypeVar("VAR_TYPE")
 
 
 def _no_chain_background_task(
@@ -1193,7 +1198,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 continue
             dynamic_vars[param] = DynamicRouteVar(
                 fget=func,
-                cache=True,
+                auto_deps=False,
+                deps=["router"],
                 _js_expr=param,
                 _var_data=VarData.from_state(cls),
             )
@@ -1537,7 +1543,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Return the direct parent of target_state_cls for subsequent linking.
         return parent_state
 
-    def _get_state_from_cache(self, state_cls: Type[BaseState]) -> BaseState:
+    def _get_state_from_cache(self, state_cls: Type[T_STATE]) -> T_STATE:
         """Get a state instance from the cache.
 
         Args:
@@ -1545,11 +1551,19 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Returns:
             The instance of state_cls associated with this state's client_token.
+
+        Raises:
+            StateMismatchError: If the state instance is not of the expected type.
         """
         root_state = self._get_root_state()
-        return root_state.get_substate(state_cls.get_full_name().split("."))
+        substate = root_state.get_substate(state_cls.get_full_name().split("."))
+        if not isinstance(substate, state_cls):
+            raise StateMismatchError(
+                f"Searched for state {state_cls.get_full_name()} but found {substate}."
+            )
+        return substate
 
-    async def _get_state_from_redis(self, state_cls: Type[BaseState]) -> BaseState:
+    async def _get_state_from_redis(self, state_cls: Type[T_STATE]) -> T_STATE:
         """Get a state instance from redis.
 
         Args:
@@ -1560,6 +1574,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Raises:
             RuntimeError: If redis is not used in this backend process.
+            StateMismatchError: If the state instance is not of the expected type.
         """
         # Fetch all missing parent states from redis.
         parent_state_of_state_cls = await self._populate_parent_states(state_cls)
@@ -1571,14 +1586,22 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 f"Requested state {state_cls.get_full_name()} is not cached and cannot be accessed without redis. "
                 "(All states should already be available -- this is likely a bug).",
             )
-        return await state_manager.get_state(
+
+        state_in_redis = await state_manager.get_state(
             token=_substate_key(self.router.session.client_token, state_cls),
             top_level=False,
             get_substates=True,
             parent_state=parent_state_of_state_cls,
         )
 
-    async def get_state(self, state_cls: Type[BaseState]) -> BaseState:
+        if not isinstance(state_in_redis, state_cls):
+            raise StateMismatchError(
+                f"Searched for state {state_cls.get_full_name()} but found {state_in_redis}."
+            )
+
+        return state_in_redis
+
+    async def get_state(self, state_cls: Type[T_STATE]) -> T_STATE:
         """Get an instance of the state associated with this token.
 
         Allows for arbitrary access to sibling states from within an event handler.
@@ -1597,6 +1620,42 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Slow case - fetch missing parent states from redis.
         return await self._get_state_from_redis(state_cls)
+
+    async def get_var_value(self, var: Var[VAR_TYPE]) -> VAR_TYPE:
+        """Get the value of an rx.Var from another state.
+
+        Args:
+            var: The var to get the value for.
+
+        Returns:
+            The value of the var.
+
+        Raises:
+            UnretrievableVarValueError: If the var does not have a literal value
+                or associated state.
+        """
+        # Oopsie case: you didn't give me a Var... so get what you give.
+        if not isinstance(var, Var):
+            return var  # type: ignore
+
+        # Fast case: this is a literal var and the value is known.
+        if hasattr(var, "_var_value"):
+            return var._var_value
+
+        var_data = var._get_all_var_data()
+        if var_data is None or not var_data.state:
+            raise UnretrievableVarValueError(
+                f"Unable to retrieve value for {var._js_expr}: not associated with any state."
+            )
+        # Fastish case: this var belongs to this state
+        if var_data.state == self.get_full_name():
+            return getattr(self, var_data.field_name)
+
+        # Slow case: this var belongs to another state
+        other_state = await self.get_state(
+            self._get_root_state().get_class_substate(var_data.state)
+        )
+        return getattr(other_state, var_data.field_name)
 
     def _get_event_handler(
         self, event: Event
@@ -1717,9 +1776,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         except Exception as ex:
             state._clean()
 
-            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-
-            event_specs = app_instance.backend_exception_handler(ex)
+            event_specs = (
+                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
+            )
 
             if event_specs is None:
                 return StateUpdate()
@@ -1829,9 +1888,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         except Exception as ex:
             telemetry.send_error(ex, context="backend")
 
-            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-
-            event_specs = app_instance.backend_exception_handler(ex)
+            event_specs = (
+                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
+            )
 
             yield state._as_state_update(
                 handler,
@@ -2274,6 +2333,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return state
 
 
+T_STATE = TypeVar("T_STATE", bound=BaseState)
+
+
 class State(BaseState):
     """The app Base State."""
 
@@ -2341,8 +2403,9 @@ class FrontendEventExceptionState(State):
             component_stack: The stack trace of the component where the exception occurred.
 
         """
-        app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-        app_instance.frontend_exception_handler(Exception(stack))
+        prerequisites.get_and_validate_app().app.frontend_exception_handler(
+            Exception(stack)
+        )
 
 
 class UpdateVarsInternalState(State):
@@ -2380,15 +2443,16 @@ class OnLoadInternalState(State):
             The list of events to queue for on load handling.
         """
         # Do not app._compile()!  It should be already compiled by now.
-        app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-        load_events = app.get_load_events(self.router.page.path)
+        load_events = prerequisites.get_and_validate_app().app.get_load_events(
+            self.router.page.path
+        )
         if not load_events:
             self.is_hydrated = True
             return  # Fast path for navigation with no on_load events defined.
         self.is_hydrated = False
         return [
             *fix_events(
-                load_events,
+                cast(list[Union[EventSpec, EventHandler]], load_events),
                 self.router.session.client_token,
                 router_data=self.router_data,
             ),
@@ -2547,7 +2611,7 @@ class StateProxy(wrapt.ObjectProxy):
         """
         super().__init__(state_instance)
         # compile is not relevant to backend logic
-        self._self_app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+        self._self_app = prerequisites.get_and_validate_app().app
         self._self_substate_path = tuple(state_instance.get_full_name().split("."))
         self._self_actx = None
         self._self_mutable = False
@@ -3640,12 +3704,14 @@ def get_state_manager() -> StateManager:
     Returns:
         The state manager.
     """
-    app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-    return app.state_manager
+    return prerequisites.get_and_validate_app().app.state_manager
 
 
 class MutableProxy(wrapt.ObjectProxy):
     """A proxy for a mutable object that tracks changes."""
+
+    # Hint for finding the base class of the proxy.
+    __base_proxy__ = "MutableProxy"
 
     # Methods on wrapped objects which should mark the state as dirty.
     __mark_dirty_attrs__ = {
@@ -3688,6 +3754,39 @@ class MutableProxy(wrapt.ObjectProxy):
         BaseModelV2,
         BaseModelV1,
     )
+
+    # Dynamically generated classes for tracking dataclass mutations.
+    __dataclass_proxies__: Dict[type, type] = {}
+
+    def __new__(cls, wrapped: Any, *args, **kwargs) -> MutableProxy:
+        """Create a proxy instance for a mutable object that tracks changes.
+
+        Args:
+            wrapped: The object to proxy.
+            *args: Other args passed to MutableProxy (ignored).
+            **kwargs: Other kwargs passed to MutableProxy (ignored).
+
+        Returns:
+            The proxy instance.
+        """
+        if dataclasses.is_dataclass(wrapped):
+            wrapped_cls = type(wrapped)
+            wrapper_cls_name = wrapped_cls.__name__ + cls.__name__
+            # Find the associated class
+            if wrapper_cls_name not in cls.__dataclass_proxies__:
+                # Create a new class that has the __dataclass_fields__ defined
+                cls.__dataclass_proxies__[wrapper_cls_name] = type(
+                    wrapper_cls_name,
+                    (cls,),
+                    {
+                        dataclasses._FIELDS: getattr(  # pyright: ignore [reportGeneralTypeIssues]
+                            wrapped_cls,
+                            dataclasses._FIELDS,  # pyright: ignore [reportGeneralTypeIssues]
+                        ),
+                    },
+                )
+            cls = cls.__dataclass_proxies__[wrapper_cls_name]
+        return super().__new__(cls)
 
     def __init__(self, wrapped: Any, state: BaseState, field_name: str):
         """Create a proxy for a mutable object that tracks changes.
@@ -3745,7 +3844,27 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             Whether the value is of a mutable type.
         """
-        return isinstance(value, cls.__mutable_types__)
+        return isinstance(value, cls.__mutable_types__) or (
+            dataclasses.is_dataclass(value) and not isinstance(value, Var)
+        )
+
+    @staticmethod
+    def _is_called_from_dataclasses_internal() -> bool:
+        """Check if the current function is called from dataclasses helper.
+
+        Returns:
+            Whether the current function is called from dataclasses internal code.
+        """
+        # Walk up the stack a bit to see if we are called from dataclasses
+        # internal code, for example `asdict` or `astuple`.
+        frame = inspect.currentframe()
+        for _ in range(5):
+            # Why not `inspect.stack()` -- this is much faster!
+            if not (frame := frame and frame.f_back):
+                break
+            if inspect.getfile(frame) == dataclasses.__file__:
+                return True
+        return False
 
     def _wrap_recursive(self, value: Any) -> Any:
         """Wrap a value recursively if it is mutable.
@@ -3756,9 +3875,13 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The wrapped value.
         """
+        # When called from dataclasses internal code, return the unwrapped value
+        if self._is_called_from_dataclasses_internal():
+            return value
         # Recursively wrap mutable types, but do not re-wrap MutableProxy instances.
         if self._is_mutable_type(value) and not isinstance(value, MutableProxy):
-            return type(self)(
+            base_cls = globals()[self.__base_proxy__]
+            return base_cls(
                 wrapped=value,
                 state=self._self_state,
                 field_name=self._self_field_name,
@@ -3965,6 +4088,9 @@ class ImmutableMutableProxy(MutableProxy):
     This wrapper comes from StateProxy, and will raise an exception if an attempt is made
     to modify the wrapped object when the StateProxy is immutable.
     """
+
+    # Ensure that recursively wrapped proxies use ImmutableMutableProxy as base.
+    __base_proxy__ = "ImmutableMutableProxy"
 
     def _mark_dirty(
         self,

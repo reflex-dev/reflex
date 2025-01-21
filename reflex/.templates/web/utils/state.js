@@ -208,11 +208,16 @@ export const applyEvent = async (event, socket) => {
   if (event.name == "_download") {
     const a = document.createElement("a");
     a.hidden = true;
+    a.href = event.payload.url;
     // Special case when linking to uploaded files
-    a.href = event.payload.url.replace(
-      "${getBackendURL(env.UPLOAD)}",
-      getBackendURL(env.UPLOAD)
-    );
+    if (a.href.includes("getBackendURL(env.UPLOAD)")) {
+      a.href = eval?.(
+        event.payload.url.replace(
+          "getBackendURL(env.UPLOAD)",
+          `"${getBackendURL(env.UPLOAD)}"`
+        )
+      );
+    }
     a.download = event.payload.filename;
     a.click();
     a.remove();
@@ -405,7 +410,14 @@ export const connect = async (
     autoUnref: false,
   });
   // Ensure undefined fields in events are sent as null instead of removed
-  socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v)
+  socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
+  socket.current.io.decoder.tryParse = (str) => {
+    try {
+      return JSON5.parse(str);
+    } catch (e) {
+      return false;
+    }
+  };
 
   function checkVisibility() {
     if (document.visibilityState === "visible") {

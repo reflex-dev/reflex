@@ -127,7 +127,7 @@ class VarData:
         state: str = "",
         field_name: str = "",
         imports: ImportDict | ParsedImportDict | None = None,
-        hooks: dict[str, None] | None = None,
+        hooks: dict[str, VarData | None] | None = None,
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
     ):
@@ -194,7 +194,9 @@ class VarData:
             (var_data.state for var_data in all_var_datas if var_data.state), ""
         )
 
-        hooks = {hook: None for var_data in all_var_datas for hook in var_data.hooks}
+        hooks: dict[str, VarData | None] = {
+            hook: None for var_data in all_var_datas for hook in var_data.hooks
+        }
 
         _imports = imports.merge_imports(
             *(var_data.imports for var_data in all_var_datas)
@@ -559,7 +561,7 @@ class Var(Generic[VAR_TYPE]):
         if _var_is_local is not None:
             console.deprecate(
                 feature_name="_var_is_local",
-                reason="The _var_is_local argument is not supported for Var."
+                reason="The _var_is_local argument is not supported for Var. "
                 "If you want to create a Var from a raw Javascript expression, use the constructor directly",
                 deprecation_version="0.6.0",
                 removal_version="0.7.0",
@@ -567,7 +569,7 @@ class Var(Generic[VAR_TYPE]):
         if _var_is_string is not None:
             console.deprecate(
                 feature_name="_var_is_string",
-                reason="The _var_is_string argument is not supported for Var."
+                reason="The _var_is_string argument is not supported for Var. "
                 "If you want to create a Var from a raw Javascript expression, use the constructor directly",
                 deprecation_version="0.6.0",
                 removal_version="0.7.0",
@@ -579,7 +581,7 @@ class Var(Generic[VAR_TYPE]):
 
         # Try to pull the imports and hooks from contained values.
         if not isinstance(value, str):
-            return LiteralVar.create(value)
+            return LiteralVar.create(value, _var_data=_var_data)
 
         if _var_is_string is False or _var_is_local is True:
             return cls(
@@ -1836,7 +1838,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         self,
         fget: Callable[[BASE_STATE], RETURN_TYPE],
         initial_value: RETURN_TYPE | types.Unset = types.Unset(),
-        cache: bool = False,
+        cache: bool = True,
         deps: Optional[List[Union[str, Var]]] = None,
         auto_deps: bool = True,
         interval: Optional[Union[int, datetime.timedelta]] = None,
@@ -2251,7 +2253,7 @@ if TYPE_CHECKING:
 def computed_var(
     fget: None = None,
     initial_value: Any | types.Unset = types.Unset(),
-    cache: bool = False,
+    cache: bool = True,
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
@@ -2264,7 +2266,7 @@ def computed_var(
 def computed_var(
     fget: Callable[[BASE_STATE], RETURN_TYPE],
     initial_value: RETURN_TYPE | types.Unset = types.Unset(),
-    cache: bool = False,
+    cache: bool = True,
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
@@ -2276,7 +2278,7 @@ def computed_var(
 def computed_var(
     fget: Callable[[BASE_STATE], Any] | None = None,
     initial_value: Any | types.Unset = types.Unset(),
-    cache: bool = False,
+    cache: bool = True,
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,

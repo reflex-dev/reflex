@@ -156,9 +156,10 @@ def _prepare_event(event: str, **kwargs) -> dict:
 def _send_event(event_data: dict) -> bool:
     try:
         httpx.post(POSTHOG_API_URL, json=event_data)
-        return True
     except Exception:
         return False
+    else:
+        return True
 
 
 def _send(event, telemetry_enabled, **kwargs):
