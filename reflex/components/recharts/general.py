@@ -241,6 +241,7 @@ class LabelList(Recharts):
     # The stroke color of each label. Default: "none"
     stroke: Var[Union[str, Color]] = LiteralVar.create("none")
 
+
 class Cell(Recharts):
     """A Cell component in Recharts."""
 
