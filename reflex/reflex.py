@@ -566,9 +566,8 @@ def rename(
     """Rename the app in the current directory."""
     from reflex.utils import prerequisites
 
-    console.set_log_level(loglevel)
     prerequisites.validate_app_name(new_name)
-    prerequisites.rename_app(new_name)
+    prerequisites.rename_app(new_name, loglevel)
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")

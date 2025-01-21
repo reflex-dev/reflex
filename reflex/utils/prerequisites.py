@@ -504,6 +504,7 @@ def rename_path_up_tree(full_path: str | Path, old_name: str, new_name: str) -> 
             new_base = base.replace(old_name, new_name)
             new_path = directory / new_base
             current_path.rename(new_path)
+            console.debug(f"Renamed {current_path} -> {new_path}")
             current_path = new_path
         else:
             new_path = current_path
@@ -514,15 +515,19 @@ def rename_path_up_tree(full_path: str | Path, old_name: str, new_name: str) -> 
     return new_path
 
 
-def rename_app(new_app_name: str):
+def rename_app(new_app_name: str, loglevel: constants.LogLevel):
     """Rename the app directory.
 
     Args:
         new_app_name: The new name for the app.
+        loglevel: The log level to use.
 
     Raises:
         Exit: If the command is not ran in the root dir or the app module cannot be imported.
     """
+    # Set the log level.
+    console.set_log_level(loglevel)
+
     if not constants.Config.FILE.exists():
         console.error(
             "No rxconfig.py found. Make sure you are in the root directory of your app."
