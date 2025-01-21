@@ -183,7 +183,7 @@ def get_npm_path() -> Path | None:
     npm_path = Path(constants.Node.NPM_PATH)
     if use_system_node() or not npm_path.exists():
         system_npm_path = which("npm")
-        npm_path = Path(system_npm_path).parent.resolve() if system_npm_path else None
+        npm_path = Path(system_npm_path) if system_npm_path else None
     return npm_path.absolute() if npm_path else None
 
 
