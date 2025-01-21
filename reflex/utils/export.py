@@ -38,7 +38,7 @@ def export(
     console.set_log_level(loglevel)
 
     # Set env mode in the environment
-    environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
+    environment.REFLEX_ENV_MODE.set(env)
 
     # Override the config url values if provided.
     if api_url is not None:
