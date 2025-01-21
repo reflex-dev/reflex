@@ -26,6 +26,7 @@ from typing import (
     Iterable,
     List,
     Literal,
+    Mapping,
     NoReturn,
     Optional,
     Set,
@@ -65,6 +66,7 @@ from reflex.utils.types import (
     _isinstance,
     get_origin,
     has_args,
+    safe_issubclass,
     unionize,
 )
 
@@ -128,7 +130,7 @@ class VarData:
         state: str = "",
         field_name: str = "",
         imports: ImportDict | ParsedImportDict | None = None,
-        hooks: dict[str, VarData | None] | None = None,
+        hooks: Mapping[str, VarData | None] | None = None,
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
     ):
@@ -613,8 +615,8 @@ class Var(Generic[VAR_TYPE]):
     @overload
     def to(
         self,
-        output: type[dict],
-    ) -> ObjectVar[dict]: ...
+        output: type[Mapping],
+    ) -> ObjectVar[Mapping]: ...
 
     @overload
     def to(
@@ -656,7 +658,9 @@ class Var(Generic[VAR_TYPE]):
 
         # If the first argument is a python type, we map it to the corresponding Var type.
         for var_subclass in _var_subclasses[::-1]:
-            if fixed_output_type in var_subclass.python_types:
+            if fixed_output_type in var_subclass.python_types or safe_issubclass(
+                fixed_output_type, var_subclass.python_types
+            ):
                 return self.to(var_subclass.var_subclass, output)
 
         if fixed_output_type is None:
@@ -790,7 +794,7 @@ class Var(Generic[VAR_TYPE]):
             return False
         if issubclass(type_, list):
             return []
-        if issubclass(type_, dict):
+        if issubclass(type_, Mapping):
             return {}
         if issubclass(type_, tuple):
             return ()
@@ -996,7 +1000,7 @@ class Var(Generic[VAR_TYPE]):
                     f"$/{constants.Dirs.STATE_PATH}": [imports.ImportVar(tag="refs")]
                 }
             ),
-        ).to(ObjectVar, Dict[str, str])
+        ).to(ObjectVar, Mapping[str, str])
         return refs[LiteralVar.create(str(self))]
 
     @deprecated("Use `.js_type()` instead.")
@@ -1343,7 +1347,7 @@ class LiteralVar(Var):
 
         serialized_value = serializers.serialize(value)
         if serialized_value is not None:
-            if isinstance(serialized_value, dict):
+            if isinstance(serialized_value, Mapping):
                 return LiteralObjectVar.create(
                     serialized_value,
                     _var_type=type(value),
@@ -1468,7 +1472,7 @@ def var_operation(
 ) -> Callable[P, ArrayVar[LIST_T]]: ...
 
 
-OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Dict)
+OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Mapping)
 
 
 @overload
@@ -1543,8 +1547,8 @@ def figure_out_type(value: Any) -> types.GenericType:
         return Set[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, tuple):
         return Tuple[unionize(*(figure_out_type(v) for v in value)), ...]
-    if isinstance(value, dict):
-        return Dict[
+    if isinstance(value, Mapping):
+        return Mapping[
             unionize(*(figure_out_type(k) for k in value)),
             unionize(*(figure_out_type(v) for v in value.values())),
         ]
@@ -1968,10 +1972,10 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: ComputedVar[dict[DICT_KEY, DICT_VAL]],
+        self: ComputedVar[Mapping[DICT_KEY, DICT_VAL]],
         instance: None,
         owner: Type,
-    ) -> ObjectVar[dict[DICT_KEY, DICT_VAL]]: ...
+    ) -> ObjectVar[Mapping[DICT_KEY, DICT_VAL]]: ...
 
     @overload
     def __get__(
@@ -2878,11 +2882,14 @@ V = TypeVar("V")
 
 BASE_TYPE = TypeVar("BASE_TYPE", bound=Base)
 
+FIELD_TYPE = TypeVar("FIELD_TYPE")
+MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping)
 
-class Field(Generic[T]):
+
+class Field(Generic[FIELD_TYPE]):
     """Shadow class for Var to allow for type hinting in the IDE."""
 
-    def __set__(self, instance, value: T):
+    def __set__(self, instance, value: FIELD_TYPE):
         """Set the Var.
 
         Args:
@@ -2894,7 +2901,9 @@ class Field(Generic[T]):
     def __get__(self: Field[bool], instance: None, owner) -> BooleanVar: ...
 
     @overload
-    def __get__(self: Field[int], instance: None, owner) -> NumberVar: ...
+    def __get__(
+        self: Field[int] | Field[float] | Field[int | float], instance: None, owner
+    ) -> NumberVar: ...
 
     @overload
     def __get__(self: Field[str], instance: None, owner) -> StringVar: ...
@@ -2911,8 +2920,8 @@ class Field(Generic[T]):
 
     @overload
     def __get__(
-        self: Field[Dict[str, V]], instance: None, owner
-    ) -> ObjectVar[Dict[str, V]]: ...
+        self: Field[MAPPING_TYPE], instance: None, owner
+    ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
@@ -2920,10 +2929,10 @@ class Field(Generic[T]):
     ) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
-    def __get__(self, instance: None, owner) -> Var[T]: ...
+    def __get__(self, instance: None, owner) -> Var[FIELD_TYPE]: ...
 
     @overload
-    def __get__(self, instance, owner) -> T: ...
+    def __get__(self, instance, owner) -> FIELD_TYPE: ...
 
     def __get__(self, instance, owner):  # type: ignore
         """Get the Var.
@@ -2934,7 +2943,7 @@ class Field(Generic[T]):
         """
 
 
-def field(value: T) -> Field[T]:
+def field(value: FIELD_TYPE) -> Field[FIELD_TYPE]:
     """Create a Field with a value.
 
     Args:

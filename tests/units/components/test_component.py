@@ -29,6 +29,7 @@ from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
 from reflex.utils.exceptions import (
+    ChildrenTypeError,
     EventFnArgMismatchError,
     EventHandlerArgTypeMismatchError,
 )
@@ -652,14 +653,17 @@ def test_create_filters_none_props(test_component):
     assert str(component.style["text-align"]) == '"center"'
 
 
-@pytest.mark.parametrize("children", [((None,),), ("foo", ("bar", (None,)))])
+@pytest.mark.parametrize(
+    "children",
+    [
+        ((None,),),
+        ("foo", ("bar", (None,))),
+        ({"foo": "bar"},),
+    ],
+)
 def test_component_create_unallowed_types(children, test_component):
-    with pytest.raises(TypeError) as err:
+    with pytest.raises(ChildrenTypeError):
         test_component.create(*children)
-    assert (
-        err.value.args[0]
-        == "Children of Reflex components must be other components, state vars, or primitive Python types. Got child None of type <class 'NoneType'>."
-    )
 
 
 @pytest.mark.parametrize(

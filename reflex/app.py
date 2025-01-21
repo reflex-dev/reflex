@@ -463,14 +463,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
         Returns:
             The generated component.
-
-        Raises:
-            exceptions.MatchTypeError: If the return types of match cases in rx.match are different.
         """
-        try:
-            return component if isinstance(component, Component) else component()
-        except exceptions.MatchTypeError:
-            raise
+        return component if isinstance(component, Component) else component()
 
     def add_page(
         self,
@@ -564,11 +558,12 @@ class App(MiddlewareMixin, LifespanMixin):
             meta=meta,
         )
 
-    def _compile_page(self, route: str):
+    def _compile_page(self, route: str, save_page: bool = True):
         """Compile a page.
 
         Args:
             route: The route of the page to compile.
+            save_page: If True, the compiled page is saved to self.pages.
         """
         component, enable_state = compiler.compile_unevaluated_page(
             route, self.unevaluated_pages[route], self.state, self.style, self.theme
@@ -579,7 +574,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Add the page.
         self._check_routes_conflict(route)
-        self.pages[route] = component
+        if save_page:
+            self.pages[route] = component
 
     def get_load_events(self, route: str) -> list[IndividualEventType[[], Any]]:
         """Get the load events for a route.
@@ -879,14 +875,16 @@ class App(MiddlewareMixin, LifespanMixin):
             # If a theme component was provided, wrap the app with it
             app_wrappers[(20, "Theme")] = self.theme
 
+        should_compile = self._should_compile()
+
         for route in self.unevaluated_pages:
             console.debug(f"Evaluating page: {route}")
-            self._compile_page(route)
+            self._compile_page(route, save_page=should_compile)
 
         # Add the optional endpoints (_upload)
         self._add_optional_endpoints()
 
-        if not self._should_compile():
+        if not should_compile:
             return
 
         self._validate_var_dependencies()
@@ -1530,7 +1528,11 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
         """
-        pass
+        subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL", None)
+        if subprotocol and subprotocol != constants.Reflex.VERSION:
+            console.warn(
+                f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
+            )
 
     def on_disconnect(self, sid):
         """Event for when the websocket disconnects.
@@ -1563,10 +1565,36 @@ class EventNamespace(AsyncNamespace):
         Args:
             sid: The Socket.IO session id.
             data: The event data.
+
+        Raises:
+            EventDeserializationError: If the event data is not a dictionary.
         """
         fields = data
-        # Get the event.
-        event = Event(**{k: v for k, v in fields.items() if k in _EVENT_FIELDS})
+
+        if isinstance(fields, str):
+            console.warn(
+                "Received event data as a string. This generally should not happen and may indicate a bug."
+                f" Event data: {fields}"
+            )
+            try:
+                fields = json.loads(fields)
+            except json.JSONDecodeError as ex:
+                raise exceptions.EventDeserializationError(
+                    f"Failed to deserialize event data: {fields}."
+                ) from ex
+
+        if not isinstance(fields, dict):
+            raise exceptions.EventDeserializationError(
+                f"Event data must be a dictionary, but received {fields} of type {type(fields)}."
+            )
+
+        try:
+            # Get the event.
+            event = Event(**{k: v for k, v in fields.items() if k in _EVENT_FIELDS})
+        except (TypeError, ValueError) as ex:
+            raise exceptions.EventDeserializationError(
+                f"Failed to deserialize event data: {fields}."
+            ) from ex
 
         self.token_to_sid[event.token] = sid
         self.sid_to_token[sid] = event.token

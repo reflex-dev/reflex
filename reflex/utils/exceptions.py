@@ -1,5 +1,7 @@
 """Custom Exceptions."""
 
+from typing import Any
+
 
 class ReflexError(Exception):
     """Base exception for all Reflex exceptions."""
@@ -27,6 +29,22 @@ class EnvVarValueError(ReflexError, ValueError):
 
 class ComponentTypeError(ReflexError, TypeError):
     """Custom TypeError for component related errors."""
+
+
+class ChildrenTypeError(ComponentTypeError):
+    """Raised when the children prop of a component is not a valid type."""
+
+    def __init__(self, component: str, child: Any):
+        """Initialize the exception.
+
+        Args:
+            component: The name of the component.
+            child: The child that caused the error.
+        """
+        super().__init__(
+            f"Component {component} received child {child} of type {type(child)}. "
+            "Accepted types are other components, state vars, or primitive Python types (dict excluded)."
+        )
 
 
 class EventHandlerTypeError(ReflexError, TypeError):
@@ -207,6 +225,10 @@ class SystemPackageMissingError(ReflexError):
             f"System package '{package}' is missing."
             f" Please install it through your system package manager.{extra}"
         )
+
+
+class EventDeserializationError(ReflexError, ValueError):
+    """Raised when an event cannot be deserialized."""
 
 
 class InvalidLockWarningThresholdError(ReflexError):
