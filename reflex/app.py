@@ -595,7 +595,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         Args:
             route: The route of the page to compile.
-            save_page: If True, the compiled page is saved to self.pages.
+            save_page: If True, the compiled page is saved to self._pages.
         """
         component, enable_state = compiler.compile_unevaluated_page(
             route, self._unevaluated_pages[route], self._state, self.style, self.theme
@@ -607,7 +607,7 @@ class App(MiddlewareMixin, LifespanMixin):
         # Add the page.
         self._check_routes_conflict(route)
         if save_page:
-            self.pages[route] = component
+            self._pages[route] = component
 
     def get_load_events(self, route: str) -> list[IndividualEventType[[], Any]]:
         """Get the load events for a route.
@@ -912,7 +912,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         should_compile = self._should_compile()
 
-        for route in self.unevaluated_pages:
+        for route in self._unevaluated_pages:
             console.debug(f"Evaluating page: {route}")
             self._compile_page(route, save_page=should_compile)
 
