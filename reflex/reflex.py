@@ -306,6 +306,9 @@ def export(
         help="Whether to exclude sqlite db files when exporting backend.",
         hidden=True,
     ),
+    env: constants.Env = typer.Option(
+        constants.Env.PROD, help="The environment to run the app in."
+    ),
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
@@ -323,6 +326,7 @@ def export(
         backend=backend,
         zip_dest_dir=zip_dest_dir,
         upload_db_file=upload_db_file,
+        env=env,
         loglevel=loglevel.subprocess_level(),
     )
 
