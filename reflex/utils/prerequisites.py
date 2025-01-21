@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import ast
 import contextlib
 import dataclasses
 import functools
@@ -26,7 +25,6 @@ from pathlib import Path
 from types import ModuleType
 from typing import Callable, List, NamedTuple, Optional
 
-import astor
 import httpx
 import typer
 from alembic.util.exc import CommandError
@@ -480,9 +478,8 @@ def validate_app_name(app_name: str | None = None) -> str:
     return app_name
 
 
-def rename_path_up_tree(full_path, old_name, new_name):
-    """
-    Rename all instances of `old_name` in the path (file and directories) to `new_name`.
+def rename_path_up_tree(full_path: str | Path, old_name: str, new_name: str) -> Path:
+    """Rename all instances of `old_name` in the path (file and directories) to `new_name`.
     The renaming stops when we reach the directory containing `rxconfig.py`.
 
     Args:
@@ -491,7 +488,7 @@ def rename_path_up_tree(full_path, old_name, new_name):
         new_name: The replacement name.
 
     Returns:
-        Path: The updated path after renaming.
+         The updated path after renaming.
     """
     current_path = Path(full_path)
     new_path = None
@@ -521,7 +518,9 @@ def rename_path_up_tree(full_path, old_name, new_name):
 def rename_app(app_name: str):
     """Rename the app directory."""
     if not constants.Config.FILE.exists():
-        console.error("No rxconfig.py found. Make sure you are in the root directory of your app.")
+        console.error(
+            "No rxconfig.py found. Make sure you are in the root directory of your app."
+        )
         raise typer.Exit(1)
 
     config = get_config()
@@ -534,16 +533,13 @@ def rename_app(app_name: str):
         console.error(f"Could not find origin for module {config.module}.")
         raise typer.Exit(1)
 
-    process_directory(
-        Path.cwd(), config.app_name, app_name, exclude_dirs=[".web"]
-    )
+    process_directory(Path.cwd(), config.app_name, app_name, exclude_dirs=[".web"])
 
     rename_path_up_tree(Path(module_path.origin), config.app_name, app_name)
 
 
-def rename_imports_and_app_name(file_path, old_name, new_name):
-    """
-    Rename imports and update the app_name in the file using string replacement.
+def rename_imports_and_app_name(file_path: str | Path, old_name: str, new_name: str):
+    """Rename imports and update the app_name in the file using string replacement.
     Handles both keyword and positional arguments for `rx.Config` and import statements.
     """
     file_path = Path(file_path)
@@ -551,15 +547,15 @@ def rename_imports_and_app_name(file_path, old_name, new_name):
 
     # Replace `from old_name.` or `from old_name` with `from new_name`
     content = re.sub(
-        rf'\bfrom {re.escape(old_name)}(\b|\.|\s)',
-        lambda match: f'from {new_name}{match.group(1)}',
+        rf"\bfrom {re.escape(old_name)}(\b|\.|\s)",
+        lambda match: f"from {new_name}{match.group(1)}",
         content,
     )
 
     # Replace `import old_name` with `import new_name`
     content = re.sub(
-        rf'\bimport {re.escape(old_name)}\b',
-        f'import {new_name}',
+        rf"\bimport {re.escape(old_name)}\b",
+        f"import {new_name}",
         content,
     )
 
@@ -580,22 +576,28 @@ def rename_imports_and_app_name(file_path, old_name, new_name):
     file_path.write_text(content)
 
 
-
-def process_directory(directory, old_name, new_name, exclude_dirs=None, extensions=None):
-    """
-    Process files with specified extensions in a directory, excluding specified directories.
+def process_directory(
+    directory: str | Path,
+    old_name: str,
+    new_name: str,
+    exclude_dirs: list | None = None,
+    extensions: list | None = None,
+):
+    """Process files with specified extensions in a directory, excluding specified directories.
 
     Args:
-        directory (str or Path): The root directory to process.
-        old_name (str): The old name to replace.
-        new_name (str): The new name to use.
-        exclude_dirs (list, optional): List of directory names to exclude. Defaults to None.
-        extensions (list, optional): List of file extensions to process. Defaults to [".py"].
+        directory: The root directory to process.
+        old_name: The old name to replace.
+        new_name: The new name to use.
+        exclude_dirs: List of directory names to exclude. Defaults to None.
+        extensions: List of file extensions to process. Defaults to [".py"].
     """
     exclude_dirs = exclude_dirs or []
     extensions = extensions or [".py", ".md"]
     extensions_set = {ext.lstrip(".") for ext in extensions}
     directory = Path(directory)
+
+    root_exclude_dirs = {directory / exclude_dir for exclude_dir in exclude_dirs}
 
     files = (
         p.resolve()
@@ -604,9 +606,10 @@ def process_directory(directory, old_name, new_name, exclude_dirs=None, extensio
     )
 
     for file_path in files:
-        if not any(part in exclude_dirs for part in file_path.parts):
+        if not any(
+            file_path.is_relative_to(exclude_dir) for exclude_dir in root_exclude_dirs
+        ):
             rename_imports_and_app_name(file_path, old_name, new_name)
-
 
 
 def create_config(app_name: str):

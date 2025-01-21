@@ -555,6 +555,7 @@ def deploy(
         **extra,
     )
 
+
 @cli.command()
 def rename(
     new_name: str = typer.Argument(..., help="The new name for the app."),
