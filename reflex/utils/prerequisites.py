@@ -494,7 +494,6 @@ def rename_path_up_tree(full_path: str | Path, old_name: str, new_name: str) -> 
     new_path = None
 
     while True:
-        # Split the current path into its directory and base name
         directory, base = current_path.parent, current_path.name
         # Stop renaming when we reach the root dir (which contains rxconfig.py)
         if current_path.is_dir() and (current_path / "rxconfig.py").exists():
