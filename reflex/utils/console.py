@@ -49,7 +49,12 @@ def set_log_level(log_level: LogLevel):
 
     Args:
         log_level: The log level to set.
+
+    Raises:
+        TypeError: If the log level is a string.
     """
+    if isinstance(log_level, str):
+        raise TypeError("log_level must be a LogLevel enum value, not str.")
     global _LOG_LEVEL
     _LOG_LEVEL = log_level
 
