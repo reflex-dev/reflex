@@ -307,7 +307,7 @@ def export(
         hidden=True,
     ),
     env: constants.Env = typer.Option(
-        constants.Env.PROD, help="The environment to run the app in."
+        constants.Env.PROD, help="The environment to export the app in."
     ),
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
