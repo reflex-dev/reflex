@@ -104,9 +104,57 @@ class Icon(LucideIconComponent):
         Raises:
             AttributeError: The errors tied to bad usage of the Icon component.
             ValueError: If the icon tag is invalid.
+            TypeError: If the icon name is not a string.
 
         Returns:
             The created component.
+        """
+        ...
+
+class DynamicIcon(LucideIconComponent):
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        name: Optional[Union[Var[str], str]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
+        **props,
+    ) -> "DynamicIcon":
+        """Create the component.
+
+        Args:
+            *children: The children of the component.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The props of the component.
+
+        Returns:
+            The component.
         """
         ...
 
@@ -889,6 +937,7 @@ LUCIDE_ICON_LIST = [
     "house",
     "house_plug",
     "house_plus",
+    "house_wifi",
     "ice_cream_bowl",
     "ice_cream_cone",
     "id_card",
@@ -1577,6 +1626,7 @@ LUCIDE_ICON_LIST = [
     "trending_up_down",
     "triangle",
     "triangle_alert",
+    "triangle_dashed",
     "triangle_right",
     "trophy",
     "truck",
@@ -1682,3 +1732,7 @@ LUCIDE_ICON_LIST = [
     "zoom_in",
     "zoom_out",
 ]
+LUCIDE_ICON_MAPPING_OVERRIDE = {
+    "grid_2x_2_check": "Grid2x2Check",
+    "grid_2x_2_x": "Grid2x2X",
+}

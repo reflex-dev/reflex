@@ -2,13 +2,15 @@
 
 from reflex.components.component import Component
 from reflex.utils import format
-from reflex.vars.base import Var
+from reflex.utils.imports import ImportVar
+from reflex.vars.base import LiteralVar, Var
+from reflex.vars.sequence import LiteralStringVar
 
 
 class LucideIconComponent(Component):
     """Lucide Icon Component."""
 
-    library = "lucide-react@0.469.0"
+    library = "lucide-react@0.471.1"
 
 
 class Icon(LucideIconComponent):
@@ -32,6 +34,7 @@ class Icon(LucideIconComponent):
         Raises:
             AttributeError: The errors tied to bad usage of the Icon component.
             ValueError: If the icon tag is invalid.
+            TypeError: If the icon name is not a string.
 
         Returns:
             The created component.
@@ -39,7 +42,6 @@ class Icon(LucideIconComponent):
         if children:
             if len(children) == 1 and isinstance(children[0], str):
                 props["tag"] = children[0]
-                children = []
             else:
                 raise AttributeError(
                     f"Passing multiple children to Icon component is not allowed: remove positional arguments {children[1:]} to fix"
@@ -47,19 +49,46 @@ class Icon(LucideIconComponent):
         if "tag" not in props:
             raise AttributeError("Missing 'tag' keyword-argument for Icon")
 
+        tag: str | Var | LiteralVar = props.pop("tag")
+        if isinstance(tag, LiteralVar):
+            if isinstance(tag, LiteralStringVar):
+                tag = tag._var_value
+            else:
+                raise TypeError(f"Icon name must be a string, got {type(tag)}")
+        elif isinstance(tag, Var):
+            return DynamicIcon.create(name=tag, **props)
+
         if (
-            not isinstance(props["tag"], str)
-            or format.to_snake_case(props["tag"]) not in LUCIDE_ICON_LIST
+            not isinstance(tag, str)
+            or format.to_snake_case(tag) not in LUCIDE_ICON_LIST
         ):
             raise ValueError(
-                f"Invalid icon tag: {props['tag']}. Please use one of the following: {', '.join(LUCIDE_ICON_LIST[0:25])}, ..."
+                f"Invalid icon tag: {tag}. Please use one of the following: {', '.join(LUCIDE_ICON_LIST[0:25])}, ..."
                 "\nSee full list at https://lucide.dev/icons."
             )
 
-        props["tag"] = format.to_title_case(format.to_snake_case(props["tag"])) + "Icon"
+        if tag in LUCIDE_ICON_MAPPING_OVERRIDE:
+            props["tag"] = LUCIDE_ICON_MAPPING_OVERRIDE[tag]
+        else:
+            props["tag"] = format.to_title_case(format.to_snake_case(tag)) + "Icon"
         props["alias"] = f"Lucide{props['tag']}"
         props.setdefault("color", "var(--current-color)")
-        return super().create(*children, **props)
+        return super().create(**props)
+
+
+class DynamicIcon(LucideIconComponent):
+    """A DynamicIcon component."""
+
+    tag = "DynamicIcon"
+
+    name: Var[str]
+
+    def _get_imports(self):
+        _imports = super()._get_imports()
+        if self.library:
+            _imports.pop(self.library)
+        _imports["lucide-react/dynamic"] = [ImportVar("DynamicIcon", install=False)]
+        return _imports
 
 
 LUCIDE_ICON_LIST = [
@@ -841,6 +870,7 @@ LUCIDE_ICON_LIST = [
     "house",
     "house_plug",
     "house_plus",
+    "house_wifi",
     "ice_cream_bowl",
     "ice_cream_cone",
     "id_card",
@@ -1529,6 +1559,7 @@ LUCIDE_ICON_LIST = [
     "trending_up_down",
     "triangle",
     "triangle_alert",
+    "triangle_dashed",
     "triangle_right",
     "trophy",
     "truck",
@@ -1634,3 +1665,10 @@ LUCIDE_ICON_LIST = [
     "zoom_in",
     "zoom_out",
 ]
+
+# The default transformation of some icon names doesn't match how the
+# icons are exported from Lucide. Manual overrides can go here.
+LUCIDE_ICON_MAPPING_OVERRIDE = {
+    "grid_2x_2_check": "Grid2x2Check",
+    "grid_2x_2_x": "Grid2x2X",
+}

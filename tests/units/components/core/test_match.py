@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import List, Mapping, Tuple
 
 import pytest
 
@@ -67,7 +67,7 @@ def test_match_components():
     assert fourth_return_value_render["children"][0]["contents"] == '{"fourth value"}'
 
     assert match_cases[4][0]._js_expr == '({ ["foo"] : "bar" })'
-    assert match_cases[4][0]._var_type == Dict[str, str]
+    assert match_cases[4][0]._var_type == Mapping[str, str]
     fifth_return_value_render = match_cases[4][1].render()
     assert fifth_return_value_render["name"] == "RadixThemesText"
     assert fifth_return_value_render["children"][0]["contents"] == '{"fifth value"}'

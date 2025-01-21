@@ -22,22 +22,22 @@ def ComputedVars():
         count: int = 0
 
         # cached var with dep on count
-        @rx.var(cache=True, interval=15)
+        @rx.var(interval=15)
         def count1(self) -> int:
             return self.count
 
         # cached backend var with dep on count
-        @rx.var(cache=True, interval=15, backend=True)
+        @rx.var(interval=15, backend=True)
         def count1_backend(self) -> int:
             return self.count
 
         # same as above but implicit backend with `_` prefix
-        @rx.var(cache=True, interval=15)
+        @rx.var(interval=15)
         def _count1_backend(self) -> int:
             return self.count
 
         # explicit disabled auto_deps
-        @rx.var(interval=15, cache=True, auto_deps=False)
+        @rx.var(interval=15, auto_deps=False)
         def count3(self) -> int:
             # this will not add deps, because auto_deps is False
             print(self.count1)
@@ -45,18 +45,26 @@ def ComputedVars():
             return self.count
 
         # explicit dependency on count var
-        @rx.var(cache=True, deps=["count"], auto_deps=False)
+        @rx.var(deps=["count"], auto_deps=False)
         def depends_on_count(self) -> int:
             return self.count
 
         # explicit dependency on count1 var
-        @rx.var(cache=True, deps=[count1], auto_deps=False)
+        @rx.var(deps=[count1], auto_deps=False)
         def depends_on_count1(self) -> int:
             return self.count
 
-        @rx.var(deps=[count3], auto_deps=False, cache=True)
+        @rx.var(
+            deps=[count3],
+            auto_deps=False,
+        )
         def depends_on_count3(self) -> int:
             return self.count
+
+        # special floats should be properly decoded on the frontend
+        @rx.var(cache=True, initial_value=[])
+        def special_floats(self) -> list[float]:
+            return [42.9, float("nan"), float("inf"), float("-inf")]
 
         @rx.event
         def increment(self):
@@ -102,6 +110,11 @@ def ComputedVars():
                 rx.text(
                     State.depends_on_count3,
                     id="depends_on_count3",
+                ),
+                rx.text("special_floats:"),
+                rx.text(
+                    State.special_floats.join(", "),
+                    id="special_floats",
                 ),
             ),
         )
@@ -223,6 +236,10 @@ async def test_computed_vars(
     depends_on_count3 = driver.find_element(By.ID, "depends_on_count3")
     assert depends_on_count3
     assert depends_on_count3.text == "0"
+
+    special_floats = driver.find_element(By.ID, "special_floats")
+    assert special_floats
+    assert special_floats.text == "42.9, NaN, Infinity, -Infinity"
 
     increment = driver.find_element(By.ID, "increment")
     assert increment.is_enabled()
