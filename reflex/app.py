@@ -1528,7 +1528,11 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
         """
-        pass
+        subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL", None)
+        if subprotocol and subprotocol != constants.Reflex.VERSION:
+            console.warn(
+                f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
+            )
 
     def on_disconnect(self, sid):
         """Event for when the websocket disconnects.
