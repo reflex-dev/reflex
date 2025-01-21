@@ -555,6 +555,20 @@ def deploy(
         **extra,
     )
 
+@cli.command()
+def rename(
+    new_name: str = typer.Argument(..., help="The new name for the app."),
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Rename the app in the current directory."""
+    from reflex.utils import prerequisites
+
+    console.set_log_level(loglevel)
+    prerequisites.validate_app_name(new_name)
+    prerequisites.rename_app(new_name)
+
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
 cli.add_typer(script_cli, name="script", help="Subcommands running helper scripts.")
