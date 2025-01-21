@@ -501,7 +501,7 @@ def rename_path_up_tree(full_path: str | Path, old_name: str, new_name: str) -> 
             new_path = current_path
             break
 
-        if old_name in base:
+        if old_name == base.removesuffix(constants.Ext.PY):
             new_base = base.replace(old_name, new_name)
             new_path = directory / new_base
             current_path.rename(new_path)
@@ -515,8 +515,15 @@ def rename_path_up_tree(full_path: str | Path, old_name: str, new_name: str) -> 
     return new_path
 
 
-def rename_app(app_name: str):
-    """Rename the app directory."""
+def rename_app(new_app_name: str):
+    """Rename the app directory.
+
+    Args:
+        new_app_name: The new name for the app.
+
+    Raises:
+        Exit: If the command is not ran in the root dir or the app module cannot be imported.
+    """
     if not constants.Config.FILE.exists():
         console.error(
             "No rxconfig.py found. Make sure you are in the root directory of your app."
@@ -532,15 +539,26 @@ def rename_app(app_name: str):
     if not module_path.origin:
         console.error(f"Could not find origin for module {config.module}.")
         raise typer.Exit(1)
+    console.info(f"Renaming app directory to {new_app_name}.")
+    process_directory(
+        Path.cwd(),
+        config.app_name,
+        new_app_name,
+        exclude_dirs=[constants.Dirs.WEB, constants.Dirs.APP_ASSETS],
+    )
 
-    process_directory(Path.cwd(), config.app_name, app_name, exclude_dirs=[".web"])
+    rename_path_up_tree(Path(module_path.origin), config.app_name, new_app_name)
 
-    rename_path_up_tree(Path(module_path.origin), config.app_name, app_name)
+    console.success(f"App directory renamed to [bold]{new_app_name}[/bold].")
 
 
 def rename_imports_and_app_name(file_path: str | Path, old_name: str, new_name: str):
-    """Rename imports and update the app_name in the file using string replacement.
-    Handles both keyword and positional arguments for `rx.Config` and import statements.
+    """Rename imports the file using string replacement as well as app_name in rxconfig.py.
+
+    Args:
+        file_path: The file to process.
+        old_name: The old name to replace.
+        new_name: The new name to use.
     """
     file_path = Path(file_path)
     content = file_path.read_text()
@@ -590,10 +608,13 @@ def process_directory(
         old_name: The old name to replace.
         new_name: The new name to use.
         exclude_dirs: List of directory names to exclude. Defaults to None.
-        extensions: List of file extensions to process. Defaults to [".py"].
+        extensions: List of file extensions to process.
     """
     exclude_dirs = exclude_dirs or []
-    extensions = extensions or [".py", ".md"]
+    extensions = extensions or [
+        constants.Ext.PY,
+        constants.Ext.MD,
+    ]  # include .md files, typically used in reflex-web.
     extensions_set = {ext.lstrip(".") for ext in extensions}
     directory = Path(directory)
 
