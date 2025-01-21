@@ -440,7 +440,11 @@ def deploy(
         config.app_name,
         "--app-name",
         help="The name of the App to deploy under.",
-        hidden=True,
+    ),
+    app_id: str = typer.Option(
+        None,
+        "--app-id",
+        help="The ID of the App to deploy over.",
     ),
     regions: List[str] = typer.Option(
         [],
@@ -480,6 +484,11 @@ def deploy(
         "--project",
         help="project id to deploy to",
     ),
+    project_name: Optional[str] = typer.Option(
+        None,
+        "--project-name",
+        help="The name of the project to deploy to.",
+    ),
     token: Optional[str] = typer.Option(
         None,
         "--token",
@@ -503,13 +512,6 @@ def deploy(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    if not token:
-        # make sure user is logged in.
-        if interactive:
-            hosting_cli.login()
-        else:
-            raise SystemExit("Token is required for non-interactive mode.")
-
     # Only check requirements if interactive.
     # There is user interaction for requirements update.
     if interactive:
@@ -519,9 +521,12 @@ def deploy(
     if prerequisites.needs_reinit(frontend=True):
         _init(name=config.app_name, loglevel=loglevel)
     prerequisites.check_latest_package_version(constants.ReflexHostingCLI.MODULE_NAME)
-
+    extra: dict[str, str] = (
+        {"config_path": config_path} if config_path is not None else {}
+    )
     hosting_cli.deploy(
         app_name=app_name,
+        app_id=app_id,
         export_fn=lambda zip_dest_dir,
         api_url,
         deploy_url,
@@ -546,6 +551,8 @@ def deploy(
         token=token,
         project=project,
         config_path=config_path,
+        project_name=project_name,
+        **extra,
     )
 
 

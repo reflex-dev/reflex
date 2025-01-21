@@ -2,7 +2,7 @@ import json
 import math
 import sys
 import typing
-from typing import Dict, List, Optional, Set, Tuple, Union, cast
+from typing import Dict, List, Mapping, Optional, Set, Tuple, Union, cast
 
 import pytest
 from pandas import DataFrame
@@ -270,7 +270,7 @@ def test_get_setter(prop: Var, expected):
         ([1, 2, 3], Var(_js_expr="[1, 2, 3]", _var_type=List[int])),
         (
             {"a": 1, "b": 2},
-            Var(_js_expr='({ ["a"] : 1, ["b"] : 2 })', _var_type=Dict[str, int]),
+            Var(_js_expr='({ ["a"] : 1, ["b"] : 2 })', _var_type=Mapping[str, int]),
         ),
     ],
 )
@@ -1004,7 +1004,7 @@ def test_all_number_operations():
 
     assert (
         str(even_more_complicated_number)
-        == "!(((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) || (2 && Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)))) !== 0))"
+        == "!(isTrue((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) || (2 && Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))))))"
     )
 
     assert str(LiteralNumberVar.create(5) > False) == "(5 > 0)"
@@ -1814,10 +1814,7 @@ def cv_fget(state: BaseState) -> int:
     ],
 )
 def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
-    @computed_var(
-        deps=deps,
-        cache=True,
-    )
+    @computed_var(deps=deps)
     def test_var(state) -> int:
         return 1
 
@@ -1835,10 +1832,7 @@ def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
 def test_invalid_computed_var_deps(deps: List):
     with pytest.raises(TypeError):
 
-        @computed_var(
-            deps=deps,
-            cache=True,
-        )
+        @computed_var(deps=deps)
         def test_var(state) -> int:
             return 1
 

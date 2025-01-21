@@ -240,6 +240,28 @@ def run_backend(
         run_uvicorn_backend(host, port, loglevel)
 
 
+def get_reload_dirs() -> list[str]:
+    """Get the reload directories for the backend.
+
+    Returns:
+        The reload directories for the backend.
+    """
+    config = get_config()
+    reload_dirs = [config.app_name]
+    if config.app_module is not None and config.app_module.__file__:
+        module_path = Path(config.app_module.__file__).resolve().parent
+        while module_path.parent.name:
+            for parent_file in module_path.parent.iterdir():
+                if parent_file == "__init__.py":
+                    # go up a level to find dir without `__init__.py`
+                    module_path = module_path.parent
+                    break
+            else:
+                break
+        reload_dirs.append(str(module_path))
+    return reload_dirs
+
+
 def run_uvicorn_backend(host, port, loglevel: LogLevel):
     """Run the backend in development mode using Uvicorn.
 
@@ -256,7 +278,7 @@ def run_uvicorn_backend(host, port, loglevel: LogLevel):
         port=port,
         log_level=loglevel.value,
         reload=True,
-        reload_dirs=[get_config().app_name],
+        reload_dirs=get_reload_dirs(),
     )
 
 
@@ -281,7 +303,7 @@ def run_granian_backend(host, port, loglevel: LogLevel):
             interface=Interfaces.ASGI,
             log_level=LogLevels(loglevel.value),
             reload=True,
-            reload_paths=[Path(get_config().app_name)],
+            reload_paths=get_reload_dirs(),
             reload_ignore_dirs=[".web"],
         ).serve()
     except ImportError:
@@ -485,6 +507,15 @@ def is_testing_env() -> bool:
         True if the app is running in under pytest.
     """
     return constants.PYTEST_CURRENT_TEST in os.environ
+
+
+def is_in_app_harness() -> bool:
+    """Whether the app is running in the app harness.
+
+    Returns:
+        True if the app is running in the app harness.
+    """
+    return constants.APP_HARNESS_FLAG in os.environ
 
 
 def is_prod_mode() -> bool:

@@ -104,6 +104,7 @@ from reflex.utils.exceptions import (
     LockExpiredError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
+    StateMismatchError,
     StateSchemaMismatchError,
     StateSerializationError,
     StateTooLargeError,
@@ -1199,7 +1200,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 fget=func,
                 auto_deps=False,
                 deps=["router"],
-                cache=True,
                 _js_expr=param,
                 _var_data=VarData.from_state(cls),
             )
@@ -1543,7 +1543,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Return the direct parent of target_state_cls for subsequent linking.
         return parent_state
 
-    def _get_state_from_cache(self, state_cls: Type[BaseState]) -> BaseState:
+    def _get_state_from_cache(self, state_cls: Type[T_STATE]) -> T_STATE:
         """Get a state instance from the cache.
 
         Args:
@@ -1551,11 +1551,19 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Returns:
             The instance of state_cls associated with this state's client_token.
+
+        Raises:
+            StateMismatchError: If the state instance is not of the expected type.
         """
         root_state = self._get_root_state()
-        return root_state.get_substate(state_cls.get_full_name().split("."))
+        substate = root_state.get_substate(state_cls.get_full_name().split("."))
+        if not isinstance(substate, state_cls):
+            raise StateMismatchError(
+                f"Searched for state {state_cls.get_full_name()} but found {substate}."
+            )
+        return substate
 
-    async def _get_state_from_redis(self, state_cls: Type[BaseState]) -> BaseState:
+    async def _get_state_from_redis(self, state_cls: Type[T_STATE]) -> T_STATE:
         """Get a state instance from redis.
 
         Args:
@@ -1566,6 +1574,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Raises:
             RuntimeError: If redis is not used in this backend process.
+            StateMismatchError: If the state instance is not of the expected type.
         """
         # Fetch all missing parent states from redis.
         parent_state_of_state_cls = await self._populate_parent_states(state_cls)
@@ -1577,14 +1586,22 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 f"Requested state {state_cls.get_full_name()} is not cached and cannot be accessed without redis. "
                 "(All states should already be available -- this is likely a bug).",
             )
-        return await state_manager.get_state(
+
+        state_in_redis = await state_manager.get_state(
             token=_substate_key(self.router.session.client_token, state_cls),
             top_level=False,
             get_substates=True,
             parent_state=parent_state_of_state_cls,
         )
 
-    async def get_state(self, state_cls: Type[BaseState]) -> BaseState:
+        if not isinstance(state_in_redis, state_cls):
+            raise StateMismatchError(
+                f"Searched for state {state_cls.get_full_name()} but found {state_in_redis}."
+            )
+
+        return state_in_redis
+
+    async def get_state(self, state_cls: Type[T_STATE]) -> T_STATE:
         """Get an instance of the state associated with this token.
 
         Allows for arbitrary access to sibling states from within an event handler.
@@ -1759,9 +1776,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         except Exception as ex:
             state._clean()
 
-            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-
-            event_specs = app_instance.backend_exception_handler(ex)
+            event_specs = (
+                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
+            )
 
             if event_specs is None:
                 return StateUpdate()
@@ -1871,9 +1888,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         except Exception as ex:
             telemetry.send_error(ex, context="backend")
 
-            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-
-            event_specs = app_instance.backend_exception_handler(ex)
+            event_specs = (
+                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
+            )
 
             yield state._as_state_update(
                 handler,
@@ -2316,6 +2333,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return state
 
 
+T_STATE = TypeVar("T_STATE", bound=BaseState)
+
+
 class State(BaseState):
     """The app Base State."""
 
@@ -2383,8 +2403,9 @@ class FrontendEventExceptionState(State):
             component_stack: The stack trace of the component where the exception occurred.
 
         """
-        app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-        app_instance.frontend_exception_handler(Exception(stack))
+        prerequisites.get_and_validate_app().app.frontend_exception_handler(
+            Exception(stack)
+        )
 
 
 class UpdateVarsInternalState(State):
@@ -2422,15 +2443,16 @@ class OnLoadInternalState(State):
             The list of events to queue for on load handling.
         """
         # Do not app._compile()!  It should be already compiled by now.
-        app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-        load_events = app.get_load_events(self.router.page.path)
+        load_events = prerequisites.get_and_validate_app().app.get_load_events(
+            self.router.page.path
+        )
         if not load_events:
             self.is_hydrated = True
             return  # Fast path for navigation with no on_load events defined.
         self.is_hydrated = False
         return [
             *fix_events(
-                load_events,
+                cast(list[Union[EventSpec, EventHandler]], load_events),
                 self.router.session.client_token,
                 router_data=self.router_data,
             ),
@@ -2589,7 +2611,7 @@ class StateProxy(wrapt.ObjectProxy):
         """
         super().__init__(state_instance)
         # compile is not relevant to backend logic
-        self._self_app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+        self._self_app = prerequisites.get_and_validate_app().app
         self._self_substate_path = tuple(state_instance.get_full_name().split("."))
         self._self_actx = None
         self._self_mutable = False
@@ -3682,8 +3704,7 @@ def get_state_manager() -> StateManager:
     Returns:
         The state manager.
     """
-    app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-    return app.state_manager
+    return prerequisites.get_and_validate_app().app.state_manager
 
 
 class MutableProxy(wrapt.ObjectProxy):
