@@ -237,7 +237,6 @@ def test_get_cpu_info():
 
 @pytest.fixture
 def temp_directory():
-    """Create a temporary directory for tests."""
     temp_dir = tempfile.mkdtemp()
     yield Path(temp_dir)
     shutil.rmtree(temp_dir)
@@ -253,7 +252,6 @@ def temp_directory():
     ],
 )
 def test_rename_imports_and_app_name(temp_directory, config_code, expected):
-    """Test renaming imports and app_name in a file."""
     file_path = temp_directory / "rxconfig.py"
     content = f"""
 config = {config_code}
@@ -270,7 +268,6 @@ config = {expected}
 
 
 def test_regex_edge_cases(temp_directory):
-    """Test regex edge cases in renaming."""
     file_path = temp_directory / "example.py"
     content = """
 from old_name.module import something
@@ -293,7 +290,6 @@ from new_name
 
 
 def test_cli_rename_command(mocker, temp_directory):
-    """Test the CLI rename command."""
     foo_dir = temp_directory / "foo"
     foo_dir.mkdir()
     (foo_dir / "__init__").touch()
