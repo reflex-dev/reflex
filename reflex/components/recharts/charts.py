@@ -88,11 +88,13 @@ class ChartBase(RechartsCharts):
             "width": width if width is not None else "100%",
             "height": height if height is not None else "100%",
         }
-        # Provide min dimensions so the graph always appears, even if the outer container is zero-size.
-        if width is None:
-            dim_props["min_width"] = 200
-        if height is None:
-            dim_props["min_height"] = 100
+
+        # Ensure that the min_height and min_width are set to prevent the chart from collapsing.
+        # We are using small values so that height and width can still be used over min_height and min_width.
+        # Without this, sometimes the chart will not be visible. Causing confusion to the user.
+        # With this, the user will see a small chart and can adjust the height and width and can figure out that the issue is with the size.
+        dim_props["min_height"] = props.pop("min_height", 10)
+        dim_props["min_width"] = props.pop("min_width", 10)
 
         return ResponsiveContainer.create(
             super().create(*children, **props),
