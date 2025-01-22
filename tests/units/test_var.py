@@ -15,6 +15,7 @@ from reflex.utils.exceptions import PrimitiveUnserializableToJSON
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import (
+    AsyncComputedVar,
     ComputedVar,
     LiteralVar,
     Var,
@@ -1808,9 +1809,9 @@ def cv_fget(state: BaseState) -> int:
 @pytest.mark.parametrize(
     "deps,expected",
     [
-        (["a"], {"a"}),
-        (["b"], {"b"}),
-        ([ComputedVar(fget=cv_fget)], {"cv_fget"}),
+        (["a"], {None: {"a"}}),
+        (["b"], {None: {"b"}}),
+        ([ComputedVar(fget=cv_fget)], {None: {"cv_fget"}}),
     ],
 )
 def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
@@ -1856,3 +1857,25 @@ def test_to_string_operation():
 
     single_var = Var.create(Email())
     assert single_var._var_type == Email
+
+
+@pytest.mark.asyncio
+async def test_async_computed_var():
+    side_effect_counter = 0
+
+    class AsyncComputedVarState(BaseState):
+        v: int = 1
+
+        @computed_var(cache=True)
+        async def async_computed_var(self) -> int:
+            nonlocal side_effect_counter
+            side_effect_counter += 1
+            return self.v + 1
+
+    my_state = AsyncComputedVarState()
+    assert await my_state.async_computed_var == 2
+    assert await my_state.async_computed_var == 2
+    my_state.v = 2
+    assert await my_state.async_computed_var == 3
+    assert await my_state.async_computed_var == 3
+    assert side_effect_counter == 2

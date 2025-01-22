@@ -1826,7 +1826,7 @@ class ComputedVar(Var[RETURN_TYPE]):
     _initial_value: RETURN_TYPE | types.Unset = dataclasses.field(default=types.Unset())
 
     # Explicit var dependencies to track
-    _static_deps: set[str] = dataclasses.field(default_factory=set)
+    _static_deps: dict[str, set[str]] = dataclasses.field(default_factory=dict)
 
     # Whether var dependencies should be auto-determined
     _auto_deps: bool = dataclasses.field(default=True)
@@ -1901,21 +1901,40 @@ class ComputedVar(Var[RETURN_TYPE]):
 
         object.__setattr__(self, "_update_interval", interval)
 
-        if deps is None:
-            deps = []
-        else:
+        _static_deps = {}
+        if isinstance(deps, dict):
+            # Assume a dict is coming from _replace, so no special processing.
+            _static_deps = deps
+        elif deps is not None:
             for dep in deps:
                 if isinstance(dep, Var):
-                    continue
-                if isinstance(dep, str) and dep != "":
-                    continue
-                raise TypeError(
-                    "ComputedVar dependencies must be Var instances or var names (non-empty strings)."
-                )
+                    state_name = (
+                        all_var_data.state
+                        if (all_var_data := dep._get_all_var_data())
+                        and all_var_data.state
+                        else None
+                    )
+                    var_name = (
+                        dep._js_expr[len(formatted_state_prefix) :]
+                        if state_name
+                        and (
+                            formatted_state_prefix := format_state_name(state_name)
+                            + "."
+                        )
+                        and dep._js_expr.startswith(formatted_state_prefix)
+                        else dep._js_expr
+                    )
+                    _static_deps.setdefault(state_name, set()).add(var_name)
+                elif isinstance(dep, str) and dep != "":
+                    _static_deps.setdefault(None, set()).add(dep)
+                else:
+                    raise TypeError(
+                        "ComputedVar dependencies must be Var instances or var names (non-empty strings)."
+                    )
         object.__setattr__(
             self,
             "_static_deps",
-            {dep._js_expr if isinstance(dep, Var) else dep for dep in deps},
+            _static_deps,
         )
         object.__setattr__(self, "_auto_deps", auto_deps)
 
@@ -2081,6 +2100,11 @@ class ComputedVar(Var[RETURN_TYPE]):
                 setattr(instance, self._last_updated_attr, datetime.datetime.now())
             value = getattr(instance, self._cache_attr)
 
+        self._check_deprecated_return_type(instance, value)
+
+        return value
+
+    def _check_deprecated_return_type(self, instance, value) -> None:
         if not _isinstance(value, self._var_type):
             console.deprecate(
                 "mismatched-computed-var-return",
@@ -2090,41 +2114,49 @@ class ComputedVar(Var[RETURN_TYPE]):
                 "0.7.0",
             )
 
-        return value
-
     def _deps(
         self,
-        objclass: Type,
+        objclass: BaseState,
         obj: FunctionType | CodeType | None = None,
-        self_name: Optional[str] = None,
-    ) -> set[str]:
+        self_names: Optional[dict[str, str]] = None,
+    ) -> dict[str, set[str]]:
         """Determine var dependencies of this ComputedVar.
 
-        Save references to attributes accessed on "self".  Recursively called
-        when the function makes a method call on "self" or define comprehensions
-        or nested functions that may reference "self".
+        Save references to attributes accessed on "self" or other fetched states.
+
+        Recursively called when the function makes a method call on "self" or
+        define comprehensions or nested functions that may reference "self".
 
         Args:
             objclass: the class obj this ComputedVar is attached to.
             obj: the object to disassemble (defaults to the fget function).
-            self_name: if specified, look for this name in LOAD_FAST and LOAD_DEREF instructions.
+            self_names: if specified, look for these names in LOAD_FAST and LOAD_DEREF instructions.
 
         Returns:
-            A set of variable names accessed by the given obj.
+            A dictionary mapping state names to the set of variable names
+            accessed by the given obj.
 
         Raises:
             VarValueError: if the function references the get_state, parent_state, or substates attributes
                 (cannot track deps in a related state, only implicitly via parent state).
         """
+        from reflex.state import BaseState
+
+        d = {}
+        if self._static_deps:
+            d.update(self._static_deps)
+            # None is a placeholder for the current state class.
+            if None in d:
+                d[objclass.get_full_name()] = d.pop(None)
+
         if not self._auto_deps:
-            return self._static_deps
-        d = self._static_deps.copy()
+            return d
         if obj is None:
             fget = self._fget
             if fget is not None:
                 obj = cast(FunctionType, fget)
             else:
-                return set()
+                return d
         with contextlib.suppress(AttributeError):
             # unbox functools.partial
             obj = cast(FunctionType, obj.func)  # type: ignore
@@ -2132,76 +2164,150 @@ class ComputedVar(Var[RETURN_TYPE]):
             # unbox EventHandler
             obj = cast(FunctionType, obj.fn)  # type: ignore
 
-        if self_name is None and isinstance(obj, FunctionType):
+        if self_names is None and isinstance(obj, FunctionType):
             try:
                 # the first argument to the function is the name of "self" arg
-                self_name = obj.__code__.co_varnames[0]
+                self_names = {obj.__code__.co_varnames[0]: objclass.get_full_name()}
             except (AttributeError, IndexError):
-                self_name = None
-        if self_name is None:
+                self_names = None
+        if self_names is None:
             # cannot reference attributes on self if method takes no args
-            return set()
+            return d
 
-        invalid_names = ["get_state", "parent_state", "substates", "get_substate"]
-        self_is_top_of_stack = False
+        invalid_names = ["parent_state", "substates", "get_substate"]
+        self_on_top_of_stack = None
+        getting_state = False
+        getting_var = False
         for instruction in dis.get_instructions(obj):
+            if getting_state:
+                if instruction.opname == "LOAD_FAST":
+                    raise VarValueError(
+                        f"Dependency detection cannot identify get_state class from local var {instruction.argval}."
+                    )
+                if instruction.opname == "LOAD_GLOBAL":
+                    # Special case: referencing state class from global scope.
+                    getting_state = obj.__globals__.get(instruction.argval)
+                elif instruction.opname == "LOAD_DEREF":
+                    # Special case: referencing state class from closure.
+                    closure = dict(zip(obj.__code__.co_freevars, obj.__closure__))
+                    try:
+                        getting_state = closure[instruction.argval].cell_contents
+                    except ValueError as ve:
+                        raise VarValueError(
+                            f"Cached var {self!s} cannot access arbitrary state `{instruction.argval}`, is it defined yet?."
+                        ) from ve
+                elif instruction.opname == "STORE_FAST":
+                    # Storing the result of get_state in a local variable.
+                    if not isinstance(getting_state, type) or not issubclass(
+                        getting_state, BaseState
+                    ):
+                        raise VarValueError(
+                            f"Cached var {self!s} cannot determine dependencies in fetched state `{instruction.argval}`."
+                        )
+                    self_names[instruction.argval] = getting_state.get_full_name()
+                    getting_state = False
+                continue  # nothing else happens until we have identified the local var
+            if getting_var:
+                if instruction.opname == "CALL":
+                    # get the original source code and eval it
+                    start_line = getting_var[0].positions.lineno
+                    start_column = getting_var[0].positions.col_offset
+                    end_line = getting_var[-1].positions.end_lineno
+                    end_column = getting_var[-1].positions.end_col_offset
+                    source = inspect.getsource(inspect.getmodule(obj)).splitlines(True)[start_line - 1: end_line]
+                    if len(source) > 1:
+                        snipped_source = "".join(
+                            [
+                                source[0][start_column:],
+                                source[1:-2] if len(source) > 2 else "",
+                                source[-1][:end_column]
+                            ]
+                        )
+                    else:
+                        snipped_source = source[0][start_column:end_column]
+                    the_var = eval(f"({snipped_source})", obj.__globals__)
+                    print(the_var)
+                    # code = source[start_line - 1]
+                    # bytecode = bytearray((dis.opmap["RESUME"], 0))
+                    # for ins in getting_var:
+                    #     bytecode.append(ins.opcode)
+                    #     bytecode.append(ins.arg or 0 & 0xFF)
+                    # bytecode.extend((dis.opmap["RETURN_VALUE"], 0))
+                    # bc = dis.Bytecode(obj)
+                    # code = bc.codeobj.replace(co_code=bytes(bytecode), co_argcount=0, co_nlocals=0, co_varnames=())
+                    # breakpoint()
+                    getting_var = False
+                elif isinstance(getting_var, list):
+                    getting_var.append(instruction)
+                else:
+                    getting_var = [instruction]
+                continue
             if (
                 instruction.opname in ("LOAD_FAST", "LOAD_DEREF")
-                and instruction.argval == self_name
+                and instruction.argval in self_names
             ):
                 # bytecode loaded the class instance to the top of stack, next load instruction
                 # is referencing an attribute on self
-                self_is_top_of_stack = True
+                self_on_top_of_stack = self_names[instruction.argval]
                 continue
-            if self_is_top_of_stack and instruction.opname in (
+            if self_on_top_of_stack and instruction.opname in (
                 "LOAD_ATTR",
                 "LOAD_METHOD",
             ):
-                try:
-                    ref_obj = getattr(objclass, instruction.argval)
-                except Exception:
-                    ref_obj = None
                 if instruction.argval in invalid_names:
                     raise VarValueError(
                         f"Cached var {self!s} cannot access arbitrary state via `{instruction.argval}`."
                     )
+                if instruction.argval == "get_state":
+                    # Special case: arbitrary state access requested.
+                    getting_state = True
+                    continue
+                if instruction.argval == "get_var_value":
+                    # Special case: arbitrary var access requested.
+                    getting_var = True
+                    continue
+                print(f"{self_on_top_of_stack=}")
+                target_state = objclass.get_root_state().get_class_substate(
+                    self_on_top_of_stack
+                )
+                try:
+                    ref_obj = getattr(target_state, instruction.argval)
+                except Exception:
+                    ref_obj = None
                 if callable(ref_obj):
                     # recurse into callable attributes
-                    d.update(
-                        self._deps(
-                            objclass=objclass,
-                            obj=ref_obj,
-                        )
-                    )
+                    for state_name, dep_name in self._deps(
+                        objclass=target_state,
+                        obj=ref_obj,
+                    ).items():
+                        d.setdefault(state_name, set()).update(dep_name)
                 # recurse into property fget functions
                 elif isinstance(ref_obj, property) and not isinstance(
                     ref_obj, ComputedVar
                 ):
-                    d.update(
-                        self._deps(
-                            objclass=objclass,
-                            obj=ref_obj.fget,  # type: ignore
-                        )
-                    )
+                    for state_name, dep_name in self._deps(
+                        objclass=target_state,
+                        obj=ref_obj.fget,  # type: ignore
+                    ).items():
+                        d.setdefault(state_name, set()).update(dep_name)
                 elif (
-                    instruction.argval in objclass.backend_vars
-                    or instruction.argval in objclass.vars
+                    instruction.argval in target_state.backend_vars
+                    or instruction.argval in target_state.vars
                 ):
                     # var access
-                    d.add(instruction.argval)
+                    d.setdefault(self_on_top_of_stack, set()).add(instruction.argval)
             elif instruction.opname == "LOAD_CONST" and isinstance(
                 instruction.argval, CodeType
             ):
                 # recurse into nested functions / comprehensions, which can reference
                 # instance attributes from the outer scope
-                d.update(
-                    self._deps(
-                        objclass=objclass,
-                        obj=instruction.argval,
-                        self_name=self_name,
-                    )
-                )
-            self_is_top_of_stack = False
+                for state_name, dep_name in self._deps(
+                    objclass=objclass,
+                    obj=instruction.argval,
+                    self_names=self_names,
+                ).items():
+                    d.setdefault(state_name, set()).update(dep_name)
+            self_on_top_of_stack = None
         return d
 
     def mark_dirty(self, instance) -> None:
@@ -2247,6 +2353,60 @@ class DynamicRouteVar(ComputedVar[Union[str, List[str]]]):
     """A ComputedVar that represents a dynamic route."""
 
     pass
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    init=False,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
+class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
+    """A computed var that wraps a coroutinefunction."""
+
+    _fget: Callable[[BaseState], RETURN_TYPE] = dataclasses.field(
+        default_factory=lambda: lambda _: None
+    )  # type: ignore
+
+    def __get__(self, instance: BaseState | None, owner):
+        """Get the ComputedVar value.
+
+        If the value is already cached on the instance, return the cached value.
+
+        Args:
+            instance: the instance of the class accessing this computed var.
+            owner: the class that this descriptor is attached to.
+
+        Returns:
+            The value of the var for the given instance.
+        """
+        if instance is None:
+            return super(AsyncComputedVar, self).__get__(instance, owner)
+
+        if not self._cache:
+
+            async def _awaitable_result():
+                value = await self.fget(instance)
+                self._check_deprecated_return_type(instance, value)
+
+            return _awaitable_result()
+        else:
+            # handle caching
+            async def _awaitable_result():
+                if not hasattr(instance, self._cache_attr) or self.needs_update(
+                    instance
+                ):
+                    # Set cache attr on state instance.
+                    setattr(instance, self._cache_attr, await self.fget(instance))
+                    # Ensure the computed var gets serialized to redis.
+                    instance._was_touched = True
+                    # Set the last updated timestamp on the state instance.
+                    setattr(instance, self._last_updated_attr, datetime.datetime.now())
+                value = getattr(instance, self._cache_attr)
+                self._check_deprecated_return_type(instance, value)
+                return value
+
+        return _awaitable_result()
 
 
 if TYPE_CHECKING:
@@ -2315,10 +2475,27 @@ def computed_var(
         raise VarDependencyError("Cannot track dependencies without caching.")
 
     if fget is not None:
-        return ComputedVar(fget, cache=cache)
+        if inspect.iscoroutinefunction(fget):
+            computed_var_cls = AsyncComputedVar
+        else:
+            computed_var_cls = ComputedVar
+        return computed_var_cls(
+            fget,
+            initial_value=initial_value,
+            cache=cache,
+            deps=deps,
+            auto_deps=auto_deps,
+            interval=interval,
+            backend=backend,
+            **kwargs,
+        )
 
     def wrapper(fget: Callable[[BASE_STATE], Any]) -> ComputedVar:
-        return ComputedVar(
+        if inspect.iscoroutinefunction(fget):
+            computed_var_cls = AsyncComputedVar
+        else:
+            computed_var_cls = ComputedVar
+        return computed_var_cls(
             fget,
             initial_value=initial_value,
             cache=cache,

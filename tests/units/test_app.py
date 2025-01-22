@@ -277,9 +277,9 @@ def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
     assert app.pages.keys() == {"test/[dynamic]"}
     assert "dynamic" in app.state.computed_vars
     assert app.state.computed_vars["dynamic"]._deps(objclass=EmptyState) == {
-        constants.ROUTER
+        EmptyState.get_full_name(): {constants.ROUTER},
     }
-    assert constants.ROUTER in app.state()._computed_var_dependencies
+    assert constants.ROUTER in app.state()._var_dependencies
 
 
 def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool):
@@ -997,9 +997,9 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     assert arg_name in app.state.vars
     assert arg_name in app.state.computed_vars
     assert app.state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
-        constants.ROUTER
+        DynamicState.get_full_name(): {constants.ROUTER},
     }
-    assert constants.ROUTER in app.state()._computed_var_dependencies
+    assert constants.ROUTER in app.state()._var_dependencies
 
     substate_token = _substate_key(token, DynamicState)
     sid = "mock_sid"
@@ -1556,6 +1556,16 @@ def test_app_with_valid_var_dependencies(compilable_app: tuple[App, Path]):
         @computed_var(deps=["_backend", "base", foo])
         def bar(self) -> str:
             return "bar"
+
+    class Child1(ValidDepState):
+        @computed_var(deps=["base", ValidDepState.bar])
+        def other(self) -> str:
+            return "other"
+
+    class Child2(ValidDepState):
+        @computed_var(deps=["base", Child1.other])
+        def other(self) -> str:
+            return "other"
 
     app.state = ValidDepState
     app._compile()
