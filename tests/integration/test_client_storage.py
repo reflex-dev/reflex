@@ -33,18 +33,18 @@ def ClientSide():
     class ClientSideSubState(ClientSideState):
         # cookies with default settings
         c1: str = rx.Cookie()
-        c2: rx.Cookie = "c2 default"  # type: ignore
+        c2: str = rx.Cookie("c2 default")
 
         # cookies with custom settings
         c3: str = rx.Cookie(max_age=2)  # expires after 2 second
-        c4: rx.Cookie = rx.Cookie(same_site="strict")
+        c4: str = rx.Cookie(same_site="strict")
         c5: str = rx.Cookie(path="/foo/")  # only accessible on `/foo/`
         c6: str = rx.Cookie(name="c6")
         c7: str = rx.Cookie("c7 default")
 
         # local storage with default settings
         l1: str = rx.LocalStorage()
-        l2: rx.LocalStorage = "l2 default"  # type: ignore
+        l2: str = rx.LocalStorage("l2 default")
 
         # local storage with custom settings
         l3: str = rx.LocalStorage(name="l3")
@@ -56,7 +56,7 @@ def ClientSide():
 
         # Session storage
         s1: str = rx.SessionStorage()
-        s2: rx.SessionStorage = "s2 default"  # type: ignore
+        s2: str = rx.SessionStorage("s2 default")
         s3: str = rx.SessionStorage(name="s3")
 
         def set_l6(self, my_param: str):
@@ -87,13 +87,13 @@ def ClientSide():
             rx.input(
                 placeholder="state var",
                 value=ClientSideState.state_var,
-                on_change=ClientSideState.set_state_var,  # type: ignore
+                on_change=ClientSideState.setvar("state_var"),
                 id="state_var",
             ),
             rx.input(
                 placeholder="input value",
                 value=ClientSideState.input_value,
-                on_change=ClientSideState.set_input_value,  # type: ignore
+                on_change=ClientSideState.setvar("input_value"),
                 id="input_value",
             ),
             rx.button(
