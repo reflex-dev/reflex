@@ -933,6 +933,7 @@ class AppHarnessProd(AppHarness):
                 frontend=True,
                 backend=False,
                 loglevel=reflex.constants.LogLevel.INFO,
+                env=reflex.constants.Env.PROD,
             )
 
         self.frontend_thread = threading.Thread(target=self._run_frontend)

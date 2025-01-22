@@ -156,7 +156,6 @@ from .constants import Env as Env
 from .constants.colors import Color as Color
 from .event import EventChain as EventChain
 from .event import EventHandler as EventHandler
-from .event import background as background
 from .event import call_function as call_function
 from .event import call_script as call_script
 from .event import clear_local_storage as clear_local_storage
