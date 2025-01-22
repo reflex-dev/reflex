@@ -393,6 +393,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
         Returns:
             The function var.
         """
+        return_expr = Var.create(return_expr)
         return cls(
             _js_expr="",
             _var_type=_var_type,
@@ -449,6 +450,7 @@ class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
         Returns:
             The function var.
         """
+        return_expr = Var.create(return_expr)
         return cls(
             _js_expr="",
             _var_type=_var_type,

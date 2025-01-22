@@ -27,7 +27,7 @@ class Dirs(SimpleNamespace):
     UPLOADED_FILES = "uploaded_files"
     # The name of the assets directory.
     APP_ASSETS = "assets"
-    # The name of the assets directory for external ressource (a subfolder of APP_ASSETS).
+    # The name of the assets directory for external resources (a subfolder of APP_ASSETS).
     EXTERNAL_APP_ASSETS = "external"
     # The name of the utils file.
     UTILS = "utils"
@@ -257,6 +257,7 @@ SESSION_STORAGE = "session_storage"
 # Testing variables.
 # Testing os env set by pytest when running a test case.
 PYTEST_CURRENT_TEST = "PYTEST_CURRENT_TEST"
+APP_HARNESS_FLAG = "APP_HARNESS_FLAG"
 
 REFLEX_VAR_OPENING_TAG = "<reflex.Var>"
 REFLEX_VAR_CLOSING_TAG = "</reflex.Var>"

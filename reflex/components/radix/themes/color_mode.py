@@ -153,8 +153,8 @@ class ColorModeIconButton(IconButton):
                 dropdown_menu.trigger(
                     super().create(
                         ColorModeIcon.create(),
-                        **props,
-                    )
+                    ),
+                    **props,
                 ),
                 dropdown_menu.content(
                     color_mode_item("light"),

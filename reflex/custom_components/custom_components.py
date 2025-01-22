@@ -421,12 +421,13 @@ def _run_commands_in_subprocess(cmds: list[str]) -> bool:
     console.debug(f"Running command: {' '.join(cmds)}")
     try:
         result = subprocess.run(cmds, capture_output=True, text=True, check=True)
-        console.debug(result.stdout)
-        return True
     except subprocess.CalledProcessError as cpe:
         console.error(cpe.stdout)
         console.error(cpe.stderr)
         return False
+    else:
+        console.debug(result.stdout)
+        return True
 
 
 def _make_pyi_files():
@@ -931,10 +932,11 @@ def _get_file_from_prompt_in_loop() -> Tuple[bytes, str] | None:
         file_extension = image_filepath.suffix
         try:
             image_file = image_filepath.read_bytes()
-            return image_file, file_extension
         except OSError as ose:
             console.error(f"Unable to read the {file_extension} file due to {ose}")
             raise typer.Exit(code=1) from ose
+        else:
+            return image_file, file_extension
 
     console.debug(f"File extension detected: {file_extension}")
     return None

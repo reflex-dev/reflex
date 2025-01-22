@@ -333,13 +333,14 @@ def export(
 
 @cli.command()
 def login(loglevel: constants.LogLevel = typer.Option(config.loglevel)):
-    """Authenicate with experimental Reflex hosting service."""
+    """Authenticate with experimental Reflex hosting service."""
     from reflex_cli.v2 import cli as hosting_cli
 
     check_version()
 
     validated_info = hosting_cli.login()
     if validated_info is not None:
+        _skip_compile()  # Allow running outside of an app dir
         telemetry.send("login", user_uuid=validated_info.get("user_id"))
 
 
@@ -443,7 +444,11 @@ def deploy(
         config.app_name,
         "--app-name",
         help="The name of the App to deploy under.",
-        hidden=True,
+    ),
+    app_id: str = typer.Option(
+        None,
+        "--app-id",
+        help="The ID of the App to deploy over.",
     ),
     regions: List[str] = typer.Option(
         [],
@@ -483,10 +488,20 @@ def deploy(
         "--project",
         help="project id to deploy to",
     ),
+    project_name: Optional[str] = typer.Option(
+        None,
+        "--project-name",
+        help="The name of the project to deploy to.",
+    ),
     token: Optional[str] = typer.Option(
         None,
         "--token",
         help="token to use for auth",
+    ),
+    config_path: Optional[str] = typer.Option(
+        None,
+        "--config",
+        help="path to the config file",
     ),
 ):
     """Deploy the app to the Reflex hosting service."""
@@ -501,13 +516,6 @@ def deploy(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    if not token:
-        # make sure user is logged in.
-        if interactive:
-            hosting_cli.login()
-        else:
-            raise SystemExit("Token is required for non-interactive mode.")
-
     # Only check requirements if interactive.
     # There is user interaction for requirements update.
     if interactive:
@@ -517,9 +525,12 @@ def deploy(
     if prerequisites.needs_reinit(frontend=True):
         _init(name=config.app_name, loglevel=loglevel)
     prerequisites.check_latest_package_version(constants.ReflexHostingCLI.MODULE_NAME)
-
+    extra: dict[str, str] = (
+        {"config_path": config_path} if config_path is not None else {}
+    )
     hosting_cli.deploy(
         app_name=app_name,
+        app_id=app_id,
         export_fn=lambda zip_dest_dir,
         api_url,
         deploy_url,
@@ -543,6 +554,9 @@ def deploy(
         loglevel=type(loglevel).INFO,  # type: ignore
         token=token,
         project=project,
+        config_path=config_path,
+        project_name=project_name,
+        **extra,
     )
 
 

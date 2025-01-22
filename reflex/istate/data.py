@@ -26,7 +26,7 @@ class HeaderData:
     accept_language: str = ""
 
     def __init__(self, router_data: Optional[dict] = None):
-        """Initalize the HeaderData object based on router_data.
+        """Initialize the HeaderData object based on router_data.
 
         Args:
             router_data: the router_data dict.
@@ -51,7 +51,7 @@ class PageData:
     params: dict = dataclasses.field(default_factory=dict)
 
     def __init__(self, router_data: Optional[dict] = None):
-        """Initalize the PageData object based on router_data.
+        """Initialize the PageData object based on router_data.
 
         Args:
             router_data: the router_data dict.
@@ -91,7 +91,7 @@ class SessionData:
     session_id: str = ""
 
     def __init__(self, router_data: Optional[dict] = None):
-        """Initalize the SessionData object based on router_data.
+        """Initialize the SessionData object based on router_data.
 
         Args:
             router_data: the router_data dict.

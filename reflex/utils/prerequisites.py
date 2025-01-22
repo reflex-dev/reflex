@@ -17,19 +17,20 @@ import stat
 import sys
 import tempfile
 import time
+import typing
 import zipfile
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, List, Optional
+from typing import Callable, List, NamedTuple, Optional
 
 import httpx
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
 from redis import Redis as RedisSync
-from redis import exceptions
 from redis.asyncio import Redis
+from redis.exceptions import RedisError
 
 from reflex import constants, model
 from reflex.compiler import templates
@@ -42,7 +43,17 @@ from reflex.utils.exceptions import (
 from reflex.utils.format import format_library_name
 from reflex.utils.registry import _get_npm_registry
 
+if typing.TYPE_CHECKING:
+    from reflex.app import App
+
 CURRENTLY_INSTALLING_NODE = False
+
+
+class AppInfo(NamedTuple):
+    """A tuple containing the app instance and module."""
+
+    app: App
+    module: ModuleType
 
 
 @dataclasses.dataclass(frozen=True)
@@ -109,7 +120,7 @@ def check_latest_package_version(package_name: str):
             console.warn(
                 f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
             )
-        # Check for depreacted python versions
+        # Check for deprecated python versions
         _python_version_check()
     except Exception:
         pass
@@ -243,7 +254,7 @@ def get_package_manager(on_failure_return_none: bool = False) -> str | None:
     """
     npm_path = path_ops.get_npm_path()
     if npm_path is not None:
-        return str(Path(npm_path).resolve())
+        return str(npm_path)
     if on_failure_return_none:
         return None
     raise FileNotFoundError("NPM not found. You may need to run `reflex init`.")
@@ -267,6 +278,22 @@ def windows_npm_escape_hatch() -> bool:
     return environment.REFLEX_USE_NPM.get()
 
 
+def _check_app_name(config: Config):
+    """Check if the app name is set in the config.
+
+    Args:
+        config: The config object.
+
+    Raises:
+        RuntimeError: If the app name is not set in the config.
+    """
+    if not config.app_name:
+        raise RuntimeError(
+            "Cannot get the app module because `app_name` is not set in rxconfig! "
+            "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
+        )
+
+
 def get_app(reload: bool = False) -> ModuleType:
     """Get the app module based on the default config.
 
@@ -277,22 +304,23 @@ def get_app(reload: bool = False) -> ModuleType:
         The app based on the default config.
 
     Raises:
-        RuntimeError: If the app name is not set in the config.
+        Exception: If an error occurs while getting the app module.
     """
     from reflex.utils import telemetry
 
     try:
         environment.RELOAD_CONFIG.set(reload)
         config = get_config()
-        if not config.app_name:
-            raise RuntimeError(
-                "Cannot get the app module because `app_name` is not set in rxconfig! "
-                "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
-            )
+
+        _check_app_name(config)
+
         module = config.module
         sys.path.insert(0, str(Path.cwd()))
-        app = __import__(module, fromlist=(constants.CompileVars.APP,))
-
+        app = (
+            __import__(module, fromlist=(constants.CompileVars.APP,))
+            if not config.app_module
+            else config.app_module
+        )
         if reload:
             from reflex.state import reload_state_module
 
@@ -301,11 +329,34 @@ def get_app(reload: bool = False) -> ModuleType:
 
             # Reload the app module.
             importlib.reload(app)
-
-        return app
     except Exception as ex:
         telemetry.send_error(ex, context="frontend")
         raise
+    else:
+        return app
+
+
+def get_and_validate_app(reload: bool = False) -> AppInfo:
+    """Get the app instance based on the default config and validate it.
+
+    Args:
+        reload: Re-import the app module from disk
+
+    Returns:
+        The app instance and the app module.
+
+    Raises:
+        RuntimeError: If the app instance is not an instance of rx.App.
+    """
+    from reflex.app import App
+
+    app_module = get_app(reload=reload)
+    app = getattr(app_module, constants.CompileVars.APP)
+    if not isinstance(app, App):
+        raise RuntimeError(
+            "The app instance in the specified app_module_import in rxconfig must be an instance of rx.App."
+        )
+    return AppInfo(app=app, module=app_module)
 
 
 def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
@@ -318,8 +369,7 @@ def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     Returns:
         The compiled app based on the default config.
     """
-    app_module = get_app(reload=reload)
-    app = getattr(app_module, constants.CompileVars.APP)
+    app, app_module = get_and_validate_app(reload=reload)
     # For py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).
     app._apply_decorated_pages()
@@ -333,10 +383,11 @@ def get_redis() -> Redis | None:
     Returns:
         The asynchronous redis client.
     """
-    if isinstance((redis_url_or_options := parse_redis_url()), str):
-        return Redis.from_url(redis_url_or_options)
-    elif isinstance(redis_url_or_options, dict):
-        return Redis(**redis_url_or_options)
+    if (redis_url := parse_redis_url()) is not None:
+        return Redis.from_url(
+            redis_url,
+            retry_on_error=[RedisError],
+        )
     return None
 
 
@@ -346,14 +397,15 @@ def get_redis_sync() -> RedisSync | None:
     Returns:
         The synchronous redis client.
     """
-    if isinstance((redis_url_or_options := parse_redis_url()), str):
-        return RedisSync.from_url(redis_url_or_options)
-    elif isinstance(redis_url_or_options, dict):
-        return RedisSync(**redis_url_or_options)
+    if (redis_url := parse_redis_url()) is not None:
+        return RedisSync.from_url(
+            redis_url,
+            retry_on_error=[RedisError],
+        )
     return None
 
 
-def parse_redis_url() -> str | dict | None:
+def parse_redis_url() -> str | None:
     """Parse the REDIS_URL in config if applicable.
 
     Returns:
@@ -372,16 +424,13 @@ def parse_redis_url() -> str | dict | None:
     return config.redis_url
 
 
-async def get_redis_status() -> bool | None:
+async def get_redis_status() -> dict[str, bool | None]:
     """Checks the status of the Redis connection.
 
     Attempts to connect to Redis and send a ping command to verify connectivity.
 
     Returns:
-        bool or None: The status of the Redis connection:
-            - True: Redis is accessible and responding.
-            - False: Redis is not accessible due to a connection error.
-            - None: Redis not used i.e redis_url is not set in rxconfig.
+        The status of the Redis connection.
     """
     try:
         status = True
@@ -390,10 +439,10 @@ async def get_redis_status() -> bool | None:
             redis_client.ping()
         else:
             status = None
-    except exceptions.RedisError:
+    except RedisError:
         status = False
 
-    return status
+    return {"redis": status}
 
 
 def validate_app_name(app_name: str | None = None) -> str:
@@ -594,7 +643,7 @@ def initialize_web_directory():
     """Initialize the web directory on reflex init."""
     console.log("Initializing the web directory.")
 
-    # Re-use the hash if one is already created, so we don't over-write it when running reflex init
+    # Reuse the hash if one is already created, so we don't over-write it when running reflex init
     project_hash = get_project_hash()
 
     path_ops.cp(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
@@ -611,10 +660,14 @@ def initialize_web_directory():
     init_reflex_json(project_hash=project_hash)
 
 
+def _turbopack_flag() -> str:
+    return " --turbopack" if environment.REFLEX_USE_TURBOPACK.get() else ""
+
+
 def _compile_package_json():
     return templates.PACKAGE_JSON.render(
         scripts={
-            "dev": constants.PackageJson.Commands.DEV,
+            "dev": constants.PackageJson.Commands.DEV + _turbopack_flag(),
             "export": constants.PackageJson.Commands.EXPORT,
             "export_sitemap": constants.PackageJson.Commands.EXPORT_SITEMAP,
             "prod": constants.PackageJson.Commands.PROD,
@@ -647,7 +700,7 @@ def initialize_bun_config():
 def init_reflex_json(project_hash: int | None):
     """Write the hash of the Reflex project to a REFLEX_JSON.
 
-    Re-use the hash if one is already created, therefore do not
+    Reuse the hash if one is already created, therefore do not
     overwrite it every time we run the reflex init command
     .
 
@@ -1152,11 +1205,12 @@ def ensure_reflex_installation_id() -> Optional[int]:
         if installation_id is None:
             installation_id = random.getrandbits(128)
             installation_id_file.write_text(str(installation_id))
-        # If we get here, installation_id is definitely set
-        return installation_id
     except Exception as e:
         console.debug(f"Failed to ensure reflex installation id: {e}")
         return None
+    else:
+        # If we get here, installation_id is definitely set
+        return installation_id
 
 
 def initialize_reflex_user_directory():
@@ -1177,6 +1231,24 @@ def initialize_frontend_dependencies():
     CURRENTLY_INSTALLING_NODE = False
     # Set up the web directory.
     initialize_web_directory()
+
+
+def check_db_used() -> bool:
+    """Check if the database is used.
+
+    Returns:
+        True if the database is used.
+    """
+    return bool(get_config().db_url)
+
+
+def check_redis_used() -> bool:
+    """Check if Redis is used.
+
+    Returns:
+        True if Redis is used.
+    """
+    return bool(get_config().redis_url)
 
 
 def check_db_initialized() -> bool:
@@ -1352,18 +1424,21 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
     except OSError as ose:
         console.error(f"Failed to create temp directory for extracting zip: {ose}")
         raise typer.Exit(1) from ose
+
     try:
         zipfile.ZipFile(zip_file_path).extractall(path=unzip_dir)
         # The zip file downloaded from github looks like:
         # repo-name-branch/**/*, so we need to remove the top level directory.
-        if len(subdirs := os.listdir(unzip_dir)) != 1:
-            console.error(f"Expected one directory in the zip, found {subdirs}")
-            raise typer.Exit(1)
-        template_dir = unzip_dir / subdirs[0]
-        console.debug(f"Template folder is located at {template_dir}")
     except Exception as uze:
         console.error(f"Failed to unzip the template: {uze}")
         raise typer.Exit(1) from uze
+
+    if len(subdirs := os.listdir(unzip_dir)) != 1:
+        console.error(f"Expected one directory in the zip, found {subdirs}")
+        raise typer.Exit(1)
+
+    template_dir = unzip_dir / subdirs[0]
+    console.debug(f"Template folder is located at {template_dir}")
 
     # Move the rxconfig file here first.
     path_ops.mv(str(template_dir / constants.Config.FILE), constants.Config.FILE)

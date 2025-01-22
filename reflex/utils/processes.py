@@ -18,6 +18,7 @@ from redis.exceptions import RedisError
 from rich.progress import Progress
 
 from reflex import constants
+from reflex.config import environment
 from reflex.utils import console, path_ops, prerequisites
 
 
@@ -119,7 +120,7 @@ def handle_port(service_name: str, port: int, default_port: int) -> int:
     """Change port if the specified port is in use and is not explicitly specified as a CLI arg or config arg.
     otherwise tell the user the port is in use and exit the app.
 
-    We make an assumption that when port is the default port,then it hasnt been explicitly set since its not straightforward
+    We make an assumption that when port is the default port,then it hasn't been explicitly set since its not straightforward
     to know whether a port was explicitly provided by the user unless its any other than the default.
 
     Args:
@@ -162,24 +163,30 @@ def new_process(
     Raises:
         Exit: When attempting to run a command with a None value.
     """
-    node_bin_path = str(path_ops.get_node_bin_path())
-    if not node_bin_path and not prerequisites.CURRENTLY_INSTALLING_NODE:
-        console.warn(
-            "The path to the Node binary could not be found. Please ensure that Node is properly "
-            "installed and added to your system's PATH environment variable or try running "
-            "`reflex init` again."
-        )
+    # Check for invalid command first.
     if isinstance(args, list) and None in args:
         console.error(f"Invalid command: {args}")
         raise typer.Exit(1)
-    # Add the node bin path to the PATH environment variable.
+
+    path_env: str = os.environ.get("PATH", "")
+
+    # Add node_bin_path to the PATH environment variable.
+    if not environment.REFLEX_BACKEND_ONLY.get():
+        node_bin_path = str(path_ops.get_node_bin_path())
+        if not node_bin_path and not prerequisites.CURRENTLY_INSTALLING_NODE:
+            console.warn(
+                "The path to the Node binary could not be found. Please ensure that Node is properly "
+                "installed and added to your system's PATH environment variable or try running "
+                "`reflex init` again."
+            )
+        path_env = os.pathsep.join([node_bin_path, path_env])
+
     env: dict[str, str] = {
         **os.environ,
-        "PATH": os.pathsep.join(
-            [node_bin_path if node_bin_path else "", os.environ["PATH"]]
-        ),  # type: ignore
+        "PATH": path_env,
         **kwargs.pop("env", {}),
     }
+
     kwargs = {
         "env": env,
         "stderr": None if show_logs else subprocess.STDOUT,
@@ -357,7 +364,7 @@ def atexit_handler():
 
 def get_command_with_loglevel(command: list[str]) -> list[str]:
     """Add the right loglevel flag to the designated command.
-     npm uses --loglevel <level>, Bun doesnt use the --loglevel flag and
+     npm uses --loglevel <level>, Bun doesn't use the --loglevel flag and
      runs in debug mode by default.
 
     Args:
@@ -367,7 +374,7 @@ def get_command_with_loglevel(command: list[str]) -> list[str]:
         The updated command list
     """
     npm_path = path_ops.get_npm_path()
-    npm_path = str(Path(npm_path).resolve()) if npm_path else npm_path
+    npm_path = str(npm_path) if npm_path else None
 
     if command[0] == npm_path:
         return [*command, "--loglevel", "silly"]

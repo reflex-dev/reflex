@@ -26,6 +26,7 @@ from typing import (
     Iterable,
     List,
     Literal,
+    Mapping,
     NoReturn,
     Optional,
     Set,
@@ -64,6 +65,7 @@ from reflex.utils.types import (
     _isinstance,
     get_origin,
     has_args,
+    safe_issubclass,
     unionize,
 )
 
@@ -127,7 +129,7 @@ class VarData:
         state: str = "",
         field_name: str = "",
         imports: ImportDict | ParsedImportDict | None = None,
-        hooks: dict[str, None] | None = None,
+        hooks: Mapping[str, VarData | None] | None = None,
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
     ):
@@ -194,7 +196,9 @@ class VarData:
             (var_data.state for var_data in all_var_datas if var_data.state), ""
         )
 
-        hooks = {hook: None for var_data in all_var_datas for hook in var_data.hooks}
+        hooks: dict[str, VarData | None] = {
+            hook: None for var_data in all_var_datas for hook in var_data.hooks
+        }
 
         _imports = imports.merge_imports(
             *(var_data.imports for var_data in all_var_datas)
@@ -569,7 +573,7 @@ class Var(Generic[VAR_TYPE]):
         if _var_is_local is not None:
             console.deprecate(
                 feature_name="_var_is_local",
-                reason="The _var_is_local argument is not supported for Var."
+                reason="The _var_is_local argument is not supported for Var. "
                 "If you want to create a Var from a raw Javascript expression, use the constructor directly",
                 deprecation_version="0.6.0",
                 removal_version="0.7.0",
@@ -577,7 +581,7 @@ class Var(Generic[VAR_TYPE]):
         if _var_is_string is not None:
             console.deprecate(
                 feature_name="_var_is_string",
-                reason="The _var_is_string argument is not supported for Var."
+                reason="The _var_is_string argument is not supported for Var. "
                 "If you want to create a Var from a raw Javascript expression, use the constructor directly",
                 deprecation_version="0.6.0",
                 removal_version="0.7.0",
@@ -589,7 +593,7 @@ class Var(Generic[VAR_TYPE]):
 
         # Try to pull the imports and hooks from contained values.
         if not isinstance(value, str):
-            return LiteralVar.create(value)
+            return LiteralVar.create(value, _var_data=_var_data)
 
         if _var_is_string is False or _var_is_local is True:
             return cls(
@@ -651,8 +655,8 @@ class Var(Generic[VAR_TYPE]):
     @overload
     def to(
         self,
-        output: type[dict],
-    ) -> ObjectVar[dict]: ...
+        output: type[Mapping],
+    ) -> ObjectVar[Mapping]: ...
 
     @overload
     def to(
@@ -694,7 +698,9 @@ class Var(Generic[VAR_TYPE]):
 
         # If the first argument is a python type, we map it to the corresponding Var type.
         for var_subclass in _var_subclasses[::-1]:
-            if fixed_output_type in var_subclass.python_types:
+            if fixed_output_type in var_subclass.python_types or safe_issubclass(
+                fixed_output_type, var_subclass.python_types
+            ):
                 return self.to(var_subclass.var_subclass, output)
 
         if fixed_output_type is None:
@@ -828,7 +834,7 @@ class Var(Generic[VAR_TYPE]):
             return False
         if issubclass(type_, list):
             return []
-        if issubclass(type_, dict):
+        if issubclass(type_, Mapping):
             return {}
         if issubclass(type_, tuple):
             return ()
@@ -1034,7 +1040,7 @@ class Var(Generic[VAR_TYPE]):
                     f"$/{constants.Dirs.STATE_PATH}": [imports.ImportVar(tag="refs")]
                 }
             ),
-        ).to(ObjectVar, Dict[str, str])
+        ).to(ObjectVar, Mapping[str, str])
         return refs[LiteralVar.create(str(self))]
 
     @deprecated("Use `.js_type()` instead.")
@@ -1381,7 +1387,7 @@ class LiteralVar(Var):
 
         serialized_value = serializers.serialize(value)
         if serialized_value is not None:
-            if isinstance(serialized_value, dict):
+            if isinstance(serialized_value, Mapping):
                 return LiteralObjectVar.create(
                     serialized_value,
                     _var_type=type(value),
@@ -1506,7 +1512,7 @@ def var_operation(
 ) -> Callable[P, ArrayVar[LIST_T]]: ...
 
 
-OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Dict)
+OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Mapping)
 
 
 @overload
@@ -1581,8 +1587,8 @@ def figure_out_type(value: Any) -> types.GenericType:
         return Set[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, tuple):
         return Tuple[unionize(*(figure_out_type(v) for v in value)), ...]
-    if isinstance(value, dict):
-        return Dict[
+    if isinstance(value, Mapping):
+        return Mapping[
             unionize(*(figure_out_type(k) for k in value)),
             unionize(*(figure_out_type(v) for v in value.values())),
         ]
@@ -1846,7 +1852,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         self,
         fget: Callable[[BASE_STATE], RETURN_TYPE],
         initial_value: RETURN_TYPE | types.Unset = types.Unset(),
-        cache: bool = False,
+        cache: bool = True,
         deps: Optional[List[Union[str, Var]]] = None,
         auto_deps: bool = True,
         interval: Optional[Union[int, datetime.timedelta]] = None,
@@ -2016,10 +2022,10 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: ComputedVar[dict[DICT_KEY, DICT_VAL]],
+        self: ComputedVar[Mapping[DICT_KEY, DICT_VAL]],
         instance: None,
         owner: Type,
-    ) -> ObjectVar[dict[DICT_KEY, DICT_VAL]]: ...
+    ) -> ObjectVar[Mapping[DICT_KEY, DICT_VAL]]: ...
 
     @overload
     def __get__(
@@ -2267,7 +2273,7 @@ if TYPE_CHECKING:
 def computed_var(
     fget: None = None,
     initial_value: Any | types.Unset = types.Unset(),
-    cache: bool = False,
+    cache: bool = True,
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
@@ -2280,7 +2286,7 @@ def computed_var(
 def computed_var(
     fget: Callable[[BASE_STATE], RETURN_TYPE],
     initial_value: RETURN_TYPE | types.Unset = types.Unset(),
-    cache: bool = False,
+    cache: bool = True,
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
@@ -2292,7 +2298,7 @@ def computed_var(
 def computed_var(
     fget: Callable[[BASE_STATE], Any] | None = None,
     initial_value: Any | types.Unset = types.Unset(),
-    cache: bool = False,
+    cache: bool = True,
     deps: Optional[List[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
@@ -2929,11 +2935,14 @@ V = TypeVar("V")
 
 BASE_TYPE = TypeVar("BASE_TYPE", bound=Base)
 
+FIELD_TYPE = TypeVar("FIELD_TYPE")
+MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping)
 
-class Field(Generic[T]):
+
+class Field(Generic[FIELD_TYPE]):
     """Shadow class for Var to allow for type hinting in the IDE."""
 
-    def __set__(self, instance: Any, value: T):
+    def __set__(self, instance: Any, value: FIELD_TYPE):
         """Set the Var.
 
         Args:
@@ -2945,7 +2954,9 @@ class Field(Generic[T]):
     def __get__(self: Field[bool], instance: None, owner: Any) -> BooleanVar: ...
 
     @overload
-    def __get__(self: Field[int], instance: None, owner: Any) -> NumberVar: ...
+    def __get__(
+        self: Field[int] | Field[float] | Field[int | float], instance: None, owner: Any
+    ) -> NumberVar: ...
 
     @overload
     def __get__(self: Field[str], instance: None, owner: Any) -> StringVar: ...
@@ -2962,8 +2973,8 @@ class Field(Generic[T]):
 
     @overload
     def __get__(
-        self: Field[Dict[str, V]], instance: None, owner: Any
-    ) -> ObjectVar[Dict[str, V]]: ...
+        self: Field[MAPPING_TYPE], instance: None, owner: Any
+    ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
@@ -2971,10 +2982,10 @@ class Field(Generic[T]):
     ) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
-    def __get__(self, instance: None, owner: Any) -> Var[T]: ...
+    def __get__(self, instance: None, owner: Any) -> Var[FIELD_TYPE]: ...
 
     @overload
-    def __get__(self, instance: Any, owner: Any) -> T: ...
+    def __get__(self, instance: Any, owner: Any) -> FIELD_TYPE: ...
 
     def __get__(self, instance: Any, owner: Any):  # type: ignore
         """Get the Var.
@@ -2985,7 +2996,7 @@ class Field(Generic[T]):
         """
 
 
-def field(value: T) -> Field[T]:
+def field(value: FIELD_TYPE) -> Field[FIELD_TYPE]:
     """Create a Field with a value.
 
     Args:

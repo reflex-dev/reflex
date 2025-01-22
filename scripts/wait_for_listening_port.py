@@ -25,7 +25,7 @@ def _pid_exists(pid: int):
 
 def _wait_for_port(port: int, server_pid: int, timeout: float) -> Tuple[bool, str]:
     start = time.time()
-    print(f"Waiting for up to {timeout} seconds for port {port} to start listening.")
+    print(f"Waiting for up to {timeout} seconds for port {port} to start listening.")  # noqa: T201
     while True:
         if not _pid_exists(server_pid):
             return False, f"Server PID {server_pid} is not running."
@@ -56,9 +56,9 @@ def main():
     for f in as_completed(futures):
         ok, msg = f.result()
         if ok:
-            print(f"OK: {msg}")
+            print(f"OK: {msg}")  # noqa: T201
         else:
-            print(f"FAIL: {msg}")
+            print(f"FAIL: {msg}")  # noqa: T201
             exit(1)
 
 

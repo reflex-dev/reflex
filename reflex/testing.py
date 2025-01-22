@@ -52,6 +52,7 @@ from reflex.state import (
     StateManagerRedis,
     reload_state_module,
 )
+from reflex.utils import console
 
 try:
     from selenium import webdriver  # pyright: ignore [reportMissingImports]
@@ -281,6 +282,7 @@ class AppHarness:
             before_decorated_pages = reflex.app.DECORATED_PAGES[self.app_name].copy()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
+            os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
             self.app_module = reflex.utils.prerequisites.get_compiled_app(
                 # Do not reload the module for pre-existing apps (only apps generated from source)
                 reload=self.app_source is not None
@@ -385,7 +387,7 @@ class AppHarness:
             )
             if not line:
                 break
-            print(line)  # for pytest diagnosis
+            print(line)  # for pytest diagnosis #noqa: T201
             m = re.search(reflex.constants.Next.FRONTEND_LISTENING_REGEX, line)
             if m is not None:
                 self.frontend_url = m.group(1)
@@ -403,11 +405,10 @@ class AppHarness:
                     )
                 # catch I/O operation on closed file.
                 except ValueError as e:
-                    print(e)
+                    console.error(str(e))
                     break
                 if not line:
                     break
-                print(line)
 
         self.frontend_output_thread = threading.Thread(target=consume_frontend_output)
         self.frontend_output_thread.start()

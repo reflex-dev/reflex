@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "reflex"
-version = "0.6.7dev1"
+version = "0.7.0dev1"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [
@@ -16,7 +16,6 @@ repository = "https://github.com/reflex-dev/reflex"
 documentation = "https://reflex.dev/docs/getting-started/introduction"
 keywords = ["web", "framework"]
 classifiers = ["Development Status :: 4 - Beta"]
-packages = [{ include = "reflex" }]
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -87,18 +86,22 @@ build-backend = "poetry.core.masonry.api"
 target-version = "py39"
 output-format = "concise"
 lint.isort.split-on-trailing-comma = false
-lint.select = ["ANN001", "B", "C4", "D", "E", "ERA", "F", "FURB", "I", "PERF", "PTH", "RUF", "SIM", "W"]
-lint.ignore = ["B008", "D205", "E501", "F403", "SIM115", "RUF006", "RUF012"]
+lint.select = ["ANN001", "B", "C4", "D", "E", "ERA", "F", "FURB", "I", "PERF", "PTH", "RUF", "SIM", "T", "TRY", "W"]
+lint.ignore = ["B008", "D205", "E501", "F403", "SIM115", "RUF006", "RUF012", "TRY0"]
 lint.pydocstyle.convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/*.py" = ["ANN001", "D100", "D103", "D104", "B018", "PERF"]
-"benchmarks/*.py" = ["ANN001"]
+"tests/*.py" = ["ANN001","D100", "D103", "D104", "B018", "PERF", "T"]
 "reflex/.templates/*.py" = ["D100", "D103", "D104"]
+"benchmarks/*.py" = ["ANN001"]
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742"]
 "*/blank.py" = ["I001"]
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
+
+[tool.codespell]
+skip = "docs/*,*.html,examples/*, *.pyi"
+ignore-words-list = "te, TreeE"

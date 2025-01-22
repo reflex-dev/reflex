@@ -3,6 +3,7 @@ import axios from "axios";
 import io from "socket.io-client";
 import JSON5 from "json5";
 import env from "$/env.json";
+import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
 import { useEffect, useRef, useState } from "react";
 import Router, { useRouter } from "next/router";
@@ -208,11 +209,16 @@ export const applyEvent = async (event, socket) => {
   if (event.name == "_download") {
     const a = document.createElement("a");
     a.hidden = true;
+    a.href = event.payload.url;
     // Special case when linking to uploaded files
-    a.href = event.payload.url.replace(
-      "${getBackendURL(env.UPLOAD)}",
-      getBackendURL(env.UPLOAD)
-    );
+    if (a.href.includes("getBackendURL(env.UPLOAD)")) {
+      a.href = eval?.(
+        event.payload.url.replace(
+          "getBackendURL(env.UPLOAD)",
+          `"${getBackendURL(env.UPLOAD)}"`
+        )
+      );
+    }
     a.download = event.payload.filename;
     a.click();
     a.remove();
@@ -402,10 +408,18 @@ export const connect = async (
   socket.current = io(endpoint.href, {
     path: endpoint["pathname"],
     transports: transports,
+    protocols: env.TEST_MODE ? undefined : [reflexEnvironment.version],
     autoUnref: false,
   });
   // Ensure undefined fields in events are sent as null instead of removed
-  socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v)
+  socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
+  socket.current.io.decoder.tryParse = (str) => {
+    try {
+      return JSON5.parse(str);
+    } catch (e) {
+      return false;
+    }
+  };
 
   function checkVisibility() {
     if (document.visibilityState === "visible") {

@@ -1025,7 +1025,7 @@ class InitStubGenerator(StubGenerator):
 
 class PyiGenerator:
     """A .pyi file generator that will scan all defined Component in Reflex and
-    generate the approriate stub.
+    generate the appropriate stub.
     """
 
     modules: list = []
@@ -1204,4 +1204,4 @@ class PyiGenerator:
                         or "Var[Template]" in line
                     ):
                         line = line.rstrip() + "  # type: ignore\n"
-                    print(line, end="")
+                    print(line, end="")  # noqa: T201
