@@ -240,25 +240,28 @@ def run_backend(
         run_uvicorn_backend(host, port, loglevel)
 
 
-def get_reload_dirs() -> list[str]:
+def get_reload_dirs() -> list[Path]:
     """Get the reload directories for the backend.
 
     Returns:
         The reload directories for the backend.
     """
     config = get_config()
-    reload_dirs = [config.app_name]
+    reload_dirs = [Path(config.app_name)]
     if config.app_module is not None and config.app_module.__file__:
         module_path = Path(config.app_module.__file__).resolve().parent
+
         while module_path.parent.name:
-            for parent_file in module_path.parent.iterdir():
-                if parent_file == "__init__.py":
-                    # go up a level to find dir without `__init__.py`
-                    module_path = module_path.parent
-                    break
+            if any(
+                sibling_file.name == "__init__.py"
+                for sibling_file in module_path.parent.iterdir()
+            ):
+                # go up a level to find dir without `__init__.py`
+                module_path = module_path.parent
             else:
                 break
-        reload_dirs.append(str(module_path))
+
+        reload_dirs = [module_path]
     return reload_dirs
 
 
@@ -278,7 +281,7 @@ def run_uvicorn_backend(host, port, loglevel: LogLevel):
         port=port,
         log_level=loglevel.value,
         reload=True,
-        reload_dirs=get_reload_dirs(),
+        reload_dirs=list(map(str, get_reload_dirs())),
     )
 
 

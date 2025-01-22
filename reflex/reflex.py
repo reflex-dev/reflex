@@ -501,6 +501,7 @@ def deploy(
     ),
 ):
     """Deploy the app to the Reflex hosting service."""
+    from reflex_cli.constants.base import LogLevel as HostingLogLevel
     from reflex_cli.utils import dependency
     from reflex_cli.v2 import cli as hosting_cli
 
@@ -512,6 +513,21 @@ def deploy(
     # Set the log level.
     console.set_log_level(loglevel)
 
+    def convert_reflex_loglevel_to_reflex_cli_loglevel(
+        loglevel: constants.LogLevel,
+    ) -> HostingLogLevel:
+        if loglevel == constants.LogLevel.DEBUG:
+            return HostingLogLevel.DEBUG
+        if loglevel == constants.LogLevel.INFO:
+            return HostingLogLevel.INFO
+        if loglevel == constants.LogLevel.WARNING:
+            return HostingLogLevel.WARNING
+        if loglevel == constants.LogLevel.ERROR:
+            return HostingLogLevel.ERROR
+        if loglevel == constants.LogLevel.CRITICAL:
+            return HostingLogLevel.CRITICAL
+        return HostingLogLevel.INFO
+
     # Only check requirements if interactive.
     # There is user interaction for requirements update.
     if interactive:
@@ -521,10 +537,6 @@ def deploy(
     if prerequisites.needs_reinit(frontend=True):
         _init(name=config.app_name, loglevel=loglevel)
     prerequisites.check_latest_package_version(constants.ReflexHostingCLI.MODULE_NAME)
-
-    extra: dict[str, str] = (
-        {"config_path": config_path} if config_path is not None else {}
-    )
 
     hosting_cli.deploy(
         app_name=app_name,
@@ -549,12 +561,11 @@ def deploy(
         envfile=envfile,
         hostname=hostname,
         interactive=interactive,
-        loglevel=type(loglevel).INFO,  # type: ignore
+        loglevel=convert_reflex_loglevel_to_reflex_cli_loglevel(loglevel),
         token=token,
         project=project,
-        config_path=config_path,
         project_name=project_name,
-        **extra,
+        **({"config_path": config_path} if config_path is not None else {}),
     )
 
 
