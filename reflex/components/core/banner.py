@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Optional
 
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.typography import Div
@@ -162,7 +163,7 @@ class ConnectionToaster(Toaster):
         return super().create(*children, **props)
 
 
-class ConnectionBanner(Component):
+class ConnectionBanner(Fragment):
     """A connection banner component."""
 
     @classmethod
@@ -175,8 +176,6 @@ class ConnectionBanner(Component):
         Returns:
             The connection banner component.
         """
-        from reflex.components.base.fragment import Fragment
-
         if not comp:
             comp = Flex.create(
                 Text.create(
@@ -191,10 +190,10 @@ class ConnectionBanner(Component):
                 position="fixed",
             )
 
-        return Fragment.create(cond(has_connection_errors, comp))
+        return super().create(cond(has_connection_errors, comp))
 
 
-class ConnectionModal(Component):
+class ConnectionModal(Fragment):
     """A connection status modal window."""
 
     @classmethod
@@ -207,11 +206,9 @@ class ConnectionModal(Component):
         Returns:
             The connection banner component.
         """
-        from reflex.components.base.fragment import Fragment
-
         if not comp:
             comp = Text.create(*default_connection_error())
-        return Fragment.create(
+        return super().create(
             cond(
                 has_too_many_connection_errors,
                 DialogRoot.create(
