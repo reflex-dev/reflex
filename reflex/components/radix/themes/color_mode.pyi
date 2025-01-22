@@ -403,7 +403,7 @@ class ColorModeSwitch(Switch):
         ...
 
 class ColorModeNamespace(Var):
-    icon = color_mode_icon
+    icon = staticmethod(color_mode_icon)
     button = staticmethod(ColorModeIconButton.create)
     switch = staticmethod(ColorModeSwitch.create)
 
