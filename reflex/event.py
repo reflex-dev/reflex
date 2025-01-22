@@ -560,10 +560,10 @@ class JavasciptKeyboardEvent:
     """Interface for a Javascript KeyboardEvent https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent."""
 
     key: str = ""
-    alt_key: bool = False
-    ctrl_key: bool = False
-    meta_key: bool = False
-    shift_key: bool = False
+    altKey: bool = False  # noqa: N815
+    ctrlKey: bool = False  # noqa: N815
+    metaKey: bool = False  # noqa: N815
+    shiftKey: bool = False  # noqa: N815
 
 
 def input_event(e: Var[JavascriptInputEvent]) -> Tuple[Var[str]]:

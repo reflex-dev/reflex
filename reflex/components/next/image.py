@@ -3,7 +3,7 @@
 from typing import Any, Literal, Optional, Union
 
 from reflex.event import EventHandler, no_args_event_spec
-from reflex.utils import types
+from reflex.utils import console, types
 from reflex.vars.base import Var
 
 from .base import NextComponent
@@ -82,6 +82,15 @@ class Image(NextComponent):
         Returns:
             _type_: _description_
         """
+        if "blurDataURL" in props:
+            console.deprecate(
+                feature_name="blurDataURL",
+                reason="Use blur_data_url instead",
+                deprecation_version="0.7.0",
+                removal_version="0.8.0",
+            )
+            props["blur_data_url"] = props.pop("blurDataURL")
+
         style = props.get("style", {})
 
         def check_prop_type(prop_name, prop_value):
