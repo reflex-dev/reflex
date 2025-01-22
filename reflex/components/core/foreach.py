@@ -45,3 +45,9 @@ def foreach(
         )
 
     return iterable.foreach(render_fn)
+
+
+class Foreach:
+    """Create a list of components from an iterable."""
+
+    create = staticmethod(foreach)
