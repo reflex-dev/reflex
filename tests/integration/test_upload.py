@@ -85,7 +85,7 @@ def UploadFile():
             ),
             rx.box(
                 rx.foreach(
-                    rx.selected_files,
+                    rx.selected_files(),
                     lambda f: rx.text(f, as_="p"),
                 ),
                 id="selected_files",
