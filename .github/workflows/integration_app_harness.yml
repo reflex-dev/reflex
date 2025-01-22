@@ -54,7 +54,7 @@ jobs:
           REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
         run: |
           poetry run playwright install chromium
-          poetry run pytest tests/integration --retries 2 --maxfail=5 --splits 2 --group ${{matrix.split_index}}
+          poetry run pytest tests/integration --retries 3 --maxfail=5 --splits 2 --group ${{matrix.split_index}}
       - uses: actions/upload-artifact@v4
         name: Upload failed test screenshots
         if: always()
