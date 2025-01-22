@@ -23,8 +23,6 @@ from typing import (
     Union,
 )
 
-from typing_extensions import deprecated
-
 import reflex.state
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
@@ -47,11 +45,10 @@ from reflex.event import (
     EventChain,
     EventHandler,
     EventSpec,
-    EventVar,
     no_args_event_spec,
 )
 from reflex.style import Style, format_as_emotion
-from reflex.utils import console, format, imports, types
+from reflex.utils import format, imports, types
 from reflex.utils.imports import (
     ImmutableParsedImportDict,
     ImportDict,
@@ -546,41 +543,6 @@ class Component(BaseComponent, ABC):
 
         # Construct the component.
         super().__init__(*args, **kwargs)
-
-    @deprecated("Use rx.EventChain.create instead.")
-    def _create_event_chain(
-        self,
-        args_spec: types.ArgsSpec | Sequence[types.ArgsSpec],
-        value: Union[
-            Var,
-            EventHandler,
-            EventSpec,
-            List[Union[EventHandler, EventSpec, EventVar]],
-            Callable,
-        ],
-        key: Optional[str] = None,
-    ) -> Union[EventChain, Var]:
-        """Create an event chain from a variety of input types.
-
-        Args:
-            args_spec: The args_spec of the event trigger being bound.
-            value: The value to create the event chain from.
-            key: The key of the event trigger being bound.
-
-        Returns:
-            The event chain.
-        """
-        console.deprecate(
-            "Component._create_event_chain",
-            "Use rx.EventChain.create instead.",
-            deprecation_version="0.6.8",
-            removal_version="0.7.0",
-        )
-        return EventChain.create(
-            value=value,  # type: ignore
-            args_spec=args_spec,
-            key=key,
-        )
 
     def get_event_triggers(
         self,
