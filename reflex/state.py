@@ -1342,12 +1342,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if field.allow_none and not is_optional(field_type):
                 field_type = Union[field_type, None]
             if not _isinstance(value, field_type):
-                console.deprecate(
-                    "mismatched-type-assignment",
-                    f"Tried to assign value {value} of type {type(value)} to field {type(self).__name__}.{name} of type {field_type}."
-                    " This might lead to unexpected behavior.",
-                    "0.6.5",
-                    "0.7.0",
+                console.error(
+                    f"Expected field '{type(self).__name__}.{name}' to receive type '{field_type}',"
+                    f" but got '{value}' of type '{type(value)}'."
                 )
 
         # Set the attribute.
@@ -1832,7 +1829,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if (
                 isinstance(value, dict)
                 and inspect.isclass(hinted_args)
-                and not types.is_generic_alias(hinted_args)  # py3.9-py3.10
+                and not types.is_generic_alias(hinted_args)  # py3.10
             ):
                 if issubclass(hinted_args, Model):
                     # Remove non-fields from the payload

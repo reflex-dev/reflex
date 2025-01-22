@@ -38,7 +38,7 @@ from reflex.config import Config, environment, get_config
 from reflex.utils import console, net, path_ops, processes, redir
 from reflex.utils.exceptions import (
     GeneratedCodeHasNoFunctionDefs,
-    raise_system_package_missing_error,
+    SystemPackageMissingError,
 )
 from reflex.utils.format import format_library_name
 from reflex.utils.registry import _get_npm_registry
@@ -86,18 +86,6 @@ def get_web_dir() -> Path:
     return environment.REFLEX_WEB_WORKDIR.get()
 
 
-def _python_version_check():
-    """Emit deprecation warning for deprecated python versions."""
-    # Check for end-of-life python versions.
-    if sys.version_info < (3, 10):
-        console.deprecate(
-            feature_name="Support for Python 3.9 and older",
-            reason="please upgrade to Python 3.10 or newer",
-            deprecation_version="0.6.0",
-            removal_version="0.7.0",
-        )
-
-
 def check_latest_package_version(package_name: str):
     """Check if the latest version of the package is installed.
 
@@ -120,8 +108,6 @@ def check_latest_package_version(package_name: str):
             console.warn(
                 f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
             )
-        # Check for deprecated python versions
-        _python_version_check()
     except Exception:
         pass
 
@@ -887,7 +873,11 @@ def install_node():
 
 
 def install_bun():
-    """Install bun onto the user's system."""
+    """Install bun onto the user's system.
+
+    Raises:
+        SystemPackageMissingError: If "unzip" is missing.
+    """
     win_supported = is_windows_bun_supported()
     one_drive_in_path = windows_check_onedrive_in_path()
     if constants.IS_WINDOWS and (not win_supported or one_drive_in_path):
@@ -926,7 +916,7 @@ def install_bun():
     else:
         unzip_path = path_ops.which("unzip")
         if unzip_path is None:
-            raise_system_package_missing_error("unzip")
+            raise SystemPackageMissingError("unzip")
 
         # Run the bun install script.
         download_and_run(

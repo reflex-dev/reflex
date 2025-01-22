@@ -25,7 +25,6 @@ from typing import (
     overload,
 )
 
-import typing_extensions
 from typing_extensions import (
     Concatenate,
     ParamSpec,
@@ -40,7 +39,11 @@ from typing_extensions import (
 from reflex import constants
 from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import console, format
-from reflex.utils.exceptions import EventFnArgMismatch, EventHandlerArgTypeMismatch
+from reflex.utils.exceptions import (
+    EventFnArgMismatchError,
+    EventHandlerArgTypeMismatchError,
+    MissingAnnotationError,
+)
 from reflex.utils.types import ArgsSpec, GenericType, typehint_issubclass
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -94,32 +97,6 @@ class Event:
 _EVENT_FIELDS: set[str] = {f.name for f in dataclasses.fields(Event)}
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
-
-
-def background(fn: Callable, *, __internal_reflex_call: bool = False):
-    """Decorator to mark event handler as running in the background.
-
-    Args:
-        fn: The function to decorate.
-
-    Returns:
-        The same function, but with a marker set.
-
-
-    Raises:
-        TypeError: If the function is not a coroutine function or async generator.
-    """
-    if not __internal_reflex_call:
-        console.deprecate(
-            "background-decorator",
-            "Use `rx.event(background=True)` instead.",
-            "0.6.5",
-            "0.7.0",
-        )
-    if not inspect.iscoroutinefunction(fn) and not inspect.isasyncgenfunction(fn):
-        raise TypeError("Background task must be async function or generator.")
-    setattr(fn, BACKGROUND_TASK_MARKER, True)
-    return fn
 
 
 @dataclasses.dataclass(
@@ -813,29 +790,10 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     )
 
 
-@overload
 def redirect(
     path: str | Var[str],
-    is_external: Optional[bool] = None,
+    is_external: bool = False,
     replace: bool = False,
-) -> EventSpec: ...
-
-
-@overload
-@typing_extensions.deprecated("`external` is deprecated use `is_external` instead")
-def redirect(
-    path: str | Var[str],
-    is_external: Optional[bool] = None,
-    replace: bool = False,
-    external: Optional[bool] = None,
-) -> EventSpec: ...
-
-
-def redirect(
-    path: str | Var[str],
-    is_external: Optional[bool] = None,
-    replace: bool = False,
-    external: Optional[bool] = None,
 ) -> EventSpec:
     """Redirect to a new path.
 
@@ -843,26 +801,10 @@ def redirect(
         path: The path to redirect to.
         is_external: Whether to open in new tab or not.
         replace: If True, the current page will not create a new history entry.
-        external(Deprecated): Whether to open in new tab or not.
 
     Returns:
         An event to redirect to the path.
     """
-    if external is not None:
-        console.deprecate(
-            "The `external` prop in `rx.redirect`",
-            "use `is_external` instead.",
-            "0.6.6",
-            "0.7.0",
-        )
-
-    # is_external should take precedence over external.
-    is_external = (
-        (False if external is None else external)
-        if is_external is None
-        else is_external
-    )
-
     return server_side(
         "_redirect",
         get_fn_signature(redirect),
@@ -1280,11 +1222,14 @@ def call_event_handler(
         event_spec: The lambda that define the argument(s) to pass to the event handler.
         key: The key to pass to the event handler.
 
+    Raises:
+        EventHandlerArgTypeMismatchError: If the event handler arguments do not match the event spec. #noqa: DAR402
+        TypeError: If the event handler arguments are invalid.
+
     Returns:
         The event spec from calling the event handler.
 
-    # noqa: DAR401 failure
-
+    #noqa: DAR401
     """
     event_spec_args = parse_args_spec(event_spec)  # type: ignore
 
@@ -1321,10 +1266,15 @@ def call_event_handler(
             ),
         )
     )
+    type_match_found: dict[str, bool] = {}
+    delayed_exceptions: list[EventHandlerArgTypeMismatchError] = []
+
+    try:
+        type_hints_of_provided_callback = get_type_hints(event_callback.fn)
+    except NameError:
+        type_hints_of_provided_callback = {}
 
     if event_spec_return_types:
-        failures = []
-
         event_callback_spec = inspect.getfullargspec(event_callback.fn)
 
         for event_spec_index, event_spec_return_type in enumerate(
@@ -1336,43 +1286,35 @@ def call_event_handler(
                 arg if get_origin(arg) is not Var else get_args(arg)[0] for arg in args
             ]
 
-            try:
-                type_hints_of_provided_callback = get_type_hints(event_callback.fn)
-            except NameError:
-                type_hints_of_provided_callback = {}
-
-            failed_type_check = False
-
             # check that args of event handler are matching the spec if type hints are provided
             for i, arg in enumerate(event_callback_spec.args[1:]):
                 if arg not in type_hints_of_provided_callback:
                     continue
 
+                type_match_found.setdefault(arg, False)
+
                 try:
                     compare_result = typehint_issubclass(
                         args_types_without_vars[i], type_hints_of_provided_callback[arg]
                     )
-                except TypeError:
-                    # TODO: In 0.7.0, remove this block and raise the exception
-                    # raise TypeError(
-                    #     f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_handler.fn.__qualname__} provided for {key}." # noqa: ERA001
-                    # ) from e
-                    console.warn(
+                except TypeError as te:
+                    raise TypeError(
                         f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_callback.fn.__qualname__} provided for {key}."
-                    )
-                    compare_result = False
+                    ) from te
 
                 if compare_result:
+                    type_match_found[arg] = True
                     continue
                 else:
-                    failure = EventHandlerArgTypeMismatch(
-                        f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {type_hints_of_provided_callback[arg]} as annotated in {event_callback.fn.__qualname__} instead."
+                    type_match_found[arg] = False
+                    delayed_exceptions.append(
+                        EventHandlerArgTypeMismatchError(
+                            f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {type_hints_of_provided_callback[arg]} as annotated in {event_callback.fn.__qualname__} instead."
+                        )
                     )
-                    failures.append(failure)
-                    failed_type_check = True
-                    break
 
-            if not failed_type_check:
+            if all(type_match_found.values()):
+                delayed_exceptions.clear()
                 if event_spec_index:
                     args = get_args(event_spec_return_types[0])
 
@@ -1394,15 +1336,10 @@ def call_event_handler(
                         f"Event handler {key} expects ({expect_string}) -> () but got ({given_string}) -> () as annotated in {event_callback.fn.__qualname__} instead. "
                         f"This may lead to unexpected behavior but is intentionally ignored for {key}."
                     )
-                return event_callback(*event_spec_args)
+                break
 
-        if failures:
-            console.deprecate(
-                "Mismatched event handler argument types",
-                "\n".join([str(f) for f in failures]),
-                "0.6.5",
-                "0.7.0",
-            )
+    if delayed_exceptions:
+        raise delayed_exceptions[0]
 
     return event_callback(*event_spec_args)  # type: ignore
 
@@ -1421,26 +1358,26 @@ def unwrap_var_annotation(annotation: GenericType):
     return annotation
 
 
-def resolve_annotation(annotations: dict[str, Any], arg_name: str):
+def resolve_annotation(annotations: dict[str, Any], arg_name: str, spec: ArgsSpec):
     """Resolve the annotation for the given argument name.
 
     Args:
         annotations: The annotations.
         arg_name: The argument name.
+        spec: The specs which the annotations come from.
+
+    Raises:
+        MissingAnnotationError: If the annotation is missing for non-lambda methods.
 
     Returns:
         The resolved annotation.
     """
     annotation = annotations.get(arg_name)
     if annotation is None:
-        console.deprecate(
-            feature_name="Unannotated event handler arguments",
-            reason="Provide type annotations for event handler arguments.",
-            deprecation_version="0.6.3",
-            removal_version="0.7.0",
-        )
-        # Allow arbitrary attribute access two levels deep until removed.
-        return Dict[str, dict]
+        if not isinstance(spec, types.LambdaType):
+            raise MissingAnnotationError(var_name=arg_name)
+        else:
+            return dict[str, dict]
     return annotation
 
 
@@ -1462,7 +1399,13 @@ def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
         arg_spec(
             *[
                 Var(f"_{l_arg}").to(
-                    unwrap_var_annotation(resolve_annotation(annotations, l_arg))
+                    unwrap_var_annotation(
+                        resolve_annotation(
+                            annotations,
+                            l_arg,
+                            spec=arg_spec,
+                        )
+                    )
                 )
                 for l_arg in spec.args
             ]
@@ -1478,7 +1421,7 @@ def check_fn_match_arg_spec(
     func_name: str | None = None,
 ):
     """Ensures that the function signature matches the passed argument specification
-    or raises an EventFnArgMismatch if they do not.
+    or raises an EventFnArgMismatchError if they do not.
 
     Args:
         user_func: The function to be validated.
@@ -1488,7 +1431,7 @@ def check_fn_match_arg_spec(
         func_name: The name of the function to be validated.
 
     Raises:
-        EventFnArgMismatch: Raised if the number of mandatory arguments do not match
+        EventFnArgMismatchError: Raised if the number of mandatory arguments do not match
     """
     user_args = inspect.getfullargspec(user_func).args
     # Drop the first argument if it's a bound method
@@ -1504,7 +1447,7 @@ def check_fn_match_arg_spec(
     number_of_event_args = len(parsed_event_args)
 
     if number_of_user_args - number_of_user_default_args > number_of_event_args:
-        raise EventFnArgMismatch(
+        raise EventFnArgMismatchError(
             f"Event {key} only provides {number_of_event_args} arguments, but "
             f"{func_name or user_func} requires at least {number_of_user_args - number_of_user_default_args} "
             "arguments to be passed to the event handler.\n"
@@ -1813,8 +1756,6 @@ V3 = TypeVar("V3")
 V4 = TypeVar("V4")
 V5 = TypeVar("V5")
 
-background_event_decorator = background
-
 
 class EventCallback(Generic[P, T]):
     """A descriptor that wraps a function to be used as an event."""
@@ -1987,6 +1928,9 @@ class EventNamespace(types.SimpleNamespace):
             func: The function to wrap.
             background: Whether the event should be run in the background. Defaults to False.
 
+        Raises:
+            TypeError: If background is True and the function is not a coroutine or async generator. # noqa: DAR402
+
         Returns:
             The wrapped function.
         """
@@ -1995,7 +1939,13 @@ class EventNamespace(types.SimpleNamespace):
             func: Callable[Concatenate[BASE_STATE, P], T],
         ) -> EventCallback[P, T]:
             if background is True:
-                return background_event_decorator(func, __internal_reflex_call=True)  # type: ignore
+                if not inspect.iscoroutinefunction(
+                    func
+                ) and not inspect.isasyncgenfunction(func):
+                    raise TypeError(
+                        "Background task must be async function or generator."
+                    )
+                setattr(func, BACKGROUND_TASK_MARKER, True)
             return func  # type: ignore
 
         if func is not None:
