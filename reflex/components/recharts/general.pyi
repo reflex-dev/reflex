@@ -482,8 +482,59 @@ class LabelList(Recharts):
         """
         ...
 
+class Cell(Recharts):
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        fill: Optional[Union[Var[str], str]] = None,
+        stroke: Optional[Union[Var[str], str]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_blur: Optional[EventType[[], BASE_STATE]] = None,
+        on_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
+        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
+        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
+        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
+        **props,
+    ) -> "Cell":
+        """Create the component.
+
+        Args:
+            *children: The children of the component.
+            fill: The presentation attribute of a rectangle in bar or a sector in pie.
+            stroke: The presentation attribute of a rectangle in bar or a sector in pie.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The props of the component.
+
+        Returns:
+            The component.
+        """
+        ...
+
 responsive_container = ResponsiveContainer.create
 legend = Legend.create
 graphing_tooltip = GraphingTooltip.create
 label = Label.create
 label_list = LabelList.create
+cell = Cell.create

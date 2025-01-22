@@ -254,7 +254,7 @@ def get_package_manager(on_failure_return_none: bool = False) -> str | None:
     """
     npm_path = path_ops.get_npm_path()
     if npm_path is not None:
-        return str(Path(npm_path).resolve())
+        return str(npm_path)
     if on_failure_return_none:
         return None
     raise FileNotFoundError("NPM not found. You may need to run `reflex init`.")

@@ -829,6 +829,22 @@ StateBases = get_base_class(StateVar)
 StateIterBases = get_base_class(StateIterVar)
 
 
+def safe_issubclass(cls: Type, cls_check: Type | Tuple[Type, ...]):
+    """Check if a class is a subclass of another class. Returns False if internal error occurs.
+
+    Args:
+        cls: The class to check.
+        cls_check: The class to check against.
+
+    Returns:
+        Whether the class is a subclass of the other class.
+    """
+    try:
+        return issubclass(cls, cls_check)
+    except TypeError:
+        return False
+
+
 def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> bool:
     """Check if a type hint is a subclass of another type hint.
 
