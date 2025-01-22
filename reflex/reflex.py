@@ -550,7 +550,6 @@ def deploy(
         loglevel=type(loglevel).INFO,  # type: ignore
         token=token,
         project=project,
-        config_path=config_path,
         project_name=project_name,
         **extra,
     )
