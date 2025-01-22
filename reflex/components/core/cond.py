@@ -90,3 +90,9 @@ def color_mode_cond(light: Any, dark: Any = None) -> Var | Component:
         light,
         dark,
     )
+
+
+class Cond:
+    """Create a conditional component or Prop."""
+
+    create = staticmethod(cond)
