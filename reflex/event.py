@@ -34,7 +34,6 @@ from typing_extensions import (
     TypeVar,
     TypeVarTuple,
     Unpack,
-    deprecated,
     get_args,
     get_origin,
 )
@@ -803,24 +802,6 @@ def redirect(
     path: str | Var[str],
     is_external: bool = False,
     replace: bool = False,
-) -> EventSpec: ...
-
-
-@overload
-@deprecated("`external` is deprecated use `is_external` instead")
-def redirect(
-    path: str | Var[str],
-    is_external: Optional[bool] = None,
-    replace: bool = False,
-    external: Optional[bool] = None,
-) -> EventSpec: ...
-
-
-def redirect(
-    path: str | Var[str],
-    is_external: Optional[bool] = None,
-    replace: bool = False,
-    external: Optional[bool] = None,
 ) -> EventSpec:
     """Redirect to a new path.
 

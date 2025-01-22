@@ -7,7 +7,7 @@ from typing import Any, overload
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import BaseComponent, Component
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
-from reflex.utils.types import infallible_issubclass
+from reflex.utils.types import safe_issubclass
 from reflex.vars.base import LiteralVar, ReflexCallable, Var
 from reflex.vars.function import ArgsFunctionOperation
 from reflex.vars.number import ternary_operation
@@ -40,7 +40,7 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
 
     # If the first component is a component, create a Fragment if the second component is not set.
     if isinstance(c1, BaseComponent) or (
-        isinstance(c1, Var) and infallible_issubclass(c1._var_type, BaseComponent)
+        isinstance(c1, Var) and safe_issubclass(c1._var_type, BaseComponent)
     ):
         c2 = c2 if c2 is not None else Fragment.create()
 

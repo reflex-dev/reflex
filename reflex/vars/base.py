@@ -74,9 +74,8 @@ from reflex.utils.types import (
     _isinstance,
     get_origin,
     has_args,
-    infallible_issubclass,
-    typehint_issubclass,
     safe_issubclass,
+    typehint_issubclass,
     unionize,
 )
 
@@ -764,7 +763,7 @@ class Var(Generic[VAR_TYPE]):
         for var_subclass in _var_subclasses[::-1]:
             if (
                 var_subclass.python_types
-                and infallible_issubclass(fixed_output_type, var_subclass.python_types)
+                and safe_issubclass(fixed_output_type, var_subclass.python_types)
             ) or (
                 var_subclass.is_subclass and var_subclass.is_subclass(fixed_output_type)
             ):
@@ -863,7 +862,7 @@ class Var(Generic[VAR_TYPE]):
             for var_subclass in _var_subclasses:
                 if all(
                     (
-                        infallible_issubclass(t, var_subclass.python_types)
+                        safe_issubclass(t, var_subclass.python_types)
                         or (var_subclass.is_subclass and var_subclass.is_subclass(t))
                     )
                     for t in inner_types
@@ -886,7 +885,7 @@ class Var(Generic[VAR_TYPE]):
             return self.to(None)
 
         for var_subclass in _var_subclasses[::-1]:
-            if infallible_issubclass(fixed_type, var_subclass.python_types) or (
+            if safe_issubclass(fixed_type, var_subclass.python_types) or (
                 var_subclass.is_subclass and var_subclass.is_subclass(fixed_type)
             ):
                 return self.to(var_subclass.var_subclass, self._var_type)

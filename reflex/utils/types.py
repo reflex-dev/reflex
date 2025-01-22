@@ -848,25 +848,6 @@ def safe_issubclass(cls: Any, class_or_tuple: Any, /) -> bool:
 
     Returns:
         Whether the class is a subclass of the other class or tuple of classes.
-
-    Raises:
-        TypeError: If the arguments are invalid.
-    """
-    try:
-        return issubclass(cls, class_or_tuple)
-    except TypeError as e:
-        return False
-
-
-def infallible_issubclass(cls: Any, class_or_tuple: Any, /) -> bool:
-    """Check if a class is a subclass of another class or a tuple of classes.
-
-    Args:
-        cls: The class to check.
-        class_or_tuple: The class or tuple of classes to check against.
-
-    Returns:
-        Whether the class is a subclass of the other class or tuple of classes.
     """
     if cls is class_or_tuple or (
         isinstance(class_or_tuple, tuple) and cls in class_or_tuple
@@ -981,7 +962,7 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
         return True
 
     # Check if the origin of both types is the same (e.g., list for List[int])
-    if not infallible_issubclass(
+    if not safe_issubclass(
         provided_type_origin or possible_subclass,
         accepted_type_origin or possible_superclass,
     ):
