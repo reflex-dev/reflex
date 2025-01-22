@@ -855,9 +855,7 @@ def safe_issubclass(cls: Any, class_or_tuple: Any, /) -> bool:
     try:
         return issubclass(cls, class_or_tuple)
     except TypeError as e:
-        raise TypeError(
-            f"Invalid arguments for issubclass: {cls}, {class_or_tuple}"
-        ) from e
+        return False
 
 
 def infallible_issubclass(cls: Any, class_or_tuple: Any, /) -> bool:

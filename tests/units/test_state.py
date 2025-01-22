@@ -1148,7 +1148,7 @@ def test_child_state():
 
     class ChildState(MainState):
         @computed_var
-        def rendered_var(self):
+        def rendered_var(self) -> int:
             return self.v
 
     ms = MainState()
@@ -1426,7 +1426,7 @@ def test_computed_var_dependencies():
             return self.testprop
 
         @rx.var
-        def comp_w(self):
+        def comp_w(self) -> Callable[[], int]:
             """Nested lambda.
 
             Returns:
@@ -1435,7 +1435,7 @@ def test_computed_var_dependencies():
             return lambda: self.w
 
         @rx.var
-        def comp_x(self):
+        def comp_x(self) -> Callable[[], int]:
             """Nested function.
 
             Returns:
@@ -1448,7 +1448,7 @@ def test_computed_var_dependencies():
             return _
 
         @rx.var
-        def comp_y(self) -> List[int]:
+        def comp_y(self) -> list[int]:
             """Comprehension iterating over attribute.
 
             Returns:
@@ -3140,7 +3140,7 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
         child3_var: int = 0
 
         @rx.var(cache=False)
-        def v(self):
+        def v(self) -> None:
             pass
 
     class Grandchild3(Child3):

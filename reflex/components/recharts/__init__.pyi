@@ -53,11 +53,13 @@ from .charts import radar_chart as radar_chart
 from .charts import radial_bar_chart as radial_bar_chart
 from .charts import scatter_chart as scatter_chart
 from .charts import treemap as treemap
+from .general import Cell as Cell
 from .general import GraphingTooltip as GraphingTooltip
 from .general import Label as Label
 from .general import LabelList as LabelList
 from .general import Legend as Legend
 from .general import ResponsiveContainer as ResponsiveContainer
+from .general import cell as cell
 from .general import graphing_tooltip as graphing_tooltip
 from .general import label as label
 from .general import label_list as label_list

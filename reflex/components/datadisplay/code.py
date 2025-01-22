@@ -14,7 +14,7 @@ from reflex.components.radix.themes.layout.box import Box
 from reflex.constants.colors import Color
 from reflex.event import set_clipboard
 from reflex.style import Style
-from reflex.utils import console, format
+from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var, VarData
 
@@ -438,22 +438,13 @@ class CodeBlock(Component, MarkdownComponentMap):
         can_copy = props.pop("can_copy", False)
         copy_button = props.pop("copy_button", None)
 
+        # react-syntax-highlighter doesn't have an explicit "light" or "dark" theme so we use one-light and one-dark
+        # themes respectively to ensure code compatibility.
         if "theme" not in props:
             # Default color scheme responds to global color mode.
             props["theme"] = color_mode_cond(
                 light=Theme.one_light,
                 dark=Theme.one_dark,
-            )
-
-        # react-syntax-highlighter doesn't have an explicit "light" or "dark" theme so we use one-light and one-dark
-        # themes respectively to ensure code compatibility.
-        if props.get("theme") is not None and not isinstance(props["theme"], Var):
-            props["theme"] = getattr(Theme, format.to_snake_case(props["theme"]))  # type: ignore
-            console.deprecate(
-                feature_name="theme prop as string",
-                reason="Use code_block.themes instead.",
-                deprecation_version="0.6.0",
-                removal_version="0.7.0",
             )
 
         if can_copy:

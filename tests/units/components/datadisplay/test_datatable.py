@@ -4,6 +4,7 @@ import pytest
 import reflex as rx
 from reflex.components.gridjs.datatable import DataTable
 from reflex.utils import types
+from reflex.utils.exceptions import UntypedComputedVarError
 from reflex.utils.serializers import serialize, serialize_dataframe
 
 
@@ -76,17 +77,17 @@ def test_invalid_props(props):
     [
         (
             "data_table_state2",
-            "Annotation of the computed var assigned to the data field should be provided.",
+            "Computed var 'data' must have a type annotation.",
             True,
         ),
         (
             "data_table_state3",
-            "Annotation of the computed var assigned to the column field should be provided.",
+            "Computed var 'columns' must have a type annotation.",
             False,
         ),
         (
             "data_table_state4",
-            "Annotation of the computed var assigned to the data field should be provided.",
+            "Computed var 'data' must have a type annotation.",
             False,
         ),
     ],
@@ -100,7 +101,7 @@ def test_computed_var_without_annotation(fixture, request, err_msg, is_data_fram
         err_msg: expected error message.
         is_data_frame: whether data field is a pandas dataframe.
     """
-    with pytest.raises(ValueError) as err:
+    with pytest.raises(UntypedComputedVarError) as err:
         if is_data_frame:
             DataTable.create(data=request.getfixturevalue(fixture).data)
         else:
