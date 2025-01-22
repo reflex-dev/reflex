@@ -276,7 +276,7 @@ class App(MiddlewareMixin, LifespanMixin):
     # Admin dashboard to view and manage the database.
     admin_dash: Optional[AdminDash] = None
 
-    # The async server name space. PRIVATE.
+    # The async server name space.
     _event_namespace: Optional[EventNamespace] = None
 
     # Background tasks that are currently running.
