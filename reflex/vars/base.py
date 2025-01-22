@@ -1447,7 +1447,7 @@ T = TypeVar("T")
 
 # NoReturn is used to match CustomVarOperationReturn with no type hint.
 @overload
-def var_operation(  # type: ignore
+def var_operation(  # pyright: ignore [reportOverlappingOverload]
     func: Callable[P, CustomVarOperationReturn[NoReturn]],
 ) -> Callable[P, Var]: ...
 
