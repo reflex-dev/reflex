@@ -33,7 +33,7 @@ def foreach(
     Raises:
         ForeachVarError: If the iterable is of type Any.
     """
-    iterable = LiteralVar.create(iterable)
+    iterable = LiteralVar.create(iterable).guess_type()
     if isinstance(iterable, ObjectVar):
         iterable = iterable.items()
 
