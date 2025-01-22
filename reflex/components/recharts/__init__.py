@@ -70,6 +70,8 @@ _SUBMOD_ATTRS: dict = {
         "Label",
         "label_list",
         "LabelList",
+        "cell",
+        "Cell",
     ],
     "polar": [
         "pie",
