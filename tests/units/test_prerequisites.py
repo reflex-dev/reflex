@@ -1,4 +1,3 @@
-import importlib.machinery
 import json
 import re
 import shutil
@@ -289,7 +288,7 @@ from new_name
     assert updated_content == expected_content
 
 
-def test_cli_rename_command(mocker, temp_directory):
+def test_cli_rename_command(temp_directory):
     foo_dir = temp_directory / "foo"
     foo_dir.mkdir()
     (foo_dir / "__init__").touch()
@@ -341,15 +340,6 @@ app.add_page(index)
 """
     )
 
-    mocker.patch(
-        "importlib.util.find_spec",
-        mocker.patch(
-            "importlib.util.find_spec",
-            return_value=importlib.machinery.ModuleSpec(
-                name="foo", loader=None, origin=str(Path(foo_dir / "foo" / "foo.py"))
-            ),
-        ),
-    )
     with chdir(temp_directory / "foo"):
         result = runner.invoke(cli, ["rename", "bar"])
 

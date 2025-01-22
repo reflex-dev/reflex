@@ -534,6 +534,8 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
         )
         raise typer.Exit(1)
 
+    sys.path.insert(0, str(Path.cwd()))
+
     config = get_config()
     module_path = importlib.util.find_spec(config.module)
     if module_path is None:
