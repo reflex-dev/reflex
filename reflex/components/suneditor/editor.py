@@ -115,7 +115,7 @@ class Editor(NoSSRComponent):
     # Alternatively to a string, a dict of your language can be passed to this prop.
     # Please refer to the library docs for this.
     # options: "en" | "da" | "de" | "es" | "fr" | "ja" | "ko" | "pt_br" |
-    #  "ru" | "zh_cn" | "ro" | "pl" | "ckb" | "lv" | "se" | "ua" | "he" | "it"
+    # "ru" | "zh_cn" | "ro" | "pl" | "ckb" | "lv" | "se" | "ua" | "he" | "it"
     # default: "en".
     lang: Var[
         Union[

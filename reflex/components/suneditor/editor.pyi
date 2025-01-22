@@ -172,7 +172,7 @@ class Editor(NoSSRComponent):
 
         Args:
             set_options: Configuration object to further configure the instance.
-            lang: Language of the editor.  Alternatively to a string, a dict of your language can be passed to this prop.  Please refer to the library docs for this.  options: "en" | "da" | "de" | "es" | "fr" | "ja" | "ko" | "pt_br" |   "ru" | "zh_cn" | "ro" | "pl" | "ckb" | "lv" | "se" | "ua" | "he" | "it"  default : "en"
+            lang: Language of the editor.  Alternatively to a string, a dict of your language can be passed to this prop.  Please refer to the library docs for this.  options: "en" | "da" | "de" | "es" | "fr" | "ja" | "ko" | "pt_br" |  "ru" | "zh_cn" | "ro" | "pl" | "ckb" | "lv" | "se" | "ua" | "he" | "it"  default: "en".
             name: This is used to set the HTML form name of the editor.  This means on HTML form submission,  it will be submitted together with contents of the editor by the name provided.
             default_value: Sets the default value of the editor.  This is useful if you don't want the on_change method to be called on render.  If you want the on_change method to be called on render please use the set_contents prop
             width: Sets the width of the editor.  px and percentage values are accepted, eg width="100%" or width="500px"  default: 100%
