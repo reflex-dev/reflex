@@ -19,6 +19,7 @@ from reflex.constants import EventTriggers
 from reflex.event import (
     EventChain,
     EventHandler,
+    JavascriptInputEvent,
     input_event,
     no_args_event_spec,
     parse_args_spec,
@@ -27,7 +28,11 @@ from reflex.event import (
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
-from reflex.utils.exceptions import ChildrenTypeError, EventFnArgMismatchError
+from reflex.utils.exceptions import (
+    ChildrenTypeError,
+    EventFnArgMismatchError,
+    EventHandlerArgTypeMismatchError,
+)
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -94,11 +99,14 @@ def component2() -> Type[Component]:
         A test component.
     """
 
+    def on_prop_event_spec(e0: Any):
+        return [e0]
+
     class TestComponent2(Component):
         # A test list prop.
         arr: Var[List[str]]
 
-        on_prop_event: EventHandler[lambda e0: [e0]]
+        on_prop_event: EventHandler[on_prop_event_spec]
 
         def get_event_triggers(self) -> Dict[str, Any]:
             """Test controlled triggers.
@@ -818,10 +826,14 @@ def test_component_create_unpack_tuple_child(test_component, element, expected):
     assert fragment_wrapper.render() == expected
 
 
+class _Obj(Base):
+    custom: int = 0
+
+
 class C1State(BaseState):
     """State for testing C1 component."""
 
-    def mock_handler(self, _e, _bravo, _charlie):
+    def mock_handler(self, _e: JavascriptInputEvent, _bravo: dict, _charlie: _Obj):
         """Mock handler."""
         pass
 
@@ -829,10 +841,12 @@ class C1State(BaseState):
 def test_component_event_trigger_arbitrary_args():
     """Test that we can define arbitrary types for the args of an event trigger."""
 
-    class Obj(Base):
-        custom: int = 0
-
-    def on_foo_spec(_e, alpha: str, bravo: Dict[str, Any], charlie: Obj):
+    def on_foo_spec(
+        _e: Var[JavascriptInputEvent],
+        alpha: Var[str],
+        bravo: dict[str, Any],
+        charlie: Var[_Obj],
+    ):
         return [_e.target.value, bravo["nested"], charlie.custom + 42]
 
     class C1(Component):
@@ -845,13 +859,7 @@ def test_component_event_trigger_arbitrary_args():
                 "on_foo": on_foo_spec,
             }
 
-    comp = C1.create(on_foo=C1State.mock_handler)
-
-    assert comp.render()["props"][0] == (
-        "onFoo={((__e, _alpha, _bravo, _charlie) => (addEvents("
-        f'[(Event("{C1State.get_full_name()}.mock_handler", ({{ ["_e"] : __e["target"]["value"], ["_bravo"] : _bravo["nested"], ["_charlie"] : (_charlie["custom"] + 42) }}), ({{  }})))], '
-        "[__e, _alpha, _bravo, _charlie], ({  }))))}"
-    )
+    C1.create(on_foo=C1State.mock_handler)
 
 
 def test_create_custom_component(my_component):
@@ -917,21 +925,20 @@ def test_invalid_event_handler_args(component2, test_state):
             on_click=[test_state.do_something_arg, test_state.do_something]
         )
 
-    # Enable when 0.7.0 happens
     # # Event Handler types must match
-    # with pytest.raises(EventHandlerArgTypeMismatch):
-    #     component2.create(
-    #         on_user_visited_count_changed=test_state.do_something_with_bool # noqa: ERA001 RUF100
-    #     ) # noqa: ERA001 RUF100
-    # with pytest.raises(EventHandlerArgTypeMismatch):
-    #     component2.create(on_user_list_changed=test_state.do_something_with_int) #noqa: ERA001
-    # with pytest.raises(EventHandlerArgTypeMismatch):
-    #     component2.create(on_user_list_changed=test_state.do_something_with_list_int) #noqa: ERA001
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        component2.create(
+            on_user_visited_count_changed=test_state.do_something_with_bool
+        )
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        component2.create(on_user_list_changed=test_state.do_something_with_int)
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        component2.create(on_user_list_changed=test_state.do_something_with_list_int)
 
-    # component2.create(on_open=test_state.do_something_with_int) #noqa: ERA001
-    # component2.create(on_open=test_state.do_something_with_bool) #noqa: ERA001
-    # component2.create(on_user_visited_count_changed=test_state.do_something_with_int) #noqa: ERA001
-    # component2.create(on_user_list_changed=test_state.do_something_with_list_str) #noqa: ERA001
+    component2.create(on_open=test_state.do_something_with_int)
+    component2.create(on_open=test_state.do_something_with_bool)
+    component2.create(on_user_visited_count_changed=test_state.do_something_with_int)
+    component2.create(on_user_list_changed=test_state.do_something_with_list_str)
 
     # lambda cannot return weird values.
     with pytest.raises(ValueError):
@@ -1801,21 +1808,15 @@ def test_custom_component_declare_event_handlers_in_fields():
             """
             return {
                 **super().get_event_triggers(),
-                "on_a": lambda e0: [e0],
                 "on_b": input_event,
-                "on_c": lambda e0: [],
                 "on_d": lambda: [],
                 "on_e": lambda: [],
-                "on_f": lambda a, b, c: [c, b, a],
             }
 
     class TestComponent(Component):
-        on_a: EventHandler[lambda e0: [e0]]
         on_b: EventHandler[input_event]
-        on_c: EventHandler[no_args_event_spec]
         on_d: EventHandler[no_args_event_spec]
         on_e: EventHandler
-        on_f: EventHandler[lambda a, b, c: [c, b, a]]
 
     custom_component = ReferenceComponent.create()
     test_component = TestComponent.create()

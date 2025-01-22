@@ -282,6 +282,7 @@ class AppHarness:
             before_decorated_pages = reflex.app.DECORATED_PAGES[self.app_name].copy()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
+            os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
             self.app_module = reflex.utils.prerequisites.get_compiled_app(
                 # Do not reload the module for pre-existing apps (only apps generated from source)
                 reload=self.app_source is not None
@@ -932,6 +933,7 @@ class AppHarnessProd(AppHarness):
                 frontend=True,
                 backend=False,
                 loglevel=reflex.constants.LogLevel.INFO,
+                env=reflex.constants.Env.PROD,
             )
 
         self.frontend_thread = threading.Thread(target=self._run_frontend)

@@ -306,6 +306,9 @@ def export(
         help="Whether to exclude sqlite db files when exporting backend.",
         hidden=True,
     ),
+    env: constants.Env = typer.Option(
+        constants.Env.PROD, help="The environment to export the app in."
+    ),
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
@@ -323,6 +326,7 @@ def export(
         backend=backend,
         zip_dest_dir=zip_dest_dir,
         upload_db_file=upload_db_file,
+        env=env,
         loglevel=loglevel.subprocess_level(),
     )
 
@@ -440,7 +444,11 @@ def deploy(
         config.app_name,
         "--app-name",
         help="The name of the App to deploy under.",
-        hidden=True,
+    ),
+    app_id: str = typer.Option(
+        None,
+        "--app-id",
+        help="The ID of the App to deploy over.",
     ),
     regions: List[str] = typer.Option(
         [],
@@ -480,6 +488,11 @@ def deploy(
         "--project",
         help="project id to deploy to",
     ),
+    project_name: Optional[str] = typer.Option(
+        None,
+        "--project-name",
+        help="The name of the project to deploy to.",
+    ),
     token: Optional[str] = typer.Option(
         None,
         "--token",
@@ -492,6 +505,7 @@ def deploy(
     ),
 ):
     """Deploy the app to the Reflex hosting service."""
+    from reflex_cli.constants.base import LogLevel as HostingLogLevel
     from reflex_cli.utils import dependency
     from reflex_cli.v2 import cli as hosting_cli
 
@@ -503,12 +517,20 @@ def deploy(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    if not token:
-        # make sure user is logged in.
-        if interactive:
-            hosting_cli.login()
-        else:
-            raise SystemExit("Token is required for non-interactive mode.")
+    def convert_reflex_loglevel_to_reflex_cli_loglevel(
+        loglevel: constants.LogLevel,
+    ) -> HostingLogLevel:
+        if loglevel == constants.LogLevel.DEBUG:
+            return HostingLogLevel.DEBUG
+        if loglevel == constants.LogLevel.INFO:
+            return HostingLogLevel.INFO
+        if loglevel == constants.LogLevel.WARNING:
+            return HostingLogLevel.WARNING
+        if loglevel == constants.LogLevel.ERROR:
+            return HostingLogLevel.ERROR
+        if loglevel == constants.LogLevel.CRITICAL:
+            return HostingLogLevel.CRITICAL
+        return HostingLogLevel.INFO
 
     # Only check requirements if interactive.
     # There is user interaction for requirements update.
@@ -519,11 +541,10 @@ def deploy(
     if prerequisites.needs_reinit(frontend=True):
         _init(name=config.app_name, loglevel=loglevel)
     prerequisites.check_latest_package_version(constants.ReflexHostingCLI.MODULE_NAME)
-    extra: dict[str, str] = (
-        {"config_path": config_path} if config_path is not None else {}
-    )
+
     hosting_cli.deploy(
         app_name=app_name,
+        app_id=app_id,
         export_fn=lambda zip_dest_dir,
         api_url,
         deploy_url,
@@ -544,10 +565,11 @@ def deploy(
         envfile=envfile,
         hostname=hostname,
         interactive=interactive,
-        loglevel=type(loglevel).INFO,  # type: ignore
+        loglevel=convert_reflex_loglevel_to_reflex_cli_loglevel(loglevel),
         token=token,
         project=project,
-        **extra,
+        project_name=project_name,
+        **({"config_path": config_path} if config_path is not None else {}),
     )
 
 

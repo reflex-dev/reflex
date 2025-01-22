@@ -1,6 +1,6 @@
 """Custom Exceptions."""
 
-from typing import Any, NoReturn
+from typing import Any
 
 
 class ReflexError(Exception):
@@ -73,6 +73,30 @@ class VarValueError(ReflexError, ValueError):
 
 class VarAttributeError(ReflexError, AttributeError):
     """Custom AttributeError for var related errors."""
+
+
+class UntypedComputedVarError(ReflexError, TypeError):
+    """Custom TypeError for untyped computed var errors."""
+
+    def __init__(self, var_name):
+        """Initialize the UntypedComputedVarError.
+
+        Args:
+            var_name: The name of the computed var.
+        """
+        super().__init__(f"Computed var '{var_name}' must have a type annotation.")
+
+
+class MissingAnnotationError(ReflexError, TypeError):
+    """Custom TypeError for missing annotations."""
+
+    def __init__(self, var_name):
+        """Initialize the MissingAnnotationError.
+
+        Args:
+            var_name: The name of the var.
+        """
+        super().__init__(f"Var '{var_name}' must have a type annotation.")
 
 
 class UploadValueError(ReflexError, ValueError):
@@ -186,27 +210,25 @@ class StateMismatchError(ReflexError, ValueError):
 class SystemPackageMissingError(ReflexError):
     """Raised when a system package is missing."""
 
+    def __init__(self, package: str):
+        """Initialize the SystemPackageMissingError.
+
+        Args:
+            package: The missing package.
+        """
+        from reflex.constants import IS_MACOS
+
+        extra = (
+            f" You can do so by running 'brew install {package}'." if IS_MACOS else ""
+        )
+        super().__init__(
+            f"System package '{package}' is missing."
+            f" Please install it through your system package manager.{extra}"
+        )
+
 
 class EventDeserializationError(ReflexError, ValueError):
     """Raised when an event cannot be deserialized."""
-
-
-def raise_system_package_missing_error(package: str) -> NoReturn:
-    """Raise a SystemPackageMissingError.
-
-    Args:
-        package: The name of the missing system package.
-
-    Raises:
-        SystemPackageMissingError: The raised exception.
-    """
-    from reflex.constants import IS_MACOS
-
-    raise SystemPackageMissingError(
-        f"System package '{package}' is missing."
-        " Please install it through your system package manager."
-        + (f" You can do so by running 'brew install {package}'." if IS_MACOS else "")
-    )
 
 
 class InvalidLockWarningThresholdError(ReflexError):

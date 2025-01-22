@@ -26,6 +26,7 @@ from typing import (
     Iterable,
     List,
     Literal,
+    Mapping,
     NoReturn,
     Optional,
     Set,
@@ -45,6 +46,7 @@ from reflex.base import Base
 from reflex.constants.compiler import Hooks
 from reflex.utils import console, exceptions, imports, serializers, types
 from reflex.utils.exceptions import (
+    UntypedComputedVarError,
     VarAttributeError,
     VarDependencyError,
     VarTypeError,
@@ -64,6 +66,7 @@ from reflex.utils.types import (
     _isinstance,
     get_origin,
     has_args,
+    safe_issubclass,
     unionize,
 )
 
@@ -127,7 +130,7 @@ class VarData:
         state: str = "",
         field_name: str = "",
         imports: ImportDict | ParsedImportDict | None = None,
-        hooks: dict[str, VarData | None] | None = None,
+        hooks: Mapping[str, VarData | None] | None = None,
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
     ):
@@ -543,51 +546,20 @@ class Var(Generic[VAR_TYPE]):
     def create(
         cls,
         value: Any,
-        _var_is_local: bool | None = None,
-        _var_is_string: bool | None = None,
         _var_data: VarData | None = None,
     ) -> Var:
         """Create a var from a value.
 
         Args:
             value: The value to create the var from.
-            _var_is_local: Whether the var is local. Deprecated.
-            _var_is_string: Whether the var is a string literal. Deprecated.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
             The var.
         """
-        if _var_is_local is not None:
-            console.deprecate(
-                feature_name="_var_is_local",
-                reason="The _var_is_local argument is not supported for Var. "
-                "If you want to create a Var from a raw Javascript expression, use the constructor directly",
-                deprecation_version="0.6.0",
-                removal_version="0.7.0",
-            )
-        if _var_is_string is not None:
-            console.deprecate(
-                feature_name="_var_is_string",
-                reason="The _var_is_string argument is not supported for Var. "
-                "If you want to create a Var from a raw Javascript expression, use the constructor directly",
-                deprecation_version="0.6.0",
-                removal_version="0.7.0",
-            )
-
         # If the value is already a var, do nothing.
         if isinstance(value, Var):
             return value
-
-        # Try to pull the imports and hooks from contained values.
-        if not isinstance(value, str):
-            return LiteralVar.create(value, _var_data=_var_data)
-
-        if _var_is_string is False or _var_is_local is True:
-            return cls(
-                _js_expr=value,
-                _var_data=_var_data,
-            )
 
         return LiteralVar.create(value, _var_data=_var_data)
 
@@ -643,8 +615,8 @@ class Var(Generic[VAR_TYPE]):
     @overload
     def to(
         self,
-        output: type[dict],
-    ) -> ObjectVar[dict]: ...
+        output: type[Mapping],
+    ) -> ObjectVar[Mapping]: ...
 
     @overload
     def to(
@@ -686,7 +658,9 @@ class Var(Generic[VAR_TYPE]):
 
         # If the first argument is a python type, we map it to the corresponding Var type.
         for var_subclass in _var_subclasses[::-1]:
-            if fixed_output_type in var_subclass.python_types:
+            if fixed_output_type in var_subclass.python_types or safe_issubclass(
+                fixed_output_type, var_subclass.python_types
+            ):
                 return self.to(var_subclass.var_subclass, output)
 
         if fixed_output_type is None:
@@ -820,7 +794,7 @@ class Var(Generic[VAR_TYPE]):
             return False
         if issubclass(type_, list):
             return []
-        if issubclass(type_, dict):
+        if issubclass(type_, Mapping):
             return {}
         if issubclass(type_, tuple):
             return ()
@@ -1026,7 +1000,7 @@ class Var(Generic[VAR_TYPE]):
                     f"$/{constants.Dirs.STATE_PATH}": [imports.ImportVar(tag="refs")]
                 }
             ),
-        ).to(ObjectVar, Dict[str, str])
+        ).to(ObjectVar, Mapping[str, str])
         return refs[LiteralVar.create(str(self))]
 
     @deprecated("Use `.js_type()` instead.")
@@ -1373,7 +1347,7 @@ class LiteralVar(Var):
 
         serialized_value = serializers.serialize(value)
         if serialized_value is not None:
-            if isinstance(serialized_value, dict):
+            if isinstance(serialized_value, Mapping):
                 return LiteralObjectVar.create(
                     serialized_value,
                     _var_type=type(value),
@@ -1498,7 +1472,7 @@ def var_operation(
 ) -> Callable[P, ArrayVar[LIST_T]]: ...
 
 
-OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Dict)
+OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Mapping)
 
 
 @overload
@@ -1573,8 +1547,8 @@ def figure_out_type(value: Any) -> types.GenericType:
         return Set[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, tuple):
         return Tuple[unionize(*(figure_out_type(v) for v in value)), ...]
-    if isinstance(value, dict):
-        return Dict[
+    if isinstance(value, Mapping):
+        return Mapping[
             unionize(*(figure_out_type(k) for k in value)),
             unionize(*(figure_out_type(v) for v in value.values())),
         ]
@@ -1859,19 +1833,14 @@ class ComputedVar(Var[RETURN_TYPE]):
 
         Raises:
             TypeError: If the computed var dependencies are not Var instances or var names.
+            UntypedComputedVarError: If the computed var is untyped.
         """
         hint = kwargs.pop("return_type", None) or get_type_hints(fget).get(
             "return", Any
         )
 
         if hint is Any:
-            console.deprecate(
-                "untyped-computed-var",
-                "ComputedVar should have a return type annotation.",
-                "0.6.5",
-                "0.7.0",
-            )
-
+            raise UntypedComputedVarError(var_name=fget.__name__)
         kwargs.setdefault("_js_expr", fget.__name__)
         kwargs.setdefault("_var_type", hint)
 
@@ -1944,6 +1913,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             "_var_data": kwargs.pop(
                 "_var_data", VarData.merge(self._var_data, merge_var_data)
             ),
+            "return_type": kwargs.pop("return_type", self._var_type),
         }
 
         if kwargs:
@@ -2002,10 +1972,10 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: ComputedVar[dict[DICT_KEY, DICT_VAL]],
+        self: ComputedVar[Mapping[DICT_KEY, DICT_VAL]],
         instance: None,
         owner: Type,
-    ) -> ObjectVar[dict[DICT_KEY, DICT_VAL]]: ...
+    ) -> ObjectVar[Mapping[DICT_KEY, DICT_VAL]]: ...
 
     @overload
     def __get__(
@@ -2078,12 +2048,9 @@ class ComputedVar(Var[RETURN_TYPE]):
             value = getattr(instance, self._cache_attr)
 
         if not _isinstance(value, self._var_type):
-            console.deprecate(
-                "mismatched-computed-var-return",
-                f"Computed var {type(instance).__name__}.{self._js_expr} returned value of type {type(value)}, "
-                f"expected {self._var_type}. This might cause unexpected behavior.",
-                "0.6.5",
-                "0.7.0",
+            console.error(
+                f"Computed var '{type(instance).__name__}.{self._js_expr}' must return"
+                f" type '{self._var_type}', got '{type(value)}'."
             )
 
         return value
@@ -2915,11 +2882,14 @@ V = TypeVar("V")
 
 BASE_TYPE = TypeVar("BASE_TYPE", bound=Base)
 
+FIELD_TYPE = TypeVar("FIELD_TYPE")
+MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping)
 
-class Field(Generic[T]):
+
+class Field(Generic[FIELD_TYPE]):
     """Shadow class for Var to allow for type hinting in the IDE."""
 
-    def __set__(self, instance, value: T):
+    def __set__(self, instance, value: FIELD_TYPE):
         """Set the Var.
 
         Args:
@@ -2931,7 +2901,9 @@ class Field(Generic[T]):
     def __get__(self: Field[bool], instance: None, owner) -> BooleanVar: ...
 
     @overload
-    def __get__(self: Field[int], instance: None, owner) -> NumberVar: ...
+    def __get__(
+        self: Field[int] | Field[float] | Field[int | float], instance: None, owner
+    ) -> NumberVar: ...
 
     @overload
     def __get__(self: Field[str], instance: None, owner) -> StringVar: ...
@@ -2948,8 +2920,8 @@ class Field(Generic[T]):
 
     @overload
     def __get__(
-        self: Field[Dict[str, V]], instance: None, owner
-    ) -> ObjectVar[Dict[str, V]]: ...
+        self: Field[MAPPING_TYPE], instance: None, owner
+    ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
@@ -2957,10 +2929,10 @@ class Field(Generic[T]):
     ) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
-    def __get__(self, instance: None, owner) -> Var[T]: ...
+    def __get__(self, instance: None, owner) -> Var[FIELD_TYPE]: ...
 
     @overload
-    def __get__(self, instance, owner) -> T: ...
+    def __get__(self, instance, owner) -> FIELD_TYPE: ...
 
     def __get__(self, instance, owner):  # type: ignore
         """Get the Var.
@@ -2971,7 +2943,7 @@ class Field(Generic[T]):
         """
 
 
-def field(value: T) -> Field[T]:
+def field(value: FIELD_TYPE) -> Field[FIELD_TYPE]:
     """Create a Field with a value.
 
     Args:
