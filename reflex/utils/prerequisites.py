@@ -921,6 +921,7 @@ def install_bun():
             constants.Bun.INSTALL_URL,
             f"bun-v{constants.Bun.VERSION}",
             BUN_INSTALL=str(constants.Bun.ROOT_PATH),
+            BUN_VERSION=str(constants.Bun.VERSION),
         )
 
 
