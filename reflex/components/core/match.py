@@ -1,6 +1,6 @@
 """rx.match."""
 
-from typing import Any, cast
+from typing import Any, Union, cast
 
 from typing_extensions import Unpack
 
@@ -49,9 +49,8 @@ def _validate_return_types(match_cases: tuple[CASE_TYPE[VAR_TYPE], ...]) -> None
     def is_component_or_component_var(obj: Any) -> bool:
         return types._isinstance(obj, BaseComponent) or (
             isinstance(obj, Var)
-            and (
-                types.safe_typehint_issubclass(obj._var_type, BaseComponent)
-                or types.safe_typehint_issubclass(obj._var_type, list[BaseComponent])
+            and types.safe_typehint_issubclass(
+                obj._var_type, Union[list[BaseComponent], BaseComponent]
             )
         )
 
