@@ -1,3 +1,4 @@
+import re
 from typing import Tuple
 
 import pytest
@@ -177,8 +178,7 @@ def test_match_case_tuple_elements(match_case):
                 (MatchState.num + 1, "black"),
                 rx.text("default value"),
             ),
-            "Match cases should have the same return types. Case 3 with return value `red` of type "
-            "<class 'str'> is not <class 'reflex.components.component.BaseComponent'>",
+            "Match cases should have the same return types. Expected return types to be of type Component or Var[Component]. Return type of case 3 is <class 'str'>. Return type of case 4 is <class 'str'>. Return type of case 5 is <class 'str'>",
         ),
         (
             (
@@ -190,8 +190,7 @@ def test_match_case_tuple_elements(match_case):
                 ([1, 2], rx.text("third value")),
                 rx.text("default value"),
             ),
-            'Match cases should have the same return types. Case 3 with return value `<RadixThemesText as={"p"}> {"first value"} </RadixThemesText>` '
-            "of type <class 'reflex.components.radix.themes.typography.text.Text'> is not <class 'str'>",
+            "Match cases should have the same return types. Expected return types to be of type Component or Var[Component]. Return type of case 0 is <class 'str'>. Return type of case 1 is <class 'str'>. Return type of case 2 is <class 'str'>",
         ),
     ],
 )
@@ -202,7 +201,7 @@ def test_match_different_return_types(cases: Tuple, error_msg: str):
         cases: The match cases.
         error_msg: Expected error message.
     """
-    with pytest.raises(MatchTypeError, match=error_msg):
+    with pytest.raises(MatchTypeError, match=re.escape(error_msg)):
         match(MatchState.value, *cases)  # pyright: ignore[reportCallIssue]
 
 
