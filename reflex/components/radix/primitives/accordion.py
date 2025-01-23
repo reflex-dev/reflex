@@ -485,11 +485,11 @@ to {
         Returns:
             The style of the component.
         """
-        slideDown = LiteralVar.create(
+        slide_down = LiteralVar.create(
             "${slideDown} var(--animation-duration) var(--animation-easing)",
         )
 
-        slideUp = LiteralVar.create(
+        slide_up = LiteralVar.create(
             "${slideUp} var(--animation-duration) var(--animation-easing)",
         )
 
@@ -503,8 +503,8 @@ to {
                 "display": "block",
                 "height": "var(--space-3)",
             },
-            "&[data-state='open']": {"animation": slideDown},
-            "&[data-state='closed']": {"animation": slideUp},
+            "&[data-state='open']": {"animation": slide_down},
+            "&[data-state='closed']": {"animation": slide_up},
             _inherited_variant_selector("classic"): {
                 "color": "var(--accent-contrast)",
             },

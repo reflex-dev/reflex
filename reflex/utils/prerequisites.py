@@ -38,7 +38,7 @@ from reflex.compiler import templates
 from reflex.config import Config, environment, get_config
 from reflex.utils import console, net, path_ops, processes, redir
 from reflex.utils.exceptions import (
-    GeneratedCodeHasNoFunctionDefs,
+    GeneratedCodeHasNoFunctionDefsError,
     SystemPackageMissingError,
 )
 from reflex.utils.format import format_library_name
@@ -1816,7 +1816,7 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
         generation_hash: The generation hash from reflex.build.
 
     Raises:
-        GeneratedCodeHasNoFunctionDefs: If the fetched code has no function definitions
+        GeneratedCodeHasNoFunctionDefsError: If the fetched code has no function definitions
             (the refactored reflex code is expected to have at least one root function defined).
     """
     # Download the reflex code for the generation.
@@ -1833,7 +1833,7 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
     # Determine the name of the last function, which renders the generated code.
     defined_funcs = re.findall(r"def ([a-zA-Z_]+)\(", resp.text)
     if not defined_funcs:
-        raise GeneratedCodeHasNoFunctionDefs(
+        raise GeneratedCodeHasNoFunctionDefsError(
             f"No function definitions found in generated code from {url!r}."
         )
     render_func_name = defined_funcs[-1]

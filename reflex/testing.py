@@ -87,7 +87,7 @@ else:
 
 
 # borrowed from py3.11
-class chdir(contextlib.AbstractContextManager):
+class chdir(contextlib.AbstractContextManager):  # noqa: N801
     """Non thread-safe context manager to change the current working directory."""
 
     def __init__(self, path):

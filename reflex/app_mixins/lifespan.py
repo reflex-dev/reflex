@@ -12,7 +12,7 @@ from typing import Callable, Coroutine, Set, Union
 from fastapi import FastAPI
 
 from reflex.utils import console
-from reflex.utils.exceptions import InvalidLifespanTaskType
+from reflex.utils.exceptions import InvalidLifespanTaskTypeError
 
 from .mixin import AppMixin
 
@@ -64,10 +64,10 @@ class LifespanMixin(AppMixin):
             task_kwargs: The kwargs of the task.
 
         Raises:
-            InvalidLifespanTaskType: If the task is a generator function.
+            InvalidLifespanTaskTypeError: If the task is a generator function.
         """
         if inspect.isgeneratorfunction(task) or inspect.isasyncgenfunction(task):
-            raise InvalidLifespanTaskType(
+            raise InvalidLifespanTaskTypeError(
                 f"Task {task.__name__} of type generator must be decorated with contextlib.asynccontextmanager."
             )
 

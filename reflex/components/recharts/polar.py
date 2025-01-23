@@ -73,7 +73,7 @@ class Pie(Recharts):
     data: Var[List[Dict[str, Any]]]
 
     # Valid children components
-    _valid_children: List[str] = ["Cell", "LabelList"]
+    _valid_children: List[str] = ["Cell", "LabelList", "Bare"]
 
     # Stoke color. Default: rx.color("accent", 9)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))

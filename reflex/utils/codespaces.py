@@ -42,10 +42,7 @@ def codespaces_port_forwarding_domain() -> str | None:
     Returns:
         The domain for port forwarding in Github Codespaces, or None if not running in Codespaces.
     """
-    GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN = os.getenv(
-        "GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN"
-    )
-    return GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN
+    return os.getenv("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN")
 
 
 def is_running_in_codespaces() -> bool:

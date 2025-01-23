@@ -1,6 +1,6 @@
 """A component that wraps a recharts lib."""
 
-from typing import Dict, Literal
+from typing import Literal
 
 from reflex.components.component import Component, MemoizationLeaf, NoSSRComponent
 
@@ -10,7 +10,7 @@ class Recharts(Component):
 
     library = "recharts@2.15.0"
 
-    def _get_style(self) -> Dict:
+    def _get_style(self) -> dict:
         return {"wrapperStyle": self.style}
 
 
