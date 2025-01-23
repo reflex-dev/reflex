@@ -296,7 +296,7 @@ class AppHarness:
         self.app_instance = self.app_module.app
         if isinstance(self.app_instance._state_manager, StateManagerRedis):
             # Create our own redis connection for testing.
-            self.state_manager = StateManagerRedis.create(self.app_instance.state)
+            self.state_manager = StateManagerRedis.create(self.app_instance._state)
         else:
             self.state_manager = self.app_instance._state_manager
 
@@ -324,7 +324,7 @@ class AppHarness:
         return _shutdown_redis
 
     def _start_backend(self, port=0):
-        if self.app_instance is None:
+        if self.app_instance is None or self.app_instance.api is None:
             raise RuntimeError("App was not initialized.")
         self.backend = uvicorn.Server(
             uvicorn.Config(
@@ -353,12 +353,12 @@ class AppHarness:
                 self.app_instance.state_manager,
                 StateManagerRedis,
             )
-            and self.app_instance.state is not None
+            and self.app_instance._state is not None
         ):
             with contextlib.suppress(RuntimeError):
                 await self.app_instance.state_manager.close()
             self.app_instance._state_manager = StateManagerRedis.create(
-                state=self.app_instance.state,
+                state=self.app_instance._state,
             )
             if not isinstance(self.app_instance.state_manager, StateManagerRedis):
                 raise RuntimeError("Failed to reset state manager.")

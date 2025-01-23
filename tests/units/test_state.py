@@ -1907,12 +1907,12 @@ def mock_app_simple(monkeypatch) -> rx.App:
     Returns:
         The app, after mocking out prerequisites.get_app()
     """
-    app = App(state=TestState)
+    app = App(_state=TestState)
 
     app_module = Mock()
 
     setattr(app_module, CompileVars.APP, app)
-    app.state = TestState
+    app._state = TestState
     app.event_namespace.emit = CopyingAsyncMock()  # type: ignore
 
     def _mock_get_app(*args, **kwargs):
@@ -2153,7 +2153,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         token: A token.
     """
     router_data = {"query": {}}
-    mock_app.state_manager.state = mock_app.state = BackgroundTaskState
+    mock_app.state_manager.state = mock_app._state = BackgroundTaskState
     async for update in rx.app.process(  # type: ignore
         mock_app,
         Event(
@@ -2171,7 +2171,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
 
     # wait for the coroutine to start
     await asyncio.sleep(0.5 if CI else 0.1)
-    assert len(mock_app.background_tasks) == 1
+    assert len(mock_app._background_tasks) == 1
 
     # Process another normal event
     async for update in rx.app.process(  # type: ignore
@@ -2203,9 +2203,9 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         )
 
     # Explicit wait for background tasks
-    for task in tuple(mock_app.background_tasks):
+    for task in tuple(mock_app._background_tasks):
         await task
-    assert not mock_app.background_tasks
+    assert not mock_app._background_tasks
 
     exp_order = [
         "background_task:start",
@@ -2280,7 +2280,7 @@ async def test_background_task_reset(mock_app: rx.App, token: str):
         token: A token.
     """
     router_data = {"query": {}}
-    mock_app.state_manager.state = mock_app.state = BackgroundTaskState
+    mock_app.state_manager.state = mock_app._state = BackgroundTaskState
     async for update in rx.app.process(  # type: ignore
         mock_app,
         Event(
@@ -2297,9 +2297,9 @@ async def test_background_task_reset(mock_app: rx.App, token: str):
         assert update == StateUpdate()
 
     # Explicit wait for background tasks
-    for task in tuple(mock_app.background_tasks):
+    for task in tuple(mock_app._background_tasks):
         await task
-    assert not mock_app.background_tasks
+    assert not mock_app._background_tasks
 
     assert (
         await mock_app.state_manager.get_state(
@@ -2884,7 +2884,7 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
         "reflex.state.State.class_subclasses", {test_state, OnLoadInternalState}
     )
     app = app_module_mock.app = App(
-        state=State, load_events={"index": [test_state.test_handler]}
+        _state=State, _load_events={"index": [test_state.test_handler]}
     )
     async with app.state_manager.modify_state(_substate_key(token, State)) as state:
         state.router_data = {"simulate": "hydrate"}
@@ -2931,8 +2931,8 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         "reflex.state.State.class_subclasses", {OnLoadState, OnLoadInternalState}
     )
     app = app_module_mock.app = App(
-        state=State,
-        load_events={"index": [OnLoadState.test_handler, OnLoadState.test_handler]},
+        _state=State,
+        _load_events={"index": [OnLoadState.test_handler, OnLoadState.test_handler]},
     )
     async with app.state_manager.modify_state(_substate_key(token, State)) as state:
         state.router_data = {"simulate": "hydrate"}
@@ -2977,7 +2977,7 @@ async def test_get_state(mock_app: rx.App, token: str):
         mock_app: An app that will be returned by `get_app()`
         token: A token.
     """
-    mock_app.state_manager.state = mock_app.state = TestState
+    mock_app.state_manager.state = mock_app._state = TestState
 
     # Get instance of ChildState2.
     test_state = await mock_app.state_manager.get_state(
@@ -3147,7 +3147,7 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
 
         pass
 
-    mock_app.state_manager.state = mock_app.state = Parent
+    mock_app.state_manager.state = mock_app._state = Parent
 
     # Get the top level state via unconnected sibling.
     root = await mock_app.state_manager.get_state(_substate_key(token, Child))
