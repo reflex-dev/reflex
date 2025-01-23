@@ -1788,7 +1788,7 @@ def var_operation(
     ```python
     @var_operation
     def add(a: Var[int], b: Var[int]):
-        return custom_var_operation(f"{a} + {b}")
+        return var_operation_return(f"{a} + {b}")
     ```
 
     Args:
@@ -1854,6 +1854,9 @@ def var_operation(
 
     custom_operation_return = func(*arg_vars)
 
+    def simplified_operation(*args):
+        return func(*args)._js_expr
+
     args_operation = ArgsFunctionOperation.create(
         tuple(map(str, arg_vars)),
         custom_operation_return,
@@ -1867,6 +1870,7 @@ def var_operation(
         function_name=func_name,
         type_computer=custom_operation_return._type_computer,
         _raw_js_function=custom_operation_return._raw_js_function,
+        _original_var_operation=simplified_operation,
         _var_type=ReflexCallable[
             tuple(
                 arg_python_type
@@ -3222,15 +3226,7 @@ def and_operation(a: Var | Any, b: Var | Any) -> Var:
     Returns:
         The result of the logical AND operation.
     """
-    from .function import ArgsFunctionOperation
-
-    a = Var.create(a)
-    b = Var.create(b)
-
-    return _and_func_operation(
-        ArgsFunctionOperation.create((), a, _var_type=ReflexCallable[[], a._var_type]),
-        ArgsFunctionOperation.create((), b, _var_type=ReflexCallable[[], b._var_type]),
-    )
+    return _and_operation(a, b)
 
 
 def or_operation(a: Var | Any, b: Var | Any) -> Var:
@@ -3243,99 +3239,7 @@ def or_operation(a: Var | Any, b: Var | Any) -> Var:
     Returns:
         The result of the logical OR operation.
     """
-    from .function import ArgsFunctionOperation
-
-    a = Var.create(a)
-    b = Var.create(b)
-
-    return _or_func_operation(
-        ArgsFunctionOperation.create((), a, _var_type=ReflexCallable[[], a._var_type]),
-        ArgsFunctionOperation.create((), b, _var_type=ReflexCallable[[], b._var_type]),
-    )
-
-
-T_LOGICAL = TypeVar("T_LOGICAL")
-U_LOGICAL = TypeVar("U_LOGICAL")
-
-
-@var_operation
-def _and_func_operation(
-    a: Var[ReflexCallable[[], T_LOGICAL]], b: Var[ReflexCallable[[], U_LOGICAL]]
-) -> CustomVarOperationReturn[ReflexCallable[[], Union[T_LOGICAL, U_LOGICAL]]]:
-    """Perform a logical AND operation on two variables.
-
-    Args:
-        a: The first variable.
-        b: The second variable.
-
-    Returns:
-        The result of the logical AND operation.
-    """
-
-    def type_computer(*args: Var):
-        if not args:
-            return (
-                ReflexCallable[[ReflexCallable[[], Any], ReflexCallable[[], Any]], Any],
-                type_computer,
-            )
-        if len(args) == 1:
-            return (
-                ReflexCallable[[ReflexCallable[[], Any]], Any],
-                functools.partial(type_computer, args[0]),
-            )
-
-        a_return_type = unwrap_reflex_callalbe(args[0]._var_type)[1]
-        b_return_type = unwrap_reflex_callalbe(args[1]._var_type)[1]
-
-        return (
-            ReflexCallable[[], unionize(a_return_type, b_return_type)],
-            None,
-        )
-
-    return var_operation_return(
-        js_expression=f"({a}() && {b}())",
-        type_computer=type_computer,
-    )
-
-
-@var_operation
-def _or_func_operation(
-    a: Var[ReflexCallable[[], T_LOGICAL]], b: Var[ReflexCallable[[], U_LOGICAL]]
-) -> CustomVarOperationReturn[ReflexCallable[[], Union[T_LOGICAL, U_LOGICAL]]]:
-    """Perform a logical OR operation on two variables.
-
-    Args:
-        a: The first variable.
-        b: The second variable.
-
-    Returns:
-        The result of the logical OR operation.
-    """
-
-    def type_computer(*args: Var):
-        if not args:
-            return (
-                ReflexCallable[[ReflexCallable[[], Any], ReflexCallable[[], Any]], Any],
-                type_computer,
-            )
-        if len(args) == 1:
-            return (
-                ReflexCallable[[ReflexCallable[[], Any]], Any],
-                functools.partial(type_computer, args[0]),
-            )
-
-        a_return_type = unwrap_reflex_callalbe(args[0]._var_type)[1]
-        b_return_type = unwrap_reflex_callalbe(args[1]._var_type)[1]
-
-        return (
-            ReflexCallable[[], unionize(a_return_type, b_return_type)],
-            None,
-        )
-
-    return var_operation_return(
-        js_expression=f"({a}() || {b}())",
-        type_computer=type_computer,
-    )
+    return _or_operation(a, b)
 
 
 def passthrough_unary_type_computer(no_args: GenericType) -> TypeComputer:
@@ -3402,3 +3306,59 @@ def nary_type_computer(
         )
 
     return type_computer
+
+
+T_LOGICAL = TypeVar("T_LOGICAL")
+U_LOGICAL = TypeVar("U_LOGICAL")
+
+
+@var_operation
+def _and_operation(
+    a: Var[T_LOGICAL], b: Var[U_LOGICAL]
+) -> CustomVarOperationReturn[Union[T_LOGICAL, U_LOGICAL]]:
+    """Perform a logical AND operation on two variables.
+
+    Args:
+        a: The first variable.
+        b: The second variable.
+
+    Returns:
+        The result of the logical AND operation.
+    """
+    return var_operation_return(
+        js_expression=f"({a} && {b})",
+        type_computer=nary_type_computer(
+            ReflexCallable[[Any, Any], Any],
+            ReflexCallable[[Any], Any],
+            computer=lambda args: unionize(
+                args[0]._var_type,
+                args[1]._var_type,
+            ),
+        ),
+    )
+
+
+@var_operation
+def _or_operation(
+    a: Var[T_LOGICAL], b: Var[U_LOGICAL]
+) -> CustomVarOperationReturn[Union[T_LOGICAL, U_LOGICAL]]:
+    """Perform a logical OR operation on two variables.
+
+    Args:
+        a: The first variable.
+        b: The second variable.
+
+    Returns:
+        The result ocomputerf the logical OR operation.
+    """
+    return var_operation_return(
+        js_expression=f"({a} || {b})",
+        type_computer=nary_type_computer(
+            ReflexCallable[[Any, Any], Any],
+            ReflexCallable[[Any], Any],
+            computer=lambda args: unionize(
+                args[0]._var_type,
+                args[1]._var_type,
+            ),
+        ),
+    )

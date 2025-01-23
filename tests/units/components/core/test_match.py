@@ -36,7 +36,7 @@ class MatchState(BaseState):
             f'(() => {{ switch (JSON.stringify({MatchState.get_name()}.value)) {{case JSON.stringify(1):  return ("first");  break;case JSON.stringify(2): case JSON.stringify(3):  return '
             '("second value");  break;case JSON.stringify([1, 2]):  return ("third-value");  break;case JSON.stringify("random"):  '
             'return ("fourth_value");  break;case JSON.stringify(({ ["foo"] : "bar" })):  return ("fifth value");  '
-            f'break;case JSON.stringify((((_lhs, _rhs) => (_lhs + _rhs))({MatchState.get_name()}.num, 1))):  return ("sixth value");  break;case JSON.stringify(({MatchState.get_name()}.value+" - string")):  '
+            f'break;case JSON.stringify(({MatchState.get_name()}.num + 1)):  return ("sixth value");  break;case JSON.stringify(({MatchState.get_name()}.value+" - string")):  '
             f'return ({MatchState.get_name()}.string);  break;case JSON.stringify({MatchState.get_name()}.string):  return (({MatchState.get_name()}.value+" - string"));  break;default:  '
             'return ("default value");  break;};})()',
         ),
@@ -55,7 +55,7 @@ class MatchState(BaseState):
             f'(() => {{ switch (JSON.stringify({MatchState.get_name()}.value)) {{case JSON.stringify(1):  return ("first");  break;case JSON.stringify(2): case JSON.stringify(3):  return '
             '("second value");  break;case JSON.stringify([1, 2]):  return ("third-value");  break;case JSON.stringify("random"):  '
             'return ("fourth_value");  break;case JSON.stringify(({ ["foo"] : "bar" })):  return ("fifth value");  '
-            f'break;case JSON.stringify((((_lhs, _rhs) => (_lhs + _rhs))({MatchState.get_name()}.num, 1))):  return ("sixth value");  break;case JSON.stringify(({MatchState.get_name()}.value+" - string")):  '
+            f'break;case JSON.stringify(({MatchState.get_name()}.num + 1)):  return ("sixth value");  break;case JSON.stringify(({MatchState.get_name()}.value+" - string")):  '
             f'return ({MatchState.get_name()}.string);  break;case JSON.stringify({MatchState.get_name()}.string):  return (({MatchState.get_name()}.value+" - string"));  break;default:  '
             f"return ({MatchState.get_name()}.string);  break;}};}})()",
         ),

@@ -23,7 +23,7 @@ def test_f_string_cond_interpolation():
     var = LiteralVar.create(f"x {cond(True, 'a', 'b')}")
     assert (
         str(var)
-        == '("x "+((((_condition, _if_true, _if_false) => (_condition ? _if_true : _if_false))(true, (() => "a"), (() => "b")))()))'
+        == '("x "+(true ? "a" : "b"))'
     )
 
 
@@ -53,7 +53,7 @@ def test_validate_cond(cond_state: BaseState):
     assert isinstance(cond_var, Var)
     assert (
         str(cond_var)
-        == f'((((_condition, _if_true, _if_false) => (_condition ? _if_true : _if_false))({cond_state.value.bool()!s}, (() => (jsx(RadixThemesText, ({{ ["as"] : "p" }}), (jsx(Fragment, ({{  }}), "cond is True"))))), (() => (jsx(RadixThemesText, ({{ ["as"] : "p" }}), (jsx(Fragment, ({{  }}), "cond is False")))))))())'
+        == f'({cond_state.value.bool()!s} ? (jsx(RadixThemesText, ({{ ["as"] : "p" }}), (jsx(Fragment, ({{  }}), "cond is True")))) : (jsx(RadixThemesText, ({{ ["as"] : "p" }}), (jsx(Fragment, ({{  }}), "cond is False")))))'
     )
 
     var_data = cond_var._get_all_var_data()
@@ -89,10 +89,7 @@ def test_prop_cond(c1: Any, c2: Any):
         c1 = json.dumps(c1)
     if not isinstance(c2, Var):
         c2 = json.dumps(c2)
-    assert (
-        str(prop_cond)
-        == f"((((_condition, _if_true, _if_false) => (_condition ? _if_true : _if_false))(true, (() => {c1!s}), (() => {c2!s})))())"
-    )
+    assert str(prop_cond) == f"(true ? {c1!s} : {c2!s})"
 
 
 def test_cond_mix():
@@ -101,7 +98,7 @@ def test_cond_mix():
     assert isinstance(x, Var)
     assert (
         str(x)
-        == '((((_condition, _if_true, _if_false) => (_condition ? _if_true : _if_false))(true, (() => "hello"), (() => (jsx(RadixThemesText, ({ ["as"] : "p" }), (jsx(Fragment, ({  }), "world")))))))())'
+        == '(true ? "hello" : (jsx(RadixThemesText, ({ ["as"] : "p" }), (jsx(Fragment, ({  }), "world")))))'
     )
 
 
@@ -112,7 +109,7 @@ def test_cond_no_else():
     assert isinstance(comp, Var)
     assert (
         str(comp)
-        == '((((_condition, _if_true, _if_false) => (_condition ? _if_true : _if_false))(true, (() => (jsx(RadixThemesText, ({ ["as"] : "p" }), (jsx(Fragment, ({  }), "hello"))))), (() => (jsx(Fragment, ({  }))))))())'
+        == '(true ? (jsx(RadixThemesText, ({ ["as"] : "p" }), (jsx(Fragment, ({  }), "hello")))) : (jsx(Fragment, ({  }))))'
     )
 
     # Props do not support the use of cond without else
@@ -139,8 +136,7 @@ def test_cond_computed_var():
 
     state_name = format_state_name(CondStateComputed.get_full_name())
     assert (
-        str(comp)
-        == f"((((_condition, _if_true, _if_false) => (_condition ? _if_true : _if_false))(true, (() => {state_name}.computed_int), (() => {state_name}.computed_str)))())"
+        str(comp) == f"(true ? {state_name}.computed_int : {state_name}.computed_str)"
     )
 
     assert comp._var_type == Union[int, str]

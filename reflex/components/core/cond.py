@@ -9,8 +9,7 @@ from reflex.components.component import BaseComponent, Component
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
 from reflex.utils import types
 from reflex.utils.types import safe_issubclass
-from reflex.vars.base import LiteralVar, ReflexCallable, Var
-from reflex.vars.function import ArgsFunctionOperation
+from reflex.vars.base import LiteralVar, Var
 from reflex.vars.number import ternary_operation
 
 
@@ -53,23 +52,12 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
     if c2 is None:
         raise ValueError("For conditional vars, the second argument must be set.")
 
-    c1 = Var.create(c1)
-    c2 = Var.create(c2)
-
     # Create the conditional var.
     return ternary_operation(
         cond_var.bool(),
-        ArgsFunctionOperation.create(
-            (),
-            c1,
-            _var_type=ReflexCallable[[], c1._var_type],
-        ),
-        ArgsFunctionOperation.create(
-            (),
-            c2,
-            _var_type=ReflexCallable[[], c2._var_type],
-        ),
-    ).call()
+        c1,
+        c2,
+    )
 
 
 @overload

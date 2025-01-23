@@ -1219,19 +1219,26 @@ class FunctionVar(
         args = tuple(map(LiteralVar.create, args))
         self._pre_check(*args)
         return_type = self._return_type(*args)
-        if (
-            isinstance(self, (ArgsFunctionOperation, ArgsFunctionOperationBuilder))
-            and self._raw_js_function
+        if arg_len == len(args) and isinstance(
+            self, (ArgsFunctionOperation, ArgsFunctionOperationBuilder)
         ):
-            return VarOperationCall.create(
-                FunctionStringVar.create(
-                    self._raw_js_function,
-                    _var_type=self._var_type,
+            if self._raw_js_function is not None:
+                return VarOperationCall.create(
+                    FunctionStringVar.create(
+                        self._raw_js_function,
+                        _var_type=self._var_type,
+                        _var_data=self._get_all_var_data(),
+                    ),
+                    *args,
+                    _var_type=return_type,
+                ).guess_type()
+            if self._original_var_operation is not None:
+                return ExpressionCall.create(
+                    self._original_var_operation,
+                    *args,
                     _var_data=self._get_all_var_data(),
-                ),
-                *args,
-                _var_type=return_type,
-            ).guess_type()
+                    _var_type=return_type,
+                ).guess_type()
 
         return VarOperationCall.create(self, *args, _var_type=return_type).guess_type()
 
@@ -1359,6 +1366,61 @@ class FunctionVar(
         return self.partial(instance)
 
     __call__ = call
+
+
+@dataclasses.dataclass(frozen=True)
+class ExpressionCall(CachedVarOperation, Var[R]):
+    """Class for expression calls."""
+
+    _original_var_operation: Callable = dataclasses.field(default=lambda *args: "")
+    _args: Tuple[Var, ...] = dataclasses.field(default_factory=tuple)
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return self._original_var_operation(*self._args)
+
+    @cached_property_no_lock
+    def _cached_get_all_var_data(self) -> VarData | None:
+        """Get all the var data associated with the var.
+
+        Returns:
+            All the var data associated with the var.
+        """
+        return VarData.merge(
+            *[arg._get_all_var_data() for arg in self._args],
+            self._var_data,
+        )
+
+    @classmethod
+    def create(
+        cls,
+        _original_var_operation: Callable,
+        *args: Var | Any,
+        _var_type: GenericType = Any,
+        _var_data: VarData | None = None,
+    ) -> ExpressionCall:
+        """Create a new expression call.
+
+        Args:
+            _original_var_operation: The original var operation.
+            *args: The arguments to call the expression with.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The expression call var.
+        """
+        return ExpressionCall(
+            _js_expr="",
+            _var_type=_var_type,
+            _var_data=_var_data,
+            _original_var_operation=_original_var_operation,
+            _args=args,
+        )
 
 
 class BuilderFunctionVar(
@@ -1600,6 +1662,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar[CALLABLE_TYPE]):
     _type_computer: Optional[TypeComputer] = dataclasses.field(default=None)
     _explicit_return: bool = dataclasses.field(default=False)
     _raw_js_function: str | None = dataclasses.field(default=None)
+    _original_var_operation: Callable | None = dataclasses.field(default=None)
 
     _cached_var_name = cached_property_no_lock(format_args_function_operation)
 
@@ -1619,6 +1682,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar[CALLABLE_TYPE]):
         explicit_return: bool = False,
         type_computer: Optional[TypeComputer] = None,
         _raw_js_function: str | None = None,
+        _original_var_operation: Callable | None = None,
         _var_type: GenericType = Callable,
         _var_data: VarData | None = None,
     ):
@@ -1634,6 +1698,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar[CALLABLE_TYPE]):
             explicit_return: Whether to use explicit return syntax.
             type_computer: A function to compute the return type.
             _raw_js_function: If provided, it will be used when the operation is being called with all of its arguments at once.
+            _original_var_operation: The original var operation, if any.
             _var_type: The type of the var.
             _var_data: Additional hooks and imports associated with the Var.
 
@@ -1647,6 +1712,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar[CALLABLE_TYPE]):
             _var_data=_var_data,
             _args=FunctionArgs(args=tuple(args_names), rest=rest),
             _raw_js_function=_raw_js_function,
+            _original_var_operation=_original_var_operation,
             _default_values=tuple(default_values),
             _function_name=function_name,
             _validators=tuple(validators),
@@ -1678,6 +1744,7 @@ class ArgsFunctionOperationBuilder(
     _type_computer: Optional[TypeComputer] = dataclasses.field(default=None)
     _explicit_return: bool = dataclasses.field(default=False)
     _raw_js_function: str | None = dataclasses.field(default=None)
+    _original_var_operation: Callable | None = dataclasses.field(default=None)
 
     _cached_var_name = cached_property_no_lock(format_args_function_operation)
 
@@ -1697,6 +1764,7 @@ class ArgsFunctionOperationBuilder(
         explicit_return: bool = False,
         type_computer: Optional[TypeComputer] = None,
         _raw_js_function: str | None = None,
+        _original_var_operation: Callable | None = None,
         _var_type: GenericType = Callable,
         _var_data: VarData | None = None,
     ):
@@ -1711,9 +1779,10 @@ class ArgsFunctionOperationBuilder(
             function_name: The name of the function.
             explicit_return: Whether to use explicit return syntax.
             type_computer: A function to compute the return type.
+            _raw_js_function: If provided, it will be used when the operation is being called with all of its arguments at once.
+            _original_var_operation: The original var operation, if any.
             _var_type: The type of the var.
             _var_data: Additional hooks and imports associated with the Var.
-            _raw_js_function: If provided, it will be used when the operation is being called with all of its arguments at once.
 
         Returns:
             The function var.
@@ -1725,6 +1794,7 @@ class ArgsFunctionOperationBuilder(
             _var_data=_var_data,
             _args=FunctionArgs(args=tuple(args_names), rest=rest),
             _raw_js_function=_raw_js_function,
+            _original_var_operation=_original_var_operation,
             _default_values=tuple(default_values),
             _function_name=function_name,
             _validators=tuple(validators),
