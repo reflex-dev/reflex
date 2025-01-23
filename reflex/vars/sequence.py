@@ -996,12 +996,21 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
 
         if not callable(fn):
             raise_unsupported_operand_types("foreach", (type(self), type(fn)))
+
         # get the number of arguments of the function
-        num_args = len(inspect.signature(fn).parameters)
-        if num_args > 2:
+        required_num_args = len(
+            [
+                p
+                for p in inspect.signature(fn).parameters.values()
+                if p.default != p.empty
+            ]
+        )
+        if required_num_args > 2:
             raise VarTypeError(
                 "The function passed to foreach should take at most two arguments."
             )
+
+        num_args = len(inspect.signature(fn).parameters)
 
         if (
             hasattr(fn, "__qualname__")
@@ -1039,7 +1048,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
             ).guess_type(),
         )
 
-        if num_args == 1:
+        if required_num_args < 2:
             fn_result = fn(first_arg)  # pyright: ignore [reportCallIssue]
 
             return_value = Var.create(fn_result)

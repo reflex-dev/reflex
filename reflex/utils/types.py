@@ -976,3 +976,19 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
         for provided_arg, accepted_arg in zip(provided_args, accepted_args)
         if accepted_arg is not Any and not isinstance(accepted_arg, TypeVar)
     )
+
+
+def safe_typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> bool:
+    """Check if a type hint is a subclass of another type hint.
+
+    Args:
+        possible_subclass: The type hint to check.
+        possible_superclass: The type hint to check against.
+
+    Returns:
+        Whether the type hint is a subclass of the other type hint.
+    """
+    try:
+        return typehint_issubclass(possible_subclass, possible_superclass)
+    except Exception:
+        return False
