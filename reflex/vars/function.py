@@ -1802,13 +1802,13 @@ def _generate_overloads_for_function_var_call(maximum_args: int = 4) -> str:
                     )
                 ]
                 function_type_hint = f"""FunctionVar[ReflexCallable[[{", ".join(required_params + optional_params)}], {return_type}]]"""
-                NEWLINE = "\n"
+                new_line = "\n"
                 overloads.append(
                     f"""
     @overload
     def call(
         self: {function_type_hint},
-        {"," + NEWLINE + "        ".join(required_args + optional_args)}
+        {"," + new_line + "        ".join(required_args + optional_args)}
     ) -> {return_type_var}: ...
     """
                 )

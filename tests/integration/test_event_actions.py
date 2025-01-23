@@ -158,7 +158,7 @@ def TestEventAction():
             on_click=EventActionState.on_click("outer"),  # type: ignore
         )
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     app.add_page(index)
 
 

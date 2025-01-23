@@ -1909,7 +1909,7 @@ def figure_out_type(value: Any) -> types.GenericType:
     return type(value)
 
 
-class cached_property_no_lock(functools.cached_property):
+class cached_property_no_lock(functools.cached_property):  # noqa: N801
     """A special version of functools.cached_property that does not use a lock."""
 
     def __init__(self, func):

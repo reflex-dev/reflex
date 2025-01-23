@@ -172,7 +172,7 @@ def BackgroundTask():
             rx.button("Reset", on_click=State.reset_counter, id="reset"),
         )
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     app.add_page(index)
 
 
@@ -288,7 +288,7 @@ def test_background_task(
     assert background_task._poll_for(lambda: counter.text == "620", timeout=40)
     # all tasks should have exited and cleaned up
     assert background_task._poll_for(
-        lambda: not background_task.app_instance.background_tasks  # type: ignore
+        lambda: not background_task.app_instance._background_tasks  # type: ignore
     )
 
 

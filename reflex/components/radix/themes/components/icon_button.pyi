@@ -14,6 +14,7 @@ from reflex.vars.base import Var
 from ..base import RadixLoadingProp, RadixThemesComponent
 
 LiteralButtonSize = Literal["1", "2", "3", "4"]
+RADIX_TO_LUCIDE_SIZE = {"1": 12, "2": 24, "3": 36, "4": 48}
 
 class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
     @overload

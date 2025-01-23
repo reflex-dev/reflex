@@ -127,7 +127,7 @@ def ClientSide():
             rx.box(ClientSideSubSubState.s1s, id="s1s"),
         )
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     app.add_page(index)
     app.add_page(index, route="/foo")
 
@@ -321,6 +321,7 @@ async def test_client_side_state(
     assert not driver.get_cookies()
     local_storage_items = local_storage.items()
     local_storage_items.pop("last_compiled_time", None)
+    local_storage_items.pop("theme", None)
     assert not local_storage_items
 
     # set some cookies and local storage values
@@ -436,6 +437,7 @@ async def test_client_side_state(
 
     local_storage_items = local_storage.items()
     local_storage_items.pop("last_compiled_time", None)
+    local_storage_items.pop("theme", None)
     assert local_storage_items.pop(f"{sub_state_name}.l1") == "l1 value"
     assert local_storage_items.pop(f"{sub_state_name}.l2") == "l2 value"
     assert local_storage_items.pop("l3") == "l3 value"

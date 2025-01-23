@@ -39,7 +39,7 @@ def TestApp():
             """
             print(1 / number)
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
 
     @app.add_page
     def index():

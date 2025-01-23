@@ -93,14 +93,14 @@ from reflex.event import (
 )
 from reflex.utils import console, format, path_ops, prerequisites, types
 from reflex.utils.exceptions import (
-    ComputedVarShadowsBaseVars,
-    ComputedVarShadowsStateVar,
-    DynamicComponentInvalidSignature,
-    DynamicRouteArgShadowsStateVar,
-    EventHandlerShadowsBuiltInStateMethod,
+    ComputedVarShadowsBaseVarsError,
+    ComputedVarShadowsStateVarError,
+    DynamicComponentInvalidSignatureError,
+    DynamicRouteArgShadowsStateVarError,
+    EventHandlerShadowsBuiltInStateMethodError,
     ImmutableStateError,
     InvalidLockWarningThresholdError,
-    InvalidStateManagerMode,
+    InvalidStateManagerModeError,
     LockExpiredError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
@@ -815,7 +815,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """Check for shadow methods and raise error if any.
 
         Raises:
-            EventHandlerShadowsBuiltInStateMethod: When an event handler shadows an inbuilt state method.
+            EventHandlerShadowsBuiltInStateMethodError: When an event handler shadows an inbuilt state method.
         """
         overridden_methods = set()
         state_base_functions = cls._get_base_functions()
@@ -829,7 +829,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 overridden_methods.add(method.__name__)
 
         for method_name in overridden_methods:
-            raise EventHandlerShadowsBuiltInStateMethod(
+            raise EventHandlerShadowsBuiltInStateMethodError(
                 f"The event handler name `{method_name}` shadows a builtin State method; use a different name instead"
             )
 
@@ -838,11 +838,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """Check for shadow base vars and raise error if any.
 
         Raises:
-            ComputedVarShadowsBaseVars: When a computed var shadows a base var.
+            ComputedVarShadowsBaseVarsError: When a computed var shadows a base var.
         """
         for computed_var_ in cls._get_computed_vars():
             if computed_var_._js_expr in cls.__annotations__:
-                raise ComputedVarShadowsBaseVars(
+                raise ComputedVarShadowsBaseVarsError(
                     f"The computed var name `{computed_var_._js_expr}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 )
 
@@ -851,14 +851,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """Check for shadow computed vars and raise error if any.
 
         Raises:
-            ComputedVarShadowsStateVar: When a computed var shadows another.
+            ComputedVarShadowsStateVarError: When a computed var shadows another.
         """
         for name, cv in cls.__dict__.items():
             if not is_computed_var(cv):
                 continue
             name = cv._js_expr
             if name in cls.inherited_vars or name in cls.inherited_backend_vars:
-                raise ComputedVarShadowsStateVar(
+                raise ComputedVarShadowsStateVarError(
                     f"The computed var name `{cv._js_expr}` shadows a var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 )
 
@@ -1218,14 +1218,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             args: a dict of args
 
         Raises:
-            DynamicRouteArgShadowsStateVar: If a dynamic arg is shadowing an existing var.
+            DynamicRouteArgShadowsStateVarError: If a dynamic arg is shadowing an existing var.
         """
         for arg in args:
             if (
                 arg in cls.computed_vars
                 and not isinstance(cls.computed_vars[arg], DynamicRouteVar)
             ) or arg in cls.base_vars:
-                raise DynamicRouteArgShadowsStateVar(
+                raise DynamicRouteArgShadowsStateVarError(
                     f"Dynamic route arg '{arg}' is shadowing an existing var in {cls.__module__}.{cls.__name__}"
                 )
         for substate in cls.get_substates():
@@ -2353,8 +2353,7 @@ def dynamic(func: Callable[[T], Component]):
         The dynamically generated component.
 
     Raises:
-        DynamicComponentInvalidSignature: If the function does not have exactly one parameter.
-        DynamicComponentInvalidSignature: If the function does not have a type hint for the state class.
+        DynamicComponentInvalidSignatureError: If the function does not have exactly one parameter or a type hint for the state class.
     """
     number_of_parameters = len(inspect.signature(func).parameters)
 
@@ -2366,12 +2365,12 @@ def dynamic(func: Callable[[T], Component]):
     values = list(func_signature.values())
 
     if number_of_parameters != 1:
-        raise DynamicComponentInvalidSignature(
+        raise DynamicComponentInvalidSignatureError(
             "The function must have exactly one parameter, which is the state class."
         )
 
     if len(values) != 1:
-        raise DynamicComponentInvalidSignature(
+        raise DynamicComponentInvalidSignatureError(
             "You must provide a type hint for the state class in the function."
         )
 
@@ -2878,7 +2877,7 @@ class StateManager(Base, ABC):
             state: The state class to use.
 
         Raises:
-            InvalidStateManagerMode: If the state manager mode is invalid.
+            InvalidStateManagerModeError: If the state manager mode is invalid.
 
         Returns:
             The state manager (either disk, memory or redis).
@@ -2901,7 +2900,7 @@ class StateManager(Base, ABC):
                     lock_expiration=config.redis_lock_expiration,
                     lock_warning_threshold=config.redis_lock_warning_threshold,
                 )
-        raise InvalidStateManagerMode(
+        raise InvalidStateManagerModeError(
             f"Expected one of: DISK, MEMORY, REDIS, got {config.state_manager_mode}"
         )
 
@@ -4057,10 +4056,10 @@ def serialize_mutable_proxy(mp: MutableProxy):
     return mp.__wrapped__
 
 
-_orig_json_JSONEncoder_default = json.JSONEncoder.default
+_orig_json_encoder_default = json.JSONEncoder.default
 
 
-def _json_JSONEncoder_default_wrapper(self: json.JSONEncoder, o: Any) -> Any:
+def _json_encoder_default_wrapper(self: json.JSONEncoder, o: Any) -> Any:
     """Wrap JSONEncoder.default to handle MutableProxy objects.
 
     Args:
@@ -4074,10 +4073,10 @@ def _json_JSONEncoder_default_wrapper(self: json.JSONEncoder, o: Any) -> Any:
         return o.__wrapped__
     except AttributeError:
         pass
-    return _orig_json_JSONEncoder_default(self, o)
+    return _orig_json_encoder_default(self, o)
 
 
-json.JSONEncoder.default = _json_JSONEncoder_default_wrapper
+json.JSONEncoder.default = _json_encoder_default_wrapper
 
 
 class ImmutableMutableProxy(MutableProxy):

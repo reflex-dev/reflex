@@ -41,7 +41,7 @@ def VarOperations():
         dict2: rx.Field[Dict[int, int]] = rx.field({3: 4})
         html_str: rx.Field[str] = rx.field("<div>hello</div>")
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
 
     @rx.memo
     def memo_comp(list1: List[int], int_var1: int, id: str):

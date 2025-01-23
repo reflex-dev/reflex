@@ -3,10 +3,12 @@
 from typing import Any, Literal, Optional, Union
 
 from reflex.event import EventHandler, no_args_event_spec
-from reflex.utils import types
+from reflex.utils import console, types
 from reflex.vars.base import Var
 
 from .base import NextComponent
+
+DEFAULT_W_H = "100%"
 
 
 class Image(NextComponent):
@@ -53,7 +55,7 @@ class Image(NextComponent):
     loading: Var[Literal["lazy", "eager"]]
 
     # A Data URL to be used as a placeholder image before the src image successfully loads. Only takes effect when combined with placeholder="blur".
-    blurDataURL: Var[str]
+    blur_data_url: Var[str]
 
     # Fires when the image has loaded.
     on_load: EventHandler[no_args_event_spec]
@@ -80,8 +82,16 @@ class Image(NextComponent):
         Returns:
             _type_: _description_
         """
+        if "blurDataURL" in props:
+            console.deprecate(
+                feature_name="blurDataURL",
+                reason="Use blur_data_url instead",
+                deprecation_version="0.7.0",
+                removal_version="0.8.0",
+            )
+            props["blur_data_url"] = props.pop("blurDataURL")
+
         style = props.get("style", {})
-        DEFAULT_W_H = "100%"
 
         def check_prop_type(prop_name, prop_value):
             if types.check_prop_in_allowed_types(prop_value, allowed_types=[int]):

@@ -22,7 +22,7 @@ from typing import (
 from typing_extensions import Unpack
 
 from reflex.constants.base import Dirs
-from reflex.utils.exceptions import PrimitiveUnserializableToJSON, VarTypeError
+from reflex.utils.exceptions import PrimitiveUnserializableToJSONError, VarTypeError
 from reflex.utils.imports import ImportDict, ImportVar
 
 from .base import (
@@ -915,10 +915,10 @@ class LiteralNumberVar(LiteralVar, NumberVar):
             The JSON representation of the var.
 
         Raises:
-            PrimitiveUnserializableToJSON: If the var is unserializable to JSON.
+            PrimitiveUnserializableToJSONError: If the var is unserializable to JSON.
         """
         if math.isinf(self._var_value) or math.isnan(self._var_value):
-            raise PrimitiveUnserializableToJSON(
+            raise PrimitiveUnserializableToJSONError(
                 f"No valid JSON representation for {self}"
             )
         return json.dumps(self._var_value)
