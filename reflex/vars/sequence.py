@@ -1002,7 +1002,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
             [
                 p
                 for p in inspect.signature(fn).parameters.values()
-                if p.default != p.empty
+                if p.default == p.empty
             ]
         )
         if required_num_args > 2:
