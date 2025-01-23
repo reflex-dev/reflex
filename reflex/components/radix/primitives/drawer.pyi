@@ -81,7 +81,7 @@ class DrawerRoot(DrawerComponent):
         snap_points: Optional[List[Union[float, str]]] = None,
         fade_from_index: Optional[Union[Var[int], int]] = None,
         scroll_lock_timeout: Optional[Union[Var[int], int]] = None,
-        preventScrollRestoration: Optional[Union[Var[bool], bool]] = None,
+        prevent_scroll_restoration: Optional[Union[Var[bool], bool]] = None,
         should_scale_background: Optional[Union[Var[bool], bool]] = None,
         close_threshold: Optional[Union[Var[float], float]] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
@@ -129,7 +129,7 @@ class DrawerRoot(DrawerComponent):
             snap_points: Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account.
             fade_from_index: Index of a snapPoint from which the overlay fade should be applied. Defaults to the last snap point.
             scroll_lock_timeout: Duration for which the drawer is not draggable after scrolling content inside of the drawer. Defaults to 500ms
-            preventScrollRestoration: When `True`, it prevents scroll restoration. Defaults to `True`.
+            prevent_scroll_restoration: When `True`, it prevents scroll restoration. Defaults to `True`.
             should_scale_background: Enable background scaling, it requires container element with `vaul-drawer-wrapper` attribute to scale its background.
             close_threshold: Number between 0 and 1 that determines when the drawer should be closed.
             as_child: Change the default rendered element for the one passed as a child.
@@ -567,7 +567,7 @@ class Drawer(ComponentNamespace):
         snap_points: Optional[List[Union[float, str]]] = None,
         fade_from_index: Optional[Union[Var[int], int]] = None,
         scroll_lock_timeout: Optional[Union[Var[int], int]] = None,
-        preventScrollRestoration: Optional[Union[Var[bool], bool]] = None,
+        prevent_scroll_restoration: Optional[Union[Var[bool], bool]] = None,
         should_scale_background: Optional[Union[Var[bool], bool]] = None,
         close_threshold: Optional[Union[Var[float], float]] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
@@ -615,7 +615,7 @@ class Drawer(ComponentNamespace):
             snap_points: Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account.
             fade_from_index: Index of a snapPoint from which the overlay fade should be applied. Defaults to the last snap point.
             scroll_lock_timeout: Duration for which the drawer is not draggable after scrolling content inside of the drawer. Defaults to 500ms
-            preventScrollRestoration: When `True`, it prevents scroll restoration. Defaults to `True`.
+            prevent_scroll_restoration: When `True`, it prevents scroll restoration. Defaults to `True`.
             should_scale_background: Enable background scaling, it requires container element with `vaul-drawer-wrapper` attribute to scale its background.
             close_threshold: Number between 0 and 1 that determines when the drawer should be closed.
             as_child: Change the default rendered element for the one passed as a child.

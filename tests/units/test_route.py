@@ -89,7 +89,7 @@ def app():
     ],
 )
 def test_check_routes_conflict_invalid(mocker, app, route1, route2):
-    mocker.patch.object(app, "pages", {route1: []})
+    mocker.patch.object(app, "_pages", {route1: []})
     with pytest.raises(ValueError):
         app._check_routes_conflict(route2)
 
@@ -117,6 +117,6 @@ def test_check_routes_conflict_invalid(mocker, app, route1, route2):
     ],
 )
 def test_check_routes_conflict_valid(mocker, app, route1, route2):
-    mocker.patch.object(app, "pages", {route1: []})
+    mocker.patch.object(app, "_pages", {route1: []})
     # test that running this does not throw an error.
     app._check_routes_conflict(route2)

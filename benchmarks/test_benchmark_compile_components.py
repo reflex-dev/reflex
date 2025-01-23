@@ -122,7 +122,7 @@ def AppWithTenComponentsOnePage():
     def index() -> rx.Component:
         return rx.center(rx.vstack(*render_component(1)))
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     app.add_page(index)
 
 
@@ -133,7 +133,7 @@ def AppWithHundredComponentOnePage():
     def index() -> rx.Component:
         return rx.center(rx.vstack(*render_component(100)))
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     app.add_page(index)
 
 
@@ -144,7 +144,7 @@ def AppWithThousandComponentsOnePage():
     def index() -> rx.Component:
         return rx.center(rx.vstack(*render_component(1000)))
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     app.add_page(index)
 
 

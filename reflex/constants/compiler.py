@@ -28,6 +28,8 @@ class Ext(SimpleNamespace):
     ZIP = ".zip"
     # The extension for executable files on Windows.
     EXE = ".exe"
+    # The extension for markdown files.
+    MD = ".md"
 
 
 class CompileVars(SimpleNamespace):

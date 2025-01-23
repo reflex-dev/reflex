@@ -12,7 +12,7 @@ from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.state import BaseState
 from reflex.utils.exceptions import (
-    PrimitiveUnserializableToJSON,
+    PrimitiveUnserializableToJSONError,
     UntypedComputedVarError,
 )
 from reflex.utils.imports import ImportVar
@@ -1061,7 +1061,7 @@ def test_inf_and_nan(var, expected_js):
     assert str(var) == expected_js
     assert isinstance(var, NumberVar)
     assert isinstance(var, LiteralVar)
-    with pytest.raises(PrimitiveUnserializableToJSON):
+    with pytest.raises(PrimitiveUnserializableToJSONError):
         var.json()
 
 

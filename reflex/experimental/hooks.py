@@ -26,7 +26,7 @@ def const(name: str | list[str], value: str | Var) -> Var:
     return Var(_js_expr=f"const {name} = {value}")
 
 
-def useCallback(func: str, deps: list) -> Var:
+def useCallback(func: str, deps: list) -> Var:  # noqa: N802
     """Create a useCallback hook with a function and dependencies.
 
     Args:
@@ -42,7 +42,7 @@ def useCallback(func: str, deps: list) -> Var:
     )
 
 
-def useContext(context: str) -> Var:
+def useContext(context: str) -> Var:  # noqa: N802
     """Create a useContext hook with a context.
 
     Args:
@@ -57,7 +57,7 @@ def useContext(context: str) -> Var:
     )
 
 
-def useRef(default: str) -> Var:
+def useRef(default: str) -> Var:  # noqa: N802
     """Create a useRef hook with a default value.
 
     Args:
@@ -72,7 +72,7 @@ def useRef(default: str) -> Var:
     )
 
 
-def useState(var_name: str, default: str | None = None) -> Var:
+def useState(var_name: str, default: str | None = None) -> Var:  # noqa: N802
     """Create a useState hook with a variable name and setter name.
 
     Args:

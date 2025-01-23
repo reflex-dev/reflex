@@ -109,7 +109,7 @@ class DrawerSidebar(DrawerRoot):
         snap_points: Optional[List[Union[float, str]]] = None,
         fade_from_index: Optional[Union[Var[int], int]] = None,
         scroll_lock_timeout: Optional[Union[Var[int], int]] = None,
-        preventScrollRestoration: Optional[Union[Var[bool], bool]] = None,
+        prevent_scroll_restoration: Optional[Union[Var[bool], bool]] = None,
         should_scale_background: Optional[Union[Var[bool], bool]] = None,
         close_threshold: Optional[Union[Var[float], float]] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,

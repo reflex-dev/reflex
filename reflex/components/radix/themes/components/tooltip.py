@@ -28,6 +28,9 @@ LiteralStickyType = Literal[
 ]
 
 
+ARIA_LABEL_KEY = "aria_label"
+
+
 # The Tooltip inherits props from the Tooltip.Root, Tooltip.Portal, Tooltip.Content
 class Tooltip(RadixThemesComponent):
     """Floating element that provides a control with contextual information via pointer or focus."""
@@ -104,7 +107,6 @@ class Tooltip(RadixThemesComponent):
         Returns:
             The created component.
         """
-        ARIA_LABEL_KEY = "aria_label"
         if props.get(ARIA_LABEL_KEY) is not None:
             props[format.to_kebab_case(ARIA_LABEL_KEY)] = props.pop(ARIA_LABEL_KEY)
 

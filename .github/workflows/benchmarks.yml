@@ -81,18 +81,22 @@ jobs:
       matrix:
         # Show OS combos first in GUI
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.10.16', '3.11.11', '3.12.8']
+        python-version: ["3.10.16", "3.11.11", "3.12.8"]
         exclude:
           - os: windows-latest
-            python-version: '3.10.16'
+            python-version: "3.10.16"
+          - os: windows-latest
+            python-version: "3.11.11"
           # keep only one python version for MacOS
           - os: macos-latest
-            python-version: '3.10.16'
+            python-version: "3.10.16"
           - os: macos-latest
             python-version: "3.11.11"
         include:
           - os: windows-latest
-            python-version: '3.10.11'
+            python-version: "3.10.11"
+          - os: windows-latest
+            python-version: "3.11.9"
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -155,7 +159,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-
+      - name: Set up python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:

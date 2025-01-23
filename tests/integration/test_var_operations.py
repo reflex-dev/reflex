@@ -39,7 +39,7 @@ def VarOperations():
         dict2: Dict[int, int] = {3: 4}
         html_str: str = "<div>hello</div>"
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
 
     @rx.memo
     def memo_comp(list1: List[int], int_var1: int, id: str):
