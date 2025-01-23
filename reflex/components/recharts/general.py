@@ -250,10 +250,10 @@ class Cell(Recharts):
     alias = "RechartsCell"
 
     # The presentation attribute of a rectangle in bar or a sector in pie.
-    fill: Var[str]
+    fill: Var[str | Color]
 
     # The presentation attribute of a rectangle in bar or a sector in pie.
-    stroke: Var[str]
+    stroke: Var[str | Color]
 
 
 responsive_container = ResponsiveContainer.create

@@ -488,8 +488,8 @@ class Cell(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        fill: Optional[Union[Var[str], str]] = None,
-        stroke: Optional[Union[Var[str], str]] = None,
+        fill: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
