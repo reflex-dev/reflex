@@ -1,7 +1,6 @@
 """The constants package."""
 
 from .base import (
-    APP_HARNESS_FLAG,
     COOKIES,
     IS_LINUX,
     IS_MACOS,
