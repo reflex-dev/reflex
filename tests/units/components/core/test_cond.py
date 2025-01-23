@@ -21,10 +21,7 @@ def cond_state(request):
 def test_f_string_cond_interpolation():
     # make sure backticks inside interpolation don't get escaped
     var = LiteralVar.create(f"x {cond(True, 'a', 'b')}")
-    assert (
-        str(var)
-        == '("x "+(true ? "a" : "b"))'
-    )
+    assert str(var) == '("x "+(true ? "a" : "b"))'
 
 
 @pytest.mark.parametrize(

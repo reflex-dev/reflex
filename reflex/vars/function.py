@@ -1219,9 +1219,20 @@ class FunctionVar(
         args = tuple(map(LiteralVar.create, args))
         self._pre_check(*args)
         return_type = self._return_type(*args)
-        if arg_len == len(args) and isinstance(
-            self, (ArgsFunctionOperation, ArgsFunctionOperationBuilder)
-        ):
+        if isinstance(self, (ArgsFunctionOperation, ArgsFunctionOperationBuilder)):
+            default_args = self._default_args()
+            max_allowed_arguments = (
+                arg_len if arg_len is not None else len(args) + len(default_args)
+            )
+            provided_argument_count = len(args)
+
+            # we skip default args which we provided
+            default_args_provided = len(default_args) - (
+                max_allowed_arguments - provided_argument_count
+            )
+
+            full_args = args + tuple(default_args[default_args_provided:])
+
             if self._raw_js_function is not None:
                 return VarOperationCall.create(
                     FunctionStringVar.create(
@@ -1229,13 +1240,13 @@ class FunctionVar(
                         _var_type=self._var_type,
                         _var_data=self._get_all_var_data(),
                     ),
-                    *args,
+                    *full_args,
                     _var_type=return_type,
                 ).guess_type()
             if self._original_var_operation is not None:
                 return ExpressionCall.create(
                     self._original_var_operation,
-                    *args,
+                    *full_args,
                     _var_data=self._get_all_var_data(),
                     _var_type=return_type,
                 ).guess_type()
@@ -1315,6 +1326,20 @@ class FunctionVar(
                 if get_origin(arg_type) is not VarWithDefault
             )
         return 0
+
+    def _default_args(self) -> list[Any]:
+        """Get the default arguments of the function.
+
+        Returns:
+            The default arguments of the function.
+        """
+        if isinstance(self, (ArgsFunctionOperation, ArgsFunctionOperationBuilder)):
+            return [
+                arg.default
+                for arg in self._default_values
+                if not isinstance(arg, inspect.Parameter.empty)
+            ]
+        return []
 
     def _return_type(self, *args: Var | Any) -> GenericType:
         """Override the type of the function call with the given arguments.

@@ -1194,14 +1194,8 @@ def test_array_operations():
         str(array_var.reverse())
         == "(((...args) => (((_array) => _array.slice().reverse())([1, 2, 3, 4, 5], ...args)))())"
     )
-    assert (
-        str(ArrayVar.range(10))
-        == "(((_e1, _e2 = null, _step = 1) => [...range(_e1, _e2, _step)])(10))"
-    )
-    assert (
-        str(ArrayVar.range(1, 10))
-        == "(((_e1, _e2 = null, _step = 1) => [...range(_e1, _e2, _step)])(1, 10))"
-    )
+    assert str(ArrayVar.range(10)) == "[...range(10, null, 1)]"
+    assert str(ArrayVar.range(1, 10)) == "[...range(1, 10, 1)]"
     assert str(ArrayVar.range(1, 10, 2)) == "[...range(1, 10, 2)]"
     assert str(ArrayVar.range(1, 10, -1)) == "[...range(1, 10, -1)]"
 
