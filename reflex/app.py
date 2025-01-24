@@ -675,7 +675,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 replaced_route.split("/"),
                 route.split("/"),
                 new_route.split("/"),
-                strict=True,
+                strict=False,
             ):
                 if rw in segments and r != nr:
                     # If the slugs in the segments of both routes are not the same, then the route is invalid
