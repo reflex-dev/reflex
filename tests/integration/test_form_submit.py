@@ -30,7 +30,7 @@ def FormSubmit(form_component):
         def form_submit(self, form_data: Dict):
             self.form_data = form_data
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
 
     @app.add_page
     def index():
@@ -90,7 +90,7 @@ def FormSubmitName(form_component):
         def form_submit(self, form_data: Dict):
             self.form_data = form_data
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
 
     @app.add_page
     def index():

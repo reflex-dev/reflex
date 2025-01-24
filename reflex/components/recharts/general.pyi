@@ -22,8 +22,8 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
         aspect: Optional[Union[Var[int], int]] = None,
         width: Optional[Union[Var[Union[int, str]], int, str]] = None,
         height: Optional[Union[Var[Union[int, str]], int, str]] = None,
-        min_width: Optional[Union[Var[int], int]] = None,
-        min_height: Optional[Union[Var[int], int]] = None,
+        min_width: Optional[Union[Var[Union[int, str]], int, str]] = None,
+        min_height: Optional[Union[Var[Union[int, str]], int, str]] = None,
         debounce: Optional[Union[Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -56,8 +56,8 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
             aspect: The aspect ratio of the container. The final aspect ratio of the SVG element will be (width / height) * aspect. Number
             width: The width of chart container. Can be a number or string. Default: "100%"
             height: The height of chart container. Can be a number or string. Default: "100%"
-            min_width: The minimum width of chart container. Number
-            min_height: The minimum height of chart container. Number
+            min_width: The minimum width of chart container. Number or string.
+            min_height: The minimum height of chart container. Number or string.
             debounce: If specified a positive number, debounced function will be used to handle the resize event. Default: 0
             on_resize: If specified provides a callback providing the updated chart width and height values.
             style: The style of the component.
@@ -488,8 +488,8 @@ class Cell(Recharts):
     def create(  # type: ignore
         cls,
         *children,
-        fill: Optional[Union[Var[str], str]] = None,
-        stroke: Optional[Union[Var[str], str]] = None,
+        fill: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
+        stroke: Optional[Union[Color, Var[Union[Color, str]], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,

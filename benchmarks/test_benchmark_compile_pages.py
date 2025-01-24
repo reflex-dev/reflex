@@ -162,7 +162,7 @@ def AppWithOnePage():
             height="100vh",
         )
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     app.add_page(index)
 
 
@@ -170,7 +170,7 @@ def AppWithTenPages():
     """A reflex app with 10 pages."""
     import reflex as rx
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     render_multiple_pages(app, 10)
 
 
@@ -178,7 +178,7 @@ def AppWithHundredPages():
     """A reflex app with 100 pages."""
     import reflex as rx
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     render_multiple_pages(app, 100)
 
 
@@ -186,7 +186,7 @@ def AppWithThousandPages():
     """A reflex app with Thousand pages."""
     import reflex as rx
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     render_multiple_pages(app, 1000)
 
 
@@ -194,7 +194,7 @@ def AppWithTenThousandPages():
     """A reflex app with ten thousand pages."""
     import reflex as rx
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     render_multiple_pages(app, 10000)
 
 

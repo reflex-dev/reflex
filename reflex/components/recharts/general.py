@@ -36,11 +36,11 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
     # The height of chart container. Can be a number or string. Default: "100%"
     height: Var[Union[int, str]]
 
-    # The minimum width of chart container. Number
-    min_width: Var[int]
+    # The minimum width of chart container. Number or string.
+    min_width: Var[Union[int, str]]
 
-    # The minimum height of chart container. Number
-    min_height: Var[int]
+    # The minimum height of chart container. Number or string.
+    min_height: Var[Union[int, str]]
 
     # If specified a positive number, debounced function will be used to handle the resize event. Default: 0
     debounce: Var[int]
@@ -250,10 +250,10 @@ class Cell(Recharts):
     alias = "RechartsCell"
 
     # The presentation attribute of a rectangle in bar or a sector in pie.
-    fill: Var[str]
+    fill: Var[str | Color]
 
     # The presentation attribute of a rectangle in bar or a sector in pie.
-    stroke: Var[str]
+    stroke: Var[str | Color]
 
 
 responsive_container = ResponsiveContainer.create

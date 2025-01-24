@@ -66,7 +66,7 @@ class DrawerRoot(DrawerComponent):
     scroll_lock_timeout: Var[int]
 
     # When `True`, it prevents scroll restoration. Defaults to `True`.
-    preventScrollRestoration: Var[bool]
+    prevent_scroll_restoration: Var[bool]
 
     # Enable background scaling, it requires container element with `vaul-drawer-wrapper` attribute to scale its background.
     should_scale_background: Var[bool]

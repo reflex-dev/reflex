@@ -14,7 +14,7 @@ class Html(Div):
     """
 
     # The HTML to render.
-    dangerouslySetInnerHTML: Var[Dict[str, str]]
+    dangerouslySetInnerHTML: Var[Dict[str, str]]  # noqa: N815
 
     @classmethod
     def create(cls, *children, **props):

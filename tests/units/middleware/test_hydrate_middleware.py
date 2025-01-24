@@ -41,7 +41,7 @@ async def test_preprocess_no_events(hydrate_middleware, event1, mocker):
     mocker.patch("reflex.state.State.class_subclasses", {TestState})
     state = State()
     update = await hydrate_middleware.preprocess(
-        app=App(state=State),
+        app=App(_state=State),
         event=event1,
         state=state,
     )
