@@ -194,10 +194,13 @@ def get_bun_version() -> version.Version | None:
     Returns:
         The version of bun.
     """
+    bun_path = path_ops.get_bun_path()
+    if bun_path is None:
+        return None
     try:
         # Run the bun -v command and capture the output
-        result = processes.new_process([str(get_config().bun_path), "-v"], run=True)
-        return version.parse(result.stdout)  # type: ignore
+        result = processes.new_process([str(bun_path), "-v"], run=True)
+        return version.parse(str(result.stdout))
     except FileNotFoundError:
         return None
     except version.InvalidVersion as e:

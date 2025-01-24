@@ -9,7 +9,7 @@ import shutil
 from pathlib import Path
 
 from reflex import constants
-from reflex.config import environment
+from reflex.config import environment, get_config
 
 # Shorthand for join.
 join = os.linesep.join
@@ -185,6 +185,19 @@ def get_npm_path() -> Path | None:
         system_npm_path = which("npm")
         npm_path = Path(system_npm_path) if system_npm_path else None
     return npm_path.absolute() if npm_path else None
+
+
+def get_bun_path() -> Path | None:
+    """Get bun binary path.
+
+    Returns:
+        The path to the bun binary file.
+    """
+    bun_path = get_config().bun_path
+    if use_system_bun() or not bun_path.exists():
+        system_bun_path = which("bun")
+        bun_path = Path(system_bun_path) if system_bun_path else None
+    return bun_path.absolute() if bun_path else None
 
 
 def update_json_file(file_path: str | Path, update_dict: dict[str, int | str]):
