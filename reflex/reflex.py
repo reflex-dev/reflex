@@ -328,6 +328,14 @@ def export(
     if prerequisites.needs_reinit(frontend=True):
         _init(name=config.app_name, loglevel=loglevel)
 
+    if frontend and not config.show_built_with_reflex:
+        # The sticky badge may be disabled on export for team/enterprise tiers.
+        prerequisites.check_config_option_in_tier(
+            option_name="show_built_with_reflex",
+            allowed_tiers=["team", "enterprise"],
+            fallback_value=False,
+        )
+
     export_utils.export(
         zipping=zipping,
         frontend=frontend,
