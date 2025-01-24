@@ -3,10 +3,9 @@
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.colors import color
 from reflex.components.core.cond import color_mode_cond
+from reflex.components.el.elements.inline import A
 from reflex.components.el.elements.media import Path, Rect, Svg
-from reflex.components.radix.themes.layout.box import Box
 from reflex.components.radix.themes.typography.text import Text
-from reflex.event import redirect
 from reflex.style import Style
 
 
@@ -73,7 +72,7 @@ class StickyLabel(Text):
         )
 
 
-class StickyBadge(Box):
+class StickyBadge(A):
     """A badge that displays the Reflex sticky."""
 
     @classmethod
@@ -86,7 +85,8 @@ class StickyBadge(Box):
         return super().create(
             StickyLogo.create(),
             StickyLabel.create(),
-            on_click=redirect("https://reflex.dev"),
+            href="https://reflex.dev",
+            target="_blank",
             width="auto",
             padding="0.375rem",
             align="center",

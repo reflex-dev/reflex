@@ -7,8 +7,8 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Breakpoints
+from reflex.components.el.elements.inline import A
 from reflex.components.el.elements.media import Svg
-from reflex.components.radix.themes.layout.box import Box
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
@@ -301,12 +301,23 @@ class StickyLabel(Text):
 
     def add_style(self): ...
 
-class StickyBadge(Box):
+class StickyBadge(A):
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
+        download: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        href: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        href_lang: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        media: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        ping: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        referrer_policy: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        rel: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        shape: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        target: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_capitalize: Optional[
             Union[Var[Union[bool, int, str]], bool, int, str]
@@ -370,6 +381,17 @@ class StickyNamespace(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
+        download: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        href: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        href_lang: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        media: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        ping: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        referrer_policy: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        rel: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        shape: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        target: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_capitalize: Optional[
             Union[Var[Union[bool, int, str]], bool, int, str]
