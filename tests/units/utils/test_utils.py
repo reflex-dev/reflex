@@ -137,9 +137,8 @@ def test_validate_bun_path_incompatible_version(mocker):
     Args:
         mocker: Pytest mocker object.
     """
-    mocker.patch(
-        "reflex.utils.path_ops.get_bun_path", return_value=constants.Bun.DEFAULT_PATH
-    )
+    mock_path = mocker.Mock()
+    mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
     mocker.patch(
         "reflex.utils.prerequisites.get_bun_version",
         return_value=version.parse("0.6.5"),
