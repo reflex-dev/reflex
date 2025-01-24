@@ -21,6 +21,7 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    ForwardRef,
     FrozenSet,
     Generic,
     Iterable,
@@ -30,7 +31,6 @@ from typing import (
     Optional,
     Set,
     Tuple,
-    ForwardRef,
     Type,
     TypeVar,
     Union,
@@ -763,9 +763,24 @@ class Var(Generic[VAR_TYPE]):
 
         if isinstance(fixed_type, ForwardRef):
             try:
-                fixed_type = fixed_type._evaluate(globals(), locals(), set())
-            except Exception:
-                raise TypeError(f"Could not resolve ForwardRef: {fixed_type}")
+                globalns = globals()
+                localns = locals()
+                # This is very similar to pydantic/typing.py:evaluate_forwardref
+                if sys.version_info < (3, 12, 4):
+                    fixed_type = fixed_type._evaluate(globalns, localns)
+                elif sys.version_info < (3, 12, 8):
+                    fixed_type = fixed_type._evaluate(
+                        globalns, localns, recursive_guard=set()
+                    )
+                else:
+                    fixed_type = fixed_type._evaluate(
+                        globalns=globalns,
+                        localns=localns,
+                        type_params=(),  # type: ignore[arg-type]
+                        recursive_guard=frozenset(),
+                    )
+            except Exception as e:
+                raise TypeError(f"Could not resolve ForwardRef: {fixed_type}") from e
 
         if fixed_type in types.UnionTypes:
             inner_types = get_args(var_type)
