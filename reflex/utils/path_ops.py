@@ -196,6 +196,9 @@ def update_json_file(file_path: str | Path, update_dict: dict[str, int | str]):
     """
     fp = Path(file_path)
 
+    # Create the parent directory if it doesn't exist.
+    fp.parent.mkdir(parents=True, exist_ok=True)
+
     # Create the file if it doesn't exist.
     fp.touch(exist_ok=True)
 
