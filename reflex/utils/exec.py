@@ -467,19 +467,19 @@ def output_system_info():
 
     system = platform.system()
 
+    fnm_info = f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]"
+
     if system != "Windows" or (
         system == "Windows" and prerequisites.is_windows_bun_supported()
     ):
         dependencies.extend(
             [
-                f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
-                f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
+                fnm_info,
+                f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {path_ops.get_bun_path()})]",
             ],
         )
     else:
-        dependencies.append(
-            f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
-        )
+        dependencies.append(fnm_info)
 
     if system == "Linux":
         import distro  # type: ignore

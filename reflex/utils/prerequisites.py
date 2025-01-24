@@ -1077,8 +1077,7 @@ def install_bun():
             show_logs=console.is_debug(),
         )
     else:
-        unzip_path = path_ops.which("unzip")
-        if unzip_path is None:
+        if path_ops.which("unzip") is None:
             raise SystemPackageMissingError("unzip")
 
         # Run the bun install script.
@@ -1282,11 +1281,8 @@ def validate_bun():
     Raises:
         Exit: If custom specified bun does not exist or does not meet requirements.
     """
-    # if a custom bun path is provided, make sure its valid
-    # This is specific to non-FHS OS
-    bun_path = get_config().bun_path
-    if path_ops.use_system_bun():
-        bun_path = path_ops.which("bun")
+    bun_path = path_ops.get_bun_path()
+
     if bun_path != constants.Bun.DEFAULT_PATH:
         console.info(f"Using custom Bun path: {bun_path}")
         bun_version = get_bun_version()
