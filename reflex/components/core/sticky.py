@@ -1,4 +1,4 @@
-"""Components for displaying the Reflex watermark."""
+"""Components for displaying the Reflex sticky logo."""
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.colors import color
@@ -9,7 +9,7 @@ from reflex.components.radix.themes.typography.text import Text
 from reflex.style import Style
 
 
-class WatermarkLogo(Svg):
+class StickyLogo(Svg):
     """A simple Reflex logo SVG with only the letter R."""
 
     @classmethod
@@ -42,15 +42,15 @@ class WatermarkLogo(Svg):
         )
 
 
-class WatermarkLabel(Text):
-    """A label that displays the Reflex watermark."""
+class StickyLabel(Text):
+    """A label that displays the Reflex sticky."""
 
     @classmethod
     def create(cls):
-        """Create the watermark label.
+        """Create the sticky label.
 
         Returns:
-            The watermark label.
+            The sticky label.
         """
         return super().create("Built with Reflex!")
 
@@ -72,19 +72,19 @@ class WatermarkLabel(Text):
         )
 
 
-class WatermarkBadge(Box):
-    """A badge that displays the Reflex watermark."""
+class StickyBadge(Box):
+    """A badge that displays the Reflex sticky."""
 
     @classmethod
     def create(cls):
-        """Create the watermark badge.
+        """Create the sticky badge.
 
         Returns:
-            The watermark badge.
+            The sticky badge.
         """
         return super().create(
-            WatermarkLogo.create(),
-            WatermarkLabel.create(),
+            StickyLogo.create(),
+            StickyLabel.create(),
             width="auto",
             padding="0.375rem",
             align="center",
@@ -120,12 +120,12 @@ class WatermarkBadge(Box):
         )
 
 
-class WatermarkNamespace(ComponentNamespace):
-    """Watermark components namespace."""
+class StickyNamespace(ComponentNamespace):
+    """Sticky components namespace."""
 
-    __call__ = staticmethod(WatermarkBadge.create)
-    label = staticmethod(WatermarkLabel.create)
-    logo = staticmethod(WatermarkLogo.create)
+    __call__ = staticmethod(StickyBadge.create)
+    label = staticmethod(StickyLabel.create)
+    logo = staticmethod(StickyLogo.create)
 
 
-watermark = WatermarkNamespace()
+sticky = StickyNamespace()
