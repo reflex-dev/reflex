@@ -1054,9 +1054,7 @@ def install_bun():
             )
 
     # Skip if bun is already installed.
-    if Path(get_config().bun_path).exists() and get_bun_version() == version.parse(
-        constants.Bun.VERSION
-    ):
+    if get_bun_version() == version.parse(constants.Bun.VERSION):
         console.debug("Skipping bun installation as it is already installed.")
         return
 
