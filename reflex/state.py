@@ -3046,7 +3046,7 @@ def is_serializable(value: Any) -> bool:
 
 def reset_disk_state_manager():
     """Reset the disk state manager."""
-    states_directory = prerequisites.get_web_dir() / constants.Dirs.STATES
+    states_directory = prerequisites.get_states_dir()
     if states_directory.exists():
         for path in states_directory.iterdir():
             path.unlink()
@@ -3094,7 +3094,7 @@ class StateManagerDisk(StateManager):
         Returns:
             The states directory.
         """
-        return prerequisites.get_web_dir() / constants.Dirs.STATES
+        return prerequisites.get_states_dir()
 
     def _purge_expired_states(self):
         """Purge expired states from the disk."""
