@@ -15,7 +15,6 @@ import time
 import typing
 import uuid
 from abc import ABC, abstractmethod
-from collections import defaultdict
 from hashlib import md5
 from pathlib import Path
 from types import FunctionType, MethodType
@@ -3468,7 +3467,9 @@ class StateManagerRedis(StateManager):
                 except ValueError:
                     # The requested state is missing, so fetch and link it (and its parents).
                     link_tasks.add(
-                        asyncio.create_task(self._link_arbitrary_state(state, substate_cls))
+                        asyncio.create_task(
+                            self._link_arbitrary_state(state, substate_cls)
+                        )
                     )
 
         for substate_name, substate_task in tasks.items():

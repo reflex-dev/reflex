@@ -1170,9 +1170,15 @@ def test_conditional_computed_vars():
 
     ms = MainState()
     # Initially there are no dirty computed vars.
-    assert ms._dirty_computed_vars(from_vars={"flag"}) == {(MainState.get_full_name(), "rendered_var")}
-    assert ms._dirty_computed_vars(from_vars={"t2"}) == {(MainState.get_full_name(), "rendered_var")}
-    assert ms._dirty_computed_vars(from_vars={"t1"}) == {(MainState.get_full_name(), "rendered_var")}
+    assert ms._dirty_computed_vars(from_vars={"flag"}) == {
+        (MainState.get_full_name(), "rendered_var")
+    }
+    assert ms._dirty_computed_vars(from_vars={"t2"}) == {
+        (MainState.get_full_name(), "rendered_var")
+    }
+    assert ms._dirty_computed_vars(from_vars={"t1"}) == {
+        (MainState.get_full_name(), "rendered_var")
+    }
     assert ms.computed_vars["rendered_var"]._deps(objclass=MainState) == {
         MainState.get_full_name(): {"flag", "t1", "t2"}
     }
@@ -1369,7 +1375,10 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
         assert isinstance(HandlerState.handler, EventHandler)
 
     s = HandlerState()
-    assert (HandlerState.get_full_name(), "cached_x_side_effect") in s._var_dependencies["x"]
+    assert (
+        HandlerState.get_full_name(),
+        "cached_x_side_effect",
+    ) in s._var_dependencies["x"]
     assert s.cached_x_side_effect == 1
     assert s.x == 43
     s.handler()
@@ -3221,7 +3230,9 @@ async def test_router_var_dep() -> None:
     foo = RouterVarDepState.computed_vars["foo"]
     State._init_var_dependency_dicts()
 
-    assert foo._deps(objclass=RouterVarDepState) == {RouterVarDepState.get_full_name(): {"router"}}
+    assert foo._deps(objclass=RouterVarDepState) == {
+        RouterVarDepState.get_full_name(): {"router"}
+    }
     assert State._var_dependencies == {
         "router": {(RouterVarDepState.get_full_name(), "foo")}
     }
@@ -3236,7 +3247,9 @@ async def test_router_var_dep() -> None:
     state.parent_state = parent_state
     parent_state.substates = {RouterVarDepState.get_name(): state}
 
-    populated_substate_classes = await rx_state._recursively_populate_dependent_substates()
+    populated_substate_classes = (
+        await rx_state._recursively_populate_dependent_substates()
+    )
     assert populated_substate_classes == {State, RouterVarDepState}
 
     assert state.dirty_vars == set()
@@ -3873,4 +3886,3 @@ async def test_async_computed_var_get_state(mock_app: rx.App, token: str):
     assert await child.v == 2
     root.parent_var = 2
     assert await child.v == 3
-

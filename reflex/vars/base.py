@@ -1914,16 +1914,10 @@ class ComputedVar(Var[RETURN_TYPE]):
                         and all_var_data.state
                         else None
                     )
-                    var_name = (
-                        dep._js_expr[len(formatted_state_prefix) :]
-                        if state_name
-                        and (
-                            formatted_state_prefix := format_state_name(state_name)
-                            + "."
-                        )
-                        and dep._js_expr.startswith(formatted_state_prefix)
-                        else dep._js_expr
-                    )
+                    if all_var_data is not None:
+                        var_name = all_var_data.field_name
+                    else:
+                        var_name = dep._js_expr
                     _static_deps.setdefault(state_name, set()).add(var_name)
                 elif isinstance(dep, str) and dep != "":
                     _static_deps.setdefault(None, set()).add(dep)
@@ -2214,28 +2208,22 @@ class ComputedVar(Var[RETURN_TYPE]):
                     start_column = getting_var[0].positions.col_offset
                     end_line = getting_var[-1].positions.end_lineno
                     end_column = getting_var[-1].positions.end_col_offset
-                    source = inspect.getsource(inspect.getmodule(obj)).splitlines(True)[start_line - 1: end_line]
+                    source = inspect.getsource(inspect.getmodule(obj)).splitlines(True)[
+                        start_line - 1 : end_line
+                    ]
                     if len(source) > 1:
                         snipped_source = "".join(
                             [
                                 source[0][start_column:],
                                 source[1:-2] if len(source) > 2 else "",
-                                source[-1][:end_column]
+                                source[-1][:end_column],
                             ]
                         )
                     else:
                         snipped_source = source[0][start_column:end_column]
                     the_var = eval(f"({snipped_source})", obj.__globals__)
-                    print(the_var)
-                    # code = source[start_line - 1]
-                    # bytecode = bytearray((dis.opmap["RESUME"], 0))
-                    # for ins in getting_var:
-                    #     bytecode.append(ins.opcode)
-                    #     bytecode.append(ins.arg or 0 & 0xFF)
-                    # bytecode.extend((dis.opmap["RETURN_VALUE"], 0))
-                    # bc = dis.Bytecode(obj)
-                    # code = bc.codeobj.replace(co_code=bytes(bytecode), co_argcount=0, co_nlocals=0, co_varnames=())
-                    # breakpoint()
+                    the_var_data = the_var._get_all_var_data()
+                    d.setdefault(the_var_data.state, set()).add(the_var_data.field_name)
                     getting_var = False
                 elif isinstance(getting_var, list):
                     getting_var.append(instruction)
@@ -2266,7 +2254,6 @@ class ComputedVar(Var[RETURN_TYPE]):
                     # Special case: arbitrary var access requested.
                     getting_var = True
                     continue
-                print(f"{self_on_top_of_stack=}")
                 target_state = objclass.get_root_state().get_class_substate(
                     self_on_top_of_stack
                 )
