@@ -700,6 +700,9 @@ class Config(Base):
     # Path to file containing key-values pairs to override in the environment; Dotenv format.
     env_file: Optional[str] = None
 
+    # Whether to display the sticky "Built with Reflex" badge on all pages.
+    show_built_with_reflex: bool = True
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 

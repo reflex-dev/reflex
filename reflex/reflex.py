@@ -182,6 +182,14 @@ def _run(
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
     if frontend:
+        if not config.show_built_with_reflex:
+            # The sticky badge may be disabled at runtime for team/enterprise tiers.
+            prerequisites.check_config_option_in_tier(
+                option_name="show_built_with_reflex",
+                allowed_tiers=["team", "enterprise"],
+                fallback_value=True,
+            )
+
         # Get the app module.
         prerequisites.get_compiled_app()
 
@@ -513,6 +521,14 @@ def deploy(
     from reflex.utils import prerequisites
 
     check_version()
+
+    if not config.show_built_with_reflex:
+        # The sticky badge may be disabled on deploy for pro/team/enterprise tiers.
+        prerequisites.check_config_option_in_tier(
+            option_name="show_built_with_reflex",
+            allowed_tiers=["pro", "team", "enterprise"],
+            fallback_value=True,
+        )
 
     # Set the log level.
     console.set_log_level(loglevel)

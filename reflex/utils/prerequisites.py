@@ -23,7 +23,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, List, NamedTuple, Optional
+from typing import Any, Callable, List, NamedTuple, Optional
 
 import httpx
 import typer
@@ -1967,3 +1967,38 @@ def is_generation_hash(template: str) -> bool:
         True if the template is composed of 32 or more hex characters.
     """
     return re.match(r"^[0-9a-f]{32,}$", template) is not None
+
+
+def check_config_option_in_tier(
+    option_name: str,
+    allowed_tiers: list[str],
+    fallback_value: Any,
+):
+    """Check if a config option is allowed for the authenticated user's current tier.
+
+    Args:
+        option_name: The name of the option to check.
+        allowed_tiers: The tiers that are allowed to use the option.
+        fallback_value: The fallback value if the option is not allowed.
+    """
+    from reflex_cli.v2.utils import hosting
+
+    config = get_config()
+    authenticated_token = hosting.authenticated_token()
+    the_remedy = []
+    if not authenticated_token:
+        the_remedy.append(
+            "You are currently logged out. Run `reflex login` to access this option."
+        )
+        current_tier = "anonymous"
+    else:
+        current_tier = authenticated_token[1].get("tier", "").lower()
+        the_remedy.append(
+            f"Your current subscription tier is `{current_tier}`. Please upgrade to {allowed_tiers} to access this option."
+        )
+    if current_tier not in allowed_tiers:
+        console.warn(
+            f"Config option `{option_name}` is restricted. {'\n'.join(the_remedy)}"
+        )
+        setattr(config, option_name, fallback_value)
+        config._set_persistent(**{option_name: fallback_value})

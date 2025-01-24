@@ -55,6 +55,13 @@ def export(
     console.rule("[bold]Compiling production app and preparing for export.")
 
     if frontend:
+        if not config.show_built_with_reflex:
+            # The sticky badge may be disabled on export for team/enterprise tiers.
+            prerequisites.check_config_option_in_tier(
+                option_name="show_built_with_reflex",
+                allowed_tiers=["team", "enterprise"],
+                fallback_value=False,
+            )
         # Ensure module can be imported and app.compile() is called.
         prerequisites.get_compiled_app(export=True)
         # Set up .web directory and install frontend dependencies.
