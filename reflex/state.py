@@ -1434,6 +1434,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for part1, part2 in zip(
             cls.get_full_name().split("."),
             other.get_full_name().split("."),
+            strict=True,
         ):
             if part1 != part2:
                 break

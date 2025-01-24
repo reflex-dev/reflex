@@ -672,7 +672,10 @@ class App(MiddlewareMixin, LifespanMixin):
         for route in self._pages:
             replaced_route = replace_brackets_with_keywords(route)
             for rw, r, nr in zip(
-                replaced_route.split("/"), route.split("/"), new_route.split("/")
+                replaced_route.split("/"),
+                route.split("/"),
+                new_route.split("/"),
+                strict=True,
             ):
                 if rw in segments and r != nr:
                     # If the slugs in the segments of both routes are not the same, then the route is invalid
@@ -1039,7 +1042,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 max_workers=environment.REFLEX_COMPILE_THREADS.get() or None
             )
 
-        for route, component in zip(self._pages, page_components):
+        for route, component in zip(self._pages, page_components, strict=True):
             ExecutorSafeFunctions.COMPONENTS[route] = component
 
         ExecutorSafeFunctions.STATE = self._state
@@ -1236,6 +1239,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 frontend_arg_spec,
                 backend_arg_spec,
             ],
+            strict=True,
         ):
             if hasattr(handler_fn, "__name__"):
                 _fn_name = handler_fn.__name__

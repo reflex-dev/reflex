@@ -18,7 +18,7 @@ keywords = ["web", "framework"]
 classifiers = ["Development Status :: 4 - Beta"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10"
 fastapi = ">=0.96.0,!=0.111.0,!=0.111.1"
 gunicorn = ">=20.1.0,<24.0"
 jinja2 = ">=3.1.2,<4.0"
@@ -82,7 +82,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.pyright]
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 output-format = "concise"
 lint.isort.split-on-trailing-comma = false
 lint.select = ["B", "C4", "D", "E", "ERA", "F", "FURB", "I", "N", "PERF", "PTH", "RUF", "SIM", "T", "TRY", "W"]
