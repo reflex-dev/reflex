@@ -1985,20 +1985,18 @@ def check_config_option_in_tier(
 
     config = get_config()
     authenticated_token = hosting.authenticated_token()
-    the_remedy = []
-    if not authenticated_token:
-        the_remedy.append(
+    if not authenticated_token[0]:
+        the_remedy = (
             "You are currently logged out. Run `reflex login` to access this option."
         )
         current_tier = "anonymous"
     else:
         current_tier = authenticated_token[1].get("tier", "").lower()
-        the_remedy.append(
-            f"Your current subscription tier is `{current_tier}`. Please upgrade to {allowed_tiers} to access this option."
+        the_remedy = (
+            f"Your current subscription tier is `{current_tier}`. "
+            f"Please upgrade to {allowed_tiers} to access this option."
         )
     if current_tier not in allowed_tiers:
-        console.warn(
-            f"Config option `{option_name}` is restricted. {'\n'.join(the_remedy)}"
-        )
+        console.warn(f"Config option `{option_name}` is restricted. {the_remedy}")
         setattr(config, option_name, fallback_value)
         config._set_persistent(**{option_name: fallback_value})
