@@ -87,6 +87,17 @@ def get_web_dir() -> Path:
     return environment.REFLEX_WEB_WORKDIR.get()
 
 
+def get_states_dir() -> Path:
+    """Get the working directory for the states.
+
+    Can be overridden with REFLEX_STATES_WORKDIR.
+
+    Returns:
+        The working directory.
+    """
+    return environment.REFLEX_STATES_WORKDIR.get()
+
+
 def check_latest_package_version(package_name: str):
     """Check if the latest version of the package is installed.
 

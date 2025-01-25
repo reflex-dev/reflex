@@ -307,7 +307,7 @@ def run_granian_backend(host, port, loglevel: LogLevel):
             log_level=LogLevels(loglevel.value),
             reload=True,
             reload_paths=get_reload_dirs(),
-            reload_ignore_dirs=[".web"],
+            reload_ignore_dirs=[".web", ".states"],
         ).serve()
     except ImportError:
         console.error(
