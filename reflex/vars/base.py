@@ -13,6 +13,7 @@ import random
 import re
 import string
 import sys
+import uuid
 import warnings
 from types import CodeType, FunctionType
 from typing import (
@@ -1555,17 +1556,92 @@ def figure_out_type(value: Any) -> types.GenericType:
     return type(value)
 
 
-class cached_property_no_lock(functools.cached_property):  # noqa: N801
-    """A special version of functools.cached_property that does not use a lock."""
+GLOBAL_CACHE = {}
+
+
+class cached_property:  # noqa: N801
+    """A cached property that caches the result of the function."""
 
     def __init__(self, func):
-        """Initialize the cached_property_no_lock.
+        """Initialize the cached_property.
 
         Args:
             func: The function to cache.
         """
-        super().__init__(func)
-        self.lock = contextlib.nullcontext()
+        self._func = func
+        self._attrname = None
+
+    def __set_name__(self, owner, name):
+        """Set the name of the cached property.
+
+        Args:
+            owner: The owner of the cached property.
+            name: The name of the cached property.
+
+        Raises:
+            TypeError: If the cached property is assigned to two different names.
+        """
+        if self._attrname is None:
+            self._attrname = name
+
+            original_del = getattr(owner, "__del__", None)
+
+            def delete_property(this):
+                """Delete the cached property.
+
+                Args:
+                    this: The object to delete the cached property from.
+                """
+                cached_field_name = "_reflex_cache_" + name
+                try:
+                    unique_id = object.__getattribute__(this, cached_field_name)
+                except AttributeError:
+                    if original_del is not None:
+                        original_del(this)
+                    return
+                if unique_id in GLOBAL_CACHE:
+                    del GLOBAL_CACHE[unique_id]
+
+                if original_del is not None:
+                    original_del(this)
+
+            owner.__del__ = delete_property
+
+        elif name != self._attrname:
+            raise TypeError(
+                "Cannot assign the same cached_property to two different names "
+                f"({self._attrname!r} and {name!r})."
+            )
+
+    def __get__(self, instance, owner=None):
+        """Get the cached property.
+
+        Args:
+            instance: The instance to get the cached property from.
+            owner: The owner of the cached property.
+
+        Returns:
+            The cached property.
+
+        Raises:
+            TypeError: If the class does not have __set_name__.
+        """
+        if self._attrname is None:
+            raise TypeError(
+                "Cannot use cached_property on a class without __set_name__."
+            )
+        cached_field_name = "_reflex_cache_" + self._attrname
+        try:
+            unique_id = object.__getattribute__(instance, cached_field_name)
+        except AttributeError:
+            unique_id = uuid.uuid4().int
+            object.__setattr__(instance, cached_field_name, unique_id)
+        if unique_id not in GLOBAL_CACHE:
+            GLOBAL_CACHE[unique_id] = self._func(instance)
+        return GLOBAL_CACHE[unique_id]
+
+
+cached_property_no_lock = cached_property
 
 
 class CachedVarOperation:
