@@ -2,11 +2,14 @@
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.colors import color
-from reflex.components.core.cond import color_mode_cond
+from reflex.components.core.cond import color_mode_cond, cond
+from reflex.components.core.responsive import tablet_and_desktop
 from reflex.components.el.elements.inline import A
 from reflex.components.el.elements.media import Path, Rect, Svg
 from reflex.components.radix.themes.typography.text import Text
+from reflex.experimental.client_state import ClientStateVar
 from reflex.style import Style
+from reflex.vars.base import Var, VarData
 
 
 class StickyLogo(Svg):
@@ -52,7 +55,7 @@ class StickyLabel(Text):
         Returns:
             The sticky label.
         """
-        return super().create("Built with Reflex!")
+        return super().create("Built with Reflex")
 
     def add_style(self):
         """Add the style to the component.
@@ -63,17 +66,17 @@ class StickyLabel(Text):
         return Style(
             {
                 "color": color("slate", 1),
-                "font-weight": "600",
-                "font-family": "'Instrument Sans', sans-serif",
-                "font-size": "0.875rem",
-                "line-height": "1rem",
-                "letter-spacing": "-0.00656rem",
+                "font_weight": "600",
+                "font_family": "'Instrument Sans', sans-serif",
+                "font_size": "0.875rem",
+                "line_height": "1rem",
+                "letter_spacing": "-0.00656rem",
             }
         )
 
 
 class StickyBadge(A):
-    """A badge that displays the Reflex sticky."""
+    """A badge that displays the Reflex sticky logo."""
 
     @classmethod
     def create(cls):
@@ -84,7 +87,7 @@ class StickyBadge(A):
         """
         return super().create(
             StickyLogo.create(),
-            StickyLabel.create(),
+            tablet_and_desktop(StickyLabel.create()),
             href="https://reflex.dev",
             target="_blank",
             width="auto",
@@ -99,12 +102,36 @@ class StickyBadge(A):
         Returns:
             The style of the component.
         """
+        is_localhost_cs = ClientStateVar.create(
+            "is_localhost",
+            default=True,
+            global_ref=False,
+        )
+        localhost_hostnames = Var.create(
+            ["localhost", "127.0.0.1", "[::1]"]
+        ).guess_type()
+        is_localhost_expr = localhost_hostnames.contains(
+            Var("window.location.hostname", _var_type=str).guess_type(),
+        )
+        check_is_localhost = Var(
+            f"useEffect(({is_localhost_cs}) => {is_localhost_cs.set}({is_localhost_expr}), [])",
+            _var_data=VarData(
+                imports={"react": "useEffect"},
+            ),
+        )
+        is_localhost = is_localhost_cs.value._replace(
+            merge_var_data=VarData.merge(
+                check_is_localhost._get_all_var_data(),
+                VarData(hooks={str(check_is_localhost): None}),
+            ),
+        )
         return Style(
             {
                 "position": "fixed",
                 "bottom": "1rem",
                 "right": "1rem",
-                "display": "flex",
+                # Do not show the badge on localhost.
+                "display": cond(is_localhost, "none", "flex"),
                 "flex-direction": "row",
                 "gap": "0.375rem",
                 "align-items": "center",
@@ -118,7 +145,7 @@ class StickyBadge(A):
                 "box-shadow": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
                 "z-index": "9998",
                 "cursor": "pointer",
-            }
+            },
         )
 
 
