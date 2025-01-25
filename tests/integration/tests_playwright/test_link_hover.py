@@ -39,7 +39,7 @@ def test_link_hover(link_app: AppHarness, page: Page):
     assert link_app.frontend_url is not None
     page.goto(link_app.frontend_url)
 
-    link = page.get_by_role("link").nth(1)
+    link = page.get_by_role("link")
     expect(link).to_have_text("Click me")
     expect(link).to_have_css("color", "rgb(0, 0, 255)")
     link.hover()
