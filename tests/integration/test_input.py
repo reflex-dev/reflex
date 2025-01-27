@@ -11,10 +11,16 @@ from reflex.testing import AppHarness
 
 def FullyControlledInput():
     """App using a fully controlled input with implicit debounce wrapper."""
+    from typing import Optional
+
     import reflex as rx
 
     class State(rx.State):
         text: str = "initial"
+        optional: rx.Field[Optional[str]] = rx.field("initial")
+
+        def set_none(self):
+            self.optional = None
 
     app = rx.App(_state=rx.State)
 
@@ -48,6 +54,11 @@ def FullyControlledInput():
             rx.button(
                 "CLEAR", on_click=rx.set_value("on_change_input", ""), id="clear"
             ),
+            rx.input(
+                value=State.optional | "",
+                id="optional_input",
+            ),
+            rx.button("SET NONE", on_click=State.set_none, id="set_none"),
         )
 
 
@@ -93,6 +104,10 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
         state = await fully_controlled_input.get_state(f"{token}_{full_state_name}")
         return state.substates[state_name].text
 
+    async def get_state_optional():
+        state = await fully_controlled_input.get_state(f"{token}_{full_state_name}")
+        return state.substates[state_name].optional
+
     # ensure defaults are set correctly
     assert (
         fully_controlled_input.poll_for_value(
@@ -121,6 +136,7 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
 
     # find the input and wait for it to have the initial state value
     debounce_input = driver.find_element(By.ID, "debounce_input_input")
+    optional_input = driver.find_element(By.ID, "optional_input")
     value_input = driver.find_element(By.ID, "value_input")
     on_change_input = driver.find_element(By.ID, "on_change_input")
     plain_value_input = driver.find_element(By.ID, "plain_value_input")
@@ -186,3 +202,8 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     # assert backend_state.text == "" #noqa: ERA001
     # assert debounce_input.get_attribute("value") == "" #noqa: ERA001
     # assert value_input.get_attribute("value") == "" #noqa: ERA001
+
+    set_none_button = driver.find_element(By.ID, "set_none")
+    set_none_button.click()
+    assert AppHarness._poll_for(lambda: optional_input.get_attribute("value") == "")
+    assert await get_state_optional() is None
