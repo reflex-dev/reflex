@@ -766,7 +766,7 @@ class Config(Base):
         """
         if self.env_file:
             try:
-                from dotenv import load_dotenv
+                from dotenv import load_dotenv  # pyright: ignore [reportMissingImports]
 
                 # load env file if exists
                 load_dotenv(self.env_file, override=True)
