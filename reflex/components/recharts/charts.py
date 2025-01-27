@@ -69,7 +69,7 @@ class ChartBase(RechartsCharts):
         )
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(cls, *children: Any, **props: Any) -> Component:
         """Create a chart component.
 
         Args:

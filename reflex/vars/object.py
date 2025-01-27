@@ -253,7 +253,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         name: str,
     ) -> ObjectItemOperation: ...
 
-    def __getattr__(self, name) -> Var:
+    def __getattr__(self, name: str) -> Var:
         """Get an attribute of the var.
 
         Args:

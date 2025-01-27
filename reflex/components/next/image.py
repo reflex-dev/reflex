@@ -1,5 +1,7 @@
 """Image component from next/image."""
 
+from __future__ import annotations
+
 from typing import Any, Literal, Optional, Union
 
 from reflex.event import EventHandler, no_args_event_spec
@@ -93,7 +95,7 @@ class Image(NextComponent):
 
         style = props.get("style", {})
 
-        def check_prop_type(prop_name, prop_value):
+        def check_prop_type(prop_name: str, prop_value: int | str | None):
             if types.check_prop_in_allowed_types(prop_value, allowed_types=[int]):
                 props[prop_name] = prop_value
 

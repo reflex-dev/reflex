@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -115,7 +115,7 @@ class Editor(NoSSRComponent):
     # Alternatively to a string, a dict of your language can be passed to this prop.
     # Please refer to the library docs for this.
     # options: "en" | "da" | "de" | "es" | "fr" | "ja" | "ko" | "pt_br" |
-    #  "ru" | "zh_cn" | "ro" | "pl" | "ckb" | "lv" | "se" | "ua" | "he" | "it"
+    # "ru" | "zh_cn" | "ro" | "pl" | "ckb" | "lv" | "se" | "ua" | "he" | "it"
     # default: "en".
     lang: Var[
         Union[
@@ -244,11 +244,13 @@ class Editor(NoSSRComponent):
         }
 
     @classmethod
-    def create(cls, set_options: Optional[EditorOptions] = None, **props) -> Component:
+    def create(
+        cls, set_options: Optional[EditorOptions] = None, **props: Any
+    ) -> Component:
         """Create an instance of Editor. No children allowed.
 
         Args:
-            set_options(Optional[EditorOptions]): Configuration object to further configure the instance.
+            set_options: Configuration object to further configure the instance.
             **props: Any properties to be passed to the Editor
 
         Returns:

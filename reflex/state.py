@@ -31,6 +31,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    SupportsIndex,
     Tuple,
     Type,
     TypeVar,
@@ -1058,7 +1059,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         setattr(cls, prop._var_field_name, prop)
 
     @classmethod
-    def _create_event_handler(cls, fn):
+    def _create_event_handler(cls, fn: Any):
         """Create an event handler for the given function.
 
         Args:
@@ -1176,14 +1177,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         cls._check_overwritten_dynamic_args(list(args.keys()))
 
-        def argsingle_factory(param):
-            def inner_func(self) -> str:
+        def argsingle_factory(param: str):
+            def inner_func(self: BaseState) -> str:  # type: ignore
                 return self.router.page.params.get(param, "")
 
             return inner_func
 
-        def arglist_factory(param):
-            def inner_func(self) -> List[str]:
+        def arglist_factory(param: str):
+            def inner_func(self: BaseState) -> List[str]:
                 return self.router.page.params.get(param, [])
 
             return inner_func
@@ -2593,7 +2594,9 @@ class StateProxy(wrapt.ObjectProxy):
     """
 
     def __init__(
-        self, state_instance, parent_state_proxy: Optional["StateProxy"] = None
+        self,
+        state_instance: BaseState,
+        parent_state_proxy: Optional["StateProxy"] = None,
     ):
         """Create a proxy for a state instance.
 
@@ -3539,7 +3542,9 @@ class StateManagerRedis(StateManager):
 
     @validator("lock_warning_threshold")
     @classmethod
-    def validate_lock_warning_threshold(cls, lock_warning_threshold: int, values):
+    def validate_lock_warning_threshold(
+        cls, lock_warning_threshold: int, values: dict[str, int]
+    ):
         """Validate the lock warning threshold.
 
         Args:
@@ -3807,10 +3812,10 @@ class MutableProxy(wrapt.ObjectProxy):
 
     def _mark_dirty(
         self,
-        wrapped=None,
-        instance=None,
-        args=(),
-        kwargs=None,
+        wrapped: Callable | None = None,
+        instance: BaseState | None = None,
+        args: tuple = (),
+        kwargs: dict | None = None,
     ) -> Any:
         """Mark the state as dirty, then call a wrapped function.
 
@@ -3884,7 +3889,9 @@ class MutableProxy(wrapt.ObjectProxy):
             )
         return value
 
-    def _wrap_recursive_decorator(self, wrapped, instance, args, kwargs) -> Any:
+    def _wrap_recursive_decorator(
+        self, wrapped: Callable, instance: BaseState, args: list, kwargs: dict
+    ) -> Any:
         """Wrap a function that returns a possibly mutable value.
 
         Intended for use with `FunctionWrapper` from the `wrapt` library.
@@ -3943,7 +3950,7 @@ class MutableProxy(wrapt.ObjectProxy):
 
         return value
 
-    def __getitem__(self, key) -> Any:
+    def __getitem__(self, key: Any) -> Any:
         """Get the item on the proxied object and return a proxy if mutable.
 
         Args:
@@ -3966,7 +3973,7 @@ class MutableProxy(wrapt.ObjectProxy):
             # Recursively wrap mutable items retrieved through this proxy.
             yield self._wrap_recursive(value)
 
-    def __delattr__(self, name):
+    def __delattr__(self, name: str):
         """Delete the attribute on the proxied object and mark state dirty.
 
         Args:
@@ -3974,7 +3981,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         self._mark_dirty(super().__delattr__, args=(name,))
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str):
         """Delete the item on the proxied object and mark state dirty.
 
         Args:
@@ -3982,7 +3989,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         self._mark_dirty(super().__delitem__, args=(key,))
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Any):
         """Set the item on the proxied object and mark state dirty.
 
         Args:
@@ -3991,7 +3998,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         self._mark_dirty(super().__setitem__, args=(key, value))
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: Any):
         """Set the attribute on the proxied object and mark state dirty.
 
         If the attribute starts with "_self_", then the state is NOT marked
@@ -4015,7 +4022,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         return copy.copy(self.__wrapped__)
 
-    def __deepcopy__(self, memo=None) -> Any:
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Any:
         """Return a deepcopy of the proxy.
 
         Args:
@@ -4026,7 +4033,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         return copy.deepcopy(self.__wrapped__, memo=memo)
 
-    def __reduce_ex__(self, protocol_version):
+    def __reduce_ex__(self, protocol_version: SupportsIndex):
         """Get the state for redis serialization.
 
         This method is called by cloudpickle to serialize the object.
@@ -4090,10 +4097,10 @@ class ImmutableMutableProxy(MutableProxy):
 
     def _mark_dirty(
         self,
-        wrapped=None,
-        instance=None,
-        args=(),
-        kwargs=None,
+        wrapped: Callable | None = None,
+        instance: BaseState | None = None,
+        args: tuple = (),
+        kwargs: dict | None = None,
     ) -> Any:
         """Raise an exception when an attempt is made to modify the object.
 

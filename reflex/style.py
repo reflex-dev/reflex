@@ -182,7 +182,9 @@ def convert(
     var_data = None  # Track import/hook data from any Vars in the style dict.
     out = {}
 
-    def update_out_dict(return_value, keys_to_update):
+    def update_out_dict(
+        return_value: Var | dict | list | str, keys_to_update: tuple[str, ...]
+    ):
         for k in keys_to_update:
             out[k] = return_value
 

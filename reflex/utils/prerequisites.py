@@ -884,7 +884,9 @@ def init_reflex_json(project_hash: int | None):
     path_ops.update_json_file(get_web_dir() / constants.Reflex.JSON, reflex_json)
 
 
-def update_next_config(export=False, transpile_packages: Optional[List[str]] = None):
+def update_next_config(
+    export: bool = False, transpile_packages: Optional[List[str]] = None
+):
     """Update Next.js config from Reflex config.
 
     Args:
@@ -1128,7 +1130,7 @@ def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
         The decorated function.
     """
 
-    def _inner_decorator(func):
+    def _inner_decorator(func: Callable):
         def _inner(*args, **kwargs):
             payload = _read_cached_procedure_file(cache_file)
             new_payload = payload_fn(*args, **kwargs)
@@ -1310,7 +1312,7 @@ def validate_bun():
             raise typer.Exit(1)
 
 
-def validate_frontend_dependencies(init=True):
+def validate_frontend_dependencies(init: bool = True):
     """Validate frontend dependencies to ensure they meet requirements.
 
     Args:
@@ -1634,7 +1636,9 @@ def initialize_default_app(app_name: str):
     initialize_app_directory(app_name)
 
 
-def validate_and_create_app_using_remote_template(app_name, template, templates):
+def validate_and_create_app_using_remote_template(
+    app_name: str, template: str, templates: dict[str, Template]
+):
     """Validate and create an app using a remote template.
 
     Args:
@@ -1846,7 +1850,7 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
         )
     render_func_name = defined_funcs[-1]
 
-    def replace_content(_match):
+    def replace_content(_match: re.Match) -> str:
         return "\n".join(
             [
                 resp.text,
@@ -1876,7 +1880,7 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
     main_module_path.write_text(main_module_code)
 
 
-def format_address_width(address_width) -> int | None:
+def format_address_width(address_width: str | None) -> int | None:
     """Cast address width to an int.
 
     Args:

@@ -162,7 +162,7 @@ def _send_event(event_data: dict) -> bool:
         return True
 
 
-def _send(event, telemetry_enabled, **kwargs):
+def _send(event: str, telemetry_enabled: bool | None, **kwargs):
     from reflex.config import get_config
 
     # Get the telemetry_enabled from the config if it is not specified.
@@ -189,7 +189,7 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
         kwargs: Additional data to send with the event.
     """
 
-    async def async_send(event, telemetry_enabled, **kwargs):
+    async def async_send(event: str, telemetry_enabled: bool | None, **kwargs):
         return _send(event, telemetry_enabled, **kwargs)
 
     try:

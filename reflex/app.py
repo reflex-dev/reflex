@@ -703,8 +703,8 @@ class App(MiddlewareMixin, LifespanMixin):
         Args:
             component: The component to display at the page.
             title: The title of the page.
-            description: The description of the page.
             image: The image to display on the page.
+            description: The description of the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
         """
@@ -1047,7 +1047,7 @@ class App(MiddlewareMixin, LifespanMixin):
         with executor:
             result_futures = []
 
-            def _submit_work(fn, *args, **kwargs):
+            def _submit_work(fn: Callable, *args, **kwargs):
                 f = executor.submit(fn, *args, **kwargs)
                 result_futures.append(f)
 
@@ -1377,15 +1377,14 @@ async def process(
                 if app._process_background(state, event) is not None:
                     # `final=True` allows the frontend send more events immediately.
                     yield StateUpdate(final=True)
-                    return
+                else:
+                    # Process the event synchronously.
+                    async for update in state._process(event):
+                        # Postprocess the event.
+                        update = await app._postprocess(state, event, update)
 
-                # Process the event synchronously.
-                async for update in state._process(event):
-                    # Postprocess the event.
-                    update = await app._postprocess(state, event, update)
-
-                    # Yield the update.
-                    yield update
+                        # Yield the update.
+                        yield update
     except Exception as ex:
         telemetry.send_error(ex, context="backend")
 
@@ -1580,20 +1579,20 @@ class EventNamespace(AsyncNamespace):
         self.sid_to_token = {}
         self.app = app
 
-    def on_connect(self, sid, environ):
+    def on_connect(self, sid: str, environ: dict):
         """Event for when the websocket is connected.
 
         Args:
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
         """
-        subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL", None)
+        subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
         if subprotocol and subprotocol != constants.Reflex.VERSION:
             console.warn(
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
 
-    def on_disconnect(self, sid):
+    def on_disconnect(self, sid: str):
         """Event for when the websocket disconnects.
 
         Args:
@@ -1615,7 +1614,7 @@ class EventNamespace(AsyncNamespace):
             self.emit(str(constants.SocketEvent.EVENT), update, to=sid)
         )
 
-    async def on_event(self, sid, data):
+    async def on_event(self, sid: str, data: Any):
         """Event for receiving front-end websocket events.
 
         Raises:
@@ -1682,7 +1681,7 @@ class EventNamespace(AsyncNamespace):
             # Emit the update from processing the event.
             await self.emit_update(update=update, sid=sid)
 
-    async def on_ping(self, sid):
+    async def on_ping(self, sid: str):
         """Event for testing the API endpoint.
 
         Args:
