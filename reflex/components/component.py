@@ -2274,6 +2274,10 @@ class StatefulComponent(BaseComponent):
 
         return _compile_component(self)
 
+    def __getattr__(self, name) -> Any:
+        # if we don't provide the attribute, get it from the wrapped component
+        return getattr(self.component, name)
+
     @classmethod
     def compile_from(cls, component: BaseComponent) -> BaseComponent:
         """Walk through the component tree and memoize all stateful components.
@@ -2474,6 +2478,8 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
         Returns:
             The var.
         """
+        if not isinstance(value, StatefulComponent):
+            value = StatefulComponent.compile_from(value) or value
         return LiteralComponentVar(
             _js_expr="",
             _var_type=type(value),
