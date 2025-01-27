@@ -17,7 +17,7 @@ def VarOperations():
     from reflex.vars.sequence import ArrayVar
 
     class Object(rx.Base):
-        str_: str = "hello"
+        name: str = "hello"
 
     class VarOperationState(rx.State):
         int_var1: int = 10
@@ -28,7 +28,7 @@ def VarOperations():
         list1: List = [1, 2]
         list2: List = [3, 4]
         list3: List = ["first", "second", "third"]
-        list4: List = [Object(str_="obj_1"), Object(str_="obj_2")]
+        list4: List = [Object(name="obj_1"), Object(name="obj_2")]
         str_var1: str = "first"
         str_var2: str = "second"
         str_var3: str = "ThIrD"
