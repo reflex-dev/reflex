@@ -419,11 +419,12 @@ class App(MiddlewareMixin, LifespanMixin):
                         if (
                             message["type"] == "websocket.accept"
                             and protocol_key in headers
+                            and isinstance(
+                                (subprotocol := headers[protocol_key]), bytes
+                            )
                         ):
-                            message["headers"] = [
-                                *message.get("headers", []),
-                                (b"sec-websocket-protocol", headers[protocol_key]),
-                            ]
+                            message["subprotocol"] = subprotocol.decode()
+
                         return await original_send(message)
 
                     return await self.app(scope, receive, modified_send)
