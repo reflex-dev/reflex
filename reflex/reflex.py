@@ -17,7 +17,7 @@ from reflex.state import reset_disk_state_manager
 from reflex.utils import console, telemetry
 
 # Disable typer+rich integration for help panels
-typer.core.rich = None  # type: ignore
+typer.core.rich = None  # pyright: ignore [reportPrivateImportUsage]
 
 # Create the app.
 try:
@@ -355,7 +355,7 @@ def logout(
 
     check_version()
 
-    logout(loglevel)  # type: ignore
+    logout(loglevel)  # pyright: ignore [reportArgumentType]
 
 
 db_cli = typer.Typer()

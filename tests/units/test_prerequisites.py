@@ -100,7 +100,7 @@ def test_transpile_packages(transpile_packages, expected_transpile_packages):
         transpile_packages=transpile_packages,
     )
     transpile_packages_match = re.search(r"transpilePackages: (\[.*?\])", output)
-    transpile_packages_json = transpile_packages_match.group(1)  # type: ignore
+    transpile_packages_json = transpile_packages_match.group(1)  # pyright: ignore [reportOptionalMemberAccess]
     actual_transpile_packages = sorted(json.loads(transpile_packages_json))
     assert actual_transpile_packages == expected_transpile_packages
 

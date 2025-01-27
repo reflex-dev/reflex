@@ -95,7 +95,7 @@ def test_create_shiki_code_block(
 
     # Test that the first child is the code
     code_block_component = component.children[0]
-    assert code_block_component.code._var_value == expected_first_child  # type: ignore
+    assert code_block_component.code._var_value == expected_first_child  # pyright: ignore [reportAttributeAccessIssue]
 
     applied_styles = component.style
     for key, value in expected_styles.items():
@@ -128,12 +128,12 @@ def test_create_shiki_high_level_code_block(
 
     # Test that the first child is the code block component
     code_block_component = component.children[0]
-    assert code_block_component.code._var_value == children[0]  # type: ignore
+    assert code_block_component.code._var_value == children[0]  # pyright: ignore [reportAttributeAccessIssue]
 
     # Check if the transformer is set correctly if expected
     if expected_transformers:
         exp_trans_names = [t.__name__ for t in expected_transformers]
-        for transformer in code_block_component.transformers._var_value:  # type: ignore
+        for transformer in code_block_component.transformers._var_value:  # pyright: ignore [reportAttributeAccessIssue]
             assert type(transformer).__name__ in exp_trans_names
 
     # Check if the second child is the copy button if can_copy is True
@@ -161,12 +161,12 @@ def test_shiki_high_level_code_block_theme_language_mapping(children, props):
     if "theme" in props:
         assert component.children[
             0
-        ].theme._var_value == ShikiHighLevelCodeBlock._map_themes(props["theme"])  # type: ignore
+        ].theme._var_value == ShikiHighLevelCodeBlock._map_themes(props["theme"])  # pyright: ignore [reportAttributeAccessIssue]
 
     # Test that the language is mapped correctly
     if "language" in props:
         assert component.children[
             0
-        ].language._var_value == ShikiHighLevelCodeBlock._map_languages(  # type: ignore
+        ].language._var_value == ShikiHighLevelCodeBlock._map_languages(  # pyright: ignore [reportAttributeAccessIssue]
             props["language"]
         )

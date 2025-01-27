@@ -24,7 +24,7 @@ from typing import (
     Tuple,
     Type,
     Union,
-    _GenericAlias,  # type: ignore
+    _GenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     get_args,
     get_type_hints,
 )
@@ -39,7 +39,9 @@ from reflex.components.core.breakpoints import Breakpoints
 try:
     from pydantic.v1.fields import ModelField
 except ModuleNotFoundError:
-    from pydantic.fields import ModelField  # type: ignore
+    from pydantic.fields import (
+        ModelField,  # pyright: ignore [reportAttributeAccessIssue]
+    )
 
 from sqlalchemy.ext.associationproxy import AssociationProxyInstance
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -70,13 +72,15 @@ GenericAliasTypes = [_GenericAlias]
 
 with contextlib.suppress(ImportError):
     # For newer versions of Python.
-    from types import GenericAlias  # type: ignore
+    from types import GenericAlias
 
     GenericAliasTypes.append(GenericAlias)
 
 with contextlib.suppress(ImportError):
     # For older versions of Python.
-    from typing import _SpecialGenericAlias  # type: ignore
+    from typing import (
+        _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
+    )
 
     GenericAliasTypes.append(_SpecialGenericAlias)
 
@@ -175,7 +179,7 @@ def is_generic_alias(cls: GenericType) -> bool:
     Returns:
         Whether the class is a generic alias.
     """
-    return isinstance(cls, GenericAliasTypes)
+    return isinstance(cls, GenericAliasTypes)  # pyright: ignore [reportArgumentType]
 
 
 def unionize(*args: GenericType) -> Type:
@@ -188,14 +192,14 @@ def unionize(*args: GenericType) -> Type:
         The unionized types.
     """
     if not args:
-        return Any
+        return Any  # pyright: ignore [reportReturnType]
     if len(args) == 1:
         return args[0]
     # We are bisecting the args list here to avoid hitting the recursion limit
     # In Python versions >= 3.11, we can simply do `return Union[*args]`
     midpoint = len(args) // 2
     first_half, second_half = args[:midpoint], args[midpoint:]
-    return Union[unionize(*first_half), unionize(*second_half)]
+    return Union[unionize(*first_half), unionize(*second_half)]  # pyright: ignore [reportReturnType]
 
 
 def is_none(cls: GenericType) -> bool:
@@ -351,13 +355,13 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             if type_ is not None:
                 if hasattr(column_type, "item_type"):
                     try:
-                        item_type = column_type.item_type.python_type  # type: ignore
+                        item_type = column_type.item_type.python_type  # pyright: ignore [reportAttributeAccessIssue]
                     except NotImplementedError:
                         item_type = None
                     if item_type is not None:
                         if type_ in PrimitiveToAnnotation:
-                            type_ = PrimitiveToAnnotation[type_]  # type: ignore
-                        type_ = type_[item_type]  # type: ignore
+                            type_ = PrimitiveToAnnotation[type_]
+                        type_ = type_[item_type]  # pyright: ignore [reportIndexIssue]
                 if column.nullable:
                     type_ = Optional[type_]
                 return type_
@@ -432,7 +436,7 @@ def get_base_class(cls: GenericType) -> Type:
         return type(get_args(cls)[0])
 
     if is_union(cls):
-        return tuple(get_base_class(arg) for arg in get_args(cls))
+        return tuple(get_base_class(arg) for arg in get_args(cls))  # pyright: ignore [reportReturnType]
 
     return get_base_class(cls.__origin__) if is_generic_alias(cls) else cls
 

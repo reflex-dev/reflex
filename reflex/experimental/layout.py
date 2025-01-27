@@ -44,10 +44,10 @@ class Sidebar(Box, MemoizationLeaf):
         Returns:
             The style of the component.
         """
-        sidebar: Component = self.children[-2]  # type: ignore
-        spacer: Component = self.children[-1]  # type: ignore
+        sidebar: Component = self.children[-2]  # pyright: ignore [reportAssignmentType]
+        spacer: Component = self.children[-1]  # pyright: ignore [reportAssignmentType]
         open = (
-            self.State.open  # type: ignore
+            self.State.open  # pyright: ignore [reportAttributeAccessIssue]
             if self.State
             else Var(_js_expr="open")
         )
@@ -159,11 +159,11 @@ class SidebarTrigger(Fragment):
         """
         trigger_props = {**props, **sidebar_trigger_style}
 
-        inner_sidebar: Component = sidebar.children[0]  # type: ignore
+        inner_sidebar: Component = sidebar.children[0]  # pyright: ignore [reportAssignmentType]
         sidebar_width = inner_sidebar.style.get("width")
 
         if sidebar.State:
-            open, toggle = sidebar.State.open, sidebar.State.toggle  # type: ignore
+            open, toggle = sidebar.State.open, sidebar.State.toggle  # pyright: ignore [reportAttributeAccessIssue]
         else:
             open, toggle = (
                 Var(_js_expr="open"),

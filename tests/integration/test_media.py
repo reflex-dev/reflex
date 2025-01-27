@@ -19,7 +19,7 @@ def MediaApp():
         def _blue(self, format=None) -> Image.Image:
             img = Image.new("RGB", (200, 200), "blue")
             if format is not None:
-                img.format = format  # type: ignore
+                img.format = format
             return img
 
         @rx.var
@@ -50,7 +50,7 @@ def MediaApp():
         def img_from_url(self) -> Image.Image:
             img_url = "https://picsum.photos/id/1/200/300"
             img_resp = httpx.get(img_url, follow_redirects=True)
-            return Image.open(img_resp)  # type: ignore
+            return Image.open(img_resp)  # pyright: ignore [reportArgumentType]
 
     app = rx.App()
 

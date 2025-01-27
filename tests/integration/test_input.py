@@ -26,11 +26,11 @@ def FullyControlledInput():
             ),
             rx.input(
                 id="debounce_input_input",
-                on_change=State.set_text,  # type: ignore
+                on_change=State.set_text,  # pyright: ignore [reportAttributeAccessIssue]
                 value=State.text,
             ),
             rx.input(value=State.text, id="value_input", is_read_only=True),
-            rx.input(on_change=State.set_text, id="on_change_input"),  # type: ignore
+            rx.input(on_change=State.set_text, id="on_change_input"),  # pyright: ignore [reportAttributeAccessIssue]
             rx.el.input(
                 value=State.text,
                 id="plain_value_input",

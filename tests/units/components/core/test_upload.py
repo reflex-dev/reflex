@@ -5,7 +5,7 @@ from reflex.components.core.upload import (
     StyledUpload,
     Upload,
     UploadNamespace,
-    _on_drop_spec,  # type: ignore
+    _on_drop_spec,  # pyright: ignore [reportAttributeAccessIssue]
     cancel_upload,
     get_upload_url,
 )
@@ -60,7 +60,7 @@ def test_upload_create():
 
     up_comp_2 = Upload.create(
         id="foo_id",
-        on_drop=UploadStateTest.drop_handler([]),  # type: ignore
+        on_drop=UploadStateTest.drop_handler([]),
     )
     assert isinstance(up_comp_2, Upload)
     assert up_comp_2.is_used
@@ -80,7 +80,7 @@ def test_upload_create():
 
     up_comp_4 = Upload.create(
         id="foo_id",
-        on_drop=UploadStateTest.not_drop_handler([]),  # type: ignore
+        on_drop=UploadStateTest.not_drop_handler([]),
     )
     assert isinstance(up_comp_4, Upload)
     assert up_comp_4.is_used
@@ -96,7 +96,7 @@ def test_styled_upload_create():
 
     styled_up_comp_2 = StyledUpload.create(
         id="foo_id",
-        on_drop=UploadStateTest.drop_handler([]),  # type: ignore
+        on_drop=UploadStateTest.drop_handler([]),
     )
     assert isinstance(styled_up_comp_2, StyledUpload)
     assert styled_up_comp_2.is_used
@@ -116,7 +116,7 @@ def test_styled_upload_create():
 
     styled_up_comp_4 = StyledUpload.create(
         id="foo_id",
-        on_drop=UploadStateTest.not_drop_handler([]),  # type: ignore
+        on_drop=UploadStateTest.not_drop_handler([]),
     )
     assert isinstance(styled_up_comp_4, StyledUpload)
     assert styled_up_comp_4.is_used

@@ -54,7 +54,7 @@ def datetime_operations_app(tmp_path_factory) -> Generator[AppHarness, None, Non
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("datetime_operations_app"),
-        app_source=DatetimeOperationsApp,  # type: ignore
+        app_source=DatetimeOperationsApp,
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
         yield harness

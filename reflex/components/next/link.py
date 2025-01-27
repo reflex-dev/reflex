@@ -17,4 +17,4 @@ class NextLink(Component):
     href: Var[str]
 
     # Whether to pass the href prop to the child.
-    pass_href: Var[bool] = True  # type: ignore
+    pass_href: Var[bool] = Var.create(True)

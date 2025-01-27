@@ -925,7 +925,7 @@ def _get_file_from_prompt_in_loop() -> Tuple[bytes, str] | None:
     image_file = file_extension = None
     while image_file is None:
         image_filepath = Path(
-            console.ask("Upload a preview image of your demo app (enter to skip)")
+            console.ask("Upload a preview image of your demo app (enter to skip)")  # pyright: ignore [reportArgumentType]
         )
         if not image_filepath:
             break

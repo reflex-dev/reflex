@@ -50,11 +50,11 @@ def pydantic_v1_patch():
     ]
     originals = {module: sys.modules.get(module) for module in patched_modules}
     try:
-        import pydantic.v1  # type: ignore
+        import pydantic.v1
 
-        sys.modules["pydantic.fields"] = pydantic.v1.fields  # type: ignore
-        sys.modules["pydantic.main"] = pydantic.v1.main  # type: ignore
-        sys.modules["pydantic.errors"] = pydantic.v1.errors  # type: ignore
+        sys.modules["pydantic.fields"] = pydantic.v1.fields  # pyright: ignore [reportAttributeAccessIssue]
+        sys.modules["pydantic.main"] = pydantic.v1.main  # pyright: ignore [reportAttributeAccessIssue]
+        sys.modules["pydantic.errors"] = pydantic.v1.errors  # pyright: ignore [reportAttributeAccessIssue]
         sys.modules["pydantic"] = pydantic.v1
         yield
     except (ImportError, AttributeError):

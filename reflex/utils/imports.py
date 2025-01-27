@@ -122,7 +122,7 @@ class ImportVar:
         """
         if self.alias:
             return (
-                self.alias if self.is_default else " as ".join([self.tag, self.alias])  # type: ignore
+                self.alias if self.is_default else " as ".join([self.tag, self.alias])  # pyright: ignore [reportCallIssue,reportArgumentType]
             )
         else:
             return self.tag or ""

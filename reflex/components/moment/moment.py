@@ -28,9 +28,9 @@ class MomentDelta:
 class Moment(NoSSRComponent):
     """The Moment component."""
 
-    tag: str = "Moment"
+    tag: str | None = "Moment"
     is_default = True
-    library: str = "react-moment"
+    library: str | None = "react-moment"
     lib_dependencies: List[str] = ["moment"]
 
     # How often the date update (how often time update / 0 to disable).

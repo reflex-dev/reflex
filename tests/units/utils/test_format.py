@@ -523,7 +523,7 @@ def test_format_event_handler(input, output):
         input: The event handler input.
         output: The expected output.
     """
-    assert format.format_event_handler(input) == output  # type: ignore
+    assert format.format_event_handler(input) == output
 
 
 @pytest.mark.parametrize(
@@ -582,7 +582,7 @@ formatted_router = {
     "input, output",
     [
         (
-            TestState(_reflex_internal_init=True).dict(),  # type: ignore
+            TestState(_reflex_internal_init=True).dict(),  # pyright: ignore [reportCallIssue]
             {
                 TestState.get_full_name(): {
                     "array": [1, 2, 3.14],
@@ -615,7 +615,7 @@ formatted_router = {
             },
         ),
         (
-            DateTimeState(_reflex_internal_init=True).dict(),  # type: ignore
+            DateTimeState(_reflex_internal_init=True).dict(),  # pyright: ignore [reportCallIssue]
             {
                 DateTimeState.get_full_name(): {
                     "d": "1989-11-09",

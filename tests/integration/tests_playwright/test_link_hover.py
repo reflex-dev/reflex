@@ -29,7 +29,7 @@ def LinkApp():
 def link_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     with AppHarness.create(
         root=tmp_path_factory.mktemp("link_app"),
-        app_source=LinkApp,  # type: ignore
+        app_source=LinkApp,
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
         yield harness

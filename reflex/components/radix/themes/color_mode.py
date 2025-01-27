@@ -115,12 +115,12 @@ class ColorModeIconButton(IconButton):
         Returns:
             The button component.
         """
-        position = props.pop("position", None)
+        position: str | Var = props.pop("position", None)
         allow_system = props.pop("allow_system", False)
 
         # position is used to set nice defaults for positioning the icon button
         if isinstance(position, Var):
-            _set_var_default(props, position, "position", "fixed", position)  # type: ignore
+            _set_var_default(props, position, "position", "fixed", position)  # pyright: ignore [reportArgumentType]
             _set_var_default(props, position, "bottom", "2rem")
             _set_var_default(props, position, "top", "2rem")
             _set_var_default(props, position, "left", "2rem")

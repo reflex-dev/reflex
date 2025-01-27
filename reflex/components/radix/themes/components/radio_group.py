@@ -155,7 +155,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
         if isinstance(default_value, str) or (
             isinstance(default_value, Var) and default_value._var_type is str
         ):
-            default_value = LiteralVar.create(default_value)  # type: ignore
+            default_value = LiteralVar.create(default_value)
         else:
             default_value = LiteralVar.create(default_value).to_string()
 

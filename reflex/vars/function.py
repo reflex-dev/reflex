@@ -100,7 +100,7 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
     @overload
     def partial(self, *args: Var | Any) -> FunctionVar: ...
 
-    def partial(self, *args: Var | Any) -> FunctionVar:  # type: ignore
+    def partial(self, *args: Var | Any) -> FunctionVar:  # pyright: ignore [reportInconsistentOverload]
         """Partially apply the function with the given arguments.
 
         Args:
@@ -174,7 +174,7 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
     @overload
     def call(self, *args: Var | Any) -> Var: ...
 
-    def call(self, *args: Var | Any) -> Var:  # type: ignore
+    def call(self, *args: Var | Any) -> Var:  # pyright: ignore [reportInconsistentOverload]
         """Call the function with the given arguments.
 
         Args:

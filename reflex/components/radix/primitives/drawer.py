@@ -83,7 +83,7 @@ class DrawerTrigger(DrawerComponent):
     alias = "Vaul" + tag
 
     # Defaults to true, if the first child acts as the trigger.
-    as_child: Var[bool] = True  # type: ignore
+    as_child: Var[bool] = Var.create(True)
 
     @classmethod
     def create(cls, *children: Any, **props: Any) -> Component:

@@ -41,14 +41,14 @@ class IterTag(Tag):
         try:
             if iterable._var_type.mro()[0] is dict:
                 # Arg is a tuple of (key, value).
-                return Tuple[get_args(iterable._var_type)]  # type: ignore
+                return Tuple[get_args(iterable._var_type)]  # pyright: ignore [reportReturnType]
             elif iterable._var_type.mro()[0] is tuple:
                 # Arg is a union of any possible values in the tuple.
-                return Union[get_args(iterable._var_type)]  # type: ignore
+                return Union[get_args(iterable._var_type)]  # pyright: ignore [reportReturnType]
             else:
                 return get_args(iterable._var_type)[0]
         except Exception:
-            return Any
+            return Any  # pyright: ignore [reportReturnType]
 
     def get_index_var(self) -> Var:
         """Get the index var for the tag (with curly braces).

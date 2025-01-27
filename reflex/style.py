@@ -78,7 +78,7 @@ def set_color_mode(
         _var_data=VarData.merge(
             base_setter._get_all_var_data(), new_color_mode._get_all_var_data()
         ),
-    ).to(FunctionVar, EventChain)  # type: ignore
+    ).to(FunctionVar, EventChain)
 
 
 # Var resolves to the current color mode for the app ("light", "dark" or "system")

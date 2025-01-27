@@ -48,4 +48,4 @@ PROP_TO_ELEMENTS = {
 ELEMENT_TO_PROPS = defaultdict(list)
 for prop, elements in PROP_TO_ELEMENTS.items():
     for el in elements:
-        ELEMENT_TO_PROPS[el].append(prop)  # type: ignore
+        ELEMENT_TO_PROPS[el].append(prop)

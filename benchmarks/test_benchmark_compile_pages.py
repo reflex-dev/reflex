@@ -28,7 +28,7 @@ def render_multiple_pages(app, num: int):
     """
     from typing import Tuple
 
-    from rxconfig import config  # type: ignore
+    from rxconfig import config  # pyright: ignore [reportMissingImports]
 
     import reflex as rx
 
@@ -74,13 +74,13 @@ def render_multiple_pages(app, num: int):
                 rx.select(
                     ["C", "PF", "SF", "PG", "SG"],
                     placeholder="Select a position. (All)",
-                    on_change=State.set_position,  # type: ignore
+                    on_change=State.set_position,  # pyright: ignore [reportAttributeAccessIssue]
                     size="3",
                 ),
                 rx.select(
                     college,
                     placeholder="Select a college. (All)",
-                    on_change=State.set_college,  # type: ignore
+                    on_change=State.set_college,  # pyright: ignore [reportAttributeAccessIssue]
                     size="3",
                 ),
             ),
@@ -95,7 +95,7 @@ def render_multiple_pages(app, num: int):
                         default_value=[18, 50],
                         min=18,
                         max=50,
-                        on_value_commit=State.set_age,  # type: ignore
+                        on_value_commit=State.set_age,  # pyright: ignore [reportAttributeAccessIssue]
                     ),
                     align_items="left",
                     width="100%",
@@ -110,7 +110,7 @@ def render_multiple_pages(app, num: int):
                         default_value=[0, 25000000],
                         min=0,
                         max=25000000,
-                        on_value_commit=State.set_salary,  # type: ignore
+                        on_value_commit=State.set_salary,  # pyright: ignore [reportAttributeAccessIssue]
                     ),
                     align_items="left",
                     width="100%",
@@ -130,7 +130,7 @@ def render_multiple_pages(app, num: int):
 
 def AppWithOnePage():
     """A reflex app with one page."""
-    from rxconfig import config  # type: ignore
+    from rxconfig import config  # pyright: ignore [reportMissingImports]
 
     import reflex as rx
 
@@ -232,7 +232,7 @@ def app_with_ten_pages(
         root=root,
         app_source=functools.partial(
             AppWithTenPages,
-            render_comp=render_multiple_pages,  # type: ignore
+            render_comp=render_multiple_pages,  # pyright: ignore [reportCallIssue]
         ),
     )
 
@@ -255,9 +255,9 @@ def app_with_hundred_pages(
         root=root,
         app_source=functools.partial(
             AppWithHundredPages,
-            render_comp=render_multiple_pages,  # type: ignore
+            render_comp=render_multiple_pages,  # pyright: ignore [reportCallIssue]
         ),
-    )  # type: ignore
+    )
 
 
 @pytest.fixture(scope="session")
@@ -278,9 +278,9 @@ def app_with_thousand_pages(
         root=root,
         app_source=functools.partial(
             AppWithThousandPages,
-            render_comp=render_multiple_pages,  # type: ignore
+            render_comp=render_multiple_pages,  # pyright: ignore [reportCallIssue]
         ),
-    )  # type: ignore
+    )
 
 
 @pytest.fixture(scope="session")
@@ -301,9 +301,9 @@ def app_with_ten_thousand_pages(
         root=root,
         app_source=functools.partial(
             AppWithTenThousandPages,
-            render_comp=render_multiple_pages,  # type: ignore
+            render_comp=render_multiple_pages,  # pyright: ignore [reportCallIssue]
         ),
-    )  # type: ignore
+    )
 
 
 @pytest.mark.skipif(constants.IS_WINDOWS, reason=WINDOWS_SKIP_REASON)

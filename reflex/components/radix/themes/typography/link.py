@@ -60,7 +60,7 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
         Returns:
             The import dict.
         """
-        return next_link._get_imports()  # type: ignore
+        return next_link._get_imports()  # pyright: ignore [reportReturnType]
 
     @classmethod
     def create(cls, *children, **props) -> Component:

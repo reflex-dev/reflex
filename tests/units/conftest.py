@@ -95,7 +95,7 @@ def upload_sub_state_event_spec():
     Returns:
         Event Spec.
     """
-    return EventSpec(handler=SubUploadState.handle_upload, upload=True)  # type: ignore
+    return EventSpec(handler=SubUploadState.handle_upload, upload=True)  # pyright: ignore [reportCallIssue]
 
 
 @pytest.fixture
@@ -105,7 +105,7 @@ def upload_event_spec():
     Returns:
         Event Spec.
     """
-    return EventSpec(handler=UploadState.handle_upload1, upload=True)  # type: ignore
+    return EventSpec(handler=UploadState.handle_upload1, upload=True)  # pyright: ignore [reportCallIssue]
 
 
 @pytest.fixture
@@ -143,7 +143,7 @@ def sqlite_db_config_values(base_db_config_values) -> Dict:
 
 
 @pytest.fixture
-def router_data_headers() -> Dict[str, str]:
+def router_data_headers() -> dict[str, str]:
     """Router data headers.
 
     Returns:
@@ -170,7 +170,7 @@ def router_data_headers() -> Dict[str, str]:
 
 
 @pytest.fixture
-def router_data(router_data_headers) -> Dict[str, str]:
+def router_data(router_data_headers: dict[str, str]) -> dict[str, str | dict]:
     """Router data.
 
     Args:
@@ -179,7 +179,7 @@ def router_data(router_data_headers) -> Dict[str, str]:
     Returns:
         Dict of router data.
     """
-    return {  # type: ignore
+    return {
         "pathname": "/",
         "query": {},
         "token": "b181904c-3953-4a79-dc18-ae9518c22f05",

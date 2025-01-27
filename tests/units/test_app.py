@@ -133,7 +133,7 @@ def test_model() -> Type[Model]:
         A default model.
     """
 
-    class TestModel(Model, table=True):  # type: ignore
+    class TestModel(Model, table=True):
         pass
 
     return TestModel
@@ -147,7 +147,7 @@ def test_model_auth() -> Type[Model]:
         A default model.
     """
 
-    class TestModelAuth(Model, table=True):  # type: ignore
+    class TestModelAuth(Model, table=True):
         """A test model with auth."""
 
         pass
@@ -185,19 +185,19 @@ def test_custom_auth_admin() -> Type[AuthProvider]:
         login_path: str = "/login"
         logout_path: str = "/logout"
 
-        def login(self):
+        def login(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Login."""
             pass
 
-        def is_authenticated(self):
+        def is_authenticated(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Is authenticated."""
             pass
 
-        def get_admin_user(self):
+        def get_admin_user(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Get admin user."""
             pass
 
-        def logout(self):
+        def logout(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Logout."""
             pass
 
@@ -419,7 +419,7 @@ async def test_initialize_with_state(test_state: Type[ATestState], token: str):
     # Get a state for a given token.
     state = await app.state_manager.get_state(_substate_key(token, test_state))
     assert isinstance(state, test_state)
-    assert state.var == 0  # type: ignore
+    assert state.var == 0
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()
@@ -441,8 +441,8 @@ async def test_set_and_get_state(test_state):
     # Get the default state for each token.
     state1 = await app.state_manager.get_state(token1)
     state2 = await app.state_manager.get_state(token2)
-    assert state1.var == 0  # type: ignore
-    assert state2.var == 0  # type: ignore
+    assert state1.var == 0
+    assert state2.var == 0
 
     # Set the vars to different values.
     state1.var = 1
@@ -453,8 +453,8 @@ async def test_set_and_get_state(test_state):
     # Get the states again and check the values.
     state1 = await app.state_manager.get_state(token1)
     state2 = await app.state_manager.get_state(token2)
-    assert state1.var == 1  # type: ignore
-    assert state2.var == 2  # type: ignore
+    assert state1.var == 1
+    assert state2.var == 2
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()
@@ -469,7 +469,7 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
         test_state: State Fixture.
         token: a Token.
     """
-    state = test_state()  # type: ignore
+    state = test_state()  # pyright: ignore [reportCallIssue]
     state.add_var("int_val", int, 0)
     result = await state._process(
         Event(
@@ -772,7 +772,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
     # The App state must be the "root" of the state tree
     app = App()
     app._enable_state()
-    app.event_namespace.emit = AsyncMock()  # type: ignore
+    app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
     current_state = await app.state_manager.get_state(_substate_key(token, state))
     data = b"This is binary data"
 
@@ -795,7 +795,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
         file=bio,
     )
     upload_fn = upload(app)
-    streaming_response = await upload_fn(request_mock, [file1, file2])
+    streaming_response = await upload_fn(request_mock, [file1, file2])  # pyright: ignore [reportFunctionMemberAccess]
     async for state_update in streaming_response.body_iterator:
         assert (
             state_update
@@ -917,7 +917,7 @@ class DynamicState(BaseState):
         """
         return self.dynamic
 
-    on_load_internal = OnLoadInternalState.on_load_internal.fn
+    on_load_internal = OnLoadInternalState.on_load_internal.fn  # pyright: ignore [reportFunctionMemberAccess]
 
 
 def test_dynamic_arg_shadow(
@@ -941,7 +941,7 @@ def test_dynamic_arg_shadow(
     app = app_module_mock.app = App(_state=DynamicState)
     assert app._state is not None
     with pytest.raises(NameError):
-        app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
+        app.add_page(index_page, route=route, on_load=DynamicState.on_load)
 
 
 def test_multiple_dynamic_args(
@@ -993,7 +993,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     app = app_module_mock.app = App(_state=DynamicState)
     assert app._state is not None
     assert arg_name not in app._state.vars
-    app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
+    app.add_page(index_page, route=route, on_load=DynamicState.on_load)
     assert arg_name in app._state.vars
     assert arg_name in app._state.computed_vars
     assert app._state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
@@ -1022,7 +1022,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
 
     def _dynamic_state_event(name, val, **kwargs):
         return _event(
-            name=format.format_event_handler(getattr(DynamicState, name)),  # type: ignore
+            name=format.format_event_handler(getattr(DynamicState, name)),
             val=val,
             **kwargs,
         )
@@ -1190,7 +1190,7 @@ async def test_process_events(mocker, token: str):
         pass
 
     assert (await app.state_manager.get_state(event.substate_token)).value == 5
-    assert app._postprocess.call_count == 6
+    assert app._postprocess.call_count == 6  # pyright: ignore [reportFunctionMemberAccess]
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()
@@ -1226,7 +1226,7 @@ def test_overlay_component(
         assert app.overlay_component is None
     elif isinstance(exp_page_child, OverlayFragment):
         assert app.overlay_component is not None
-        generated_component = app._generate_component(app.overlay_component)  # type: ignore
+        generated_component = app._generate_component(app.overlay_component)
         assert isinstance(generated_component, OverlayFragment)
         assert isinstance(
             generated_component.children[0],
@@ -1235,7 +1235,7 @@ def test_overlay_component(
     else:
         assert app.overlay_component is not None
         assert isinstance(
-            app._generate_component(app.overlay_component),  # type: ignore
+            app._generate_component(app.overlay_component),
             exp_page_child,
         )
 
@@ -1248,7 +1248,7 @@ def test_overlay_component(
     if exp_page_child is not None:
         assert len(page.children) == 3
         children_types = (type(child) for child in page.children)
-        assert exp_page_child in children_types
+        assert exp_page_child in children_types  # pyright: ignore [reportOperatorIssue]
     else:
         assert len(page.children) == 2
 
@@ -1315,19 +1315,19 @@ def test_app_wrap_priority(compilable_app: tuple[App, Path]):
     class Fragment1(Component):
         tag = "Fragment1"
 
-        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:  # pyright: ignore [reportIncompatibleMethodOverride]
             return {(99, "Box"): rx.box()}
 
     class Fragment2(Component):
         tag = "Fragment2"
 
-        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:  # pyright: ignore [reportIncompatibleMethodOverride]
             return {(50, "Text"): rx.text()}
 
     class Fragment3(Component):
         tag = "Fragment3"
 
-        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:  # pyright: ignore [reportIncompatibleMethodOverride]
             return {(10, "Fragment2"): Fragment2.create()}
 
     def page():
@@ -1448,11 +1448,11 @@ def test_generate_component():
             "Bar",
         )
 
-    comp = App._generate_component(index)  # type: ignore
+    comp = App._generate_component(index)
     assert isinstance(comp, Component)
 
     with pytest.raises(exceptions.MatchTypeError):
-        App._generate_component(index_mismatch)  # type: ignore
+        App._generate_component(index_mismatch)  # pyright: ignore [reportArgumentType]
 
 
 def test_add_page_component_returning_tuple():
@@ -1467,8 +1467,8 @@ def test_add_page_component_returning_tuple():
     def page2():
         return (rx.text("third"),)
 
-    app.add_page(index)  # type: ignore
-    app.add_page(page2)  # type: ignore
+    app.add_page(index)  # pyright: ignore [reportArgumentType]
+    app.add_page(page2)  # pyright: ignore [reportArgumentType]
 
     app._compile_page("index")
     app._compile_page("page2")
@@ -1477,17 +1477,17 @@ def test_add_page_component_returning_tuple():
     assert isinstance(fragment_wrapper, Fragment)
     first_text = fragment_wrapper.children[0]
     assert isinstance(first_text, Text)
-    assert str(first_text.children[0].contents) == '"first"'  # type: ignore
+    assert str(first_text.children[0].contents) == '"first"'  # pyright: ignore [reportAttributeAccessIssue]
     second_text = fragment_wrapper.children[1]
     assert isinstance(second_text, Text)
-    assert str(second_text.children[0].contents) == '"second"'  # type: ignore
+    assert str(second_text.children[0].contents) == '"second"'  # pyright: ignore [reportAttributeAccessIssue]
 
     # Test page with trailing comma.
     page2_fragment_wrapper = app._pages["page2"].children[0]
     assert isinstance(page2_fragment_wrapper, Fragment)
     third_text = page2_fragment_wrapper.children[0]
     assert isinstance(third_text, Text)
-    assert str(third_text.children[0].contents) == '"third"'  # type: ignore
+    assert str(third_text.children[0].contents) == '"third"'  # pyright: ignore [reportAttributeAccessIssue]
 
 
 @pytest.mark.parametrize("export", (True, False))
@@ -1525,7 +1525,7 @@ def test_app_with_transpile_packages(compilable_app: tuple[App, Path], export: b
 
     next_config = (web_dir / "next.config.js").read_text()
     transpile_packages_match = re.search(r"transpilePackages: (\[.*?\])", next_config)
-    transpile_packages_json = transpile_packages_match.group(1)  # type: ignore
+    transpile_packages_json = transpile_packages_match.group(1)  # pyright: ignore [reportOptionalMemberAccess]
     transpile_packages = sorted(json.loads(transpile_packages_json))
 
     assert transpile_packages == [

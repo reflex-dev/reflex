@@ -12,7 +12,9 @@ from reflex.vars.base import Var
 try:
     from pydantic.v1.fields import ModelField
 except ModuleNotFoundError:
-    from pydantic.fields import ModelField  # type: ignore
+    from pydantic.fields import (
+        ModelField,  # pyright: ignore [reportAttributeAccessIssue]
+    )
 
 from reflex import constants
 from reflex.components.base import (
@@ -115,7 +117,7 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
         default, rest = compile_import_statement(fields)
 
         # prevent lib from being rendered on the page if all imports are non rendered kind
-        if not any(f.render for f in fields):  # type: ignore
+        if not any(f.render for f in fields):
             continue
 
         if not lib:

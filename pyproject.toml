@@ -55,7 +55,7 @@ typing_extensions = ">=4.6.0"
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.1.2,<9.0"
 pytest-mock = ">=3.10.0,<4.0"
-pyright = ">=1.1.229,<1.1.335"
+pyright = ">=1.1.392, <1.2"
 darglint = ">=1.8.1,<2.0"
 dill = ">=0.3.8"
 toml = ">=0.10.2,<1.0"
@@ -85,7 +85,7 @@ build-backend = "poetry.core.masonry.api"
 target-version = "py39"
 output-format = "concise"
 lint.isort.split-on-trailing-comma = false
-lint.select = ["B", "C4", "D", "E", "ERA", "F", "FURB", "I", "N", "PERF", "PTH", "RUF", "SIM", "T", "TRY", "W"]
+lint.select = ["B", "C4", "D", "E", "ERA", "F", "FURB", "I", "N", "PERF", "PGH", "PTH", "RUF", "SIM", "T", "TRY", "W"]
 lint.ignore = ["B008", "D205", "E501", "F403", "SIM115", "RUF006", "RUF012", "TRY0"]
 lint.pydocstyle.convention = "google"
 
@@ -94,7 +94,7 @@ lint.pydocstyle.convention = "google"
 "tests/*.py" = ["D100", "D103", "D104", "B018", "PERF", "T", "N"]
 "benchmarks/*.py" = ["D100", "D103", "D104", "B018", "PERF", "T", "N"]
 "reflex/.templates/*.py" = ["D100", "D103", "D104"]
-"*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N"]
+"*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]
 "pyi_generator.py" = ["N802"]
 "reflex/constants/*.py" = ["N"]
 "*/blank.py" = ["I001"]
