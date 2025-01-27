@@ -11,6 +11,7 @@ from .base import NextComponent
 DEFAULT_W_H = "100%"
 
 
+# implementing image call back technique here
 class Image(NextComponent):
     """Display an image."""
 
