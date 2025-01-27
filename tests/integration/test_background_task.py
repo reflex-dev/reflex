@@ -288,7 +288,7 @@ def test_background_task(
     assert background_task._poll_for(lambda: counter.text == "620", timeout=40)
     # all tasks should have exited and cleaned up
     assert background_task._poll_for(
-        lambda: not background_task.app_instance._background_tasks
+        lambda: not background_task.app_instance._background_tasks  # pyright: ignore [reportOptionalMemberAccess]
     )
 
 

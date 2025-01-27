@@ -238,11 +238,11 @@ class Match(MemoizationLeaf):
                 match_cases=match_cases,
                 default=default,  # pyright: ignore [reportArgumentType]
             ),
-            _var_type=default._var_type,  # pyright: ignore [reportAttributeAccessIssue]
+            _var_type=default._var_type,  # pyright: ignore [reportAttributeAccessIssue,reportOptionalMemberAccess]
             _var_data=VarData.merge(
                 match_cond_var._get_all_var_data(),
                 *[el._get_all_var_data() for case in match_cases for el in case],
-                default._get_all_var_data(),  # pyright: ignore [reportAttributeAccessIssue]
+                default._get_all_var_data(),  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
             ),
         )
 

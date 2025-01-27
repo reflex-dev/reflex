@@ -72,8 +72,8 @@ class Cond(MemoizationLeaf):
     def _render(self) -> Tag:
         return CondTag(
             cond=self.cond,
-            true_value=self.comp1.render(),
-            false_value=self.comp2.render(),
+            true_value=self.comp1.render(),  # pyright: ignore [reportOptionalMemberAccess]
+            false_value=self.comp2.render(),  # pyright: ignore [reportOptionalMemberAccess]
         )
 
     def render(self) -> Dict:

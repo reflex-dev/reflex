@@ -116,7 +116,7 @@ class ConnectionToaster(Toaster):
                 _var_data=VarData(
                     imports={
                         "react": ["useEffect", "useState"],
-                        **dict(target_url._get_all_var_data().imports),  # pyright: ignore [reportArgumentType]
+                        **dict(target_url._get_all_var_data().imports),  # pyright: ignore [reportArgumentType, reportOptionalMemberAccess]
                     }
                 ),
             ).call(

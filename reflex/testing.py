@@ -294,11 +294,15 @@ class AppHarness:
                 if p not in before_decorated_pages
             ]
         self.app_instance = self.app_module.app
-        if isinstance(self.app_instance._state_manager, StateManagerRedis):
+        if self.app_instance and isinstance(
+            self.app_instance._state_manager, StateManagerRedis
+        ):
             # Create our own redis connection for testing.
             self.state_manager = StateManagerRedis.create(self.app_instance._state)  # pyright: ignore [reportArgumentType]
         else:
-            self.state_manager = self.app_instance._state_manager
+            self.state_manager = (
+                self.app_instance._state_manager if self.app_instance else None
+            )
 
     def _reload_state_module(self):
         """Reload the rx.State module to avoid conflict when reloading."""

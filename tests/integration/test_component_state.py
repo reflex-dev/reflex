@@ -89,7 +89,7 @@ def ComponentStateApp():
             mc_d,
             rx.button(
                 "Inc A",
-                on_click=mc_a.State.increment,  # pyright: ignore [reportAttributeAccessIssue]
+                on_click=mc_a.State.increment,  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
                 id="inc-a",
             ),
             rx.text(
