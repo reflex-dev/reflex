@@ -296,8 +296,8 @@ def run_granian_backend(host, port, loglevel: LogLevel):
     console.debug("Using Granian for backend")
     try:
         from granian import Granian  # pyright: ignore [reportMissingImports]
-        from granian.constants import (
-            Interfaces,  # pyright: ignore [reportMissingImports]
+        from granian.constants import (  # pyright: ignore [reportMissingImports]
+            Interfaces,
         )
         from granian.log import LogLevels  # pyright: ignore [reportMissingImports]
 
@@ -415,8 +415,8 @@ def run_granian_backend_prod(host, port, loglevel):
     from reflex.utils import processes
 
     try:
-        from granian.constants import (
-            Interfaces,  # pyright: ignore [reportMissingImports]
+        from granian.constants import (  # pyright: ignore [reportMissingImports]
+            Interfaces,
         )
 
         command = [
