@@ -9,7 +9,7 @@ import shutil
 from pathlib import Path
 
 from reflex import constants
-from reflex.config import environment
+from reflex.config import environment, get_config
 
 # Shorthand for join.
 join = os.linesep.join
@@ -118,7 +118,7 @@ def ln(src: str | Path, dest: str | Path, overwrite: bool = False) -> bool:
     return True
 
 
-def which(program: str | Path) -> str | Path | None:
+def which(program: str | Path) -> Path | None:
     """Find the path to an executable.
 
     Args:
@@ -127,7 +127,8 @@ def which(program: str | Path) -> str | Path | None:
     Returns:
         The path to the executable.
     """
-    return shutil.which(str(program))
+    which_result = shutil.which(program)
+    return Path(which_result) if which_result else None
 
 
 def use_system_node() -> bool:
@@ -156,12 +157,12 @@ def get_node_bin_path() -> Path | None:
     """
     bin_path = Path(constants.Node.BIN_PATH)
     if not bin_path.exists():
-        str_path = which("node")
-        return Path(str_path).parent.resolve() if str_path else None
-    return bin_path.resolve()
+        path = which("node")
+        return path.parent.absolute() if path else None
+    return bin_path.absolute()
 
 
-def get_node_path() -> str | None:
+def get_node_path() -> Path | None:
     """Get the node binary path.
 
     Returns:
@@ -169,9 +170,8 @@ def get_node_path() -> str | None:
     """
     node_path = Path(constants.Node.PATH)
     if use_system_node() or not node_path.exists():
-        system_node_path = which("node")
-        return str(system_node_path) if system_node_path else None
-    return str(node_path)
+        node_path = which("node")
+    return node_path
 
 
 def get_npm_path() -> Path | None:
@@ -182,9 +182,20 @@ def get_npm_path() -> Path | None:
     """
     npm_path = Path(constants.Node.NPM_PATH)
     if use_system_node() or not npm_path.exists():
-        system_npm_path = which("npm")
-        npm_path = Path(system_npm_path) if system_npm_path else None
+        npm_path = which("npm")
     return npm_path.absolute() if npm_path else None
+
+
+def get_bun_path() -> Path | None:
+    """Get bun binary path.
+
+    Returns:
+        The path to the bun binary file.
+    """
+    bun_path = get_config().bun_path
+    if use_system_bun() or not bun_path.exists():
+        bun_path = which("bun")
+    return bun_path.absolute() if bun_path else None
 
 
 def update_json_file(file_path: str | Path, update_dict: dict[str, int | str]):
@@ -195,6 +206,9 @@ def update_json_file(file_path: str | Path, update_dict: dict[str, int | str]):
         update_dict: object to update json.
     """
     fp = Path(file_path)
+
+    # Create the parent directory if it doesn't exist.
+    fp.parent.mkdir(parents=True, exist_ok=True)
 
     # Create the file if it doesn't exist.
     fp.touch(exist_ok=True)

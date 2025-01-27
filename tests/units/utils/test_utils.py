@@ -122,13 +122,13 @@ def test_validate_invalid_bun_path(mocker):
     Args:
         mocker: Pytest mocker object.
     """
-    mock = mocker.Mock()
-    mocker.patch.object(mock, "bun_path", return_value="/mock/path")
-    mocker.patch("reflex.utils.prerequisites.get_config", mock)
+    mock_path = mocker.Mock()
+    mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
     mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=None)
 
     with pytest.raises(typer.Exit):
         prerequisites.validate_bun()
+    mock_path.samefile.assert_called_once()
 
 
 def test_validate_bun_path_incompatible_version(mocker):
@@ -137,9 +137,8 @@ def test_validate_bun_path_incompatible_version(mocker):
     Args:
         mocker: Pytest mocker object.
     """
-    mock = mocker.Mock()
-    mocker.patch.object(mock, "bun_path", return_value="/mock/path")
-    mocker.patch("reflex.utils.prerequisites.get_config", mock)
+    mock_path = mocker.Mock()
+    mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
     mocker.patch(
         "reflex.utils.prerequisites.get_bun_version",
         return_value=version.parse("0.6.5"),

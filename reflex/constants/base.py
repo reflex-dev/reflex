@@ -52,7 +52,7 @@ class Dirs(SimpleNamespace):
     # The name of the postcss config file.
     POSTCSS_JS = "postcss.config.js"
     # The name of the states directory.
-    STATES = "states"
+    STATES = ".states"
 
 
 class Reflex(SimpleNamespace):
