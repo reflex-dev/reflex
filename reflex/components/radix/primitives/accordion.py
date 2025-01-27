@@ -197,7 +197,7 @@ class AccordionItem(AccordionComponent):
     # The header of the accordion item.
     header: Var[Union[Component, str]]
     # The content of the accordion item.
-    content: Var[Union[Component, str]] = Var.create(None)
+    content: Var[Union[Component, str]] = Var.create("")
 
     _valid_children: List[str] = [
         "AccordionHeader",

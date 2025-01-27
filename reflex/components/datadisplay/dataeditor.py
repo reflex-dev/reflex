@@ -303,7 +303,7 @@ class DataEditor(NoSSRComponent):
 
     # Fired when editing is finished.
     on_finished_editing: EventHandler[
-        passthrough_event_spec(Union[GridCell, None], tuple[int, int])
+        passthrough_event_spec(Union[GridCell, None], tuple[int, int])  # pyright: ignore[reportArgumentType]
     ]
 
     # Fired when a row is appended.

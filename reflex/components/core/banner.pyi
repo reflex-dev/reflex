@@ -5,6 +5,7 @@
 # ------------------------------------------------------
 from typing import Any, Dict, Literal, Optional, Union, overload
 
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.el.elements.typography import Div
 from reflex.components.lucide.icon import Icon
@@ -137,7 +138,7 @@ class ConnectionToaster(Toaster):
         """
         ...
 
-class ConnectionBanner(Component):
+class ConnectionBanner(Fragment):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -176,7 +177,7 @@ class ConnectionBanner(Component):
         """
         ...
 
-class ConnectionModal(Component):
+class ConnectionModal(Fragment):
     @overload
     @classmethod
     def create(  # type: ignore

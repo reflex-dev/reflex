@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Literal, Optional, Union, overload
 
 from reflex.components.component import BaseComponent
 from reflex.components.core.breakpoints import Breakpoints
-from reflex.components.core.cond import Cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.switch import Switch
 from reflex.event import BASE_STATE, EventType
@@ -19,48 +18,10 @@ from .components.icon_button import IconButton
 DEFAULT_LIGHT_ICON: Icon
 DEFAULT_DARK_ICON: Icon
 
-class ColorModeIcon(Cond):
-    @overload
-    @classmethod
-    def create(  # type: ignore
-        cls,
-        *children,
-        cond: Optional[Union[Any, Var[Any]]] = None,
-        comp1: Optional[BaseComponent] = None,
-        comp2: Optional[BaseComponent] = None,
-        style: Optional[Style] = None,
-        key: Optional[Any] = None,
-        id: Optional[Any] = None,
-        class_name: Optional[Any] = None,
-        autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
-        on_blur: Optional[EventType[[], BASE_STATE]] = None,
-        on_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
-        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_focus: Optional[EventType[[], BASE_STATE]] = None,
-        on_mount: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
-        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
-        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
-        **props,
-    ) -> "ColorModeIcon":
-        """Create an icon component based on color_mode.
-
-        Args:
-            light_component: the component to display when color mode is default
-            dark_component: the component to display when color mode is dark (non-default)
-
-        Returns:
-            The conditionally rendered component
-        """
-        ...
+def color_mode_icon(
+    light_component: BaseComponent | None = None,
+    dark_component: BaseComponent | None = None,
+): ...
 
 LiteralPosition = Literal["top-left", "top-right", "bottom-left", "bottom-right"]
 position_values: List[str]
@@ -442,7 +403,7 @@ class ColorModeSwitch(Switch):
         ...
 
 class ColorModeNamespace(Var):
-    icon = staticmethod(ColorModeIcon.create)
+    icon = staticmethod(color_mode_icon)
     button = staticmethod(ColorModeIconButton.create)
     switch = staticmethod(ColorModeSwitch.create)
 

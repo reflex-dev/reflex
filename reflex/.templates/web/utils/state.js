@@ -301,10 +301,7 @@ export const applyEvent = async (event, socket) => {
 
   // Send the event to the server.
   if (socket) {
-    socket.emit(
-      "event",
-      event,
-    );
+    socket.emit("event", event);
     return true;
   }
 
@@ -497,7 +494,7 @@ export const uploadFiles = async (
     return false;
   }
 
-  const upload_ref_name = `__upload_controllers_${upload_id}`
+  const upload_ref_name = `__upload_controllers_${upload_id}`;
 
   if (refs[upload_ref_name]) {
     console.log("Upload already in progress for ", upload_id);
@@ -904,6 +901,45 @@ export const isTrue = (val) => {
   if (Array.isArray(val)) return val.length > 0;
   if (val === Object(val)) return Object.keys(val).length > 0;
   return Boolean(val);
+};
+
+/**
+ * Returns a copy of a section of an array.
+ * @param {Array | string} arrayLike The array to slice.
+ * @param {[number, number, number]} slice The slice to apply.
+ * @returns The sliced array.
+ */
+export const atSlice = (arrayLike, slice) => {
+  const array = [...arrayLike];
+  const [startSlice, endSlice, stepSlice] = slice;
+  if (stepSlice ?? null === null) {
+    return array.slice(startSlice ?? undefined, endSlice ?? undefined);
+  }
+  const step = stepSlice ?? 1;
+  if (step > 0) {
+    return array
+      .slice(startSlice ?? undefined, endSlice ?? undefined)
+      .filter((_, i) => i % step === 0);
+  }
+  const actualStart = (endSlice ?? null) === null ? 0 : endSlice + 1;
+  const actualEnd =
+    (startSlice ?? null) === null ? array.length : startSlice + 1;
+  return array
+    .slice(actualStart, actualEnd)
+    .reverse()
+    .filter((_, i) => i % step === 0);
+};
+
+/**
+ * Get the value at a slice or index.
+ * @param {Array | string} arrayLike The array to get the value from.
+ * @param {number | [number, number, number]} sliceOrIndex The slice or index to get the value at.
+ * @returns The value at the slice or index.
+ */
+export const atSliceOrIndex = (arrayLike, sliceOrIndex) => {
+  return Array.isArray(sliceOrIndex)
+    ? atSlice(arrayLike, sliceOrIndex)
+    : arrayLike.at(sliceOrIndex);
 };
 
 /**

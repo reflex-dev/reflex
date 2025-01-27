@@ -2,7 +2,7 @@ from typing import Dict, List
 
 import pytest
 
-from reflex.components.tags import CondTag, Tag, tagless
+from reflex.components.tags import Tag, tagless
 from reflex.vars.base import LiteralVar, Var
 
 
@@ -103,29 +103,6 @@ def test_format_tag(tag: Tag, expected: Dict):
     assert tag_dict["contents"] == expected["contents"]
     for prop, prop_value in tag_dict["props"].items():
         assert prop_value.equals(LiteralVar.create(expected["props"][prop]))
-
-
-def test_format_cond_tag():
-    """Test that the cond tag dict is correct."""
-    tag = CondTag(
-        true_value=dict(Tag(name="h1", contents="True content")),
-        false_value=dict(Tag(name="h2", contents="False content")),
-        cond=Var(_js_expr="logged_in", _var_type=bool),
-    )
-    tag_dict = dict(tag)
-    cond, true_value, false_value = (
-        tag_dict["cond"],
-        tag_dict["true_value"],
-        tag_dict["false_value"],
-    )
-    assert cond._js_expr == "logged_in"
-    assert cond._var_type is bool
-
-    assert true_value["name"] == "h1"
-    assert true_value["contents"] == "True content"
-
-    assert false_value["name"] == "h2"
-    assert false_value["contents"] == "False content"
 
 
 def test_tagless_string_representation():

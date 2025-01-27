@@ -11,6 +11,7 @@ from typing import (
     List,
     Mapping,
     NoReturn,
+    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -23,15 +24,23 @@ from typing_extensions import is_typeddict
 
 from reflex.utils import types
 from reflex.utils.exceptions import VarAttributeError
-from reflex.utils.types import GenericType, get_attribute_access_type, get_origin
+from reflex.utils.types import (
+    GenericType,
+    get_attribute_access_type,
+    get_origin,
+    unionize,
+)
 
 from .base import (
     CachedVarOperation,
     LiteralVar,
+    ReflexCallable,
     Var,
     VarData,
     cached_property_no_lock,
     figure_out_type,
+    nary_type_computer,
+    unary_type_computer,
     var_operation,
     var_operation_return,
 )
@@ -65,9 +74,9 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
     ) -> Type[VALUE_TYPE]: ...
 
     @overload
-    def _value_type(self) -> Type: ...
+    def _value_type(self) -> GenericType: ...
 
-    def _value_type(self) -> Type:
+    def _value_type(self) -> GenericType:
         """Get the type of the values of the object.
 
         Returns:
@@ -79,18 +88,18 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         args = get_args(self._var_type) if issubclass(fixed_type, Mapping) else ()
         return args[1] if args else Any
 
-    def keys(self) -> ArrayVar[List[str]]:
+    def keys(self) -> ArrayVar[Sequence[str]]:
         """Get the keys of the object.
 
         Returns:
             The keys of the object.
         """
-        return object_keys_operation(self)
+        return object_keys_operation(self).guess_type()
 
     @overload
     def values(
         self: ObjectVar[Mapping[Any, VALUE_TYPE]],
-    ) -> ArrayVar[List[VALUE_TYPE]]: ...
+    ) -> ArrayVar[Sequence[VALUE_TYPE]]: ...
 
     @overload
     def values(self) -> ArrayVar: ...
@@ -101,12 +110,12 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         Returns:
             The values of the object.
         """
-        return object_values_operation(self)
+        return object_values_operation(self).guess_type()
 
     @overload
     def entries(
         self: ObjectVar[Mapping[Any, VALUE_TYPE]],
-    ) -> ArrayVar[List[Tuple[str, VALUE_TYPE]]]: ...
+    ) -> ArrayVar[Sequence[Tuple[str, VALUE_TYPE]]]: ...
 
     @overload
     def entries(self) -> ArrayVar: ...
@@ -117,7 +126,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         Returns:
             The entries of the object.
         """
-        return object_entries_operation(self)
+        return object_entries_operation(self).guess_type()
 
     items = entries
 
@@ -134,7 +143,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 
     # NoReturn is used here to catch when key value is Any
     @overload
-    def __getitem__(
+    def __getitem__(  # pyright: ignore [reportOverlappingOverload]
         self: ObjectVar[Mapping[Any, NoReturn]],
         key: Var | Any,
     ) -> Var: ...
@@ -163,21 +172,16 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 
     @overload
     def __getitem__(
-        self: ObjectVar[Mapping[Any, list[ARRAY_INNER_TYPE]]],
+        self: ObjectVar[Mapping[Any, Sequence[ARRAY_INNER_TYPE]]]
+        | ObjectVar[Mapping[Any, List[ARRAY_INNER_TYPE]]],
         key: Var | Any,
-    ) -> ArrayVar[list[ARRAY_INNER_TYPE]]: ...
+    ) -> ArrayVar[Sequence[ARRAY_INNER_TYPE]]: ...
 
     @overload
     def __getitem__(
         self: ObjectVar[Mapping[Any, set[ARRAY_INNER_TYPE]]],
         key: Var | Any,
     ) -> ArrayVar[set[ARRAY_INNER_TYPE]]: ...
-
-    @overload
-    def __getitem__(
-        self: ObjectVar[Mapping[Any, tuple[ARRAY_INNER_TYPE, ...]]],
-        key: Var | Any,
-    ) -> ArrayVar[tuple[ARRAY_INNER_TYPE, ...]]: ...
 
     @overload
     def __getitem__(
@@ -202,7 +206,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 
     # NoReturn is used here to catch when key value is Any
     @overload
-    def __getattr__(
+    def __getattr__(  # pyright: ignore [reportOverlappingOverload]
         self: ObjectVar[Mapping[Any, NoReturn]],
         name: str,
     ) -> Var: ...
@@ -225,21 +229,15 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 
     @overload
     def __getattr__(
-        self: ObjectVar[Mapping[Any, list[ARRAY_INNER_TYPE]]],
+        self: ObjectVar[Mapping[Any, Sequence[ARRAY_INNER_TYPE]]],
         name: str,
-    ) -> ArrayVar[list[ARRAY_INNER_TYPE]]: ...
+    ) -> ArrayVar[Sequence[ARRAY_INNER_TYPE]]: ...
 
     @overload
     def __getattr__(
         self: ObjectVar[Mapping[Any, set[ARRAY_INNER_TYPE]]],
         name: str,
     ) -> ArrayVar[set[ARRAY_INNER_TYPE]]: ...
-
-    @overload
-    def __getattr__(
-        self: ObjectVar[Mapping[Any, tuple[ARRAY_INNER_TYPE, ...]]],
-        name: str,
-    ) -> ArrayVar[tuple[ARRAY_INNER_TYPE, ...]]: ...
 
     @overload
     def __getattr__(
@@ -299,7 +297,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         Returns:
             The result of the check.
         """
-        return object_has_own_property_operation(self, key)
+        return object_has_own_property_operation(self, key).guess_type()
 
 
 @dataclasses.dataclass(
@@ -314,7 +312,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
         default_factory=dict
     )
 
-    def _key_type(self) -> Type:
+    def _key_type(self) -> GenericType:
         """Get the type of the keys of the object.
 
         Returns:
@@ -323,7 +321,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
         args_list = typing.get_args(self._var_type)
         return args_list[0] if args_list else Any
 
-    def _value_type(self) -> Type:
+    def _value_type(self) -> GenericType:
         """Get the type of the values of the object.
 
         Returns:
@@ -417,7 +415,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
 
 
 @var_operation
-def object_keys_operation(value: ObjectVar):
+def object_keys_operation(value: Var):
     """Get the keys of an object.
 
     Args:
@@ -429,11 +427,12 @@ def object_keys_operation(value: ObjectVar):
     return var_operation_return(
         js_expression=f"Object.keys({value})",
         var_type=List[str],
+        _raw_js_function="Object.keys",
     )
 
 
 @var_operation
-def object_values_operation(value: ObjectVar):
+def object_values_operation(value: Var):
     """Get the values of an object.
 
     Args:
@@ -444,12 +443,17 @@ def object_values_operation(value: ObjectVar):
     """
     return var_operation_return(
         js_expression=f"Object.values({value})",
-        var_type=List[value._value_type()],
+        type_computer=unary_type_computer(
+            ReflexCallable[[Any], List[Any]],
+            lambda x: List[x.to(ObjectVar)._value_type()],
+        ),
+        var_type=List[Any],
+        _raw_js_function="Object.values",
     )
 
 
 @var_operation
-def object_entries_operation(value: ObjectVar):
+def object_entries_operation(value: Var):
     """Get the entries of an object.
 
     Args:
@@ -458,14 +462,20 @@ def object_entries_operation(value: ObjectVar):
     Returns:
         The entries of the object.
     """
+    value = value.to(ObjectVar)
     return var_operation_return(
         js_expression=f"Object.entries({value})",
-        var_type=List[Tuple[str, value._value_type()]],
+        type_computer=unary_type_computer(
+            ReflexCallable[[Any], List[Tuple[str, Any]]],
+            lambda x: List[Tuple[str, x.to(ObjectVar)._value_type()]],
+        ),
+        var_type=List[Tuple[str, Any]],
+        _raw_js_function="Object.entries",
     )
 
 
 @var_operation
-def object_merge_operation(lhs: ObjectVar, rhs: ObjectVar):
+def object_merge_operation(lhs: Var, rhs: Var):
     """Merge two objects.
 
     Args:
@@ -477,10 +487,15 @@ def object_merge_operation(lhs: ObjectVar, rhs: ObjectVar):
     """
     return var_operation_return(
         js_expression=f"({{...{lhs}, ...{rhs}}})",
-        var_type=Mapping[
-            Union[lhs._key_type(), rhs._key_type()],
-            Union[lhs._value_type(), rhs._value_type()],
-        ],
+        type_computer=nary_type_computer(
+            ReflexCallable[[Any, Any], Mapping[Any, Any]],
+            ReflexCallable[[Any], Mapping[Any, Any]],
+            computer=lambda args: Mapping[
+                unionize(*[arg.to(ObjectVar)._key_type() for arg in args]),
+                unionize(*[arg.to(ObjectVar)._value_type() for arg in args]),
+            ],
+        ),
+        var_type=Mapping[Any, Any],
     )
 
 
@@ -537,7 +552,7 @@ class ObjectItemOperation(CachedVarOperation, Var):
 
 
 @var_operation
-def object_has_own_property_operation(object: ObjectVar, key: Var):
+def object_has_own_property_operation(object: Var, key: Var):
     """Check if an object has a key.
 
     Args:

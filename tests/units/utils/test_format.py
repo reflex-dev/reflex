@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import json
-from typing import Any, List
+from typing import Any
 
 import plotly.graph_objects as go
 import pytest
@@ -96,60 +96,6 @@ def test_wrap(text: str, open: str, expected: str, check_first: bool, num: int):
         num: The number of times to wrap the text.
     """
     assert format.wrap(text, open, check_first=check_first, num=num) == expected
-
-
-@pytest.mark.parametrize(
-    "string,expected_output",
-    [
-        ("This is a random string", "This is a random string"),
-        (
-            "This is a random string with `backticks`",
-            "This is a random string with \\`backticks\\`",
-        ),
-        (
-            "This is a random string with `backticks`",
-            "This is a random string with \\`backticks\\`",
-        ),
-        (
-            "This is a string with ${someValue[`string interpolation`]} unescaped",
-            "This is a string with ${someValue[`string interpolation`]} unescaped",
-        ),
-        (
-            "This is a string with `backticks` and ${someValue[`string interpolation`]} unescaped",
-            "This is a string with \\`backticks\\` and ${someValue[`string interpolation`]} unescaped",
-        ),
-        (
-            "This is a string with `backticks`, ${someValue[`the first string interpolation`]} and ${someValue[`the second`]}",
-            "This is a string with \\`backticks\\`, ${someValue[`the first string interpolation`]} and ${someValue[`the second`]}",
-        ),
-    ],
-)
-def test_escape_js_string(string, expected_output):
-    assert format._escape_js_string(string) == expected_output
-
-
-@pytest.mark.parametrize(
-    "text,indent_level,expected",
-    [
-        ("", 2, ""),
-        ("hello", 2, "hello"),
-        ("hello\nworld", 2, "  hello\n  world\n"),
-        ("hello\nworld", 4, "    hello\n    world\n"),
-        ("  hello\n  world", 2, "    hello\n    world\n"),
-    ],
-)
-def test_indent(text: str, indent_level: int, expected: str, windows_platform: bool):
-    """Test indenting a string.
-
-    Args:
-        text: The text to indent.
-        indent_level: The number of spaces to indent by.
-        expected: The expected output string.
-        windows_platform: Whether the system is windows.
-    """
-    assert format.indent(text, indent_level) == (
-        expected.replace("\n", "\r\n") if windows_platform else expected
-    )
 
 
 @pytest.mark.parametrize(
@@ -255,25 +201,6 @@ def test_to_kebab_case(input: str, output: str):
 @pytest.mark.parametrize(
     "input,output",
     [
-        ("", "{``}"),
-        ("hello", "{`hello`}"),
-        ("hello world", "{`hello world`}"),
-        ("hello=`world`", "{`hello=\\`world\\``}"),
-    ],
-)
-def test_format_string(input: str, output: str):
-    """Test formatting the input as JS string literal.
-
-    Args:
-        input: the input string.
-        output: the output string.
-    """
-    assert format.format_string(input) == output
-
-
-@pytest.mark.parametrize(
-    "input,output",
-    [
         (LiteralVar.create(value="test"), '"test"'),
         (Var(_js_expr="test"), "test"),
     ],
@@ -308,45 +235,6 @@ def test_format_route(route: str, format_case: bool, expected: bool):
         expected: The expected formatted route.
     """
     assert format.format_route(route, format_case=format_case) == expected
-
-
-@pytest.mark.parametrize(
-    "condition, match_cases, default,expected",
-    [
-        (
-            "state__state.value",
-            [
-                [LiteralVar.create(1), LiteralVar.create("red")],
-                [LiteralVar.create(2), LiteralVar.create(3), LiteralVar.create("blue")],
-                [TestState.mapping, TestState.num1],
-                [
-                    LiteralVar.create(f"{TestState.map_key}-key"),
-                    LiteralVar.create("return-key"),
-                ],
-            ],
-            LiteralVar.create("yellow"),
-            '(() => { switch (JSON.stringify(state__state.value)) {case JSON.stringify(1):  return ("red");  break;case JSON.stringify(2): case JSON.stringify(3):  '
-            f'return ("blue");  break;case JSON.stringify({TestState.get_full_name()}.mapping):  return '
-            f'({TestState.get_full_name()}.num1);  break;case JSON.stringify(({TestState.get_full_name()}.map_key+"-key")):  return ("return-key");'
-            '  break;default:  return ("yellow");  break;};})()',
-        )
-    ],
-)
-def test_format_match(
-    condition: str,
-    match_cases: List[List[Var]],
-    default: Var,
-    expected: str,
-):
-    """Test formatting a match statement.
-
-    Args:
-        condition: The condition to match.
-        match_cases: List of match cases to be matched.
-        default: Catchall case for the match statement.
-        expected: The expected string output.
-    """
-    assert format.format_match(condition, match_cases, default) == expected
 
 
 @pytest.mark.parametrize(
