@@ -25,7 +25,7 @@ from reflex.vars.function import FunctionStringVar
 from reflex.vars.number import BooleanVar
 from reflex.vars.sequence import LiteralArrayVar
 
-connect_error_var_data: VarData = VarData(  # type: ignore
+connect_error_var_data: VarData = VarData(
     imports=Imports.EVENTS,
     hooks={Hooks.EVENTS: None},
 )
@@ -99,14 +99,14 @@ class ConnectionToaster(Toaster):
         """
         toast_id = "websocket-error"
         target_url = WebsocketTargetURL.create()
-        props = ToastProps(  # type: ignore
+        props = ToastProps(
             description=LiteralVar.create(
                 f"Check if server is reachable at {target_url}",
             ),
             close_button=True,
             duration=120000,
             id=toast_id,
-        )
+        )  # pyright: ignore [reportCallIssue]
 
         individual_hooks = [
             f"const toast_props = {LiteralVar.create(props)!s};",
@@ -116,7 +116,7 @@ class ConnectionToaster(Toaster):
                 _var_data=VarData(
                     imports={
                         "react": ["useEffect", "useState"],
-                        **dict(target_url._get_all_var_data().imports),  # type: ignore
+                        **dict(target_url._get_all_var_data().imports),  # pyright: ignore [reportArgumentType]
                     }
                 ),
             ).call(

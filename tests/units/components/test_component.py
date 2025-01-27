@@ -452,8 +452,8 @@ def test_add_style(component1, component2):
         component1: Style({"color": "white"}),
         component2: Style({"color": "black"}),
     }
-    c1 = component1()._add_style_recursive(style)  # type: ignore
-    c2 = component2()._add_style_recursive(style)  # type: ignore
+    c1 = component1()._add_style_recursive(style)
+    c2 = component2()._add_style_recursive(style)
     assert str(c1.style["color"]) == '"white"'
     assert str(c2.style["color"]) == '"black"'
 
@@ -469,8 +469,8 @@ def test_add_style_create(component1, component2):
         component1.create: Style({"color": "white"}),
         component2.create: Style({"color": "black"}),
     }
-    c1 = component1()._add_style_recursive(style)  # type: ignore
-    c2 = component2()._add_style_recursive(style)  # type: ignore
+    c1 = component1()._add_style_recursive(style)
+    c2 = component2()._add_style_recursive(style)
     assert str(c1.style["color"]) == '"white"'
     assert str(c2.style["color"]) == '"black"'
 
@@ -1363,17 +1363,17 @@ class EventState(rx.State):
             id="fstring-background_color",
         ),
         pytest.param(
-            rx.fragment(style={"background_color": TEST_VAR}),  # type: ignore
+            rx.fragment(style={"background_color": TEST_VAR}),  # pyright: ignore [reportArgumentType]
             [STYLE_VAR],
             id="direct-style-background_color",
         ),
         pytest.param(
-            rx.fragment(style={"background_color": f"foo{TEST_VAR}bar"}),  # type: ignore
+            rx.fragment(style={"background_color": f"foo{TEST_VAR}bar"}),  # pyright: ignore [reportArgumentType]
             [STYLE_VAR],
             id="fstring-style-background_color",
         ),
         pytest.param(
-            rx.fragment(on_click=EVENT_CHAIN_VAR),  # type: ignore
+            rx.fragment(on_click=EVENT_CHAIN_VAR),
             [EVENT_CHAIN_VAR],
             id="direct-event-chain",
         ),
@@ -1383,17 +1383,17 @@ class EventState(rx.State):
             id="direct-event-handler",
         ),
         pytest.param(
-            rx.fragment(on_click=EventState.handler2(TEST_VAR)),  # type: ignore
+            rx.fragment(on_click=EventState.handler2(TEST_VAR)),  # pyright: ignore [reportCallIssue]
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-arg",
         ),
         pytest.param(
-            rx.fragment(on_click=EventState.handler2(EventState.v)),  # type: ignore
+            rx.fragment(on_click=EventState.handler2(EventState.v)),  # pyright: ignore [reportCallIssue]
             [ARG_VAR, EventState.v],
             id="direct-event-handler-arg2",
         ),
         pytest.param(
-            rx.fragment(on_click=lambda: EventState.handler2(TEST_VAR)),  # type: ignore
+            rx.fragment(on_click=lambda: EventState.handler2(TEST_VAR)),  # pyright: ignore [reportCallIssue]
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-lambda",
         ),
@@ -1481,7 +1481,7 @@ def test_instantiate_all_components():
         comp_name
         for submodule_list in component_nested_list
         for comp_name in submodule_list
-    ]:  # type: ignore
+    ]:
         if component_name in untested_components:
             continue
         component = getattr(
@@ -1554,11 +1554,11 @@ def test_validate_valid_children():
     )
 
     valid_component1(
-        rx.cond(  # type: ignore
+        rx.cond(
             True,
             rx.fragment(valid_component2()),
             rx.fragment(
-                rx.foreach(LiteralVar.create([1, 2, 3]), lambda x: valid_component2(x))  # type: ignore
+                rx.foreach(LiteralVar.create([1, 2, 3]), lambda x: valid_component2(x))
             ),
         )
     )
@@ -1613,12 +1613,12 @@ def test_validate_valid_parents():
     )
 
     valid_component2(
-        rx.cond(  # type: ignore
+        rx.cond(
             True,
             rx.fragment(valid_component3()),
             rx.fragment(
                 rx.foreach(
-                    LiteralVar.create([1, 2, 3]),  # type: ignore
+                    LiteralVar.create([1, 2, 3]),
                     lambda x: valid_component2(valid_component3(x)),
                 )
             ),
@@ -1681,13 +1681,13 @@ def test_validate_invalid_children():
 
     with pytest.raises(ValueError):
         valid_component4(
-            rx.cond(  # type: ignore
+            rx.cond(
                 True,
                 rx.fragment(invalid_component()),
                 rx.fragment(
                     rx.foreach(
                         LiteralVar.create([1, 2, 3]), lambda x: invalid_component(x)
-                    )  # type: ignore
+                    )
                 ),
             )
         )
@@ -1868,7 +1868,7 @@ def test_invalid_event_trigger():
 )
 def test_component_add_imports(tags):
     class BaseComponent(Component):
-        def _get_imports(self) -> ImportDict:
+        def _get_imports(self) -> ImportDict:  # pyright: ignore [reportIncompatibleMethodOverride]
             return {}
 
     class Reference(Component):
@@ -1880,7 +1880,7 @@ def test_component_add_imports(tags):
             )
 
     class TestBase(Component):
-        def add_imports(
+        def add_imports(  # pyright: ignore [reportIncompatibleMethodOverride]
             self,
         ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
             return {"foo": "bar"}
@@ -1912,7 +1912,7 @@ def test_component_add_hooks():
         pass
 
     class GrandchildComponent1(ChildComponent1):
-        def add_hooks(self):
+        def add_hooks(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             return [
                 "const hook2 = 43",
                 "const hook3 = 44",
@@ -1925,11 +1925,11 @@ def test_component_add_hooks():
             ]
 
     class GrandchildComponent2(ChildComponent1):
-        def _get_hooks(self):
+        def _get_hooks(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             return "const hook5 = 46"
 
     class GreatGrandchildComponent2(GrandchildComponent2):
-        def add_hooks(self):
+        def add_hooks(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             return [
                 "const hook2 = 43",
                 "const hook6 = 47",
@@ -2004,7 +2004,7 @@ def test_component_add_custom_code():
             ]
 
     class GrandchildComponent2(ChildComponent1):
-        def _get_custom_code(self):
+        def _get_custom_code(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             return "const custom_code5 = 46"
 
     class GreatGrandchildComponent2(GrandchildComponent2):
@@ -2100,11 +2100,11 @@ def test_add_style_embedded_vars(test_state: BaseState):
         test_state: A test state.
     """
     v0 = LiteralVar.create("parent")._replace(
-        merge_var_data=VarData(hooks={"useParent": None}),  # type: ignore
+        merge_var_data=VarData(hooks={"useParent": None}),
     )
     v1 = rx.color("plum", 10)
     v2 = LiteralVar.create("text")._replace(
-        merge_var_data=VarData(hooks={"useText": None}),  # type: ignore
+        merge_var_data=VarData(hooks={"useText": None}),
     )
 
     class ParentComponent(Component):
@@ -2118,7 +2118,7 @@ def test_add_style_embedded_vars(test_state: BaseState):
     class StyledComponent(ParentComponent):
         tag = "StyledComponent"
 
-        def add_style(self):
+        def add_style(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             return {
                 "color": v1,
                 "fake": v2,

@@ -29,7 +29,7 @@ def test_match_components():
         rx.text("default value"),
     )
     match_comp = Match.create(MatchState.value, *match_case_tuples)
-    match_dict = match_comp.render()  # type: ignore
+    match_dict = match_comp.render()
     assert match_dict["name"] == "Fragment"
 
     [match_child] = match_dict["children"]
@@ -151,7 +151,7 @@ def test_match_on_component_without_default():
     )
 
     match_comp = Match.create(MatchState.value, *match_case_tuples)
-    default = match_comp.render()["children"][0]["default"]  # type: ignore
+    default = match_comp.render()["children"][0]["default"]
 
     assert isinstance(default, Fragment)
 

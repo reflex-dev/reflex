@@ -390,7 +390,7 @@ class EnvVar(Generic[T]):
             os.environ[self.name] = str(value)
 
 
-class env_var:  # type: ignore # noqa: N801
+class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
     """Descriptor for environment variables."""
 
     name: str
@@ -597,7 +597,7 @@ class Config(Base):
     See the [configuration](https://reflex.dev/docs/getting-started/configuration/) docs for more info.
     """
 
-    class Config:
+    class Config:  # pyright: ignore [reportIncompatibleVariableOverride]
         """Pydantic config for the config."""
 
         validate_assignment = True
@@ -763,7 +763,7 @@ class Config(Base):
         """
         if self.env_file:
             try:
-                from dotenv import load_dotenv  # type: ignore
+                from dotenv import load_dotenv
 
                 # load env file if exists
                 load_dotenv(self.env_file, override=True)

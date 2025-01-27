@@ -83,7 +83,7 @@ class ProgressIndicator(ProgressComponent):
             "&[data_state='loading']": {
                 "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms linear",
             },
-            "transform": f"translateX(calc(-100% + ({self.value} / {self.max} * 100%)))",  # type: ignore
+            "transform": f"translateX(calc(-100% + ({self.value} / {self.max} * 100%)))",
             "boxShadow": "inset 0 0 0 1px var(--gray-a5)",
         }
 

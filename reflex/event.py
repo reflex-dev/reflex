@@ -263,7 +263,7 @@ class EventSpec(EventActionsMixin):
     """
 
     # The event handler.
-    handler: EventHandler = dataclasses.field(default=None)  # type: ignore
+    handler: EventHandler = dataclasses.field(default=None)  # pyright: ignore [reportAssignmentType]
 
     # The handler on the client to process event.
     client_handler_name: str = dataclasses.field(default="")
@@ -589,7 +589,7 @@ def no_args_event_spec() -> Tuple[()]:
     Returns:
         An empty tuple.
     """
-    return ()  # type: ignore
+    return ()
 
 
 # These chains can be used for their side effects when no other events are desired.
@@ -617,9 +617,9 @@ class IdentityEventReturn(Generic[T], Protocol):
 
 
 @overload
-def passthrough_event_spec(
+def passthrough_event_spec(  # pyright: ignore [reportOverlappingOverload]
     event_type: Type[T], /
-) -> Callable[[Var[T]], Tuple[Var[T]]]: ...  # type: ignore
+) -> Callable[[Var[T]], Tuple[Var[T]]]: ...
 
 
 @overload
@@ -632,7 +632,7 @@ def passthrough_event_spec(
 def passthrough_event_spec(*event_types: Type[T]) -> IdentityEventReturn[T]: ...
 
 
-def passthrough_event_spec(*event_types: Type[T]) -> IdentityEventReturn[T]:  # type: ignore
+def passthrough_event_spec(*event_types: Type[T]) -> IdentityEventReturn[T]:  # pyright: ignore [reportInconsistentOverload]
     """A helper function that returns the input event as output.
 
     Args:
@@ -646,9 +646,9 @@ def passthrough_event_spec(*event_types: Type[T]) -> IdentityEventReturn[T]:  # 
         return values
 
     inner_type = tuple(Var[event_type] for event_type in event_types)
-    return_annotation = Tuple[inner_type]  # type: ignore
+    return_annotation = Tuple[inner_type]
 
-    inner.__signature__ = inspect.signature(inner).replace(  # type: ignore
+    inner.__signature__ = inspect.signature(inner).replace(  # pyright: ignore [reportFunctionMemberAccess]
         parameters=[
             inspect.Parameter(
                 f"ev_{i}",
@@ -730,7 +730,7 @@ class FileUpload:
                 # Call the lambda to get the event chain.
                 events = call_event_fn(
                     on_upload_progress, self.on_upload_progress_args_spec
-                )  # type: ignore
+                )
             else:
                 raise ValueError(f"{on_upload_progress} is not a valid event handler.")
             if isinstance(events, Var):
@@ -777,7 +777,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
         return None
 
     fn.__qualname__ = name
-    fn.__signature__ = sig
+    fn.__signature__ = sig  # pyright: ignore [reportFunctionMemberAccess]
     return EventSpec(
         handler=EventHandler(fn=fn, state_full_name=FRONTEND_EVENT_STATE),
         args=tuple(
@@ -1050,13 +1050,13 @@ def download(
 
             is_data_url = (data.js_type() == "string") & (
                 data.to(str).startswith("data:")
-            )  # type: ignore
+            )
 
             # If it's a data: URI, use it as is, otherwise convert the Var to JSON in a data: URI.
-            url = cond(  # type: ignore
+            url = cond(
                 is_data_url,
                 data.to(str),
-                "data:text/plain," + data.to_string(),  # type: ignore
+                "data:text/plain," + data.to_string(),
             )
         elif isinstance(data, bytes):
             # Caller provided bytes, so base64 encode it as a data: URI.
@@ -1230,7 +1230,7 @@ def call_event_handler(
 
     #noqa: DAR401
     """
-    event_spec_args = parse_args_spec(event_spec)  # type: ignore
+    event_spec_args = parse_args_spec(event_spec)
 
     if isinstance(event_callback, EventSpec):
         check_fn_match_arg_spec(
@@ -1340,7 +1340,7 @@ def call_event_handler(
     if delayed_exceptions:
         raise delayed_exceptions[0]
 
-    return event_callback(*event_spec_args)  # type: ignore
+    return event_callback(*event_spec_args)
 
 
 def unwrap_var_annotation(annotation: GenericType):
@@ -1574,7 +1574,7 @@ def fix_events(
         if not isinstance(e, EventSpec):
             raise ValueError(f"Unexpected event type, {type(e)}.")
         name = format.format_event_handler(e.handler)
-        payload = {k._js_expr: v._decode() for k, v in e.args}  # type: ignore
+        payload = {k._js_expr: v._decode() for k, v in e.args}
 
         # Filter router_data to reduce payload size
         event_router_data = {
@@ -1623,7 +1623,7 @@ class EventVar(ObjectVar, python_types=EventSpec):
 class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
     """A literal event var."""
 
-    _var_value: EventSpec = dataclasses.field(default=None)  # type: ignore
+    _var_value: EventSpec = dataclasses.field(default=None)  # pyright: ignore [reportAssignmentType]
 
     def __hash__(self) -> int:
         """Get the hash of the var.
@@ -1687,7 +1687,7 @@ class EventChainVar(BuilderFunctionVar, python_types=EventChain):
 class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainVar):
     """A literal event chain var."""
 
-    _var_value: EventChain = dataclasses.field(default=None)  # type: ignore
+    _var_value: EventChain = dataclasses.field(default=None)  # pyright: ignore [reportAssignmentType]
 
     def __hash__(self) -> int:
         """Get the hash of the var.
@@ -1717,7 +1717,7 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             if isinstance(value.args_spec, Sequence)
             else value.args_spec
         )
-        sig = inspect.signature(arg_spec)  # type: ignore
+        sig = inspect.signature(arg_spec)  # pyright: ignore [reportArgumentType]
         if sig.parameters:
             arg_def = tuple((f"_{p}" for p in sig.parameters))
             arg_def_expr = LiteralVar.create([Var(_js_expr=arg) for arg in arg_def])
@@ -1819,7 +1819,7 @@ class EventCallback(Generic[P, T]):
         value4: V4 | Var[V4],
     ) -> EventCallback[Q, T]: ...
 
-    def __call__(self, *values) -> EventCallback:  # type: ignore
+    def __call__(self, *values) -> EventCallback:  # pyright: ignore [reportInconsistentOverload]
         """Call the function with the values.
 
         Args:
@@ -1828,7 +1828,7 @@ class EventCallback(Generic[P, T]):
         Returns:
             The function with the values.
         """
-        return self.func(*values)  # type: ignore
+        return self.func(*values)  # pyright: ignore [reportCallIssue, reportReturnType]
 
     @overload
     def __get__(
@@ -1838,7 +1838,7 @@ class EventCallback(Generic[P, T]):
     @overload
     def __get__(self, instance, owner) -> Callable[P, T]: ...
 
-    def __get__(self, instance, owner) -> Callable:  # type: ignore
+    def __get__(self, instance, owner) -> Callable:
         """Get the function with the instance bound to it.
 
         Args:
@@ -1849,9 +1849,9 @@ class EventCallback(Generic[P, T]):
             The function with the instance bound to it
         """
         if instance is None:
-            return self.func  # type: ignore
+            return self.func
 
-        return partial(self.func, instance)  # type: ignore
+        return partial(self.func, instance)
 
 
 G = ParamSpec("G")
@@ -1902,7 +1902,7 @@ class EventNamespace(types.SimpleNamespace):
     @staticmethod
     def __call__(
         func: None = None, *, background: bool | None = None
-    ) -> Callable[[Callable[Concatenate[BASE_STATE, P], T]], EventCallback[P, T]]: ...
+    ) -> Callable[[Callable[Concatenate[BASE_STATE, P], T]], EventCallback[P, T]]: ...  # pyright: ignore [reportInvalidTypeVarUse]
 
     @overload
     @staticmethod
@@ -1945,7 +1945,7 @@ class EventNamespace(types.SimpleNamespace):
                         "Background task must be async function or generator."
                     )
                 setattr(func, BACKGROUND_TASK_MARKER, True)
-            return func  # type: ignore
+            return func  # pyright: ignore [reportReturnType]
 
         if func is not None:
             return wrapper(func)

@@ -145,7 +145,7 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
             position="top-center",
             id="backend_error",
             style={"width": "500px"},
-        )  # type: ignore
+        )  # pyright: ignore [reportReturnType]
     else:
         error_message.insert(0, "An error occurred.")
         return window_alert("\n".join(error_message))
@@ -747,7 +747,7 @@ class App(MiddlewareMixin, LifespanMixin):
         frontend_packages = get_config().frontend_packages
         _frontend_packages = []
         for package in frontend_packages:
-            if package in (get_config().tailwind or {}).get("plugins", []):  # type: ignore
+            if package in (get_config().tailwind or {}).get("plugins", []):
                 console.warn(
                     f"Tailwind packages are inferred from 'plugins', remove `{package}` from `frontend_packages`"
                 )
@@ -992,7 +992,7 @@ class App(MiddlewareMixin, LifespanMixin):
             compiler.compile_document_root(
                 self.head_components,
                 html_lang=self.html_lang,
-                html_custom_attrs=self.html_custom_attrs,  # type: ignore
+                html_custom_attrs=self.html_custom_attrs,  # pyright: ignore [reportArgumentType]
             )
         )
 

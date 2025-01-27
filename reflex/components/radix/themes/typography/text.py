@@ -47,7 +47,7 @@ class Text(elements.Span, RadixThemesComponent, MarkdownComponentMap):
     as_child: Var[bool]
 
     # Change the default rendered element into a semantically appropriate alternative (cannot be used with asChild)
-    as_: Var[LiteralType] = "p"  # type: ignore
+    as_: Var[LiteralType] = Var.create("p")
 
     # Text size: "1" - "9"
     size: Var[Responsive[LiteralTextSize]]
@@ -71,7 +71,7 @@ class Text(elements.Span, RadixThemesComponent, MarkdownComponentMap):
 class Span(Text):
     """A variant of text rendering as <span> element."""
 
-    as_: Var[LiteralType] = "span"  # type: ignore
+    as_: Var[LiteralType] = Var.create("span")
 
 
 class Em(elements.Em, RadixThemesComponent):
