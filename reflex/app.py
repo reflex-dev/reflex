@@ -418,20 +418,17 @@ class App(MiddlewareMixin, LifespanMixin):
 
                     async def modified_send(message):
                         if message["type"] == "websocket.accept":
-                            subprotocols = scope.get("subprotocols", [])
-                            if not subprotocols:
-                                headers = scope.get("headers", {})
-                                headers_key = b"sec-websocket-protocol"
-                                if headers_key in headers:
-                                    subprotocols = (
-                                        headers[headers_key].decode().split(", ")
-                                    )
-                                else:
-                                    subprotocols = None
-                            else:
-                                subprotocols = subprotocols[0]
+                            if scope.get("subprotocols"):
+                                # The following *does* say "subprotocol" instead of "subprotocols", intentionally.
+                                message["subprotocol"] = scope["subprotocols"][0]
 
-                            message["subprotocol"] = subprotocols
+                            headers = dict(message.get("headers", []))
+                            header_key = b"sec-websocket-protocol"
+                            if subprotocol := headers.get(header_key):
+                                message["headers"] = [
+                                    *message.get("headers", []),
+                                    (header_key, subprotocol),
+                                ]
 
                         return await original_send(message)
 
