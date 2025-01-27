@@ -23,7 +23,7 @@ def test_app_harness(tmp_path):
         class State(rx.State):
             pass
 
-        app = rx.App(state=State)
+        app = rx.App(_state=State)
         app.add_page(lambda: rx.text("Basic App"), route="/", title="index")
         app._compile()
 

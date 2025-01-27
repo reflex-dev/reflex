@@ -174,7 +174,7 @@ def get_node_path() -> str | None:
     return str(node_path)
 
 
-def get_npm_path() -> str | None:
+def get_npm_path() -> Path | None:
     """Get npm binary path.
 
     Returns:
@@ -183,8 +183,8 @@ def get_npm_path() -> str | None:
     npm_path = Path(constants.Node.NPM_PATH)
     if use_system_node() or not npm_path.exists():
         system_npm_path = which("npm")
-        return str(system_npm_path) if system_npm_path else None
-    return str(npm_path)
+        npm_path = Path(system_npm_path) if system_npm_path else None
+    return npm_path.absolute() if npm_path else None
 
 
 def update_json_file(file_path: str | Path, update_dict: dict[str, int | str]):
@@ -195,6 +195,9 @@ def update_json_file(file_path: str | Path, update_dict: dict[str, int | str]):
         update_dict: object to update json.
     """
     fp = Path(file_path)
+
+    # Create the parent directory if it doesn't exist.
+    fp.parent.mkdir(parents=True, exist_ok=True)
 
     # Create the file if it doesn't exist.
     fp.touch(exist_ok=True)

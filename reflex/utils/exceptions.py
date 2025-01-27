@@ -1,6 +1,6 @@
 """Custom Exceptions."""
 
-from typing import Any, NoReturn
+from typing import Any
 
 
 class ReflexError(Exception):
@@ -11,7 +11,7 @@ class ConfigError(ReflexError):
     """Custom exception for config related errors."""
 
 
-class InvalidStateManagerMode(ReflexError, ValueError):
+class InvalidStateManagerModeError(ReflexError, ValueError):
     """Raised when an invalid state manager mode is provided."""
 
 
@@ -75,6 +75,30 @@ class VarAttributeError(ReflexError, AttributeError):
     """Custom AttributeError for var related errors."""
 
 
+class UntypedComputedVarError(ReflexError, TypeError):
+    """Custom TypeError for untyped computed var errors."""
+
+    def __init__(self, var_name):
+        """Initialize the UntypedComputedVarError.
+
+        Args:
+            var_name: The name of the computed var.
+        """
+        super().__init__(f"Computed var '{var_name}' must have a type annotation.")
+
+
+class MissingAnnotationError(ReflexError, TypeError):
+    """Custom TypeError for missing annotations."""
+
+    def __init__(self, var_name):
+        """Initialize the MissingAnnotationError.
+
+        Args:
+            var_name: The name of the var.
+        """
+        super().__init__(f"Var '{var_name}' must have a type annotation.")
+
+
 class UploadValueError(ReflexError, ValueError):
     """Custom ValueError for upload related errors."""
 
@@ -111,43 +135,43 @@ class MatchTypeError(ReflexError, TypeError):
     """Raised when the return types of match cases are different."""
 
 
-class EventHandlerArgTypeMismatch(ReflexError, TypeError):
+class EventHandlerArgTypeMismatchError(ReflexError, TypeError):
     """Raised when the annotations of args accepted by an EventHandler differs from the spec of the event trigger."""
 
 
-class EventFnArgMismatch(ReflexError, TypeError):
+class EventFnArgMismatchError(ReflexError, TypeError):
     """Raised when the number of args required by an event handler is more than provided by the event trigger."""
 
 
-class DynamicRouteArgShadowsStateVar(ReflexError, NameError):
+class DynamicRouteArgShadowsStateVarError(ReflexError, NameError):
     """Raised when a dynamic route arg shadows a state var."""
 
 
-class ComputedVarShadowsStateVar(ReflexError, NameError):
+class ComputedVarShadowsStateVarError(ReflexError, NameError):
     """Raised when a computed var shadows a state var."""
 
 
-class ComputedVarShadowsBaseVars(ReflexError, NameError):
+class ComputedVarShadowsBaseVarsError(ReflexError, NameError):
     """Raised when a computed var shadows a base var."""
 
 
-class EventHandlerShadowsBuiltInStateMethod(ReflexError, NameError):
+class EventHandlerShadowsBuiltInStateMethodError(ReflexError, NameError):
     """Raised when an event handler shadows a built-in state method."""
 
 
-class GeneratedCodeHasNoFunctionDefs(ReflexError):
+class GeneratedCodeHasNoFunctionDefsError(ReflexError):
     """Raised when refactored code generated with flexgen has no functions defined."""
 
 
-class PrimitiveUnserializableToJSON(ReflexError, ValueError):
+class PrimitiveUnserializableToJSONError(ReflexError, ValueError):
     """Raised when a primitive type is unserializable to JSON. Usually with NaN and Infinity."""
 
 
-class InvalidLifespanTaskType(ReflexError, TypeError):
+class InvalidLifespanTaskTypeError(ReflexError, TypeError):
     """Raised when an invalid task type is registered as a lifespan task."""
 
 
-class DynamicComponentMissingLibrary(ReflexError, ValueError):
+class DynamicComponentMissingLibraryError(ReflexError, ValueError):
     """Raised when a dynamic component is missing a library."""
 
 
@@ -163,7 +187,7 @@ class EnvironmentVarValueError(ReflexError, ValueError):
     """Raised when an environment variable is set to an invalid value."""
 
 
-class DynamicComponentInvalidSignature(ReflexError, TypeError):
+class DynamicComponentInvalidSignatureError(ReflexError, TypeError):
     """Raised when a dynamic component has an invalid signature."""
 
 
@@ -186,27 +210,25 @@ class StateMismatchError(ReflexError, ValueError):
 class SystemPackageMissingError(ReflexError):
     """Raised when a system package is missing."""
 
+    def __init__(self, package: str):
+        """Initialize the SystemPackageMissingError.
+
+        Args:
+            package: The missing package.
+        """
+        from reflex.constants import IS_MACOS
+
+        extra = (
+            f" You can do so by running 'brew install {package}'." if IS_MACOS else ""
+        )
+        super().__init__(
+            f"System package '{package}' is missing."
+            f" Please install it through your system package manager.{extra}"
+        )
+
 
 class EventDeserializationError(ReflexError, ValueError):
     """Raised when an event cannot be deserialized."""
-
-
-def raise_system_package_missing_error(package: str) -> NoReturn:
-    """Raise a SystemPackageMissingError.
-
-    Args:
-        package: The name of the missing system package.
-
-    Raises:
-        SystemPackageMissingError: The raised exception.
-    """
-    from reflex.constants import IS_MACOS
-
-    raise SystemPackageMissingError(
-        f"System package '{package}' is missing."
-        " Please install it through your system package manager."
-        + (f" You can do so by running 'brew install {package}'." if IS_MACOS else "")
-    )
 
 
 class InvalidLockWarningThresholdError(ReflexError):

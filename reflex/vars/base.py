@@ -46,6 +46,7 @@ from reflex.base import Base
 from reflex.constants.compiler import Hooks
 from reflex.utils import console, exceptions, imports, serializers, types
 from reflex.utils.exceptions import (
+    UntypedComputedVarError,
     VarAttributeError,
     VarDependencyError,
     VarTypeError,
@@ -545,51 +546,20 @@ class Var(Generic[VAR_TYPE]):
     def create(
         cls,
         value: Any,
-        _var_is_local: bool | None = None,
-        _var_is_string: bool | None = None,
         _var_data: VarData | None = None,
     ) -> Var:
         """Create a var from a value.
 
         Args:
             value: The value to create the var from.
-            _var_is_local: Whether the var is local. Deprecated.
-            _var_is_string: Whether the var is a string literal. Deprecated.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
             The var.
         """
-        if _var_is_local is not None:
-            console.deprecate(
-                feature_name="_var_is_local",
-                reason="The _var_is_local argument is not supported for Var. "
-                "If you want to create a Var from a raw Javascript expression, use the constructor directly",
-                deprecation_version="0.6.0",
-                removal_version="0.7.0",
-            )
-        if _var_is_string is not None:
-            console.deprecate(
-                feature_name="_var_is_string",
-                reason="The _var_is_string argument is not supported for Var. "
-                "If you want to create a Var from a raw Javascript expression, use the constructor directly",
-                deprecation_version="0.6.0",
-                removal_version="0.7.0",
-            )
-
         # If the value is already a var, do nothing.
         if isinstance(value, Var):
             return value
-
-        # Try to pull the imports and hooks from contained values.
-        if not isinstance(value, str):
-            return LiteralVar.create(value, _var_data=_var_data)
-
-        if _var_is_string is False or _var_is_local is True:
-            return cls(
-                _js_expr=value,
-                _var_data=_var_data,
-            )
 
         return LiteralVar.create(value, _var_data=_var_data)
 
@@ -1585,7 +1555,7 @@ def figure_out_type(value: Any) -> types.GenericType:
     return type(value)
 
 
-class cached_property_no_lock(functools.cached_property):
+class cached_property_no_lock(functools.cached_property):  # noqa: N801
     """A special version of functools.cached_property that does not use a lock."""
 
     def __init__(self, func):
@@ -1863,19 +1833,14 @@ class ComputedVar(Var[RETURN_TYPE]):
 
         Raises:
             TypeError: If the computed var dependencies are not Var instances or var names.
+            UntypedComputedVarError: If the computed var is untyped.
         """
         hint = kwargs.pop("return_type", None) or get_type_hints(fget).get(
             "return", Any
         )
 
         if hint is Any:
-            console.deprecate(
-                "untyped-computed-var",
-                "ComputedVar should have a return type annotation.",
-                "0.6.5",
-                "0.7.0",
-            )
-
+            raise UntypedComputedVarError(var_name=fget.__name__)
         kwargs.setdefault("_js_expr", fget.__name__)
         kwargs.setdefault("_var_type", hint)
 
@@ -1961,6 +1926,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             "_var_data": kwargs.pop(
                 "_var_data", VarData.merge(self._var_data, merge_var_data)
             ),
+            "return_type": kwargs.pop("return_type", self._var_type),
         }
 
         if kwargs:
@@ -2100,12 +2066,9 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     def _check_deprecated_return_type(self, instance, value) -> None:
         if not _isinstance(value, self._var_type):
-            console.deprecate(
-                "mismatched-computed-var-return",
-                f"Computed var {type(instance).__name__}.{self._js_expr} returned value of type {type(value)}, "
-                f"expected {self._var_type}. This might cause unexpected behavior.",
-                "0.6.5",
-                "0.7.0",
+            console.error(
+                f"Computed var '{type(instance).__name__}.{self._js_expr}' must return"
+                f" type '{self._var_type}', got '{type(value)}'."
             )
 
     def _deps(

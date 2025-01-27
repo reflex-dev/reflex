@@ -37,19 +37,6 @@ def test_shared_asset() -> None:
     assert not Path(Path.cwd() / "assets/external").exists()
 
 
-def test_deprecated_x_asset(capsys) -> None:
-    """Test that the deprecated asset function raises a warning.
-
-    Args:
-        capsys: Pytest fixture that captures stdout and stderr.
-    """
-    assert rx.asset("custom_script.js", shared=True) == rx._x.asset("custom_script.js")
-    assert (
-        "DeprecationWarning: rx._x.asset has been deprecated in version 0.6.6"
-        in capsys.readouterr().out
-    )
-
-
 @pytest.mark.parametrize(
     "path,shared",
     [

@@ -1,8 +1,6 @@
 """Shared conftest for all integration tests."""
 
 import os
-import re
-from pathlib import Path
 
 import pytest
 
@@ -34,34 +32,6 @@ def xvfb():
         DISPLAY = None
     else:
         yield None
-
-
-def pytest_exception_interact(node, call, report):
-    """Take and upload screenshot when tests fail.
-
-    Args:
-        node: The pytest item that failed.
-        call: The pytest call describing when/where the test was invoked.
-        report: The pytest log report object.
-    """
-    screenshot_dir = environment.SCREENSHOT_DIR.get()
-    if DISPLAY is None or screenshot_dir is None:
-        return
-
-    screenshot_dir = Path(screenshot_dir)
-    screenshot_dir.mkdir(parents=True, exist_ok=True)
-    safe_filename = re.sub(
-        r"(?u)[^-\w.]",
-        "_",
-        str(node.nodeid).strip().replace(" ", "_").replace(":", "_").replace(".py", ""),
-    )
-
-    try:
-        DISPLAY.waitgrab().save(
-            (Path(screenshot_dir) / safe_filename).with_suffix(".png"),
-        )
-    except Exception as e:
-        print(f"Failed to take screenshot for {node}: {e}")
 
 
 @pytest.fixture(

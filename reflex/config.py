@@ -390,7 +390,7 @@ class EnvVar(Generic[T]):
             os.environ[self.name] = str(value)
 
 
-class env_var:  # type: ignore
+class env_var:  # type: ignore # noqa: N801
     """Descriptor for environment variables."""
 
     name: str
@@ -490,6 +490,9 @@ class EnvironmentVariables:
     # The working directory for the next.js commands.
     REFLEX_WEB_WORKDIR: EnvVar[Path] = env_var(Path(constants.Dirs.WEB))
 
+    # The working directory for the states directory.
+    REFLEX_STATES_WORKDIR: EnvVar[Path] = env_var(Path(constants.Dirs.STATES))
+
     # Path to the alembic config file
     ALEMBIC_CONFIG: EnvVar[ExistingPath] = env_var(Path(constants.ALEMBIC_CONFIG))
 
@@ -555,9 +558,6 @@ class EnvironmentVariables:
 
     # Arguments to pass to the app harness driver.
     APP_HARNESS_DRIVER_ARGS: EnvVar[str] = env_var("")
-
-    # Where to save screenshots when tests fail.
-    SCREENSHOT_DIR: EnvVar[Optional[Path]] = env_var(None)
 
     # Whether to check for outdated package versions.
     REFLEX_CHECK_LATEST_VERSION: EnvVar[bool] = env_var(True)
@@ -826,16 +826,16 @@ class Config(Base):
         if "api_url" not in self._non_default_attributes:
             # If running in Github Codespaces, override API_URL
             codespace_name = os.getenv("CODESPACE_NAME")
-            GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN = os.getenv(
+            github_codespaces_port_forwarding_domain = os.getenv(
                 "GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN"
             )
             # If running on Replit.com interactively, override API_URL to ensure we maintain the backend_port
             replit_dev_domain = os.getenv("REPLIT_DEV_DOMAIN")
             backend_port = kwargs.get("backend_port", self.backend_port)
-            if codespace_name and GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:
+            if codespace_name and github_codespaces_port_forwarding_domain:
                 self.api_url = (
                     f"https://{codespace_name}-{kwargs.get('backend_port', self.backend_port)}"
-                    f".{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
+                    f".{github_codespaces_port_forwarding_domain}"
                 )
             elif replit_dev_domain and backend_port:
                 self.api_url = f"https://{replit_dev_domain}:{backend_port}"

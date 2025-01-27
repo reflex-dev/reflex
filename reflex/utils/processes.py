@@ -9,7 +9,6 @@ import os
 import signal
 import subprocess
 from concurrent import futures
-from pathlib import Path
 from typing import Callable, Generator, List, Optional, Tuple, Union
 
 import psutil
@@ -368,7 +367,7 @@ def get_command_with_loglevel(command: list[str]) -> list[str]:
         The updated command list
     """
     npm_path = path_ops.get_npm_path()
-    npm_path = str(Path(npm_path).resolve()) if npm_path else npm_path
+    npm_path = str(npm_path) if npm_path else None
 
     if command[0] == npm_path:
         return [*command, "--loglevel", "silly"]

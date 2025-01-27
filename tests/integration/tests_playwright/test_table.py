@@ -20,7 +20,7 @@ def Table():
     """App using table component."""
     import reflex as rx
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
 
     @app.add_page
     def index():

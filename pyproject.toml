@@ -18,7 +18,7 @@ keywords = ["web", "framework"]
 classifiers = ["Development Status :: 4 - Beta"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 fastapi = ">=0.96.0,!=0.111.0,!=0.111.1"
 gunicorn = ">=20.1.0,<24.0"
 jinja2 = ">=3.1.2,<4.0"
@@ -50,7 +50,6 @@ httpx = ">=0.25.1,<1.0"
 twine = ">=4.0.0,<7.0"
 tomlkit = ">=0.12.4,<1.0"
 lazy_loader = ">=0.4"
-reflex-chakra = ">=0.6.0"
 typing_extensions = ">=4.6.0"
 
 [tool.poetry.group.dev.dependencies]
@@ -86,15 +85,18 @@ build-backend = "poetry.core.masonry.api"
 target-version = "py39"
 output-format = "concise"
 lint.isort.split-on-trailing-comma = false
-lint.select = ["B", "C4", "D", "E", "ERA", "F", "FURB", "I", "PERF", "PTH", "RUF", "SIM", "T", "TRY", "W"]
+lint.select = ["B", "C4", "D", "E", "ERA", "F", "FURB", "I", "N", "PERF", "PTH", "RUF", "SIM", "T", "TRY", "W"]
 lint.ignore = ["B008", "D205", "E501", "F403", "SIM115", "RUF006", "RUF012", "TRY0"]
 lint.pydocstyle.convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/*.py" = ["D100", "D103", "D104", "B018", "PERF", "T"]
+"tests/*.py" = ["D100", "D103", "D104", "B018", "PERF", "T", "N"]
+"benchmarks/*.py" = ["D100", "D103", "D104", "B018", "PERF", "T", "N"]
 "reflex/.templates/*.py" = ["D100", "D103", "D104"]
-"*.pyi" = ["D301", "D415", "D417", "D418", "E742"]
+"*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N"]
+"pyi_generator.py" = ["N802"]
+"reflex/constants/*.py" = ["N"]
 "*/blank.py" = ["I001"]
 
 [tool.pytest.ini_options]
@@ -102,5 +104,5 @@ asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 
 [tool.codespell]
-skip = "docs/*,*.html,examples/*, *.pyi"
+skip = "docs/*,*.html,examples/*, *.pyi, poetry.lock"
 ignore-words-list = "te, TreeE"
