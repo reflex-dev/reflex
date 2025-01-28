@@ -82,7 +82,9 @@ class Breakpoints(Dict[K, V]):
             return Breakpoints(
                 {
                     k: v
-                    for k, v in zip(["initial", *breakpoint_names], thresholds)
+                    for k, v in zip(
+                        ["initial", *breakpoint_names], thresholds, strict=True
+                    )
                     if v is not None
                 }
             )

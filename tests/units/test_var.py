@@ -188,6 +188,7 @@ def ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
             "state.local",
             "local2",
         ],
+        strict=True,
     ),
 )
 def test_full_name(prop, expected):
@@ -205,6 +206,7 @@ def test_full_name(prop, expected):
     zip(
         test_vars,
         ["prop1", "key", "state.value", "state.local", "local2"],
+        strict=True,
     ),
 )
 def test_str(prop, expected):
@@ -251,6 +253,7 @@ def test_default_value(prop: Var, expected):
             "state.set_local",
             "set_local2",
         ],
+        strict=True,
     ),
 )
 def test_get_setter(prop: Var, expected):
