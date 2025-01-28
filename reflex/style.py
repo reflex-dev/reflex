@@ -301,7 +301,8 @@ class Style(dict):
         Returns:
             The combined style.
         """
-        return Style(super().__or__(self, other))  # pyright: ignore [reportGeneralTypeIssues, reportCallIssue]
+        _var_data = VarData.merge(self._var_data, getattr(other, "_var_data", None))
+        return Style(super().__or__(self, other), _var_data=_var_data)  # pyright: ignore [reportGeneralTypeIssues, reportCallIssue]
 
 
 def _format_emotion_style_pseudo_selector(key: str) -> str:
