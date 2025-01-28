@@ -3216,6 +3216,19 @@ class StateManagerRedis(StateManager):
         subclasses: bool = False,
         required_state_classes: set[Type[BaseState]] | None = None,
     ) -> set[Type[BaseState]]:
+        """Recursively determine which states are required to fetch the target state.
+
+        This will always include potentially dirty substates that depend on vars
+        in the target_state_cls.
+
+        Args:
+            target_state_cls: The target state class being fetched.
+            subclasses: Whether to include subclasses of the target state.
+            required_state_classes: Recursive argument tracking state classes that have already been seen.
+
+        Returns:
+            The set of state classes required to fetch the target state.
+        """
         if required_state_classes is None:
             required_state_classes = set()
         # Get the substates if requested.
@@ -3252,6 +3265,15 @@ class StateManagerRedis(StateManager):
         target_state: BaseState,
         populated_states: dict[str, BaseState] | None = None,
     ) -> dict[str, BaseState]:
+        """Recursively determine which states from target_state are already fetched.
+
+        Args:
+            target_state: The state to check for populated states.
+            populated_states: Recursive argument tracking states seen in previous calls.
+
+        Returns:
+            A dictionary of state full name to state instance.
+        """
         if populated_states is None:
             populated_states = {}
         if target_state.get_full_name() in populated_states:
@@ -3283,7 +3305,8 @@ class StateManagerRedis(StateManager):
             The state for the token.
 
         Raises:
-            RuntimeError: when the state_cls is not specified in the token
+            RuntimeError: when the state_cls is not specified in the token, or when the parent state for a
+                requested state was not fetched.
         """
         # Split the actual token from the fully qualified substate name.
         token, state_path = _split_substate_key(token)
@@ -3334,8 +3357,10 @@ class StateManagerRedis(StateManager):
                 )
                 parent_state = flat_state_tree.get(parent_state_name)
                 if parent_state is None:
-                    raise Exception(
-                        f"Parent state should get fetched first... got {state.get_full_name()} instead"
+                    raise RuntimeError(
+                        f"Parent state for {state.get_full_name()} was not found "
+                        "in the state tree, but should have already been fetched. "
+                        "This is a bug",
                     )
                 parent_state.substates[state_name] = state
                 state.parent_state = parent_state
