@@ -75,6 +75,8 @@ class Reflex(SimpleNamespace):
     # If user sets REFLEX_DIR envroment variable use that instead.
     DIR = PlatformDirs(MODULE_NAME, False).user_data_path
 
+    LOGS_DIR = DIR / "logs"
+
     # The root directory of the reflex library.
     ROOT_DIR = Path(__file__).parents[2]
 
