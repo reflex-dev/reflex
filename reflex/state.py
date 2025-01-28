@@ -3301,15 +3301,21 @@ class StateManagerRedis(StateManager):
         )
 
         # Determine which states from the tree need to be fetched.
-        required_state_classes = self._get_required_state_classes(
-            state_cls, subclasses=True
-        ) - {type(s) for s in flat_state_tree.values()}
+        required_state_classes = sorted(
+            self._get_required_state_classes(state_cls, subclasses=True)
+            - {type(s) for s in flat_state_tree.values()},
+            key=lambda x: x.get_full_name(),
+        )
 
-        for state_cls in sorted(
-            required_state_classes, key=lambda x: x.get_full_name()
+        redis_pipeline = self.redis.pipeline()
+        for state_cls in required_state_classes:
+            redis_pipeline.get(_substate_key(token, state_cls))
+
+        for state_cls, redis_state in zip(
+            required_state_classes,
+            await redis_pipeline.execute(),
         ):
             state = None
-            redis_state = await self.redis.get(_substate_key(token, state_cls))
 
             if redis_state is not None:
                 # Deserialize the substate.
