@@ -185,7 +185,7 @@ def date_compare_operation(
         The result of the operation.
     """
     return var_operation_return(
-        f"({lhs} { '<' if strict else '<='} {rhs})",
+        f"({lhs} {'<' if strict else '<='} {rhs})",
         bool,
     )
 

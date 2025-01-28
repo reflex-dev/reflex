@@ -345,7 +345,7 @@ class DataEditor(NoSSRComponent):
             data_callback = f"getData_{editor_id}"
             self.get_cell_content = Var(_js_expr=data_callback)  # type: ignore
 
-        code = [f"function {data_callback}([col, row])" "{"]
+        code = [f"function {data_callback}([col, row]){{"]
 
         columns_path = str(self.columns)
         data_path = str(self.data)

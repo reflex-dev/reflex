@@ -332,7 +332,7 @@ class EventSpec(EventActionsMixin):
         arg = None
         try:
             for arg in args:
-                values.append(LiteralVar.create(value=arg))  # noqa: PERF401
+                values.append(LiteralVar.create(value=arg))  # noqa: PERF401, RUF100
         except TypeError as e:
             raise EventHandlerTypeError(
                 f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."

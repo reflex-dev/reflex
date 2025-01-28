@@ -444,7 +444,7 @@ class Var(Generic[VAR_TYPE]):
 
                 _default_var_type: ClassVar[GenericType] = default_type
 
-            ToVarOperation.__name__ = f'To{cls.__name__.removesuffix("Var")}Operation'
+            ToVarOperation.__name__ = f"To{cls.__name__.removesuffix('Var')}Operation"
 
             _var_subclasses.append(VarSubclassEntry(cls, ToVarOperation, python_types))
 

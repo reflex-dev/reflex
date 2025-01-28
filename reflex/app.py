@@ -1280,7 +1280,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 ):
                     raise ValueError(
                         f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong argument order."
-                        f"Expected `{required_arg}` as the {required_arg_index+1} argument but got `{list(arg_annotations.keys())[required_arg_index]}`"
+                        f"Expected `{required_arg}` as the {required_arg_index + 1} argument but got `{list(arg_annotations.keys())[required_arg_index]}`"
                     )
 
                 if not issubclass(arg_annotations[required_arg], Exception):

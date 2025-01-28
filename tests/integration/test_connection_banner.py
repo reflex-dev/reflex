@@ -89,9 +89,9 @@ async def test_connection_banner(connection_banner: AppHarness):
     driver = connection_banner.frontend()
 
     ss = SessionStorage(driver)
-    assert connection_banner._poll_for(
-        lambda: ss.get("token") is not None
-    ), "token not found"
+    assert connection_banner._poll_for(lambda: ss.get("token") is not None), (
+        "token not found"
+    )
 
     assert connection_banner._poll_for(lambda: not has_error_modal(driver))
 
