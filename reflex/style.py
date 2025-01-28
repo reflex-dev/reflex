@@ -292,6 +292,18 @@ class Style(dict):
             )
         super().__setitem__(key, value)
 
+    def __or__(self, other: Style | dict) -> Style:
+        """Combine two styles.
+
+        Args:
+            other: The other style to combine.
+
+        Returns:
+            The combined style.
+        """
+        _var_data = VarData.merge(self._var_data, getattr(other, "_var_data", None))
+        return Style(super().__or__(self, other), _var_data=_var_data)  # pyright: ignore [reportGeneralTypeIssues, reportCallIssue]
+
 
 def _format_emotion_style_pseudo_selector(key: str) -> str:
     """Format a pseudo selector for emotion CSS-in-JS.
