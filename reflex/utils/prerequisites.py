@@ -210,8 +210,7 @@ def get_bun_version() -> version.Version | None:
         return None
     try:
         # Run the bun -v command and capture the output
-        result = processes.new_process([str(get_config().bun_path), "-v"], run=True)
-        result = processes.new_process([str(get_config().bun_path), "-v"], run=True)
+        result = processes.new_process([str(bun_path), "-v"], run=True)
         return version.parse(str(result.stdout))  # pyright: ignore [reportArgumentType]
     except FileNotFoundError:
         return None

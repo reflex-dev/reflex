@@ -10,8 +10,6 @@ from reflex.testing import AppHarness
 
 def VarOperations():
     """App with var operations."""
-    from typing import Dict, List
-
     import reflex as rx
     from reflex.vars.base import LiteralVar
     from reflex.vars.sequence import ArrayVar
@@ -20,27 +18,27 @@ def VarOperations():
         name: str = "hello"
 
     class VarOperationState(rx.State):
-        int_var1: int = 10
-        int_var2: int = 5
-        int_var3: int = 7
-        float_var1: float = 10.5
-        float_var2: float = 5.5
-        list1: List = [1, 2]
-        list2: List = [3, 4]
-        list3: List = ["first", "second", "third"]
-        list4: List = [Object(name="obj_1"), Object(name="obj_2")]
-        str_var1: str = "first"
-        str_var2: str = "second"
-        str_var3: str = "ThIrD"
-        str_var4: str = "a long string"
-        dict1: Dict[int, int] = {1: 2}
-        dict2: Dict[int, int] = {3: 4}
-        html_str: str = "<div>hello</div>"
+        int_var1: rx.Field[int] = rx.field(10)
+        int_var2: rx.Field[int] = rx.field(5)
+        int_var3: rx.Field[int] = rx.field(7)
+        float_var1: rx.Field[float] = rx.field(10.5)
+        float_var2: rx.Field[float] = rx.field(5.5)
+        list1: rx.Field[list] = rx.field([1, 2])
+        list2: rx.Field[list] = rx.field([3, 4])
+        list3: rx.Field[list] = rx.field(["first", "second", "third"])
+        list4: rx.Field[list] = rx.field([Object(name="obj_1"), Object(name="obj_2")])
+        str_var1: rx.Field[str] = rx.field("first")
+        str_var2: rx.Field[str] = rx.field("second")
+        str_var3: rx.Field[str] = rx.field("ThIrD")
+        str_var4: rx.Field[str] = rx.field("a long string")
+        dict1: rx.Field[dict[int, int]] = rx.field({1: 2})
+        dict2: rx.Field[dict[int, int]] = rx.field({3: 4})
+        html_str: rx.Field[str] = rx.field("<div>hello</div>")
 
     app = rx.App(_state=rx.State)
 
     @rx.memo
-    def memo_comp(list1: List[int], int_var1: int, id: str):
+    def memo_comp(list1: list[int], int_var1: int, id: str):
         return rx.text(list1, int_var1, id=id)
 
     @rx.memo
@@ -89,19 +87,19 @@ def VarOperations():
                 id="int_or_int",
             ),
             rx.text(
-                (VarOperationState.int_var1 > VarOperationState.int_var2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.int_var1 > VarOperationState.int_var2).to_string(),
                 id="int_gt_int",
             ),
             rx.text(
-                (VarOperationState.int_var1 < VarOperationState.int_var2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.int_var1 < VarOperationState.int_var2).to_string(),
                 id="int_lt_int",
             ),
             rx.text(
-                (VarOperationState.int_var1 >= VarOperationState.int_var2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.int_var1 >= VarOperationState.int_var2).to_string(),
                 id="int_gte_int",
             ),
             rx.text(
-                (VarOperationState.int_var1 <= VarOperationState.int_var2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.int_var1 <= VarOperationState.int_var2).to_string(),
                 id="int_lte_int",
             ),
             rx.text(
@@ -109,15 +107,15 @@ def VarOperations():
                 id="int_and_int",
             ),
             rx.text(
-                (VarOperationState.int_var1 | VarOperationState.int_var2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.int_var1 | VarOperationState.int_var2).to_string(),
                 id="int_or_int",
             ),
             rx.text(
-                (VarOperationState.int_var1 == VarOperationState.int_var2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.int_var1 == VarOperationState.int_var2).to_string(),
                 id="int_eq_int",
             ),
             rx.text(
-                (VarOperationState.int_var1 != VarOperationState.int_var2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.int_var1 != VarOperationState.int_var2).to_string(),
                 id="int_neq_int",
             ),
             # INT FLOAT OR FLOAT INT
@@ -150,60 +148,60 @@ def VarOperations():
                 id="float_mod_int",
             ),
             rx.text(
-                (VarOperationState.float_var1 > VarOperationState.int_var2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.float_var1 > VarOperationState.int_var2).to_string(),
                 id="float_gt_int",
             ),
             rx.text(
-                (VarOperationState.float_var1 < VarOperationState.int_var2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.float_var1 < VarOperationState.int_var2).to_string(),
                 id="float_lt_int",
             ),
             rx.text(
                 (
                     VarOperationState.float_var1 >= VarOperationState.int_var2
-                ).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                ).to_string(),
                 id="float_gte_int",
             ),
             rx.text(
                 (
                     VarOperationState.float_var1 <= VarOperationState.int_var2
-                ).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                ).to_string(),
                 id="float_lte_int",
             ),
             rx.text(
                 (
                     VarOperationState.float_var1 == VarOperationState.int_var2
-                ).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                ).to_string(),
                 id="float_eq_int",
             ),
             rx.text(
                 (
                     VarOperationState.float_var1 != VarOperationState.int_var2
-                ).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                ).to_string(),
                 id="float_neq_int",
             ),
             rx.text(
-                (VarOperationState.float_var1 & VarOperationState.int_var2).to_string(),  # pyright: ignore [reportOperatorIssue, reportAttributeAccessIssue]
+                (VarOperationState.float_var1 & VarOperationState.int_var2).to_string(),
                 id="float_and_int",
             ),
             rx.text(
-                (VarOperationState.float_var1 | VarOperationState.int_var2).to_string(),  # pyright: ignore [reportOperatorIssue]
+                (VarOperationState.float_var1 | VarOperationState.int_var2).to_string(),
                 id="float_or_int",
             ),
             # INT, DICT
             rx.text(
-                (VarOperationState.int_var1 | VarOperationState.dict1).to_string(),  # pyright: ignore [reportOperatorIssue]
+                (VarOperationState.int_var1 | VarOperationState.dict1).to_string(),
                 id="int_or_dict",
             ),
             rx.text(
-                (VarOperationState.int_var1 & VarOperationState.dict1).to_string(),  # pyright: ignore [reportOperatorIssue]
+                (VarOperationState.int_var1 & VarOperationState.dict1).to_string(),
                 id="int_and_dict",
             ),
             rx.text(
-                (VarOperationState.int_var1 == VarOperationState.dict1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.int_var1 == VarOperationState.dict1).to_string(),
                 id="int_eq_dict",
             ),
             rx.text(
-                (VarOperationState.int_var1 != VarOperationState.dict1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.int_var1 != VarOperationState.dict1).to_string(),
                 id="int_neq_dict",
             ),
             # FLOAT FLOAT
@@ -238,104 +236,104 @@ def VarOperations():
             rx.text(
                 (
                     VarOperationState.float_var1 > VarOperationState.float_var2
-                ).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                ).to_string(),
                 id="float_gt_float",
             ),
             rx.text(
                 (
                     VarOperationState.float_var1 < VarOperationState.float_var2
-                ).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                ).to_string(),
                 id="float_lt_float",
             ),
             rx.text(
                 (
                     VarOperationState.float_var1 >= VarOperationState.float_var2
-                ).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                ).to_string(),
                 id="float_gte_float",
             ),
             rx.text(
                 (
                     VarOperationState.float_var1 <= VarOperationState.float_var2
-                ).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                ).to_string(),
                 id="float_lte_float",
             ),
             rx.text(
                 (
                     VarOperationState.float_var1 == VarOperationState.float_var2
-                ).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                ).to_string(),
                 id="float_eq_float",
             ),
             rx.text(
                 (
                     VarOperationState.float_var1 != VarOperationState.float_var2
-                ).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                ).to_string(),
                 id="float_neq_float",
             ),
             rx.text(
                 (
-                    VarOperationState.float_var1 & VarOperationState.float_var2  # pyright: ignore [reportOperatorIssue]
+                    VarOperationState.float_var1 & VarOperationState.float_var2
                 ).to_string(),
                 id="float_and_float",
             ),
             rx.text(
                 (
-                    VarOperationState.float_var1 | VarOperationState.float_var2  # pyright: ignore [reportOperatorIssue]
+                    VarOperationState.float_var1 | VarOperationState.float_var2
                 ).to_string(),
                 id="float_or_float",
             ),
             # FLOAT STR
             rx.text(
-                VarOperationState.float_var1 | VarOperationState.str_var1,  # pyright: ignore [reportOperatorIssue]
+                VarOperationState.float_var1 | VarOperationState.str_var1,
                 id="float_or_str",
             ),
             rx.text(
-                VarOperationState.float_var1 & VarOperationState.str_var1,  # pyright: ignore [reportOperatorIssue]
+                VarOperationState.float_var1 & VarOperationState.str_var1,
                 id="float_and_str",
             ),
             rx.text(
                 (
                     VarOperationState.float_var1 == VarOperationState.str_var1
-                ).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                ).to_string(),
                 id="float_eq_str",
             ),
             rx.text(
                 (
                     VarOperationState.float_var1 != VarOperationState.str_var1
-                ).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                ).to_string(),
                 id="float_neq_str",
             ),
             # FLOAT LIST
             rx.text(
-                (VarOperationState.float_var1 | VarOperationState.list1).to_string(),  # pyright: ignore [reportOperatorIssue]
+                (VarOperationState.float_var1 | VarOperationState.list1).to_string(),
                 id="float_or_list",
             ),
             rx.text(
-                (VarOperationState.float_var1 & VarOperationState.list1).to_string(),  # pyright: ignore [reportOperatorIssue]
+                (VarOperationState.float_var1 & VarOperationState.list1).to_string(),
                 id="float_and_list",
             ),
             rx.text(
-                (VarOperationState.float_var1 == VarOperationState.list1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.float_var1 == VarOperationState.list1).to_string(),
                 id="float_eq_list",
             ),
             rx.text(
-                (VarOperationState.float_var1 != VarOperationState.list1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.float_var1 != VarOperationState.list1).to_string(),
                 id="float_neq_list",
             ),
             # FLOAT DICT
             rx.text(
-                (VarOperationState.float_var1 | VarOperationState.dict1).to_string(),  # pyright: ignore [reportOperatorIssue]
+                (VarOperationState.float_var1 | VarOperationState.dict1).to_string(),
                 id="float_or_dict",
             ),
             rx.text(
-                (VarOperationState.float_var1 & VarOperationState.dict1).to_string(),  # pyright: ignore [reportOperatorIssue]
+                (VarOperationState.float_var1 & VarOperationState.dict1).to_string(),
                 id="float_and_dict",
             ),
             rx.text(
-                (VarOperationState.float_var1 == VarOperationState.dict1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.float_var1 == VarOperationState.dict1).to_string(),
                 id="float_eq_dict",
             ),
             rx.text(
-                (VarOperationState.float_var1 != VarOperationState.dict1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.float_var1 != VarOperationState.dict1).to_string(),
                 id="float_neq_dict",
             ),
             # STR STR
@@ -344,43 +342,43 @@ def VarOperations():
                 id="str_add_str",
             ),
             rx.text(
-                (VarOperationState.str_var1 > VarOperationState.str_var2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.str_var1 > VarOperationState.str_var2).to_string(),
                 id="str_gt_str",
             ),
             rx.text(
-                (VarOperationState.str_var1 < VarOperationState.str_var2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.str_var1 < VarOperationState.str_var2).to_string(),
                 id="str_lt_str",
             ),
             rx.text(
-                (VarOperationState.str_var1 >= VarOperationState.str_var2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.str_var1 >= VarOperationState.str_var2).to_string(),
                 id="str_gte_str",
             ),
             rx.text(
-                (VarOperationState.str_var1 <= VarOperationState.str_var2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.str_var1 <= VarOperationState.str_var2).to_string(),
                 id="str_lte_str",
             ),
             rx.text(
                 (
                     VarOperationState.float_var1 == VarOperationState.float_var2
-                ).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                ).to_string(),
                 id="str_eq_str",
             ),
             rx.text(
                 (
                     VarOperationState.float_var1 != VarOperationState.float_var2
-                ).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                ).to_string(),
                 id="str_neq_str",
             ),
             rx.text(
-                VarOperationState.str_var1.contains("fir").to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                VarOperationState.str_var1.contains("fir").to_string(),
                 id="str_contains",
             ),
             rx.text(
-                VarOperationState.str_var1 | VarOperationState.str_var1,  # pyright: ignore [reportOperatorIssue]
+                VarOperationState.str_var1 | VarOperationState.str_var1,
                 id="str_or_str",
             ),
             rx.text(
-                VarOperationState.str_var1 & VarOperationState.str_var2,  # pyright: ignore [reportOperatorIssue]
+                VarOperationState.str_var1 & VarOperationState.str_var2,
                 id="str_and_str",
             ),
             # STR, INT
@@ -389,162 +387,162 @@ def VarOperations():
                 id="str_mult_int",
             ),
             rx.text(
-                VarOperationState.str_var1 & VarOperationState.int_var2,  # pyright: ignore [reportOperatorIssue]
+                VarOperationState.str_var1 & VarOperationState.int_var2,
                 id="str_and_int",
             ),
             rx.text(
-                VarOperationState.str_var1 | VarOperationState.int_var2,  # pyright: ignore [reportOperatorIssue]
+                VarOperationState.str_var1 | VarOperationState.int_var2,
                 id="str_or_int",
             ),
             rx.text(
-                (VarOperationState.str_var1 == VarOperationState.int_var1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.str_var1 == VarOperationState.int_var1).to_string(),
                 id="str_eq_int",
             ),
             rx.text(
-                (VarOperationState.str_var1 != VarOperationState.int_var1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.str_var1 != VarOperationState.int_var1).to_string(),
                 id="str_neq_int",
             ),
             # STR, LIST
             rx.text(
-                VarOperationState.str_var1 | VarOperationState.list1,  # pyright: ignore [reportOperatorIssue]
+                VarOperationState.str_var1 | VarOperationState.list1,
                 id="str_or_list",
             ),
             rx.text(
-                (VarOperationState.str_var1 & VarOperationState.list1).to_string(),  # pyright: ignore [reportOperatorIssue]
+                (VarOperationState.str_var1 & VarOperationState.list1).to_string(),
                 id="str_and_list",
             ),
             rx.text(
-                (VarOperationState.str_var1 == VarOperationState.list1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.str_var1 == VarOperationState.list1).to_string(),
                 id="str_eq_list",
             ),
             rx.text(
-                (VarOperationState.str_var1 != VarOperationState.list1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.str_var1 != VarOperationState.list1).to_string(),
                 id="str_neq_list",
             ),
             # STR, DICT
             rx.text(
-                VarOperationState.str_var1 | VarOperationState.dict1,  # pyright: ignore [reportOperatorIssue]
+                VarOperationState.str_var1 | VarOperationState.dict1,
                 id="str_or_dict",
             ),
             rx.text(
-                (VarOperationState.str_var1 & VarOperationState.dict1).to_string(),  # pyright: ignore [reportOperatorIssue]
+                (VarOperationState.str_var1 & VarOperationState.dict1).to_string(),
                 id="str_and_dict",
             ),
             rx.text(
-                (VarOperationState.str_var1 == VarOperationState.dict1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.str_var1 == VarOperationState.dict1).to_string(),
                 id="str_eq_dict",
             ),
             rx.text(
-                (VarOperationState.str_var1 != VarOperationState.dict1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.str_var1 != VarOperationState.dict1).to_string(),
                 id="str_neq_dict",
             ),
             # LIST, LIST
             rx.text(
-                (VarOperationState.list1 + VarOperationState.list2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.list1 + VarOperationState.list2).to_string(),
                 id="list_add_list",
             ),
             rx.text(
-                (VarOperationState.list1 & VarOperationState.list2).to_string(),  # pyright: ignore [reportOperatorIssue]
+                (VarOperationState.list1 & VarOperationState.list2).to_string(),
                 id="list_and_list",
             ),
             rx.text(
-                (VarOperationState.list1 | VarOperationState.list2).to_string(),  # pyright: ignore [reportOperatorIssue]
+                (VarOperationState.list1 | VarOperationState.list2).to_string(),
                 id="list_or_list",
             ),
             rx.text(
-                (VarOperationState.list1 > VarOperationState.list2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.list1 > VarOperationState.list2).to_string(),
                 id="list_gt_list",
             ),
             rx.text(
-                (VarOperationState.list1 < VarOperationState.list2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.list1 < VarOperationState.list2).to_string(),
                 id="list_lt_list",
             ),
             rx.text(
-                (VarOperationState.list1 >= VarOperationState.list2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.list1 >= VarOperationState.list2).to_string(),
                 id="list_gte_list",
             ),
             rx.text(
-                (VarOperationState.list1 <= VarOperationState.list2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.list1 <= VarOperationState.list2).to_string(),
                 id="list_lte_list",
             ),
             rx.text(
-                (VarOperationState.list1 == VarOperationState.list2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.list1 == VarOperationState.list2).to_string(),
                 id="list_eq_list",
             ),
             rx.text(
-                (VarOperationState.list1 != VarOperationState.list2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.list1 != VarOperationState.list2).to_string(),
                 id="list_neq_list",
             ),
             rx.text(
-                VarOperationState.list1.contains(1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                VarOperationState.list1.contains(1).to_string(),
                 id="list_contains",
             ),
-            rx.text(VarOperationState.list4.pluck("name").to_string(), id="list_pluck"),  # pyright: ignore [reportAttributeAccessIssue]
-            rx.text(VarOperationState.list1.reverse().to_string(), id="list_reverse"),  # pyright: ignore [reportAttributeAccessIssue]
+            rx.text(VarOperationState.list4.pluck("name").to_string(), id="list_pluck"),
+            rx.text(VarOperationState.list1.reverse().to_string(), id="list_reverse"),
             # LIST, INT
             rx.text(
-                (VarOperationState.list1 * VarOperationState.int_var2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.list1 * VarOperationState.int_var2).to_string(),
                 id="list_mult_int",
             ),
             rx.text(
-                (VarOperationState.list1 | VarOperationState.int_var1).to_string(),  # pyright: ignore [reportOperatorIssue]
+                (VarOperationState.list1 | VarOperationState.int_var1).to_string(),
                 id="list_or_int",
             ),
             rx.text(
-                (VarOperationState.list1 & VarOperationState.int_var1).to_string(),  # pyright: ignore [reportOperatorIssue]
+                (VarOperationState.list1 & VarOperationState.int_var1).to_string(),
                 id="list_and_int",
             ),
             rx.text(
-                (VarOperationState.list1 == VarOperationState.int_var1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.list1 == VarOperationState.int_var1).to_string(),
                 id="list_eq_int",
             ),
             rx.text(
-                (VarOperationState.list1 != VarOperationState.int_var1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.list1 != VarOperationState.int_var1).to_string(),
                 id="list_neq_int",
             ),
             # LIST, DICT
             rx.text(
-                (VarOperationState.list1 | VarOperationState.dict1).to_string(),  # pyright: ignore [reportOperatorIssue]
+                (VarOperationState.list1 | VarOperationState.dict1).to_string(),
                 id="list_or_dict",
             ),
             rx.text(
-                (VarOperationState.list1 & VarOperationState.dict1).to_string(),  # pyright: ignore [reportOperatorIssue]
+                (VarOperationState.list1 & VarOperationState.dict1).to_string(),
                 id="list_and_dict",
             ),
             rx.text(
-                (VarOperationState.list1 == VarOperationState.dict1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.list1 == VarOperationState.dict1).to_string(),
                 id="list_eq_dict",
             ),
             rx.text(
-                (VarOperationState.list1 != VarOperationState.dict1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.list1 != VarOperationState.dict1).to_string(),
                 id="list_neq_dict",
             ),
             # DICT, DICT
             rx.text(
-                (VarOperationState.dict1 | VarOperationState.dict2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.dict1 | VarOperationState.dict2).to_string(),
                 id="dict_or_dict",
             ),
             rx.text(
-                (VarOperationState.dict1 & VarOperationState.dict2).to_string(),  # pyright: ignore [reportOperatorIssue]
+                (VarOperationState.dict1 & VarOperationState.dict2).to_string(),
                 id="dict_and_dict",
             ),
             rx.text(
-                (VarOperationState.dict1 == VarOperationState.dict2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.dict1 == VarOperationState.dict2).to_string(),
                 id="dict_eq_dict",
             ),
             rx.text(
-                (VarOperationState.dict1 != VarOperationState.dict2).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                (VarOperationState.dict1 != VarOperationState.dict2).to_string(),
                 id="dict_neq_dict",
             ),
             rx.text(
-                VarOperationState.dict1.contains(1).to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                VarOperationState.dict1.contains(1).to_string(),
                 id="dict_contains",
             ),
             rx.text(VarOperationState.str_var3.lower(), id="str_lower"),
             rx.text(VarOperationState.str_var3.upper(), id="str_upper"),
-            rx.text(VarOperationState.str_var4.split(" ").to_string(), id="str_split"),  # pyright: ignore [reportAttributeAccessIssue]
-            rx.text(VarOperationState.list3.join(""), id="list_join"),  # pyright: ignore [reportAttributeAccessIssue]
-            rx.text(VarOperationState.list3.join(","), id="list_join_comma"),  # pyright: ignore [reportAttributeAccessIssue]
+            rx.text(VarOperationState.str_var4.split(" ").to_string(), id="str_split"),
+            rx.text(VarOperationState.list3.join(""), id="list_join"),
+            rx.text(VarOperationState.list3.join(","), id="list_join_comma"),
             # Index from an op var
             rx.text(
                 VarOperationState.list3[VarOperationState.int_var1 % 3],
@@ -575,7 +573,7 @@ def VarOperations():
             ),
             rx.box(
                 rx.foreach(
-                    LiteralVar.create(list(range(0, 3))).to(ArrayVar, List[int]),
+                    LiteralVar.create(list(range(0, 3))).to(ArrayVar, list[int]),
                     lambda x: rx.foreach(
                         ArrayVar.range(x),
                         lambda y: rx.text(VarOperationState.list1[y], as_="p"),
@@ -595,7 +593,7 @@ def VarOperations():
             # foreach in a match
             rx.box(
                 rx.match(
-                    VarOperationState.list3.length(),  # pyright: ignore [reportAttributeAccessIssue]
+                    VarOperationState.list3.length(),
                     (0, rx.text("No choices")),
                     (1, rx.text("One choice")),
                     rx.foreach(VarOperationState.list3, lambda choice: rx.text(choice)),
