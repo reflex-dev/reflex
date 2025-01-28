@@ -87,7 +87,7 @@ target-version = "py310"
 output-format = "concise"
 lint.isort.split-on-trailing-comma = false
 lint.select = ["B", "C4", "D", "E", "ERA", "F", "FURB", "I", "N", "PERF", "PGH", "PTH", "RUF", "SIM", "T", "TRY", "W"]
-lint.ignore = ["B008", "D205", "E501", "F403", "SIM115", "RUF006", "RUF012", "TRY0"]
+lint.ignore = ["B008", "D205", "E501", "F403", "SIM115", "RUF006", "RUF008", "RUF012", "TRY0"]
 lint.pydocstyle.convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
