@@ -797,7 +797,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                         *defining_state_cls.inherited_vars,
                         *defining_state_cls.inherited_backend_vars,
                     }:
-                        defining_state_cls = defining_state_cls.get_parent_state()
+                        parent_state = defining_state_cls.get_parent_state()
+                        if parent_state is not None:
+                            defining_state_cls = parent_state
                     defining_state_cls._var_dependencies.setdefault(dvar, set()).add(
                         (cls.get_full_name(), cvar_name)
                     )
@@ -2721,7 +2723,7 @@ class StateProxy(wrapt.ObjectProxy):
             await self.__wrapped__.get_state(state_cls), parent_state_proxy=self
         )
 
-    def _as_state_update(self, *args, **kwargs) -> StateUpdate:
+    async def _as_state_update(self, *args, **kwargs) -> StateUpdate:
         """Temporarily allow mutability to access parent_state.
 
         Args:
@@ -2734,7 +2736,7 @@ class StateProxy(wrapt.ObjectProxy):
         original_mutable = self._self_mutable
         self._self_mutable = True
         try:
-            return self.__wrapped__._as_state_update(*args, **kwargs)
+            return await self.__wrapped__._as_state_update(*args, **kwargs)
         finally:
             self._self_mutable = original_mutable
 
@@ -3366,10 +3368,10 @@ class StateManagerRedis(StateManager):
                 state.parent_state = parent_state
 
         # To retain compatibility with previous implementation, by default, we return
-        # the top-level state by chasing `parent_state` pointers up the tree.
+        # the top-level state which should always be fetched or already cached.
         if top_level:
-            return state._get_root_state()
-        return state
+            return flat_state_tree[self.state.get_full_name()]
+        return flat_state_tree[state_cls.get_full_name()]
 
     @override
     async def set_state(
@@ -4070,7 +4072,7 @@ def reload_state_module(
         if subclass.__module__ == module and module is not None:
             state.class_subclasses.remove(subclass)
             state._always_dirty_substates.discard(subclass.get_name())
-            state._potentially_dirty_substates.discard(subclass.get_name())
+            state._potentially_dirty_states.discard(subclass.get_name())
             state._var_dependencies = {}
             state._init_var_dependency_dicts()
     state.get_class_substate.cache_clear()
