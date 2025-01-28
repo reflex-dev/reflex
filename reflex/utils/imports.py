@@ -90,7 +90,7 @@ def collapse_imports(
     }
 
 
-@dataclasses.dataclass(order=True, frozen=True)
+@dataclasses.dataclass(frozen=True)
 class ImportVar:
     """An import var."""
 

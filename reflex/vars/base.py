@@ -145,9 +145,7 @@ class VarData:
             position: Position of the hook in the component.
         """
         immutable_imports: ImmutableParsedImportDict = tuple(
-            sorted(
-                ((k, tuple(sorted(v))) for k, v in parse_imports(imports or {}).items())
-            )
+            (k, tuple(v)) for k, v in parse_imports(imports or {}).items()
         )
         object.__setattr__(self, "state", state)
         object.__setattr__(self, "field_name", field_name)
@@ -2723,7 +2721,7 @@ def generic_type_to_actual_type_map(
     # call recursively for nested generic types and merge the results
     return {
         k: v
-        for generic_arg, actual_arg in zip(generic_args, actual_args)
+        for generic_arg, actual_arg in zip(generic_args, actual_args, strict=True)
         for k, v in generic_type_to_actual_type_map(generic_arg, actual_arg).items()
     }
 

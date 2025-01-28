@@ -609,7 +609,9 @@ def _isinstance(obj: Any, cls: GenericType, nested: bool = False) -> bool:
             return (
                 isinstance(obj, tuple)
                 and len(obj) == len(args)
-                and all(_isinstance(item, arg) for item, arg in zip(obj, args))
+                and all(
+                    _isinstance(item, arg) for item, arg in zip(obj, args, strict=True)
+                )
             )
         if origin in (dict, Breakpoints):
             return isinstance(obj, dict) and all(
@@ -812,7 +814,7 @@ def validate_parameter_literals(func):
         annotations = {param[0]: param[1].annotation for param in func_params}
 
         # validate args
-        for param, arg in zip(annotations, args):
+        for param, arg in zip(annotations, args, strict=False):
             if annotations[param] is inspect.Parameter.empty:
                 continue
             validate_literal(param, arg, annotations[param], func.__name__)
@@ -910,6 +912,8 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
     # It also ignores when the length of the arguments is different
     return all(
         typehint_issubclass(provided_arg, accepted_arg)
-        for provided_arg, accepted_arg in zip(provided_args, accepted_args)
+        for provided_arg, accepted_arg in zip(
+            provided_args, accepted_args, strict=False
+        )
         if accepted_arg is not Any
     )
