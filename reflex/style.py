@@ -292,7 +292,7 @@ class Style(dict):
             )
         super().__setitem__(key, value)
 
-    def __or__(self, other: Style) -> Style:
+    def __or__(self, other: Style | dict) -> Style:
         """Combine two styles.
 
         Args:
@@ -301,9 +301,7 @@ class Style(dict):
         Returns:
             The combined style.
         """
-        if not isinstance(other, Style):
-            other = Style(other)
-        return Style(super().__or__(self, other))
+        return Style(super().__or__(self, other))  # pyright: ignore [reportGeneralTypeIssues, reportCallIssue]
 
 
 def _format_emotion_style_pseudo_selector(key: str) -> str:
