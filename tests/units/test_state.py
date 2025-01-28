@@ -3212,8 +3212,13 @@ def test_potentially_dirty_substates():
 
 
 @pytest.mark.asyncio
-async def test_router_var_dep() -> None:
-    """Test that router var dependencies are correctly tracked."""
+async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
+    """Test that router var dependencies are correctly tracked.
+
+    Args:
+        state_manager: A state manager.
+        token: A token.
+    """
 
     class RouterVarParentState(State):
         """A parent state for testing router var dependency."""
@@ -3233,24 +3238,17 @@ async def test_router_var_dep() -> None:
     assert foo._deps(objclass=RouterVarDepState) == {
         RouterVarDepState.get_full_name(): {"router"}
     }
-    assert State._var_dependencies == {
-        "router": {(RouterVarDepState.get_full_name(), "foo")}
-    }
+    assert (RouterVarDepState.get_full_name(), "foo") in State._var_dependencies[
+        "router"
+    ]
 
-    rx_state = State()
-    parent_state = RouterVarParentState()
-    state = RouterVarDepState()
-
-    # link states
-    rx_state.substates = {RouterVarParentState.get_name(): parent_state}
-    parent_state.parent_state = rx_state
-    state.parent_state = parent_state
-    parent_state.substates = {RouterVarDepState.get_name(): state}
-
-    populated_substate_classes = (
-        await rx_state._recursively_populate_dependent_substates()
-    )
-    assert populated_substate_classes == {State, RouterVarDepState}
+    # Get state from state manager.
+    state_manager.state = State
+    rx_state = await state_manager.get_state(_substate_key(token, State))
+    assert RouterVarParentState.get_name() in rx_state.substates
+    parent_state = rx_state.substates[RouterVarParentState.get_name()]
+    assert RouterVarDepState.get_name() in parent_state.substates
+    state = parent_state.substates[RouterVarDepState.get_name()]
 
     assert state.dirty_vars == set()
 
