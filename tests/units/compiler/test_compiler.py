@@ -103,7 +103,7 @@ def test_compile_imports(import_dict: ParsedImportDict, test_dicts: list[dict]):
     for import_dict, test_dict in zip(imports, test_dicts):
         assert import_dict["lib"] == test_dict["lib"]
         assert import_dict["default"] == test_dict["default"]
-        assert import_dict["rest"] == test_dict["rest"]
+        assert sorted(import_dict["rest"]) == test_dict["rest"]  # pyright: ignore [reportArgumentType]
 
 
 def test_compile_stylesheets(tmp_path, mocker):
