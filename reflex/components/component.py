@@ -150,7 +150,7 @@ class BaseComponent(Base, ABC):
 class ComponentNamespace(SimpleNamespace):
     """A namespace to manage components with subcomponents."""
 
-    def __hash__(self) -> int:
+    def __hash__(self) -> int:  # pyright: ignore [reportIncompatibleVariableOverride]
         """Get the hash of the namespace.
 
         Returns:
@@ -462,9 +462,7 @@ class Component(BaseComponent, ABC):
                 if types.is_union(passed_type):
                     # We need to check all possible types in the union.
                     passed_types = (
-                        arg
-                        for arg in passed_type.__args__  # type: ignore
-                        if arg is not type(None)
+                        arg for arg in passed_type.__args__ if arg is not type(None)
                     )
                 if (
                     # If the passed var is a union, check if all possible types are valid.
@@ -491,7 +489,7 @@ class Component(BaseComponent, ABC):
             # Check if the key is an event trigger.
             if key in component_specific_triggers:
                 kwargs["event_triggers"][key] = EventChain.create(
-                    value=value,  # type: ignore
+                    value=value,
                     args_spec=component_specific_triggers[key],
                     key=key,
                 )
@@ -578,7 +576,7 @@ class Component(BaseComponent, ABC):
                 annotation = field.annotation
                 if (metadata := getattr(annotation, "__metadata__", None)) is not None:
                     args_spec = metadata[0]
-                default_triggers[field.name] = args_spec or (no_args_event_spec)  # type: ignore
+                default_triggers[field.name] = args_spec or (no_args_event_spec)
         return default_triggers
 
     def __repr__(self) -> str:
@@ -760,7 +758,7 @@ class Component(BaseComponent, ABC):
 
         # Walk the MRO to call all `add_style` methods.
         for base in self._iter_parent_classes_with_method("add_style"):
-            s = base.add_style(self)  # type: ignore
+            s = base.add_style(self)
             if s is not None:
                 styles.append(s)
 
@@ -1673,7 +1671,7 @@ class CustomComponent(Component):
                 if base_value is not None and isinstance(value, Component):
                     self.component_props[key] = value
                     value = base_value._replace(
-                        merge_var_data=VarData(  # type: ignore
+                        merge_var_data=VarData(
                             imports=value._get_all_imports(),
                             hooks=value._get_all_hooks(),
                         )
@@ -1706,7 +1704,7 @@ class CustomComponent(Component):
         return hash(self.tag)
 
     @classmethod
-    def get_props(cls) -> Set[str]:
+    def get_props(cls) -> Set[str]:  # pyright: ignore [reportIncompatibleVariableOverride]
         """Get the props for the component.
 
         Returns:
@@ -1801,7 +1799,7 @@ class CustomComponent(Component):
             include_children=include_children, ignore_ids=ignore_ids
         )
 
-    @lru_cache(maxsize=None)  # noqa
+    @lru_cache(maxsize=None)  # noqa: B019
     def get_component(self) -> Component:
         """Render the component.
 
