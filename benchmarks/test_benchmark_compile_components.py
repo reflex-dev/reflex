@@ -32,13 +32,13 @@ def render_component(num: int):
             rx.box(
                 rx.accordion.root(
                     rx.accordion.item(
-                        header="Full Ingredients",  # type: ignore
-                        content="Yes. It's built with accessibility in mind.",  # type: ignore
+                        header="Full Ingredients",
+                        content="Yes. It's built with accessibility in mind.",
                         font_size="3em",
                     ),
                     rx.accordion.item(
-                        header="Applications",  # type: ignore
-                        content="Yes. It's unstyled by default, giving you freedom over the look and feel.",  # type: ignore
+                        header="Applications",
+                        content="Yes. It's unstyled by default, giving you freedom over the look and feel.",
                     ),
                     collapsible=True,
                     variant="ghost",
@@ -154,10 +154,10 @@ def app_with_10_components(
         root=root,
         app_source=functools.partial(
             AppWithComponents,
-            render_component=render_component,  # type: ignore
-            components=10,  # pyright: ignore [reportGeneralTypeIssues]
+            render_component=render_component,  # pyright: ignore [reportCallIssue]
+            components=10,  # pyright: ignore [reportCallIssue]
         ),
-    )  # type: ignore
+    )
 
 
 @pytest.fixture(scope="session")
@@ -178,10 +178,10 @@ def app_with_100_components(
         root=root,
         app_source=functools.partial(
             AppWithComponents,
-            render_component=render_component,  # type: ignore
-            components=100,  # pyright: ignore [reportGeneralTypeIssues]
+            render_component=render_component,  # pyright: ignore [reportCallIssue]
+            components=100,  # pyright: ignore [reportCallIssue]
         ),
-    )  # type: ignore
+    )
 
 
 @pytest.fixture(scope="session")
@@ -202,10 +202,10 @@ def app_with_1000_components(
         root=root,
         app_source=functools.partial(
             AppWithComponents,
-            render_component=render_component,  # type: ignore
-            components=1000,  # pyright: ignore [reportGeneralTypeIssues]
+            render_component=render_component,  # pyright: ignore [reportCallIssue]
+            components=1000,  # pyright: ignore [reportCallIssue]
         ),
-    )  # type: ignore
+    )
 
 
 @pytest.mark.benchmark(

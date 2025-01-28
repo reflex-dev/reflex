@@ -10,4 +10,4 @@ from reflex.components.datadisplay.code import CodeBlock, Theme
 def test_code_light_dark_theme(theme, expected):
     code_block = CodeBlock.create(theme=theme)
 
-    assert code_block.theme._js_expr == expected  # type: ignore
+    assert code_block.theme._js_expr == expected  # pyright: ignore [reportAttributeAccessIssue]
