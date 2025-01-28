@@ -119,14 +119,7 @@ components = 1
 
 
 def AppWithComponents():
-    """Generate an app with a number of components.
-
-    Args:
-        components: The number of components to generate.
-
-    Returns:
-        The generated app.
-    """
+    """Generate an app with a number of components."""
     import reflex as rx
 
     def index() -> rx.Component:
