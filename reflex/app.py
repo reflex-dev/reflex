@@ -27,6 +27,7 @@ from typing import (
     Dict,
     Generic,
     List,
+    MutableMapping,
     Optional,
     Set,
     Type,
@@ -145,7 +146,7 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
             position="top-center",
             id="backend_error",
             style={"width": "500px"},
-        )  # type: ignore
+        )  # pyright: ignore [reportReturnType]
     else:
         error_message.insert(0, "An error occurred.")
         return window_alert("\n".join(error_message))
@@ -405,7 +406,36 @@ class App(MiddlewareMixin, LifespanMixin):
         self.sio.register_namespace(self.event_namespace)
         # Mount the socket app with the API.
         if self.api:
-            self.api.mount(str(constants.Endpoint.EVENT), socket_app)
+
+            class HeaderMiddleware:
+                def __init__(self, app: ASGIApp):
+                    self.app = app
+
+                async def __call__(
+                    self, scope: MutableMapping[str, Any], receive: Any, send: Callable
+                ):
+                    original_send = send
+
+                    async def modified_send(message: dict):
+                        if message["type"] == "websocket.accept":
+                            if scope.get("subprotocols"):
+                                # The following *does* say "subprotocol" instead of "subprotocols", intentionally.
+                                message["subprotocol"] = scope["subprotocols"][0]
+
+                            headers = dict(message.get("headers", []))
+                            header_key = b"sec-websocket-protocol"
+                            if subprotocol := headers.get(header_key):
+                                message["headers"] = [
+                                    *message.get("headers", []),
+                                    (header_key, subprotocol),
+                                ]
+
+                        return await original_send(message)
+
+                    return await self.app(scope, receive, modified_send)
+
+            socket_app_with_headers = HeaderMiddleware(socket_app)
+            self.api.mount(str(constants.Endpoint.EVENT), socket_app_with_headers)
 
         # Check the exception handlers
         self._validate_exception_handlers()
@@ -648,7 +678,10 @@ class App(MiddlewareMixin, LifespanMixin):
         for route in self._pages:
             replaced_route = replace_brackets_with_keywords(route)
             for rw, r, nr in zip(
-                replaced_route.split("/"), route.split("/"), new_route.split("/")
+                replaced_route.split("/"),
+                route.split("/"),
+                new_route.split("/"),
+                strict=False,
             ):
                 if rw in segments and r != nr:
                     # If the slugs in the segments of both routes are not the same, then the route is invalid
@@ -747,7 +780,7 @@ class App(MiddlewareMixin, LifespanMixin):
         frontend_packages = get_config().frontend_packages
         _frontend_packages = []
         for package in frontend_packages:
-            if package in (get_config().tailwind or {}).get("plugins", []):  # type: ignore
+            if package in (get_config().tailwind or {}).get("plugins", []):
                 console.warn(
                     f"Tailwind packages are inferred from 'plugins', remove `{package}` from `frontend_packages`"
                 )
@@ -992,7 +1025,7 @@ class App(MiddlewareMixin, LifespanMixin):
             compiler.compile_document_root(
                 self.head_components,
                 html_lang=self.html_lang,
-                html_custom_attrs=self.html_custom_attrs,  # type: ignore
+                html_custom_attrs=self.html_custom_attrs,  # pyright: ignore [reportArgumentType]
             )
         )
 
@@ -1015,7 +1048,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 max_workers=environment.REFLEX_COMPILE_THREADS.get() or None
             )
 
-        for route, component in zip(self._pages, page_components):
+        for route, component in zip(self._pages, page_components, strict=True):
             ExecutorSafeFunctions.COMPONENTS[route] = component
 
         ExecutorSafeFunctions.STATE = self._state
@@ -1212,6 +1245,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 frontend_arg_spec,
                 backend_arg_spec,
             ],
+            strict=True,
         ):
             if hasattr(handler_fn, "__name__"):
                 _fn_name = handler_fn.__name__

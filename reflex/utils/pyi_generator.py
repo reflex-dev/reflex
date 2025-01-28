@@ -231,7 +231,7 @@ def _generate_imports(
     """
     return [
         *[
-            ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])
+            ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])  # pyright: ignore [reportCallIssue]
             for name, values in DEFAULT_IMPORTS.items()
         ],
         ast.Import([ast.alias("reflex")]),
@@ -369,7 +369,7 @@ def _extract_class_props_as_ast_nodes(
                     # Try to get default from pydantic field definition.
                     default = target_class.__fields__[name].default
                     if isinstance(default, Var):
-                        default = default._decode()  # type: ignore
+                        default = default._decode()
 
             kwargs.append(
                 (
@@ -436,10 +436,12 @@ def type_to_ast(typ: Any, cls: type) -> ast.AST:
     if len(arg_nodes) == 1:
         slice_value = arg_nodes[0]
     else:
-        slice_value = ast.Tuple(elts=arg_nodes, ctx=ast.Load())
+        slice_value = ast.Tuple(elts=arg_nodes, ctx=ast.Load())  # pyright: ignore [reportArgumentType]
 
     return ast.Subscript(
-        value=ast.Name(id=base_name), slice=ast.Index(value=slice_value), ctx=ast.Load()
+        value=ast.Name(id=base_name),
+        slice=ast.Index(value=slice_value),  # pyright: ignore [reportArgumentType]
+        ctx=ast.Load(),
     )
 
 
@@ -577,7 +579,7 @@ def _generate_component_create_functiondef(
                 arg=trigger,
                 annotation=ast.Subscript(
                     ast.Name("Optional"),
-                    ast.Index(  # type: ignore
+                    ast.Index(  # pyright: ignore [reportArgumentType]
                         value=ast.Name(
                             id=ast.unparse(
                                 figure_out_return_type(
@@ -623,7 +625,7 @@ def _generate_component_create_functiondef(
     definition = ast.FunctionDef(
         name="create",
         args=create_args,
-        body=[
+        body=[  # pyright: ignore [reportArgumentType]
             ast.Expr(
                 value=ast.Constant(
                     value=_generate_docstrings(
@@ -632,7 +634,7 @@ def _generate_component_create_functiondef(
                 ),
             ),
             ast.Expr(
-                value=ast.Ellipsis(),
+                value=ast.Constant(value=Ellipsis),
             ),
         ],
         decorator_list=[
@@ -643,7 +645,7 @@ def _generate_component_create_functiondef(
                 else [ast.Name(id="classmethod")]
             ),
         ],
-        lineno=node.lineno if node is not None else None,
+        lineno=node.lineno if node is not None else None,  # pyright: ignore [reportArgumentType]
         returns=ast.Constant(value=clz.__name__),
     )
     return definition
@@ -692,7 +694,7 @@ def _generate_staticmethod_call_functiondef(
             ),
         ],
         decorator_list=[ast.Name(id="staticmethod")],
-        lineno=node.lineno if node is not None else None,
+        lineno=node.lineno if node is not None else None,  # pyright: ignore [reportArgumentType]
         returns=ast.Constant(
             value=_get_type_hint(
                 typing.get_type_hints(clz.__call__).get("return", None),
@@ -728,17 +730,17 @@ def _generate_namespace_call_functiondef(
     clz = classes[clz_name]
 
     if not hasattr(clz.__call__, "__self__"):
-        return _generate_staticmethod_call_functiondef(node, clz, type_hint_globals)  # type: ignore
+        return _generate_staticmethod_call_functiondef(node, clz, type_hint_globals)  # pyright: ignore [reportArgumentType]
 
     # Determine which class is wrapped by the namespace __call__ method
     component_clz = clz.__call__.__self__
 
-    if clz.__call__.__func__.__name__ != "create":
+    if clz.__call__.__func__.__name__ != "create":  # pyright: ignore [reportFunctionMemberAccess]
         return None
 
     definition = _generate_component_create_functiondef(
         node=None,
-        clz=component_clz,  # type: ignore
+        clz=component_clz,  # pyright: ignore [reportArgumentType]
         type_hint_globals=type_hint_globals,
     )
     definition.name = "__call__"
@@ -818,7 +820,7 @@ class StubGenerator(ast.NodeTransformer):
             The modified Module node.
         """
         self.generic_visit(node)
-        return self._remove_docstring(node)  # type: ignore
+        return self._remove_docstring(node)  # pyright: ignore [reportReturnType]
 
     def visit_Import(
         self, node: ast.Import | ast.ImportFrom
@@ -916,7 +918,7 @@ class StubGenerator(ast.NodeTransformer):
             node.body.append(call_definition)
         if not node.body:
             # We should never return an empty body.
-            node.body.append(ast.Expr(value=ast.Ellipsis()))
+            node.body.append(ast.Expr(value=ast.Constant(value=Ellipsis)))
         self.current_class = None
         return node
 
@@ -943,9 +945,9 @@ class StubGenerator(ast.NodeTransformer):
             if node.name.startswith("_") and node.name != "__call__":
                 return None  # remove private methods
 
-            if node.body[-1] != ast.Expr(value=ast.Ellipsis()):
+            if node.body[-1] != ast.Expr(value=ast.Constant(value=Ellipsis)):
                 # Blank out the function body for public functions.
-                node.body = [ast.Expr(value=ast.Ellipsis())]
+                node.body = [ast.Expr(value=ast.Constant(value=Ellipsis))]
         return node
 
     def visit_Assign(self, node: ast.Assign) -> ast.Assign | None:
@@ -1079,7 +1081,7 @@ class PyiGenerator:
                 + (
                     "  # type: ignore"
                     if mod in pyright_ignore_imports
-                    else "  # noqa"  # ignore ruff formatting here for cases like rx.list.
+                    else "  # noqa: F401"  # ignore ruff formatting here for cases like rx.list.
                     if isinstance(mod, tuple)
                     else ""
                 )

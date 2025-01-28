@@ -66,7 +66,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def __add__(self, other: StringVar | str) -> ConcatVarOperation: ...
 
     @overload
-    def __add__(self, other: NoReturn) -> NoReturn: ...
+    def __add__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __add__(self, other: Any) -> ConcatVarOperation:
         """Concatenate two strings.
@@ -86,7 +86,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def __radd__(self, other: StringVar | str) -> ConcatVarOperation: ...
 
     @overload
-    def __radd__(self, other: NoReturn) -> NoReturn: ...
+    def __radd__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __radd__(self, other: Any) -> ConcatVarOperation:
         """Concatenate two strings.
@@ -106,7 +106,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def __mul__(self, other: NumberVar | int) -> StringVar: ...
 
     @overload
-    def __mul__(self, other: NoReturn) -> NoReturn: ...
+    def __mul__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __mul__(self, other: Any) -> StringVar:
         """Multiply the sequence by a number or an integer.
@@ -126,7 +126,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def __rmul__(self, other: NumberVar | int) -> StringVar: ...
 
     @overload
-    def __rmul__(self, other: NoReturn) -> NoReturn: ...
+    def __rmul__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __rmul__(self, other: Any) -> StringVar:
         """Multiply the sequence by a number or an integer.
@@ -211,7 +211,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     ) -> BooleanVar: ...
 
     @overload
-    def contains(
+    def contains(  # pyright: ignore [reportOverlappingOverload]
         self, other: NoReturn, field: StringVar | str | None = None
     ) -> NoReturn: ...
 
@@ -237,7 +237,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def split(self, separator: StringVar | str = "") -> ArrayVar[List[str]]: ...
 
     @overload
-    def split(self, separator: NoReturn) -> NoReturn: ...
+    def split(self, separator: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def split(self, separator: Any = "") -> ArrayVar[List[str]]:
         """Split the string.
@@ -256,7 +256,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def startswith(self, prefix: StringVar | str) -> BooleanVar: ...
 
     @overload
-    def startswith(self, prefix: NoReturn) -> NoReturn: ...
+    def startswith(self, prefix: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def startswith(self, prefix: Any) -> BooleanVar:
         """Check if the string starts with a prefix.
@@ -275,7 +275,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def endswith(self, suffix: StringVar | str) -> BooleanVar: ...
 
     @overload
-    def endswith(self, suffix: NoReturn) -> NoReturn: ...
+    def endswith(self, suffix: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def endswith(self, suffix: Any) -> BooleanVar:
         """Check if the string ends with a suffix.
@@ -294,7 +294,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def __lt__(self, other: StringVar | str) -> BooleanVar: ...
 
     @overload
-    def __lt__(self, other: NoReturn) -> NoReturn: ...
+    def __lt__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __lt__(self, other: Any):
         """Check if the string is less than another string.
@@ -314,7 +314,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def __gt__(self, other: StringVar | str) -> BooleanVar: ...
 
     @overload
-    def __gt__(self, other: NoReturn) -> NoReturn: ...
+    def __gt__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __gt__(self, other: Any):
         """Check if the string is greater than another string.
@@ -334,7 +334,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def __le__(self, other: StringVar | str) -> BooleanVar: ...
 
     @overload
-    def __le__(self, other: NoReturn) -> NoReturn: ...
+    def __le__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __le__(self, other: Any):
         """Check if the string is less than or equal to another string.
@@ -354,7 +354,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def __ge__(self, other: StringVar | str) -> BooleanVar: ...
 
     @overload
-    def __ge__(self, other: NoReturn) -> NoReturn: ...
+    def __ge__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __ge__(self, other: Any):
         """Check if the string is greater than or equal to another string.
@@ -811,7 +811,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
     def join(self, sep: StringVar | str = "") -> StringVar: ...
 
     @overload
-    def join(self, sep: NoReturn) -> NoReturn: ...
+    def join(self, sep: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def join(self, sep: Any = "") -> StringVar:
         """Join the elements of the array.
@@ -858,7 +858,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
     def __add__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> ArrayVar[ARRAY_VAR_TYPE]: ...
 
     @overload
-    def __add__(self, other: NoReturn) -> NoReturn: ...
+    def __add__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __add__(self, other: Any) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Concatenate two arrays.
@@ -1089,7 +1089,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
     def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]: ...
 
     @overload
-    def __mul__(self, other: NoReturn) -> NoReturn: ...
+    def __mul__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __mul__(self, other: Any) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Multiply the sequence by a number or integer.
@@ -1107,7 +1107,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
         return repeat_array_operation(self, other)
 
-    __rmul__ = __mul__  # type: ignore
+    __rmul__ = __mul__
 
     @overload
     def __lt__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> BooleanVar: ...
@@ -1694,7 +1694,7 @@ def array_concat_operation(
     """
     return var_operation_return(
         js_expression=f"[...{lhs}, ...{rhs}]",
-        var_type=Union[lhs._var_type, rhs._var_type],
+        var_type=Union[lhs._var_type, rhs._var_type],  # pyright: ignore [reportArgumentType]
     )
 
 

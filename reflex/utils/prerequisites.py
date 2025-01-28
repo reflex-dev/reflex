@@ -87,6 +87,17 @@ def get_web_dir() -> Path:
     return environment.REFLEX_WEB_WORKDIR.get()
 
 
+def get_states_dir() -> Path:
+    """Get the working directory for the states.
+
+    Can be overridden with REFLEX_STATES_WORKDIR.
+
+    Returns:
+        The working directory.
+    """
+    return environment.REFLEX_STATES_WORKDIR.get()
+
+
 def check_latest_package_version(package_name: str):
     """Check if the latest version of the package is installed.
 
@@ -165,7 +176,7 @@ def get_node_version() -> version.Version | None:
     try:
         result = processes.new_process([node_path, "-v"], run=True)
         # The output will be in the form "vX.Y.Z", but version.parse() can handle it
-        return version.parse(result.stdout)  # type: ignore
+        return version.parse(result.stdout)  # pyright: ignore [reportArgumentType]
     except (FileNotFoundError, TypeError):
         return None
 
@@ -178,7 +189,7 @@ def get_fnm_version() -> version.Version | None:
     """
     try:
         result = processes.new_process([constants.Fnm.EXE, "--version"], run=True)
-        return version.parse(result.stdout.split(" ")[1])  # type: ignore
+        return version.parse(result.stdout.split(" ")[1])  # pyright: ignore [reportOptionalMemberAccess, reportAttributeAccessIssue]
     except (FileNotFoundError, TypeError):
         return None
     except version.InvalidVersion as e:
@@ -194,10 +205,13 @@ def get_bun_version() -> version.Version | None:
     Returns:
         The version of bun.
     """
+    bun_path = path_ops.get_bun_path()
+    if bun_path is None:
+        return None
     try:
         # Run the bun -v command and capture the output
-        result = processes.new_process([str(get_config().bun_path), "-v"], run=True)
-        return version.parse(result.stdout)  # type: ignore
+        result = processes.new_process([str(bun_path), "-v"], run=True)
+        return version.parse(str(result.stdout))  # pyright: ignore [reportArgumentType]
     except FileNotFoundError:
         return None
     except version.InvalidVersion as e:
@@ -1053,9 +1067,7 @@ def install_bun():
             )
 
     # Skip if bun is already installed.
-    if Path(get_config().bun_path).exists() and get_bun_version() == version.parse(
-        constants.Bun.VERSION
-    ):
+    if get_bun_version() == version.parse(constants.Bun.VERSION):
         console.debug("Skipping bun installation as it is already installed.")
         return
 
@@ -1076,8 +1088,7 @@ def install_bun():
             show_logs=console.is_debug(),
         )
     else:
-        unzip_path = path_ops.which("unzip")
-        if unzip_path is None:
+        if path_ops.which("unzip") is None:
             raise SystemPackageMissingError("unzip")
 
         # Run the bun install script.
@@ -1179,7 +1190,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     )
 
     processes.run_process_with_fallback(
-        [install_package_manager, "install"],  # type: ignore
+        [install_package_manager, "install"],
         fallback=fallback_command,
         analytics_enabled=True,
         show_status_message="Installing base frontend packages",
@@ -1281,12 +1292,9 @@ def validate_bun():
     Raises:
         Exit: If custom specified bun does not exist or does not meet requirements.
     """
-    # if a custom bun path is provided, make sure its valid
-    # This is specific to non-FHS OS
-    bun_path = get_config().bun_path
-    if path_ops.use_system_bun():
-        bun_path = path_ops.which("bun")
-    if bun_path != constants.Bun.DEFAULT_PATH:
+    bun_path = path_ops.get_bun_path()
+
+    if bun_path and bun_path.samefile(constants.Bun.DEFAULT_PATH):
         console.info(f"Using custom Bun path: {bun_path}")
         bun_version = get_bun_version()
         if not bun_version:
@@ -1475,7 +1483,7 @@ def prompt_for_template_options(templates: list[Template]) -> str:
     )
 
     # Return the template.
-    return templates[int(template)].name
+    return templates[int(template)].name  # pyright: ignore [reportArgumentType]
 
 
 def fetch_app_templates(version: str) -> dict[str, Template]:

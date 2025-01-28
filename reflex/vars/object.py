@@ -75,9 +75,9 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         """
         fixed_type = get_origin(self._var_type) or self._var_type
         if not isclass(fixed_type):
-            return Any
+            return Any  # pyright: ignore [reportReturnType]
         args = get_args(self._var_type) if issubclass(fixed_type, Mapping) else ()
-        return args[1] if args else Any
+        return args[1] if args else Any  # pyright: ignore [reportReturnType]
 
     def keys(self) -> ArrayVar[List[str]]:
         """Get the keys of the object.
@@ -134,7 +134,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 
     # NoReturn is used here to catch when key value is Any
     @overload
-    def __getitem__(
+    def __getitem__(  # pyright: ignore [reportOverlappingOverload]
         self: ObjectVar[Mapping[Any, NoReturn]],
         key: Var | Any,
     ) -> Var: ...
@@ -202,7 +202,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 
     # NoReturn is used here to catch when key value is Any
     @overload
-    def __getattr__(
+    def __getattr__(  # pyright: ignore [reportOverlappingOverload]
         self: ObjectVar[Mapping[Any, NoReturn]],
         name: str,
     ) -> Var: ...
@@ -321,7 +321,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
             The type of the keys of the object.
         """
         args_list = typing.get_args(self._var_type)
-        return args_list[0] if args_list else Any
+        return args_list[0] if args_list else Any  # pyright: ignore [reportReturnType]
 
     def _value_type(self) -> Type:
         """Get the type of the values of the object.
@@ -330,7 +330,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
             The type of the values of the object.
         """
         args_list = typing.get_args(self._var_type)
-        return args_list[1] if args_list else Any
+        return args_list[1] if args_list else Any  # pyright: ignore [reportReturnType]
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:

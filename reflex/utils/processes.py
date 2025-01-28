@@ -64,7 +64,7 @@ def get_process_on_port(port: int) -> Optional[psutil.Process]:
             psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess
         ):
             if importlib.metadata.version("psutil") >= "6.0.0":
-                conns = proc.net_connections(kind="inet")  # type: ignore
+                conns = proc.net_connections(kind="inet")
             else:
                 conns = proc.connections(kind="inet")
             for conn in conns:
@@ -93,7 +93,7 @@ def kill_process_on_port(port: int):
     """
     if get_process_on_port(port) is not None:
         with contextlib.suppress(psutil.AccessDenied):
-            get_process_on_port(port).kill()  # type: ignore
+            get_process_on_port(port).kill()  # pyright: ignore [reportOptionalMemberAccess]
 
 
 def change_port(port: int, _type: str) -> int:
@@ -144,7 +144,7 @@ def handle_port(service_name: str, port: int, default_port: int) -> int:
 
 
 def new_process(
-    args: str | list[str | Path | None] | list[str],
+    args: str | list[str] | list[str | None] | list[str | Path | None],
     run: bool = False,
     show_logs: bool = False,
     **kwargs,
@@ -198,7 +198,7 @@ def new_process(
     }
     console.debug(f"Running command: {args}")
     fn = subprocess.run if run else subprocess.Popen
-    return fn(args, **kwargs)  # type: ignore
+    return fn(args, **kwargs)  # pyright: ignore [reportCallIssue, reportArgumentType]
 
 
 @contextlib.contextmanager
@@ -219,14 +219,14 @@ def run_concurrently_context(
         return
 
     # Convert the functions to tuples.
-    fns = [fn if isinstance(fn, tuple) else (fn,) for fn in fns]  # type: ignore
+    fns = [fn if isinstance(fn, tuple) else (fn,) for fn in fns]  # pyright: ignore [reportAssignmentType]
 
     # Run the functions concurrently.
     executor = None
     try:
         executor = futures.ThreadPoolExecutor(max_workers=len(fns))
         # Submit the tasks.
-        tasks = [executor.submit(*fn) for fn in fns]  # type: ignore
+        tasks = [executor.submit(*fn) for fn in fns]  # pyright: ignore [reportArgumentType]
 
         # Yield control back to the main thread while tasks are running.
         yield tasks

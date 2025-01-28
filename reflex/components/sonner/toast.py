@@ -142,7 +142,7 @@ class ToastProps(PropsBase, NoExtrasAllowedProps):
         Returns:
             The object as a dictionary with ToastAction fields intact.
         """
-        kwargs.setdefault("exclude_none", True)  # type: ignore
+        kwargs.setdefault("exclude_none", True)
         d = super().dict(*args, **kwargs)
         # Keep these fields as ToastAction so they can be serialized specially
         if "action" in d:
@@ -167,7 +167,7 @@ class ToastProps(PropsBase, NoExtrasAllowedProps):
 class Toaster(Component):
     """A Toaster Component for displaying toast notifications."""
 
-    library: str = "sonner@1.7.2"
+    library: str | None = "sonner@1.7.2"
 
     tag = "Toaster"
 
@@ -222,13 +222,15 @@ class Toaster(Component):
         Returns:
             The hooks for the toaster component.
         """
+        if self.library is None:
+            return []
         hook = Var(
             _js_expr=f"{toast_ref} = toast",
             _var_data=VarData(
                 imports={
                     "$/utils/state": [ImportVar(tag="refs")],
                     self.library: [ImportVar(tag="toast", install=False)],
-                }  # type: ignore
+                }
             ),
         )
         return [hook]
@@ -266,7 +268,7 @@ class Toaster(Component):
             raise ValueError("Toast message or title or description must be provided.")
 
         if props:
-            args = LiteralVar.create(ToastProps(component_name="rx.toast", **props))  # pyright: ignore [reportCallIssue, reportGeneralTypeIssues]
+            args = LiteralVar.create(ToastProps(component_name="rx.toast", **props))  # pyright: ignore [reportCallIssue]
             toast = toast_command.call(message, args)
         else:
             toast = toast_command.call(message)

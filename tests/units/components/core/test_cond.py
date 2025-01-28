@@ -14,7 +14,7 @@ from reflex.vars.base import LiteralVar, Var, computed_var
 @pytest.fixture
 def cond_state(request):
     class CondState(BaseState):
-        value: request.param["value_type"] = request.param["value"]  # noqa
+        value: request.param["value_type"] = request.param["value"]  # pyright: ignore [reportInvalidTypeForm, reportUndefinedVariable] # noqa: F821
 
     return CondState
 
@@ -112,13 +112,13 @@ def test_cond_no_else():
     assert isinstance(comp, Fragment)
     comp = comp.children[0]
     assert isinstance(comp, Cond)
-    assert comp.cond._decode() is True  # type: ignore
-    assert comp.comp1.render() == Fragment.create(Text.create("hello")).render()
+    assert comp.cond._decode() is True
+    assert comp.comp1.render() == Fragment.create(Text.create("hello")).render()  # pyright: ignore [reportOptionalMemberAccess]
     assert comp.comp2 == Fragment.create()
 
     # Props do not support the use of cond without else
     with pytest.raises(ValueError):
-        cond(True, "hello")  # type: ignore
+        cond(True, "hello")  # pyright: ignore [reportArgumentType]
 
 
 def test_cond_computed_var():

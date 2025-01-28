@@ -49,14 +49,14 @@ class VStack(Stack):
     """A vertical stack component."""
 
     # The direction of the stack.
-    direction: Var[LiteralFlexDirection] = "column"  # type: ignore
+    direction: Var[LiteralFlexDirection] = Var.create("column")
 
 
 class HStack(Stack):
     """A horizontal stack component."""
 
     # The direction of the stack.
-    direction: Var[LiteralFlexDirection] = "row"  # type: ignore
+    direction: Var[LiteralFlexDirection] = Var.create("row")
 
 
 stack = Stack.create

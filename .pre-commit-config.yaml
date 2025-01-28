@@ -28,7 +28,7 @@ repos:
         entry: python3 scripts/make_pyi.py
 
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.334
+    rev: v1.1.392
     hooks:
       - id: pyright
         args: [reflex, tests]
