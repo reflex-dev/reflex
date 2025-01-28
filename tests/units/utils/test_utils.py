@@ -31,7 +31,7 @@ def get_above_max_version():
 
     """
     semantic_version_list = constants.Bun.VERSION.split(".")
-    semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # type: ignore
+    semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # pyright: ignore [reportArgumentType, reportCallIssue]
     return ".".join(semantic_version_list)
 
 
@@ -586,9 +586,7 @@ def test_style_prop_with_event_handler_value(callable):
     }
 
     with pytest.raises(ReflexError):
-        rx.box(
-            style=style,  # type: ignore
-        )
+        rx.box(style=style)  # pyright: ignore [reportArgumentType]
 
 
 def test_is_prod_mode() -> None:

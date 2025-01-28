@@ -176,7 +176,7 @@ def get_node_version() -> version.Version | None:
     try:
         result = processes.new_process([node_path, "-v"], run=True)
         # The output will be in the form "vX.Y.Z", but version.parse() can handle it
-        return version.parse(result.stdout)  # type: ignore
+        return version.parse(result.stdout)  # pyright: ignore [reportArgumentType]
     except (FileNotFoundError, TypeError):
         return None
 
@@ -189,7 +189,7 @@ def get_fnm_version() -> version.Version | None:
     """
     try:
         result = processes.new_process([constants.Fnm.EXE, "--version"], run=True)
-        return version.parse(result.stdout.split(" ")[1])  # type: ignore
+        return version.parse(result.stdout.split(" ")[1])  # pyright: ignore [reportOptionalMemberAccess, reportAttributeAccessIssue]
     except (FileNotFoundError, TypeError):
         return None
     except version.InvalidVersion as e:
@@ -211,7 +211,7 @@ def get_bun_version() -> version.Version | None:
     try:
         # Run the bun -v command and capture the output
         result = processes.new_process([str(bun_path), "-v"], run=True)
-        return version.parse(str(result.stdout))
+        return version.parse(str(result.stdout))  # pyright: ignore [reportArgumentType]
     except FileNotFoundError:
         return None
     except version.InvalidVersion as e:
@@ -1188,7 +1188,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     )
 
     processes.run_process_with_fallback(
-        [install_package_manager, "install"],  # type: ignore
+        [install_package_manager, "install"],
         fallback=fallback_command,
         analytics_enabled=True,
         show_status_message="Installing base frontend packages",
@@ -1481,7 +1481,7 @@ def prompt_for_template_options(templates: list[Template]) -> str:
     )
 
     # Return the template.
-    return templates[int(template)].name
+    return templates[int(template)].name  # pyright: ignore [reportArgumentType]
 
 
 def fetch_app_templates(version: str) -> dict[str, Template]:

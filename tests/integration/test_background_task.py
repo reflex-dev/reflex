@@ -37,9 +37,9 @@ def BackgroundTask():
                 self._task_id += 1
             for ix in range(int(self.iterations)):
                 if ix % 2 == 0:
-                    yield State.increment_arbitrary(1)  # type: ignore
+                    yield State.increment_arbitrary(1)
                 else:
-                    yield State.increment()  # type: ignore
+                    yield State.increment()
                 await asyncio.sleep(0.005)
 
         @rx.event
@@ -125,8 +125,8 @@ def BackgroundTask():
             rx.input(
                 id="iterations",
                 placeholder="Iterations",
-                value=State.iterations.to_string(),  # type: ignore
-                on_change=State.set_iterations,  # type: ignore
+                value=State.iterations.to_string(),  # pyright: ignore [reportAttributeAccessIssue]
+                on_change=State.set_iterations,  # pyright: ignore [reportAttributeAccessIssue]
             ),
             rx.button(
                 "Delayed Increment",
@@ -288,7 +288,7 @@ def test_background_task(
     assert background_task._poll_for(lambda: counter.text == "620", timeout=40)
     # all tasks should have exited and cleaned up
     assert background_task._poll_for(
-        lambda: not background_task.app_instance._background_tasks  # type: ignore
+        lambda: not background_task.app_instance._background_tasks  # pyright: ignore [reportOptionalMemberAccess]
     )
 
 

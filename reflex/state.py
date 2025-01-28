@@ -587,7 +587,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if cls._item_is_event_handler(name, fn)
         }
 
-        for mixin in cls._mixins():
+        for mixin in cls._mixins():  # pyright: ignore [reportAssignmentType]
             for name, value in mixin.__dict__.items():
                 if name in cls.inherited_vars:
                     continue
@@ -599,7 +599,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     cls.computed_vars[newcv._js_expr] = newcv
                     cls.vars[newcv._js_expr] = newcv
                     continue
-                if types.is_backend_base_variable(name, mixin):
+                if types.is_backend_base_variable(name, mixin):  # pyright: ignore [reportArgumentType]
                     cls.backend_vars[name] = copy.deepcopy(value)
                     continue
                 if events.get(name) is not None:
@@ -899,7 +899,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ]
         if len(parent_states) >= 2:
             raise ValueError(f"Only one parent state is allowed {parent_states}.")
-        return parent_states[0] if len(parent_states) == 1 else None  # type: ignore
+        return parent_states[0] if len(parent_states) == 1 else None
 
     @classmethod
     def get_substates(cls) -> set[Type[BaseState]]:
@@ -1268,8 +1268,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 fn = _no_chain_background_task(type(self), name, handler.fn)
             else:
                 fn = functools.partial(handler.fn, self)
-            fn.__module__ = handler.fn.__module__  # type: ignore
-            fn.__qualname__ = handler.fn.__qualname__  # type: ignore
+            fn.__module__ = handler.fn.__module__
+            fn.__qualname__ = handler.fn.__qualname__
             return fn
 
         backend_vars = super().__getattribute__("_backend_vars")
@@ -1634,7 +1634,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         # Oopsie case: you didn't give me a Var... so get what you give.
         if not isinstance(var, Var):
-            return var  # type: ignore
+            return var
 
         # Fast case: this is a literal var and the value is known.
         if hasattr(var, "_var_value"):
@@ -2453,7 +2453,7 @@ class OnLoadInternalState(State):
                 self.router.session.client_token,
                 router_data=self.router_data,
             ),
-            State.set_is_hydrated(True),  # type: ignore
+            State.set_is_hydrated(True),  # pyright: ignore [reportAttributeAccessIssue]
         ]
 
 
@@ -2737,7 +2737,7 @@ class StateProxy(wrapt.ObjectProxy):
             # ensure mutations to these containers are blocked unless proxy is _mutable
             return ImmutableMutableProxy(
                 wrapped=value.__wrapped__,
-                state=self,  # type: ignore
+                state=self,
                 field_name=value._self_field_name,
             )
         if isinstance(value, functools.partial) and value.args[0] is self.__wrapped__:
@@ -2750,7 +2750,7 @@ class StateProxy(wrapt.ObjectProxy):
             )
         if isinstance(value, MethodType) and value.__self__ is self.__wrapped__:
             # Rebind methods to the proxy instance
-            value = type(value)(value.__func__, self)  # type: ignore
+            value = type(value)(value.__func__, self)
         return value
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -2950,7 +2950,7 @@ class StateManagerMemory(StateManager):
     # The dict of mutexes for each client
     _states_locks: Dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
 
-    class Config:
+    class Config:  # pyright: ignore [reportIncompatibleVariableOverride]
         """The Pydantic config."""
 
         fields = {
@@ -3068,7 +3068,7 @@ class StateManagerDisk(StateManager):
     # The token expiration time (s).
     token_expiration: int = pydantic.Field(default_factory=_default_token_expiration)
 
-    class Config:
+    class Config:  # pyright: ignore [reportIncompatibleVariableOverride]
         """The Pydantic config."""
 
         fields = {
@@ -3776,9 +3776,9 @@ class MutableProxy(wrapt.ObjectProxy):
                     wrapper_cls_name,
                     (cls,),
                     {
-                        dataclasses._FIELDS: getattr(  # pyright: ignore [reportGeneralTypeIssues]
+                        dataclasses._FIELDS: getattr(  # pyright: ignore [reportAttributeAccessIssue]
                             wrapped_cls,
-                            dataclasses._FIELDS,  # pyright: ignore [reportGeneralTypeIssues]
+                            dataclasses._FIELDS,  # pyright: ignore [reportAttributeAccessIssue]
                         ),
                     },
                 )
@@ -3931,7 +3931,7 @@ class MutableProxy(wrapt.ObjectProxy):
             ):
                 # Wrap methods called on Base subclasses, which might do _anything_
                 return wrapt.FunctionWrapper(
-                    functools.partial(value.__func__, self),
+                    functools.partial(value.__func__, self),  # pyright: ignore [reportFunctionMemberAccess]
                     self._wrap_recursive_decorator,
                 )
 

@@ -165,7 +165,7 @@ class DataEditor(NoSSRComponent):
 
     tag = "DataEditor"
     is_default = True
-    library: str = "@glideapps/glide-data-grid@^6.0.3"
+    library: str | None = "@glideapps/glide-data-grid@^6.0.3"
     lib_dependencies: List[str] = [
         "lodash@^4.17.21",
         "react-responsive-carousel@^3.2.7",
@@ -321,6 +321,8 @@ class DataEditor(NoSSRComponent):
         Returns:
             The import dict.
         """
+        if self.library is None:
+            return {}
         return {
             "": f"{format.format_library_name(self.library)}/dist/index.css",
             self.library: "GridCellKind",
@@ -343,7 +345,7 @@ class DataEditor(NoSSRComponent):
             data_callback = self.get_cell_content._js_expr
         else:
             data_callback = f"getData_{editor_id}"
-            self.get_cell_content = Var(_js_expr=data_callback)  # type: ignore
+            self.get_cell_content = Var(_js_expr=data_callback)
 
         code = [f"function {data_callback}([col, row])" "{"]
 

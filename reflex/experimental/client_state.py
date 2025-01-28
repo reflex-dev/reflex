@@ -201,9 +201,7 @@ class ClientStateVar(Var):
             )
             .to(self._var_type)
             ._replace(
-                merge_var_data=VarData(  # type: ignore
-                    imports=_refs_import if self._global_ref else {}
-                )
+                merge_var_data=VarData(imports=_refs_import if self._global_ref else {})
             )
         )
 
