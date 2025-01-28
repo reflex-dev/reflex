@@ -1,5 +1,7 @@
 import random
 
+import pytest
+
 
 def bubble_sort(arr: list[int]) -> list[int]:
     result = arr[:]
@@ -33,17 +35,32 @@ def merge_sort(arr: list[int]) -> list[int]:
     return merge(left, right)
 
 
-SORTED_ARRAY = list(range(1000))
-
-SHUFFLED_ARRAY = SORTED_ARRAY[:]
-random.shuffle(SHUFFLED_ARRAY)
-
-
-def test_bubble_sort(benchmark):
-    result = benchmark(bubble_sort, SHUFFLED_ARRAY)
-    assert result == SORTED_ARRAY
+def sorted_and_shuffled_array(n: int) -> tuple[list[int], list[int]]:
+    sorted_array = list(range(n))
+    shuffled_array = sorted_array[:]
+    random.shuffle(shuffled_array)
+    return sorted_array, shuffled_array
 
 
-def test_merge_sort(benchmark):
-    result = benchmark(merge_sort, SHUFFLED_ARRAY)
-    assert result == SORTED_ARRAY
+def helper_test_sort(sort_func, benchmark, n):
+    sorted_array, shuffled_array = sorted_and_shuffled_array(n)
+    result = benchmark(sort_func, shuffled_array)
+    assert result == sorted_array
+
+
+sizes = [10, 100, 1000]
+
+
+@pytest.mark.parametrize("n", sizes)
+def test_bubble_sort(benchmark, n):
+    helper_test_sort(bubble_sort, benchmark, n)
+
+
+@pytest.mark.parametrize("n", sizes)
+def test_merge_sort(benchmark, n):
+    helper_test_sort(merge_sort, benchmark, n)
+
+
+@pytest.mark.parametrize("n", sizes)
+def test_builtin_sort(benchmark, n):
+    helper_test_sort(sorted, benchmark, n)
