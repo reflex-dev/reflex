@@ -203,7 +203,7 @@ def app_with_1000_components(
 
 @pytest.mark.benchmark(
     group="Compile time of varying component numbers",
-    min_rounds=5,
+    min_rounds=1,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
@@ -228,7 +228,7 @@ def test_app_10_compile_time_warm(benchmark, app_with_10_components):
 
 @pytest.mark.benchmark(
     group="Compile time of varying component numbers",
-    min_rounds=5,
+    min_rounds=1,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
@@ -253,7 +253,7 @@ def test_app_100_compile_time_warm(benchmark, app_with_100_components):
 
 @pytest.mark.benchmark(
     group="Compile time of varying component numbers",
-    min_rounds=5,
+    min_rounds=1,
     timer=time.perf_counter,
     disable_gc=True,
     warmup=False,
