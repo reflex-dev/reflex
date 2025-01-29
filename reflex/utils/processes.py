@@ -9,18 +9,20 @@ import os
 import signal
 import subprocess
 from concurrent import futures
+from pathlib import Path
 from typing import Callable, Generator, List, Optional, Tuple, Union
 
 import psutil
 import typer
 from redis.exceptions import RedisError
+from rich.progress import Progress
 
 from reflex import constants
 from reflex.config import environment
 from reflex.utils import console, path_ops, prerequisites
 
 
-def kill(pid):
+def kill(pid: int):
     """Kill a process.
 
     Args:
@@ -48,7 +50,7 @@ def get_num_workers() -> int:
     return (os.cpu_count() or 1) * 2 + 1
 
 
-def get_process_on_port(port) -> Optional[psutil.Process]:
+def get_process_on_port(port: int) -> Optional[psutil.Process]:
     """Get the process on the given port.
 
     Args:
@@ -62,7 +64,7 @@ def get_process_on_port(port) -> Optional[psutil.Process]:
             psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess
         ):
             if importlib.metadata.version("psutil") >= "6.0.0":
-                conns = proc.net_connections(kind="inet")  # type: ignore
+                conns = proc.net_connections(kind="inet")
             else:
                 conns = proc.connections(kind="inet")
             for conn in conns:
@@ -71,7 +73,7 @@ def get_process_on_port(port) -> Optional[psutil.Process]:
     return None
 
 
-def is_process_on_port(port) -> bool:
+def is_process_on_port(port: int) -> bool:
     """Check if a process is running on the given port.
 
     Args:
@@ -83,7 +85,7 @@ def is_process_on_port(port) -> bool:
     return get_process_on_port(port) is not None
 
 
-def kill_process_on_port(port):
+def kill_process_on_port(port: int):
     """Kill the process on the given port.
 
     Args:
@@ -91,10 +93,10 @@ def kill_process_on_port(port):
     """
     if get_process_on_port(port) is not None:
         with contextlib.suppress(psutil.AccessDenied):
-            get_process_on_port(port).kill()  # type: ignore
+            get_process_on_port(port).kill()  # pyright: ignore [reportOptionalMemberAccess]
 
 
-def change_port(port: str, _type: str) -> str:
+def change_port(port: int, _type: str) -> int:
     """Change the port.
 
     Args:
@@ -105,7 +107,7 @@ def change_port(port: str, _type: str) -> str:
         The new port.
 
     """
-    new_port = str(int(port) + 1)
+    new_port = port + 1
     if is_process_on_port(new_port):
         return change_port(new_port, _type)
     console.info(
@@ -114,7 +116,7 @@ def change_port(port: str, _type: str) -> str:
     return new_port
 
 
-def handle_port(service_name: str, port: str, default_port: str) -> str:
+def handle_port(service_name: str, port: int, default_port: int) -> int:
     """Change port if the specified port is in use and is not explicitly specified as a CLI arg or config arg.
     otherwise tell the user the port is in use and exit the app.
 
@@ -133,7 +135,7 @@ def handle_port(service_name: str, port: str, default_port: str) -> str:
         Exit:when the port is in use.
     """
     if is_process_on_port(port):
-        if int(port) == int(default_port):
+        if port == int(default_port):
             return change_port(port, service_name)
         else:
             console.error(f"{service_name.capitalize()} port: {port} is already in use")
@@ -141,7 +143,12 @@ def handle_port(service_name: str, port: str, default_port: str) -> str:
     return port
 
 
-def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
+def new_process(
+    args: str | list[str] | list[str | None] | list[str | Path | None],
+    run: bool = False,
+    show_logs: bool = False,
+    **kwargs,
+):
     """Wrapper over subprocess.Popen to unify the launch of child processes.
 
     Args:
@@ -157,7 +164,7 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
         Exit: When attempting to run a command with a None value.
     """
     # Check for invalid command first.
-    if None in args:
+    if isinstance(args, list) and None in args:
         console.error(f"Invalid command: {args}")
         raise typer.Exit(1)
 
@@ -191,7 +198,7 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     }
     console.debug(f"Running command: {args}")
     fn = subprocess.run if run else subprocess.Popen
-    return fn(args, **kwargs)
+    return fn(args, **kwargs)  # pyright: ignore [reportCallIssue, reportArgumentType]
 
 
 @contextlib.contextmanager
@@ -212,14 +219,14 @@ def run_concurrently_context(
         return
 
     # Convert the functions to tuples.
-    fns = [fn if isinstance(fn, tuple) else (fn,) for fn in fns]  # type: ignore
+    fns = [fn if isinstance(fn, tuple) else (fn,) for fn in fns]  # pyright: ignore [reportAssignmentType]
 
     # Run the functions concurrently.
     executor = None
     try:
         executor = futures.ThreadPoolExecutor(max_workers=len(fns))
         # Submit the tasks.
-        tasks = [executor.submit(*fn) for fn in fns]  # type: ignore
+        tasks = [executor.submit(*fn) for fn in fns]  # pyright: ignore [reportArgumentType]
 
         # Yield control back to the main thread while tasks are running.
         yield tasks
@@ -247,7 +254,7 @@ def run_concurrently(*fns: Union[Callable, Tuple]) -> None:
 def stream_logs(
     message: str,
     process: subprocess.Popen,
-    progress=None,
+    progress: Progress | None = None,
     suppress_errors: bool = False,
     analytics_enabled: bool = False,
 ):
@@ -375,10 +382,10 @@ def get_command_with_loglevel(command: list[str]) -> list[str]:
 
 
 def run_process_with_fallback(
-    args,
+    args: list[str],
     *,
-    show_status_message,
-    fallback=None,
+    show_status_message: str,
+    fallback: str | list | None = None,
     analytics_enabled: bool = False,
     **kwargs,
 ):
@@ -417,7 +424,7 @@ def run_process_with_fallback(
             )
 
 
-def execute_command_and_return_output(command) -> str | None:
+def execute_command_and_return_output(command: str) -> str | None:
     """Execute a command and return the output.
 
     Args:

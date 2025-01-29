@@ -14,7 +14,8 @@ from reflex.utils.serializers import serialize, serialize_dataframe
         pytest.param(
             {
                 "data": pd.DataFrame(
-                    [["foo", "bar"], ["foo1", "bar1"]], columns=["column1", "column2"]
+                    [["foo", "bar"], ["foo1", "bar1"]],
+                    columns=["column1", "column2"],  # pyright: ignore [reportArgumentType]
                 )
             },
             "data",
@@ -114,7 +115,8 @@ def test_computed_var_without_annotation(fixture, request, err_msg, is_data_fram
 def test_serialize_dataframe():
     """Test if dataframe is serialized correctly."""
     df = pd.DataFrame(
-        [["foo", "bar"], ["foo1", "bar1"]], columns=["column1", "column2"]
+        [["foo", "bar"], ["foo1", "bar1"]],
+        columns=["column1", "column2"],  # pyright: ignore [reportArgumentType]
     )
     value = serialize(df)
     assert value == serialize_dataframe(df)

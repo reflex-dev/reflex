@@ -109,7 +109,7 @@ class Match(MemoizationLeaf):
         return cases, default
 
     @classmethod
-    def _create_case_var_with_var_data(cls, case_element):
+    def _create_case_var_with_var_data(cls, case_element: Any) -> Var:
         """Convert a case element into a Var.If the case
         is a Style type, we extract the var data and merge it with the
         newly created Var.
@@ -222,7 +222,7 @@ class Match(MemoizationLeaf):
                     cond=match_cond_var,
                     match_cases=match_cases,
                     default=default,
-                    children=[case[-1] for case in match_cases] + [default],  # type: ignore
+                    children=[case[-1] for case in match_cases] + [default],  # pyright: ignore [reportArgumentType]
                 )
             )
 
@@ -236,13 +236,13 @@ class Match(MemoizationLeaf):
             _js_expr=format.format_match(
                 cond=str(match_cond_var),
                 match_cases=match_cases,
-                default=default,  # type: ignore
+                default=default,  # pyright: ignore [reportArgumentType]
             ),
-            _var_type=default._var_type,  # type: ignore
+            _var_type=default._var_type,  # pyright: ignore [reportAttributeAccessIssue,reportOptionalMemberAccess]
             _var_data=VarData.merge(
                 match_cond_var._get_all_var_data(),
                 *[el._get_all_var_data() for case in match_cases for el in case],
-                default._get_all_var_data(),  # type: ignore
+                default._get_all_var_data(),  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
             ),
         )
 

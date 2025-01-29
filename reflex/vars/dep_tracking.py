@@ -7,7 +7,7 @@ import dataclasses
 import dis
 import enum
 import inspect
-from types import CodeType, FunctionType
+from types import CellType, CodeType, FunctionType
 from typing import TYPE_CHECKING, Any, ClassVar, Type, cast
 
 from reflex.utils.exceptions import VarValueError
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 CellEmpty = object()
 
 
-def get_cell_value(cell) -> Any:
+def get_cell_value(cell: CellType) -> Any:
     """Get the value of a cell object.
 
     Args:
@@ -70,10 +70,10 @@ class DependencyTracker:
         """After initializing, populate the dependencies dict."""
         with contextlib.suppress(AttributeError):
             # unbox functools.partial
-            self.func = cast(FunctionType, self.func.func)  # type: ignore
+            self.func = cast(FunctionType, self.func.func)  # pyright: ignore[reportGeneralTypeIssues]
         with contextlib.suppress(AttributeError):
             # unbox EventHandler
-            self.func = cast(FunctionType, self.func.fn)  # type: ignore
+            self.func = cast(FunctionType, self.func.fn)  # pyright: ignore[reportGeneralTypeIssues]
 
         if isinstance(self.func, FunctionType):
             with contextlib.suppress(AttributeError, IndexError):
@@ -127,7 +127,7 @@ class DependencyTracker:
 
         if isinstance(ref_obj, property) and not isinstance(ref_obj, ComputedVar):
             # recurse into property fget functions
-            ref_obj = ref_obj.fget  # type: ignore
+            ref_obj = ref_obj.fget
         if callable(ref_obj):
             # recurse into callable attributes
             self._merge_deps(
@@ -164,7 +164,8 @@ class DependencyTracker:
             var_name: get_cell_value(cell)
             for var_name, cell in zip(
                 self.func.__code__.co_freevars,  # pyright: ignore[reportGeneralTypeIssues]
-                self.func.__closure__,  # pyright: ignore[reportGeneralTypeIssues]
+                self.func.__closure__ or (),
+                strict=False,
             )
             if get_cell_value(cell) is not CellEmpty
         }

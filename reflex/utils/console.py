@@ -196,7 +196,7 @@ def _get_first_non_framework_frame() -> FrameType | None:
     exclude_modules = [click, rx, typer, typing_extensions]
     exclude_roots = [
         p.parent.resolve()
-        if (p := Path(m.__file__)).name == "__init__.py"
+        if (p := Path(m.__file__)).name == "__init__.py"  # pyright: ignore [reportArgumentType]
         else p.resolve()
         for m in exclude_modules
     ]
@@ -275,7 +275,7 @@ def ask(
     choices: list[str] | None = None,
     default: str | None = None,
     show_choices: bool = True,
-) -> str:
+) -> str | None:
     """Takes a prompt question and optionally a list of choices
      and returns the user input.
 
@@ -290,7 +290,7 @@ def ask(
     """
     return Prompt.ask(
         question, choices=choices, default=default, show_choices=show_choices
-    )  # type: ignore
+    )
 
 
 def progress():
