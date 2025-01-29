@@ -2260,6 +2260,10 @@ class DynamicRouteVar(ComputedVar[Union[str, List[str]]]):
     pass
 
 
+async def _default_async_computed_var(_self: BaseState) -> Any:
+    return None
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
@@ -2270,7 +2274,7 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
     """A computed var that wraps a coroutinefunction."""
 
     _fget: Callable[[BaseState], Coroutine[None, None, RETURN_TYPE]] = (
-        dataclasses.field()
+        dataclasses.field(default=_default_async_computed_var)
     )
 
     @overload
