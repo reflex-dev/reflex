@@ -350,18 +350,6 @@ class ConnectionPulser(Div):
         """
         ...
 
-IS_BACKEND_DISABLED = Var(
-    "backendDisabled",
-    _var_type=bool,
-    _var_data=VarData(
-        hooks={
-            "const [backendDisabled, setBackendDisabled] = useState(false);": None,
-            "useEffect(() => { setBackendDisabled(isBackendDisabled()); }, []);": None,
-        },
-        imports={"$/utils/state.js": [ImportVar(tag="isBackendDisabled")]},
-    ),
-)
-
 class BackendDisabled(Div):
     @overload
     @classmethod
