@@ -61,7 +61,7 @@ class LifespanMixin(AppMixin):
 
         Args:
             task: The task to register.
-            task_kwargs: The kwargs of the task.
+            **task_kwargs: The kwargs of the task.
 
         Raises:
             InvalidLifespanTaskTypeError: If the task is a generator function.

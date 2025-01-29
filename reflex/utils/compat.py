@@ -2,6 +2,7 @@
 
 import contextlib
 import sys
+from typing import Any
 
 
 async def windows_hot_reload_lifespan_hack():
@@ -74,7 +75,7 @@ with pydantic_v1_patch():
     import sqlmodel as sqlmodel
 
 
-def sqlmodel_field_has_primary_key(field) -> bool:
+def sqlmodel_field_has_primary_key(field: Any) -> bool:
     """Determines if a field is a priamary.
 
     Args:

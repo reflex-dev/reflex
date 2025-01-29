@@ -83,7 +83,7 @@ def _get_package_config(exit_on_fail: bool = True) -> dict:
         The package configuration.
 
     Raises:
-        Exit: If the pyproject.toml file is not found.
+        Exit: If the pyproject.toml file is not found and exit_on_fail is True.
     """
     pyproject = Path(CustomComponents.PYPROJECT_TOML)
     try:

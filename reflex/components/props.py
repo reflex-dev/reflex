@@ -48,7 +48,7 @@ class PropsBase(Base):
 class NoExtrasAllowedProps(Base):
     """A class that holds props to be passed or applied to a component with no extra props allowed."""
 
-    def __init__(self, component_name=None, **kwargs):
+    def __init__(self, component_name: str | None = None, **kwargs):
         """Initialize the props.
 
         Args:
