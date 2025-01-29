@@ -123,7 +123,11 @@ class DependencyTracker:
         if not self.top_of_stack:
             return
         target_state = self.tracked_locals[self.top_of_stack]
-        ref_obj = getattr(target_state, instruction.argval)
+        try:
+            ref_obj = getattr(target_state, instruction.argval)
+        except AttributeError:
+            # Not found on this state class, maybe it is a dynamic attribute that will be picked up later.
+            ref_obj = None
 
         if isinstance(ref_obj, property) and not isinstance(ref_obj, ComputedVar):
             # recurse into property fget functions
