@@ -100,7 +100,7 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
     @overload
     def partial(self, *args: Var | Any) -> FunctionVar: ...
 
-    def partial(self, *args: Var | Any) -> FunctionVar:  # type: ignore
+    def partial(self, *args: Var | Any) -> FunctionVar:  # pyright: ignore [reportInconsistentOverload]
         """Partially apply the function with the given arguments.
 
         Args:
@@ -174,7 +174,7 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
     @overload
     def call(self, *args: Var | Any) -> Var: ...
 
-    def call(self, *args: Var | Any) -> Var:  # type: ignore
+    def call(self, *args: Var | Any) -> Var:  # pyright: ignore [reportInconsistentOverload]
         """Call the function with the given arguments.
 
         Args:
@@ -210,6 +210,7 @@ class FunctionStringVar(FunctionVar[CALLABLE_TYPE]):
 
         Args:
             func: The function to call.
+            _var_type: The type of the Var.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -268,6 +269,7 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
         Args:
             func: The function to call.
             *args: The arguments to call the function with.
+            _var_type: The type of the Var.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -385,6 +387,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
             return_expr: The return expression of the function.
             rest: The name of the rest argument.
             explicit_return: Whether to use explicit return syntax.
+            _var_type: The type of the Var.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -441,6 +444,7 @@ class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
             return_expr: The return expression of the function.
             rest: The name of the rest argument.
             explicit_return: Whether to use explicit return syntax.
+            _var_type: The type of the Var.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:

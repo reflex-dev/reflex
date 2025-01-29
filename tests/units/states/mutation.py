@@ -18,7 +18,7 @@ class DictMutationTestState(BaseState):
 
     def add_age(self):
         """Add an age to the dict."""
-        self.details.update({"age": 20})  # type: ignore
+        self.details.update({"age": 20})  # pyright: ignore [reportCallIssue, reportArgumentType]
 
     def change_name(self):
         """Change the name in the dict."""

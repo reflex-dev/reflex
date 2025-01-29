@@ -176,7 +176,7 @@ def get_node_version() -> version.Version | None:
     try:
         result = processes.new_process([node_path, "-v"], run=True)
         # The output will be in the form "vX.Y.Z", but version.parse() can handle it
-        return version.parse(result.stdout)  # type: ignore
+        return version.parse(result.stdout)  # pyright: ignore [reportArgumentType]
     except (FileNotFoundError, TypeError):
         return None
 
@@ -189,7 +189,7 @@ def get_fnm_version() -> version.Version | None:
     """
     try:
         result = processes.new_process([constants.Fnm.EXE, "--version"], run=True)
-        return version.parse(result.stdout.split(" ")[1])  # type: ignore
+        return version.parse(result.stdout.split(" ")[1])  # pyright: ignore [reportOptionalMemberAccess, reportAttributeAccessIssue]
     except (FileNotFoundError, TypeError):
         return None
     except version.InvalidVersion as e:
@@ -205,10 +205,13 @@ def get_bun_version() -> version.Version | None:
     Returns:
         The version of bun.
     """
+    bun_path = path_ops.get_bun_path()
+    if bun_path is None:
+        return None
     try:
         # Run the bun -v command and capture the output
-        result = processes.new_process([str(get_config().bun_path), "-v"], run=True)
-        return version.parse(result.stdout)  # type: ignore
+        result = processes.new_process([str(bun_path), "-v"], run=True)
+        return version.parse(str(result.stdout))  # pyright: ignore [reportArgumentType]
     except FileNotFoundError:
         return None
     except version.InvalidVersion as e:
@@ -881,7 +884,9 @@ def init_reflex_json(project_hash: int | None):
     path_ops.update_json_file(get_web_dir() / constants.Reflex.JSON, reflex_json)
 
 
-def update_next_config(export=False, transpile_packages: Optional[List[str]] = None):
+def update_next_config(
+    export: bool = False, transpile_packages: Optional[List[str]] = None
+):
     """Update Next.js config from Reflex config.
 
     Args:
@@ -1062,9 +1067,7 @@ def install_bun():
             )
 
     # Skip if bun is already installed.
-    if Path(get_config().bun_path).exists() and get_bun_version() == version.parse(
-        constants.Bun.VERSION
-    ):
+    if get_bun_version() == version.parse(constants.Bun.VERSION):
         console.debug("Skipping bun installation as it is already installed.")
         return
 
@@ -1085,8 +1088,7 @@ def install_bun():
             show_logs=console.is_debug(),
         )
     else:
-        unzip_path = path_ops.which("unzip")
-        if unzip_path is None:
+        if path_ops.which("unzip") is None:
             raise SystemPackageMissingError("unzip")
 
         # Run the bun install script.
@@ -1128,7 +1130,7 @@ def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
         The decorated function.
     """
 
-    def _inner_decorator(func):
+    def _inner_decorator(func: Callable):
         def _inner(*args, **kwargs):
             payload = _read_cached_procedure_file(cache_file)
             new_payload = payload_fn(*args, **kwargs)
@@ -1188,7 +1190,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     )
 
     processes.run_process_with_fallback(
-        [install_package_manager, "install"],  # type: ignore
+        [install_package_manager, "install"],
         fallback=fallback_command,
         analytics_enabled=True,
         show_status_message="Installing base frontend packages",
@@ -1290,12 +1292,9 @@ def validate_bun():
     Raises:
         Exit: If custom specified bun does not exist or does not meet requirements.
     """
-    # if a custom bun path is provided, make sure its valid
-    # This is specific to non-FHS OS
-    bun_path = get_config().bun_path
-    if path_ops.use_system_bun():
-        bun_path = path_ops.which("bun")
-    if bun_path != constants.Bun.DEFAULT_PATH:
+    bun_path = path_ops.get_bun_path()
+
+    if bun_path and bun_path.samefile(constants.Bun.DEFAULT_PATH):
         console.info(f"Using custom Bun path: {bun_path}")
         bun_version = get_bun_version()
         if not bun_version:
@@ -1313,7 +1312,7 @@ def validate_bun():
             raise typer.Exit(1)
 
 
-def validate_frontend_dependencies(init=True):
+def validate_frontend_dependencies(init: bool = True):
     """Validate frontend dependencies to ensure they meet requirements.
 
     Args:
@@ -1484,7 +1483,7 @@ def prompt_for_template_options(templates: list[Template]) -> str:
     )
 
     # Return the template.
-    return templates[int(template)].name
+    return templates[int(template)].name  # pyright: ignore [reportArgumentType]
 
 
 def fetch_app_templates(version: str) -> dict[str, Template]:
@@ -1637,7 +1636,9 @@ def initialize_default_app(app_name: str):
     initialize_app_directory(app_name)
 
 
-def validate_and_create_app_using_remote_template(app_name, template, templates):
+def validate_and_create_app_using_remote_template(
+    app_name: str, template: str, templates: dict[str, Template]
+):
     """Validate and create an app using a remote template.
 
     Args:
@@ -1849,7 +1850,7 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
         )
     render_func_name = defined_funcs[-1]
 
-    def replace_content(_match):
+    def replace_content(_match: re.Match) -> str:
         return "\n".join(
             [
                 resp.text,
@@ -1879,7 +1880,7 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
     main_module_path.write_text(main_module_code)
 
 
-def format_address_width(address_width) -> int | None:
+def format_address_width(address_width: str | None) -> int | None:
     """Cast address width to an int.
 
     Args:

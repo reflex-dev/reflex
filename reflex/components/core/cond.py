@@ -26,10 +26,9 @@ class Cond(MemoizationLeaf):
     cond: Var[Any]
 
     # The component to render if the cond is true.
-    comp1: BaseComponent = None  # type: ignore
-
+    comp1: BaseComponent | None = None
     # The component to render if the cond is false.
-    comp2: BaseComponent = None  # type: ignore
+    comp2: BaseComponent | None = None
 
     @classmethod
     def create(
@@ -73,8 +72,8 @@ class Cond(MemoizationLeaf):
     def _render(self) -> Tag:
         return CondTag(
             cond=self.cond,
-            true_value=self.comp1.render(),
-            false_value=self.comp2.render(),
+            true_value=self.comp1.render(),  # pyright: ignore [reportOptionalMemberAccess]
+            false_value=self.comp2.render(),  # pyright: ignore [reportOptionalMemberAccess]
         )
 
     def render(self) -> Dict:
@@ -111,7 +110,7 @@ class Cond(MemoizationLeaf):
 
 
 @overload
-def cond(condition: Any, c1: Component, c2: Any) -> Component: ...
+def cond(condition: Any, c1: Component, c2: Any) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
 
 
 @overload
@@ -154,7 +153,7 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
     if c2 is None:
         raise ValueError("For conditional vars, the second argument must be set.")
 
-    def create_var(cond_part):
+    def create_var(cond_part: Any) -> Var[Any]:
         return LiteralVar.create(cond_part)
 
     # convert the truth and false cond parts into vars so the _var_data can be obtained.
@@ -163,16 +162,16 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
 
     # Create the conditional var.
     return ternary_operation(
-        cond_var.bool()._replace(  # type: ignore
+        cond_var.bool()._replace(
             merge_var_data=VarData(imports=_IS_TRUE_IMPORT),
-        ),  # type: ignore
+        ),
         c1,
         c2,
     )
 
 
 @overload
-def color_mode_cond(light: Component, dark: Component | None = None) -> Component: ...  # type: ignore
+def color_mode_cond(light: Component, dark: Component | None = None) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
 
 
 @overload

@@ -188,6 +188,7 @@ def ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
             "state.local",
             "local2",
         ],
+        strict=True,
     ),
 )
 def test_full_name(prop, expected):
@@ -205,6 +206,7 @@ def test_full_name(prop, expected):
     zip(
         test_vars,
         ["prop1", "key", "state.value", "state.local", "local2"],
+        strict=True,
     ),
 )
 def test_str(prop, expected):
@@ -251,6 +253,7 @@ def test_default_value(prop: Var, expected):
             "state.set_local",
             "set_local2",
         ],
+        strict=True,
     ),
 )
 def test_get_setter(prop: Var, expected):
@@ -285,7 +288,7 @@ def test_create(value, expected):
         expected: The expected name of the setter function.
     """
     prop = LiteralVar.create(value)
-    assert prop.equals(expected)  # type: ignore
+    assert prop.equals(expected)
 
 
 def test_create_type_error():
@@ -1130,7 +1133,7 @@ def test_var_component():
             for _, imported_objects in var_data.imports
         )
 
-    has_eval_react_component(ComponentVarState.field_var)  # type: ignore
+    has_eval_react_component(ComponentVarState.field_var)  # pyright: ignore [reportArgumentType]
     has_eval_react_component(ComponentVarState.computed_var)
 
 
@@ -1142,15 +1145,15 @@ def test_type_chains():
         List[int],
     )
     assert (
-        str(object_var.keys()[0].upper())  # type: ignore
+        str(object_var.keys()[0].upper())
         == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(0).toUpperCase()'
     )
     assert (
-        str(object_var.entries()[1][1] - 1)  # type: ignore
+        str(object_var.entries()[1][1] - 1)
         == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(1).at(1) - 1)'
     )
     assert (
-        str(object_var["c"] + object_var["b"])  # type: ignore
+        str(object_var["c"] + object_var["b"])  # pyright: ignore [reportCallIssue, reportOperatorIssue]
         == '(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["c"] + ({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["b"])'
     )
 
@@ -1159,7 +1162,7 @@ def test_nested_dict():
     arr = LiteralArrayVar.create([{"bar": ["foo", "bar"]}], List[Dict[str, List[str]]])
 
     assert (
-        str(arr[0]["bar"][0]) == '[({ ["bar"] : ["foo", "bar"] })].at(0)["bar"].at(0)'
+        str(arr[0]["bar"][0]) == '[({ ["bar"] : ["foo", "bar"] })].at(0)["bar"].at(0)'  # pyright: ignore [reportIndexIssue]
     )
 
 
