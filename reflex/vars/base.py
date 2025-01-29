@@ -80,6 +80,7 @@ if TYPE_CHECKING:
 
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
 OTHER_VAR_TYPE = TypeVar("OTHER_VAR_TYPE")
+STRING_T = TypeVar("STRING_T", bound=str)
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
@@ -550,12 +551,60 @@ class Var(Generic[VAR_TYPE]):
 
         return value_with_replaced
 
+    @overload
+    @classmethod
+    def create(  # type: ignore[override]
+        cls,
+        value: bool,
+        _var_data: VarData | None = None,
+    ) -> BooleanVar: ...
+
+    @overload
+    @classmethod
+    def create(  # type: ignore[override]
+        cls,
+        value: int,
+        _var_data: VarData | None = None,
+    ) -> NumberVar[int]: ...
+
+    @overload
     @classmethod
     def create(
         cls,
-        value: Any,
+        value: float,
         _var_data: VarData | None = None,
-    ) -> Var:
+    ) -> NumberVar[float]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: STRING_T,
+        _var_data: VarData | None = None,
+    ) -> StringVar[STRING_T]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: None,
+        _var_data: VarData | None = None,
+    ) -> NoneVar: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: OTHER_VAR_TYPE,
+        _var_data: VarData | None = None,
+    ) -> Var[OTHER_VAR_TYPE]: ...
+
+    @classmethod
+    def create(
+        cls,
+        value: OTHER_VAR_TYPE,
+        _var_data: VarData | None = None,
+    ) -> Var[OTHER_VAR_TYPE]:
         """Create a var from a value.
 
         Args:
