@@ -4075,12 +4075,19 @@ def reload_state_module(
         state: Recursive argument for the state class to reload.
 
     """
+    # Clean out all potentially dirty states of reloaded modules.
+    for pd_state in tuple(state._potentially_dirty_states):
+        with contextlib.suppress(ValueError):
+            if (
+                state.get_root_state().get_class_substate(pd_state).__module__ == module
+                and module is not None
+            ):
+                state._potentially_dirty_states.remove(pd_state)
     for subclass in tuple(state.class_subclasses):
         reload_state_module(module=module, state=subclass)
         if subclass.__module__ == module and module is not None:
             state.class_subclasses.remove(subclass)
             state._always_dirty_substates.discard(subclass.get_name())
-            state._potentially_dirty_states.discard(subclass.get_name())
             state._var_dependencies = {}
             state._init_var_dependency_dicts()
     state.get_class_substate.cache_clear()
