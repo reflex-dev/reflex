@@ -65,7 +65,22 @@ class Tag:
         Yields:
             Tuple[str, Any]: The field name and value.
         """
+        from reflex.components.component import BaseComponent
+
         for field in dataclasses.fields(self):
+            value = getattr(self, field.name)
+            if isinstance(value, list):
+                children = []
+                for child in value:
+                    if isinstance(child, BaseComponent):
+                        children.append(child.render())
+                    else:
+                        children.append(child)
+                yield field.name, children
+                continue
+            if isinstance(value, BaseComponent):
+                yield field.name, value.render()
+                continue
             yield field.name, getattr(self, field.name)
 
     def add_props(self, **kwargs: Optional[Any]) -> Tag:

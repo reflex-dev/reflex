@@ -78,7 +78,7 @@ def test_match_components():
     assert fifth_return_value_render["name"] == "RadixThemesText"
     assert fifth_return_value_render["children"][0]["contents"] == '{"sixth value"}'
 
-    default = match_child["default"].render()
+    default = match_child["default"]
 
     assert default["name"] == "RadixThemesText"
     assert default["children"][0]["contents"] == '{"default value"}'
@@ -153,7 +153,7 @@ def test_match_on_component_without_default():
     match_comp = Match.create(MatchState.value, *match_case_tuples)
     default = match_comp.render()["children"][0]["default"]
 
-    assert isinstance(default, Fragment)
+    assert isinstance(default, dict) and default["name"] == Fragment.__name__
 
 
 def test_match_on_var_no_default():
