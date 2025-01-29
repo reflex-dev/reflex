@@ -8,7 +8,7 @@ import dis
 import enum
 import inspect
 from types import CodeType, FunctionType
-from typing import TYPE_CHECKING, ClassVar, Type, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Type, cast
 
 from reflex.utils.exceptions import VarValueError
 
@@ -16,6 +16,24 @@ if TYPE_CHECKING:
     from reflex.state import BaseState
 
     from .base import Var
+
+
+CellEmpty = object()
+
+
+def get_cell_value(cell) -> Any:
+    """Get the value of a cell object.
+
+    Args:
+        cell: The cell object to get the value from. (func.__closure__ objects)
+
+    Returns:
+        The value from the cell or CellEmpty if a ValueError is raised.
+    """
+    try:
+        return cell.cell_contents
+    except ValueError:
+        return CellEmpty
 
 
 class ScanStatus(enum.Enum):
@@ -124,6 +142,33 @@ class DependencyTracker:
                 instruction.argval
             )
 
+    def _get_globals(self) -> dict[str, Any]:
+        """Get the globals of the function.
+
+        Returns:
+            The var names and values in the globals of the function.
+        """
+        if isinstance(self.func, CodeType):
+            return {}
+        return self.func.__globals__  # pyright: ignore[reportGeneralTypeIssues]
+
+    def _get_closure(self) -> dict[str, Any]:
+        """Get the closure of the function, with unbound values omitted.
+
+        Returns:
+            The var names and values in the closure of the function.
+        """
+        if isinstance(self.func, CodeType):
+            return {}
+        return {
+            var_name: get_cell_value(cell)
+            for var_name, cell in zip(
+                self.func.__code__.co_freevars,  # pyright: ignore[reportGeneralTypeIssues]
+                self.func.__closure__,  # pyright: ignore[reportGeneralTypeIssues]
+            )
+            if get_cell_value(cell) is not CellEmpty
+        }
+
     def handle_getting_state(self, instruction: dis.Instruction) -> None:
         """Handle bytecode analysis when `get_state` was called in the function.
 
@@ -153,9 +198,7 @@ class DependencyTracker:
         if instruction.opname == "LOAD_GLOBAL":
             # Special case: referencing state class from global scope.
             try:
-                self._getting_state_class = inspect.getclosurevars(self.func).globals[
-                    instruction.argval
-                ]
+                self._getting_state_class = self._get_globals()[instruction.argval]
             except (ValueError, KeyError) as ve:
                 raise VarValueError(
                     f"Cached var {self!s} cannot access arbitrary state `{instruction.argval}`, not found in globals."
@@ -163,11 +206,10 @@ class DependencyTracker:
         elif instruction.opname == "LOAD_DEREF":
             # Special case: referencing state class from closure.
             try:
-                closure = inspect.getclosurevars(self.func).nonlocals
-                self._getting_state_class = closure[instruction.argval]
-            except ValueError as ve:
+                self._getting_state_class = self._get_closure()[instruction.argval]
+            except (ValueError, KeyError) as ve:
                 raise VarValueError(
-                    f"Cached var {self!s} cannot access arbitrary state `{instruction.argval}`, is it defined yet?."
+                    f"Cached var {self!s} cannot access arbitrary state `{instruction.argval}`, is it defined yet?"
                 ) from ve
         elif instruction.opname == "STORE_FAST":
             # Storing the result of get_state in a local variable.
@@ -192,15 +234,16 @@ class DependencyTracker:
         """
         # Get the original source code and eval it to get the Var.
         module = inspect.getmodule(self.func)
-        positions = self._getting_var_instructions[0].positions
-        if module is None or positions is None:
+        positions0 = self._getting_var_instructions[0].positions
+        positions1 = self._getting_var_instructions[-1].positions
+        if module is None or positions0 is None or positions1 is None:
             raise VarValueError(
                 f"Cannot determine the source code for the var in {self.func!r}."
             )
-        start_line = positions.lineno
-        start_column = positions.col_offset
-        end_line = positions.end_lineno
-        end_column = positions.end_col_offset
+        start_line = positions0.lineno
+        start_column = positions0.col_offset
+        end_line = positions1.end_lineno
+        end_column = positions1.end_col_offset
         if (
             start_line is None
             or start_column is None
@@ -217,23 +260,13 @@ class DependencyTracker:
                 [
                     *source[0][start_column:],
                     *(source[1:-2] if len(source) > 2 else []),
-                    *source[-1][:end_column],
+                    *source[-1][: end_column - 1],
                 ]
             )
         else:
-            snipped_source = source[0][start_column:end_column]
-        # Fallback if the closure is not available.
-        globals = {}
-        closure = {}
-        try:
-            if not isinstance(self.func, CodeType):
-                closurevars = inspect.getclosurevars(self.func)
-                closure = closurevars.nonlocals
-                globals = dict(closurevars.globals)
-        except Exception:
-            pass
+            snipped_source = source[0][start_column : end_column - 1]
         # Evaluate the string in the context of the function's globals and closure.
-        return eval(f"({snipped_source})", globals, closure)
+        return eval(f"({snipped_source})", self._get_globals(), self._get_closure())
 
     def handle_getting_var(self, instruction: dis.Instruction) -> None:
         """Handle bytecode analysis when `get_var_value` was called in the function.

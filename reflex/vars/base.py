@@ -2130,6 +2130,37 @@ class ComputedVar(Var[RETURN_TYPE]):
         with contextlib.suppress(AttributeError):
             delattr(instance, self._cache_attr)
 
+    def add_dependency(self, objclass: Type[BaseState], dep: Var):
+        """Explicitly add a dependency to the ComputedVar.
+
+        After adding the dependency, when the `dep` changes, this computed var
+        will be marked dirty.
+
+        Args:
+            objclass: The class obj this ComputedVar is attached to.
+            dep: The dependency to add.
+
+        Raises:
+            VarDependencyError: If the dependency is not a Var instance with a
+                state and field name
+        """
+        if all_var_data := dep._get_all_var_data():
+            state_name = all_var_data.state
+            if state_name:
+                var_name = all_var_data.field_name
+                if var_name:
+                    self._static_deps.setdefault(state_name, set()).add(var_name)
+                    objclass.get_root_state().get_class_substate(
+                        state_name
+                    )._var_dependencies.setdefault(var_name, set()).add(
+                        (objclass.get_full_name(), self._js_expr)
+                    )
+                    return
+        raise VarDependencyError(
+            "ComputedVar dependencies must be Var instances with a state and "
+            f"field name, got {dep!r}."
+        )
+
     def _determine_var_type(self) -> Type:
         """Get the type of the var.
 
