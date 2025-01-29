@@ -2097,18 +2097,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                 existing_var=self,
             )
 
-        if not self._cache:
-            value = self.fget(instance)
-        else:
-            # handle caching
-            if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
-                # Set cache attr on state instance.
-                setattr(instance, self._cache_attr, self.fget(instance))
-                # Ensure the computed var gets serialized to redis.
-                instance._was_touched = True
-                # Set the last updated timestamp on the state instance.
-                setattr(instance, self._last_updated_attr, datetime.datetime.now())
-            value = getattr(instance, self._cache_attr)
+        value = self.get_value(instance)
 
         if not _isinstance(value, self._var_type):
             console.error(
@@ -2236,8 +2225,65 @@ class ComputedVar(Var[RETURN_TYPE]):
         Args:
             instance: the state instance that needs to recompute the value.
         """
-        with contextlib.suppress(AttributeError):
-            delattr(instance, self._cache_attr)
+        instance._ready_computed_vars.discard(self._js_expr)
+
+    def already_computed(self, instance: BaseState) -> bool:
+        """Check if the ComputedVar has already been computed.
+
+        Args:
+            instance: the state instance that needs to recompute the value.
+
+        Returns:
+            True if the ComputedVar has already been computed, False otherwise.
+        """
+        if self.needs_update(instance):
+            return False
+        return self._js_expr in instance._ready_computed_vars
+
+    def get_value(self, instance: BaseState) -> RETURN_TYPE:
+        """Get the value of the ComputedVar.
+
+        Args:
+            instance: the state instance that needs to recompute the value.
+
+        Returns:
+            The value of the ComputedVar.
+        """
+        if not self._cache:
+            instance._was_touched = True
+            new = self.fget(instance)
+            return new
+
+        has_cache = hasattr(instance, self._cache_attr)
+
+        if self.already_computed(instance) and has_cache:
+            return getattr(instance, self._cache_attr)
+
+        cache_value = getattr(instance, self._cache_attr, None)
+        instance._ready_computed_vars.add(self._js_expr)
+        setattr(instance, self._last_updated_attr, datetime.datetime.now())
+        new_value = self.fget(instance)
+        if cache_value != new_value:
+            instance._changed_computed_vars.add(self._js_expr)
+            instance._was_touched = True
+            setattr(instance, self._cache_attr, new_value)
+        return new_value
+
+    def has_changed(self, instance: BaseState) -> bool:
+        """Check if the ComputedVar value has changed.
+
+        Args:
+            instance: the state instance that needs to recompute the value.
+
+        Returns:
+            True if the value has changed, False otherwise.
+        """
+        if not self._cache:
+            return True
+        if self._js_expr in instance._changed_computed_vars:
+            return True
+        # TODO: prime the cache if it's not already? creates side effects and breaks order of computed var execution
+        return self._js_expr in instance._changed_computed_vars
 
     def _determine_var_type(self) -> Type:
         """Get the type of the var.
