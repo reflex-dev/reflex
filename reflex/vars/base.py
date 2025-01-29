@@ -1579,7 +1579,7 @@ class cached_property:  # noqa: N801
         self._func = func
         self._attrname = None
 
-    def __set_name__(self, owner, name):
+    def __set_name__(self, owner: Any, name: str):
         """Set the name of the cached property.
 
         Args:
@@ -1594,7 +1594,7 @@ class cached_property:  # noqa: N801
 
             original_del = getattr(owner, "__del__", None)
 
-            def delete_property(this):
+            def delete_property(this: Any):
                 """Delete the cached property.
 
                 Args:
@@ -1621,7 +1621,7 @@ class cached_property:  # noqa: N801
                 f"({self._attrname!r} and {name!r})."
             )
 
-    def __get__(self, instance, owner=None):
+    def __get__(self, instance: Any, owner: Type | None = None):
         """Get the cached property.
 
         Args:
