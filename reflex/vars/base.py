@@ -162,14 +162,13 @@ class VarData:
 
         if hooks and any(hooks.values()):
             merged_var_data = VarData.merge(self, *hooks.values())
-            if merged_var_data is None:
-                raise ValueError("what")
-            object.__setattr__(self, "state", merged_var_data.state)
-            object.__setattr__(self, "field_name", merged_var_data.field_name)
-            object.__setattr__(self, "imports", merged_var_data.imports)
-            object.__setattr__(self, "hooks", merged_var_data.hooks)
-            object.__setattr__(self, "deps", merged_var_data.deps)
-            object.__setattr__(self, "position", merged_var_data.position)
+            if merged_var_data is not None:
+                object.__setattr__(self, "state", merged_var_data.state)
+                object.__setattr__(self, "field_name", merged_var_data.field_name)
+                object.__setattr__(self, "imports", merged_var_data.imports)
+                object.__setattr__(self, "hooks", merged_var_data.hooks)
+                object.__setattr__(self, "deps", merged_var_data.deps)
+                object.__setattr__(self, "position", merged_var_data.position)
 
     def old_school_imports(self) -> ImportDict:
         """Return the imports as a mutable dict.
