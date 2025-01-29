@@ -2389,7 +2389,7 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
     if tag["name"] == "match":
         element = tag["cond"]
 
-        conditionals = tag["default"]
+        conditionals = render_dict_to_var(tag["default"], imported_names)
 
         for case in tag["match_cases"][::-1]:
             condition = case[0].to_string() == element.to_string()
@@ -2398,7 +2398,7 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
 
             conditionals = ternary_operation(
                 condition,
-                case[-1],
+                render_dict_to_var(case[-1], imported_names),
                 conditionals,
             )
 

@@ -86,7 +86,7 @@
             {% for condition in case[:-1] %}
                 case JSON.stringify({{ condition._js_expr }}):
             {% endfor %}
-                return {{ case[-1] }};
+                return {{ render(case[-1]) }};
                 break;
         {% endfor %}
             default:
