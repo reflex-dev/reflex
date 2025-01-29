@@ -703,6 +703,9 @@ class Config(Base):
     # Path to file containing key-values pairs to override in the environment; Dotenv format.
     env_file: Optional[str] = None
 
+    # Whether the app is running in the reflex cloud environment.
+    is_reflex_cloud: bool = False
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 

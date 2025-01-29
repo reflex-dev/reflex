@@ -6,6 +6,7 @@ from typing import Optional
 
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
+from reflex.components.datadisplay.logo import svg_logo
 from reflex.components.el.elements.typography import Div
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.dialog import (
@@ -293,7 +294,82 @@ class ConnectionPulser(Div):
         )
 
 
+class BackendDisabled(Div):
+    """A component that displays a message when the backend is disabled."""
+
+    @classmethod
+    def create(cls, **props) -> Component:
+        """Create a backend disabled component.
+
+        Args:
+            **props: The properties of the component.
+
+        Returns:
+            The backend disabled component.
+        """
+        import reflex as rx
+
+        is_backend_disabled = Var(
+            "backendDisabled",
+            _var_type=bool,
+            _var_data=VarData(
+                hooks={
+                    "const [backendDisabled, setBackendDisabled] = useState(false);": None,
+                    "useEffect(() => { setBackendDisabled(isBackendDisabled()); }, []);": None,
+                },
+                imports={
+                    "$/utils/state.js": [ImportVar(tag="isBackendDisabled")],
+                },
+            ),
+        )
+
+        return super().create(
+            rx.cond(
+                is_backend_disabled,
+                rx.box(
+                    rx.box(
+                        rx.card(
+                            rx.vstack(
+                                svg_logo(),
+                                rx.text(
+                                    "You ran out of compute credits.",
+                                ),
+                                rx.callout(
+                                    rx.fragment(
+                                        "Please upgrade your plan or raise your compute credits at ",
+                                        rx.link(
+                                            "Reflex Cloud.",
+                                            href="https://cloud.reflex.dev/",
+                                        ),
+                                    ),
+                                    width="100%",
+                                    icon="info",
+                                    variant="surface",
+                                ),
+                            ),
+                            font_size="20px",
+                            font_family='"Inter", "Helvetica", "Arial", sans-serif',
+                            variant="classic",
+                        ),
+                        position="fixed",
+                        top="50%",
+                        left="50%",
+                        transform="translate(-50%, -50%)",
+                        width="40ch",
+                        max_width="90vw",
+                    ),
+                    position="fixed",
+                    z_index=9999,
+                    backdrop_filter="grayscale(1) blur(5px)",
+                    width="100dvw",
+                    height="100dvh",
+                ),
+            )
+        )
+
+
 connection_banner = ConnectionBanner.create
 connection_modal = ConnectionModal.create
 connection_toaster = ConnectionToaster.create
 connection_pulser = ConnectionPulser.create
+backend_disabled = BackendDisabled.create
