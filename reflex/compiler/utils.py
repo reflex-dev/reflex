@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import traceback
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
@@ -165,8 +167,12 @@ def compile_state(state: Type[BaseState]) -> dict:
     try:
         initial_state = state(_reflex_internal_init=True).dict(initial=True)
     except Exception as e:
+        timestamp = datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
+        constants.Reflex.LOGS_DIR.mkdir(parents=True, exist_ok=True)
+        log_path = constants.Reflex.LOGS_DIR / f"state_compile_error_{timestamp}.log"
+        traceback.TracebackException.from_exception(e).print(file=log_path.open("w+"))
         console.warn(
-            f"Failed to compile initial state with computed vars, excluding them: {e}"
+            f"Failed to compile initial state with computed vars. Error log saved to {log_path}"
         )
         initial_state = state(_reflex_internal_init=True).dict(
             initial=True, include_computed=False
