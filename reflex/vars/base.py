@@ -80,6 +80,7 @@ if TYPE_CHECKING:
 
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
 OTHER_VAR_TYPE = TypeVar("OTHER_VAR_TYPE")
+STRING_T = TypeVar("STRING_T", bound=str)
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
@@ -493,20 +494,30 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     def _replace(
-        self, _var_type: Type[OTHER_VAR_TYPE], merge_var_data=None, **kwargs: Any
+        self,
+        _var_type: Type[OTHER_VAR_TYPE],
+        merge_var_data: VarData | None = None,
+        **kwargs: Any,
     ) -> Var[OTHER_VAR_TYPE]: ...
 
     @overload
     def _replace(
-        self, _var_type: GenericType | None = None, merge_var_data=None, **kwargs: Any
+        self,
+        _var_type: GenericType | None = None,
+        merge_var_data: VarData | None = None,
+        **kwargs: Any,
     ) -> Self: ...
 
     def _replace(
-        self, _var_type: GenericType | None = None, merge_var_data=None, **kwargs: Any
+        self,
+        _var_type: GenericType | None = None,
+        merge_var_data: VarData | None = None,
+        **kwargs: Any,
     ) -> Self | Var:
         """Make a copy of this Var with updated fields.
 
         Args:
+            _var_type: The new type of the Var.
             merge_var_data: VarData to merge into the existing VarData.
             **kwargs: Var fields to update.
 
@@ -540,12 +551,60 @@ class Var(Generic[VAR_TYPE]):
 
         return value_with_replaced
 
+    @overload
+    @classmethod
+    def create(  # type: ignore[override]
+        cls,
+        value: bool,
+        _var_data: VarData | None = None,
+    ) -> BooleanVar: ...
+
+    @overload
+    @classmethod
+    def create(  # type: ignore[override]
+        cls,
+        value: int,
+        _var_data: VarData | None = None,
+    ) -> NumberVar[int]: ...
+
+    @overload
     @classmethod
     def create(
         cls,
-        value: Any,
+        value: float,
         _var_data: VarData | None = None,
-    ) -> Var:
+    ) -> NumberVar[float]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: STRING_T,
+        _var_data: VarData | None = None,
+    ) -> StringVar[STRING_T]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: None,
+        _var_data: VarData | None = None,
+    ) -> NoneVar: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: OTHER_VAR_TYPE,
+        _var_data: VarData | None = None,
+    ) -> Var[OTHER_VAR_TYPE]: ...
+
+    @classmethod
+    def create(
+        cls,
+        value: OTHER_VAR_TYPE,
+        _var_data: VarData | None = None,
+    ) -> Var[OTHER_VAR_TYPE]:
         """Create a var from a value.
 
         Args:
@@ -1308,7 +1367,7 @@ class LiteralVar(Var):
         _var_literal_subclasses.append((cls, var_subclass))
 
     @classmethod
-    def create(
+    def create(  # pyright: ignore [reportArgumentType]
         cls,
         value: Any,
         _var_data: VarData | None = None,
@@ -1556,7 +1615,7 @@ def figure_out_type(value: Any) -> types.GenericType:
 class cached_property_no_lock(functools.cached_property):  # noqa: N801
     """A special version of functools.cached_property that does not use a lock."""
 
-    def __init__(self, func):
+    def __init__(self, func: Callable):
         """Initialize the cached_property_no_lock.
 
         Args:
@@ -1729,7 +1788,7 @@ class CallableVar(Var):
         object.__setattr__(self, "fn", fn)
         object.__setattr__(self, "original_var", original_var)
 
-    def __call__(self, *args, **kwargs) -> Var:
+    def __call__(self, *args: Any, **kwargs: Any) -> Var:
         """Call the decorated function.
 
         Args:
@@ -1885,10 +1944,16 @@ class ComputedVar(Var[RETURN_TYPE]):
         object.__setattr__(self, "_fget", fget)
 
     @override
-    def _replace(self, merge_var_data=None, **kwargs: Any) -> Self:
+    def _replace(
+        self,
+        _var_type: Any = None,
+        merge_var_data: VarData | None = None,
+        **kwargs: Any,
+    ) -> Self:
         """Replace the attributes of the ComputedVar.
 
         Args:
+            _var_type: ignored in ComputedVar.
             merge_var_data: VarData to merge into the existing VarData.
             **kwargs: Var fields to update.
 
@@ -2002,7 +2067,7 @@ class ComputedVar(Var[RETURN_TYPE]):
     @overload
     def __get__(self, instance: BaseState, owner: Type) -> RETURN_TYPE: ...
 
-    def __get__(self, instance: BaseState | None, owner):
+    def __get__(self, instance: BaseState | None, owner: Type):
         """Get the ComputedVar value.
 
         If the value is already cached on the instance, return the cached value.
@@ -2165,7 +2230,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             self_is_top_of_stack = False
         return d
 
-    def mark_dirty(self, instance) -> None:
+    def mark_dirty(self, instance: BaseState) -> None:
         """Mark this ComputedVar as dirty.
 
         Args:
@@ -2887,7 +2952,7 @@ MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping)
 class Field(Generic[FIELD_TYPE]):
     """Shadow class for Var to allow for type hinting in the IDE."""
 
-    def __set__(self, instance, value: FIELD_TYPE):
+    def __set__(self, instance: Any, value: FIELD_TYPE):
         """Set the Var.
 
         Args:
@@ -2896,43 +2961,43 @@ class Field(Generic[FIELD_TYPE]):
         """
 
     @overload
-    def __get__(self: Field[bool], instance: None, owner) -> BooleanVar: ...
+    def __get__(self: Field[bool], instance: None, owner: Any) -> BooleanVar: ...
 
     @overload
     def __get__(
-        self: Field[int] | Field[float] | Field[int | float], instance: None, owner
+        self: Field[int] | Field[float] | Field[int | float], instance: None, owner: Any
     ) -> NumberVar: ...
 
     @overload
-    def __get__(self: Field[str], instance: None, owner) -> StringVar: ...
+    def __get__(self: Field[str], instance: None, owner: Any) -> StringVar: ...
 
     @overload
-    def __get__(self: Field[None], instance: None, owner) -> NoneVar: ...
+    def __get__(self: Field[None], instance: None, owner: Any) -> NoneVar: ...
 
     @overload
     def __get__(
         self: Field[List[V]] | Field[Set[V]] | Field[Tuple[V, ...]],
         instance: None,
-        owner,
+        owner: Any,
     ) -> ArrayVar[List[V]]: ...
 
     @overload
     def __get__(
-        self: Field[MAPPING_TYPE], instance: None, owner
+        self: Field[MAPPING_TYPE], instance: None, owner: Any
     ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
-        self: Field[BASE_TYPE], instance: None, owner
+        self: Field[BASE_TYPE], instance: None, owner: Any
     ) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
-    def __get__(self, instance: None, owner) -> Var[FIELD_TYPE]: ...
+    def __get__(self, instance: None, owner: Any) -> Var[FIELD_TYPE]: ...
 
     @overload
-    def __get__(self, instance, owner) -> FIELD_TYPE: ...
+    def __get__(self, instance: Any, owner: Any) -> FIELD_TYPE: ...
 
-    def __get__(self, instance, owner):  # pyright: ignore [reportInconsistentOverload]
+    def __get__(self, instance: Any, owner: Any):  # pyright: ignore [reportInconsistentOverload]
         """Get the Var.
 
         Args:

@@ -71,7 +71,9 @@ def notify_backend():
 # run_process_and_launch_url is assumed to be used
 # only to launch the frontend
 # If this is not the case, might have to change the logic
-def run_process_and_launch_url(run_command: list[str | None], backend_present=True):
+def run_process_and_launch_url(
+    run_command: list[str | None], backend_present: bool = True
+):
     """Run the process and launch the URL.
 
     Args:
@@ -134,7 +136,7 @@ def run_process_and_launch_url(run_command: list[str | None], backend_present=Tr
             break  # while True
 
 
-def run_frontend(root: Path, port: str, backend_present=True):
+def run_frontend(root: Path, port: str, backend_present: bool = True):
     """Run the frontend.
 
     Args:
@@ -156,7 +158,7 @@ def run_frontend(root: Path, port: str, backend_present=True):
     )
 
 
-def run_frontend_prod(root: Path, port: str, backend_present=True):
+def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
     """Run the frontend.
 
     Args:
@@ -265,7 +267,7 @@ def get_reload_dirs() -> list[Path]:
     return reload_dirs
 
 
-def run_uvicorn_backend(host, port, loglevel: LogLevel):
+def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
     """Run the backend in development mode using Uvicorn.
 
     Args:
@@ -285,7 +287,7 @@ def run_uvicorn_backend(host, port, loglevel: LogLevel):
     )
 
 
-def run_granian_backend(host, port, loglevel: LogLevel):
+def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     """Run the backend in development mode using Granian.
 
     Args:
@@ -352,7 +354,7 @@ def run_backend_prod(
         run_uvicorn_backend_prod(host, port, loglevel)
 
 
-def run_uvicorn_backend_prod(host, port, loglevel):
+def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
     """Run the backend in production mode using Uvicorn.
 
     Args:
@@ -404,7 +406,7 @@ def run_uvicorn_backend_prod(host, port, loglevel):
     )
 
 
-def run_granian_backend_prod(host, port, loglevel):
+def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
     """Run the backend in production mode using Granian.
 
     Args:

@@ -182,7 +182,9 @@ def convert(
     var_data = None  # Track import/hook data from any Vars in the style dict.
     out = {}
 
-    def update_out_dict(return_value, keys_to_update):
+    def update_out_dict(
+        return_value: Var | dict | list | str, keys_to_update: tuple[str, ...]
+    ):
         for k in keys_to_update:
             out[k] = return_value
 
@@ -291,6 +293,18 @@ class Style(dict):
                 getattr(self, "_var_data", None), _var._get_all_var_data()
             )
         super().__setitem__(key, value)
+
+    def __or__(self, other: Style | dict) -> Style:
+        """Combine two styles.
+
+        Args:
+            other: The other style to combine.
+
+        Returns:
+            The combined style.
+        """
+        _var_data = VarData.merge(self._var_data, getattr(other, "_var_data", None))
+        return Style(super().__or__(self, other), _var_data=_var_data)  # pyright: ignore [reportGeneralTypeIssues, reportCallIssue]
 
 
 def _format_emotion_style_pseudo_selector(key: str) -> str:

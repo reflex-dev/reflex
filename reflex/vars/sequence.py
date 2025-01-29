@@ -780,7 +780,7 @@ class ConcatVarOperation(CachedVarOperation, StringVar[str]):
         """Create a var from a string value.
 
         Args:
-            value: The values to concatenate.
+            *value: The values to concatenate.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -1323,6 +1323,7 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
 
         Args:
             value: The value to create the var from.
+            _var_type: The type of the var.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -1618,7 +1619,9 @@ def array_contains_field_operation(
 
 
 @var_operation
-def array_contains_operation(haystack: ArrayVar, needle: Any | Var):
+def array_contains_operation(
+    haystack: ArrayVar, needle: Any | Var
+) -> CustomVarOperationReturn[bool]:
     """Check if an array contains an element.
 
     Args:
@@ -1661,7 +1664,7 @@ if TYPE_CHECKING:
 def map_array_operation(
     array: ArrayVar[ARRAY_VAR_TYPE],
     function: FunctionVar,
-):
+) -> CustomVarOperationReturn[List[Any]]:
     """Map a function over an array.
 
     Args:
