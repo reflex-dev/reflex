@@ -3,11 +3,31 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from reflex.event import EventChain
 from reflex.utils import format, types
 from reflex.vars.base import LiteralVar, Var
+
+
+def render_prop(value: Any) -> Any:
+    """Render the prop.
+
+    Args:
+        value: The value to render.
+
+    Returns:
+        The rendered value.
+    """
+    from reflex.components.component import BaseComponent
+
+    if isinstance(value, BaseComponent):
+        return value.render()
+    if isinstance(value, Sequence) and not isinstance(value, str):
+        return [render_prop(v) for v in value]
+    if callable(value) and not isinstance(value, Var):
+        return None
+    return value
 
 
 @dataclasses.dataclass()
@@ -65,25 +85,10 @@ class Tag:
         Yields:
             Tuple[str, Any]: The field name and value.
         """
-        from reflex.components.component import BaseComponent
-
         for field in dataclasses.fields(self):
-            value = getattr(self, field.name)
-            if isinstance(value, list):
-                children = []
-                for child in value:
-                    if isinstance(child, BaseComponent):
-                        children.append(child.render())
-                    else:
-                        children.append(child)
-                yield field.name, children
-                continue
-            if isinstance(value, BaseComponent):
-                yield field.name, value.render()
-                continue
-            if callable(value) and not isinstance(value, Var):
-                continue
-            yield field.name, getattr(self, field.name)
+            rendered_value = render_prop(getattr(self, field.name))
+            if rendered_value is not None:
+                yield field.name, rendered_value
 
     def add_props(self, **kwargs: Optional[Any]) -> Tag:
         """Add props to the tag.
