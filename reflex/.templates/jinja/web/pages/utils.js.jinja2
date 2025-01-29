@@ -90,7 +90,7 @@
                 break;
         {% endfor %}
             default:
-                return {{ component.default }};
+                return {{ render(component.default) }};
                 break;
         }
     })()

@@ -81,6 +81,8 @@ class Tag:
             if isinstance(value, BaseComponent):
                 yield field.name, value.render()
                 continue
+            if callable(value) and not isinstance(value, Var):
+                continue
             yield field.name, getattr(self, field.name)
 
     def add_props(self, **kwargs: Optional[Any]) -> Tag:
