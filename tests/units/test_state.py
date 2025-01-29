@@ -3189,8 +3189,7 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
 RxState = State
 
 
-@pytest.mark.skip(reason="This test is maybe not relevant anymore.")
-def test_potentially_dirty_substates():
+def test_potentially_dirty_states():
     """Test that potentially_dirty_substates returns the correct substates.
 
     Even if the name "State" is shadowed, it should still work correctly.
@@ -3206,9 +3205,9 @@ def test_potentially_dirty_substates():
         def bar(self) -> str:
             return ""
 
-    assert RxState._potentially_dirty_substates() == set()
-    assert State._potentially_dirty_substates() == set()
-    assert C1._potentially_dirty_substates() == set()
+    assert RxState._get_potentially_dirty_states() == set()
+    assert State._get_potentially_dirty_states() == set()
+    assert C1._get_potentially_dirty_states() == set()
 
 
 @pytest.mark.asyncio
@@ -3857,7 +3856,7 @@ async def test_async_computed_var_get_state(mock_app: rx.App, token: str):
             child3 = await self.get_state(Child3)
             return child3.child3_var + p.parent_var
 
-    mock_app.state_manager.state = mock_app.state = Parent
+    mock_app.state_manager.state = mock_app._state = Parent
 
     # Get the top level state via unconnected sibling.
     root = await mock_app.state_manager.get_state(_substate_key(token, Child))
