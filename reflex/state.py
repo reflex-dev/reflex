@@ -772,6 +772,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             set(cls.inherited_backend_vars),
         )
         for cvar_name, cvar in cls.computed_vars.items():
+            if not cvar._cache:
+                continue
             # Add the dependencies.
             for var in cvar._deps(objclass=cls):
                 cls._computed_var_dependencies[var].add(cvar_name)
