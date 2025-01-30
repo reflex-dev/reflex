@@ -318,7 +318,7 @@ class BackendDisabled(Div):
                     "useEffect(() => { setBackendDisabled(isBackendDisabled()); }, []);": None,
                 },
                 imports={
-                    "$/utils/state.js": [ImportVar(tag="isBackendDisabled")],
+                    f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isBackendDisabled")],
                 },
             ),
         )
