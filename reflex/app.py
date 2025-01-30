@@ -54,6 +54,7 @@ from reflex.compiler.compiler import ExecutorSafeFunctions, compile_theme
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.error_boundary import ErrorBoundary
 from reflex.components.base.fragment import Fragment
+from reflex.components.base.strict_mode import StrictMode
 from reflex.components.component import (
     Component,
     ComponentStyle,
@@ -943,6 +944,12 @@ class App(MiddlewareMixin, LifespanMixin):
             # If a theme component was provided, wrap the app with it
             app_wrappers[(20, "Theme")] = self.theme
 
+        # Get the env mode.
+        config = get_config()
+
+        if config.react_strict_mode:
+            app_wrappers[(200, "StrictMode")] = StrictMode.create()
+
         should_compile = self._should_compile()
 
         for route in self._unevaluated_pages:
@@ -976,9 +983,6 @@ class App(MiddlewareMixin, LifespanMixin):
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,
         )
-
-        # Get the env mode.
-        config = get_config()
 
         # Store the compile results.
         compile_results = []

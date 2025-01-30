@@ -32,7 +32,7 @@ runner = CliRunner()
                 app_name="test",
             ),
             False,
-            'module.exports = {basePath: "", compress: true, reactStrictMode: true, trailingSlash: true, staticPageGenerationTimeout: 60};',
+            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60};',
         ),
         (
             Config(
@@ -40,7 +40,7 @@ runner = CliRunner()
                 static_page_generation_timeout=30,
             ),
             False,
-            'module.exports = {basePath: "", compress: true, reactStrictMode: true, trailingSlash: true, staticPageGenerationTimeout: 30};',
+            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 30};',
         ),
         (
             Config(
@@ -48,7 +48,7 @@ runner = CliRunner()
                 next_compression=False,
             ),
             False,
-            'module.exports = {basePath: "", compress: false, reactStrictMode: true, trailingSlash: true, staticPageGenerationTimeout: 60};',
+            'module.exports = {basePath: "", compress: false, trailingSlash: true, staticPageGenerationTimeout: 60};',
         ),
         (
             Config(
@@ -56,7 +56,7 @@ runner = CliRunner()
                 frontend_path="/test",
             ),
             False,
-            'module.exports = {basePath: "/test", compress: true, reactStrictMode: true, trailingSlash: true, staticPageGenerationTimeout: 60};',
+            'module.exports = {basePath: "/test", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60};',
         ),
         (
             Config(
@@ -65,14 +65,14 @@ runner = CliRunner()
                 next_compression=False,
             ),
             False,
-            'module.exports = {basePath: "/test", compress: false, reactStrictMode: true, trailingSlash: true, staticPageGenerationTimeout: 60};',
+            'module.exports = {basePath: "/test", compress: false, trailingSlash: true, staticPageGenerationTimeout: 60};',
         ),
         (
             Config(
                 app_name="test",
             ),
             True,
-            'module.exports = {basePath: "", compress: true, reactStrictMode: true, trailingSlash: true, staticPageGenerationTimeout: 60, output: "export", distDir: "_static"};',
+            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, output: "export", distDir: "_static"};',
         ),
     ],
 )

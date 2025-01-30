@@ -1276,12 +1276,23 @@ def compilable_app(tmp_path) -> Generator[tuple[App, Path], None, None]:
         yield app, web_dir
 
 
-def test_app_wrap_compile_theme(compilable_app: tuple[App, Path]):
+@pytest.mark.parametrize(
+    "react_strict_mode",
+    [True, False],
+)
+def test_app_wrap_compile_theme(
+    react_strict_mode: bool, compilable_app: tuple[App, Path], mocker
+):
     """Test that the radix theme component wraps the app.
 
     Args:
+        react_strict_mode: Whether to use React Strict Mode.
         compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
     """
+    conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
+    mocker.patch("reflex.config._get_config", return_value=conf)
+
     app, web_dir = compilable_app
     app.theme = rx.theme(accent_color="plum")
     app._compile()
@@ -1292,24 +1303,37 @@ def test_app_wrap_compile_theme(compilable_app: tuple[App, Path]):
     assert (
         "function AppWrap({children}) {"
         "return ("
-        "<RadixThemesColorModeProvider>"
+        + ("<StrictMode>" if react_strict_mode else "")
+        + "<RadixThemesColorModeProvider>"
         "<RadixThemesTheme accentColor={\"plum\"} css={{...theme.styles.global[':root'], ...theme.styles.global.body}}>"
         "<Fragment>"
         "{children}"
         "</Fragment>"
         "</RadixThemesTheme>"
         "</RadixThemesColorModeProvider>"
-        ")"
+        + ("</StrictMode>" if react_strict_mode else "")
+        + ")"
         "}"
     ) in "".join(app_js_lines)
 
 
-def test_app_wrap_priority(compilable_app: tuple[App, Path]):
+@pytest.mark.parametrize(
+    "react_strict_mode",
+    [True, False],
+)
+def test_app_wrap_priority(
+    react_strict_mode: bool, compilable_app: tuple[App, Path], mocker
+):
     """Test that the app wrap components are wrapped in the correct order.
 
     Args:
+        react_strict_mode: Whether to use React Strict Mode.
         compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
     """
+    conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
+    mocker.patch("reflex.config._get_config", return_value=conf)
+
     app, web_dir = compilable_app
 
     class Fragment1(Component):
@@ -1341,8 +1365,7 @@ def test_app_wrap_priority(compilable_app: tuple[App, Path]):
     ]
     assert (
         "function AppWrap({children}) {"
-        "return ("
-        "<RadixThemesBox>"
+        "return (" + ("<StrictMode>" if react_strict_mode else "") + "<RadixThemesBox>"
         '<RadixThemesText as={"p"}>'
         "<RadixThemesColorModeProvider>"
         "<Fragment2>"
@@ -1352,8 +1375,7 @@ def test_app_wrap_priority(compilable_app: tuple[App, Path]):
         "</Fragment2>"
         "</RadixThemesColorModeProvider>"
         "</RadixThemesText>"
-        "</RadixThemesBox>"
-        ")"
+        "</RadixThemesBox>" + ("</StrictMode>" if react_strict_mode else "") + ")"
         "}"
     ) in "".join(app_js_lines)
 

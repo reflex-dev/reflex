@@ -301,10 +301,7 @@ export const applyEvent = async (event, socket) => {
 
   // Send the event to the server.
   if (socket) {
-    socket.emit(
-      "event",
-      event,
-    );
+    socket.emit("event", event);
     return true;
   }
 
@@ -497,7 +494,7 @@ export const uploadFiles = async (
     return false;
   }
 
-  const upload_ref_name = `__upload_controllers_${upload_id}`
+  const upload_ref_name = `__upload_controllers_${upload_id}`;
 
   if (refs[upload_ref_name]) {
     console.log("Upload already in progress for ", upload_id);
@@ -833,6 +830,13 @@ export const useEventLoop = (
         }
       })();
     }
+
+    // Cleanup function.
+    return () => {
+      if (socket.current) {
+        socket.current.disconnect();
+      }
+    };
   });
 
   // localStorage event handling
