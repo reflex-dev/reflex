@@ -1216,7 +1216,7 @@ class Var(Generic[VAR_TYPE]):
                 raise TypeError("Cannot reverse non-list var.")
 
             if self._var_type is Any:
-                raise TypeError(
+                raise exceptions.UntypedVarError(
                     f"You must provide an annotation for the state var `{self!s}`. Annotation cannot be `{self._var_type}`."
                 )
 

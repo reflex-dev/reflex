@@ -11,6 +11,7 @@ from reflex.components.component import Component
 from reflex.components.tags import IterTag
 from reflex.constants import MemoizationMode
 from reflex.state import ComponentState
+from reflex.utils.exceptions import UntypedVarError
 from reflex.vars.base import LiteralVar, Var
 
 
@@ -72,8 +73,14 @@ class Foreach(Component):
             iterable=iterable,
             render_fn=render_fn,
         )
-        # Keep a ref to a rendered component to determine correct imports/hooks/styles.
-        component.children = [component._render().render_component()]
+        try:
+            # Keep a ref to a rendered component to determine correct imports/hooks/styles.
+            component.children = [component._render().render_component()]
+        except UntypedVarError as e:
+            raise UntypedVarError(
+                f"Could not foreach over var `{iterable!s}` without a type annotation. "
+                "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
+            ) from e
         return component
 
     def _render(self) -> IterTag:
