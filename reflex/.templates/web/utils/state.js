@@ -837,7 +837,7 @@ export const useEventLoop = (
         socket.current.disconnect();
       }
     };
-  });
+  }, []);
 
   // localStorage event handling
   useEffect(() => {
