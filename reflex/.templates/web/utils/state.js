@@ -3,6 +3,7 @@ import axios from "axios";
 import io from "socket.io-client";
 import JSON5 from "json5";
 import env from "$/env.json";
+import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
 import { useEffect, useRef, useState } from "react";
 import Router, { useRouter } from "next/router";
@@ -407,6 +408,7 @@ export const connect = async (
   socket.current = io(endpoint.href, {
     path: endpoint["pathname"],
     transports: transports,
+    protocols: [reflexEnvironment.version],
     autoUnref: false,
   });
   // Ensure undefined fields in events are sent as null instead of removed

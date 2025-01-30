@@ -51,20 +51,12 @@ def set_log_level(log_level: LogLevel):
         log_level: The log level to set.
 
     Raises:
-        ValueError: If the log level is invalid.
+        TypeError: If the log level is a string.
     """
     if not isinstance(log_level, LogLevel):
-        deprecate(
-            feature_name="Passing a string to set_log_level",
-            reason="use reflex.constants.LogLevel enum instead",
-            deprecation_version="0.6.6",
-            removal_version="0.7.0",
+        raise TypeError(
+            f"log_level must be a LogLevel enum value, got {log_level} of type {type(log_level)} instead."
         )
-        try:
-            log_level = getattr(LogLevel, log_level.upper())
-        except AttributeError as ae:
-            raise ValueError(f"Invalid log level: {log_level}") from ae
-
     global _LOG_LEVEL
     _LOG_LEVEL = log_level
 
@@ -204,7 +196,7 @@ def _get_first_non_framework_frame() -> FrameType | None:
     exclude_modules = [click, rx, typer, typing_extensions]
     exclude_roots = [
         p.parent.resolve()
-        if (p := Path(m.__file__)).name == "__init__.py"
+        if (p := Path(m.__file__)).name == "__init__.py"  # pyright: ignore [reportArgumentType]
         else p.resolve()
         for m in exclude_modules
     ]
@@ -283,7 +275,7 @@ def ask(
     choices: list[str] | None = None,
     default: str | None = None,
     show_choices: bool = True,
-) -> str:
+) -> str | None:
     """Takes a prompt question and optionally a list of choices
      and returns the user input.
 
@@ -298,7 +290,7 @@ def ask(
     """
     return Prompt.ask(
         question, choices=choices, default=default, show_choices=show_choices
-    )  # type: ignore
+    )
 
 
 def progress():

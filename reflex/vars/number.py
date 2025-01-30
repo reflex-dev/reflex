@@ -18,7 +18,7 @@ from typing import (
 )
 
 from reflex.constants.base import Dirs
-from reflex.utils.exceptions import PrimitiveUnserializableToJSON, VarTypeError
+from reflex.utils.exceptions import PrimitiveUnserializableToJSONError, VarTypeError
 from reflex.utils.imports import ImportDict, ImportVar
 
 from .base import (
@@ -31,7 +31,7 @@ from .base import (
     var_operation_return,
 )
 
-NUMBER_T = TypeVar("NUMBER_T", int, float, Union[int, float], bool)
+NUMBER_T = TypeVar("NUMBER_T", int, float, bool)
 
 if TYPE_CHECKING:
     from .sequence import ArrayVar
@@ -61,7 +61,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __add__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __add__(self, other: NoReturn) -> NoReturn: ...
+    def __add__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __add__(self, other: Any):
         """Add two numbers.
@@ -80,7 +80,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __radd__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __radd__(self, other: NoReturn) -> NoReturn: ...
+    def __radd__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __radd__(self, other: Any):
         """Add two numbers.
@@ -99,7 +99,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __sub__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __sub__(self, other: NoReturn) -> NoReturn: ...
+    def __sub__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __sub__(self, other: Any):
         """Subtract two numbers.
@@ -119,7 +119,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __rsub__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __rsub__(self, other: NoReturn) -> NoReturn: ...
+    def __rsub__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __rsub__(self, other: Any):
         """Subtract two numbers.
@@ -201,7 +201,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __truediv__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __truediv__(self, other: NoReturn) -> NoReturn: ...
+    def __truediv__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __truediv__(self, other: Any):
         """Divide two numbers.
@@ -221,7 +221,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __rtruediv__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __rtruediv__(self, other: NoReturn) -> NoReturn: ...
+    def __rtruediv__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __rtruediv__(self, other: Any):
         """Divide two numbers.
@@ -241,7 +241,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __floordiv__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __floordiv__(self, other: NoReturn) -> NoReturn: ...
+    def __floordiv__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __floordiv__(self, other: Any):
         """Floor divide two numbers.
@@ -261,7 +261,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __rfloordiv__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __rfloordiv__(self, other: NoReturn) -> NoReturn: ...
+    def __rfloordiv__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __rfloordiv__(self, other: Any):
         """Floor divide two numbers.
@@ -281,7 +281,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __mod__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __mod__(self, other: NoReturn) -> NoReturn: ...
+    def __mod__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __mod__(self, other: Any):
         """Modulo two numbers.
@@ -301,7 +301,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __rmod__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __rmod__(self, other: NoReturn) -> NoReturn: ...
+    def __rmod__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __rmod__(self, other: Any):
         """Modulo two numbers.
@@ -321,7 +321,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __pow__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __pow__(self, other: NoReturn) -> NoReturn: ...
+    def __pow__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __pow__(self, other: Any):
         """Exponentiate two numbers.
@@ -341,7 +341,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __rpow__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __rpow__(self, other: NoReturn) -> NoReturn: ...
+    def __rpow__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __rpow__(self, other: Any):
         """Exponentiate two numbers.
@@ -417,7 +417,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __lt__(self, other: number_types) -> BooleanVar: ...
 
     @overload
-    def __lt__(self, other: NoReturn) -> NoReturn: ...
+    def __lt__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __lt__(self, other: Any):
         """Less than comparison.
@@ -436,7 +436,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __le__(self, other: number_types) -> BooleanVar: ...
 
     @overload
-    def __le__(self, other: NoReturn) -> NoReturn: ...
+    def __le__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __le__(self, other: Any):
         """Less than or equal comparison.
@@ -481,7 +481,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __gt__(self, other: number_types) -> BooleanVar: ...
 
     @overload
-    def __gt__(self, other: NoReturn) -> NoReturn: ...
+    def __gt__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __gt__(self, other: Any):
         """Greater than comparison.
@@ -500,7 +500,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __ge__(self, other: number_types) -> BooleanVar: ...
 
     @overload
-    def __ge__(self, other: NoReturn) -> NoReturn: ...
+    def __ge__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __ge__(self, other: Any):
         """Greater than or equal comparison.
@@ -561,7 +561,7 @@ def binary_number_operation(
         Returns:
             The binary number operation.
         """
-        return operation(lhs, rhs)  # type: ignore
+        return operation(lhs, rhs)  # pyright: ignore [reportReturnType, reportArgumentType]
 
     return wrapper
 
@@ -987,10 +987,10 @@ class LiteralNumberVar(LiteralVar, NumberVar):
             The JSON representation of the var.
 
         Raises:
-            PrimitiveUnserializableToJSON: If the var is unserializable to JSON.
+            PrimitiveUnserializableToJSONError: If the var is unserializable to JSON.
         """
         if math.isinf(self._var_value) or math.isnan(self._var_value):
-            raise PrimitiveUnserializableToJSON(
+            raise PrimitiveUnserializableToJSONError(
                 f"No valid JSON representation for {self}"
             )
         return json.dumps(self._var_value)

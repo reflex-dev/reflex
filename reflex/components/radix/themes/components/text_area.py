@@ -96,5 +96,17 @@ class TextArea(RadixThemesComponent, elements.Textarea):
             return DebounceInput.create(super().create(*children, **props))
         return super().create(*children, **props)
 
+    def add_style(self):
+        """Add the style to the component.
+
+        Returns:
+            The style of the component.
+        """
+        added_style: dict[str, dict] = {}
+        added_style.setdefault("& textarea", {})
+        if "padding" in self.style:
+            added_style["& textarea"]["padding"] = self.style.pop("padding")
+        return added_style
+
 
 text_area = TextArea.create

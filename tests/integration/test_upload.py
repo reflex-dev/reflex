@@ -80,7 +80,7 @@ def UploadFile():
             ),
             rx.button(
                 "Upload",
-                on_click=lambda: UploadState.handle_upload(rx.upload_files()),  # type: ignore
+                on_click=lambda: UploadState.handle_upload(rx.upload_files()),  # pyright: ignore [reportCallIssue]
                 id="upload_button",
             ),
             rx.box(
@@ -105,7 +105,7 @@ def UploadFile():
             ),
             rx.button(
                 "Upload",
-                on_click=UploadState.handle_upload_secondary(  # type: ignore
+                on_click=UploadState.handle_upload_secondary(  # pyright: ignore [reportCallIssue]
                     rx.upload_files(
                         upload_id="secondary",
                         on_upload_progress=UploadState.upload_progress,
@@ -127,7 +127,7 @@ def UploadFile():
             ),
             rx.vstack(
                 rx.foreach(
-                    UploadState.progress_dicts,  # type: ignore
+                    UploadState.progress_dicts,
                     lambda d: rx.text(d.to_string()),
                 )
             ),
@@ -146,7 +146,7 @@ def UploadFile():
             ),
             rx.button(
                 "Upload",
-                on_click=UploadState.handle_upload_tertiary(  # type: ignore
+                on_click=UploadState.handle_upload_tertiary(  # pyright: ignore [reportCallIssue]
                     rx.upload_files(
                         upload_id="tertiary",
                     ),
@@ -166,7 +166,7 @@ def UploadFile():
             rx.text(UploadState.event_order.to_string(), id="event-order"),
         )
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     app.add_page(index)
 
 

@@ -18,8 +18,8 @@ try:
     Template = layout.Template
 except ImportError:
     console.warn("Plotly is not installed. Please run `pip install plotly`.")
-    Figure = Any  # type: ignore
-    Template = Any  # type: ignore
+    Figure = Any
+    Template = Any
 
 
 def _event_points_data_signature(e0: Var) -> Tuple[Var[List[Point]]]:
@@ -95,20 +95,20 @@ class Plotly(NoSSRComponent):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: List[str] = ["plotly.js@2.35.2"]
+    lib_dependencies: List[str] = ["plotly.js@2.35.3"]
 
     tag = "Plot"
 
     is_default = True
 
     # The figure to display. This can be a plotly figure or a plotly data json.
-    data: Var[Figure]  # type: ignore
+    data: Var[Figure]  # pyright: ignore [reportInvalidTypeForm]
 
     # The layout of the graph.
     layout: Var[Dict]
 
     # The template for visual appearance of the graph.
-    template: Var[Template]  # type: ignore
+    template: Var[Template]  # pyright: ignore [reportInvalidTypeForm]
 
     # The config of the graph.
     config: Var[Dict]

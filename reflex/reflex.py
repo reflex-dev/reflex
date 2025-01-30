@@ -17,7 +17,7 @@ from reflex.state import reset_disk_state_manager
 from reflex.utils import console, telemetry
 
 # Disable typer+rich integration for help panels
-typer.core.rich = None  # type: ignore
+typer.core.rich = None  # pyright: ignore [reportPrivateImportUsage]
 
 # Create the app.
 try:
@@ -125,8 +125,8 @@ def _run(
     env: constants.Env = constants.Env.DEV,
     frontend: bool = True,
     backend: bool = True,
-    frontend_port: str = str(config.frontend_port),
-    backend_port: str = str(config.backend_port),
+    frontend_port: int = config.frontend_port,
+    backend_port: int = config.backend_port,
     backend_host: str = config.backend_host,
     loglevel: constants.LogLevel = config.loglevel,
 ):
@@ -160,18 +160,22 @@ def _run(
     # Find the next available open port if applicable.
     if frontend:
         frontend_port = processes.handle_port(
-            "frontend", frontend_port, str(constants.DefaultPorts.FRONTEND_PORT)
+            "frontend",
+            frontend_port,
+            constants.DefaultPorts.FRONTEND_PORT,
         )
 
     if backend:
         backend_port = processes.handle_port(
-            "backend", backend_port, str(constants.DefaultPorts.BACKEND_PORT)
+            "backend",
+            backend_port,
+            constants.DefaultPorts.BACKEND_PORT,
         )
 
     # Apply the new ports to the config.
-    if frontend_port != str(config.frontend_port):
+    if frontend_port != config.frontend_port:
         config._set_persistent(frontend_port=frontend_port)
-    if backend_port != str(config.backend_port):
+    if backend_port != config.backend_port:
         config._set_persistent(backend_port=backend_port)
 
     # Reload the config to make sure the env vars are persistent.
@@ -262,10 +266,10 @@ def run(
         help="Execute only backend.",
         envvar=environment.REFLEX_BACKEND_ONLY.name,
     ),
-    frontend_port: str = typer.Option(
+    frontend_port: int = typer.Option(
         config.frontend_port, help="Specify a different frontend port."
     ),
-    backend_port: str = typer.Option(
+    backend_port: int = typer.Option(
         config.backend_port, help="Specify a different backend port."
     ),
     backend_host: str = typer.Option(
@@ -306,6 +310,9 @@ def export(
         help="Whether to exclude sqlite db files when exporting backend.",
         hidden=True,
     ),
+    env: constants.Env = typer.Option(
+        constants.Env.PROD, help="The environment to export the app in."
+    ),
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
@@ -323,6 +330,7 @@ def export(
         backend=backend,
         zip_dest_dir=zip_dest_dir,
         upload_db_file=upload_db_file,
+        env=env,
         loglevel=loglevel.subprocess_level(),
     )
 
@@ -351,7 +359,7 @@ def logout(
 
     check_version()
 
-    logout(loglevel)  # type: ignore
+    logout(loglevel)  # pyright: ignore [reportArgumentType]
 
 
 db_cli = typer.Typer()
@@ -440,7 +448,11 @@ def deploy(
         config.app_name,
         "--app-name",
         help="The name of the App to deploy under.",
-        hidden=True,
+    ),
+    app_id: str = typer.Option(
+        None,
+        "--app-id",
+        help="The ID of the App to deploy over.",
     ),
     regions: List[str] = typer.Option(
         [],
@@ -480,6 +492,11 @@ def deploy(
         "--project",
         help="project id to deploy to",
     ),
+    project_name: Optional[str] = typer.Option(
+        None,
+        "--project-name",
+        help="The name of the project to deploy to.",
+    ),
     token: Optional[str] = typer.Option(
         None,
         "--token",
@@ -492,6 +509,7 @@ def deploy(
     ),
 ):
     """Deploy the app to the Reflex hosting service."""
+    from reflex_cli.constants.base import LogLevel as HostingLogLevel
     from reflex_cli.utils import dependency
     from reflex_cli.v2 import cli as hosting_cli
 
@@ -503,12 +521,20 @@ def deploy(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    if not token:
-        # make sure user is logged in.
-        if interactive:
-            hosting_cli.login()
-        else:
-            raise SystemExit("Token is required for non-interactive mode.")
+    def convert_reflex_loglevel_to_reflex_cli_loglevel(
+        loglevel: constants.LogLevel,
+    ) -> HostingLogLevel:
+        if loglevel == constants.LogLevel.DEBUG:
+            return HostingLogLevel.DEBUG
+        if loglevel == constants.LogLevel.INFO:
+            return HostingLogLevel.INFO
+        if loglevel == constants.LogLevel.WARNING:
+            return HostingLogLevel.WARNING
+        if loglevel == constants.LogLevel.ERROR:
+            return HostingLogLevel.ERROR
+        if loglevel == constants.LogLevel.CRITICAL:
+            return HostingLogLevel.CRITICAL
+        return HostingLogLevel.INFO
 
     # Only check requirements if interactive.
     # There is user interaction for requirements update.
@@ -519,11 +545,10 @@ def deploy(
     if prerequisites.needs_reinit(frontend=True):
         _init(name=config.app_name, loglevel=loglevel)
     prerequisites.check_latest_package_version(constants.ReflexHostingCLI.MODULE_NAME)
-    extra: dict[str, str] = (
-        {"config_path": config_path} if config_path is not None else {}
-    )
+
     hosting_cli.deploy(
         app_name=app_name,
+        app_id=app_id,
         export_fn=lambda zip_dest_dir,
         api_url,
         deploy_url,
@@ -544,11 +569,26 @@ def deploy(
         envfile=envfile,
         hostname=hostname,
         interactive=interactive,
-        loglevel=type(loglevel).INFO,  # type: ignore
+        loglevel=convert_reflex_loglevel_to_reflex_cli_loglevel(loglevel),
         token=token,
         project=project,
-        **extra,
+        project_name=project_name,
+        **({"config_path": config_path} if config_path is not None else {}),
     )
+
+
+@cli.command()
+def rename(
+    new_name: str = typer.Argument(..., help="The new name for the app."),
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Rename the app in the current directory."""
+    from reflex.utils import prerequisites
+
+    prerequisites.validate_app_name(new_name)
+    prerequisites.rename_app(new_name, loglevel)
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")

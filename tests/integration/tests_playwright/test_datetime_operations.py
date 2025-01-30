@@ -16,7 +16,7 @@ def DatetimeOperationsApp():
         date2: datetime = datetime(2031, 1, 1)
         date3: datetime = datetime(2021, 1, 1)
 
-    app = rx.App(state=DtOperationsState)
+    app = rx.App(_state=DtOperationsState)
 
     @app.add_page
     def index():
@@ -54,7 +54,7 @@ def datetime_operations_app(tmp_path_factory) -> Generator[AppHarness, None, Non
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("datetime_operations_app"),
-        app_source=DatetimeOperationsApp,  # type: ignore
+        app_source=DatetimeOperationsApp,
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
         yield harness

@@ -72,7 +72,7 @@ def test_call_event_handler():
     )
 
     # Passing args as strings should format differently.
-    event_spec = handler("first", "second")  # type: ignore
+    event_spec = handler("first", "second")
     assert (
         format.format_event(event_spec)
         == 'Event("test_fn_with_args", {arg1:"first",arg2:"second"})'
@@ -80,7 +80,7 @@ def test_call_event_handler():
 
     first, second = 123, "456"
     handler = EventHandler(fn=test_fn_with_args)
-    event_spec = handler(first, second)  # type: ignore
+    event_spec = handler(first, second)
     assert (
         format.format_event(event_spec)
         == 'Event("test_fn_with_args", {arg1:123,arg2:"456"})'
@@ -94,7 +94,7 @@ def test_call_event_handler():
 
     handler = EventHandler(fn=test_fn_with_args)
     with pytest.raises(TypeError):
-        handler(test_fn)  # type: ignore
+        handler(test_fn)
 
 
 def test_call_event_handler_partial():
@@ -199,16 +199,15 @@ def test_event_redirect(input, output):
         input: The input for running the test.
         output: The expected output to validate the test.
     """
-    path, external, replace = input
+    path, is_external, replace = input
     kwargs = {}
-    if external is not None:
-        kwargs["external"] = external
+    if is_external is not None:
+        kwargs["is_external"] = is_external
     if replace is not None:
         kwargs["replace"] = replace
     spec = event.redirect(path, **kwargs)
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_redirect"
-
     assert format.format_event(spec) == output
 
 
@@ -417,7 +416,7 @@ def test_event_actions_on_state():
     assert isinstance(handler, EventHandler)
     assert not handler.event_actions
 
-    sp_handler = EventActionState.handler.stop_propagation
+    sp_handler = EventActionState.handler.stop_propagation  # pyright: ignore [reportFunctionMemberAccess]
     assert sp_handler.event_actions == {"stopPropagation": True}
     # should NOT affect other references to the handler
     assert not handler.event_actions

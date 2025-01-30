@@ -31,12 +31,12 @@ def ConnectionBanner():
             rx.button(
                 "Increment",
                 id="increment",
-                on_click=State.set_foo(State.foo + 1),  # type: ignore
+                on_click=State.set_foo(State.foo + 1),  # pyright: ignore [reportAttributeAccessIssue]
             ),
             rx.button("Delay", id="delay", on_click=State.delay),
         )
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     app.add_page(index)
 
 
@@ -71,9 +71,10 @@ def has_error_modal(driver: WebDriver) -> bool:
     """
     try:
         driver.find_element(By.XPATH, CONNECTION_ERROR_XPATH)
-        return True
     except NoSuchElementException:
         return False
+    else:
+        return True
 
 
 @pytest.mark.asyncio

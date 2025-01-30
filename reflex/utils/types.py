@@ -24,7 +24,7 @@ from typing import (
     Tuple,
     Type,
     Union,
-    _GenericAlias,  # type: ignore
+    _GenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     get_args,
     get_type_hints,
 )
@@ -39,7 +39,9 @@ from reflex.components.core.breakpoints import Breakpoints
 try:
     from pydantic.v1.fields import ModelField
 except ModuleNotFoundError:
-    from pydantic.fields import ModelField  # type: ignore
+    from pydantic.fields import (
+        ModelField,  # pyright: ignore [reportAttributeAccessIssue]
+    )
 
 from sqlalchemy.ext.associationproxy import AssociationProxyInstance
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -70,13 +72,15 @@ GenericAliasTypes = [_GenericAlias]
 
 with contextlib.suppress(ImportError):
     # For newer versions of Python.
-    from types import GenericAlias  # type: ignore
+    from types import GenericAlias
 
     GenericAliasTypes.append(GenericAlias)
 
 with contextlib.suppress(ImportError):
     # For older versions of Python.
-    from typing import _SpecialGenericAlias  # type: ignore
+    from typing import (
+        _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
+    )
 
     GenericAliasTypes.append(_SpecialGenericAlias)
 
@@ -153,7 +157,7 @@ class Unset:
 
 
 @lru_cache()
-def get_origin(tp):
+def get_origin(tp: Any):
     """Get the origin of a class.
 
     Args:
@@ -175,7 +179,7 @@ def is_generic_alias(cls: GenericType) -> bool:
     Returns:
         Whether the class is a generic alias.
     """
-    return isinstance(cls, GenericAliasTypes)
+    return isinstance(cls, GenericAliasTypes)  # pyright: ignore [reportArgumentType]
 
 
 def unionize(*args: GenericType) -> Type:
@@ -188,14 +192,14 @@ def unionize(*args: GenericType) -> Type:
         The unionized types.
     """
     if not args:
-        return Any
+        return Any  # pyright: ignore [reportReturnType]
     if len(args) == 1:
         return args[0]
     # We are bisecting the args list here to avoid hitting the recursion limit
     # In Python versions >= 3.11, we can simply do `return Union[*args]`
     midpoint = len(args) // 2
     first_half, second_half = args[:midpoint], args[midpoint:]
-    return Union[unionize(*first_half), unionize(*second_half)]
+    return Union[unionize(*first_half), unionize(*second_half)]  # pyright: ignore [reportReturnType]
 
 
 def is_none(cls: GenericType) -> bool:
@@ -236,7 +240,7 @@ def is_literal(cls: GenericType) -> bool:
     return get_origin(cls) is Literal
 
 
-def has_args(cls) -> bool:
+def has_args(cls: Type) -> bool:
     """Check if the class has generic parameters.
 
     Args:
@@ -351,13 +355,13 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             if type_ is not None:
                 if hasattr(column_type, "item_type"):
                     try:
-                        item_type = column_type.item_type.python_type  # type: ignore
+                        item_type = column_type.item_type.python_type  # pyright: ignore [reportAttributeAccessIssue]
                     except NotImplementedError:
                         item_type = None
                     if item_type is not None:
                         if type_ in PrimitiveToAnnotation:
-                            type_ = PrimitiveToAnnotation[type_]  # type: ignore
-                        type_ = type_[item_type]  # type: ignore
+                            type_ = PrimitiveToAnnotation[type_]
+                        type_ = type_[item_type]  # pyright: ignore [reportIndexIssue]
                 if column.nullable:
                     type_ = Optional[type_]
                 return type_
@@ -432,7 +436,7 @@ def get_base_class(cls: GenericType) -> Type:
         return type(get_args(cls)[0])
 
     if is_union(cls):
-        return tuple(get_base_class(arg) for arg in get_args(cls))
+        return tuple(get_base_class(arg) for arg in get_args(cls))  # pyright: ignore [reportReturnType]
 
     return get_base_class(cls.__origin__) if is_generic_alias(cls) else cls
 
@@ -605,7 +609,9 @@ def _isinstance(obj: Any, cls: GenericType, nested: bool = False) -> bool:
             return (
                 isinstance(obj, tuple)
                 and len(obj) == len(args)
-                and all(_isinstance(item, arg) for item, arg in zip(obj, args))
+                and all(
+                    _isinstance(item, arg) for item, arg in zip(obj, args, strict=True)
+                )
             )
         if origin in (dict, Breakpoints):
             return isinstance(obj, dict) and all(
@@ -747,7 +753,7 @@ def check_prop_in_allowed_types(prop: Any, allowed_types: Iterable) -> bool:
     return type_ in allowed_types
 
 
-def is_encoded_fstring(value) -> bool:
+def is_encoded_fstring(value: Any) -> bool:
     """Check if a value is an encoded Var f-string.
 
     Args:
@@ -790,7 +796,7 @@ def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
             )
 
 
-def validate_parameter_literals(func):
+def validate_parameter_literals(func: Callable):
     """Decorator to check that the arguments passed to a function
     correspond to the correct function parameter if it (the parameter)
     is a literal type.
@@ -808,7 +814,7 @@ def validate_parameter_literals(func):
         annotations = {param[0]: param[1].annotation for param in func_params}
 
         # validate args
-        for param, arg in zip(annotations, args):
+        for param, arg in zip(annotations, args, strict=False):
             if annotations[param] is inspect.Parameter.empty:
                 continue
             validate_literal(param, arg, annotations[param], func.__name__)
@@ -827,6 +833,22 @@ def validate_parameter_literals(func):
 # Store this here for performance.
 StateBases = get_base_class(StateVar)
 StateIterBases = get_base_class(StateIterVar)
+
+
+def safe_issubclass(cls: Type, cls_check: Type | Tuple[Type, ...]):
+    """Check if a class is a subclass of another class. Returns False if internal error occurs.
+
+    Args:
+        cls: The class to check.
+        cls_check: The class to check against.
+
+    Returns:
+        Whether the class is a subclass of the other class.
+    """
+    try:
+        return issubclass(cls, cls_check)
+    except TypeError:
+        return False
 
 
 def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> bool:
@@ -890,6 +912,8 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
     # It also ignores when the length of the arguments is different
     return all(
         typehint_issubclass(provided_arg, accepted_arg)
-        for provided_arg, accepted_arg in zip(provided_args, accepted_args)
+        for provided_arg, accepted_arg in zip(
+            provided_args, accepted_args, strict=False
+        )
         if accepted_arg is not Any
     )

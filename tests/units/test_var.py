@@ -2,7 +2,7 @@ import json
 import math
 import sys
 import typing
-from typing import Dict, List, Optional, Set, Tuple, Union, cast
+from typing import Dict, List, Mapping, Optional, Set, Tuple, Union, cast
 
 import pytest
 from pandas import DataFrame
@@ -11,7 +11,10 @@ import reflex as rx
 from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.state import BaseState
-from reflex.utils.exceptions import PrimitiveUnserializableToJSON
+from reflex.utils.exceptions import (
+    PrimitiveUnserializableToJSONError,
+    UntypedComputedVarError,
+)
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import (
@@ -185,6 +188,7 @@ def ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
             "state.local",
             "local2",
         ],
+        strict=True,
     ),
 )
 def test_full_name(prop, expected):
@@ -202,6 +206,7 @@ def test_full_name(prop, expected):
     zip(
         test_vars,
         ["prop1", "key", "state.value", "state.local", "local2"],
+        strict=True,
     ),
 )
 def test_str(prop, expected):
@@ -248,6 +253,7 @@ def test_default_value(prop: Var, expected):
             "state.set_local",
             "set_local2",
         ],
+        strict=True,
     ),
 )
 def test_get_setter(prop: Var, expected):
@@ -270,7 +276,7 @@ def test_get_setter(prop: Var, expected):
         ([1, 2, 3], Var(_js_expr="[1, 2, 3]", _var_type=List[int])),
         (
             {"a": 1, "b": 2},
-            Var(_js_expr='({ ["a"] : 1, ["b"] : 2 })', _var_type=Dict[str, int]),
+            Var(_js_expr='({ ["a"] : 1, ["b"] : 2 })', _var_type=Mapping[str, int]),
         ),
     ],
 )
@@ -282,7 +288,7 @@ def test_create(value, expected):
         expected: The expected name of the setter function.
     """
     prop = LiteralVar.create(value)
-    assert prop.equals(expected)  # type: ignore
+    assert prop.equals(expected)
 
 
 def test_create_type_error():
@@ -804,7 +810,7 @@ def test_shadow_computed_var_error(request: pytest.FixtureRequest, fixture: str)
         request: Fixture Request.
         fixture: The state fixture.
     """
-    with pytest.raises(NameError):
+    with pytest.raises(UntypedComputedVarError):
         state = request.getfixturevalue(fixture)
         state.var_without_annotation.foo
 
@@ -1058,7 +1064,7 @@ def test_inf_and_nan(var, expected_js):
     assert str(var) == expected_js
     assert isinstance(var, NumberVar)
     assert isinstance(var, LiteralVar)
-    with pytest.raises(PrimitiveUnserializableToJSON):
+    with pytest.raises(PrimitiveUnserializableToJSONError):
         var.json()
 
 
@@ -1127,7 +1133,7 @@ def test_var_component():
             for _, imported_objects in var_data.imports
         )
 
-    has_eval_react_component(ComponentVarState.field_var)  # type: ignore
+    has_eval_react_component(ComponentVarState.field_var)  # pyright: ignore [reportArgumentType]
     has_eval_react_component(ComponentVarState.computed_var)
 
 
@@ -1139,15 +1145,15 @@ def test_type_chains():
         List[int],
     )
     assert (
-        str(object_var.keys()[0].upper())  # type: ignore
+        str(object_var.keys()[0].upper())
         == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(0).toUpperCase()'
     )
     assert (
-        str(object_var.entries()[1][1] - 1)  # type: ignore
+        str(object_var.entries()[1][1] - 1)
         == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(1).at(1) - 1)'
     )
     assert (
-        str(object_var["c"] + object_var["b"])  # type: ignore
+        str(object_var["c"] + object_var["b"])  # pyright: ignore [reportCallIssue, reportOperatorIssue]
         == '(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["c"] + ({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["b"])'
     )
 
@@ -1156,7 +1162,7 @@ def test_nested_dict():
     arr = LiteralArrayVar.create([{"bar": ["foo", "bar"]}], List[Dict[str, List[str]]])
 
     assert (
-        str(arr[0]["bar"][0]) == '[({ ["bar"] : ["foo", "bar"] })].at(0)["bar"].at(0)'
+        str(arr[0]["bar"][0]) == '[({ ["bar"] : ["foo", "bar"] })].at(0)["bar"].at(0)'  # pyright: ignore [reportIndexIssue]
     )
 
 

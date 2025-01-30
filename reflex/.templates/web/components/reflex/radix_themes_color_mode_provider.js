@@ -16,10 +16,7 @@ export default function RadixThemesColorModeProvider({ children }) {
     if (isDevMode) {
       const lastCompiledTimeInLocalStorage =
         localStorage.getItem("last_compiled_time");
-      if (
-        lastCompiledTimeInLocalStorage &&
-        lastCompiledTimeInLocalStorage !== lastCompiledTimeStamp
-      ) {
+      if (lastCompiledTimeInLocalStorage !== lastCompiledTimeStamp) {
         // on app startup, make sure the application color mode is persisted correctly.
         setTheme(defaultColorMode);
         localStorage.setItem("last_compiled_time", lastCompiledTimeStamp);

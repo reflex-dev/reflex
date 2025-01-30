@@ -32,6 +32,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    SupportsIndex,
     Tuple,
     Type,
     TypeVar,
@@ -94,14 +95,14 @@ from reflex.event import (
 )
 from reflex.utils import console, format, path_ops, prerequisites, types
 from reflex.utils.exceptions import (
-    ComputedVarShadowsBaseVars,
-    ComputedVarShadowsStateVar,
-    DynamicComponentInvalidSignature,
-    DynamicRouteArgShadowsStateVar,
-    EventHandlerShadowsBuiltInStateMethod,
+    ComputedVarShadowsBaseVarsError,
+    ComputedVarShadowsStateVarError,
+    DynamicComponentInvalidSignatureError,
+    DynamicRouteArgShadowsStateVarError,
+    EventHandlerShadowsBuiltInStateMethodError,
     ImmutableStateError,
     InvalidLockWarningThresholdError,
-    InvalidStateManagerMode,
+    InvalidStateManagerModeError,
     LockExpiredError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
@@ -592,7 +593,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if cls._item_is_event_handler(name, fn)
         }
 
-        for mixin in cls._mixins():
+        for mixin in cls._mixins():  # pyright: ignore [reportAssignmentType]
             for name, value in mixin.__dict__.items():
                 if name in cls.inherited_vars:
                     continue
@@ -604,7 +605,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     cls.computed_vars[newcv._js_expr] = newcv
                     cls.vars[newcv._js_expr] = newcv
                     continue
-                if types.is_backend_base_variable(name, mixin):
+                if types.is_backend_base_variable(name, mixin):  # pyright: ignore [reportArgumentType]
                     cls.backend_vars[name] = copy.deepcopy(value)
                     continue
                 if events.get(name) is not None:
@@ -820,7 +821,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """Check for shadow methods and raise error if any.
 
         Raises:
-            EventHandlerShadowsBuiltInStateMethod: When an event handler shadows an inbuilt state method.
+            EventHandlerShadowsBuiltInStateMethodError: When an event handler shadows an inbuilt state method.
         """
         overridden_methods = set()
         state_base_functions = cls._get_base_functions()
@@ -834,7 +835,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 overridden_methods.add(method.__name__)
 
         for method_name in overridden_methods:
-            raise EventHandlerShadowsBuiltInStateMethod(
+            raise EventHandlerShadowsBuiltInStateMethodError(
                 f"The event handler name `{method_name}` shadows a builtin State method; use a different name instead"
             )
 
@@ -843,11 +844,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """Check for shadow base vars and raise error if any.
 
         Raises:
-            ComputedVarShadowsBaseVars: When a computed var shadows a base var.
+            ComputedVarShadowsBaseVarsError: When a computed var shadows a base var.
         """
         for computed_var_ in cls._get_computed_vars():
             if computed_var_._js_expr in cls.__annotations__:
-                raise ComputedVarShadowsBaseVars(
+                raise ComputedVarShadowsBaseVarsError(
                     f"The computed var name `{computed_var_._js_expr}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 )
 
@@ -856,14 +857,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """Check for shadow computed vars and raise error if any.
 
         Raises:
-            ComputedVarShadowsStateVar: When a computed var shadows another.
+            ComputedVarShadowsStateVarError: When a computed var shadows another.
         """
         for name, cv in cls.__dict__.items():
             if not is_computed_var(cv):
                 continue
             name = cv._js_expr
             if name in cls.inherited_vars or name in cls.inherited_backend_vars:
-                raise ComputedVarShadowsStateVar(
+                raise ComputedVarShadowsStateVarError(
                     f"The computed var name `{cv._js_expr}` shadows a var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 )
 
@@ -904,7 +905,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ]
         if len(parent_states) >= 2:
             raise ValueError(f"Only one parent state is allowed {parent_states}.")
-        return parent_states[0] if len(parent_states) == 1 else None  # type: ignore
+        return parent_states[0] if len(parent_states) == 1 else None
 
     @classmethod
     def get_substates(cls) -> set[Type[BaseState]]:
@@ -1063,7 +1064,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         setattr(cls, prop._var_field_name, prop)
 
     @classmethod
-    def _create_event_handler(cls, fn):
+    def _create_event_handler(cls, fn: Any):
         """Create an event handler for the given function.
 
         Args:
@@ -1181,14 +1182,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         cls._check_overwritten_dynamic_args(list(args.keys()))
 
-        def argsingle_factory(param):
-            def inner_func(self) -> str:
+        def argsingle_factory(param: str):
+            def inner_func(self: BaseState) -> str:
                 return self.router.page.params.get(param, "")
 
             return inner_func
 
-        def arglist_factory(param):
-            def inner_func(self) -> List[str]:
+        def arglist_factory(param: str):
+            def inner_func(self: BaseState) -> List[str]:
                 return self.router.page.params.get(param, [])
 
             return inner_func
@@ -1223,14 +1224,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             args: a dict of args
 
         Raises:
-            DynamicRouteArgShadowsStateVar: If a dynamic arg is shadowing an existing var.
+            DynamicRouteArgShadowsStateVarError: If a dynamic arg is shadowing an existing var.
         """
         for arg in args:
             if (
                 arg in cls.computed_vars
                 and not isinstance(cls.computed_vars[arg], DynamicRouteVar)
             ) or arg in cls.base_vars:
-                raise DynamicRouteArgShadowsStateVar(
+                raise DynamicRouteArgShadowsStateVarError(
                     f"Dynamic route arg '{arg}' is shadowing an existing var in {cls.__module__}.{cls.__name__}"
                 )
         for substate in cls.get_substates():
@@ -1273,8 +1274,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 fn = _no_chain_background_task(type(self), name, handler.fn)
             else:
                 fn = functools.partial(handler.fn, self)
-            fn.__module__ = handler.fn.__module__  # type: ignore
-            fn.__qualname__ = handler.fn.__qualname__  # type: ignore
+            fn.__module__ = handler.fn.__module__
+            fn.__qualname__ = handler.fn.__qualname__
             return fn
 
         backend_vars = super().__getattribute__("_backend_vars")
@@ -1346,12 +1347,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if field.allow_none and not is_optional(field_type):
                 field_type = Union[field_type, None]
             if not _isinstance(value, field_type):
-                console.deprecate(
-                    "mismatched-type-assignment",
-                    f"Tried to assign value {value} of type {type(value)} to field {type(self).__name__}.{name} of type {field_type}."
-                    " This might lead to unexpected behavior.",
-                    "0.6.5",
-                    "0.7.0",
+                console.error(
+                    f"Expected field '{type(self).__name__}.{name}' to receive type '{field_type}',"
+                    f" but got '{value}' of type '{type(value)}'."
                 )
 
         # Set the attribute.
@@ -1442,6 +1440,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for part1, part2 in zip(
             cls.get_full_name().split("."),
             other.get_full_name().split("."),
+            strict=True,
         ):
             if part1 != part2:
                 break
@@ -1641,7 +1640,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         # Oopsie case: you didn't give me a Var... so get what you give.
         if not isinstance(var, Var):
-            return var  # type: ignore
+            return var
 
         # Fast case: this is a literal var and the value is known.
         if hasattr(var, "_var_value"):
@@ -1781,9 +1780,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         except Exception as ex:
             state._clean()
 
-            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-
-            event_specs = app_instance.backend_exception_handler(ex)
+            event_specs = (
+                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
+            )
 
             if event_specs is None:
                 return StateUpdate()
@@ -1836,7 +1835,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if (
                 isinstance(value, dict)
                 and inspect.isclass(hinted_args)
-                and not types.is_generic_alias(hinted_args)  # py3.9-py3.10
+                and not types.is_generic_alias(hinted_args)  # py3.10
             ):
                 if issubclass(hinted_args, Model):
                     # Remove non-fields from the payload
@@ -1893,9 +1892,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         except Exception as ex:
             telemetry.send_error(ex, context="backend")
 
-            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-
-            event_specs = app_instance.backend_exception_handler(ex)
+            event_specs = (
+                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
+            )
 
             yield state._as_state_update(
                 handler,
@@ -2398,8 +2397,7 @@ def dynamic(func: Callable[[T], Component]):
         The dynamically generated component.
 
     Raises:
-        DynamicComponentInvalidSignature: If the function does not have exactly one parameter.
-        DynamicComponentInvalidSignature: If the function does not have a type hint for the state class.
+        DynamicComponentInvalidSignatureError: If the function does not have exactly one parameter or a type hint for the state class.
     """
     number_of_parameters = len(inspect.signature(func).parameters)
 
@@ -2411,12 +2409,12 @@ def dynamic(func: Callable[[T], Component]):
     values = list(func_signature.values())
 
     if number_of_parameters != 1:
-        raise DynamicComponentInvalidSignature(
+        raise DynamicComponentInvalidSignatureError(
             "The function must have exactly one parameter, which is the state class."
         )
 
     if len(values) != 1:
-        raise DynamicComponentInvalidSignature(
+        raise DynamicComponentInvalidSignatureError(
             "You must provide a type hint for the state class in the function."
         )
 
@@ -2445,8 +2443,9 @@ class FrontendEventExceptionState(State):
             component_stack: The stack trace of the component where the exception occurred.
 
         """
-        app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-        app_instance.frontend_exception_handler(Exception(stack))
+        prerequisites.get_and_validate_app().app.frontend_exception_handler(
+            Exception(stack)
+        )
 
 
 class UpdateVarsInternalState(State):
@@ -2484,19 +2483,20 @@ class OnLoadInternalState(State):
             The list of events to queue for on load handling.
         """
         # Do not app._compile()!  It should be already compiled by now.
-        app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-        load_events = app.get_load_events(self.router.page.path)
+        load_events = prerequisites.get_and_validate_app().app.get_load_events(
+            self.router.page.path
+        )
         if not load_events:
             self.is_hydrated = True
             return  # Fast path for navigation with no on_load events defined.
         self.is_hydrated = False
         return [
             *fix_events(
-                load_events,
+                cast(list[Union[EventSpec, EventHandler]], load_events),
                 self.router.session.client_token,
                 router_data=self.router_data,
             ),
-            State.set_is_hydrated(True),  # type: ignore
+            State.set_is_hydrated(True),  # pyright: ignore [reportAttributeAccessIssue]
         ]
 
 
@@ -2637,7 +2637,9 @@ class StateProxy(wrapt.ObjectProxy):
     """
 
     def __init__(
-        self, state_instance, parent_state_proxy: Optional["StateProxy"] = None
+        self,
+        state_instance: BaseState,
+        parent_state_proxy: Optional["StateProxy"] = None,
     ):
         """Create a proxy for a state instance.
 
@@ -2651,7 +2653,7 @@ class StateProxy(wrapt.ObjectProxy):
         """
         super().__init__(state_instance)
         # compile is not relevant to backend logic
-        self._self_app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+        self._self_app = prerequisites.get_and_validate_app().app
         self._self_substate_path = tuple(state_instance.get_full_name().split("."))
         self._self_actx = None
         self._self_mutable = False
@@ -2780,7 +2782,7 @@ class StateProxy(wrapt.ObjectProxy):
             # ensure mutations to these containers are blocked unless proxy is _mutable
             return ImmutableMutableProxy(
                 wrapped=value.__wrapped__,
-                state=self,  # type: ignore
+                state=self,
                 field_name=value._self_field_name,
             )
         if isinstance(value, functools.partial) and value.args[0] is self.__wrapped__:
@@ -2793,7 +2795,7 @@ class StateProxy(wrapt.ObjectProxy):
             )
         if isinstance(value, MethodType) and value.__self__ is self.__wrapped__:
             # Rebind methods to the proxy instance
-            value = type(value)(value.__func__, self)  # type: ignore
+            value = type(value)(value.__func__, self)
         return value
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -2918,7 +2920,7 @@ class StateManager(Base, ABC):
             state: The state class to use.
 
         Raises:
-            InvalidStateManagerMode: If the state manager mode is invalid.
+            InvalidStateManagerModeError: If the state manager mode is invalid.
 
         Returns:
             The state manager (either disk, memory or redis).
@@ -2941,7 +2943,7 @@ class StateManager(Base, ABC):
                     lock_expiration=config.redis_lock_expiration,
                     lock_warning_threshold=config.redis_lock_warning_threshold,
                 )
-        raise InvalidStateManagerMode(
+        raise InvalidStateManagerModeError(
             f"Expected one of: DISK, MEMORY, REDIS, got {config.state_manager_mode}"
         )
 
@@ -2993,7 +2995,7 @@ class StateManagerMemory(StateManager):
     # The dict of mutexes for each client
     _states_locks: Dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
 
-    class Config:
+    class Config:  # pyright: ignore [reportIncompatibleVariableOverride]
         """The Pydantic config."""
 
         fields = {
@@ -3090,7 +3092,7 @@ def is_serializable(value: Any) -> bool:
 
 def reset_disk_state_manager():
     """Reset the disk state manager."""
-    states_directory = prerequisites.get_web_dir() / constants.Dirs.STATES
+    states_directory = prerequisites.get_states_dir()
     if states_directory.exists():
         for path in states_directory.iterdir():
             path.unlink()
@@ -3111,7 +3113,7 @@ class StateManagerDisk(StateManager):
     # The token expiration time (s).
     token_expiration: int = pydantic.Field(default_factory=_default_token_expiration)
 
-    class Config:
+    class Config:  # pyright: ignore [reportIncompatibleVariableOverride]
         """The Pydantic config."""
 
         fields = {
@@ -3138,7 +3140,7 @@ class StateManagerDisk(StateManager):
         Returns:
             The states directory.
         """
-        return prerequisites.get_web_dir() / constants.Dirs.STATES
+        return prerequisites.get_states_dir()
 
     def _purge_expired_states(self):
         """Purge expired states from the disk."""
@@ -3583,7 +3585,9 @@ class StateManagerRedis(StateManager):
 
     @validator("lock_warning_threshold")
     @classmethod
-    def validate_lock_warning_threshold(cls, lock_warning_threshold: int, values):
+    def validate_lock_warning_threshold(
+        cls, lock_warning_threshold: int, values: dict[str, int]
+    ):
         """Validate the lock warning threshold.
 
         Args:
@@ -3744,8 +3748,7 @@ def get_state_manager() -> StateManager:
     Returns:
         The state manager.
     """
-    app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-    return app.state_manager
+    return prerequisites.get_and_validate_app().app.state_manager
 
 
 class MutableProxy(wrapt.ObjectProxy):
@@ -3820,9 +3823,9 @@ class MutableProxy(wrapt.ObjectProxy):
                     wrapper_cls_name,
                     (cls,),
                     {
-                        dataclasses._FIELDS: getattr(  # pyright: ignore [reportGeneralTypeIssues]
+                        dataclasses._FIELDS: getattr(  # pyright: ignore [reportAttributeAccessIssue]
                             wrapped_cls,
-                            dataclasses._FIELDS,  # pyright: ignore [reportGeneralTypeIssues]
+                            dataclasses._FIELDS,  # pyright: ignore [reportAttributeAccessIssue]
                         ),
                     },
                 )
@@ -3852,10 +3855,10 @@ class MutableProxy(wrapt.ObjectProxy):
 
     def _mark_dirty(
         self,
-        wrapped=None,
-        instance=None,
-        args=(),
-        kwargs=None,
+        wrapped: Callable | None = None,
+        instance: BaseState | None = None,
+        args: tuple = (),
+        kwargs: dict | None = None,
     ) -> Any:
         """Mark the state as dirty, then call a wrapped function.
 
@@ -3929,7 +3932,9 @@ class MutableProxy(wrapt.ObjectProxy):
             )
         return value
 
-    def _wrap_recursive_decorator(self, wrapped, instance, args, kwargs) -> Any:
+    def _wrap_recursive_decorator(
+        self, wrapped: Callable, instance: BaseState, args: list, kwargs: dict
+    ) -> Any:
         """Wrap a function that returns a possibly mutable value.
 
         Intended for use with `FunctionWrapper` from the `wrapt` library.
@@ -3975,7 +3980,7 @@ class MutableProxy(wrapt.ObjectProxy):
             ):
                 # Wrap methods called on Base subclasses, which might do _anything_
                 return wrapt.FunctionWrapper(
-                    functools.partial(value.__func__, self),
+                    functools.partial(value.__func__, self),  # pyright: ignore [reportFunctionMemberAccess]
                     self._wrap_recursive_decorator,
                 )
 
@@ -3988,7 +3993,7 @@ class MutableProxy(wrapt.ObjectProxy):
 
         return value
 
-    def __getitem__(self, key) -> Any:
+    def __getitem__(self, key: Any) -> Any:
         """Get the item on the proxied object and return a proxy if mutable.
 
         Args:
@@ -4011,7 +4016,7 @@ class MutableProxy(wrapt.ObjectProxy):
             # Recursively wrap mutable items retrieved through this proxy.
             yield self._wrap_recursive(value)
 
-    def __delattr__(self, name):
+    def __delattr__(self, name: str):
         """Delete the attribute on the proxied object and mark state dirty.
 
         Args:
@@ -4019,7 +4024,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         self._mark_dirty(super().__delattr__, args=(name,))
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str):
         """Delete the item on the proxied object and mark state dirty.
 
         Args:
@@ -4027,7 +4032,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         self._mark_dirty(super().__delitem__, args=(key,))
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Any):
         """Set the item on the proxied object and mark state dirty.
 
         Args:
@@ -4036,7 +4041,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         self._mark_dirty(super().__setitem__, args=(key, value))
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: Any):
         """Set the attribute on the proxied object and mark state dirty.
 
         If the attribute starts with "_self_", then the state is NOT marked
@@ -4060,7 +4065,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         return copy.copy(self.__wrapped__)
 
-    def __deepcopy__(self, memo=None) -> Any:
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Any:
         """Return a deepcopy of the proxy.
 
         Args:
@@ -4071,7 +4076,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         return copy.deepcopy(self.__wrapped__, memo=memo)
 
-    def __reduce_ex__(self, protocol_version):
+    def __reduce_ex__(self, protocol_version: SupportsIndex):
         """Get the state for redis serialization.
 
         This method is called by cloudpickle to serialize the object.
@@ -4100,10 +4105,10 @@ def serialize_mutable_proxy(mp: MutableProxy):
     return mp.__wrapped__
 
 
-_orig_json_JSONEncoder_default = json.JSONEncoder.default
+_orig_json_encoder_default = json.JSONEncoder.default
 
 
-def _json_JSONEncoder_default_wrapper(self: json.JSONEncoder, o: Any) -> Any:
+def _json_encoder_default_wrapper(self: json.JSONEncoder, o: Any) -> Any:
     """Wrap JSONEncoder.default to handle MutableProxy objects.
 
     Args:
@@ -4117,10 +4122,10 @@ def _json_JSONEncoder_default_wrapper(self: json.JSONEncoder, o: Any) -> Any:
         return o.__wrapped__
     except AttributeError:
         pass
-    return _orig_json_JSONEncoder_default(self, o)
+    return _orig_json_encoder_default(self, o)
 
 
-json.JSONEncoder.default = _json_JSONEncoder_default_wrapper
+json.JSONEncoder.default = _json_encoder_default_wrapper
 
 
 class ImmutableMutableProxy(MutableProxy):
@@ -4135,10 +4140,10 @@ class ImmutableMutableProxy(MutableProxy):
 
     def _mark_dirty(
         self,
-        wrapped=None,
-        instance=None,
-        args=(),
-        kwargs=None,
+        wrapped: Callable | None = None,
+        instance: BaseState | None = None,
+        args: tuple = (),
+        kwargs: dict | None = None,
     ) -> Any:
         """Raise an exception when an attempt is made to modify the object.
 

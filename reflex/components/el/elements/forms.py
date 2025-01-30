@@ -102,7 +102,7 @@ class Fieldset(Element):
     name: Var[Union[str, int, bool]]
 
 
-def on_submit_event_spec() -> Tuple[Var[Dict[str, Any]]]:
+def on_submit_event_spec() -> Tuple[Var[dict[str, Any]]]:
     """Event handler spec for the on_submit event.
 
     Returns:
@@ -111,7 +111,7 @@ def on_submit_event_spec() -> Tuple[Var[Dict[str, Any]]]:
     return (FORM_DATA,)
 
 
-def on_submit_string_event_spec() -> Tuple[Var[Dict[str, str]]]:
+def on_submit_string_event_spec() -> Tuple[Var[dict[str, str]]]:
     """Event handler spec for the on_submit event.
 
     Returns:
@@ -153,7 +153,7 @@ class Form(BaseHTML):
     target: Var[Union[str, int, bool]]
 
     # If true, the form will be cleared after submit.
-    reset_on_submit: Var[bool] = False  # type: ignore
+    reset_on_submit: Var[bool] = Var.create(False)
 
     # The name used to make this form's submit handler function unique.
     handle_submit_unique_name: Var[str]
@@ -405,7 +405,7 @@ class Input(BaseHTML):
             (value_var := Var.create(value))._var_type
         ):
             props["value"] = ternary_operation(
-                (value_var != Var.create(None))  # pyright: ignore [reportGeneralTypeIssues]
+                (value_var != Var.create(None))  # pyright: ignore [reportArgumentType]
                 & (value_var != Var(_js_expr="undefined")),
                 value,
                 Var.create(""),

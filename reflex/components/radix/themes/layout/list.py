@@ -72,7 +72,7 @@ class BaseList(Component, MarkdownComponentMap):
             if isinstance(items, Var):
                 children = [Foreach.create(items, ListItem.create)]
             else:
-                children = [ListItem.create(item) for item in items]  # type: ignore
+                children = [ListItem.create(item) for item in items]
         props["direction"] = "column"
         style = props.setdefault("style", {})
         style["list_style_type"] = list_style_type
@@ -189,7 +189,7 @@ ordered_list = list_ns.ordered
 unordered_list = list_ns.unordered
 
 
-def __getattr__(name):
+def __getattr__(name: Any):
     # special case for when accessing list to avoid shadowing
     # python's built in list object.
     if name == "list":
