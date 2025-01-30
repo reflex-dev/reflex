@@ -112,9 +112,12 @@ export const getBackendURL = (url_str) => {
  * @returns True if the backend is disabled, false otherwise.
  */
 export const isBackendDisabled = () => {
-  const backendEnabled = cookies.get("backend-enabled");
-  return backendEnabled === "false";
+  const cookie = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("backend-enabled="));
+  return cookie !== undefined && cookie.split("=")[1] == "false";
 };
+
 /**
  * Determine if any event in the event queue is stateful.
  *
