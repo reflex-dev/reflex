@@ -1199,15 +1199,14 @@ class Var(Generic[VAR_TYPE]):
             Args:
                 name: The name of the attribute.
 
-            Returns:
-                The attribute.
-
             Raises:
                 VarAttributeError: If the attribute does not exist.
                 TypeError: If the var type is Any.
+
+            # noqa: DAR101 self
             """
             if name.startswith("_"):
-                raise AttributeError(f"Attribute {name} not found.")
+                raise VarAttributeError(f"Attribute {name} not found.")
 
             if name == "contains":
                 raise TypeError(
@@ -1230,6 +1229,8 @@ class Var(Generic[VAR_TYPE]):
 
             Raises:
                 VarTypeError: when attempting to bool-ify the Var.
+
+            # noqa: DAR101 self
             """
             raise VarTypeError(
                 f"Cannot convert Var {str(self)!r} to bool for use with `if`, `and`, `or`, and `not`. "
@@ -1241,6 +1242,8 @@ class Var(Generic[VAR_TYPE]):
 
             Raises:
                 VarTypeError: when attempting to iterate over the Var.
+
+            # noqa: DAR101 self
             """
             raise VarTypeError(
                 f"Cannot iterate over Var {str(self)!r}. Instead use `rx.foreach`."
@@ -1251,6 +1254,8 @@ class Var(Generic[VAR_TYPE]):
 
             Raises:
                 VarTypeError: the operation is not supported
+
+            # noqa: DAR101 self
             """
             raise VarTypeError(
                 "'in' operator not supported for Var types, use Var.contains() instead."

@@ -1289,6 +1289,9 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
 
         Returns:
             The JSON representation of the var.
+
+        Raises:
+            TypeError: If the array elements are not of type LiteralVar.
         """
         elements = []
         for element in self._var_value:
