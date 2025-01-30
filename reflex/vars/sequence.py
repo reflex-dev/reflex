@@ -6,7 +6,6 @@ import dataclasses
 import inspect
 import json
 import re
-import sys
 import typing
 from typing import (
     TYPE_CHECKING,
@@ -15,7 +14,7 @@ from typing import (
     List,
     Literal,
     NoReturn,
-    Set,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -596,7 +595,7 @@ _decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralStringVar(LiteralVar, StringVar[str]):
     """Base class for immutable literal string vars."""
@@ -718,7 +717,7 @@ class LiteralStringVar(LiteralVar, StringVar[str]):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class ConcatVarOperation(CachedVarOperation, StringVar[str]):
     """Representing a concatenation of literal string vars."""
@@ -794,7 +793,8 @@ class ConcatVarOperation(CachedVarOperation, StringVar[str]):
         )
 
 
-ARRAY_VAR_TYPE = TypeVar("ARRAY_VAR_TYPE", bound=Union[List, Tuple, Set])
+ARRAY_VAR_TYPE = TypeVar("ARRAY_VAR_TYPE", bound=Sequence, covariant=True)
+OTHER_ARRAY_VAR_TYPE = TypeVar("OTHER_ARRAY_VAR_TYPE", bound=Sequence)
 
 OTHER_TUPLE = TypeVar("OTHER_TUPLE")
 
@@ -889,6 +889,11 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
     @overload
     def __getitem__(
+        self: ArrayVar[Tuple[Any, bool]], i: Literal[1, -1]
+    ) -> BooleanVar: ...
+
+    @overload
+    def __getitem__(
         self: (
             ArrayVar[Tuple[Any, int]]
             | ArrayVar[Tuple[Any, float]]
@@ -914,7 +919,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
     @overload
     def __getitem__(
-        self: ArrayVar[Tuple[Any, bool]], i: Literal[1, -1]
+        self: ARRAY_VAR_OF_LIST_ELEMENT[bool], i: int | NumberVar
     ) -> BooleanVar: ...
 
     @overload
@@ -934,20 +939,9 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
     @overload
     def __getitem__(
-        self: ARRAY_VAR_OF_LIST_ELEMENT[bool], i: int | NumberVar
-    ) -> BooleanVar: ...
-
-    @overload
-    def __getitem__(
         self: ARRAY_VAR_OF_LIST_ELEMENT[List[INNER_ARRAY_VAR]],
         i: int | NumberVar,
     ) -> ArrayVar[List[INNER_ARRAY_VAR]]: ...
-
-    @overload
-    def __getitem__(
-        self: ARRAY_VAR_OF_LIST_ELEMENT[Set[INNER_ARRAY_VAR]],
-        i: int | NumberVar,
-    ) -> ArrayVar[Set[INNER_ARRAY_VAR]]: ...
 
     @overload
     def __getitem__(
@@ -1239,26 +1233,18 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
 LIST_ELEMENT = TypeVar("LIST_ELEMENT")
 
-ARRAY_VAR_OF_LIST_ELEMENT = Union[
-    ArrayVar[List[LIST_ELEMENT]],
-    ArrayVar[Set[LIST_ELEMENT]],
-    ArrayVar[Tuple[LIST_ELEMENT, ...]],
-]
+ARRAY_VAR_OF_LIST_ELEMENT = ArrayVar[Sequence[LIST_ELEMENT]]
 
 
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
     """Base class for immutable literal array vars."""
 
-    _var_value: Union[
-        List[Union[Var, Any]],
-        Set[Union[Var, Any]],
-        Tuple[Union[Var, Any], ...],
-    ] = dataclasses.field(default_factory=list)
+    _var_value: Sequence[Union[Var, Any]] = dataclasses.field(default=())
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -1304,21 +1290,24 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
         Returns:
             The JSON representation of the var.
         """
-        return (
-            "["
-            + ", ".join(
-                [LiteralVar.create(element).json() for element in self._var_value]
-            )
-            + "]"
-        )
+        elements = []
+        for element in self._var_value:
+            element_var = LiteralVar.create(element)
+            if not isinstance(element_var, LiteralVar):
+                raise TypeError(
+                    f"Array elements must be of type LiteralVar, not {type(element_var)}"
+                )
+            elements.append(element_var.json())
+
+        return "[" + ", ".join(elements) + "]"
 
     @classmethod
     def create(
         cls,
-        value: ARRAY_VAR_TYPE,
-        _var_type: Type[ARRAY_VAR_TYPE] | None = None,
+        value: OTHER_ARRAY_VAR_TYPE,
+        _var_type: Type[OTHER_ARRAY_VAR_TYPE] | None = None,
         _var_data: VarData | None = None,
-    ) -> LiteralArrayVar[ARRAY_VAR_TYPE]:
+    ) -> LiteralArrayVar[OTHER_ARRAY_VAR_TYPE]:
         """Create a var from a string value.
 
         Args:
@@ -1329,7 +1318,7 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
         Returns:
             The var.
         """
-        return cls(
+        return LiteralArrayVar(
             _js_expr="",
             _var_type=figure_out_type(value) if _var_type is None else _var_type,
             _var_data=_var_data,
@@ -1356,7 +1345,7 @@ def string_split_operation(string: StringVar[Any], sep: StringVar | str = ""):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class ArraySliceOperation(CachedVarOperation, ArrayVar):
     """Base class for immutable string vars that are the result of a string slice operation."""
@@ -1705,7 +1694,7 @@ class ColorVar(StringVar[Color], python_types=Color):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
     """Base class for immutable literal color vars."""
