@@ -52,6 +52,7 @@ class Foreach(Component):
         Raises:
             ForeachVarError: If the iterable is of type Any.
             TypeError: If the render function is a ComponentState.
+            UntypedVarError: If the iterable is of type Any without a type annotation.
         """
         iterable = LiteralVar.create(iterable)
         if iterable._var_type == Any:

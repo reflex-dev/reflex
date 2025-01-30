@@ -1201,6 +1201,7 @@ class Var(Generic[VAR_TYPE]):
 
             Raises:
                 VarAttributeError: If the attribute does not exist.
+                UntypedVarError: If the var type is Any.
                 TypeError: If the var type is Any.
 
             # noqa: DAR101 self
