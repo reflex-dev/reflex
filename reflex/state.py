@@ -2314,7 +2314,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 prefix = STATE_COMPRESSED
             else:
                 prefix = STATE_NOT_COMPRESSED
-            payload = prefix + payload  # type: ignore
+            payload = prefix + payload  # pyright: ignore[reportOperatorIssue,reportUnknownVariableType]
 
         return payload
 
@@ -2346,8 +2346,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 if is_compressed:
                     from blosc2 import decompress
 
-                    data = decompress(data)  # type: ignore
-            data = pickle.loads(data)  # type: ignore
+                    data = decompress(data)  # pyright: ignore[reportAssignmentType]
+            data = pickle.loads(data)  # pyright: ignore[reportArgumentType]
         elif fp is not None and data is None:
             if environment.REFLEX_COMPRESS_STATE.get():
                 # read first byte to determine if compressed
@@ -2363,13 +2363,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     fp = BytesIO()
 
                     for chunk_index in range(schunk.nchunks):
-                        fp.write(schunk.decompress_chunk(chunk_index))  # type: ignore
+                        fp.write(schunk.decompress_chunk(chunk_index))  # pyright: ignore[reportArgumentType,reportUnusedCallResult]
 
             data = pickle.load(fp)
         else:
             raise ValueError("Only one of `data` or `fp` must be provided")
-        substate_schema, state = data  # type: ignore
-        if substate_schema != state._to_schema():  # type: ignore
+        substate_schema, state = data  # pyright: ignore[reportUnknownVariableType,reportGeneralTypeIssues]
+        if substate_schema != state._to_schema():  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             raise StateSchemaMismatchError()
         return state  # type: ignore
 

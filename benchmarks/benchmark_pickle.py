@@ -109,10 +109,10 @@ def test_pickle(
             pytest.skip("Blosc is not available.")
 
         def dump(obj: State) -> bytes:
-            return compress(pickle.dumps(obj, protocol=protocol))  # type: ignore
+            return compress(pickle.dumps(obj, protocol=protocol))  # pyright: ignore[reportReturnType]
 
         def load(data: bytes) -> State:
-            return pickle.loads(decompress(data))  # type: ignore
+            return pickle.loads(decompress(data))  # pyright: ignore[reportAny,reportArgumentType]
 
     else:
 
@@ -134,7 +134,7 @@ def test_pickle(
 
         def run(obj: State) -> None:
             _ = redis_client.set(key, dump(obj))
-            _ = load(redis_client.get(key))  # type: ignore
+            _ = load(redis_client.get(key))  # pyright: ignore[reportArgumentType]
 
     else:
 
@@ -149,7 +149,7 @@ def test_pickle(
     benchmark.extra_info["size"] = size
     benchmark.extra_info["redis"] = redis
     benchmark.extra_info["pickle_protocol"] = protocol
-    redis_group = redis.__name__ if redis else "no_redis"  # type: ignore
+    redis_group = redis.__name__ if redis else "no_redis"  # pyright: ignore[reportUnknownMemberType,reportAttributeAccessIssue,reportUnknownVariableType]
     benchmark.group = f"{redis_group}_{big_state_size[1]}"
 
     _ = benchmark(run, big_state)
