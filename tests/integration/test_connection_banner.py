@@ -1,6 +1,5 @@
 """Test case for displaying the connection banner when the websocket drops."""
 
-import asyncio
 import functools
 from typing import Generator
 
@@ -15,6 +14,8 @@ from .utils import SessionStorage
 
 def ConnectionBanner(is_reflex_cloud: bool = False):
     """App with a connection banner."""
+    import asyncio
+
     import reflex as rx
 
     # Simulate reflex cloud deploy
