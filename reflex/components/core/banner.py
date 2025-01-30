@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Optional
 
+from reflex import constants
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
 from reflex.components.datadisplay.logo import svg_logo
@@ -318,7 +319,9 @@ class BackendDisabled(Div):
                     "useEffect(() => { setBackendDisabled(isBackendDisabled()); }, []);": None,
                 },
                 imports={
-                    f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isBackendDisabled")],
+                    f"$/{constants.Dirs.STATE_PATH}": [
+                        ImportVar(tag="isBackendDisabled")
+                    ],
                 },
             ),
         )
