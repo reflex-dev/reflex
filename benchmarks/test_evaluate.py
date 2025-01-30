@@ -2,21 +2,28 @@ from dataclasses import dataclass
 from typing import cast
 
 import pytest
+
 import reflex as rx
 
 
 class SideBarState(rx.State):
+    """State for the side bar."""
+
     current_page: rx.Field[str] = rx.field("/")
 
 
 @dataclass(frozen=True)
 class SideBarPage:
+    """A page in the side bar."""
+
     title: str
     href: str
 
 
 @dataclass(frozen=True)
 class SideBarSection:
+    """A section in the side bar."""
+
     name: str
     icon: str
     pages: tuple[SideBarPage, ...]
@@ -24,6 +31,8 @@ class SideBarSection:
 
 @dataclass(frozen=True)
 class Category:
+    """A category in the side bar."""
+
     name: str
     href: str
     sections: tuple[SideBarSection, ...]
