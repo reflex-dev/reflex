@@ -31,7 +31,7 @@ from .base import (
     var_operation_return,
 )
 
-NUMBER_T = TypeVar("NUMBER_T", int, float, Union[int, float], bool)
+NUMBER_T = TypeVar("NUMBER_T", int, float, bool)
 
 if TYPE_CHECKING:
     from .sequence import ArrayVar

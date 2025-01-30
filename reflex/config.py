@@ -407,7 +407,7 @@ class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
         self.default = default
         self.internal = internal
 
-    def __set_name__(self, owner, name):
+    def __set_name__(self, owner: Any, name: str):
         """Set the name of the descriptor.
 
         Args:
@@ -416,7 +416,7 @@ class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
         """
         self.name = name
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance: Any, owner: Any):
         """Get the EnvVar instance.
 
         Args:
@@ -435,7 +435,7 @@ class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
 
 if TYPE_CHECKING:
 
-    def env_var(default, internal=False) -> EnvVar:
+    def env_var(default: Any, internal: bool = False) -> EnvVar:
         """Typing helper for the env_var descriptor.
 
         Args:

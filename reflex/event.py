@@ -1075,7 +1075,8 @@ def download(
     )
 
 
-def _callback_arg_spec(eval_result):
+# This function seems unused. Check if we still need it. If not, remove in 0.7.0
+def _callback_arg_spec(eval_result: Any):
     """ArgSpec for call_script callback function.
 
     Args:
@@ -1180,7 +1181,7 @@ def run_script(
     return call_function(ArgsFunctionOperation.create((), javascript_code), callback)
 
 
-def get_event(state, event):
+def get_event(state: BaseState, event: str):
     """Get the event from the given state.
 
     Args:
@@ -1193,7 +1194,7 @@ def get_event(state, event):
     return f"{state.get_name()}.{event}"
 
 
-def get_hydrate_event(state) -> str:
+def get_hydrate_event(state: BaseState) -> str:
     """Get the name of the hydrate event for the state.
 
     Args:
@@ -1832,13 +1833,13 @@ class EventCallback(Generic[P, T]):
 
     @overload
     def __get__(
-        self: EventCallback[P, T], instance: None, owner
+        self: EventCallback[P, T], instance: None, owner: Any
     ) -> EventCallback[P, T]: ...
 
     @overload
-    def __get__(self, instance, owner) -> Callable[P, T]: ...
+    def __get__(self, instance: Any, owner: Any) -> Callable[P, T]: ...
 
-    def __get__(self, instance, owner) -> Callable:
+    def __get__(self, instance: Any, owner: Any) -> Callable:
         """Get the function with the instance bound to it.
 
         Args:

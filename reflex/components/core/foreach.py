@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import inspect
 from typing import Any, Callable, Iterable
 
@@ -97,9 +98,20 @@ class Foreach(Component):
             # Determine the index var name based on the params accepted by render_fn.
             props["index_var_name"] = params[1].name
         else:
+            render_fn = self.render_fn
             # Otherwise, use a deterministic index, based on the render function bytecode.
             code_hash = (
-                hash(self.render_fn.__code__)
+                hash(
+                    getattr(
+                        render_fn,
+                        "__code__",
+                        (
+                            repr(self.render_fn)
+                            if not isinstance(render_fn, functools.partial)
+                            else render_fn.func.__code__
+                        ),
+                    )
+                )
                 .to_bytes(
                     length=8,
                     byteorder="big",
