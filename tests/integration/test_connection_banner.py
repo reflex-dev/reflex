@@ -13,7 +13,11 @@ from .utils import SessionStorage
 
 
 def ConnectionBanner(is_reflex_cloud: bool = False):
-    """App with a connection banner."""
+    """App with a connection banner.
+
+    Args:
+        is_reflex_cloud: The value for config.is_reflex_cloud.
+    """
     import asyncio
 
     import reflex as rx
