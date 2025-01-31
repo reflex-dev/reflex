@@ -541,3 +541,7 @@ def test_style_update_with_var_data():
     assert s2._var_data is not None
     assert "const red = true" in s2._var_data.hooks
     assert "const blue = true" in s2._var_data.hooks
+
+    s3 = s1 | s2
+    assert s3._var_data is not None
+    assert "_varData" not in s3
