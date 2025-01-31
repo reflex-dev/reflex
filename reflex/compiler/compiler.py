@@ -239,11 +239,19 @@ def _compile_components(
         component_renders.append(component_render)
         imports = utils.merge_imports(imports, component_imports)
 
+    dynamic_imports = {
+        comp_import: None
+        for comp_render in component_renders
+        if "dynamic_imports" in comp_render
+        for comp_import in comp_render["dynamic_imports"]
+    }
+
     # Compile the components page.
     return (
         templates.COMPONENTS.render(
             imports=utils.compile_imports(imports),
             components=component_renders,
+            dynamic_imports=dynamic_imports,
         ),
         imports,
     )
