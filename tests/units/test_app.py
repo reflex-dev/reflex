@@ -471,15 +471,15 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
     """
     state = test_state()  # pyright: ignore [reportCallIssue]
     state.add_var("int_val", int, 0)
-    result = await state._process(
+    async for result in state._process(
         Event(
             token=token,
             name=f"{test_state.get_name()}.set_int_val",
             router_data={"pathname": "/", "query": {}},
             payload={"value": 50},
         )
-    ).__anext__()
-    assert result.delta == {test_state.get_name(): {"int_val": 50}}
+    ):
+        assert result.delta == {test_state.get_name(): {"int_val": 50}}
 
 
 @pytest.mark.asyncio
@@ -583,18 +583,17 @@ async def test_list_mutation_detection__plain_list(
         token: a Token.
     """
     for event_name, expected_delta in event_tuples:
-        result = await list_mutation_state._process(
+        async for result in list_mutation_state._process(
             Event(
                 token=token,
                 name=f"{list_mutation_state.get_name()}.{event_name}",
                 router_data={"pathname": "/", "query": {}},
                 payload={},
             )
-        ).__anext__()
-
-        # prefix keys in expected_delta with the state name
-        expected_delta = {list_mutation_state.get_name(): expected_delta}
-        assert result.delta == expected_delta
+        ):
+            # prefix keys in expected_delta with the state name
+            expected_delta = {list_mutation_state.get_name(): expected_delta}
+            assert result.delta == expected_delta
 
 
 @pytest.mark.asyncio
@@ -709,19 +708,18 @@ async def test_dict_mutation_detection__plain_list(
         token: a Token.
     """
     for event_name, expected_delta in event_tuples:
-        result = await dict_mutation_state._process(
+        async for result in dict_mutation_state._process(
             Event(
                 token=token,
                 name=f"{dict_mutation_state.get_name()}.{event_name}",
                 router_data={"pathname": "/", "query": {}},
                 payload={},
             )
-        ).__anext__()
+        ):
+            # prefix keys in expected_delta with the state name
+            expected_delta = {dict_mutation_state.get_name(): expected_delta}
 
-        # prefix keys in expected_delta with the state name
-        expected_delta = {dict_mutation_state.get_name(): expected_delta}
-
-        assert result.delta == expected_delta
+            assert result.delta == expected_delta
 
 
 @pytest.mark.asyncio

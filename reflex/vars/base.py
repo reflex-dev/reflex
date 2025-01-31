@@ -11,7 +11,6 @@ import json
 import random
 import re
 import string
-import sys
 import warnings
 from types import CodeType, FunctionType
 from typing import (
@@ -29,6 +28,7 @@ from typing import (
     Mapping,
     NoReturn,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Type,
@@ -80,6 +80,7 @@ if TYPE_CHECKING:
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
 OTHER_VAR_TYPE = TypeVar("OTHER_VAR_TYPE")
 STRING_T = TypeVar("STRING_T", bound=str)
+SEQUENCE_TYPE = TypeVar("SEQUENCE_TYPE", bound=Sequence)
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
@@ -130,7 +131,7 @@ class VarData:
         state: str = "",
         field_name: str = "",
         imports: ImportDict | ParsedImportDict | None = None,
-        hooks: Mapping[str, VarData | None] | None = None,
+        hooks: Mapping[str, VarData | None] | Sequence[str] | str | None = None,
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
     ):
@@ -144,6 +145,10 @@ class VarData:
             deps: Dependencies of the var for useCallback.
             position: Position of the hook in the component.
         """
+        if isinstance(hooks, str):
+            hooks = [hooks]
+        if not isinstance(hooks, dict):
+            hooks = {hook: None for hook in (hooks or [])}
         immutable_imports: ImmutableParsedImportDict = tuple(
             (k, tuple(v)) for k, v in parse_imports(imports or {}).items()
         )
@@ -153,6 +158,16 @@ class VarData:
         object.__setattr__(self, "hooks", tuple(hooks or {}))
         object.__setattr__(self, "deps", tuple(deps or []))
         object.__setattr__(self, "position", position or None)
+
+        if hooks and any(hooks.values()):
+            merged_var_data = VarData.merge(self, *hooks.values())
+            if merged_var_data is not None:
+                object.__setattr__(self, "state", merged_var_data.state)
+                object.__setattr__(self, "field_name", merged_var_data.field_name)
+                object.__setattr__(self, "imports", merged_var_data.imports)
+                object.__setattr__(self, "hooks", merged_var_data.hooks)
+                object.__setattr__(self, "deps", merged_var_data.deps)
+                object.__setattr__(self, "position", merged_var_data.position)
 
     def old_school_imports(self) -> ImportDict:
         """Return the imports as a mutable dict.
@@ -433,7 +448,7 @@ class Var(Generic[VAR_TYPE]):
             @dataclasses.dataclass(
                 eq=False,
                 frozen=True,
-                **{"slots": True} if sys.version_info >= (3, 10) else {},
+                slots=True,
             )
             class ToVarOperation(ToOperation, cls):
                 """Base class of converting a var to another var type."""
@@ -444,7 +459,12 @@ class Var(Generic[VAR_TYPE]):
 
                 _default_var_type: ClassVar[GenericType] = default_type
 
-            ToVarOperation.__name__ = f'To{cls.__name__.removesuffix("Var")}Operation'
+            new_to_var_operation_name = f"To{cls.__name__.removesuffix('Var')}Operation"
+            ToVarOperation.__qualname__ = (
+                ToVarOperation.__qualname__.removesuffix(ToVarOperation.__name__)
+                + new_to_var_operation_name
+            )
+            ToVarOperation.__name__ = new_to_var_operation_name
 
             _var_subclasses.append(VarSubclassEntry(cls, ToVarOperation, python_types))
 
@@ -576,7 +596,7 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     @classmethod
-    def create(
+    def create(  # pyright: ignore [reportOverlappingOverload]
         cls,
         value: STRING_T,
         _var_data: VarData | None = None,
@@ -589,6 +609,22 @@ class Var(Generic[VAR_TYPE]):
         value: None,
         _var_data: VarData | None = None,
     ) -> NoneVar: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: MAPPING_TYPE,
+        _var_data: VarData | None = None,
+    ) -> ObjectVar[MAPPING_TYPE]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: SEQUENCE_TYPE,
+        _var_data: VarData | None = None,
+    ) -> ArrayVar[SEQUENCE_TYPE]: ...
 
     @overload
     @classmethod
@@ -671,8 +707,8 @@ class Var(Generic[VAR_TYPE]):
     @overload
     def to(
         self,
-        output: type[Mapping],
-    ) -> ObjectVar[Mapping]: ...
+        output: type[MAPPING_TYPE],
+    ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def to(
@@ -723,7 +759,7 @@ class Var(Generic[VAR_TYPE]):
             return get_to_operation(NoneVar).create(self)  # pyright: ignore [reportReturnType]
 
         # Handle fixed_output_type being Base or a dataclass.
-        if can_use_in_object_var(fixed_output_type):
+        if can_use_in_object_var(output):
             return self.to(ObjectVar, output)
 
         if inspect.isclass(output):
@@ -756,6 +792,9 @@ class Var(Generic[VAR_TYPE]):
         return self
 
     @overload
+    def guess_type(self: Var[NoReturn]) -> Var[Any]: ...  # pyright: ignore [reportOverlappingOverload]
+
+    @overload
     def guess_type(self: Var[str]) -> StringVar: ...
 
     @overload
@@ -763,6 +802,9 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     def guess_type(self: Var[int] | Var[float] | Var[int | float]) -> NumberVar: ...
+
+    @overload
+    def guess_type(self: Var[BASE_TYPE]) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
     def guess_type(self) -> Self: ...
@@ -912,7 +954,7 @@ class Var(Generic[VAR_TYPE]):
 
         return setter
 
-    def _var_set_state(self, state: type[BaseState] | str):
+    def _var_set_state(self, state: type[BaseState] | str) -> Self:
         """Set the state of the var.
 
         Args:
@@ -927,7 +969,7 @@ class Var(Generic[VAR_TYPE]):
             else format_state_name(state.get_full_name())
         )
 
-        return StateOperation.create(
+        return StateOperation.create(  # pyright: ignore [reportReturnType]
             formatted_state_name,
             self,
             _var_data=VarData.merge(
@@ -1106,43 +1148,6 @@ class Var(Generic[VAR_TYPE]):
         """
         return self
 
-    def __getattr__(self, name: str):
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute.
-
-        Raises:
-            VarAttributeError: If the attribute does not exist.
-            TypeError: If the var type is Any.
-        """
-        if name.startswith("_"):
-            return self.__getattribute__(name)
-
-        if name == "contains":
-            raise TypeError(
-                f"Var of type {self._var_type} does not support contains check."
-            )
-        if name == "reverse":
-            raise TypeError("Cannot reverse non-list var.")
-
-        if self._var_type is Any:
-            raise TypeError(
-                f"You must provide an annotation for the state var `{self!s}`. Annotation cannot be `{self._var_type}`."
-            )
-
-        if name in REPLACED_NAMES:
-            raise VarAttributeError(
-                f"Field {name!r} was renamed to {REPLACED_NAMES[name]!r}"
-            )
-
-        raise VarAttributeError(
-            f"The State var has no attribute '{name}' or may have been annotated wrongly.",
-        )
-
     def _decode(self) -> Any:
         """Decode Var as a python value.
 
@@ -1204,36 +1209,76 @@ class Var(Generic[VAR_TYPE]):
 
         return ArrayVar.range(first_endpoint, second_endpoint, step)
 
-    def __bool__(self) -> bool:
-        """Raise exception if using Var in a boolean context.
+    if not TYPE_CHECKING:
 
-        Raises:
-            VarTypeError: when attempting to bool-ify the Var.
-        """
-        raise VarTypeError(
-            f"Cannot convert Var {str(self)!r} to bool for use with `if`, `and`, `or`, and `not`. "
-            "Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert)."
-        )
+        def __getattr__(self, name: str):
+            """Get an attribute of the var.
 
-    def __iter__(self) -> Any:
-        """Raise exception if using Var in an iterable context.
+            Args:
+                name: The name of the attribute.
 
-        Raises:
-            VarTypeError: when attempting to iterate over the Var.
-        """
-        raise VarTypeError(
-            f"Cannot iterate over Var {str(self)!r}. Instead use `rx.foreach`."
-        )
+            Raises:
+                VarAttributeError: If the attribute does not exist.
+                UntypedVarError: If the var type is Any.
+                TypeError: If the var type is Any.
 
-    def __contains__(self, _: Any) -> Var:
-        """Override the 'in' operator to alert the user that it is not supported.
+            # noqa: DAR101 self
+            """
+            if name.startswith("_"):
+                raise VarAttributeError(f"Attribute {name} not found.")
 
-        Raises:
-            VarTypeError: the operation is not supported
-        """
-        raise VarTypeError(
-            "'in' operator not supported for Var types, use Var.contains() instead."
-        )
+            if name == "contains":
+                raise TypeError(
+                    f"Var of type {self._var_type} does not support contains check."
+                )
+            if name == "reverse":
+                raise TypeError("Cannot reverse non-list var.")
+
+            if self._var_type is Any:
+                raise exceptions.UntypedVarError(
+                    f"You must provide an annotation for the state var `{self!s}`. Annotation cannot be `{self._var_type}`."
+                )
+
+            raise VarAttributeError(
+                f"The State var has no attribute '{name}' or may have been annotated wrongly.",
+            )
+
+        def __bool__(self) -> bool:
+            """Raise exception if using Var in a boolean context.
+
+            Raises:
+                VarTypeError: when attempting to bool-ify the Var.
+
+            # noqa: DAR101 self
+            """
+            raise VarTypeError(
+                f"Cannot convert Var {str(self)!r} to bool for use with `if`, `and`, `or`, and `not`. "
+                "Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert)."
+            )
+
+        def __iter__(self) -> Any:
+            """Raise exception if using Var in an iterable context.
+
+            Raises:
+                VarTypeError: when attempting to iterate over the Var.
+
+            # noqa: DAR101 self
+            """
+            raise VarTypeError(
+                f"Cannot iterate over Var {str(self)!r}. Instead use `rx.foreach`."
+            )
+
+        def __contains__(self, _: Any) -> Var:
+            """Override the 'in' operator to alert the user that it is not supported.
+
+            Raises:
+                VarTypeError: the operation is not supported
+
+            # noqa: DAR101 self
+            """
+            raise VarTypeError(
+                "'in' operator not supported for Var types, use Var.contains() instead."
+            )
 
 
 OUTPUT = TypeVar("OUTPUT", bound=Var)
@@ -1384,7 +1429,7 @@ class LiteralVar(Var):
             TypeError: If the value is not a supported type for LiteralVar.
         """
         from .object import LiteralObjectVar
-        from .sequence import LiteralStringVar
+        from .sequence import ArrayVar, LiteralStringVar
 
         if isinstance(value, Var):
             if _var_data is None:
@@ -1440,12 +1485,21 @@ class LiteralVar(Var):
                 _var_data=_var_data,
             )
 
+        if isinstance(value, range):
+            return ArrayVar.range(value.start, value.stop, value.step)
+
         raise TypeError(
             f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
         )
 
     def __post_init__(self):
         """Post-initialize the var."""
+
+    @property
+    def _var_value(self) -> Any:
+        raise NotImplementedError(
+            "LiteralVar subclasses must implement the _var_value property."
+        )
 
     def json(self) -> str:
         """Serialize the var to a JSON string.
@@ -1519,7 +1573,7 @@ def var_operation(
 ) -> Callable[P, StringVar]: ...
 
 
-LIST_T = TypeVar("LIST_T", bound=Union[List[Any], Tuple, Set])
+LIST_T = TypeVar("LIST_T", bound=Sequence)
 
 
 @overload
@@ -1756,7 +1810,7 @@ def _or_operation(a: Var, b: Var):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class CallableVar(Var):
     """Decorate a Var-returning function to act as both a Var and a function.
@@ -1837,7 +1891,7 @@ def is_computed_var(obj: Any) -> TypeGuard[ComputedVar]:
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class ComputedVar(Var[RETURN_TYPE]):
     """A field with computed getters."""
@@ -2033,6 +2087,13 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
+        self: ComputedVar[bool],
+        instance: None,
+        owner: Type,
+    ) -> BooleanVar: ...
+
+    @overload
+    def __get__(
         self: ComputedVar[int] | ComputedVar[float],
         instance: None,
         owner: Type,
@@ -2058,13 +2119,6 @@ class ComputedVar(Var[RETURN_TYPE]):
         instance: None,
         owner: Type,
     ) -> ArrayVar[list[LIST_INSIDE]]: ...
-
-    @overload
-    def __get__(
-        self: ComputedVar[set[LIST_INSIDE]],
-        instance: None,
-        owner: Type,
-    ) -> ArrayVar[set[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
@@ -2268,7 +2322,7 @@ async def _default_async_computed_var(_self: BaseState) -> Any:
     eq=False,
     frozen=True,
     init=False,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
     """A computed var that wraps a coroutinefunction."""
@@ -2279,7 +2333,14 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: AsyncComputedVar[int] | AsyncComputedVar[float],
+        self: AsyncComputedVar[bool],
+        instance: None,
+        owner: Type,
+    ) -> BooleanVar: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[int] | ComputedVar[float],
         instance: None,
         owner: Type,
     ) -> NumberVar: ...
@@ -2304,13 +2365,6 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
         instance: None,
         owner: Type,
     ) -> ArrayVar[list[LIST_INSIDE]]: ...
-
-    @overload
-    def __get__(
-        self: AsyncComputedVar[set[LIST_INSIDE]],
-        instance: None,
-        owner: Type,
-    ) -> ArrayVar[set[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
@@ -2535,7 +2589,7 @@ def var_operation_return(
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class CustomVarOperation(CachedVarOperation, Var[T]):
     """Base class for custom var operations."""
@@ -2606,7 +2660,7 @@ class NoneVar(Var[None], python_types=type(None)):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralNoneVar(LiteralVar, NoneVar):
     """A var representing None."""
@@ -2668,7 +2722,7 @@ def get_to_operation(var_subclass: Type[Var]) -> Type[ToOperation]:
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class StateOperation(CachedVarOperation, Var):
     """A var operation that accesses a field on an object."""
@@ -2813,19 +2867,6 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
         if callable(values):
             var_datas.extend(_extract_var_data(values()))  # pyright: ignore [reportArgumentType]
     return var_datas
-
-
-# These names were changed in reflex 0.3.0
-REPLACED_NAMES = {
-    "full_name": "_var_full_name",
-    "name": "_js_expr",
-    "state": "_var_data.state",
-    "type_": "_var_type",
-    "is_local": "_var_is_local",
-    "is_string": "_var_is_string",
-    "set_state": "_var_set_state",
-    "deps": "_deps",
-}
 
 
 dispatchers: Dict[GenericType, Callable[[Var], Var]] = {}

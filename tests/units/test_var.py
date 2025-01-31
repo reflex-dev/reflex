@@ -1,6 +1,5 @@
 import json
 import math
-import sys
 import typing
 from typing import Dict, List, Mapping, Optional, Set, Tuple, Union, cast
 
@@ -422,19 +421,13 @@ class Bar(rx.Base):
 
 @pytest.mark.parametrize(
     ("var", "var_type"),
-    (
-        [
-            (Var(_js_expr="", _var_type=Foo | Bar).guess_type(), Foo | Bar),
-            (Var(_js_expr="", _var_type=Foo | Bar).guess_type().bar, Union[int, str]),
-        ]
-        if sys.version_info >= (3, 10)
-        else []
-    )
-    + [
-        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type(), Union[Foo, Bar]),
-        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().baz, str),
+    [
+        (Var(_js_expr="").to(Foo | Bar), Foo | Bar),
+        (Var(_js_expr="").to(Foo | Bar).bar, Union[int, str]),
+        (Var(_js_expr="").to(Union[Foo, Bar]), Union[Foo, Bar]),
+        (Var(_js_expr="").to(Union[Foo, Bar]).baz, str),
         (
-            Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().foo,
+            Var(_js_expr="").to(Union[Foo, Bar]).foo,
             Union[int, None],
         ),
     ],
@@ -1076,19 +1069,19 @@ def test_array_operations():
     assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].slice().reverse()"
     assert (
         str(ArrayVar.range(10))
-        == "Array.from({ length: (10 - 0) / 1 }, (_, i) => 0 + i * 1)"
+        == "Array.from({ length: Math.ceil((10 - 0) / 1) }, (_, i) => 0 + i * 1)"
     )
     assert (
         str(ArrayVar.range(1, 10))
-        == "Array.from({ length: (10 - 1) / 1 }, (_, i) => 1 + i * 1)"
+        == "Array.from({ length: Math.ceil((10 - 1) / 1) }, (_, i) => 1 + i * 1)"
     )
     assert (
         str(ArrayVar.range(1, 10, 2))
-        == "Array.from({ length: (10 - 1) / 2 }, (_, i) => 1 + i * 2)"
+        == "Array.from({ length: Math.ceil((10 - 1) / 2) }, (_, i) => 1 + i * 2)"
     )
     assert (
         str(ArrayVar.range(1, 10, -1))
-        == "Array.from({ length: (10 - 1) / -1 }, (_, i) => 1 + i * -1)"
+        == "Array.from({ length: Math.ceil((10 - 1) / -1) }, (_, i) => 1 + i * -1)"
     )
 
 
@@ -1358,7 +1351,7 @@ def test_unsupported_types_for_contains(var: Var):
         var: The base var.
     """
     with pytest.raises(TypeError) as err:
-        assert var.contains(1)
+        assert var.contains(1)  # pyright: ignore [reportAttributeAccessIssue]
     assert (
         err.value.args[0]
         == f"Var of type {var._var_type} does not support contains check."
@@ -1388,7 +1381,7 @@ def test_unsupported_types_for_string_contains(other):
 
 def test_unsupported_default_contains():
     with pytest.raises(TypeError) as err:
-        assert 1 in Var(_js_expr="var", _var_type=str).guess_type()
+        assert 1 in Var(_js_expr="var", _var_type=str).guess_type()  # pyright: ignore [reportOperatorIssue]
     assert (
         err.value.args[0]
         == "'in' operator not supported for Var types, use Var.contains() instead."
@@ -1884,3 +1877,19 @@ async def test_async_computed_var():
     assert await my_state.async_computed_var == 3
     assert await my_state.async_computed_var == 3
     assert side_effect_counter == 2
+
+
+def test_var_data_hooks():
+    var_data_str = VarData(hooks="what")
+    var_data_list = VarData(hooks=["what"])
+    var_data_dict = VarData(hooks={"what": None})
+    assert var_data_str == var_data_list == var_data_dict
+
+    var_data_list_multiple = VarData(hooks=["what", "whot"])
+    var_data_dict_multiple = VarData(hooks={"what": None, "whot": None})
+    assert var_data_list_multiple == var_data_dict_multiple
+
+
+def test_var_data_with_hooks_value():
+    var_data = VarData(hooks={"what": VarData(hooks={"whot": VarData(hooks="whott")})})
+    assert var_data == VarData(hooks=["what", "whot", "whott"])

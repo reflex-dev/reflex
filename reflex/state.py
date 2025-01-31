@@ -1569,9 +1569,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if not isinstance(var, Var):
             return var
 
+        unset = object()
+
         # Fast case: this is a literal var and the value is known.
-        if hasattr(var, "_var_value"):
-            return var._var_value
+        if (var_value := getattr(var, "_var_value", unset)) is not unset:
+            return var_value  # pyright: ignore [reportReturnType]
 
         var_data = var._get_all_var_data()
         if var_data is None or not var_data.state:
