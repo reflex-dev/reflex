@@ -19,7 +19,7 @@ env:
 jobs:
   benchmarks:
     name: Run benchmarks
-    runs-on: ubuntu-latest
+    runs-on: codspeed-macro
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_build_env
