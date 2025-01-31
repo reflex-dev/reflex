@@ -37,6 +37,7 @@ from typing_extensions import (
 )
 
 from reflex import constants
+from reflex.constants.compiler import CompileVars, Hooks, Imports
 from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import console, format
 from reflex.utils.exceptions import (
@@ -1729,7 +1730,13 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             arg_def_expr = Var(_js_expr="args")
 
         if value.invocation is None:
-            invocation = FunctionStringVar.create("addEvents")
+            invocation = FunctionStringVar.create(
+                CompileVars.ADD_EVENTS,
+                _var_data=VarData(
+                    imports=Imports.EVENTS,
+                    hooks={Hooks.EVENTS: None},
+                ),
+            )
         else:
             invocation = value.invocation
 
