@@ -9,7 +9,7 @@ from reflex.components.tags import Tag
 from reflex.components.tags.tagless import Tagless
 from reflex.utils.imports import ParsedImportDict
 from reflex.vars import BooleanVar, ObjectVar, Var
-from reflex.vars.base import VarData, get_var_caching, set_var_caching
+from reflex.vars.base import VarData
 
 
 class Bare(Component):
@@ -160,10 +160,7 @@ class Bare(Component):
                 for component in var_data.components:
                     if isinstance(component, Component):
                         component._add_style_recursive(style, theme)
-        if get_var_caching():
-            set_var_caching(False)
-            str(new_self)
-            set_var_caching(True)
+
         return new_self
 
     def _get_vars(

@@ -148,28 +148,6 @@ def unwrap_reflex_callalbe(
     return args
 
 
-_VAR_CACHING = True
-
-
-def get_var_caching() -> bool:
-    """Get the var caching status.
-
-    Returns:
-        The var caching status.
-    """
-    return _VAR_CACHING
-
-
-def set_var_caching(value: bool):
-    """Set the var caching status.
-
-    Args:
-        value: The value to set the var caching status to.
-    """
-    global _VAR_CACHING
-    _VAR_CACHING = value
-
-
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
