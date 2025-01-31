@@ -689,8 +689,6 @@ class ExecutorSafeFunctions:
         component, enable_state = compile_unevaluated_page(
             route, cls.UNCOMPILED_PAGES[route]
         )
-        component = component if isinstance(component, Component) else component()
-        component._add_style_recursive(style, theme)
         return route, component, compile_page(route, component, cls.STATE)
 
     @classmethod

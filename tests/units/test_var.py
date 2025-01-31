@@ -1445,9 +1445,9 @@ def test_unsupported_types_for_reverse(var):
     Args:
         var: The base var.
     """
-    with pytest.raises(TypeError) as err:
+    with pytest.raises(AttributeError) as err:
         var.reverse()
-    assert err.value.args[0] == "Cannot reverse non-list var."
+    assert err.value.args[0] == "'Var' object has no attribute 'reverse'"
 
 
 @pytest.mark.parametrize(
@@ -1465,12 +1465,9 @@ def test_unsupported_types_for_contains(var: Var):
     Args:
         var: The base var.
     """
-    with pytest.raises(TypeError) as err:
+    with pytest.raises(AttributeError) as err:
         assert var.contains(1)  # pyright: ignore [reportAttributeAccessIssue]
-    assert (
-        err.value.args[0]
-        == f"Var of type {var._var_type} does not support contains check."
-    )
+    assert err.value.args[0] == "'Var' object has no attribute 'contains'"
 
 
 @pytest.mark.parametrize(
