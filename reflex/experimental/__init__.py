@@ -17,7 +17,7 @@ from .misc import run_in_thread as run_in_thread
 class ExperimentalNamespace(SimpleNamespace):
     """Namespace for experimental features."""
 
-    def __getattribute__(self, item):
+    def __getattribute__(self, item: str):
         """Get attribute from the namespace.
 
         Args:
@@ -27,7 +27,7 @@ class ExperimentalNamespace(SimpleNamespace):
             The attribute.
         """
         warn(
-            "`rx._x` contains experimental features and might be removed at any time in the future .",
+            "`rx._x` contains experimental features and might be removed at any time in the future.",
             dedupe=True,
         )
         return super().__getattribute__(item)
@@ -64,7 +64,10 @@ class ExperimentalNamespace(SimpleNamespace):
         Args:
              component_name: name of the component.
         """
-        warn(f"`rx._x.{component_name}` was promoted to `rx.{component_name}`.", dedupe=True)
+        warn(
+            f"`rx._x.{component_name}` was promoted to `rx.{component_name}`.",
+            dedupe=True,
+        )
 
 
 _x = ExperimentalNamespace(

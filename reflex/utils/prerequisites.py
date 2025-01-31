@@ -1985,7 +1985,7 @@ def check_config_option_in_tier(
     option_name: str,
     allowed_tiers: list[str],
     fallback_value: Any,
-    help_link: str | None = None
+    help_link: str | None = None,
 ):
     """Check if a config option is allowed for the authenticated user's current tier.
 
