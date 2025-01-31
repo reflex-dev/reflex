@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import dataclasses
-import sys
 import typing
 from inspect import isclass
 from typing import (
@@ -169,12 +168,6 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 
     @overload
     def __getitem__(
-        self: ObjectVar[Mapping[Any, set[ARRAY_INNER_TYPE]]],
-        key: Var | Any,
-    ) -> ArrayVar[set[ARRAY_INNER_TYPE]]: ...
-
-    @overload
-    def __getitem__(
         self: ObjectVar[Mapping[Any, tuple[ARRAY_INNER_TYPE, ...]]],
         key: Var | Any,
     ) -> ArrayVar[tuple[ARRAY_INNER_TYPE, ...]]: ...
@@ -228,12 +221,6 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         self: ObjectVar[Mapping[Any, list[ARRAY_INNER_TYPE]]],
         name: str,
     ) -> ArrayVar[list[ARRAY_INNER_TYPE]]: ...
-
-    @overload
-    def __getattr__(
-        self: ObjectVar[Mapping[Any, set[ARRAY_INNER_TYPE]]],
-        name: str,
-    ) -> ArrayVar[set[ARRAY_INNER_TYPE]]: ...
 
     @overload
     def __getattr__(
@@ -305,7 +292,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
     """Base class for immutable literal object vars."""
@@ -355,17 +342,20 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
 
         Returns:
             The JSON representation of the object.
+
+        Raises:
+            TypeError: The keys and values of the object must be literal vars to get the JSON representation
         """
-        return (
-            "{"
-            + ", ".join(
-                [
-                    f"{LiteralVar.create(key).json()}:{LiteralVar.create(value).json()}"
-                    for key, value in self._var_value.items()
-                ]
-            )
-            + "}"
-        )
+        keys_and_values = []
+        for key, value in self._var_value.items():
+            key = LiteralVar.create(key)
+            value = LiteralVar.create(value)
+            if not isinstance(key, LiteralVar) or not isinstance(value, LiteralVar):
+                raise TypeError(
+                    "The keys and values of the object must be literal vars to get the JSON representation."
+                )
+            keys_and_values.append(f"{key.json()}:{value.json()}")
+        return "{" + ", ".join(keys_and_values) + "}"
 
     def __hash__(self) -> int:
         """Get the hash of the var.
@@ -487,7 +477,7 @@ def object_merge_operation(lhs: ObjectVar, rhs: ObjectVar):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class ObjectItemOperation(CachedVarOperation, Var):
     """Operation to get an item from an object."""

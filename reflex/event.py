@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-import sys
 import types
 import urllib.parse
 from base64 import b64encode
@@ -541,7 +540,7 @@ class JavasciptKeyboardEvent:
     shiftKey: bool = False  # noqa: N815
 
 
-def input_event(e: Var[JavascriptInputEvent]) -> Tuple[Var[str]]:
+def input_event(e: ObjectVar[JavascriptInputEvent]) -> Tuple[Var[str]]:
     """Get the value from an input event.
 
     Args:
@@ -562,7 +561,9 @@ class KeyInputInfo(TypedDict):
     shift_key: bool
 
 
-def key_event(e: Var[JavasciptKeyboardEvent]) -> Tuple[Var[str], Var[KeyInputInfo]]:
+def key_event(
+    e: ObjectVar[JavasciptKeyboardEvent],
+) -> Tuple[Var[str], Var[KeyInputInfo]]:
     """Get the key from a keyboard event.
 
     Args:
@@ -572,7 +573,7 @@ def key_event(e: Var[JavasciptKeyboardEvent]) -> Tuple[Var[str], Var[KeyInputInf
         The key from the keyboard event.
     """
     return (
-        e.key,
+        e.key.to(str),
         Var.create(
             {
                 "alt_key": e.altKey,
@@ -580,7 +581,7 @@ def key_event(e: Var[JavasciptKeyboardEvent]) -> Tuple[Var[str], Var[KeyInputInf
                 "meta_key": e.metaKey,
                 "shift_key": e.shiftKey,
             },
-        ),
+        ).to(KeyInputInfo),
     )
 
 
@@ -1354,7 +1355,7 @@ def unwrap_var_annotation(annotation: GenericType):
     Returns:
         The unwrapped annotation.
     """
-    if get_origin(annotation) is Var and (args := get_args(annotation)):
+    if get_origin(annotation) in (Var, ObjectVar) and (args := get_args(annotation)):
         return args[0]
     return annotation
 
@@ -1620,7 +1621,7 @@ class EventVar(ObjectVar, python_types=EventSpec):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
     """A literal event var."""
@@ -1681,7 +1682,7 @@ class EventChainVar(BuilderFunctionVar, python_types=EventChain):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 # Note: LiteralVar is second in the inheritance list allowing it act like a
 # CachedVarOperation (ArgsFunctionOperation) and get the _js_expr from the
@@ -1713,6 +1714,9 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
 
         Returns:
             The created LiteralEventChainVar instance.
+
+        Raises:
+            ValueError: If the invocation is not a FunctionVar.
         """
         arg_spec = (
             value.args_spec[0]
@@ -1739,6 +1743,11 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             )
         else:
             invocation = value.invocation
+
+        if invocation is not None and not isinstance(invocation, FunctionVar):
+            raise ValueError(
+                f"EventChain invocation must be a FunctionVar, got {invocation!s} of type {invocation._var_type!s}."
+            )
 
         return cls(
             _js_expr="",
