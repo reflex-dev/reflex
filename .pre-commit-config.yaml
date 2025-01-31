@@ -24,6 +24,7 @@ repos:
         name: update-pyi-files
         always_run: true
         language: system
+        require_serial: true
         description: 'Update pyi files as needed'
         entry: python3 scripts/make_pyi.py
 
