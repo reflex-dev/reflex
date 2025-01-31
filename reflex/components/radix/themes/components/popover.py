@@ -5,6 +5,7 @@ from typing import Dict, Literal, Union
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
+from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
 
@@ -33,6 +34,8 @@ class PopoverTrigger(RadixThemesTriggerComponent):
     """Wraps the control that will open the popover."""
 
     tag = "Popover.Trigger"
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
 
 class PopoverContent(elements.Div, RadixThemesComponent):
