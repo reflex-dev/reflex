@@ -805,12 +805,8 @@ export const useEventLoop = (
     };
   }, []);
 
-  // Main event loop.
+  // Handle socket connect/disconnect.
   useEffect(() => {
-    // Skip if the router is not ready.
-    if (!router.isReady) {
-      return;
-    }
     // only use websockets if state is present
     if (Object.keys(initialState).length > 1) {
       // Initialize the websocket connection.
@@ -820,15 +816,9 @@ export const useEventLoop = (
           dispatch,
           ["websocket"],
           setConnectErrors,
-          client_storage
+          client_storage,
         );
       }
-      (async () => {
-        // Process all outstanding events.
-        while (event_queue.length > 0 && !event_processing) {
-          await processEvent(socket.current);
-        }
-      })();
     }
 
     // Cleanup function.
@@ -838,6 +828,20 @@ export const useEventLoop = (
       }
     };
   }, []);
+
+  // Main event loop.
+  useEffect(() => {
+    // Skip if the router is not ready.
+    if (!router.isReady) {
+      return;
+    }
+    (async () => {
+      // Process all outstanding events.
+      while (event_queue.length > 0 && !event_processing) {
+        await processEvent(socket.current);
+      }
+    })();
+  });
 
   // localStorage event handling
   useEffect(() => {
