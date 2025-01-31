@@ -445,7 +445,12 @@ class Var(Generic[VAR_TYPE]):
 
                 _default_var_type: ClassVar[GenericType] = default_type
 
-            ToVarOperation.__name__ = f'To{cls.__name__.removesuffix("Var")}Operation'
+            new_to_var_operation_name = f"To{cls.__name__.removesuffix('Var')}Operation"
+            ToVarOperation.__qualname__ = (
+                ToVarOperation.__qualname__.removesuffix(ToVarOperation.__name__)
+                + new_to_var_operation_name
+            )
+            ToVarOperation.__name__ = new_to_var_operation_name
 
             _var_subclasses.append(VarSubclassEntry(cls, ToVarOperation, python_types))
 
@@ -1385,7 +1390,7 @@ class LiteralVar(Var):
             TypeError: If the value is not a supported type for LiteralVar.
         """
         from .object import LiteralObjectVar
-        from .sequence import LiteralStringVar
+        from .sequence import ArrayVar, LiteralStringVar
 
         if isinstance(value, Var):
             if _var_data is None:
@@ -1440,6 +1445,9 @@ class LiteralVar(Var):
                 _var_type=type(value),
                 _var_data=_var_data,
             )
+
+        if isinstance(value, range):
+            return ArrayVar.range(value.start, value.stop, value.step)
 
         raise TypeError(
             f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."

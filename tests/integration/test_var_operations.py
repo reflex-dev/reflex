@@ -600,6 +600,11 @@ def VarOperations():
                 ),
                 id="foreach_in_match",
             ),
+            # Literal range var in a foreach
+            rx.box(rx.foreach(range(42, 80, 27), rx.text.span), id="range_in_foreach1"),
+            rx.box(rx.foreach(range(42, 80, 3), rx.text.span), id="range_in_foreach2"),
+            rx.box(rx.foreach(range(42, 20, -6), rx.text.span), id="range_in_foreach3"),
+            rx.box(rx.foreach(range(42, 43, 5), rx.text.span), id="range_in_foreach4"),
         )
 
 
@@ -799,6 +804,11 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("memo_comp_nested", "345"),
         # foreach in a match
         ("foreach_in_match", "first\nsecond\nthird"),
+        # literal range in a foreach
+        ("range_in_foreach1", "4269"),
+        ("range_in_foreach2", "42454851545760636669727578"),
+        ("range_in_foreach3", "42363024"),
+        ("range_in_foreach4", "42"),
     ]
 
     for tag, expected in tests:
