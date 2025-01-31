@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Literal
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.colors import color
+from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, passthrough_event_spec
 from reflex.vars.base import Var
 
@@ -94,6 +95,8 @@ class TabsTrigger(RadixThemesComponent):
     color_scheme: Var[LiteralAccentColor]
 
     _valid_parents: List[str] = ["TabsList"]
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
     @classmethod
     def create(cls, *children, **props) -> Component:
