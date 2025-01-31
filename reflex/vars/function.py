@@ -1194,7 +1194,6 @@ class FunctionVar(
     def call(self: FunctionVar[NoReturn], *args: Var | Any) -> Var: ...
 
     def call(self, *args: Var | Any) -> Var:  # pyright: ignore [reportInconsistentOverload]
-    def call(self, *args: Var | Any) -> Var:  # pyright: ignore [reportInconsistentOverload]
         """Call the function with the given arguments.
 
         Args:
@@ -1299,7 +1298,7 @@ class FunctionVar(
         """
         args_types, return_type = unwrap_reflex_callalbe(self._var_type)
         if isinstance(args_types, tuple):
-            return ReflexCallable[[*args_types[len(args) :]], return_type], None  # type: ignore
+            return ReflexCallable[[*args_types[len(args) :]], return_type], None
         return ReflexCallable[..., return_type], None
 
     def _arg_len(self) -> int | None:
@@ -1637,7 +1636,7 @@ def pre_check_args(
     Raises:
         VarTypeError: If the arguments are invalid.
     """
-    for i, (validator, arg) in enumerate(zip(self._validators, args)):
+    for i, (validator, arg) in enumerate(zip(self._validators, args, strict=False)):
         if (validation_message := validator(arg)) is not None:
             arg_name = self._args.args[i] if i < len(self._args.args) else None
             if arg_name is not None:
@@ -1694,9 +1693,9 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar[CALLABLE_TYPE]):
 
     _cached_var_name = cached_property_no_lock(format_args_function_operation)
 
-    _pre_check = pre_check_args  # type: ignore
+    _pre_check = pre_check_args
 
-    _partial_type = figure_partial_type  # type: ignore
+    _partial_type = figure_partial_type
 
     @classmethod
     def create(
@@ -1776,9 +1775,9 @@ class ArgsFunctionOperationBuilder(
 
     _cached_var_name = cached_property_no_lock(format_args_function_operation)
 
-    _pre_check = pre_check_args  # type: ignore
+    _pre_check = pre_check_args
 
-    _partial_type = figure_partial_type  # type: ignore
+    _partial_type = figure_partial_type
 
     @classmethod
     def create(

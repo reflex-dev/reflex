@@ -880,7 +880,9 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
     ):
         return all(
             typehint_issubclass(subclass, superclass)
-            for subclass, superclass in zip(possible_subclass, possible_superclass)
+            for subclass, superclass in zip(
+                possible_subclass, possible_superclass, strict=False
+            )
         )
     if possible_subclass is possible_superclass:
         return True

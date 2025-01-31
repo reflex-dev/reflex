@@ -143,7 +143,6 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
     # NoReturn is used here to catch when key value is Any
     @overload
     def __getitem__(  # pyright: ignore [reportOverlappingOverload]
-    def __getitem__(  # pyright: ignore [reportOverlappingOverload]
         self: ObjectVar[Mapping[Any, NoReturn]],
         key: Var | Any,
     ) -> Var: ...

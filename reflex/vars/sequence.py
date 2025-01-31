@@ -773,7 +773,7 @@ def map_array_operation(
         type_computer=nary_type_computer(
             ReflexCallable[[List[Any], ReflexCallable], List[Any]],
             ReflexCallable[[ReflexCallable], List[Any]],
-            computer=lambda args: List[unwrap_reflex_callalbe(args[1]._var_type)[1]],  # type: ignore
+            computer=lambda args: List[unwrap_reflex_callalbe(args[1]._var_type)[1]],
         ),
     )
 
@@ -846,7 +846,7 @@ class SliceVar(Var[slice], python_types=slice):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralSliceVar(CachedVarOperation, LiteralVar, SliceVar):
     """Base class for immutable literal slice vars."""
@@ -1245,7 +1245,7 @@ _decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralStringVar(LiteralVar, StringVar[str]):
     """Base class for immutable literal string vars."""
@@ -1367,7 +1367,7 @@ class LiteralStringVar(LiteralVar, StringVar[str]):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class ConcatVarOperation(CachedVarOperation, StringVar[str]):
     """Representing a concatenation of literal string vars."""

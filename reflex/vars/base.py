@@ -13,7 +13,7 @@ import random
 import re
 import string
 import warnings
-from types import CodeType, FunctionType
+from types import CodeType, EllipsisType, FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -54,7 +54,6 @@ from reflex.constants.compiler import Hooks
 from reflex.utils import console, exceptions, imports, serializers, types
 from reflex.utils.exceptions import (
     UntypedComputedVarError,
-    VarAttributeError,
     VarDependencyError,
     VarTypeError,
     VarValueError,
@@ -108,12 +107,7 @@ class ReflexCallable(Protocol[P, R]):
     __call__: Callable[P, R]
 
 
-if sys.version_info >= (3, 10):
-    from types import EllipsisType
-
-    ReflexCallableParams = Union[EllipsisType, Tuple[GenericType, ...]]
-else:
-    ReflexCallableParams = Union[Any, Tuple[GenericType, ...]]
+ReflexCallableParams = Union[EllipsisType, Tuple[GenericType, ...]]
 
 
 def unwrap_reflex_callalbe(
@@ -1336,10 +1330,15 @@ class Var(Generic[VAR_TYPE]):
         """
         from .sequence import ArrayVar
 
+        if step is None:
+            return ArrayVar.range(first_endpoint, second_endpoint)
+
         return ArrayVar.range(first_endpoint, second_endpoint, step)
 
-    def __bool__(self) -> bool:
-        """Raise exception if using Var in a boolean context.
+    if not TYPE_CHECKING:
+
+        def __bool__(self) -> bool:
+            """Raise exception if using Var in a boolean context.
 
             Raises:
                 VarTypeError: when attempting to bool-ify the Var.
@@ -1924,12 +1923,12 @@ def var_operation(
         _raw_js_function=custom_operation_return._raw_js_function,
         _original_var_operation=simplified_operation,
         _var_type=ReflexCallable[
-            tuple(
+            tuple(  # pyright: ignore [reportInvalidTypeArguments]
                 arg_python_type
                 if isinstance(arg_default_values[i], inspect.Parameter)
                 else VarWithDefault[arg_python_type]
                 for i, (_, arg_python_type) in enumerate(args_with_type_hints)
-            ),  # type: ignore
+            ),
             custom_operation_return._var_type,
         ],
     )
@@ -2048,11 +2047,6 @@ class CachedVarOperation:
 
 
 RETURN_TYPE = TypeVar("RETURN_TYPE")
-
-DICT_KEY = TypeVar("DICT_KEY")
-DICT_VAL = TypeVar("DICT_VAL")
-
-LIST_INSIDE = TypeVar("LIST_INSIDE")
 
 
 class FakeComputedVarBaseClass(property):
@@ -2273,17 +2267,17 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: ComputedVar[Mapping[DICT_KEY, DICT_VAL]],
+        self: ComputedVar[MAPPING_TYPE],
         instance: None,
         owner: Type,
-    ) -> ObjectVar[Mapping[DICT_KEY, DICT_VAL]]: ...
+    ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
-        self: ComputedVar[Sequence[LIST_INSIDE]],
+        self: ComputedVar[SEQUENCE_TYPE],
         instance: None,
         owner: Type,
-    ) -> ArrayVar[Sequence[LIST_INSIDE]]: ...
+    ) -> ArrayVar[SEQUENCE_TYPE]: ...
 
     @overload
     def __get__(self, instance: None, owner: Type) -> ComputedVar[RETURN_TYPE]: ...
@@ -2588,7 +2582,7 @@ RETURN = TypeVar("RETURN")
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class CustomVarOperationReturn(Var[RETURN]):
     """Base class for custom var operations."""
@@ -3202,7 +3196,7 @@ class Field(Generic[FIELD_TYPE]):
     def __get__(self: Field[int], instance: None, owner: Any) -> NumberVar[int]: ...
 
     @overload
-    def __get__(self: Field[float], instance: None, owner) -> NumberVar[float]: ...
+    def __get__(self: Field[float], instance: None, owner: Any) -> NumberVar[float]: ...
 
     @overload
     def __get__(self: Field[str], instance: None, owner: Any) -> StringVar[str]: ...
@@ -3251,7 +3245,7 @@ def field(value: FIELD_TYPE) -> Field[FIELD_TYPE]:
     Returns:
         The Field.
     """
-    return value  # type: ignore
+    return value  # pyright: ignore [reportReturnType]
 
 
 def and_operation(a: Var | Any, b: Var | Any) -> Var:

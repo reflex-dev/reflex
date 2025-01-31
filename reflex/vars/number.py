@@ -1080,7 +1080,7 @@ TUPLE_ENDS_IN_VAR_RELAXED = tuple[
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class MatchOperation(CachedVarOperation, Var[VAR_TYPE]):
     """Base class for immutable match operations."""

@@ -1249,11 +1249,11 @@ def test_type_chains():
         List[int],
     )
     assert (
-        str(object_var.keys()[0].upper())
+        str(object_var.keys()[0].upper())  # pyright: ignore [reportAttributeAccessIssue]
         == '(((...args) => (((_string) => String.prototype.toUpperCase.apply(_string))((((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))((Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))), ...args)))(0)), ...args)))())'
     )
     assert (
-        str(object_var.entries()[1][1] - 1)
+        str(object_var.entries()[1][1] - 1)  # pyright: ignore [reportCallIssue, reportOperatorIssue]
         == '((((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))((((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))((Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))), ...args)))(1)), ...args)))(1)) - 1)'
     )
     assert (

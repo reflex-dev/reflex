@@ -136,7 +136,7 @@ async def test_lifespan(lifespan_app: AppHarness):
     task_global = driver.find_element(By.ID, "task_global")
 
     assert context_global.text == "2"
-    assert lifespan_app.app_module.lifespan_context_global_getter() == 2  # type: ignore
+    assert lifespan_app.app_module.lifespan_context_global_getter() == 2
 
     original_task_global_text = task_global.text
     original_task_global_value = int(original_task_global_text)
@@ -145,7 +145,7 @@ async def test_lifespan(lifespan_app: AppHarness):
     assert (
         lifespan_app.app_module.lifespan_task_global_getter()
         > original_task_global_value
-    )  # type: ignore
+    )
     assert int(task_global.text) > original_task_global_value
 
     # Kill the backend

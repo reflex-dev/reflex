@@ -929,15 +929,16 @@ class Component(BaseComponent, ABC):
 
             valid_children = self._valid_children + allowed_components
 
-            def child_is_in_valid(child):
-                if type(child).__name__ in valid_children:
+            def child_is_in_valid(child_component: Any):
+                if type(child_component).__name__ in valid_children:
                     return True
 
                 if (
-                    not isinstance(child, Bare)
-                    or child.contents is None
-                    or not isinstance(child.contents, Var)
-                    or (var_data := child.contents._get_all_var_data()) is None
+                    not isinstance(child_component, Bare)
+                    or child_component.contents is None
+                    or not isinstance(child_component.contents, Var)
+                    or (var_data := child_component.contents._get_all_var_data())
+                    is None
                 ):
                     return False
 
