@@ -622,7 +622,7 @@ def _generate_component_create_functiondef(
         defaults=[],
     )
 
-    definition = ast.FunctionDef(
+    definition = ast.FunctionDef(  # pyright: ignore [reportCallIssue]
         name="create",
         args=create_args,
         body=[  # pyright: ignore [reportArgumentType]
@@ -684,7 +684,7 @@ def _generate_staticmethod_call_functiondef(
             else []
         ),
     )
-    definition = ast.FunctionDef(
+    definition = ast.FunctionDef(  # pyright: ignore [reportCallIssue]
         name="__call__",
         args=call_args,
         body=[
