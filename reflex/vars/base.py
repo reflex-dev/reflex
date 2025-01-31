@@ -81,6 +81,7 @@ if TYPE_CHECKING:
 
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
 OTHER_VAR_TYPE = TypeVar("OTHER_VAR_TYPE")
+STRING_T = TypeVar("STRING_T", bound=str)
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
@@ -445,7 +446,12 @@ class Var(Generic[VAR_TYPE]):
 
                 _default_var_type: ClassVar[GenericType] = default_type
 
-            ToVarOperation.__name__ = f'To{cls.__name__.removesuffix("Var")}Operation'
+            new_to_var_operation_name = f"To{cls.__name__.removesuffix('Var')}Operation"
+            ToVarOperation.__qualname__ = (
+                ToVarOperation.__qualname__.removesuffix(ToVarOperation.__name__)
+                + new_to_var_operation_name
+            )
+            ToVarOperation.__name__ = new_to_var_operation_name
 
             _var_subclasses.append(VarSubclassEntry(cls, ToVarOperation, python_types))
 
@@ -551,12 +557,60 @@ class Var(Generic[VAR_TYPE]):
 
         return value_with_replaced
 
+    @overload
+    @classmethod
+    def create(  # type: ignore[override]
+        cls,
+        value: bool,
+        _var_data: VarData | None = None,
+    ) -> BooleanVar: ...
+
+    @overload
+    @classmethod
+    def create(  # type: ignore[override]
+        cls,
+        value: int,
+        _var_data: VarData | None = None,
+    ) -> NumberVar[int]: ...
+
+    @overload
     @classmethod
     def create(
         cls,
-        value: Any,
+        value: float,
         _var_data: VarData | None = None,
-    ) -> Var:
+    ) -> NumberVar[float]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: STRING_T,
+        _var_data: VarData | None = None,
+    ) -> StringVar[STRING_T]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: None,
+        _var_data: VarData | None = None,
+    ) -> NoneVar: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: OTHER_VAR_TYPE,
+        _var_data: VarData | None = None,
+    ) -> Var[OTHER_VAR_TYPE]: ...
+
+    @classmethod
+    def create(
+        cls,
+        value: OTHER_VAR_TYPE,
+        _var_data: VarData | None = None,
+    ) -> Var[OTHER_VAR_TYPE]:
         """Create a var from a value.
 
         Args:
@@ -1337,7 +1391,7 @@ class LiteralVar(Var):
             TypeError: If the value is not a supported type for LiteralVar.
         """
         from .object import LiteralObjectVar
-        from .sequence import LiteralStringVar
+        from .sequence import ArrayVar, LiteralStringVar
 
         if isinstance(value, Var):
             if _var_data is None:
@@ -1392,6 +1446,9 @@ class LiteralVar(Var):
                 _var_type=type(value),
                 _var_data=_var_data,
             )
+
+        if isinstance(value, range):
+            return ArrayVar.range(value.start, value.stop, value.step)
 
         raise TypeError(
             f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."

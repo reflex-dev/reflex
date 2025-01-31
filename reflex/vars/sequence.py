@@ -1593,7 +1593,7 @@ def array_range_operation(
         The range of numbers.
     """
     return var_operation_return(
-        js_expression=f"Array.from({{ length: ({stop!s} - {start!s}) / {step!s} }}, (_, i) => {start!s} + i * {step!s})",
+        js_expression=f"Array.from({{ length: Math.ceil(({stop!s} - {start!s}) / {step!s}) }}, (_, i) => {start!s} + i * {step!s})",
         var_type=List[int],
     )
 
