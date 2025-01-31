@@ -30,7 +30,7 @@ def on_value_event_spec(
     Returns:
         The event handler spec.
     """
-    return (value,)  # type: ignore
+    return (value,)
 
 
 class SliderRoot(SliderComponent):

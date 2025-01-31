@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import dataclasses
-import sys
 from datetime import date, datetime
 from typing import TypeVar, Union
 
@@ -123,7 +122,7 @@ class DateTimeVar(Var[DATETIME_T], python_types=(datetime, date)):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralDatetimeVar(LiteralVar, DateTimeVar):
     """Base class for immutable datetime and date vars."""

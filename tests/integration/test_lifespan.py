@@ -88,7 +88,7 @@ def LifespanApp():
                 rx.moment(
                     interval=LifespanState.interval, on_change=LifespanState.tick
                 ),
-                on_click=LifespanState.set_interval(  # type: ignore
+                on_click=LifespanState.set_interval(  # pyright: ignore [reportAttributeAccessIssue]
                     rx.cond(LifespanState.interval, 0, 100)
                 ),
                 id="toggle-tick",

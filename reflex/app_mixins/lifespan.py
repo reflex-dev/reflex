@@ -32,7 +32,7 @@ class LifespanMixin(AppMixin):
         try:
             async with contextlib.AsyncExitStack() as stack:
                 for task in self.lifespan_tasks:
-                    run_msg = f"Started lifespan task: {task.__name__} as {{type}}"  # type: ignore
+                    run_msg = f"Started lifespan task: {task.__name__} as {{type}}"  # pyright: ignore [reportAttributeAccessIssue]
                     if isinstance(task, asyncio.Task):
                         running_tasks.append(task)
                     else:
@@ -61,7 +61,7 @@ class LifespanMixin(AppMixin):
 
         Args:
             task: The task to register.
-            task_kwargs: The kwargs of the task.
+            **task_kwargs: The kwargs of the task.
 
         Raises:
             InvalidLifespanTaskTypeError: If the task is a generator function.
@@ -73,7 +73,7 @@ class LifespanMixin(AppMixin):
 
         if task_kwargs:
             original_task = task
-            task = functools.partial(task, **task_kwargs)  # type: ignore
-            functools.update_wrapper(task, original_task)  # type: ignore
-        self.lifespan_tasks.add(task)  # type: ignore
-        console.debug(f"Registered lifespan task: {task.__name__}")  # type: ignore
+            task = functools.partial(task, **task_kwargs)  # pyright: ignore [reportArgumentType]
+            functools.update_wrapper(task, original_task)  # pyright: ignore [reportArgumentType]
+        self.lifespan_tasks.add(task)
+        console.debug(f"Registered lifespan task: {task.__name__}")  # pyright: ignore [reportAttributeAccessIssue]

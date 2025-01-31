@@ -390,7 +390,7 @@ class EnvVar(Generic[T]):
             os.environ[self.name] = str(value)
 
 
-class env_var:  # type: ignore # noqa: N801
+class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
     """Descriptor for environment variables."""
 
     name: str
@@ -407,7 +407,7 @@ class env_var:  # type: ignore # noqa: N801
         self.default = default
         self.internal = internal
 
-    def __set_name__(self, owner, name):
+    def __set_name__(self, owner: Any, name: str):
         """Set the name of the descriptor.
 
         Args:
@@ -416,7 +416,7 @@ class env_var:  # type: ignore # noqa: N801
         """
         self.name = name
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance: Any, owner: Any):
         """Get the EnvVar instance.
 
         Args:
@@ -435,7 +435,7 @@ class env_var:  # type: ignore # noqa: N801
 
 if TYPE_CHECKING:
 
-    def env_var(default, internal=False) -> EnvVar:
+    def env_var(default: Any, internal: bool = False) -> EnvVar:
         """Typing helper for the env_var descriptor.
 
         Args:
@@ -489,6 +489,9 @@ class EnvironmentVariables:
 
     # The working directory for the next.js commands.
     REFLEX_WEB_WORKDIR: EnvVar[Path] = env_var(Path(constants.Dirs.WEB))
+
+    # The working directory for the states directory.
+    REFLEX_STATES_WORKDIR: EnvVar[Path] = env_var(Path(constants.Dirs.STATES))
 
     # Path to the alembic config file
     ALEMBIC_CONFIG: EnvVar[ExistingPath] = env_var(Path(constants.ALEMBIC_CONFIG))
@@ -597,7 +600,7 @@ class Config(Base):
     See the [configuration](https://reflex.dev/docs/getting-started/configuration/) docs for more info.
     """
 
-    class Config:
+    class Config:  # pyright: ignore [reportIncompatibleVariableOverride]
         """Pydantic config for the config."""
 
         validate_assignment = True
@@ -700,6 +703,9 @@ class Config(Base):
     # Path to file containing key-values pairs to override in the environment; Dotenv format.
     env_file: Optional[str] = None
 
+    # Whether the app is running in the reflex cloud environment.
+    is_reflex_cloud: bool = False
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 
@@ -763,7 +769,7 @@ class Config(Base):
         """
         if self.env_file:
             try:
-                from dotenv import load_dotenv  # type: ignore
+                from dotenv import load_dotenv  # pyright: ignore [reportMissingImports]
 
                 # load env file if exists
                 load_dotenv(self.env_file, override=True)

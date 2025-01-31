@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import dataclasses
-import sys
 import typing
 from inspect import isclass
 from typing import (
@@ -84,9 +83,9 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         """
         fixed_type = get_origin(self._var_type) or self._var_type
         if not isclass(fixed_type):
-            return Any
+            return Any  # pyright: ignore [reportReturnType]
         args = get_args(self._var_type) if issubclass(fixed_type, Mapping) else ()
-        return args[1] if args else Any
+        return args[1] if args else Any  # pyright: ignore [reportReturnType]
 
     def keys(self) -> ArrayVar[Sequence[str]]:
         """Get the keys of the object.
@@ -144,6 +143,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
     # NoReturn is used here to catch when key value is Any
     @overload
     def __getitem__(  # pyright: ignore [reportOverlappingOverload]
+    def __getitem__(  # pyright: ignore [reportOverlappingOverload]
         self: ObjectVar[Mapping[Any, NoReturn]],
         key: Var | Any,
     ) -> Var: ...
@@ -176,12 +176,6 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         | ObjectVar[Mapping[Any, List[ARRAY_INNER_TYPE]]],
         key: Var | Any,
     ) -> ArrayVar[Sequence[ARRAY_INNER_TYPE]]: ...
-
-    @overload
-    def __getitem__(
-        self: ObjectVar[Mapping[Any, set[ARRAY_INNER_TYPE]]],
-        key: Var | Any,
-    ) -> ArrayVar[set[ARRAY_INNER_TYPE]]: ...
 
     @overload
     def __getitem__(
@@ -235,12 +229,6 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 
     @overload
     def __getattr__(
-        self: ObjectVar[Mapping[Any, set[ARRAY_INNER_TYPE]]],
-        name: str,
-    ) -> ArrayVar[set[ARRAY_INNER_TYPE]]: ...
-
-    @overload
-    def __getattr__(
         self: ObjectVar[Mapping[Any, Mapping[OTHER_KEY_TYPE, VALUE_TYPE]]],
         name: str,
     ) -> ObjectVar[Mapping[OTHER_KEY_TYPE, VALUE_TYPE]]: ...
@@ -251,7 +239,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         name: str,
     ) -> ObjectItemOperation: ...
 
-    def __getattr__(self, name) -> Var:
+    def __getattr__(self, name: str) -> Var:
         """Get an attribute of the var.
 
         Args:
@@ -303,7 +291,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
     """Base class for immutable literal object vars."""
@@ -319,7 +307,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
             The type of the keys of the object.
         """
         args_list = typing.get_args(self._var_type)
-        return args_list[0] if args_list else Any
+        return args_list[0] if args_list else Any  # pyright: ignore [reportReturnType]
 
     def _value_type(self) -> GenericType:
         """Get the type of the values of the object.
@@ -328,7 +316,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
             The type of the values of the object.
         """
         args_list = typing.get_args(self._var_type)
-        return args_list[1] if args_list else Any
+        return args_list[1] if args_list else Any  # pyright: ignore [reportReturnType]
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -353,17 +341,20 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
 
         Returns:
             The JSON representation of the object.
+
+        Raises:
+            TypeError: The keys and values of the object must be literal vars to get the JSON representation
         """
-        return (
-            "{"
-            + ", ".join(
-                [
-                    f"{LiteralVar.create(key).json()}:{LiteralVar.create(value).json()}"
-                    for key, value in self._var_value.items()
-                ]
-            )
-            + "}"
-        )
+        keys_and_values = []
+        for key, value in self._var_value.items():
+            key = LiteralVar.create(key)
+            value = LiteralVar.create(value)
+            if not isinstance(key, LiteralVar) or not isinstance(value, LiteralVar):
+                raise TypeError(
+                    "The keys and values of the object must be literal vars to get the JSON representation."
+                )
+            keys_and_values.append(f"{key.json()}:{value.json()}")
+        return "{" + ", ".join(keys_and_values) + "}"
 
     def __hash__(self) -> int:
         """Get the hash of the var.
@@ -502,7 +493,7 @@ def object_merge_operation(lhs: Var, rhs: Var):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class ObjectItemOperation(CachedVarOperation, Var):
     """Operation to get an item from an object."""

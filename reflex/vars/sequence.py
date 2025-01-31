@@ -7,7 +7,6 @@ import functools
 import inspect
 import json
 import re
-import sys
 import typing
 from typing import (
     TYPE_CHECKING,
@@ -1103,7 +1102,7 @@ ARRAY_VAR_OF_LIST_ELEMENT = TypeAliasType(
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
     """Base class for immutable literal array vars."""
@@ -1156,32 +1155,39 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
 
         Returns:
             The JSON representation of the var.
+
+        Raises:
+            TypeError: If the array elements are not of type LiteralVar.
         """
-        return (
-            "["
-            + ", ".join(
-                [LiteralVar.create(element).json() for element in self._var_value]
-            )
-            + "]"
-        )
+        elements = []
+        for element in self._var_value:
+            element_var = LiteralVar.create(element)
+            if not isinstance(element_var, LiteralVar):
+                raise TypeError(
+                    f"Array elements must be of type LiteralVar, not {type(element_var)}"
+                )
+            elements.append(element_var.json())
+
+        return "[" + ", ".join(elements) + "]"
 
     @classmethod
     def create(
         cls,
-        value: ARRAY_VAR_TYPE,
-        _var_type: Type[ARRAY_VAR_TYPE] | None = None,
+        value: OTHER_ARRAY_VAR_TYPE,
+        _var_type: Type[OTHER_ARRAY_VAR_TYPE] | None = None,
         _var_data: VarData | None = None,
-    ) -> LiteralArrayVar[ARRAY_VAR_TYPE]:
+    ) -> LiteralArrayVar[OTHER_ARRAY_VAR_TYPE]:
         """Create a var from a string value.
 
         Args:
             value: The value to create the var from.
+            _var_type: The type of the var.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
             The var.
         """
-        return cls(
+        return LiteralArrayVar(
             _js_expr="",
             _var_type=figure_out_type(value) if _var_type is None else _var_type,
             _var_data=_var_data,
@@ -1458,7 +1464,7 @@ class ColorVar(StringVar[Color], python_types=Color):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
     """Base class for immutable literal color vars."""

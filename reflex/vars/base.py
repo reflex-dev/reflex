@@ -12,7 +12,6 @@ import json
 import random
 import re
 import string
-import sys
 import warnings
 from types import CodeType, FunctionType
 from typing import (
@@ -94,6 +93,8 @@ VALUE = TypeVar("VALUE")
 INT_OR_FLOAT = TypeVar("INT_OR_FLOAT", int, float)
 FAKE_VAR_TYPE = TypeVar("FAKE_VAR_TYPE")
 OTHER_VAR_TYPE = TypeVar("OTHER_VAR_TYPE")
+STRING_T = TypeVar("STRING_T", bound=str)
+SEQUENCE_TYPE = TypeVar("SEQUENCE_TYPE", bound=Sequence)
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
@@ -225,7 +226,7 @@ class VarData:
         state: str = "",
         field_name: str = "",
         imports: ImportDict | ParsedImportDict | None = None,
-        hooks: Mapping[str, VarData | None] | None = None,
+        hooks: Mapping[str, VarData | None] | Sequence[str] | str | None = None,
         components: Iterable[BaseComponent] | None = None,
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
@@ -241,6 +242,10 @@ class VarData:
             deps: Dependencies of the var for useCallback.
             position: Position of the hook in the component.
         """
+        if isinstance(hooks, str):
+            hooks = [hooks]
+        if not isinstance(hooks, dict):
+            hooks = {hook: None for hook in (hooks or [])}
         immutable_imports: ImmutableParsedImportDict = tuple(
             (k, tuple(v)) for k, v in parse_imports(imports or {}).items()
         )
@@ -253,6 +258,16 @@ class VarData:
         )
         object.__setattr__(self, "deps", tuple(deps or []))
         object.__setattr__(self, "position", position or None)
+
+        if hooks and any(hooks.values()):
+            merged_var_data = VarData.merge(self, *hooks.values())
+            if merged_var_data is not None:
+                object.__setattr__(self, "state", merged_var_data.state)
+                object.__setattr__(self, "field_name", merged_var_data.field_name)
+                object.__setattr__(self, "imports", merged_var_data.imports)
+                object.__setattr__(self, "hooks", merged_var_data.hooks)
+                object.__setattr__(self, "deps", merged_var_data.deps)
+                object.__setattr__(self, "position", merged_var_data.position)
 
     def old_school_imports(self) -> ImportDict:
         """Return the imports as a mutable dict.
@@ -526,7 +541,7 @@ class Var(Generic[VAR_TYPE]):
             @dataclasses.dataclass(
                 eq=False,
                 frozen=True,
-                **{"slots": True} if sys.version_info >= (3, 10) else {},
+                slots=True,
             )
             class ToVarOperation(ToOperation, cls):
                 """Base class of converting a var to another var type."""
@@ -537,7 +552,12 @@ class Var(Generic[VAR_TYPE]):
 
                 _default_var_type: ClassVar[GenericType] = default_type
 
-            ToVarOperation.__name__ = f'To{cls.__name__.removesuffix("Var")}Operation'
+            new_to_var_operation_name = f"To{cls.__name__.removesuffix('Var')}Operation"
+            ToVarOperation.__qualname__ = (
+                ToVarOperation.__qualname__.removesuffix(ToVarOperation.__name__)
+                + new_to_var_operation_name
+            )
+            ToVarOperation.__name__ = new_to_var_operation_name
 
             _var_subclasses.append(
                 VarSubclassEntry(
@@ -595,20 +615,30 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     def _replace(
-        self, _var_type: Type[OTHER_VAR_TYPE], merge_var_data=None, **kwargs: Any
+        self,
+        _var_type: Type[OTHER_VAR_TYPE],
+        merge_var_data: VarData | None = None,
+        **kwargs: Any,
     ) -> Var[OTHER_VAR_TYPE]: ...
 
     @overload
     def _replace(
-        self, _var_type: GenericType | None = None, merge_var_data=None, **kwargs: Any
+        self,
+        _var_type: GenericType | None = None,
+        merge_var_data: VarData | None = None,
+        **kwargs: Any,
     ) -> Self: ...
 
     def _replace(
-        self, _var_type: GenericType | None = None, merge_var_data=None, **kwargs: Any
+        self,
+        _var_type: GenericType | None = None,
+        merge_var_data: VarData | None = None,
+        **kwargs: Any,
     ) -> Self | Var:
         """Make a copy of this Var with updated fields.
 
         Args:
+            _var_type: The new type of the Var.
             merge_var_data: VarData to merge into the existing VarData.
             **kwargs: Var fields to update.
 
@@ -642,12 +672,76 @@ class Var(Generic[VAR_TYPE]):
 
         return value_with_replaced
 
+    @overload
+    @classmethod
+    def create(  # type: ignore[override]
+        cls,
+        value: bool,
+        _var_data: VarData | None = None,
+    ) -> BooleanVar: ...
+
+    @overload
+    @classmethod
+    def create(  # type: ignore[override]
+        cls,
+        value: int,
+        _var_data: VarData | None = None,
+    ) -> NumberVar[int]: ...
+
+    @overload
     @classmethod
     def create(
         cls,
-        value: FAKE_VAR_TYPE,
+        value: float,
         _var_data: VarData | None = None,
-    ) -> Var[FAKE_VAR_TYPE]:
+    ) -> NumberVar[float]: ...
+
+    @overload
+    @classmethod
+    def create(  # pyright: ignore [reportOverlappingOverload]
+        cls,
+        value: STRING_T,
+        _var_data: VarData | None = None,
+    ) -> StringVar[STRING_T]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: None,
+        _var_data: VarData | None = None,
+    ) -> NoneVar: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: MAPPING_TYPE,
+        _var_data: VarData | None = None,
+    ) -> ObjectVar[MAPPING_TYPE]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: SEQUENCE_TYPE,
+        _var_data: VarData | None = None,
+    ) -> ArrayVar[SEQUENCE_TYPE]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: OTHER_VAR_TYPE,
+        _var_data: VarData | None = None,
+    ) -> Var[OTHER_VAR_TYPE]: ...
+
+    @classmethod
+    def create(
+        cls,
+        value: OTHER_VAR_TYPE,
+        _var_data: VarData | None = None,
+    ) -> Var[OTHER_VAR_TYPE]:
         """Create a var from a value.
 
         Args:
@@ -718,8 +812,8 @@ class Var(Generic[VAR_TYPE]):
     @overload
     def to(
         self,
-        output: type[Mapping],
-    ) -> ObjectVar[Mapping]: ...
+        output: type[MAPPING_TYPE],
+    ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def to(
@@ -770,10 +864,10 @@ class Var(Generic[VAR_TYPE]):
                 return self.to(var_subclass.var_subclass, output)
 
         if fixed_output_type is None:
-            return get_to_operation(NoneVar).create(self)  # type: ignore
+            return get_to_operation(NoneVar).create(self)  # pyright: ignore [reportReturnType]
 
         # Handle fixed_output_type being Base or a dataclass.
-        if can_use_in_object_var(fixed_output_type):
+        if can_use_in_object_var(output):
             return self.to(ObjectVar, output)
 
         if inspect.isclass(output):
@@ -787,7 +881,7 @@ class Var(Generic[VAR_TYPE]):
                     to_operation_return = var_subclass.to_var_subclass.create(
                         value=self, _var_type=new_var_type
                     )
-                    return to_operation_return  # type: ignore
+                    return to_operation_return  # pyright: ignore [reportReturnType]
 
             # If we can't determine the first argument, we just replace the _var_type.
             if not issubclass(output, Var) or var_type is None:
@@ -828,6 +922,9 @@ class Var(Generic[VAR_TYPE]):
     def guess_type(
         self: Var[Dict[VALUE, OTHER_VAR_TYPE]],
     ) -> ObjectVar[Dict[VALUE, OTHER_VAR_TYPE]]: ...
+
+    @overload
+    def guess_type(self: Var[BASE_TYPE]) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
     def guess_type(self) -> Self: ...
@@ -985,7 +1082,7 @@ class Var(Generic[VAR_TYPE]):
 
         return setter
 
-    def _var_set_state(self, state: type[BaseState] | str):
+    def _var_set_state(self, state: type[BaseState] | str) -> Self:
         """Set the state of the var.
 
         Args:
@@ -1000,7 +1097,7 @@ class Var(Generic[VAR_TYPE]):
             else format_state_name(state.get_full_name())
         )
 
-        return StateOperation.create(
+        return StateOperation.create(  # pyright: ignore [reportReturnType]
             formatted_state_name,
             self,
             _var_data=VarData.merge(
@@ -1179,62 +1276,6 @@ class Var(Generic[VAR_TYPE]):
         """
         return self
 
-    def __getattribute__(self, name: str) -> Any:
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute.
-        """
-        if not _VAR_CACHING:
-            try:
-                self_dict = object.__getattribute__(self, "__dict__")
-                for key in self_dict:
-                    if key.startswith("_cached_"):
-                        del self_dict[key]
-            except Exception:
-                pass
-        return super().__getattribute__(name)
-
-    def __getattr__(self, name: str):
-        """Get an attribute of the var.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute.
-
-        Raises:
-            VarAttributeError: If the attribute does not exist.
-            TypeError: If the var type is Any.
-        """
-        if name.startswith("_"):
-            return self.__getattribute__(name)
-
-        if name == "contains":
-            raise TypeError(
-                f"Var of type {self._var_type} does not support contains check."
-            )
-        if name == "reverse":
-            raise TypeError("Cannot reverse non-list var.")
-
-        if self._var_type is Any:
-            raise TypeError(
-                f"You must provide an annotation for the state var `{self!s}`. Annotation cannot be `{self._var_type}`."
-            )
-
-        if name in REPLACED_NAMES:
-            raise VarAttributeError(
-                f"Field {name!r} was renamed to {REPLACED_NAMES[name]!r}"
-            )
-
-        raise VarAttributeError(
-            f"The State var has no attribute '{name}' or may have been annotated wrongly.",
-        )
-
     def _decode(self) -> Any:
         """Decode Var as a python value.
 
@@ -1245,7 +1286,7 @@ class Var(Generic[VAR_TYPE]):
             The decoded value or the Var name.
         """
         if isinstance(self, LiteralVar):
-            return self._var_value  # type: ignore
+            return self._var_value
         try:
             return json.loads(str(self))
         except ValueError:
@@ -1295,42 +1336,44 @@ class Var(Generic[VAR_TYPE]):
         """
         from .sequence import ArrayVar
 
-        if second_endpoint is None:
-            return ArrayVar.range.call(first_endpoint).guess_type()
-        if step is None:
-            return ArrayVar.range.call(first_endpoint, second_endpoint).guess_type()
-        return ArrayVar.range.call(first_endpoint, second_endpoint, step).guess_type()
+        return ArrayVar.range(first_endpoint, second_endpoint, step)
 
     def __bool__(self) -> bool:
         """Raise exception if using Var in a boolean context.
 
-        Raises:
-            VarTypeError: when attempting to bool-ify the Var.
-        """
-        raise VarTypeError(
-            f"Cannot convert Var {str(self)!r} to bool for use with `if`, `and`, `or`, and `not`. "
-            "Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert)."
-        )
+            Raises:
+                VarTypeError: when attempting to bool-ify the Var.
 
-    def __iter__(self) -> Any:
-        """Raise exception if using Var in an iterable context.
+            # noqa: DAR101 self
+            """
+            raise VarTypeError(
+                f"Cannot convert Var {str(self)!r} to bool for use with `if`, `and`, `or`, and `not`. "
+                "Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert)."
+            )
 
-        Raises:
-            VarTypeError: when attempting to iterate over the Var.
-        """
-        raise VarTypeError(
-            f"Cannot iterate over Var {str(self)!r}. Instead use `rx.foreach`."
-        )
+        def __iter__(self) -> Any:
+            """Raise exception if using Var in an iterable context.
 
-    def __contains__(self, _: Any) -> Var:
-        """Override the 'in' operator to alert the user that it is not supported.
+            Raises:
+                VarTypeError: when attempting to iterate over the Var.
 
-        Raises:
-            VarTypeError: the operation is not supported
-        """
-        raise VarTypeError(
-            "'in' operator not supported for Var types, use Var.contains() instead."
-        )
+            # noqa: DAR101 self
+            """
+            raise VarTypeError(
+                f"Cannot iterate over Var {str(self)!r}. Instead use `rx.foreach`."
+            )
+
+        def __contains__(self, _: Any) -> Var:
+            """Override the 'in' operator to alert the user that it is not supported.
+
+            Raises:
+                VarTypeError: the operation is not supported
+
+            # noqa: DAR101 self
+            """
+            raise VarTypeError(
+                "'in' operator not supported for Var types, use Var.contains() instead."
+            )
 
 
 OUTPUT = TypeVar("OUTPUT", bound=Var)
@@ -1399,7 +1442,7 @@ class ToOperation:
         """
         return VarData.merge(
             self._original._get_all_var_data(),
-            self._var_data,  # type: ignore
+            self._var_data,
         )
 
     @classmethod
@@ -1420,10 +1463,10 @@ class ToOperation:
             The ToOperation.
         """
         return cls(
-            _js_expr="",  # type: ignore
-            _var_data=_var_data,  # type: ignore
-            _var_type=_var_type or cls._default_var_type,  # type: ignore
-            _original=value,  # type: ignore
+            _js_expr="",  # pyright: ignore [reportCallIssue]
+            _var_data=_var_data,  # pyright: ignore [reportCallIssue]
+            _var_type=_var_type or cls._default_var_type,  # pyright: ignore [reportCallIssue, reportAttributeAccessIssue]
+            _original=value,  # pyright: ignore [reportCallIssue]
         )
 
 
@@ -1485,7 +1528,7 @@ class LiteralVar(Var):
         _var_literal_subclasses.append((cls, var_subclass))
 
     @classmethod
-    def create(
+    def create(  # pyright: ignore [reportArgumentType]
         cls,
         value: Any,
         _var_data: VarData | None = None,
@@ -1559,12 +1602,21 @@ class LiteralVar(Var):
                 _var_data=_var_data,
             )
 
+        if isinstance(value, range):
+            return ArrayVar.range(value.start, value.stop, value.step)
+
         raise TypeError(
             f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
         )
 
     def __post_init__(self):
         """Post-initialize the var."""
+
+    @property
+    def _var_value(self) -> Any:
+        raise NotImplementedError(
+            "LiteralVar subclasses must implement the _var_value property."
+        )
 
     def json(self) -> str:
         """Serialize the var to a JSON string.
@@ -1916,7 +1968,7 @@ def figure_out_type(value: Any) -> types.GenericType:
 class cached_property_no_lock(functools.cached_property):  # noqa: N801
     """A special version of functools.cached_property that does not use a lock."""
 
-    def __init__(self, func):
+    def __init__(self, func: Callable):
         """Initialize the cached_property_no_lock.
 
         Args:
@@ -1949,7 +2001,7 @@ class CachedVarOperation:
 
         next_class = parent_classes[parent_classes.index(CachedVarOperation) + 1]
 
-        return next_class.__getattr__(self, name)  # type: ignore
+        return next_class.__getattr__(self, name)
 
     def _get_all_var_data(self) -> VarData | None:
         """Get all VarData associated with the Var.
@@ -1971,7 +2023,7 @@ class CachedVarOperation:
                 value._get_all_var_data() if isinstance(value, Var) else None
                 for value in (
                     getattr(self, field.name)
-                    for field in dataclasses.fields(self)  # type: ignore
+                    for field in dataclasses.fields(self)  # pyright: ignore [reportArgumentType]
                 )
             ),
             self._var_data,
@@ -1988,7 +2040,7 @@ class CachedVarOperation:
                 type(self).__name__,
                 *[
                     getattr(self, field.name)
-                    for field in dataclasses.fields(self)  # type: ignore
+                    for field in dataclasses.fields(self)  # pyright: ignore [reportArgumentType]
                     if field.name not in ["_js_expr", "_var_data", "_var_type"]
                 ],
             )
@@ -2024,7 +2076,7 @@ def is_computed_var(obj: Any) -> TypeGuard[ComputedVar]:
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class ComputedVar(Var[RETURN_TYPE]):
     """A field with computed getters."""
@@ -2049,7 +2101,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     _fget: Callable[[BaseState], RETURN_TYPE] = dataclasses.field(
         default_factory=lambda: lambda _: None
-    )  # type: ignore
+    )  # pyright: ignore [reportAssignmentType]
 
     def __init__(
         self,
@@ -2130,10 +2182,16 @@ class ComputedVar(Var[RETURN_TYPE]):
         object.__setattr__(self, "_fget", fget)
 
     @override
-    def _replace(self, merge_var_data=None, **kwargs: Any) -> Self:
+    def _replace(
+        self,
+        _var_type: Any = None,
+        merge_var_data: VarData | None = None,
+        **kwargs: Any,
+    ) -> Self:
         """Replace the attributes of the ComputedVar.
 
         Args:
+            _var_type: ignored in ComputedVar.
             merge_var_data: VarData to merge into the existing VarData.
             **kwargs: Var fields to update.
 
@@ -2228,19 +2286,12 @@ class ComputedVar(Var[RETURN_TYPE]):
     ) -> ArrayVar[Sequence[LIST_INSIDE]]: ...
 
     @overload
-    def __get__(
-        self: ComputedVar[set[LIST_INSIDE]],
-        instance: None,
-        owner: Type,
-    ) -> ArrayVar[set[LIST_INSIDE]]: ...
-
-    @overload
     def __get__(self, instance: None, owner: Type) -> ComputedVar[RETURN_TYPE]: ...
 
     @overload
     def __get__(self, instance: BaseState, owner: Type) -> RETURN_TYPE: ...
 
-    def __get__(self, instance: BaseState | None, owner):
+    def __get__(self, instance: BaseState | None, owner: Type):
         """Get the ComputedVar value.
 
         If the value is already cached on the instance, return the cached value.
@@ -2326,10 +2377,10 @@ class ComputedVar(Var[RETURN_TYPE]):
                 return set()
         with contextlib.suppress(AttributeError):
             # unbox functools.partial
-            obj = cast(FunctionType, obj.func)  # type: ignore
+            obj = cast(FunctionType, obj.func)  # pyright: ignore [reportAttributeAccessIssue]
         with contextlib.suppress(AttributeError):
             # unbox EventHandler
-            obj = cast(FunctionType, obj.fn)  # type: ignore
+            obj = cast(FunctionType, obj.fn)  # pyright: ignore [reportAttributeAccessIssue]
 
         if self_name is None and isinstance(obj, FunctionType):
             try:
@@ -2379,7 +2430,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                     d.update(
                         self._deps(
                             objclass=objclass,
-                            obj=ref_obj.fget,  # type: ignore
+                            obj=ref_obj.fget,  # pyright: ignore [reportArgumentType]
                         )
                     )
                 elif (
@@ -2403,7 +2454,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             self_is_top_of_stack = False
         return d
 
-    def mark_dirty(self, instance) -> None:
+    def mark_dirty(self, instance: BaseState) -> None:
         """Mark this ComputedVar as dirty.
 
         Args:
@@ -2421,7 +2472,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         hints = get_type_hints(self._fget)
         if "return" in hints:
             return hints["return"]
-        return Any
+        return Any  # pyright: ignore [reportReturnType]
 
     @property
     def __class__(self) -> Type:
@@ -2462,7 +2513,7 @@ def computed_var(
     interval: Optional[Union[datetime.timedelta, int]] = None,
     backend: bool | None = None,
     **kwargs,
-) -> Callable[[Callable[[BASE_STATE], RETURN_TYPE]], ComputedVar[RETURN_TYPE]]: ...
+) -> Callable[[Callable[[BASE_STATE], RETURN_TYPE]], ComputedVar[RETURN_TYPE]]: ...  # pyright: ignore [reportInvalidTypeVarUse]
 
 
 @overload
@@ -2606,7 +2657,7 @@ def var_operation_return(
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class CustomVarOperation(CachedVarOperation, Var[T]):
     """Base class for custom var operations."""
@@ -2677,7 +2728,7 @@ class NoneVar(Var[None], python_types=type(None)):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralNoneVar(LiteralVar, NoneVar):
     """A var representing None."""
@@ -2739,7 +2790,7 @@ def get_to_operation(var_subclass: Type[Var]) -> Type[ToOperation]:
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class StateOperation(CachedVarOperation, Var):
     """A var operation that accesses a field on an object."""
@@ -2811,7 +2862,7 @@ def get_uuid_string_var() -> Var:
     unique_uuid_var = get_unique_variable_name()
     unique_uuid_var_data = VarData(
         imports={
-            f"$/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")},  # type: ignore
+            f"$/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")},  # pyright: ignore [reportArgumentType]
             "react": "useMemo",
         },
         hooks={f"const {unique_uuid_var} = useMemo(generateUUID, [])": None},
@@ -2888,19 +2939,6 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
         if callable(values_fn) and isinstance((values := values_fn()), Iterable):
             var_datas.extend(_extract_var_data(values))
     return var_datas
-
-
-# These names were changed in reflex 0.3.0
-REPLACED_NAMES = {
-    "full_name": "_var_full_name",
-    "name": "_js_expr",
-    "state": "_var_data.state",
-    "type_": "_var_type",
-    "is_local": "_var_is_local",
-    "is_string": "_var_is_string",
-    "set_state": "_var_set_state",
-    "deps": "_deps",
-}
 
 
 dispatchers: Dict[GenericType, Callable[[Var], Var]] = {}
@@ -2983,7 +3021,7 @@ def generic_type_to_actual_type_map(
     # call recursively for nested generic types and merge the results
     return {
         k: v
-        for generic_arg, actual_arg in zip(generic_args, actual_args)
+        for generic_arg, actual_arg in zip(generic_args, actual_args, strict=True)
         for k, v in generic_type_to_actual_type_map(generic_arg, actual_arg).items()
     }
 
@@ -3149,7 +3187,7 @@ MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping)
 class Field(Generic[FIELD_TYPE]):
     """Shadow class for Var to allow for type hinting in the IDE."""
 
-    def __set__(self, instance, value: FIELD_TYPE):
+    def __set__(self, instance: Any, value: FIELD_TYPE):
         """Set the Var.
 
         Args:
@@ -3158,44 +3196,44 @@ class Field(Generic[FIELD_TYPE]):
         """
 
     @overload
-    def __get__(self: Field[bool], instance: None, owner) -> BooleanVar: ...
+    def __get__(self: Field[bool], instance: None, owner: Any) -> BooleanVar: ...
 
     @overload
-    def __get__(self: Field[int], instance: None, owner) -> NumberVar[int]: ...
+    def __get__(self: Field[int], instance: None, owner: Any) -> NumberVar[int]: ...
 
     @overload
     def __get__(self: Field[float], instance: None, owner) -> NumberVar[float]: ...
 
     @overload
-    def __get__(self: Field[str], instance: None, owner) -> StringVar[str]: ...
+    def __get__(self: Field[str], instance: None, owner: Any) -> StringVar[str]: ...
 
     @overload
-    def __get__(self: Field[None], instance: None, owner) -> NoneVar: ...
+    def __get__(self: Field[None], instance: None, owner: Any) -> NoneVar: ...
 
     @overload
     def __get__(
         self: Field[Sequence[V]] | Field[Set[V]] | Field[List[V]],
         instance: None,
-        owner,
+        owner: Any,
     ) -> ArrayVar[Sequence[V]]: ...
 
     @overload
     def __get__(
-        self: Field[MAPPING_TYPE], instance: None, owner
+        self: Field[MAPPING_TYPE], instance: None, owner: Any
     ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
-        self: Field[BASE_TYPE], instance: None, owner
+        self: Field[BASE_TYPE], instance: None, owner: Any
     ) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
-    def __get__(self, instance: None, owner) -> Var[FIELD_TYPE]: ...
+    def __get__(self, instance: None, owner: Any) -> Var[FIELD_TYPE]: ...
 
     @overload
-    def __get__(self, instance, owner) -> FIELD_TYPE: ...
+    def __get__(self, instance: Any, owner: Any) -> FIELD_TYPE: ...
 
-    def __get__(self, instance, owner):  # type: ignore
+    def __get__(self, instance: Any, owner: Any):  # pyright: ignore [reportInconsistentOverload]
         """Get the Var.
 
         Args:

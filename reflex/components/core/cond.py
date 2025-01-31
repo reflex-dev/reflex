@@ -59,7 +59,7 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
 
 
 @overload
-def color_mode_cond(light: Component, dark: Component | None = None) -> Component: ...  # type: ignore
+def color_mode_cond(light: Component, dark: Component | None = None) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
 
 
 @overload

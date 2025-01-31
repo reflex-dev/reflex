@@ -1,6 +1,5 @@
 import json
 import math
-import sys
 import typing
 from typing import Dict, List, Mapping, Optional, Set, Tuple, Union, cast
 
@@ -188,6 +187,7 @@ def ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
             "state.local",
             "local2",
         ],
+        strict=True,
     ),
 )
 def test_full_name(prop, expected):
@@ -205,6 +205,7 @@ def test_full_name(prop, expected):
     zip(
         test_vars,
         ["prop1", "key", "state.value", "state.local", "local2"],
+        strict=True,
     ),
 )
 def test_str(prop, expected):
@@ -251,6 +252,7 @@ def test_default_value(prop: Var, expected):
             "state.set_local",
             "set_local2",
         ],
+        strict=True,
     ),
 )
 def test_get_setter(prop: Var, expected):
@@ -285,7 +287,7 @@ def test_create(value, expected):
         expected: The expected name of the setter function.
     """
     prop = LiteralVar.create(value)
-    assert prop.equals(expected)  # type: ignore
+    assert prop.equals(expected)
 
 
 def test_create_type_error():
@@ -446,19 +448,13 @@ class Bar(rx.Base):
 
 @pytest.mark.parametrize(
     ("var", "var_type"),
-    (
-        [
-            (Var(_js_expr="", _var_type=Foo | Bar).guess_type(), Foo | Bar),
-            (Var(_js_expr="", _var_type=Foo | Bar).guess_type().bar, Union[int, str]),
-        ]
-        if sys.version_info >= (3, 10)
-        else []
-    )
-    + [
-        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type(), Union[Foo, Bar]),
-        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().baz, str),
+    [
+        (Var(_js_expr="").to(Foo | Bar), Foo | Bar),
+        (Var(_js_expr="").to(Foo | Bar).bar, Union[int, str]),
+        (Var(_js_expr="").to(Union[Foo, Bar]), Union[Foo, Bar]),
+        (Var(_js_expr="").to(Union[Foo, Bar]).baz, str),
         (
-            Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().foo,
+            Var(_js_expr="").to(Union[Foo, Bar]).foo,
             Union[int, None],
         ),
     ],
@@ -1241,7 +1237,7 @@ def test_var_component():
             for _, imported_objects in var_data.imports
         )
 
-    has_eval_react_component(ComponentVarState.field_var)  # type: ignore
+    has_eval_react_component(ComponentVarState.field_var)  # pyright: ignore [reportArgumentType]
     has_eval_react_component(ComponentVarState.computed_var)
 
 
@@ -1253,15 +1249,15 @@ def test_type_chains():
         List[int],
     )
     assert (
-        str(object_var.keys()[0].upper())  # type: ignore
+        str(object_var.keys()[0].upper())
         == '(((...args) => (((_string) => String.prototype.toUpperCase.apply(_string))((((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))((Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))), ...args)))(0)), ...args)))())'
     )
     assert (
-        str(object_var.entries()[1][1] - 1)  # type: ignore
+        str(object_var.entries()[1][1] - 1)
         == '((((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))((((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))((Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))), ...args)))(1)), ...args)))(1)) - 1)'
     )
     assert (
-        str(object_var["c"] + object_var["b"])  # type: ignore
+        str(object_var["c"] + object_var["b"])  # pyright: ignore [reportCallIssue, reportOperatorIssue]
         == '(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["c"] + ({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["b"])'
     )
 
@@ -1274,7 +1270,7 @@ def test_nested_dict():
 
     assert (
         str(first_bar_element)
-        == '(((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))((((...args) => (((_array, _index) => _array.at(_index))([({ ["bar"] : ["foo", "bar"] })], ...args)))(0))["bar"], ...args)))(0))'
+        == '(((...args) => (((_array, _index_or_slice) => atSliceOrIndex(_array, _index_or_slice))((((...args) => (((_array, _index) => _array.at(_index))([({ ["bar"] : ["foo", "bar"] })], ...args)))(0))["bar"], ...args)))(0))'  # pyright: ignore [reportIndexIssue]
     )
 
 
@@ -1470,7 +1466,7 @@ def test_unsupported_types_for_contains(var: Var):
         var: The base var.
     """
     with pytest.raises(TypeError) as err:
-        assert var.contains(1)
+        assert var.contains(1)  # pyright: ignore [reportAttributeAccessIssue]
     assert (
         err.value.args[0]
         == f"Var of type {var._var_type} does not support contains check."
@@ -1500,7 +1496,7 @@ def test_unsupported_types_for_string_contains(other):
 
 def test_unsupported_default_contains():
     with pytest.raises(TypeError) as err:
-        assert 1 in Var(_js_expr="var", _var_type=str).guess_type()
+        assert 1 in Var(_js_expr="var", _var_type=str).guess_type()  # pyright: ignore [reportOperatorIssue]
     assert (
         err.value.args[0]
         == "'in' operator not supported for Var types, use Var.contains() instead."
@@ -1969,3 +1965,19 @@ def test_to_string_operation():
 
     single_var = Var.create(Email())
     assert single_var._var_type == Email
+
+
+def test_var_data_hooks():
+    var_data_str = VarData(hooks="what")
+    var_data_list = VarData(hooks=["what"])
+    var_data_dict = VarData(hooks={"what": None})
+    assert var_data_str == var_data_list == var_data_dict
+
+    var_data_list_multiple = VarData(hooks=["what", "whot"])
+    var_data_dict_multiple = VarData(hooks={"what": None, "whot": None})
+    assert var_data_list_multiple == var_data_dict_multiple
+
+
+def test_var_data_with_hooks_value():
+    var_data = VarData(hooks={"what": VarData(hooks={"whot": VarData(hooks="whott")})})
+    assert var_data == VarData(hooks=["what", "whot", "whott"])

@@ -192,7 +192,7 @@ def make_default_page_title(app_name: str, route: str) -> str:
     return to_title_case(title)
 
 
-def format_route(route: str, format_case=True) -> str:
+def format_route(route: str, format_case: bool = True) -> str:
     """Format the given route.
 
     Args:
@@ -252,7 +252,7 @@ def format_prop(
 
         # For dictionaries, convert any properties to strings.
         elif isinstance(prop, dict):
-            prop = serializers.serialize_dict(prop)  # type: ignore
+            prop = serializers.serialize_dict(prop)  # pyright: ignore [reportAttributeAccessIssue]
 
         else:
             # Dump the prop as JSON.
@@ -408,14 +408,14 @@ def format_queue_events(
     from reflex.vars import FunctionVar, Var
 
     if not events:
-        return Var("(() => null)").to(FunctionVar, EventChain)  # type: ignore
+        return Var("(() => null)").to(FunctionVar, EventChain)
 
     # If no spec is provided, the function will take no arguments.
     def _default_args_spec():
         return []
 
     # Construct the arguments that the function accepts.
-    sig = inspect.signature(args_spec or _default_args_spec)  # type: ignore
+    sig = inspect.signature(args_spec or _default_args_spec)
     if sig.parameters:
         arg_def = ",".join(f"_{p}" for p in sig.parameters)
         arg_def = f"({arg_def})"
@@ -432,7 +432,7 @@ def format_queue_events(
         if isinstance(spec, (EventHandler, EventSpec)):
             specs = [call_event_handler(spec, args_spec or _default_args_spec)]
         elif isinstance(spec, type(lambda: None)):
-            specs = call_event_fn(spec, args_spec or _default_args_spec)  # type: ignore
+            specs = call_event_fn(spec, args_spec or _default_args_spec)  # pyright: ignore [reportAssignmentType, reportArgumentType]
             if isinstance(specs, Var):
                 raise ValueError(
                     f"Invalid event spec: {specs}. Expected a list of EventSpecs."
@@ -444,7 +444,7 @@ def format_queue_events(
     return Var(
         f"{arg_def} => {{queueEvents([{','.join(payloads)}], {constants.CompileVars.SOCKET}); "
         f"processEvent({constants.CompileVars.SOCKET})}}",
-    ).to(FunctionVar, EventChain)  # type: ignore
+    ).to(FunctionVar, EventChain)
 
 
 def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:

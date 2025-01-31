@@ -5,8 +5,10 @@ from __future__ import annotations
 from typing import Optional
 
 from reflex.components.base.fragment import Fragment
+from reflex import constants
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
+from reflex.components.datadisplay.logo import svg_logo
 from reflex.components.el.elements.typography import Div
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.dialog import (
@@ -26,7 +28,7 @@ from reflex.vars.function import FunctionStringVar
 from reflex.vars.number import BooleanVar
 from reflex.vars.sequence import LiteralArrayVar
 
-connect_error_var_data: VarData = VarData(  # type: ignore
+connect_error_var_data: VarData = VarData(
     imports=Imports.EVENTS,
     hooks={Hooks.EVENTS: None},
 )
@@ -100,14 +102,14 @@ class ConnectionToaster(Toaster):
         """
         toast_id = "websocket-error"
         target_url = WebsocketTargetURL.create()
-        props = ToastProps(  # type: ignore
+        props = ToastProps(
             description=LiteralVar.create(
                 f"Check if server is reachable at {target_url}",
             ),
             close_button=True,
             duration=120000,
             id=toast_id,
-        )
+        )  # pyright: ignore [reportCallIssue]
 
         individual_hooks = [
             f"const toast_props = {LiteralVar.create(props)!s};",
@@ -117,7 +119,7 @@ class ConnectionToaster(Toaster):
                 _var_data=VarData(
                     imports={
                         "react": ["useEffect", "useState"],
-                        **dict(target_url._get_all_var_data().imports),  # type: ignore
+                        **dict(target_url._get_all_var_data().imports),  # pyright: ignore [reportArgumentType, reportOptionalMemberAccess]
                     }
                 ),
             ).call(
@@ -296,7 +298,84 @@ class ConnectionPulser(Div):
         )
 
 
+class BackendDisabled(Div):
+    """A component that displays a message when the backend is disabled."""
+
+    @classmethod
+    def create(cls, **props) -> Component:
+        """Create a backend disabled component.
+
+        Args:
+            **props: The properties of the component.
+
+        Returns:
+            The backend disabled component.
+        """
+        import reflex as rx
+
+        is_backend_disabled = Var(
+            "backendDisabled",
+            _var_type=bool,
+            _var_data=VarData(
+                hooks={
+                    "const [backendDisabled, setBackendDisabled] = useState(false);": None,
+                    "useEffect(() => { setBackendDisabled(isBackendDisabled()); }, []);": None,
+                },
+                imports={
+                    f"$/{constants.Dirs.STATE_PATH}": [
+                        ImportVar(tag="isBackendDisabled")
+                    ],
+                },
+            ),
+        )
+
+        return super().create(
+            rx.cond(
+                is_backend_disabled,
+                rx.box(
+                    rx.box(
+                        rx.card(
+                            rx.vstack(
+                                svg_logo(),
+                                rx.text(
+                                    "You ran out of compute credits.",
+                                ),
+                                rx.callout(
+                                    rx.fragment(
+                                        "Please upgrade your plan or raise your compute credits at ",
+                                        rx.link(
+                                            "Reflex Cloud.",
+                                            href="https://cloud.reflex.dev/",
+                                        ),
+                                    ),
+                                    width="100%",
+                                    icon="info",
+                                    variant="surface",
+                                ),
+                            ),
+                            font_size="20px",
+                            font_family='"Inter", "Helvetica", "Arial", sans-serif',
+                            variant="classic",
+                        ),
+                        position="fixed",
+                        top="50%",
+                        left="50%",
+                        transform="translate(-50%, -50%)",
+                        width="40ch",
+                        max_width="90vw",
+                    ),
+                    position="fixed",
+                    z_index=9999,
+                    backdrop_filter="grayscale(1) blur(5px)",
+                    width="100dvw",
+                    height="100dvh",
+                ),
+            )
+        )
+
+
 connection_banner = ConnectionBanner.create
 connection_modal = ConnectionModal.create
 connection_toaster = ConnectionToaster.create
 connection_pulser = ConnectionPulser.create
+backend_disabled = BackendDisabled.create

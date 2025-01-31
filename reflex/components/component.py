@@ -149,7 +149,7 @@ class BaseComponent(Base, ABC):
 class ComponentNamespace(SimpleNamespace):
     """A namespace to manage components with subcomponents."""
 
-    def __hash__(self) -> int:
+    def __hash__(self) -> int:  # pyright: ignore [reportIncompatibleVariableOverride]
         """Get the hash of the namespace.
 
         Returns:
@@ -425,7 +425,7 @@ class Component(BaseComponent, ABC):
             else:
                 continue
 
-            def determine_key(value):
+            def determine_key(value: Any):
                 # Try to create a var from the value
                 key = value if isinstance(value, Var) else LiteralVar.create(value)
 
@@ -461,9 +461,7 @@ class Component(BaseComponent, ABC):
                 if types.is_union(passed_type):
                     # We need to check all possible types in the union.
                     passed_types = (
-                        arg
-                        for arg in passed_type.__args__  # type: ignore
-                        if arg is not type(None)
+                        arg for arg in passed_type.__args__ if arg is not type(None)
                     )
                 if (
                     # If the passed var is a union, check if all possible types are valid.
@@ -490,7 +488,7 @@ class Component(BaseComponent, ABC):
             # Check if the key is an event trigger.
             if key in component_specific_triggers:
                 kwargs["event_triggers"][key] = EventChain.create(
-                    value=value,  # type: ignore
+                    value=value,
                     args_spec=component_specific_triggers[key],
                     key=key,
                 )
@@ -577,7 +575,7 @@ class Component(BaseComponent, ABC):
                 annotation = field.annotation
                 if (metadata := getattr(annotation, "__metadata__", None)) is not None:
                     args_spec = metadata[0]
-                default_triggers[field.name] = args_spec or (no_args_event_spec)  # type: ignore
+                default_triggers[field.name] = args_spec or (no_args_event_spec)
         return default_triggers
 
     def __repr__(self) -> str:
@@ -708,7 +706,7 @@ class Component(BaseComponent, ABC):
         # Filter out None props
         props = {key: value for key, value in props.items() if value is not None}
 
-        def validate_children(children):
+        def validate_children(children: tuple | list):
             for child in children:
                 if isinstance(child, (tuple, list)):
                     validate_children(child)
@@ -760,7 +758,7 @@ class Component(BaseComponent, ABC):
 
         # Walk the MRO to call all `add_style` methods.
         for base in self._iter_parent_classes_with_method("add_style"):
-            s = base.add_style(self)  # type: ignore
+            s = base.add_style(self)
             if s is not None:
                 styles.append(s)
 
@@ -852,7 +850,7 @@ class Component(BaseComponent, ABC):
             else {}
         )
 
-    def render(self) -> Dict:
+    def render(self) -> dict:
         """Render the component.
 
         Returns:
@@ -870,7 +868,7 @@ class Component(BaseComponent, ABC):
         self._replace_prop_names(rendered_dict)
         return rendered_dict
 
-    def _replace_prop_names(self, rendered_dict) -> None:
+    def _replace_prop_names(self, rendered_dict: dict) -> None:
         """Replace the prop names in the render dictionary.
 
         Args:
@@ -906,7 +904,7 @@ class Component(BaseComponent, ABC):
         comp_name = type(self).__name__
         allowed_components = [comp.__name__ for comp in (Fragment,)]
 
-        def validate_child(child):
+        def validate_child(child: Any):
             child_name = type(child).__name__
 
             # Iterate through the immediate children of fragment
@@ -1683,7 +1681,7 @@ class CustomComponent(Component):
                 if base_value is not None and isinstance(value, Component):
                     self.component_props[key] = value
                     value = base_value._replace(
-                        merge_var_data=VarData(  # type: ignore
+                        merge_var_data=VarData(
                             imports=value._get_all_imports(),
                             hooks=value._get_all_hooks(),
                         )
@@ -1716,7 +1714,7 @@ class CustomComponent(Component):
         return hash(self.tag)
 
     @classmethod
-    def get_props(cls) -> Set[str]:
+    def get_props(cls) -> Set[str]:  # pyright: ignore [reportIncompatibleVariableOverride]
         """Get the props for the component.
 
         Returns:
@@ -1811,7 +1809,7 @@ class CustomComponent(Component):
             include_children=include_children, ignore_ids=ignore_ids
         )
 
-    @lru_cache(maxsize=None)  # noqa
+    @lru_cache(maxsize=None)  # noqa: B019
     def get_component(self) -> Component:
         """Render the component.
 
@@ -1953,7 +1951,7 @@ class StatefulComponent(BaseComponent):
 
         if not should_memoize:
             # Determine if any Vars have associated data.
-            for prop_var in component._get_vars():
+            for prop_var in component._get_vars(include_children=True):
                 if prop_var._get_all_var_data():
                     should_memoize = True
                     break
@@ -2323,8 +2321,8 @@ class MemoizationLeaf(Component):
         """
         comp = super().create(*children, **props)
         if comp._get_all_hooks():
-            comp._memoization_mode = cls._memoization_mode.copy(
-                update={"disposition": MemoizationDisposition.ALWAYS}
+            comp._memoization_mode = dataclasses.replace(
+                comp._memoization_mode, disposition=MemoizationDisposition.ALWAYS
             )
         return comp
 
@@ -2406,6 +2404,7 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
+    slots=True,
 )
 class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
     """A Var that represents a Component."""

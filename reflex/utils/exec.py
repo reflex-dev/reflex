@@ -71,7 +71,9 @@ def notify_backend():
 # run_process_and_launch_url is assumed to be used
 # only to launch the frontend
 # If this is not the case, might have to change the logic
-def run_process_and_launch_url(run_command: list[str], backend_present=True):
+def run_process_and_launch_url(
+    run_command: list[str | None], backend_present: bool = True
+):
     """Run the process and launch the URL.
 
     Args:
@@ -89,7 +91,7 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
         if process is None:
             kwargs = {}
             if constants.IS_WINDOWS and backend_present:
-                kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore
+                kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
             process = processes.new_process(
                 run_command,
                 cwd=get_web_dir(),
@@ -134,7 +136,7 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
             break  # while True
 
 
-def run_frontend(root: Path, port: str, backend_present=True):
+def run_frontend(root: Path, port: str, backend_present: bool = True):
     """Run the frontend.
 
     Args:
@@ -151,12 +153,12 @@ def run_frontend(root: Path, port: str, backend_present=True):
     console.rule("[bold green]App Running")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "dev"],  # type: ignore
+        [prerequisites.get_package_manager(), "run", "dev"],
         backend_present,
     )
 
 
-def run_frontend_prod(root: Path, port: str, backend_present=True):
+def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
     """Run the frontend.
 
     Args:
@@ -173,7 +175,7 @@ def run_frontend_prod(root: Path, port: str, backend_present=True):
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "prod"],  # type: ignore
+        [prerequisites.get_package_manager(), "run", "prod"],
         backend_present,
     )
 
@@ -265,7 +267,7 @@ def get_reload_dirs() -> list[Path]:
     return list(map(Path.absolute, reload_dirs))
 
 
-def run_uvicorn_backend(host, port, loglevel: LogLevel):
+def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
     """Run the backend in development mode using Uvicorn.
 
     Args:
@@ -285,7 +287,7 @@ def run_uvicorn_backend(host, port, loglevel: LogLevel):
     )
 
 
-def run_granian_backend(host, port, loglevel: LogLevel):
+def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     """Run the backend in development mode using Granian.
 
     Args:
@@ -295,9 +297,11 @@ def run_granian_backend(host, port, loglevel: LogLevel):
     """
     console.debug("Using Granian for backend")
     try:
-        from granian import Granian  # type: ignore
-        from granian.constants import Interfaces  # type: ignore
-        from granian.log import LogLevels  # type: ignore
+        from granian import Granian  # pyright: ignore [reportMissingImports]
+        from granian.constants import (  # pyright: ignore [reportMissingImports]
+            Interfaces,
+        )
+        from granian.log import LogLevels  # pyright: ignore [reportMissingImports]
 
         Granian(
             target=get_granian_target(),
@@ -307,7 +311,7 @@ def run_granian_backend(host, port, loglevel: LogLevel):
             log_level=LogLevels(loglevel.value),
             reload=True,
             reload_paths=get_reload_dirs(),
-            reload_ignore_dirs=[".web"],
+            reload_ignore_dirs=[".web", ".states"],
         ).serve()
     except ImportError:
         console.error(
@@ -350,7 +354,7 @@ def run_backend_prod(
         run_uvicorn_backend_prod(host, port, loglevel)
 
 
-def run_uvicorn_backend_prod(host, port, loglevel):
+def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
     """Run the backend in production mode using Uvicorn.
 
     Args:
@@ -402,7 +406,7 @@ def run_uvicorn_backend_prod(host, port, loglevel):
     )
 
 
-def run_granian_backend_prod(host, port, loglevel):
+def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
     """Run the backend in production mode using Granian.
 
     Args:
@@ -413,7 +417,9 @@ def run_granian_backend_prod(host, port, loglevel):
     from reflex.utils import processes
 
     try:
-        from granian.constants import Interfaces  # type: ignore
+        from granian.constants import (  # pyright: ignore [reportMissingImports]
+            Interfaces,
+        )
 
         command = [
             "granian",
@@ -467,22 +473,22 @@ def output_system_info():
 
     system = platform.system()
 
+    fnm_info = f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]"
+
     if system != "Windows" or (
         system == "Windows" and prerequisites.is_windows_bun_supported()
     ):
         dependencies.extend(
             [
-                f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
-                f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
+                fnm_info,
+                f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {path_ops.get_bun_path()})]",
             ],
         )
     else:
-        dependencies.append(
-            f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
-        )
+        dependencies.append(fnm_info)
 
     if system == "Linux":
-        import distro  # type: ignore
+        import distro
 
         os_version = distro.name(pretty=True)
     else:
@@ -494,11 +500,11 @@ def output_system_info():
         console.debug(f"{dep}")
 
     console.debug(
-        f"Using package installer at: {prerequisites.get_install_package_manager(on_failure_return_none=True)}"  # type: ignore
+        f"Using package installer at: {prerequisites.get_install_package_manager(on_failure_return_none=True)}"
     )
     console.debug(
         f"Using package executer at: {prerequisites.get_package_manager(on_failure_return_none=True)}"
-    )  # type: ignore
+    )
     if system != "Windows":
         console.debug(f"Unzip path: {path_ops.which('unzip')}")
 

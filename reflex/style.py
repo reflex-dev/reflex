@@ -77,7 +77,7 @@ def set_color_mode(
         _var_data=VarData.merge(
             base_setter._get_all_var_data(), new_color_mode._get_all_var_data()
         ),
-    ).to(FunctionVar, EventChain)  # type: ignore
+    ).to(FunctionVar, EventChain)
 
 
 # Var resolves to the current color mode for the app ("light", "dark" or "system")
@@ -181,7 +181,9 @@ def convert(
     var_data = None  # Track import/hook data from any Vars in the style dict.
     out = {}
 
-    def update_out_dict(return_value, keys_to_update):
+    def update_out_dict(
+        return_value: Var | dict | list | str, keys_to_update: tuple[str, ...]
+    ):
         for k in keys_to_update:
             out[k] = return_value
 
@@ -290,6 +292,26 @@ class Style(dict):
                 getattr(self, "_var_data", None), _var._get_all_var_data()
             )
         super().__setitem__(key, value)
+
+    def __or__(self, other: Style | dict) -> Style:
+        """Combine two styles.
+
+        Args:
+            other: The other style to combine.
+
+        Returns:
+            The combined style.
+        """
+        other_var_data = None
+        if not isinstance(other, Style):
+            other_dict, other_var_data = convert(other)
+        else:
+            other_dict, other_var_data = other, other._var_data
+
+        new_style = Style(super().__or__(other_dict))
+        if self._var_data or other_var_data:
+            new_style._var_data = VarData.merge(self._var_data, other_var_data)
+        return new_style
 
 
 def _format_emotion_style_pseudo_selector(key: str) -> str:

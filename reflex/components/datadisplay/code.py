@@ -449,7 +449,7 @@ class CodeBlock(Component, MarkdownComponentMap):
 
         if can_copy:
             code = children[0]
-            copy_button = (  # type: ignore
+            copy_button = (
                 copy_button
                 if copy_button is not None
                 else Button.create(

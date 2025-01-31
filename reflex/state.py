@@ -31,6 +31,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    SupportsIndex,
     Tuple,
     Type,
     TypeVar,
@@ -899,7 +900,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ]
         if len(parent_states) >= 2:
             raise ValueError(f"Only one parent state is allowed {parent_states}.")
-        return parent_states[0] if len(parent_states) == 1 else None  # type: ignore
+        return parent_states[0] if len(parent_states) == 1 else None
 
     @classmethod
     def get_substates(cls) -> set[Type[BaseState]]:
@@ -1058,7 +1059,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         setattr(cls, prop._var_field_name, prop)
 
     @classmethod
-    def _create_event_handler(cls, fn):
+    def _create_event_handler(cls, fn: Any):
         """Create an event handler for the given function.
 
         Args:
@@ -1176,14 +1177,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         cls._check_overwritten_dynamic_args(list(args.keys()))
 
-        def argsingle_factory(param):
-            def inner_func(self) -> str:
+        def argsingle_factory(param: str):
+            def inner_func(self: BaseState) -> str:
                 return self.router.page.params.get(param, "")
 
             return inner_func
 
-        def arglist_factory(param):
-            def inner_func(self) -> List[str]:
+        def arglist_factory(param: str):
+            def inner_func(self: BaseState) -> List[str]:
                 return self.router.page.params.get(param, [])
 
             return inner_func
@@ -1268,8 +1269,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 fn = _no_chain_background_task(type(self), name, handler.fn)
             else:
                 fn = functools.partial(handler.fn, self)
-            fn.__module__ = handler.fn.__module__  # type: ignore
-            fn.__qualname__ = handler.fn.__qualname__  # type: ignore
+            fn.__module__ = handler.fn.__module__
+            fn.__qualname__ = handler.fn.__qualname__
             return fn
 
         backend_vars = super().__getattribute__("_backend_vars")
@@ -1434,6 +1435,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for part1, part2 in zip(
             cls.get_full_name().split("."),
             other.get_full_name().split("."),
+            strict=True,
         ):
             if part1 != part2:
                 break
@@ -1633,11 +1635,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         # Oopsie case: you didn't give me a Var... so get what you give.
         if not isinstance(var, Var):
-            return var  # type: ignore
+            return var
+
+        unset = object()
 
         # Fast case: this is a literal var and the value is known.
-        if hasattr(var, "_var_value"):
-            return var._var_value
+        if (var_value := getattr(var, "_var_value", unset)) is not unset:
+            return var_value  # pyright: ignore [reportReturnType]
 
         var_data = var._get_all_var_data()
         if var_data is None or not var_data.state:
@@ -2452,7 +2456,7 @@ class OnLoadInternalState(State):
                 self.router.session.client_token,
                 router_data=self.router_data,
             ),
-            State.set_is_hydrated(True),  # type: ignore
+            State.set_is_hydrated(True),  # pyright: ignore [reportAttributeAccessIssue]
         ]
 
 
@@ -2596,7 +2600,9 @@ class StateProxy(wrapt.ObjectProxy):
     """
 
     def __init__(
-        self, state_instance, parent_state_proxy: Optional["StateProxy"] = None
+        self,
+        state_instance: BaseState,
+        parent_state_proxy: Optional["StateProxy"] = None,
     ):
         """Create a proxy for a state instance.
 
@@ -2739,7 +2745,7 @@ class StateProxy(wrapt.ObjectProxy):
             # ensure mutations to these containers are blocked unless proxy is _mutable
             return ImmutableMutableProxy(
                 wrapped=value.__wrapped__,
-                state=self,  # type: ignore
+                state=self,
                 field_name=value._self_field_name,
             )
         if isinstance(value, functools.partial) and value.args[0] is self.__wrapped__:
@@ -2752,7 +2758,7 @@ class StateProxy(wrapt.ObjectProxy):
             )
         if isinstance(value, MethodType) and value.__self__ is self.__wrapped__:
             # Rebind methods to the proxy instance
-            value = type(value)(value.__func__, self)  # type: ignore
+            value = type(value)(value.__func__, self)
         return value
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -2952,7 +2958,7 @@ class StateManagerMemory(StateManager):
     # The dict of mutexes for each client
     _states_locks: Dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
 
-    class Config:
+    class Config:  # pyright: ignore [reportIncompatibleVariableOverride]
         """The Pydantic config."""
 
         fields = {
@@ -3049,7 +3055,7 @@ def is_serializable(value: Any) -> bool:
 
 def reset_disk_state_manager():
     """Reset the disk state manager."""
-    states_directory = prerequisites.get_web_dir() / constants.Dirs.STATES
+    states_directory = prerequisites.get_states_dir()
     if states_directory.exists():
         for path in states_directory.iterdir():
             path.unlink()
@@ -3070,7 +3076,7 @@ class StateManagerDisk(StateManager):
     # The token expiration time (s).
     token_expiration: int = pydantic.Field(default_factory=_default_token_expiration)
 
-    class Config:
+    class Config:  # pyright: ignore [reportIncompatibleVariableOverride]
         """The Pydantic config."""
 
         fields = {
@@ -3097,7 +3103,7 @@ class StateManagerDisk(StateManager):
         Returns:
             The states directory.
         """
-        return prerequisites.get_web_dir() / constants.Dirs.STATES
+        return prerequisites.get_states_dir()
 
     def _purge_expired_states(self):
         """Purge expired states from the disk."""
@@ -3542,7 +3548,9 @@ class StateManagerRedis(StateManager):
 
     @validator("lock_warning_threshold")
     @classmethod
-    def validate_lock_warning_threshold(cls, lock_warning_threshold: int, values):
+    def validate_lock_warning_threshold(
+        cls, lock_warning_threshold: int, values: dict[str, int]
+    ):
         """Validate the lock warning threshold.
 
         Args:
@@ -3808,10 +3816,10 @@ class MutableProxy(wrapt.ObjectProxy):
 
     def _mark_dirty(
         self,
-        wrapped=None,
-        instance=None,
-        args=(),
-        kwargs=None,
+        wrapped: Callable | None = None,
+        instance: BaseState | None = None,
+        args: tuple = (),
+        kwargs: dict | None = None,
     ) -> Any:
         """Mark the state as dirty, then call a wrapped function.
 
@@ -3885,7 +3893,9 @@ class MutableProxy(wrapt.ObjectProxy):
             )
         return value
 
-    def _wrap_recursive_decorator(self, wrapped, instance, args, kwargs) -> Any:
+    def _wrap_recursive_decorator(
+        self, wrapped: Callable, instance: BaseState, args: list, kwargs: dict
+    ) -> Any:
         """Wrap a function that returns a possibly mutable value.
 
         Intended for use with `FunctionWrapper` from the `wrapt` library.
@@ -3944,7 +3954,7 @@ class MutableProxy(wrapt.ObjectProxy):
 
         return value
 
-    def __getitem__(self, key) -> Any:
+    def __getitem__(self, key: Any) -> Any:
         """Get the item on the proxied object and return a proxy if mutable.
 
         Args:
@@ -3967,7 +3977,7 @@ class MutableProxy(wrapt.ObjectProxy):
             # Recursively wrap mutable items retrieved through this proxy.
             yield self._wrap_recursive(value)
 
-    def __delattr__(self, name):
+    def __delattr__(self, name: str):
         """Delete the attribute on the proxied object and mark state dirty.
 
         Args:
@@ -3975,7 +3985,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         self._mark_dirty(super().__delattr__, args=(name,))
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str):
         """Delete the item on the proxied object and mark state dirty.
 
         Args:
@@ -3983,7 +3993,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         self._mark_dirty(super().__delitem__, args=(key,))
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Any):
         """Set the item on the proxied object and mark state dirty.
 
         Args:
@@ -3992,7 +4002,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         self._mark_dirty(super().__setitem__, args=(key, value))
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: Any):
         """Set the attribute on the proxied object and mark state dirty.
 
         If the attribute starts with "_self_", then the state is NOT marked
@@ -4016,7 +4026,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         return copy.copy(self.__wrapped__)
 
-    def __deepcopy__(self, memo=None) -> Any:
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Any:
         """Return a deepcopy of the proxy.
 
         Args:
@@ -4027,7 +4037,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         return copy.deepcopy(self.__wrapped__, memo=memo)
 
-    def __reduce_ex__(self, protocol_version):
+    def __reduce_ex__(self, protocol_version: SupportsIndex):
         """Get the state for redis serialization.
 
         This method is called by cloudpickle to serialize the object.
@@ -4091,10 +4101,10 @@ class ImmutableMutableProxy(MutableProxy):
 
     def _mark_dirty(
         self,
-        wrapped=None,
-        instance=None,
-        args=(),
-        kwargs=None,
+        wrapped: Callable | None = None,
+        instance: BaseState | None = None,
+        args: tuple = (),
+        kwargs: dict | None = None,
     ) -> Any:
         """Raise an exception when an attempt is made to modify the object.
 

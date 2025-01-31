@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import functools
 from typing import Callable, Iterable
 
+from reflex.utils.exceptions import UntypedVarError
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.object import ObjectVar
 from reflex.vars.sequence import ArrayVar

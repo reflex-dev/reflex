@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import dataclasses
 import re
-import sys
 from typing import Any, Callable, Union
 
 from reflex import constants
@@ -49,7 +48,7 @@ def _client_state_ref_dict(var_name: str) -> str:
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class ClientStateVar(Var):
     """A Var that exists on the client via useState."""
@@ -201,9 +200,7 @@ class ClientStateVar(Var):
             )
             .to(self._var_type)
             ._replace(
-                merge_var_data=VarData(  # type: ignore
-                    imports=_refs_import if self._global_ref else {}
-                )
+                merge_var_data=VarData(imports=_refs_import if self._global_ref else {})
             )
         )
 

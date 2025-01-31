@@ -75,10 +75,14 @@ class VarAttributeError(ReflexError, AttributeError):
     """Custom AttributeError for var related errors."""
 
 
+class UntypedVarError(ReflexError, TypeError):
+    """Custom TypeError for untyped var errors."""
+
+
 class UntypedComputedVarError(ReflexError, TypeError):
     """Custom TypeError for untyped computed var errors."""
 
-    def __init__(self, var_name):
+    def __init__(self, var_name: str):
         """Initialize the UntypedComputedVarError.
 
         Args:
@@ -90,7 +94,7 @@ class UntypedComputedVarError(ReflexError, TypeError):
 class MissingAnnotationError(ReflexError, TypeError):
     """Custom TypeError for missing annotations."""
 
-    def __init__(self, var_name):
+    def __init__(self, var_name: str):
         """Initialize the MissingAnnotationError.
 
         Args:

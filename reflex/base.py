@@ -38,7 +38,7 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
 
 # monkeypatch pydantic validate_field_name method to skip validating
 # shadowed state vars when reloading app via utils.prerequisites.get_app(reload=True)
-pydantic_main.validate_field_name = validate_field_name  # type: ignore
+pydantic_main.validate_field_name = validate_field_name  # pyright: ignore [reportPossiblyUnboundVariable, reportPrivateImportUsage]
 
 if TYPE_CHECKING:
     from reflex.vars import Var
@@ -69,12 +69,12 @@ class Base(BaseModel):
         """
         from reflex.utils.serializers import serialize
 
-        return self.__config__.json_dumps(  # type: ignore
+        return self.__config__.json_dumps(
             self.dict(),
             default=serialize,
         )
 
-    def set(self, **kwargs):
+    def set(self, **kwargs: Any):
         """Set multiple fields and return the object.
 
         Args:
@@ -107,12 +107,12 @@ class Base(BaseModel):
             default_value: The default value of the field
         """
         var_name = var._var_field_name
-        new_field = ModelField.infer(
+        new_field = ModelField.infer(  # pyright: ignore [reportPossiblyUnboundVariable]
             name=var_name,
             value=default_value,
             annotation=var._var_type,
             class_validators=None,
-            config=cls.__config__,  # type: ignore
+            config=cls.__config__,
         )
         cls.__fields__.update({var_name: new_field})
 

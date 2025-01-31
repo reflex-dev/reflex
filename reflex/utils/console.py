@@ -278,7 +278,7 @@ def ask(
     choices: list[str] | None = None,
     default: str | None = None,
     show_choices: bool = True,
-) -> str:
+) -> str | None:
     """Takes a prompt question and optionally a list of choices
      and returns the user input.
 
@@ -293,7 +293,7 @@ def ask(
     """
     return Prompt.ask(
         question, choices=choices, default=default, show_choices=show_choices
-    )  # type: ignore
+    )
 
 
 def progress():
