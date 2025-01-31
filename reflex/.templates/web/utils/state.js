@@ -107,6 +107,18 @@ export const getBackendURL = (url_str) => {
 };
 
 /**
+ * Check if the backend is disabled.
+ *
+ * @returns True if the backend is disabled, false otherwise.
+ */
+export const isBackendDisabled = () => {
+  const cookie = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("backend-enabled="));
+  return cookie !== undefined && cookie.split("=")[1] == "false";
+};
+
+/**
  * Determine if any event in the event queue is stateful.
  *
  * @returns True if there's any event that requires state and False if none of them do.
@@ -808,7 +820,7 @@ export const useEventLoop = (
   // Handle socket connect/disconnect.
   useEffect(() => {
     // only use websockets if state is present
-    if (Object.keys(initialState).length > 1) {
+    if (Object.keys(initialState).length > 1 && !isBackendDisabled()) {
       // Initialize the websocket connection.
       if (!socket.current) {
         connect(

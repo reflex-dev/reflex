@@ -789,17 +789,16 @@ async def test_process_event_simple(test_state):
     assert test_state.num1 == 0
 
     event = Event(token="t", name="set_num1", payload={"value": 69})
-    update = await test_state._process(event).__anext__()
+    async for update in test_state._process(event):
+        # The event should update the value.
+        assert test_state.num1 == 69
 
-    # The event should update the value.
-    assert test_state.num1 == 69
-
-    # The delta should contain the changes, including computed vars.
-    assert update.delta == {
-        TestState.get_full_name(): {"num1": 69, "sum": 72.14},
-        GrandchildState3.get_full_name(): {"computed": ""},
-    }
-    assert update.events == []
+        # The delta should contain the changes, including computed vars.
+        assert update.delta == {
+            TestState.get_full_name(): {"num1": 69, "sum": 72.14},
+            GrandchildState3.get_full_name(): {"computed": ""},
+        }
+        assert update.events == []
 
 
 @pytest.mark.asyncio
@@ -819,15 +818,15 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
         name=f"{ChildState.get_name()}.change_both",
         payload={"value": "hi", "count": 12},
     )
-    update = await test_state._process(event).__anext__()
-    assert child_state.value == "HI"
-    assert child_state.count == 24
-    assert update.delta == {
-        # TestState.get_full_name(): {"sum": 3.14, "upper": ""},
-        ChildState.get_full_name(): {"value": "HI", "count": 24},
-        GrandchildState3.get_full_name(): {"computed": ""},
-    }
-    test_state._clean()
+    async for update in test_state._process(event):
+        assert child_state.value == "HI"
+        assert child_state.count == 24
+        assert update.delta == {
+            # TestState.get_full_name(): {"sum": 3.14, "upper": ""},
+            ChildState.get_full_name(): {"value": "HI", "count": 24},
+            GrandchildState3.get_full_name(): {"computed": ""},
+        }
+        test_state._clean()
 
     # Test with the granchild state.
     assert grandchild_state.value2 == ""
@@ -836,13 +835,13 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
         name=f"{GrandchildState.get_full_name()}.set_value2",
         payload={"value": "new"},
     )
-    update = await test_state._process(event).__anext__()
-    assert grandchild_state.value2 == "new"
-    assert update.delta == {
-        # TestState.get_full_name(): {"sum": 3.14, "upper": ""},
-        GrandchildState.get_full_name(): {"value2": "new"},
-        GrandchildState3.get_full_name(): {"computed": ""},
-    }
+    async for update in test_state._process(event):
+        assert grandchild_state.value2 == "new"
+        assert update.delta == {
+            # TestState.get_full_name(): {"sum": 3.14, "upper": ""},
+            GrandchildState.get_full_name(): {"value2": "new"},
+            GrandchildState3.get_full_name(): {"computed": ""},
+        }
 
 
 @pytest.mark.asyncio
@@ -2909,10 +2908,10 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
 
     events = updates[0].events
     assert len(events) == 2
-    assert (await state._process(events[0]).__anext__()).delta == {
-        test_state.get_full_name(): {"num": 1}
-    }
-    assert (await state._process(events[1]).__anext__()).delta == exp_is_hydrated(state)
+    async for update in state._process(events[0]):
+        assert update.delta == {test_state.get_full_name(): {"num": 1}}
+    async for update in state._process(events[1]):
+        assert update.delta == exp_is_hydrated(state)
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()
@@ -2957,13 +2956,12 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
 
     events = updates[0].events
     assert len(events) == 3
-    assert (await state._process(events[0]).__anext__()).delta == {
-        OnLoadState.get_full_name(): {"num": 1}
-    }
-    assert (await state._process(events[1]).__anext__()).delta == {
-        OnLoadState.get_full_name(): {"num": 2}
-    }
-    assert (await state._process(events[2]).__anext__()).delta == exp_is_hydrated(state)
+    async for update in state._process(events[0]):
+        assert update.delta == {OnLoadState.get_full_name(): {"num": 1}}
+    async for update in state._process(events[1]):
+        assert update.delta == {OnLoadState.get_full_name(): {"num": 2}}
+    async for update in state._process(events[2]):
+        assert update.delta == exp_is_hydrated(state)
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()

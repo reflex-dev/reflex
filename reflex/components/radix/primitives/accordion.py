@@ -10,6 +10,7 @@ from reflex.components.core.cond import cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
+from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler
 from reflex.style import Style
 from reflex.vars import get_uuid_string_var
@@ -341,6 +342,8 @@ class AccordionTrigger(AccordionComponent):
     tag = "Trigger"
 
     alias = "RadixAccordionTrigger"
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
     @classmethod
     def create(cls, *children, **props) -> Component:

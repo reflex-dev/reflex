@@ -1944,7 +1944,7 @@ class StatefulComponent(BaseComponent):
 
         if not should_memoize:
             # Determine if any Vars have associated data.
-            for prop_var in component._get_vars():
+            for prop_var in component._get_vars(include_children=True):
                 if prop_var._get_all_var_data():
                     should_memoize = True
                     break
@@ -2327,8 +2327,8 @@ class MemoizationLeaf(Component):
         """
         comp = super().create(*children, **props)
         if comp._get_all_hooks():
-            comp._memoization_mode = cls._memoization_mode.copy(
-                update={"disposition": MemoizationDisposition.ALWAYS}
+            comp._memoization_mode = dataclasses.replace(
+                comp._memoization_mode, disposition=MemoizationDisposition.ALWAYS
             )
         return comp
 
@@ -2457,6 +2457,7 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
+    slots=True,
 )
 class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
     """A Var that represents a Component."""

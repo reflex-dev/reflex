@@ -75,6 +75,10 @@ class VarAttributeError(ReflexError, AttributeError):
     """Custom AttributeError for var related errors."""
 
 
+class UntypedVarError(ReflexError, TypeError):
+    """Custom TypeError for untyped var errors."""
+
+
 class UntypedComputedVarError(ReflexError, TypeError):
     """Custom TypeError for untyped computed var errors."""
 

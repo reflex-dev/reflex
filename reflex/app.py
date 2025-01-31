@@ -60,7 +60,11 @@ from reflex.components.component import (
     ComponentStyle,
     evaluate_style_namespaces,
 )
-from reflex.components.core.banner import connection_pulser, connection_toaster
+from reflex.components.core.banner import (
+    backend_disabled,
+    connection_pulser,
+    connection_toaster,
+)
 from reflex.components.core.breakpoints import set_breakpoints
 from reflex.components.core.client_side_routing import (
     Default404Page,
@@ -159,9 +163,12 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay_component, which is a connection_modal.
     """
+    config = get_config()
+
     return Fragment.create(
         connection_pulser(),
         connection_toaster(),
+        *([backend_disabled()] if config.is_reflex_cloud else []),
         *codespaces.codespaces_auto_redirect(),
     )
 

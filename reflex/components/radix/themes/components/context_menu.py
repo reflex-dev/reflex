@@ -4,6 +4,7 @@ from typing import Dict, List, Literal, Union
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
+from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
 
@@ -54,6 +55,8 @@ class ContextMenuTrigger(RadixThemesComponent):
     _valid_parents: List[str] = ["ContextMenuRoot"]
 
     _invalid_children: List[str] = ["ContextMenuContent"]
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
 
 class ContextMenuContent(RadixThemesComponent):
@@ -152,6 +155,8 @@ class ContextMenuSubTrigger(RadixThemesComponent):
     text_value: Var[str]
 
     _valid_parents: List[str] = ["ContextMenuContent", "ContextMenuSub"]
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
 
 class ContextMenuSubContent(RadixThemesComponent):
