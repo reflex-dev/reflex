@@ -26,6 +26,8 @@ except TypeError:
     # Fallback for older typer versions.
     cli = typer.Typer(add_completion=False)
 
+SHOW_BUILT_WITH_REFLEX_INFO = "https://reflex.dev/docs/hosting/reflex-branding/"
+
 # Get the config.
 config = get_config()
 
@@ -188,6 +190,7 @@ def _run(
                 option_name="show_built_with_reflex",
                 allowed_tiers=["team", "enterprise"],
                 fallback_value=True,
+                help_link=SHOW_BUILT_WITH_REFLEX_INFO,
             )
 
         # Get the app module.
@@ -334,6 +337,7 @@ def export(
             option_name="show_built_with_reflex",
             allowed_tiers=["team", "enterprise"],
             fallback_value=False,
+            help_link=SHOW_BUILT_WITH_REFLEX_INFO,
         )
 
     export_utils.export(
@@ -536,6 +540,7 @@ def deploy(
             option_name="show_built_with_reflex",
             allowed_tiers=["pro", "team", "enterprise"],
             fallback_value=True,
+            help_link=SHOW_BUILT_WITH_REFLEX_INFO,
         )
 
     # Set the log level.
