@@ -2457,6 +2457,7 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
+    slots=True,
 )
 class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
     """A Var that represents a Component."""

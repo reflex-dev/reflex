@@ -621,18 +621,22 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
 
         Returns:
             Imports for the component.
+
+        Raises:
+            ValueError: If the transformers are not of type LiteralVar.
         """
         imports = defaultdict(list)
+        if not isinstance(self.transformers, LiteralVar):
+            raise ValueError(
+                f"transformers should be a LiteralVar type. Got {type(self.transformers)} instead."
+            )
         for transformer in self.transformers._var_value:
             if isinstance(transformer, ShikiBaseTransformers):
                 imports[transformer.library].extend(
                     [ImportVar(tag=str(fn)) for fn in transformer.fns]
                 )
-                (
+                if transformer.library not in self.lib_dependencies:
                     self.lib_dependencies.append(transformer.library)
-                    if transformer.library not in self.lib_dependencies
-                    else None
-                )
         return imports
 
     @classmethod

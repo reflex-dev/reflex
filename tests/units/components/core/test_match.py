@@ -3,6 +3,7 @@ from typing import List, Mapping, Tuple
 import pytest
 
 import reflex as rx
+from reflex.components.component import Component
 from reflex.components.core.match import Match
 from reflex.state import BaseState
 from reflex.utils.exceptions import MatchTypeError
@@ -29,6 +30,8 @@ def test_match_components():
         rx.text("default value"),
     )
     match_comp = Match.create(MatchState.value, *match_case_tuples)
+
+    assert isinstance(match_comp, Component)
     match_dict = match_comp.render()
     assert match_dict["name"] == "Fragment"
 
@@ -151,6 +154,7 @@ def test_match_on_component_without_default():
     )
 
     match_comp = Match.create(MatchState.value, *match_case_tuples)
+    assert isinstance(match_comp, Component)
     default = match_comp.render()["children"][0]["default"]
 
     assert isinstance(default, dict) and default["name"] == Fragment.__name__
