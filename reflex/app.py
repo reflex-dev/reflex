@@ -27,6 +27,7 @@ from typing import (
     Dict,
     Generic,
     List,
+    MutableMapping,
     Optional,
     Set,
     Type,
@@ -146,7 +147,7 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
             position="top-center",
             id="backend_error",
             style={"width": "500px"},
-        )  # type: ignore
+        )  # pyright: ignore [reportReturnType]
     else:
         error_message.insert(0, "An error occurred.")
         return window_alert("\n".join(error_message))
@@ -408,23 +409,28 @@ class App(MiddlewareMixin, LifespanMixin):
         if self.api:
 
             class HeaderMiddleware:
-                def __init__(self, app):
+                def __init__(self, app: ASGIApp):
                     self.app = app
 
-                async def __call__(self, scope, receive, send):
+                async def __call__(
+                    self, scope: MutableMapping[str, Any], receive: Any, send: Callable
+                ):
                     original_send = send
 
-                    async def modified_send(message):
-                        headers = dict(scope["headers"])
-                        protocol_key = b"sec-websocket-protocol"
-                        if (
-                            message["type"] == "websocket.accept"
-                            and protocol_key in headers
-                        ):
-                            message["headers"] = [
-                                *message.get("headers", []),
-                                (b"sec-websocket-protocol", headers[protocol_key]),
-                            ]
+                    async def modified_send(message: dict):
+                        if message["type"] == "websocket.accept":
+                            if scope.get("subprotocols"):
+                                # The following *does* say "subprotocol" instead of "subprotocols", intentionally.
+                                message["subprotocol"] = scope["subprotocols"][0]
+
+                            headers = dict(message.get("headers", []))
+                            header_key = b"sec-websocket-protocol"
+                            if subprotocol := headers.get(header_key):
+                                message["headers"] = [
+                                    *message.get("headers", []),
+                                    (header_key, subprotocol),
+                                ]
+
                         return await original_send(message)
 
                     return await self.app(scope, receive, modified_send)
@@ -673,7 +679,10 @@ class App(MiddlewareMixin, LifespanMixin):
         for route in self._pages:
             replaced_route = replace_brackets_with_keywords(route)
             for rw, r, nr in zip(
-                replaced_route.split("/"), route.split("/"), new_route.split("/")
+                replaced_route.split("/"),
+                route.split("/"),
+                new_route.split("/"),
+                strict=False,
             ):
                 if rw in segments and r != nr:
                     # If the slugs in the segments of both routes are not the same, then the route is invalid
@@ -704,8 +713,8 @@ class App(MiddlewareMixin, LifespanMixin):
         Args:
             component: The component to display at the page.
             title: The title of the page.
-            description: The description of the page.
             image: The image to display on the page.
+            description: The description of the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
         """
@@ -772,7 +781,7 @@ class App(MiddlewareMixin, LifespanMixin):
         frontend_packages = get_config().frontend_packages
         _frontend_packages = []
         for package in frontend_packages:
-            if package in (get_config().tailwind or {}).get("plugins", []):  # type: ignore
+            if package in (get_config().tailwind or {}).get("plugins", []):
                 console.warn(
                     f"Tailwind packages are inferred from 'plugins', remove `{package}` from `frontend_packages`"
                 )
@@ -1029,7 +1038,7 @@ class App(MiddlewareMixin, LifespanMixin):
             compiler.compile_document_root(
                 self.head_components,
                 html_lang=self.html_lang,
-                html_custom_attrs=self.html_custom_attrs,  # type: ignore
+                html_custom_attrs=self.html_custom_attrs,  # pyright: ignore [reportArgumentType]
             )
         )
 
@@ -1052,7 +1061,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 max_workers=environment.REFLEX_COMPILE_THREADS.get() or None
             )
 
-        for route, component in zip(self._pages, page_components):
+        for route, component in zip(self._pages, page_components, strict=True):
             ExecutorSafeFunctions.COMPONENTS[route] = component
 
         ExecutorSafeFunctions.STATE = self._state
@@ -1060,7 +1069,7 @@ class App(MiddlewareMixin, LifespanMixin):
         with executor:
             result_futures = []
 
-            def _submit_work(fn, *args, **kwargs):
+            def _submit_work(fn: Callable, *args, **kwargs):
                 f = executor.submit(fn, *args, **kwargs)
                 result_futures.append(f)
 
@@ -1249,6 +1258,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 frontend_arg_spec,
                 backend_arg_spec,
             ],
+            strict=True,
         ):
             if hasattr(handler_fn, "__name__"):
                 _fn_name = handler_fn.__name__
@@ -1390,15 +1400,14 @@ async def process(
                 if app._process_background(state, event) is not None:
                     # `final=True` allows the frontend send more events immediately.
                     yield StateUpdate(final=True)
-                    return
+                else:
+                    # Process the event synchronously.
+                    async for update in state._process(event):
+                        # Postprocess the event.
+                        update = await app._postprocess(state, event, update)
 
-                # Process the event synchronously.
-                async for update in state._process(event):
-                    # Postprocess the event.
-                    update = await app._postprocess(state, event, update)
-
-                    # Yield the update.
-                    yield update
+                        # Yield the update.
+                        yield update
     except Exception as ex:
         telemetry.send_error(ex, context="backend")
 
@@ -1593,20 +1602,20 @@ class EventNamespace(AsyncNamespace):
         self.sid_to_token = {}
         self.app = app
 
-    def on_connect(self, sid, environ):
+    def on_connect(self, sid: str, environ: dict):
         """Event for when the websocket is connected.
 
         Args:
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
         """
-        subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL", None)
+        subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
         if subprotocol and subprotocol != constants.Reflex.VERSION:
             console.warn(
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
 
-    def on_disconnect(self, sid):
+    def on_disconnect(self, sid: str):
         """Event for when the websocket disconnects.
 
         Args:
@@ -1628,7 +1637,7 @@ class EventNamespace(AsyncNamespace):
             self.emit(str(constants.SocketEvent.EVENT), update, to=sid)
         )
 
-    async def on_event(self, sid, data):
+    async def on_event(self, sid: str, data: Any):
         """Event for receiving front-end websocket events.
 
         Raises:
@@ -1695,7 +1704,7 @@ class EventNamespace(AsyncNamespace):
             # Emit the update from processing the event.
             await self.emit_update(update=update, sid=sid)
 
-    async def on_ping(self, sid):
+    async def on_ping(self, sid: str):
         """Event for testing the API endpoint.
 
         Args:

@@ -18,7 +18,7 @@ keywords = ["web", "framework"]
 classifiers = ["Development Status :: 4 - Beta"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10, <4.0"
 fastapi = ">=0.96.0,!=0.111.0,!=0.111.1"
 gunicorn = ">=20.1.0,<24.0"
 jinja2 = ">=3.1.2,<4.0"
@@ -55,7 +55,7 @@ typing_extensions = ">=4.6.0"
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.1.2,<9.0"
 pytest-mock = ">=3.10.0,<4.0"
-pyright = ">=1.1.229,<1.1.335"
+pyright = ">=1.1.392, <1.2"
 darglint = ">=1.8.1,<2.0"
 dill = ">=0.3.8"
 toml = ">=0.10.2,<1.0"
@@ -71,6 +71,7 @@ selenium = ">=4.11.0,<5.0"
 pytest-benchmark = ">=4.0.0,<6.0"
 playwright = ">=1.46.0"
 pytest-playwright = ">=0.5.1"
+pytest-codspeed = "^3.1.2"
 
 [tool.poetry.scripts]
 reflex = "reflex.reflex:cli"
@@ -80,21 +81,22 @@ requires = ["poetry-core>=1.5.1"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pyright]
+reportIncompatibleMethodOverride = false
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 output-format = "concise"
 lint.isort.split-on-trailing-comma = false
-lint.select = ["B", "C4", "D", "E", "ERA", "F", "FURB", "I", "N", "PERF", "PTH", "RUF", "SIM", "T", "TRY", "W"]
+lint.select = ["ANN001","B", "C4", "D", "E", "ERA", "F", "FURB", "I", "N", "PERF", "PGH", "PTH", "RUF", "SIM", "T", "TRY", "W"]
 lint.ignore = ["B008", "D205", "E501", "F403", "SIM115", "RUF006", "RUF012", "TRY0"]
 lint.pydocstyle.convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/*.py" = ["D100", "D103", "D104", "B018", "PERF", "T", "N"]
-"benchmarks/*.py" = ["D100", "D103", "D104", "B018", "PERF", "T", "N"]
+"tests/*.py" = ["ANN001", "D100", "D103", "D104", "B018", "PERF", "T", "N"]
+"benchmarks/*.py" = ["ANN001", "D100", "D103", "D104", "B018", "PERF", "T", "N"]
 "reflex/.templates/*.py" = ["D100", "D103", "D104"]
-"*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N"]
+"*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]
 "pyi_generator.py" = ["N802"]
 "reflex/constants/*.py" = ["N"]
 "*/blank.py" = ["I001"]

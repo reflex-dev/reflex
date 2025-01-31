@@ -31,7 +31,7 @@ def ConnectionBanner():
             rx.button(
                 "Increment",
                 id="increment",
-                on_click=State.set_foo(State.foo + 1),  # type: ignore
+                on_click=State.set_foo(State.foo + 1),  # pyright: ignore [reportAttributeAccessIssue]
             ),
             rx.button("Delay", id="delay", on_click=State.delay),
         )

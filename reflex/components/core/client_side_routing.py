@@ -41,7 +41,7 @@ class ClientSideRouting(Component):
         return ""
 
 
-def wait_for_client_redirect(component) -> Component:
+def wait_for_client_redirect(component: Component) -> Component:
     """Wait for a redirect to occur before rendering a component.
 
     This prevents the 404 page from flashing while the redirect is happening.

@@ -80,6 +80,7 @@ if TYPE_CHECKING:
 
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
 OTHER_VAR_TYPE = TypeVar("OTHER_VAR_TYPE")
+STRING_T = TypeVar("STRING_T", bound=str)
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
@@ -145,9 +146,7 @@ class VarData:
             position: Position of the hook in the component.
         """
         immutable_imports: ImmutableParsedImportDict = tuple(
-            sorted(
-                ((k, tuple(sorted(v))) for k, v in parse_imports(imports or {}).items())
-            )
+            (k, tuple(v)) for k, v in parse_imports(imports or {}).items()
         )
         object.__setattr__(self, "state", state)
         object.__setattr__(self, "field_name", field_name)
@@ -446,7 +445,12 @@ class Var(Generic[VAR_TYPE]):
 
                 _default_var_type: ClassVar[GenericType] = default_type
 
-            ToVarOperation.__name__ = f'To{cls.__name__.removesuffix("Var")}Operation'
+            new_to_var_operation_name = f"To{cls.__name__.removesuffix('Var')}Operation"
+            ToVarOperation.__qualname__ = (
+                ToVarOperation.__qualname__.removesuffix(ToVarOperation.__name__)
+                + new_to_var_operation_name
+            )
+            ToVarOperation.__name__ = new_to_var_operation_name
 
             _var_subclasses.append(VarSubclassEntry(cls, ToVarOperation, python_types))
 
@@ -495,20 +499,30 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     def _replace(
-        self, _var_type: Type[OTHER_VAR_TYPE], merge_var_data=None, **kwargs: Any
+        self,
+        _var_type: Type[OTHER_VAR_TYPE],
+        merge_var_data: VarData | None = None,
+        **kwargs: Any,
     ) -> Var[OTHER_VAR_TYPE]: ...
 
     @overload
     def _replace(
-        self, _var_type: GenericType | None = None, merge_var_data=None, **kwargs: Any
+        self,
+        _var_type: GenericType | None = None,
+        merge_var_data: VarData | None = None,
+        **kwargs: Any,
     ) -> Self: ...
 
     def _replace(
-        self, _var_type: GenericType | None = None, merge_var_data=None, **kwargs: Any
+        self,
+        _var_type: GenericType | None = None,
+        merge_var_data: VarData | None = None,
+        **kwargs: Any,
     ) -> Self | Var:
         """Make a copy of this Var with updated fields.
 
         Args:
+            _var_type: The new type of the Var.
             merge_var_data: VarData to merge into the existing VarData.
             **kwargs: Var fields to update.
 
@@ -542,12 +556,60 @@ class Var(Generic[VAR_TYPE]):
 
         return value_with_replaced
 
+    @overload
+    @classmethod
+    def create(  # type: ignore[override]
+        cls,
+        value: bool,
+        _var_data: VarData | None = None,
+    ) -> BooleanVar: ...
+
+    @overload
+    @classmethod
+    def create(  # type: ignore[override]
+        cls,
+        value: int,
+        _var_data: VarData | None = None,
+    ) -> NumberVar[int]: ...
+
+    @overload
     @classmethod
     def create(
         cls,
-        value: Any,
+        value: float,
         _var_data: VarData | None = None,
-    ) -> Var:
+    ) -> NumberVar[float]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: STRING_T,
+        _var_data: VarData | None = None,
+    ) -> StringVar[STRING_T]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: None,
+        _var_data: VarData | None = None,
+    ) -> NoneVar: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: OTHER_VAR_TYPE,
+        _var_data: VarData | None = None,
+    ) -> Var[OTHER_VAR_TYPE]: ...
+
+    @classmethod
+    def create(
+        cls,
+        value: OTHER_VAR_TYPE,
+        _var_data: VarData | None = None,
+    ) -> Var[OTHER_VAR_TYPE]:
         """Create a var from a value.
 
         Args:
@@ -664,7 +726,7 @@ class Var(Generic[VAR_TYPE]):
                 return self.to(var_subclass.var_subclass, output)
 
         if fixed_output_type is None:
-            return get_to_operation(NoneVar).create(self)  # type: ignore
+            return get_to_operation(NoneVar).create(self)  # pyright: ignore [reportReturnType]
 
         # Handle fixed_output_type being Base or a dataclass.
         if can_use_in_object_var(fixed_output_type):
@@ -681,7 +743,7 @@ class Var(Generic[VAR_TYPE]):
                     to_operation_return = var_subclass.to_var_subclass.create(
                         value=self, _var_type=new_var_type
                     )
-                    return to_operation_return  # type: ignore
+                    return to_operation_return  # pyright: ignore [reportReturnType]
 
             # If we can't determine the first argument, we just replace the _var_type.
             if not issubclass(output, Var) or var_type is None:
@@ -1097,7 +1159,7 @@ class Var(Generic[VAR_TYPE]):
             The decoded value or the Var name.
         """
         if isinstance(self, LiteralVar):
-            return self._var_value  # type: ignore
+            return self._var_value
         try:
             return json.loads(str(self))
         except ValueError:
@@ -1224,7 +1286,7 @@ class ToOperation:
         """
         return VarData.merge(
             self._original._get_all_var_data(),
-            self._var_data,  # type: ignore
+            self._var_data,
         )
 
     @classmethod
@@ -1245,10 +1307,10 @@ class ToOperation:
             The ToOperation.
         """
         return cls(
-            _js_expr="",  # type: ignore
-            _var_data=_var_data,  # type: ignore
-            _var_type=_var_type or cls._default_var_type,  # type: ignore
-            _original=value,  # type: ignore
+            _js_expr="",  # pyright: ignore [reportCallIssue]
+            _var_data=_var_data,  # pyright: ignore [reportCallIssue]
+            _var_type=_var_type or cls._default_var_type,  # pyright: ignore [reportCallIssue, reportAttributeAccessIssue]
+            _original=value,  # pyright: ignore [reportCallIssue]
         )
 
 
@@ -1310,7 +1372,7 @@ class LiteralVar(Var):
         _var_literal_subclasses.append((cls, var_subclass))
 
     @classmethod
-    def create(
+    def create(  # pyright: ignore [reportArgumentType]
         cls,
         value: Any,
         _var_data: VarData | None = None,
@@ -1328,7 +1390,7 @@ class LiteralVar(Var):
             TypeError: If the value is not a supported type for LiteralVar.
         """
         from .object import LiteralObjectVar
-        from .sequence import LiteralStringVar
+        from .sequence import ArrayVar, LiteralStringVar
 
         if isinstance(value, Var):
             if _var_data is None:
@@ -1384,6 +1446,9 @@ class LiteralVar(Var):
                 _var_data=_var_data,
             )
 
+        if isinstance(value, range):
+            return ArrayVar.range(value.start, value.stop, value.step)
+
         raise TypeError(
             f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
         )
@@ -1437,7 +1502,7 @@ T = TypeVar("T")
 
 # NoReturn is used to match CustomVarOperationReturn with no type hint.
 @overload
-def var_operation(
+def var_operation(  # pyright: ignore [reportOverlappingOverload]
     func: Callable[P, CustomVarOperationReturn[NoReturn]],
 ) -> Callable[P, Var]: ...
 
@@ -1487,7 +1552,7 @@ def var_operation(
 ) -> Callable[P, Var[T]]: ...
 
 
-def var_operation(
+def var_operation(  # pyright: ignore [reportInconsistentOverload]
     func: Callable[P, CustomVarOperationReturn[T]],
 ) -> Callable[P, Var[T]]:
     """Decorator for creating a var operation.
@@ -1521,7 +1586,7 @@ def var_operation(
         return CustomVarOperation.create(
             name=func.__name__,
             args=tuple(list(args_vars.items()) + list(kwargs_vars.items())),
-            return_var=func(*args_vars.values(), **kwargs_vars),  # type: ignore
+            return_var=func(*args_vars.values(), **kwargs_vars),  # pyright: ignore [reportCallIssue, reportReturnType]
         ).guess_type()
 
     return wrapper
@@ -1558,7 +1623,7 @@ def figure_out_type(value: Any) -> types.GenericType:
 class cached_property_no_lock(functools.cached_property):  # noqa: N801
     """A special version of functools.cached_property that does not use a lock."""
 
-    def __init__(self, func):
+    def __init__(self, func: Callable):
         """Initialize the cached_property_no_lock.
 
         Args:
@@ -1591,7 +1656,7 @@ class CachedVarOperation:
 
         next_class = parent_classes[parent_classes.index(CachedVarOperation) + 1]
 
-        return next_class.__getattr__(self, name)  # type: ignore
+        return next_class.__getattr__(self, name)
 
     def _get_all_var_data(self) -> VarData | None:
         """Get all VarData associated with the Var.
@@ -1613,7 +1678,7 @@ class CachedVarOperation:
                 value._get_all_var_data() if isinstance(value, Var) else None
                 for value in (
                     getattr(self, field.name)
-                    for field in dataclasses.fields(self)  # type: ignore
+                    for field in dataclasses.fields(self)  # pyright: ignore [reportArgumentType]
                 )
             ),
             self._var_data,
@@ -1630,7 +1695,7 @@ class CachedVarOperation:
                 type(self).__name__,
                 *[
                     getattr(self, field.name)
-                    for field in dataclasses.fields(self)  # type: ignore
+                    for field in dataclasses.fields(self)  # pyright: ignore [reportArgumentType]
                     if field.name not in ["_js_expr", "_var_data", "_var_type"]
                 ],
             )
@@ -1647,7 +1712,7 @@ def and_operation(a: Var | Any, b: Var | Any) -> Var:
     Returns:
         The result of the logical AND operation.
     """
-    return _and_operation(a, b)  # type: ignore
+    return _and_operation(a, b)
 
 
 @var_operation
@@ -1677,7 +1742,7 @@ def or_operation(a: Var | Any, b: Var | Any) -> Var:
     Returns:
         The result of the logical OR operation.
     """
-    return _or_operation(a, b)  # type: ignore
+    return _or_operation(a, b)
 
 
 @var_operation
@@ -1731,7 +1796,7 @@ class CallableVar(Var):
         object.__setattr__(self, "fn", fn)
         object.__setattr__(self, "original_var", original_var)
 
-    def __call__(self, *args, **kwargs) -> Var:
+    def __call__(self, *args: Any, **kwargs: Any) -> Var:
         """Call the decorated function.
 
         Args:
@@ -1806,7 +1871,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     _fget: Callable[[BaseState], RETURN_TYPE] = dataclasses.field(
         default_factory=lambda: lambda _: None
-    )  # type: ignore
+    )  # pyright: ignore [reportAssignmentType]
 
     def __init__(
         self,
@@ -1887,10 +1952,16 @@ class ComputedVar(Var[RETURN_TYPE]):
         object.__setattr__(self, "_fget", fget)
 
     @override
-    def _replace(self, merge_var_data=None, **kwargs: Any) -> Self:
+    def _replace(
+        self,
+        _var_type: Any = None,
+        merge_var_data: VarData | None = None,
+        **kwargs: Any,
+    ) -> Self:
         """Replace the attributes of the ComputedVar.
 
         Args:
+            _var_type: ignored in ComputedVar.
             merge_var_data: VarData to merge into the existing VarData.
             **kwargs: Var fields to update.
 
@@ -2004,7 +2075,7 @@ class ComputedVar(Var[RETURN_TYPE]):
     @overload
     def __get__(self, instance: BaseState, owner: Type) -> RETURN_TYPE: ...
 
-    def __get__(self, instance: BaseState | None, owner):
+    def __get__(self, instance: BaseState | None, owner: Type):
         """Get the ComputedVar value.
 
         If the value is already cached on the instance, return the cached value.
@@ -2090,10 +2161,10 @@ class ComputedVar(Var[RETURN_TYPE]):
                 return set()
         with contextlib.suppress(AttributeError):
             # unbox functools.partial
-            obj = cast(FunctionType, obj.func)  # type: ignore
+            obj = cast(FunctionType, obj.func)  # pyright: ignore [reportAttributeAccessIssue]
         with contextlib.suppress(AttributeError):
             # unbox EventHandler
-            obj = cast(FunctionType, obj.fn)  # type: ignore
+            obj = cast(FunctionType, obj.fn)  # pyright: ignore [reportAttributeAccessIssue]
 
         if self_name is None and isinstance(obj, FunctionType):
             try:
@@ -2133,7 +2204,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                     d.update(
                         self._deps(
                             objclass=objclass,
-                            obj=ref_obj,
+                            obj=ref_obj,  # pyright: ignore [reportArgumentType]
                         )
                     )
                 # recurse into property fget functions
@@ -2143,7 +2214,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                     d.update(
                         self._deps(
                             objclass=objclass,
-                            obj=ref_obj.fget,  # type: ignore
+                            obj=ref_obj.fget,  # pyright: ignore [reportArgumentType]
                         )
                     )
                 elif (
@@ -2167,7 +2238,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             self_is_top_of_stack = False
         return d
 
-    def mark_dirty(self, instance) -> None:
+    def mark_dirty(self, instance: BaseState) -> None:
         """Mark this ComputedVar as dirty.
 
         Args:
@@ -2185,7 +2256,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         hints = get_type_hints(self._fget)
         if "return" in hints:
             return hints["return"]
-        return Any
+        return Any  # pyright: ignore [reportReturnType]
 
     @property
     def __class__(self) -> Type:
@@ -2226,7 +2297,7 @@ def computed_var(
     interval: Optional[Union[datetime.timedelta, int]] = None,
     backend: bool | None = None,
     **kwargs,
-) -> Callable[[Callable[[BASE_STATE], RETURN_TYPE]], ComputedVar[RETURN_TYPE]]: ...
+) -> Callable[[Callable[[BASE_STATE], RETURN_TYPE]], ComputedVar[RETURN_TYPE]]: ...  # pyright: ignore [reportInvalidTypeVarUse]
 
 
 @overload
@@ -2555,7 +2626,7 @@ def get_uuid_string_var() -> Var:
     unique_uuid_var = get_unique_variable_name()
     unique_uuid_var_data = VarData(
         imports={
-            f"$/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")},  # type: ignore
+            f"$/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")},  # pyright: ignore [reportArgumentType]
             "react": "useMemo",
         },
         hooks={f"const {unique_uuid_var} = useMemo(generateUUID, [])": None},
@@ -2615,7 +2686,7 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
             elif not isinstance(sub, str):
                 # Recurse into dict values.
                 if hasattr(sub, "values") and callable(sub.values):
-                    var_datas.extend(_extract_var_data(sub.values()))
+                    var_datas.extend(_extract_var_data(sub.values()))  # pyright: ignore [reportArgumentType]
                 # Recurse into iterable values (or dict keys).
                 var_datas.extend(_extract_var_data(sub))
 
@@ -2626,7 +2697,7 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
         # Recurse when value is a dict itself.
         values = getattr(value, "values", None)
         if callable(values):
-            var_datas.extend(_extract_var_data(values()))
+            var_datas.extend(_extract_var_data(values()))  # pyright: ignore [reportArgumentType]
     return var_datas
 
 
@@ -2723,7 +2794,7 @@ def generic_type_to_actual_type_map(
     # call recursively for nested generic types and merge the results
     return {
         k: v
-        for generic_arg, actual_arg in zip(generic_args, actual_args)
+        for generic_arg, actual_arg in zip(generic_args, actual_args, strict=True)
         for k, v in generic_type_to_actual_type_map(generic_arg, actual_arg).items()
     }
 
@@ -2889,7 +2960,7 @@ MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping)
 class Field(Generic[FIELD_TYPE]):
     """Shadow class for Var to allow for type hinting in the IDE."""
 
-    def __set__(self, instance, value: FIELD_TYPE):
+    def __set__(self, instance: Any, value: FIELD_TYPE):
         """Set the Var.
 
         Args:
@@ -2898,43 +2969,43 @@ class Field(Generic[FIELD_TYPE]):
         """
 
     @overload
-    def __get__(self: Field[bool], instance: None, owner) -> BooleanVar: ...
+    def __get__(self: Field[bool], instance: None, owner: Any) -> BooleanVar: ...
 
     @overload
     def __get__(
-        self: Field[int] | Field[float] | Field[int | float], instance: None, owner
+        self: Field[int] | Field[float] | Field[int | float], instance: None, owner: Any
     ) -> NumberVar: ...
 
     @overload
-    def __get__(self: Field[str], instance: None, owner) -> StringVar: ...
+    def __get__(self: Field[str], instance: None, owner: Any) -> StringVar: ...
 
     @overload
-    def __get__(self: Field[None], instance: None, owner) -> NoneVar: ...
+    def __get__(self: Field[None], instance: None, owner: Any) -> NoneVar: ...
 
     @overload
     def __get__(
         self: Field[List[V]] | Field[Set[V]] | Field[Tuple[V, ...]],
         instance: None,
-        owner,
+        owner: Any,
     ) -> ArrayVar[List[V]]: ...
 
     @overload
     def __get__(
-        self: Field[MAPPING_TYPE], instance: None, owner
+        self: Field[MAPPING_TYPE], instance: None, owner: Any
     ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
-        self: Field[BASE_TYPE], instance: None, owner
+        self: Field[BASE_TYPE], instance: None, owner: Any
     ) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
-    def __get__(self, instance: None, owner) -> Var[FIELD_TYPE]: ...
+    def __get__(self, instance: None, owner: Any) -> Var[FIELD_TYPE]: ...
 
     @overload
-    def __get__(self, instance, owner) -> FIELD_TYPE: ...
+    def __get__(self, instance: Any, owner: Any) -> FIELD_TYPE: ...
 
-    def __get__(self, instance, owner):  # type: ignore
+    def __get__(self, instance: Any, owner: Any):  # pyright: ignore [reportInconsistentOverload]
         """Get the Var.
 
         Args:
@@ -2952,4 +3023,4 @@ def field(value: FIELD_TYPE) -> Field[FIELD_TYPE]:
     Returns:
         The Field.
     """
-    return value  # type: ignore
+    return value  # pyright: ignore [reportReturnType]

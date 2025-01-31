@@ -10,6 +10,7 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import Theme
 from reflex.components.radix.themes.layout.flex import Flex
+from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
 
@@ -83,7 +84,9 @@ class DrawerTrigger(DrawerComponent):
     alias = "Vaul" + tag
 
     # Defaults to true, if the first child acts as the trigger.
-    as_child: Var[bool] = True  # type: ignore
+    as_child: Var[bool] = Var.create(True)
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
     @classmethod
     def create(cls, *children: Any, **props: Any) -> Component:
