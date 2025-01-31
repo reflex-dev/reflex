@@ -819,7 +819,7 @@ export const useEventLoop = (
 
   // Handle socket connect/disconnect.
   useEffect(() => {
-    // only use websockets if state is present
+    // only use websockets if state is present and backend is not disabled (reflex cloud).
     if (Object.keys(initialState).length > 1 && !isBackendDisabled()) {
       // Initialize the websocket connection.
       if (!socket.current) {
@@ -839,7 +839,7 @@ export const useEventLoop = (
         socket.current.disconnect();
       }
     };
-  }, []);
+  }, [isBackendDisabled]);
 
   // Main event loop.
   useEffect(() => {
