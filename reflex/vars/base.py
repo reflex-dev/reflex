@@ -933,7 +933,7 @@ class Var(Generic[VAR_TYPE]):
         """
         actual_name = self._var_field_name
 
-        def setter(state: BaseState, value: Any):
+        def setter(state: Any, value: Any):
             """Get the setter for the var.
 
             Args:
@@ -950,6 +950,8 @@ class Var(Generic[VAR_TYPE]):
                     )
             else:
                 setattr(state, actual_name, value)
+
+        setter.__annotations__["value"] = self._var_type
 
         setter.__qualname__ = self._get_setter_name()
 
