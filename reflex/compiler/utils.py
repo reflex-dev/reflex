@@ -320,6 +320,7 @@ def compile_custom_component(
             "render": render.render(),
             "hooks": render._get_all_hooks(),
             "custom_code": render._get_all_custom_code(),
+            "dynamic_imports": render._get_all_dynamic_imports(),
         },
         imports,
     )
