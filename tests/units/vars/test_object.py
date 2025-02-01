@@ -8,6 +8,7 @@ import reflex as rx
 from reflex.utils.types import GenericType
 from reflex.vars.base import Var
 from reflex.vars.object import LiteralObjectVar, ObjectVar
+from reflex.vars.sequence import ArrayVar
 
 
 class Bare:
@@ -64,6 +65,8 @@ class ObjectState(rx.State):
     base: rx.Field[Base] = rx.field(Base())
     sqlamodel: rx.Field[SqlaModel] = rx.field(SqlaModel())
     dataclass: rx.Field[Dataclass] = rx.field(Dataclass())
+
+    base_list: rx.Field[list[Base]] = rx.field([Base()])
 
 
 @pytest.mark.parametrize("type_", [Base, Bare, SqlaModel, Dataclass])
@@ -127,11 +130,23 @@ def test_typing() -> None:
     # Base
     var = ObjectState.base
     _ = assert_type(var, ObjectVar[Base])
+    list_var = ObjectState.base_list
+    _ = assert_type(list_var, ArrayVar[list[Base]])
+    list_var_0 = list_var[0]
+    _ = assert_type(list_var_0, ObjectVar[Base])
 
     # Sqla
     var = ObjectState.sqlamodel
     _ = assert_type(var, ObjectVar[SqlaModel])
+    list_var = ObjectState.base_list
+    _ = assert_type(list_var, ArrayVar[list[Base]])
+    list_var_0 = list_var[0]
+    _ = assert_type(list_var_0, ObjectVar[Base])
 
     # Dataclass
     var = ObjectState.dataclass
     _ = assert_type(var, ObjectVar[Dataclass])
+    list_var = ObjectState.base_list
+    _ = assert_type(list_var, ArrayVar[list[Base]])
+    list_var_0 = list_var[0]
+    _ = assert_type(list_var_0, ObjectVar[Base])
