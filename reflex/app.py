@@ -958,19 +958,15 @@ class App(MiddlewareMixin, LifespanMixin):
 
         should_compile = self._should_compile()
 
-        for route in self._unevaluated_pages:
-            console.debug(f"Evaluating page: {route}")
-            self._compile_page(route, save_page=should_compile)
-
-        # Add the optional endpoints (_upload)
-        self._add_optional_endpoints()
-
         if not should_compile:
-            return
+            for route in self._unevaluated_pages:
+                console.debug(f"Evaluating page: {route}")
+                self._compile_page(route, save_page=should_compile)
 
-        self._validate_var_dependencies()
-        self._setup_overlay_component()
-        self._setup_error_boundary()
+            # Add the optional endpoints (_upload)
+            self._add_optional_endpoints()
+
+            return
 
         # Create a progress bar.
         progress = Progress(
@@ -980,15 +976,30 @@ class App(MiddlewareMixin, LifespanMixin):
         )
 
         # try to be somewhat accurate - but still not 100%
-        adhoc_steps_without_executor = 6
+        adhoc_steps_without_executor = 7
         fixed_pages_within_executor = 5
         progress.start()
         task = progress.add_task(
             f"[{get_compilation_time()}] Compiling:",
             total=len(self._pages)
+            + (len(self._unevaluated_pages) * 2)
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,
         )
+
+        for route in self._unevaluated_pages:
+            console.debug(f"Evaluating page: {route}")
+            self._compile_page(route, save_page=should_compile)
+            progress.advance(task)
+
+        # Add the optional endpoints (_upload)
+        self._add_optional_endpoints()
+
+        self._validate_var_dependencies()
+        self._setup_overlay_component()
+        self._setup_error_boundary()
+
+        progress.advance(task)
 
         # Get the env mode.
         config = get_config()
