@@ -1742,6 +1742,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Yields:
             StateUpdate object
+
+        Raises:
+            ValueError: If a string value is received for an int or float type and cannot be converted.
         """
         from reflex.utils import telemetry
 
