@@ -909,11 +909,17 @@ class App(MiddlewareMixin, LifespanMixin):
             if not var._cache:
                 continue
             deps = var._deps(objclass=state)
-            for dep in deps:
-                if dep not in state.vars and dep not in state.backend_vars:
-                    raise exceptions.VarDependencyError(
-                        f"ComputedVar {var._js_expr} on state {state.__name__} has an invalid dependency {dep}"
-                    )
+            for state_name, dep_set in deps.items():
+                state_cls = (
+                    state.get_root_state().get_class_substate(state_name)
+                    if state_name != state.get_full_name()
+                    else state
+                )
+                for dep in dep_set:
+                    if dep not in state_cls.vars and dep not in state_cls.backend_vars:
+                        raise exceptions.VarDependencyError(
+                            f"ComputedVar {var._js_expr} on state {state.__name__} has an invalid dependency {state_name}.{dep}"
+                        )
 
         for substate in state.class_subclasses:
             self._validate_var_dependencies(substate)
@@ -959,19 +965,15 @@ class App(MiddlewareMixin, LifespanMixin):
 
         should_compile = self._should_compile()
 
-        for route in self._unevaluated_pages:
-            console.debug(f"Evaluating page: {route}")
-            self._compile_page(route, save_page=should_compile)
-
-        # Add the optional endpoints (_upload)
-        self._add_optional_endpoints()
-
         if not should_compile:
-            return
+            for route in self._unevaluated_pages:
+                console.debug(f"Evaluating page: {route}")
+                self._compile_page(route, save_page=should_compile)
 
-        self._validate_var_dependencies()
-        self._setup_overlay_component()
-        self._setup_error_boundary()
+            # Add the optional endpoints (_upload)
+            self._add_optional_endpoints()
+
+            return
 
         # Create a progress bar.
         progress = Progress(
@@ -981,15 +983,30 @@ class App(MiddlewareMixin, LifespanMixin):
         )
 
         # try to be somewhat accurate - but still not 100%
-        adhoc_steps_without_executor = 6
+        adhoc_steps_without_executor = 7
         fixed_pages_within_executor = 5
         progress.start()
         task = progress.add_task(
             f"[{get_compilation_time()}] Compiling:",
             total=len(self._pages)
+            + (len(self._unevaluated_pages) * 2)
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,
         )
+
+        for route in self._unevaluated_pages:
+            console.debug(f"Evaluating page: {route}")
+            self._compile_page(route, save_page=should_compile)
+            progress.advance(task)
+
+        # Add the optional endpoints (_upload)
+        self._add_optional_endpoints()
+
+        self._validate_var_dependencies()
+        self._setup_overlay_component()
+        self._setup_error_boundary()
+
+        progress.advance(task)
 
         # Store the compile results.
         compile_results = []
