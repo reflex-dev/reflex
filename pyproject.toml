@@ -61,7 +61,7 @@ dill = ">=0.3.8"
 toml = ">=0.10.2,<1.0"
 pytest-asyncio = ">=0.24.0"
 pytest-cov = ">=4.0.0,<7.0"
-ruff = "0.8.2"
+ruff = "0.9.3"
 pandas = ">=2.1.1,<3.0"
 pillow = ">=10.0.0,<12.0"
 plotly = ">=5.13.0,<6.0"
@@ -88,7 +88,7 @@ target-version = "py310"
 output-format = "concise"
 lint.isort.split-on-trailing-comma = false
 lint.select = ["ANN001","B", "C4", "D", "E", "ERA", "F", "FURB", "I", "N", "PERF", "PGH", "PTH", "RUF", "SIM", "T", "TRY", "W"]
-lint.ignore = ["B008", "D205", "E501", "F403", "SIM115", "RUF006", "RUF012", "TRY0"]
+lint.ignore = ["B008", "D205", "E501", "F403", "SIM115", "RUF006", "RUF008", "RUF012", "TRY0"]
 lint.pydocstyle.convention = "google"
 
 [tool.ruff.lint.per-file-ignores]

@@ -1855,7 +1855,7 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
             [
                 resp.text,
                 "",
-                "" "def index() -> rx.Component:",
+                "def index() -> rx.Component:",
                 f"    return {render_func_name}()",
                 "",
                 "",
