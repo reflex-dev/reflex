@@ -3239,11 +3239,6 @@ class Field(Generic[FIELD_TYPE]):
 
     @overload
     def __get__(
-        self: Field[BASE_TYPE], instance: None, owner: Any
-    ) -> ObjectVar[BASE_TYPE]: ...
-
-    @overload
-    def __get__(
         self: Field[SQLA_TYPE], instance: None, owner: Any
     ) -> ObjectVar[SQLA_TYPE]: ...
 
