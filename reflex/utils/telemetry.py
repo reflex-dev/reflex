@@ -122,7 +122,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
         return {}
 
     if UTC is None:
-        # for python 3.9 & 3.10
+        # for python 3.10
         stamp = datetime.utcnow().isoformat()
     else:
         # for python 3.11 & 3.12
@@ -156,12 +156,13 @@ def _prepare_event(event: str, **kwargs) -> dict:
 def _send_event(event_data: dict) -> bool:
     try:
         httpx.post(POSTHOG_API_URL, json=event_data)
-        return True
     except Exception:
         return False
+    else:
+        return True
 
 
-def _send(event, telemetry_enabled, **kwargs):
+def _send(event: str, telemetry_enabled: bool | None, **kwargs):
     from reflex.config import get_config
 
     # Get the telemetry_enabled from the config if it is not specified.
@@ -188,7 +189,7 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
         kwargs: Additional data to send with the event.
     """
 
-    async def async_send(event, telemetry_enabled, **kwargs):
+    async def async_send(event: str, telemetry_enabled: bool | None, **kwargs):
         return _send(event, telemetry_enabled, **kwargs)
 
     try:

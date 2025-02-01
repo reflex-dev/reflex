@@ -5,16 +5,13 @@ Only the app attribute is explicitly exposed.
 from concurrent.futures import ThreadPoolExecutor
 
 from reflex import constants
-from reflex.utils import telemetry
 from reflex.utils.exec import is_prod_mode
-from reflex.utils.prerequisites import get_app
+from reflex.utils.prerequisites import get_and_validate_app
 
 if constants.CompileVars.APP != "app":
     raise AssertionError("unexpected variable name for 'app'")
 
-telemetry.send("compile")
-app_module = get_app(reload=False)
-app = getattr(app_module, constants.CompileVars.APP)
+app, app_module = get_and_validate_app(reload=False)
 # For py3.9 compatibility when redis is used, we MUST add any decorator pages
 # before compiling the app in a thread to avoid event loop error (REF-2172).
 app._apply_decorated_pages()
@@ -30,8 +27,7 @@ if is_prod_mode():
 # ensure only "app" is exposed.
 del app_module
 del compile_future
-del get_app
+del get_and_validate_app
 del is_prod_mode
-del telemetry
 del constants
 del ThreadPoolExecutor

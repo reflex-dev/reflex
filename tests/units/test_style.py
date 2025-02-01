@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Mapping
 
 import pytest
 
@@ -356,7 +356,7 @@ def test_style_via_component(
         style_dict: The style_dict to pass to the component.
         expected_get_style: The expected style dict.
     """
-    comp = rx.el.div(style=style_dict, **kwargs)  # type: ignore
+    comp = rx.el.div(style=style_dict, **kwargs)  # pyright: ignore [reportArgumentType]
     compare_dict_of_var(comp._get_style(), expected_get_style)
 
 
@@ -379,7 +379,7 @@ class StyleState(rx.State):
             {
                 "css": Var(
                     _js_expr=f'({{ ["color"] : ("dark"+{StyleState.color}) }})'
-                ).to(Dict[str, str])
+                ).to(Mapping[str, str])
             },
         ),
         (
@@ -515,17 +515,17 @@ def test_evaluate_style_namespaces():
     """Test that namespaces get converted to component create functions."""
     style_dict = {rx.text: {"color": "blue"}}
     assert rx.text.__call__ not in style_dict
-    style_dict = evaluate_style_namespaces(style_dict)  # type: ignore
+    style_dict = evaluate_style_namespaces(style_dict)  # pyright: ignore [reportArgumentType]
     assert rx.text.__call__ in style_dict
 
 
 def test_style_update_with_var_data():
     """Test that .update with a Style containing VarData works."""
     red_var = LiteralVar.create("red")._replace(
-        merge_var_data=VarData(hooks={"const red = true": None}),  # type: ignore
+        merge_var_data=VarData(hooks={"const red = true": None}),
     )
     blue_var = LiteralVar.create("blue")._replace(
-        merge_var_data=VarData(hooks={"const blue = true": None}),  # type: ignore
+        merge_var_data=VarData(hooks={"const blue = true": None}),
     )
 
     s1 = Style(
@@ -541,3 +541,7 @@ def test_style_update_with_var_data():
     assert s2._var_data is not None
     assert "const red = true" in s2._var_data.hooks
     assert "const blue = true" in s2._var_data.hooks
+
+    s3 = s1 | s2
+    assert s3._var_data is not None
+    assert "_varData" not in s3

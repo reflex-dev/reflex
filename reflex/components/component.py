@@ -23,8 +23,6 @@ from typing import (
     Union,
 )
 
-from typing_extensions import deprecated
-
 import reflex.state
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
@@ -47,11 +45,10 @@ from reflex.event import (
     EventChain,
     EventHandler,
     EventSpec,
-    EventVar,
     no_args_event_spec,
 )
 from reflex.style import Style, format_as_emotion
-from reflex.utils import console, format, imports, types
+from reflex.utils import format, imports, types
 from reflex.utils.imports import (
     ImmutableParsedImportDict,
     ImportDict,
@@ -153,7 +150,7 @@ class BaseComponent(Base, ABC):
 class ComponentNamespace(SimpleNamespace):
     """A namespace to manage components with subcomponents."""
 
-    def __hash__(self) -> int:
+    def __hash__(self) -> int:  # pyright: ignore [reportIncompatibleVariableOverride]
         """Get the hash of the namespace.
 
         Returns:
@@ -429,20 +426,22 @@ class Component(BaseComponent, ABC):
             else:
                 continue
 
+            def determine_key(value: Any):
+                # Try to create a var from the value
+                key = value if isinstance(value, Var) else LiteralVar.create(value)
+
+                # Check that the var type is not None.
+                if key is None:
+                    raise TypeError
+
+                return key
+
             # Check whether the key is a component prop.
             if types._issubclass(field_type, Var):
                 # Used to store the passed types if var type is a union.
                 passed_types = None
                 try:
-                    # Try to create a var from the value.
-                    if isinstance(value, Var):
-                        kwargs[key] = value
-                    else:
-                        kwargs[key] = LiteralVar.create(value)
-
-                    # Check that the var type is not None.
-                    if kwargs[key] is None:
-                        raise TypeError
+                    kwargs[key] = determine_key(value)
 
                     expected_type = fields[key].outer_type_.__args__[0]
                     # validate literal fields.
@@ -463,9 +462,7 @@ class Component(BaseComponent, ABC):
                 if types.is_union(passed_type):
                     # We need to check all possible types in the union.
                     passed_types = (
-                        arg
-                        for arg in passed_type.__args__  # type: ignore
-                        if arg is not type(None)
+                        arg for arg in passed_type.__args__ if arg is not type(None)
                     )
                 if (
                     # If the passed var is a union, check if all possible types are valid.
@@ -492,7 +489,7 @@ class Component(BaseComponent, ABC):
             # Check if the key is an event trigger.
             if key in component_specific_triggers:
                 kwargs["event_triggers"][key] = EventChain.create(
-                    value=value,  # type: ignore
+                    value=value,
                     args_spec=component_specific_triggers[key],
                     key=key,
                 )
@@ -545,41 +542,6 @@ class Component(BaseComponent, ABC):
         # Construct the component.
         super().__init__(*args, **kwargs)
 
-    @deprecated("Use rx.EventChain.create instead.")
-    def _create_event_chain(
-        self,
-        args_spec: types.ArgsSpec | Sequence[types.ArgsSpec],
-        value: Union[
-            Var,
-            EventHandler,
-            EventSpec,
-            List[Union[EventHandler, EventSpec, EventVar]],
-            Callable,
-        ],
-        key: Optional[str] = None,
-    ) -> Union[EventChain, Var]:
-        """Create an event chain from a variety of input types.
-
-        Args:
-            args_spec: The args_spec of the event trigger being bound.
-            value: The value to create the event chain from.
-            key: The key of the event trigger being bound.
-
-        Returns:
-            The event chain.
-        """
-        console.deprecate(
-            "Component._create_event_chain",
-            "Use rx.EventChain.create instead.",
-            deprecation_version="0.6.8",
-            removal_version="0.7.0",
-        )
-        return EventChain.create(
-            value=value,  # type: ignore
-            args_spec=args_spec,
-            key=key,
-        )
-
     def get_event_triggers(
         self,
     ) -> Dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]]:
@@ -614,7 +576,7 @@ class Component(BaseComponent, ABC):
                 annotation = field.annotation
                 if (metadata := getattr(annotation, "__metadata__", None)) is not None:
                     args_spec = metadata[0]
-                default_triggers[field.name] = args_spec or (no_args_event_spec)  # type: ignore
+                default_triggers[field.name] = args_spec or (no_args_event_spec)
         return default_triggers
 
     def __repr__(self) -> str:
@@ -661,8 +623,7 @@ class Component(BaseComponent, ABC):
         if props is None:
             # Add component props to the tag.
             props = {
-                attr[:-1] if attr.endswith("_") else attr: getattr(self, attr)
-                for attr in self.get_props()
+                attr.removesuffix("_"): getattr(self, attr) for attr in self.get_props()
             }
 
             # Add ref to element if `id` is not None.
@@ -740,22 +701,21 @@ class Component(BaseComponent, ABC):
         # Import here to avoid circular imports.
         from reflex.components.base.bare import Bare
         from reflex.components.base.fragment import Fragment
-        from reflex.utils.exceptions import ComponentTypeError
+        from reflex.utils.exceptions import ChildrenTypeError
 
         # Filter out None props
         props = {key: value for key, value in props.items() if value is not None}
 
-        def validate_children(children):
+        def validate_children(children: tuple | list):
             for child in children:
-                if isinstance(child, tuple):
+                if isinstance(child, (tuple, list)):
                     validate_children(child)
+
                 # Make sure the child is a valid type.
-                if not types._isinstance(child, ComponentChild):
-                    raise ComponentTypeError(
-                        "Children of Reflex components must be other components, "
-                        "state vars, or primitive Python types. "
-                        f"Got child {child} of type {type(child)}.",
-                    )
+                if isinstance(child, dict) or not types._isinstance(
+                    child, ComponentChild
+                ):
+                    raise ChildrenTypeError(component=cls.__name__, child=child)
 
         # Validate all the children.
         validate_children(children)
@@ -798,7 +758,7 @@ class Component(BaseComponent, ABC):
 
         # Walk the MRO to call all `add_style` methods.
         for base in self._iter_parent_classes_with_method("add_style"):
-            s = base.add_style(self)  # type: ignore
+            s = base.add_style(self)
             if s is not None:
                 styles.append(s)
 
@@ -890,7 +850,7 @@ class Component(BaseComponent, ABC):
             else {}
         )
 
-    def render(self) -> Dict:
+    def render(self) -> dict:
         """Render the component.
 
         Returns:
@@ -908,7 +868,7 @@ class Component(BaseComponent, ABC):
         self._replace_prop_names(rendered_dict)
         return rendered_dict
 
-    def _replace_prop_names(self, rendered_dict) -> None:
+    def _replace_prop_names(self, rendered_dict: dict) -> None:
         """Replace the prop names in the render dictionary.
 
         Args:
@@ -948,7 +908,7 @@ class Component(BaseComponent, ABC):
             comp.__name__ for comp in (Fragment, Foreach, Cond, Match)
         ]
 
-        def validate_child(child):
+        def validate_child(child: Any):
             child_name = type(child).__name__
 
             # Iterate through the immediate children of fragment
@@ -1711,7 +1671,7 @@ class CustomComponent(Component):
                 if base_value is not None and isinstance(value, Component):
                     self.component_props[key] = value
                     value = base_value._replace(
-                        merge_var_data=VarData(  # type: ignore
+                        merge_var_data=VarData(
                             imports=value._get_all_imports(),
                             hooks=value._get_all_hooks(),
                         )
@@ -1744,7 +1704,7 @@ class CustomComponent(Component):
         return hash(self.tag)
 
     @classmethod
-    def get_props(cls) -> Set[str]:
+    def get_props(cls) -> Set[str]:  # pyright: ignore [reportIncompatibleVariableOverride]
         """Get the props for the component.
 
         Returns:
@@ -1839,7 +1799,7 @@ class CustomComponent(Component):
             include_children=include_children, ignore_ids=ignore_ids
         )
 
-    @lru_cache(maxsize=None)  # noqa
+    @lru_cache(maxsize=None)  # noqa: B019
     def get_component(self) -> Component:
         """Render the component.
 
@@ -1983,7 +1943,7 @@ class StatefulComponent(BaseComponent):
 
         if not should_memoize:
             # Determine if any Vars have associated data.
-            for prop_var in component._get_vars():
+            for prop_var in component._get_vars(include_children=True):
                 if prop_var._get_all_var_data():
                     should_memoize = True
                     break
@@ -2366,8 +2326,8 @@ class MemoizationLeaf(Component):
         """
         comp = super().create(*children, **props)
         if comp._get_all_hooks():
-            comp._memoization_mode = cls._memoization_mode.copy(
-                update={"disposition": MemoizationDisposition.ALWAYS}
+            comp._memoization_mode = dataclasses.replace(
+                comp._memoization_mode, disposition=MemoizationDisposition.ALWAYS
             )
         return comp
 
@@ -2428,7 +2388,7 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
     if tag["name"] == "match":
         element = tag["cond"]
 
-        conditionals = tag["default"]
+        conditionals = render_dict_to_var(tag["default"], imported_names)
 
         for case in tag["match_cases"][::-1]:
             condition = case[0].to_string() == element.to_string()
@@ -2437,7 +2397,7 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
 
             conditionals = ternary_operation(
                 condition,
-                case[-1],
+                render_dict_to_var(case[-1], imported_names),
                 conditionals,
             )
 
@@ -2496,6 +2456,7 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
+    slots=True,
 )
 class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
     """A Var that represents a Component."""

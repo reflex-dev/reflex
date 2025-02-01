@@ -31,37 +31,37 @@ def create_color_var(color):
         (create_color_var(rx.color("mint", 3)), '"var(--mint-3)"', Color),
         (create_color_var(rx.color("mint", 3, True)), '"var(--mint-a3)"', Color),
         (
-            create_color_var(rx.color(ColorState.color, ColorState.shade)),  # type: ignore
+            create_color_var(rx.color(ColorState.color, ColorState.shade)),  # pyright: ignore [reportArgumentType]
             f'("var(--"+{color_state_name!s}.color+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade))+")")',
             Color,
         ),
         (
             create_color_var(
-                rx.color(ColorState.color, ColorState.shade, ColorState.alpha)  # type: ignore
+                rx.color(ColorState.color, ColorState.shade, ColorState.alpha)  # pyright: ignore [reportArgumentType]
             ),
             f'("var(--"+{color_state_name!s}.color+"-"+({color_state_name!s}.alpha ? "a" : "")+(((__to_string) => __to_string.toString())({color_state_name!s}.shade))+")")',
             Color,
         ),
         (
-            create_color_var(rx.color(f"{ColorState.color}", f"{ColorState.shade}")),  # type: ignore
+            create_color_var(rx.color(f"{ColorState.color}", f"{ColorState.shade}")),  # pyright: ignore [reportArgumentType]
             f'("var(--"+{color_state_name!s}.color+"-"+{color_state_name!s}.shade+")")',
             Color,
         ),
         (
             create_color_var(
-                rx.color(f"{ColorState.color_part}ato", f"{ColorState.shade}")  # type: ignore
+                rx.color(f"{ColorState.color_part}ato", f"{ColorState.shade}")  # pyright: ignore [reportArgumentType]
             ),
             f'("var(--"+({color_state_name!s}.color_part+"ato")+"-"+{color_state_name!s}.shade+")")',
             Color,
         ),
         (
-            create_color_var(f'{rx.color(ColorState.color, f"{ColorState.shade}")}'),  # type: ignore
+            create_color_var(f"{rx.color(ColorState.color, f'{ColorState.shade}')}"),  # pyright: ignore [reportArgumentType]
             f'("var(--"+{color_state_name!s}.color+"-"+{color_state_name!s}.shade+")")',
             str,
         ),
         (
             create_color_var(
-                f'{rx.color(f"{ColorState.color}", f"{ColorState.shade}")}'  # type: ignore
+                f"{rx.color(f'{ColorState.color}', f'{ColorState.shade}')}"  # pyright: ignore [reportArgumentType]
             ),
             f'("var(--"+{color_state_name!s}.color+"-"+{color_state_name!s}.shade+")")',
             str,
@@ -81,7 +81,7 @@ def test_color(color, expected, expected_type: Union[Type[str], Type[Color]]):
             '(true ? "var(--mint-7)" : "var(--tomato-5)")',
         ),
         (
-            rx.cond(True, rx.color(ColorState.color), rx.color(ColorState.color, 5)),  # type: ignore
+            rx.cond(True, rx.color(ColorState.color), rx.color(ColorState.color, 5)),  # pyright: ignore [reportArgumentType, reportCallIssue]
             f'(true ? ("var(--"+{color_state_name!s}.color+"-7)") : ("var(--"+{color_state_name!s}.color+"-5)"))',
         ),
         (
@@ -89,7 +89,7 @@ def test_color(color, expected, expected_type: Union[Type[str], Type[Color]]):
                 "condition",
                 ("first", rx.color("mint")),
                 ("second", rx.color("tomato", 5)),
-                rx.color(ColorState.color, 2),  # type: ignore
+                rx.color(ColorState.color, 2),  # pyright: ignore [reportArgumentType]
             ),
             '(() => { switch (JSON.stringify("condition")) {case JSON.stringify("first"):  return ("var(--mint-7)");'
             '  break;case JSON.stringify("second"):  return ("var(--tomato-5)");  break;default:  '
@@ -98,9 +98,9 @@ def test_color(color, expected, expected_type: Union[Type[str], Type[Color]]):
         (
             rx.match(
                 "condition",
-                ("first", rx.color(ColorState.color)),  # type: ignore
-                ("second", rx.color(ColorState.color, 5)),  # type: ignore
-                rx.color(ColorState.color, 2),  # type: ignore
+                ("first", rx.color(ColorState.color)),  # pyright: ignore [reportArgumentType]
+                ("second", rx.color(ColorState.color, 5)),  # pyright: ignore [reportArgumentType]
+                rx.color(ColorState.color, 2),  # pyright: ignore [reportArgumentType]
             ),
             '(() => { switch (JSON.stringify("condition")) {case JSON.stringify("first"):  '
             f'return (("var(--"+{color_state_name!s}.color+"-7)"));  break;case JSON.stringify("second"):  '
@@ -133,4 +133,4 @@ def test_radix_color(color, expected):
         expected (str): The expected custom_style string, radix or literal
     """
     code_block = CodeBlock.create("Hello World", background_color=color)
-    assert str(code_block.custom_style["backgroundColor"]) == expected  # type: ignore
+    assert str(code_block.custom_style["backgroundColor"]) == expected  # pyright: ignore [reportAttributeAccessIssue]

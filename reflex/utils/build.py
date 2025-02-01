@@ -13,17 +13,21 @@ from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, path_ops, prerequisites, processes
+from reflex.utils.exec import is_in_app_harness
 
 
 def set_env_json():
     """Write the upload url to a REFLEX_JSON."""
     path_ops.update_json_file(
         str(prerequisites.get_web_dir() / constants.Dirs.ENV_JSON),
-        {endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
+        {
+            **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
+            "TEST_MODE": is_in_app_harness(),
+        },
     )
 
 
-def generate_sitemap_config(deploy_url: str, export=False):
+def generate_sitemap_config(deploy_url: str, export: bool = False):
     """Generate the sitemap config file.
 
     Args:

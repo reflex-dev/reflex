@@ -64,7 +64,7 @@ class Pie(Recharts):
     legend_type: Var[LiteralLegendType]
 
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
-    label: Var[bool] = False  # type: ignore
+    label: Var[bool] = Var.create(False)
 
     # If false set, label lines will not be drawn. If true set, label lines will be drawn which have the props calculated internally. Default: False
     label_line: Var[bool]
@@ -73,7 +73,7 @@ class Pie(Recharts):
     data: Var[List[Dict[str, Any]]]
 
     # Valid children components
-    _valid_children: List[str] = ["Cell", "LabelList"]
+    _valid_children: List[str] = ["Cell", "LabelList", "Bare"]
 
     # Stoke color. Default: rx.color("accent", 9)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))

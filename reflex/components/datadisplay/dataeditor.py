@@ -165,7 +165,7 @@ class DataEditor(NoSSRComponent):
 
     tag = "DataEditor"
     is_default = True
-    library: str = "@glideapps/glide-data-grid@^6.0.3"
+    library: str | None = "@glideapps/glide-data-grid@^6.0.3"
     lib_dependencies: List[str] = [
         "lodash@^4.17.21",
         "react-responsive-carousel@^3.2.7",
@@ -321,6 +321,8 @@ class DataEditor(NoSSRComponent):
         Returns:
             The import dict.
         """
+        if self.library is None:
+            return {}
         return {
             "": f"{format.format_library_name(self.library)}/dist/index.css",
             self.library: "GridCellKind",
@@ -343,9 +345,9 @@ class DataEditor(NoSSRComponent):
             data_callback = self.get_cell_content._js_expr
         else:
             data_callback = f"getData_{editor_id}"
-            self.get_cell_content = Var(_js_expr=data_callback)  # type: ignore
+            self.get_cell_content = Var(_js_expr=data_callback)
 
-        code = [f"function {data_callback}([col, row])" "{"]
+        code = [f"function {data_callback}([col, row]){{"]
 
         columns_path = str(self.columns)
         data_path = str(self.data)
@@ -385,7 +387,8 @@ class DataEditor(NoSSRComponent):
                 raise ValueError(
                     "DataEditor data must be an ArrayVar if rows is not provided."
                 )
-            props["rows"] = data.length() if isinstance(data, Var) else len(data)
+
+            props["rows"] = data.length() if isinstance(data, ArrayVar) else len(data)
 
         if not isinstance(columns, Var) and len(columns):
             if types.is_dataframe(type(data)) or (

@@ -33,7 +33,7 @@ env:
   PR_TITLE: ${{ github.event.pull_request.title }}
 
 jobs:
-  example-counter:
+  example-counter-and-nba-proxy:
     env:
       OUTPUT_FILE: import_benchmark.json
     timeout-minutes: 30
@@ -43,22 +43,17 @@ jobs:
       matrix:
         # Show OS combos first in GUI
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.9.21", "3.10.16", "3.11.11", "3.12.8", "3.13.1"]
-        # Windows is a bit behind on Python version availability in Github
+        python-version: ['3.10.16', '3.11.11', '3.12.8', '3.13.1']
         exclude:
           - os: windows-latest
             python-version: "3.11.11"
           - os: windows-latest
-            python-version: "3.10.16"
-          - os: windows-latest
-            python-version: "3.9.21"
+            python-version: '3.10.16'
         include:
           - os: windows-latest
             python-version: "3.11.9"
           - os: windows-latest
-            python-version: "3.10.11"
-          - os: windows-latest
-            python-version: "3.9.13"
+            python-version: '3.10.11'
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -119,6 +114,26 @@ jobs:
           --benchmark-json "./reflex-examples/counter/${{ env.OUTPUT_FILE }}"
           --branch-name "${{ github.head_ref || github.ref_name }}" --pr-id "${{ github.event.pull_request.id }}"
           --app-name "counter"
+      - name: Install requirements for nba proxy example
+        working-directory: ./reflex-examples/nba-proxy
+        run: |
+          poetry run uv pip install -r requirements.txt
+      - name: Install additional dependencies for DB access
+        run: poetry run uv pip install psycopg
+      - name: Check export --backend-only before init for nba-proxy example
+        working-directory: ./reflex-examples/nba-proxy
+        run: |
+          poetry run reflex export --backend-only
+      - name: Init Website for nba-proxy example
+        working-directory: ./reflex-examples/nba-proxy
+        run: |
+          poetry run reflex init --loglevel debug
+      - name: Run Website and Check for errors
+        run: |
+          # Check that npm is home
+          npm -v
+          poetry run bash scripts/integration.sh ./reflex-examples/nba-proxy dev
+
 
   reflex-web:
     strategy:

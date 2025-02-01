@@ -52,7 +52,7 @@ class Dirs(SimpleNamespace):
     # The name of the postcss config file.
     POSTCSS_JS = "postcss.config.js"
     # The name of the states directory.
-    STATES = "states"
+    STATES = ".states"
 
 
 class Reflex(SimpleNamespace):
@@ -74,6 +74,8 @@ class Reflex(SimpleNamespace):
     # on linux, we use ~/.local/share/reflex.
     # If user sets REFLEX_DIR envroment variable use that instead.
     DIR = PlatformDirs(MODULE_NAME, False).user_data_path
+
+    LOGS_DIR = DIR / "logs"
 
     # The root directory of the reflex library.
     ROOT_DIR = Path(__file__).parents[2]
@@ -257,6 +259,7 @@ SESSION_STORAGE = "session_storage"
 # Testing variables.
 # Testing os env set by pytest when running a test case.
 PYTEST_CURRENT_TEST = "PYTEST_CURRENT_TEST"
+APP_HARNESS_FLAG = "APP_HARNESS_FLAG"
 
 REFLEX_VAR_OPENING_TAG = "<reflex.Var>"
 REFLEX_VAR_CLOSING_TAG = "</reflex.Var>"

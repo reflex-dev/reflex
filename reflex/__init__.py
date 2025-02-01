@@ -84,6 +84,9 @@ In the example above, you will be able to do `rx.list`
 
 from __future__ import annotations
 
+from types import ModuleType
+from typing import Any
+
 from reflex.utils import (
     compat,  # for side-effects
     lazy_loader,
@@ -303,7 +306,6 @@ _MAPPING: dict = {
     "event": [
         "EventChain",
         "EventHandler",
-        "background",
         "call_script",
         "call_function",
         "run_script",
@@ -366,20 +368,5 @@ getattr, __dir__, __all__ = lazy_loader.attach(
 )
 
 
-def __getattr__(name):
-    if name == "chakra":
-        from reflex.utils import console
-
-        console.deprecate(
-            "rx.chakra",
-            reason="and moved to a separate package. "
-            "To continue using Chakra UI components, install the `reflex-chakra` package via `pip install "
-            "reflex-chakra`.",
-            deprecation_version="0.6.0",
-            removal_version="0.7.0",
-            dedupe=True,
-        )
-        import reflex_chakra as rc
-
-        return rc
+def __getattr__(name: ModuleType | Any):
     return getattr(name)

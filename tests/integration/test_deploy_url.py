@@ -19,14 +19,14 @@ def DeployUrlSample() -> None:
     class State(rx.State):
         @rx.event
         def goto_self(self):
-            return rx.redirect(rx.config.get_config().deploy_url)  # type: ignore
+            return rx.redirect(rx.config.get_config().deploy_url)  # pyright: ignore [reportArgumentType]
 
     def index():
         return rx.fragment(
             rx.button("GOTO SELF", on_click=State.goto_self, id="goto_self")
         )
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     app.add_page(index)
 
 

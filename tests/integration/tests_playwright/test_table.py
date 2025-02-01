@@ -3,7 +3,7 @@
 from typing import Generator
 
 import pytest
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
 
@@ -20,7 +20,7 @@ def Table():
     """App using table component."""
     import reflex as rx
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
 
     @app.add_page
     def index():
@@ -87,12 +87,14 @@ def test_table(page: Page, table_app: AppHarness):
     table = page.get_by_role("table")
 
     # Check column headers
-    headers = table.get_by_role("columnheader").all_inner_texts()
-    assert headers == expected_col_headers
+    headers = table.get_by_role("columnheader")
+    for header, exp_value in zip(headers.all(), expected_col_headers, strict=True):
+        expect(header).to_have_text(exp_value)
 
     # Check rows headers
-    rows = table.get_by_role("rowheader").all_inner_texts()
-    assert rows == expected_row_headers
+    rows = table.get_by_role("rowheader")
+    for row, expected_row in zip(rows.all(), expected_row_headers, strict=True):
+        expect(row).to_have_text(expected_row)
 
     # Check cells
     rows = table.get_by_role("cell").all_inner_texts()

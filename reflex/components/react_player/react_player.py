@@ -39,7 +39,7 @@ class ReactPlayer(NoSSRComponent):
     loop: Var[bool]
 
     # Set to true or false to display native player controls.
-    controls: Var[bool] = True  # type: ignore
+    controls: Var[bool] = Var.create(True)
 
     # Set to true to show just the video thumbnail, which loads the full player on click
     light: Var[bool]

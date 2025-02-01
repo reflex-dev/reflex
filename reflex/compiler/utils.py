@@ -2,17 +2,24 @@
 
 from __future__ import annotations
 
+import asyncio
+import concurrent.futures
+import traceback
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
 
+from reflex.utils.exec import is_in_app_harness
 from reflex.utils.prerequisites import get_web_dir
 from reflex.vars.base import Var
 
 try:
     from pydantic.v1.fields import ModelField
 except ModuleNotFoundError:
-    from pydantic.fields import ModelField  # type: ignore
+    from pydantic.fields import (
+        ModelField,  # pyright: ignore [reportAttributeAccessIssue]
+    )
 
 from reflex import constants
 from reflex.components.base import (
@@ -29,7 +36,7 @@ from reflex.components.base import (
 )
 from reflex.components.component import Component, ComponentStyle, CustomComponent
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
-from reflex.state import BaseState
+from reflex.state import BaseState, _resolve_delta
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
 from reflex.utils.imports import ImportVar, ParsedImportDict
@@ -115,7 +122,7 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
         default, rest = compile_import_statement(fields)
 
         # prevent lib from being rendered on the page if all imports are non rendered kind
-        if not any(f.render for f in fields):  # type: ignore
+        if not any(f.render for f in fields):
             continue
 
         if not lib:
@@ -163,13 +170,34 @@ def compile_state(state: Type[BaseState]) -> dict:
     try:
         initial_state = state(_reflex_internal_init=True).dict(initial=True)
     except Exception as e:
+        timestamp = datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
+        constants.Reflex.LOGS_DIR.mkdir(parents=True, exist_ok=True)
+        log_path = constants.Reflex.LOGS_DIR / f"state_compile_error_{timestamp}.log"
+        traceback.TracebackException.from_exception(e).print(file=log_path.open("w+"))
         console.warn(
-            f"Failed to compile initial state with computed vars, excluding them: {e}"
+            f"Failed to compile initial state with computed vars. Error log saved to {log_path}"
         )
         initial_state = state(_reflex_internal_init=True).dict(
             initial=True, include_computed=False
         )
-    return initial_state
+    try:
+        _ = asyncio.get_running_loop()
+    except RuntimeError:
+        pass
+    else:
+        if is_in_app_harness():
+            # Playwright tests already have an event loop running, so we can't use asyncio.run.
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                resolved_initial_state = pool.submit(
+                    asyncio.run, _resolve_delta(initial_state)
+                ).result()
+                console.warn(
+                    f"Had to get initial state in a thread 🤮 {resolved_initial_state}",
+                )
+                return resolved_initial_state
+
+    # Normally the compile runs before any event loop starts, we asyncio.run is available for calling.
+    return asyncio.run(_resolve_delta(initial_state))
 
 
 def _compile_client_storage_field(
@@ -292,6 +320,7 @@ def compile_custom_component(
             "render": render.render(),
             "hooks": render._get_all_hooks(),
             "custom_code": render._get_all_custom_code(),
+            "dynamic_imports": render._get_all_dynamic_imports(),
         },
         imports,
     )
@@ -494,7 +523,7 @@ def empty_dir(path: str | Path, keep_files: list[str] | None = None):
             path_ops.rm(element)
 
 
-def is_valid_url(url) -> bool:
+def is_valid_url(url: str) -> bool:
     """Check if a url is valid.
 
     Args:

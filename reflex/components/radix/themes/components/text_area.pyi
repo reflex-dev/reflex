@@ -268,4 +268,6 @@ class TextArea(RadixThemesComponent, elements.Textarea):
         """
         ...
 
+    def add_style(self): ...
+
 text_area = TextArea.create

@@ -602,7 +602,7 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
 
         transformer_styles = {}
         # Collect styles from transformers and wrapper
-        for transformer in code_block.transformers._var_value:  # type: ignore
+        for transformer in code_block.transformers._var_value:  # pyright: ignore [reportAttributeAccessIssue]
             if isinstance(transformer, ShikiBaseTransformers) and transformer.style:
                 transformer_styles.update(transformer.style)
         transformer_styles.update(code_wrapper_props.pop("style", {}))
@@ -621,18 +621,22 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
 
         Returns:
             Imports for the component.
+
+        Raises:
+            ValueError: If the transformers are not of type LiteralVar.
         """
         imports = defaultdict(list)
+        if not isinstance(self.transformers, LiteralVar):
+            raise ValueError(
+                f"transformers should be a LiteralVar type. Got {type(self.transformers)} instead."
+            )
         for transformer in self.transformers._var_value:
             if isinstance(transformer, ShikiBaseTransformers):
                 imports[transformer.library].extend(
                     [ImportVar(tag=str(fn)) for fn in transformer.fns]
                 )
-                (
+                if transformer.library not in self.lib_dependencies:
                     self.lib_dependencies.append(transformer.library)
-                    if transformer.library not in self.lib_dependencies
-                    else None
-                )
         return imports
 
     @classmethod
@@ -653,8 +657,9 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
             raise ValueError(
                 f"the function names should be str names of functions in the specified transformer: {library!r}"
             )
-        return ShikiBaseTransformers(  # type: ignore
-            library=library, fns=[FunctionStringVar.create(fn) for fn in fns]
+        return ShikiBaseTransformers(
+            library=library,
+            fns=[FunctionStringVar.create(fn) for fn in fns],  # pyright: ignore [reportCallIssue]
         )
 
     def _render(self, props: dict[str, Any] | None = None):
@@ -757,13 +762,13 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
 
         if can_copy:
             code = children[0]
-            copy_button = (  # type: ignore
+            copy_button = (
                 copy_button
                 if copy_button is not None
                 else Button.create(
                     Icon.create(tag="copy", size=16, color=color("gray", 11)),
                     on_click=[
-                        set_clipboard(cls._strip_transformer_triggers(code)),  # type: ignore
+                        set_clipboard(cls._strip_transformer_triggers(code)),
                         copy_script(),
                     ],
                     style=Style(

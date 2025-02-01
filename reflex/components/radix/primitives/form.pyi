@@ -132,10 +132,10 @@ class FormRoot(FormComponent, HTMLForm):
         on_submit: Optional[
             Union[
                 Union[
-                    EventType[[], BASE_STATE], EventType[[Dict[str, Any]], BASE_STATE]
+                    EventType[[], BASE_STATE], EventType[[dict[str, Any]], BASE_STATE]
                 ],
                 Union[
-                    EventType[[], BASE_STATE], EventType[[Dict[str, str]], BASE_STATE]
+                    EventType[[], BASE_STATE], EventType[[dict[str, str]], BASE_STATE]
                 ],
             ]
         ] = None,
@@ -608,10 +608,10 @@ class Form(FormRoot):
         on_submit: Optional[
             Union[
                 Union[
-                    EventType[[], BASE_STATE], EventType[[Dict[str, Any]], BASE_STATE]
+                    EventType[[], BASE_STATE], EventType[[dict[str, Any]], BASE_STATE]
                 ],
                 Union[
-                    EventType[[], BASE_STATE], EventType[[Dict[str, str]], BASE_STATE]
+                    EventType[[], BASE_STATE], EventType[[dict[str, str]], BASE_STATE]
                 ],
             ]
         ] = None,
@@ -741,10 +741,10 @@ class FormNamespace(ComponentNamespace):
         on_submit: Optional[
             Union[
                 Union[
-                    EventType[[], BASE_STATE], EventType[[Dict[str, Any]], BASE_STATE]
+                    EventType[[], BASE_STATE], EventType[[dict[str, Any]], BASE_STATE]
                 ],
                 Union[
-                    EventType[[], BASE_STATE], EventType[[Dict[str, str]], BASE_STATE]
+                    EventType[[], BASE_STATE], EventType[[dict[str, str]], BASE_STATE]
                 ],
             ]
         ] = None,
