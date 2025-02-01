@@ -5,7 +5,6 @@ from __future__ import annotations
 import dataclasses
 import json
 import math
-import sys
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -160,7 +159,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         from .sequence import ArrayVar, LiteralArrayVar
 
-        if isinstance(other, (list, tuple, set, ArrayVar)):
+        if isinstance(other, (list, tuple, ArrayVar)):
             if isinstance(other, ArrayVar):
                 return other * self
             return LiteralArrayVar.create(other) * self
@@ -187,7 +186,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         from .sequence import ArrayVar, LiteralArrayVar
 
-        if isinstance(other, (list, tuple, set, ArrayVar)):
+        if isinstance(other, (list, tuple, ArrayVar)):
             if isinstance(other, ArrayVar):
                 return other * self
             return LiteralArrayVar.create(other) * self
@@ -973,7 +972,7 @@ def boolean_not_operation(value: BooleanVar):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralNumberVar(LiteralVar, NumberVar):
     """Base class for immutable literal number vars."""
@@ -1032,7 +1031,7 @@ class LiteralNumberVar(LiteralVar, NumberVar):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralBooleanVar(LiteralVar, BooleanVar):
     """Base class for immutable literal boolean vars."""

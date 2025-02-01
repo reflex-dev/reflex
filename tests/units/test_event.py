@@ -3,6 +3,7 @@ from typing import Callable, List
 import pytest
 
 import reflex as rx
+from reflex.constants.compiler import Hooks, Imports
 from reflex.event import (
     Event,
     EventChain,
@@ -14,7 +15,7 @@ from reflex.event import (
 )
 from reflex.state import BaseState
 from reflex.utils import format
-from reflex.vars.base import Field, LiteralVar, Var, field
+from reflex.vars.base import Field, LiteralVar, Var, VarData, field
 
 
 def make_var(value) -> Var:
@@ -443,8 +444,27 @@ def test_event_var_data():
         return (value,)
 
     # Ensure chain carries _var_data
-    chain_var = Var.create(EventChain(events=[S.s(S.x)], args_spec=_args_spec))
+    chain_var = Var.create(
+        EventChain(
+            events=[S.s(S.x)],
+            args_spec=_args_spec,
+            invocation=rx.vars.FunctionStringVar.create(""),
+        )
+    )
     assert chain_var._get_all_var_data() == S.x._get_all_var_data()
+
+    chain_var_data = Var.create(
+        EventChain(
+            events=[],
+            args_spec=_args_spec,
+        )
+    )._get_all_var_data()
+    assert chain_var_data is not None
+
+    assert chain_var_data == VarData(
+        imports=Imports.EVENTS,
+        hooks={Hooks.EVENTS: None},
+    )
 
 
 def test_event_bound_method() -> None:

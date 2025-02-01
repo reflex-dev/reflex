@@ -36,6 +36,7 @@ from reflex.utils.exceptions import (
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
+from reflex.vars.object import ObjectVar
 
 
 @pytest.fixture
@@ -842,12 +843,12 @@ def test_component_event_trigger_arbitrary_args():
     """Test that we can define arbitrary types for the args of an event trigger."""
 
     def on_foo_spec(
-        _e: Var[JavascriptInputEvent],
+        _e: ObjectVar[JavascriptInputEvent],
         alpha: Var[str],
         bravo: dict[str, Any],
-        charlie: Var[_Obj],
+        charlie: ObjectVar[_Obj],
     ):
-        return [_e.target.value, bravo["nested"], charlie.custom + 42]
+        return [_e.target.value, bravo["nested"], charlie.custom.to(int) + 42]
 
     class C1(Component):
         library = "/local"
@@ -1328,7 +1329,7 @@ class EventState(rx.State):
         ),
         pytest.param(
             rx.fragment(class_name=[TEST_VAR, "other-class"]),
-            [LiteralVar.create([TEST_VAR, "other-class"]).join(" ")],
+            [Var.create([TEST_VAR, "other-class"]).join(" ")],
             id="fstring-dual-class_name",
         ),
         pytest.param(
