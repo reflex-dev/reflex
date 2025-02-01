@@ -21,11 +21,9 @@ from typing import (
     overload,
 )
 
-from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import TypeVar
 
 from reflex import constants
-from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
 from reflex.constants.colors import Color
 from reflex.utils.exceptions import VarTypeError
