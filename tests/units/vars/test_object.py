@@ -1,4 +1,7 @@
+import dataclasses
+
 import pytest
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from typing_extensions import assert_type
 
 import reflex as rx
@@ -32,11 +35,32 @@ class Base(rx.Base):
     quantity: int = 0
 
 
+class SqlaBase(DeclarativeBase):
+    """Sqlalchemy declarative mapping base class."""
+
+    pass
+
+
+class SqlaModel(SqlaBase):
+    """A sqlalchemy model with a single attribute."""
+
+    quantity: Mapped[int] = mapped_column()
+
+
+@dataclasses.dataclass
+class Dataclass:
+    """A dataclass with a single attribute."""
+
+    quantity: int = 0
+
+
 class ObjectState(rx.State):
-    """A reflex state with bare and base objects."""
+    """A reflex state with bare, base and sqlalchemy base vars."""
 
     bare: rx.Field[Bare] = rx.field(Bare())
     base: rx.Field[Base] = rx.field(Base())
+    sqla: rx.Field[SqlaModel] = rx.field(SqlaModel())
+    dataclass: rx.Field[Dataclass] = rx.field(Dataclass())
 
 
 @pytest.mark.parametrize("type_", [Base, Bare])
@@ -100,3 +124,11 @@ def test_typing() -> None:
     # Base
     var = ObjectState.base
     _ = assert_type(var, ObjectVar[Base])
+
+    # Sqla
+    var = ObjectState.sqla
+    _ = assert_type(var, ObjectVar[SqlaModel])
+
+    # Dataclass
+    var = ObjectState.dataclass
+    _ = assert_type(var, ObjectVar[Dataclass])

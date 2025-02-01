@@ -40,6 +40,7 @@ from typing import (
     overload,
 )
 
+from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import ParamSpec, TypeGuard, deprecated, get_type_hints, override
 
 from reflex import constants
@@ -3183,6 +3184,12 @@ def dispatch(
 V = TypeVar("V")
 
 BASE_TYPE = TypeVar("BASE_TYPE", bound=Base)
+SQLA_TYPE = TypeVar("SQLA_TYPE", bound=DeclarativeBase)
+
+if TYPE_CHECKING:
+    from _typeshed import DataclassInstance
+
+    DATACLASS_TYPE = TypeVar("DATACLASS_TYPE", bound=DataclassInstance)
 
 FIELD_TYPE = TypeVar("FIELD_TYPE")
 MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping)
@@ -3229,6 +3236,23 @@ class Field(Generic[FIELD_TYPE]):
     def __get__(
         self: Field[BASE_TYPE], instance: None, owner: Any
     ) -> ObjectVar[BASE_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: Field[BASE_TYPE], instance: None, owner: Any
+    ) -> ObjectVar[BASE_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: Field[SQLA_TYPE], instance: None, owner: Any
+    ) -> ObjectVar[SQLA_TYPE]: ...
+
+    if TYPE_CHECKING:
+
+        @overload
+        def __get__(
+            self: Field[DATACLASS_TYPE], instance: None, owner: Any
+        ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload
     def __get__(self, instance: None, owner: Any) -> Var[FIELD_TYPE]: ...
