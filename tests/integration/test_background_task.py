@@ -22,6 +22,10 @@ def BackgroundTask():
         _task_id: int = 0
         iterations: int = 10
 
+        @rx.event
+        def set_iterations(self, value: str):
+            self.iterations = int(value)
+
         @rx.event(background=True)
         async def handle_event(self):
             async with self:
