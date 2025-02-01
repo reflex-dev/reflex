@@ -2088,14 +2088,12 @@ class ComputedVar(Var[RETURN_TYPE]):
     @override
     def _replace(
         self,
-        _var_type: Any = None,
         merge_var_data: VarData | None = None,
         **kwargs: Any,
     ) -> Self:
         """Replace the attributes of the ComputedVar.
 
         Args:
-            _var_type: ignored in ComputedVar.
             merge_var_data: VarData to merge into the existing VarData.
             **kwargs: Var fields to update.
 
