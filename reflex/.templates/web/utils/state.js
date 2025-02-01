@@ -844,18 +844,16 @@ export const useEventLoop = (
   // Main event loop.
   useEffect(() => {
     // Skip if the router is not ready.
-    if (!router.isReady) {
+    if (!router.isReady || isBackendDisabled()) {
       return;
     }
-    if (socket.current || !isStateful()) {
-      (async () => {
-        // Process all outstanding events.
-        while (event_queue.length > 0 && !event_processing) {
-          await processEvent(socket.current);
-        }
-      })();
-    }
-  }, [socket]);
+    (async () => {
+      // Process all outstanding events.
+      while (event_queue.length > 0 && !event_processing) {
+        await processEvent(socket.current);
+      }
+    })();
+  });
 
   // localStorage event handling
   useEffect(() => {
