@@ -574,7 +574,7 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     @classmethod
-    def create(  # type: ignore[override]
+    def create(  # pyright: ignore[reportOverlappingOverload]
         cls,
         value: bool,
         _var_data: VarData | None = None,
@@ -582,7 +582,7 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     @classmethod
-    def create(  # type: ignore[override]
+    def create(
         cls,
         value: int,
         _var_data: VarData | None = None,
@@ -606,7 +606,7 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     @classmethod
-    def create(
+    def create(  # pyright: ignore[reportOverlappingOverload]
         cls,
         value: None,
         _var_data: VarData | None = None,
@@ -3183,16 +3183,16 @@ def dispatch(
 
 V = TypeVar("V")
 
-BASE_TYPE = TypeVar("BASE_TYPE", bound=Base)
-SQLA_TYPE = TypeVar("SQLA_TYPE", bound=DeclarativeBase)
+BASE_TYPE = TypeVar("BASE_TYPE", bound=Base | None)
+SQLA_TYPE = TypeVar("SQLA_TYPE", bound=DeclarativeBase | None)
 
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
 
-    DATACLASS_TYPE = TypeVar("DATACLASS_TYPE", bound=DataclassInstance)
+    DATACLASS_TYPE = TypeVar("DATACLASS_TYPE", bound=DataclassInstance | None)
 
 FIELD_TYPE = TypeVar("FIELD_TYPE")
-MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping)
+MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping | None)
 
 
 class Field(Generic[FIELD_TYPE]):

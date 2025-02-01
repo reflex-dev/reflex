@@ -62,9 +62,13 @@ class ObjectState(rx.State):
     """A reflex state with bare, base and sqlalchemy base vars."""
 
     bare: rx.Field[Bare] = rx.field(Bare())
+    bare_optional: rx.Field[Bare | None] = rx.field(None)
     base: rx.Field[Base] = rx.field(Base())
+    base_optional: rx.Field[Base | None] = rx.field(None)
     sqlamodel: rx.Field[SqlaModel] = rx.field(SqlaModel())
+    sqlamodel_optional: rx.Field[SqlaModel | None] = rx.field(None)
     dataclass: rx.Field[Dataclass] = rx.field(Dataclass())
+    dataclass_optional: rx.Field[Dataclass | None] = rx.field(None)
 
     base_list: rx.Field[list[Base]] = rx.field([Base()])
 
@@ -130,6 +134,8 @@ def test_typing() -> None:
     # Base
     var = ObjectState.base
     _ = assert_type(var, ObjectVar[Base])
+    optional_var = ObjectState.base_optional
+    _ = assert_type(optional_var, ObjectVar[Base | None])
     list_var = ObjectState.base_list
     _ = assert_type(list_var, ArrayVar[list[Base]])
     list_var_0 = list_var[0]
@@ -138,6 +144,8 @@ def test_typing() -> None:
     # Sqla
     var = ObjectState.sqlamodel
     _ = assert_type(var, ObjectVar[SqlaModel])
+    optional_var = ObjectState.sqlamodel_optional
+    _ = assert_type(optional_var, ObjectVar[SqlaModel | None])
     list_var = ObjectState.base_list
     _ = assert_type(list_var, ArrayVar[list[Base]])
     list_var_0 = list_var[0]
@@ -146,6 +154,8 @@ def test_typing() -> None:
     # Dataclass
     var = ObjectState.dataclass
     _ = assert_type(var, ObjectVar[Dataclass])
+    optional_var = ObjectState.dataclass_optional
+    _ = assert_type(optional_var, ObjectVar[Dataclass | None])
     list_var = ObjectState.base_list
     _ = assert_type(list_var, ArrayVar[list[Base]])
     list_var_0 = list_var[0]
