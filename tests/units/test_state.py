@@ -1623,7 +1623,7 @@ async def test_state_with_invalid_yield(capsys, mock_app):
                         id="backend_error",
                         position="top-center",
                         style={"width": "500px"},
-                    )  # pyright: ignore [reportCallIssue, reportArgumentType]
+                    )
                 ],
                 token="",
             )

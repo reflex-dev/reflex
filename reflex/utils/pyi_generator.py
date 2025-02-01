@@ -699,6 +699,7 @@ def _generate_staticmethod_call_functiondef(
             value=_get_type_hint(
                 typing.get_type_hints(clz.__call__).get("return", None),
                 type_hint_globals,
+                is_optional=False,
             )
         ),
     )
