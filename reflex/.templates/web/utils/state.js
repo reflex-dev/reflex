@@ -839,7 +839,7 @@ export const useEventLoop = (
         socket.current.disconnect();
       }
     };
-  }, [isBackendDisabled]);
+  }, []);
 
   // Main event loop.
   useEffect(() => {
@@ -847,13 +847,15 @@ export const useEventLoop = (
     if (!router.isReady) {
       return;
     }
-    (async () => {
-      // Process all outstanding events.
-      while (event_queue.length > 0 && !event_processing) {
-        await processEvent(socket.current);
-      }
-    })();
-  });
+    if (socket.current || !isStateful()) {
+      (async () => {
+        // Process all outstanding events.
+        while (event_queue.length > 0 && !event_processing) {
+          await processEvent(socket.current);
+        }
+      })();
+    }
+  }, [socket]);
 
   // localStorage event handling
   useEffect(() => {
