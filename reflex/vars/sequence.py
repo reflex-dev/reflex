@@ -53,7 +53,7 @@ from .number import (
 )
 
 if TYPE_CHECKING:
-    from .base import BASE_TYPE, DATACLASS_TYPE, SQLA_TYPE, ObjectVar
+    from .base import BASE_TYPE, DATACLASS_TYPE, SQLA_TYPE
     from .function import FunctionVar
     from .object import ObjectVar
 
