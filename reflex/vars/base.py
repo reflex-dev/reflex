@@ -2052,11 +2052,23 @@ class ComputedVar(Var[RETURN_TYPE]):
 
         object.__setattr__(self, "_update_interval", interval)
 
-        _static_deps = {}
+        object.__setattr__(
+            self,
+            "_static_deps",
+            self._calculate_static_deps(deps),
+        )
+        object.__setattr__(self, "_auto_deps", auto_deps)
+
+        object.__setattr__(self, "_fget", fget)
+
+    def _calculate_static_deps(
+        self, deps: Union[List[Union[str, Var]], dict[str, set[str]]] | None = None
+    ) -> dict[str, set[str]]:
         if isinstance(deps, dict):
             # Assume a dict is coming from _replace, so no special processing.
-            _static_deps = deps
-        elif deps is not None:
+            return deps
+        _static_deps = {}
+        if deps is not None:
             for dep in deps:
                 if isinstance(dep, Var):
                     state_name = (
@@ -2076,14 +2088,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                     raise TypeError(
                         "ComputedVar dependencies must be Var instances or var names (non-empty strings)."
                     )
-        object.__setattr__(
-            self,
-            "_static_deps",
-            _static_deps,
-        )
-        object.__setattr__(self, "_auto_deps", auto_deps)
-
-        object.__setattr__(self, "_fget", fget)
+        return _static_deps
 
     @override
     def _replace(
@@ -2105,6 +2110,8 @@ class ComputedVar(Var[RETURN_TYPE]):
         Raises:
             TypeError: If kwargs contains keys that are not allowed.
         """
+        if "deps" in kwargs:
+            kwargs["deps"] = self._calculate_static_deps(kwargs["deps"])
         field_values = {
             "fget": kwargs.pop("fget", self._fget),
             "initial_value": kwargs.pop("initial_value", self._initial_value),
