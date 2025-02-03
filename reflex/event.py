@@ -1901,15 +1901,13 @@ class LambdaEventCallback(Protocol[Unpack[P]]):
         """
 
 
-BasicEventTypes = EventSpec | EventHandler | Var[Any]
-
 ARGS = TypeVarTuple("ARGS")
 
 LambdaOrState = LambdaEventCallback[Unpack[ARGS]] | EventCallback[Unpack[ARGS]]
 
 ItemOrList = V | List[V]
 
-IndividualEventType = BasicEventTypes | LambdaOrState[Unpack[ARGS]]
+IndividualEventType = LambdaOrState[Unpack[ARGS]] | EventSpec | EventHandler | Var[Any]
 EventType = ItemOrList[IndividualEventType[Unpack[ARGS]]]
 
 
