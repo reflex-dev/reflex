@@ -1294,7 +1294,7 @@ def validate_bun():
     """
     bun_path = path_ops.get_bun_path()
 
-    if bun_path and bun_path.samefile(constants.Bun.DEFAULT_PATH):
+    if bun_path and not bun_path.samefile(constants.Bun.DEFAULT_PATH):
         console.info(f"Using custom Bun path: {bun_path}")
         bun_version = get_bun_version()
         if not bun_version:
