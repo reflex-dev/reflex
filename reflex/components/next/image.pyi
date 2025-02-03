@@ -11,6 +11,8 @@ from reflex.vars.base import Var
 
 from .base import NextComponent
 
+DEFAULT_W_H = "100%"
+
 class Image(NextComponent):
     @overload
     @classmethod
@@ -30,7 +32,7 @@ class Image(NextComponent):
         loading: Optional[
             Union[Literal["eager", "lazy"], Var[Literal["eager", "lazy"]]]
         ] = None,
-        blurDataURL: Optional[Union[Var[str], str]] = None,
+        blur_data_url: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -70,8 +72,8 @@ class Image(NextComponent):
             quality: The quality of the optimized image, an integer between 1 and 100, where 100 is the best quality and therefore largest file size. Defaults to 75.
             priority: When true, the image will be considered high priority and preload. Lazy loading is automatically disabled for images using priority.
             placeholder: A placeholder to use while the image is loading. Possible values are blur, empty, or data:image/.... Defaults to empty.
-            loading: Allows passing CSS styles to the underlying image element.  style: Var[Any]  The loading behavior of the image. Defaults to lazy. Can hurt performance, recommended to use `priority` instead.
-            blurDataURL: A Data URL to be used as a placeholder image before the src image successfully loads. Only takes effect when combined with placeholder="blur".
+            loading: The loading behavior of the image. Defaults to lazy. Can hurt performance, recommended to use `priority` instead.
+            blur_data_url: A Data URL to be used as a placeholder image before the src image successfully loads. Only takes effect when combined with placeholder="blur".
             on_load: Fires when the image has loaded.
             on_error: Fires when the image has an error.
             style: The style of the component.

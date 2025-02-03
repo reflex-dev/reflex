@@ -16,7 +16,7 @@ def FullyControlledInput():
     class State(rx.State):
         text: str = "initial"
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
 
     @app.add_page
     def index():
@@ -26,11 +26,11 @@ def FullyControlledInput():
             ),
             rx.input(
                 id="debounce_input_input",
-                on_change=State.set_text,  # type: ignore
+                on_change=State.set_text,  # pyright: ignore [reportAttributeAccessIssue]
                 value=State.text,
             ),
             rx.input(value=State.text, id="value_input", is_read_only=True),
-            rx.input(on_change=State.set_text, id="on_change_input"),  # type: ignore
+            rx.input(on_change=State.set_text, id="on_change_input"),  # pyright: ignore [reportAttributeAccessIssue]
             rx.el.input(
                 value=State.text,
                 id="plain_value_input",
@@ -183,6 +183,6 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     clear_button.click()
     assert AppHarness._poll_for(lambda: on_change_input.get_attribute("value") == "")
     # potential bug: clearing the on_change field doesn't itself trigger on_change
-    # assert backend_state.text == ""
-    # assert debounce_input.get_attribute("value") == ""
-    # assert value_input.get_attribute("value") == ""
+    # assert backend_state.text == "" #noqa: ERA001
+    # assert debounce_input.get_attribute("value") == "" #noqa: ERA001
+    # assert value_input.get_attribute("value") == "" #noqa: ERA001

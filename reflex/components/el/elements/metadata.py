@@ -1,4 +1,4 @@
-"""Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+"""Metadata classes."""
 
 from typing import List, Union
 
@@ -81,7 +81,7 @@ class Title(Element):
     tag = "title"
 
 
-# Had to be named with an underscore so it doesnt conflict with reflex.style Style in pyi
+# Had to be named with an underscore so it doesn't conflict with reflex.style Style in pyi
 class StyleEl(Element):
     """Display the style element."""
 

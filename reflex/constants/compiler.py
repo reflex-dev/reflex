@@ -1,10 +1,10 @@
 """Compiler variables."""
 
+import dataclasses
 import enum
 from enum import Enum
 from types import SimpleNamespace
 
-from reflex.base import Base
 from reflex.constants import Dirs
 from reflex.utils.imports import ImportVar
 
@@ -28,6 +28,8 @@ class Ext(SimpleNamespace):
     ZIP = ".zip"
     # The extension for executable files on Windows.
     EXE = ".exe"
+    # The extension for markdown files.
+    MD = ".md"
 
 
 class CompileVars(SimpleNamespace):
@@ -132,6 +134,13 @@ class Hooks(SimpleNamespace):
                   }
                 })"""
 
+    class HookPosition(enum.Enum):
+        """The position of the hook in the component."""
+
+        INTERNAL = "internal"
+        PRE_TRIGGER = "pre_trigger"
+        POST_TRIGGER = "post_trigger"
+
 
 class MemoizationDisposition(enum.Enum):
     """The conditions under which a component should be memoized."""
@@ -142,7 +151,8 @@ class MemoizationDisposition(enum.Enum):
     NEVER = "never"
 
 
-class MemoizationMode(Base):
+@dataclasses.dataclass(frozen=True)
+class MemoizationMode:
     """The mode for memoizing a Component."""
 
     # The conditions under which the component should be memoized.

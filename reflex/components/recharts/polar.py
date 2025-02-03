@@ -64,7 +64,7 @@ class Pie(Recharts):
     legend_type: Var[LiteralLegendType]
 
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
-    label: Var[bool] = False  # type: ignore
+    label: Var[bool] = Var.create(False)
 
     # If false set, label lines will not be drawn. If true set, label lines will be drawn which have the props calculated internally. Default: False
     label_line: Var[bool]
@@ -73,7 +73,7 @@ class Pie(Recharts):
     data: Var[List[Dict[str, Any]]]
 
     # Valid children components
-    _valid_children: List[str] = ["Cell", "LabelList"]
+    _valid_children: List[str] = ["Cell", "LabelList", "Bare"]
 
     # Stoke color. Default: rx.color("accent", 9)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
@@ -124,7 +124,7 @@ class Radar(Recharts):
     # The key of a group of data which should be unique in a radar chart.
     data_key: Var[Union[str, int]]
 
-    # The coordinates of all the vertexes of the radar shape, like [{ x, y }].
+    # The coordinates of all the vertices of the radar shape, like [{ x, y }].
     points: Var[List[Dict[str, Any]]]
 
     # If false set, dots will not be drawn. Default: True
@@ -136,7 +136,7 @@ class Radar(Recharts):
     # Fill color. Default: rx.color("accent", 3)
     fill: Var[str] = LiteralVar.create(Color("accent", 3))
 
-    # opacity. Default: 0.6
+    # The opacity to fill the chart. Default: 0.6
     fill_opacity: Var[float] = LiteralVar.create(0.6)
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered. Default: "rect"
@@ -373,7 +373,7 @@ class PolarRadiusAxis(Recharts):
     # The count of axis ticks. Not used if 'type' is 'category'. Default: 5
     tick_count: Var[int]
 
-    # If 'auto' set, the scale funtion is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'. Default: "auto"
+    # If 'auto' set, the scale function is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'. Default: "auto"
     scale: Var[LiteralScale]
 
     # Valid children components

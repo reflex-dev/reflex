@@ -9,9 +9,10 @@ from reflex.components.component import Component
 from reflex.event import BASE_STATE, EventType
 from reflex.style import Style
 from reflex.vars.base import Var
+from reflex.vars.object import ObjectVar
 
 def on_error_spec(
-    error: Var[Dict[str, str]], info: Var[Dict[str, str]]
+    error: ObjectVar[Dict[str, str]], info: ObjectVar[Dict[str, str]]
 ) -> Tuple[Var[str], Var[str]]: ...
 
 class ErrorBoundary(Component):

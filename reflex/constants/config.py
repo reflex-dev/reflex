@@ -26,9 +26,11 @@ class Expiration(SimpleNamespace):
     # Token expiration time in seconds
     TOKEN = 60 * 60
     # Maximum time in milliseconds that a state can be locked for exclusive access.
-    LOCK = 1000
+    LOCK = 10000
     # The PING timeout
     PING = 120
+    # The maximum time in milliseconds to hold a lock before throwing a warning.
+    LOCK_WARNING_THRESHOLD = 1000
 
 
 class GitIgnore(SimpleNamespace):
@@ -37,7 +39,14 @@ class GitIgnore(SimpleNamespace):
     # The gitignore file.
     FILE = Path(".gitignore")
     # Files to gitignore.
-    DEFAULTS = {Dirs.WEB, "*.db", "__pycache__/", "*.py[cod]", "assets/external/"}
+    DEFAULTS = {
+        Dirs.WEB,
+        Dirs.STATES,
+        "*.db",
+        "__pycache__/",
+        "*.py[cod]",
+        "assets/external/",
+    }
 
 
 class RequirementsTxt(SimpleNamespace):

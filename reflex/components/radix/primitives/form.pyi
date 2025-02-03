@@ -132,10 +132,10 @@ class FormRoot(FormComponent, HTMLForm):
         on_submit: Optional[
             Union[
                 Union[
-                    EventType[[], BASE_STATE], EventType[[Dict[str, Any]], BASE_STATE]
+                    EventType[[], BASE_STATE], EventType[[dict[str, Any]], BASE_STATE]
                 ],
                 Union[
-                    EventType[[], BASE_STATE], EventType[[Dict[str, str]], BASE_STATE]
+                    EventType[[], BASE_STATE], EventType[[dict[str, str]], BASE_STATE]
                 ],
             ]
         ] = None,
@@ -160,7 +160,7 @@ class FormRoot(FormComponent, HTMLForm):
             reset_on_submit: If true, the form will be cleared after submit.
             handle_submit_unique_name: The name used to make this form's submit handler function unique.
             on_submit: Fired when the form is submitted
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -608,10 +608,10 @@ class Form(FormRoot):
         on_submit: Optional[
             Union[
                 Union[
-                    EventType[[], BASE_STATE], EventType[[Dict[str, Any]], BASE_STATE]
+                    EventType[[], BASE_STATE], EventType[[dict[str, Any]], BASE_STATE]
                 ],
                 Union[
-                    EventType[[], BASE_STATE], EventType[[Dict[str, str]], BASE_STATE]
+                    EventType[[], BASE_STATE], EventType[[dict[str, str]], BASE_STATE]
                 ],
             ]
         ] = None,
@@ -636,7 +636,7 @@ class Form(FormRoot):
             reset_on_submit: If true, the form will be cleared after submit.
             handle_submit_unique_name: The name used to make this form's submit handler function unique.
             on_submit: Fired when the form is submitted
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -741,10 +741,10 @@ class FormNamespace(ComponentNamespace):
         on_submit: Optional[
             Union[
                 Union[
-                    EventType[[], BASE_STATE], EventType[[Dict[str, Any]], BASE_STATE]
+                    EventType[[], BASE_STATE], EventType[[dict[str, Any]], BASE_STATE]
                 ],
                 Union[
-                    EventType[[], BASE_STATE], EventType[[Dict[str, str]], BASE_STATE]
+                    EventType[[], BASE_STATE], EventType[[dict[str, str]], BASE_STATE]
                 ],
             ]
         ] = None,
@@ -769,7 +769,7 @@ class FormNamespace(ComponentNamespace):
             reset_on_submit: If true, the form will be cleared after submit.
             handle_submit_unique_name: The name used to make this form's submit handler function unique.
             on_submit: Fired when the form is submitted
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.

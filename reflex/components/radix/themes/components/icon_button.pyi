@@ -14,6 +14,7 @@ from reflex.vars.base import Var
 from ..base import RadixLoadingProp, RadixThemesComponent
 
 LiteralButtonSize = Literal["1", "2", "3", "4"]
+RADIX_TO_LUCIDE_SIZE = {"1": 12, "2": 24, "3": 36, "4": 48}
 
 class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
     @overload
@@ -193,7 +194,7 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
             name: Name of the button, used when sending form data
             type: Type of the button (submit, reset, or button)
             value: Value of the button, used when sending form data
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.

@@ -14,6 +14,7 @@ from ..base import RadixThemesComponent
 LiteralSideType = Literal["top", "right", "bottom", "left"]
 LiteralAlignType = Literal["start", "center", "end"]
 LiteralStickyType = Literal["partial", "always"]
+ARIA_LABEL_KEY = "aria_label"
 
 class Tooltip(RadixThemesComponent):
     @overload

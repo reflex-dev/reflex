@@ -33,18 +33,18 @@ def ClientSide():
     class ClientSideSubState(ClientSideState):
         # cookies with default settings
         c1: str = rx.Cookie()
-        c2: rx.Cookie = "c2 default"  # type: ignore
+        c2: str = rx.Cookie("c2 default")
 
         # cookies with custom settings
         c3: str = rx.Cookie(max_age=2)  # expires after 2 second
-        c4: rx.Cookie = rx.Cookie(same_site="strict")
+        c4: str = rx.Cookie(same_site="strict")
         c5: str = rx.Cookie(path="/foo/")  # only accessible on `/foo/`
         c6: str = rx.Cookie(name="c6")
         c7: str = rx.Cookie("c7 default")
 
         # local storage with default settings
         l1: str = rx.LocalStorage()
-        l2: rx.LocalStorage = "l2 default"  # type: ignore
+        l2: str = rx.LocalStorage("l2 default")
 
         # local storage with custom settings
         l3: str = rx.LocalStorage(name="l3")
@@ -56,7 +56,7 @@ def ClientSide():
 
         # Session storage
         s1: str = rx.SessionStorage()
-        s2: rx.SessionStorage = "s2 default"  # type: ignore
+        s2: str = rx.SessionStorage("s2 default")
         s3: str = rx.SessionStorage(name="s3")
 
         def set_l6(self, my_param: str):
@@ -87,13 +87,13 @@ def ClientSide():
             rx.input(
                 placeholder="state var",
                 value=ClientSideState.state_var,
-                on_change=ClientSideState.set_state_var,  # type: ignore
+                on_change=ClientSideState.setvar("state_var"),
                 id="state_var",
             ),
             rx.input(
                 placeholder="input value",
                 value=ClientSideState.input_value,
-                on_change=ClientSideState.set_input_value,  # type: ignore
+                on_change=ClientSideState.setvar("input_value"),
                 id="input_value",
             ),
             rx.button(
@@ -127,7 +127,7 @@ def ClientSide():
             rx.box(ClientSideSubSubState.s1s, id="s1s"),
         )
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     app.add_page(index)
     app.add_page(index, route="/foo")
 
@@ -321,6 +321,7 @@ async def test_client_side_state(
     assert not driver.get_cookies()
     local_storage_items = local_storage.items()
     local_storage_items.pop("last_compiled_time", None)
+    local_storage_items.pop("theme", None)
     assert not local_storage_items
 
     # set some cookies and local storage values
@@ -436,6 +437,7 @@ async def test_client_side_state(
 
     local_storage_items = local_storage.items()
     local_storage_items.pop("last_compiled_time", None)
+    local_storage_items.pop("theme", None)
     assert local_storage_items.pop(f"{sub_state_name}.l1") == "l1 value"
     assert local_storage_items.pop(f"{sub_state_name}.l2") == "l2 value"
     assert local_storage_items.pop("l3") == "l3 value"
@@ -637,8 +639,7 @@ async def test_client_side_state(
     assert await AppHarness._poll_for_async(poll_for_not_hydrated)
 
     # Trigger event to get a new instance of the state since the old was expired.
-    state_var_input = driver.find_element(By.ID, "state_var")
-    state_var_input.send_keys("re-triggering")
+    set_sub("c1", "c1 post expire")
 
     # get new references to all cookie and local storage elements (again)
     c1 = driver.find_element(By.ID, "c1")
@@ -659,7 +660,7 @@ async def test_client_side_state(
     l1s = driver.find_element(By.ID, "l1s")
     s1s = driver.find_element(By.ID, "s1s")
 
-    assert c1.text == "c1 value"
+    assert c1.text == "c1 post expire"
     assert c2.text == "c2 value"
     assert c3.text == ""  # temporary cookie expired after reset state!
     assert c4.text == "c4 value"
@@ -690,11 +691,11 @@ async def test_client_side_state(
 
     async def poll_for_c1_set():
         sub_state = await get_sub_state()
-        return sub_state.c1 == "c1 value"
+        return sub_state.c1 == "c1 post expire"
 
     assert await AppHarness._poll_for_async(poll_for_c1_set)
     sub_state = await get_sub_state()
-    assert sub_state.c1 == "c1 value"
+    assert sub_state.c1 == "c1 post expire"
     assert sub_state.c2 == "c2 value"
     assert sub_state.c3 == ""
     assert sub_state.c4 == "c4 value"

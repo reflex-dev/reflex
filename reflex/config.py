@@ -12,6 +12,7 @@ import threading
 import urllib.parse
 from importlib.util import find_spec
 from pathlib import Path
+from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -82,7 +83,7 @@ class DBConfig(Base):
         )
 
     @classmethod
-    def postgresql_psycopg2(
+    def postgresql_psycopg(
         cls,
         database: str,
         username: str,
@@ -90,7 +91,7 @@ class DBConfig(Base):
         host: str | None = None,
         port: int | None = 5432,
     ) -> DBConfig:
-        """Create an instance with postgresql+psycopg2 engine.
+        """Create an instance with postgresql+psycopg engine.
 
         Args:
             database: Database name.
@@ -103,7 +104,7 @@ class DBConfig(Base):
             DBConfig instance.
         """
         return cls(
-            engine="postgresql+psycopg2",
+            engine="postgresql+psycopg",
             username=username,
             password=password,
             host=host,
@@ -389,7 +390,7 @@ class EnvVar(Generic[T]):
             os.environ[self.name] = str(value)
 
 
-class env_var:  # type: ignore
+class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
     """Descriptor for environment variables."""
 
     name: str
@@ -406,7 +407,7 @@ class env_var:  # type: ignore
         self.default = default
         self.internal = internal
 
-    def __set_name__(self, owner, name):
+    def __set_name__(self, owner: Any, name: str):
         """Set the name of the descriptor.
 
         Args:
@@ -415,7 +416,7 @@ class env_var:  # type: ignore
         """
         self.name = name
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance: Any, owner: Any):
         """Get the EnvVar instance.
 
         Args:
@@ -434,7 +435,7 @@ class env_var:  # type: ignore
 
 if TYPE_CHECKING:
 
-    def env_var(default, internal=False) -> EnvVar:
+    def env_var(default: Any, internal: bool = False) -> EnvVar:
         """Typing helper for the env_var descriptor.
 
         Args:
@@ -489,6 +490,9 @@ class EnvironmentVariables:
     # The working directory for the next.js commands.
     REFLEX_WEB_WORKDIR: EnvVar[Path] = env_var(Path(constants.Dirs.WEB))
 
+    # The working directory for the states directory.
+    REFLEX_STATES_WORKDIR: EnvVar[Path] = env_var(Path(constants.Dirs.STATES))
+
     # Path to the alembic config file
     ALEMBIC_CONFIG: EnvVar[ExistingPath] = env_var(Path(constants.ALEMBIC_CONFIG))
 
@@ -511,6 +515,9 @@ class EnvironmentVariables:
 
     # Whether to print the SQL queries if the log level is INFO or lower.
     SQLALCHEMY_ECHO: EnvVar[bool] = env_var(False)
+
+    # Whether to check db connections before using them.
+    SQLALCHEMY_POOL_PRE_PING: EnvVar[bool] = env_var(True)
 
     # Whether to ignore the redis config error. Some redis servers only allow out-of-band configuration.
     REFLEX_IGNORE_REDIS_CONFIG_ERROR: EnvVar[bool] = env_var(False)
@@ -552,9 +559,6 @@ class EnvironmentVariables:
     # Arguments to pass to the app harness driver.
     APP_HARNESS_DRIVER_ARGS: EnvVar[str] = env_var("")
 
-    # Where to save screenshots when tests fail.
-    SCREENSHOT_DIR: EnvVar[Optional[Path]] = env_var(None)
-
     # Whether to check for outdated package versions.
     REFLEX_CHECK_LATEST_VERSION: EnvVar[bool] = env_var(True)
 
@@ -564,8 +568,15 @@ class EnvironmentVariables:
     # The maximum size of the reflex state in kilobytes.
     REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
 
+    # Whether to use the turbopack bundler.
+    REFLEX_USE_TURBOPACK: EnvVar[bool] = env_var(True)
+
 
 environment = EnvironmentVariables()
+
+
+# These vars are not logged because they may contain sensitive information.
+_sensitive_env_vars = {"DB_URL", "ASYNC_DB_URL", "REDIS_URL"}
 
 
 class Config(Base):
@@ -589,13 +600,16 @@ class Config(Base):
     See the [configuration](https://reflex.dev/docs/getting-started/configuration/) docs for more info.
     """
 
-    class Config:
+    class Config:  # pyright: ignore [reportIncompatibleVariableOverride]
         """Pydantic config for the config."""
 
         validate_assignment = True
 
     # The name of the app (should match the name of the app directory).
     app_name: str
+
+    # The path to the app module.
+    app_module_import: Optional[str] = None
 
     # The log level to use.
     loglevel: constants.LogLevel = constants.LogLevel.DEFAULT
@@ -620,6 +634,9 @@ class Config(Base):
 
     # The database url used by rx.Model.
     db_url: Optional[str] = "sqlite:///reflex.db"
+
+    # The async database url used by rx.Model.
+    async_db_url: Optional[str] = None
 
     # The redis url
     redis_url: Optional[str] = None
@@ -674,6 +691,9 @@ class Config(Base):
     # Maximum expiration lock time for redis state manager
     redis_lock_expiration: int = constants.Expiration.LOCK
 
+    # Maximum lock time before warning for redis state manager.
+    redis_lock_warning_threshold: int = constants.Expiration.LOCK_WARNING_THRESHOLD
+
     # Token expiration time for redis state manager
     redis_token_expiration: int = constants.Expiration.TOKEN
 
@@ -685,6 +705,9 @@ class Config(Base):
 
     # Whether to automatically create setters for state base vars
     state_auto_setters: bool = True
+
+    # Whether the app is running in the reflex cloud environment.
+    is_reflex_cloud: bool = False
 
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
@@ -717,12 +740,27 @@ class Config(Base):
             )
 
     @property
+    def app_module(self) -> ModuleType | None:
+        """Return the app module if `app_module_import` is set.
+
+        Returns:
+            The app module.
+        """
+        return (
+            importlib.import_module(self.app_module_import)
+            if self.app_module_import
+            else None
+        )
+
+    @property
     def module(self) -> str:
         """Get the module name of the app.
 
         Returns:
             The module name.
         """
+        if self.app_module is not None:
+            return self.app_module.__name__
         return ".".join([self.app_name, self.app_name])
 
     def update_from_env(self) -> dict[str, Any]:
@@ -734,7 +772,7 @@ class Config(Base):
         """
         if self.env_file:
             try:
-                from dotenv import load_dotenv  # type: ignore
+                from dotenv import load_dotenv  # pyright: ignore [reportMissingImports]
 
                 # load env file if exists
                 load_dotenv(self.env_file, override=True)
@@ -751,17 +789,19 @@ class Config(Base):
 
             # If the env var is set, override the config value.
             if env_var is not None:
-                if key.upper() != "DB_URL":
-                    console.info(
-                        f"Overriding config value {key} with env var {key.upper()}={env_var}",
-                        dedupe=True,
-                    )
-
                 # Interpret the value.
                 value = interpret_env_var_value(env_var, field.outer_type_, field.name)
 
                 # Set the value.
                 updated_values[key] = value
+
+                if key.upper() in _sensitive_env_vars:
+                    env_var = "***"
+
+                console.info(
+                    f"Overriding config value {key} with env var {key.upper()}={env_var}",
+                    dedupe=True,
+                )
 
         return updated_values
 
@@ -792,16 +832,16 @@ class Config(Base):
         if "api_url" not in self._non_default_attributes:
             # If running in Github Codespaces, override API_URL
             codespace_name = os.getenv("CODESPACE_NAME")
-            GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN = os.getenv(
+            github_codespaces_port_forwarding_domain = os.getenv(
                 "GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN"
             )
             # If running on Replit.com interactively, override API_URL to ensure we maintain the backend_port
             replit_dev_domain = os.getenv("REPLIT_DEV_DOMAIN")
             backend_port = kwargs.get("backend_port", self.backend_port)
-            if codespace_name and GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:
+            if codespace_name and github_codespaces_port_forwarding_domain:
                 self.api_url = (
                     f"https://{codespace_name}-{kwargs.get('backend_port', self.backend_port)}"
-                    f".{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
+                    f".{github_codespaces_port_forwarding_domain}"
                 )
             elif replit_dev_domain and backend_port:
                 self.api_url = f"https://{replit_dev_domain}:{backend_port}"
@@ -859,17 +899,22 @@ def get_config(reload: bool = False) -> Config:
             return cached_rxconfig.config
 
     with _config_lock:
-        sys_path = sys.path.copy()
+        orig_sys_path = sys.path.copy()
         sys.path.clear()
-        sys.path.append(os.getcwd())
+        sys.path.append(str(Path.cwd()))
         try:
             # Try to import the module with only the current directory in the path.
             return _get_config()
         except Exception:
             # If the module import fails, try to import with the original sys.path.
-            sys.path.extend(sys_path)
+            sys.path.extend(orig_sys_path)
             return _get_config()
         finally:
+            # Find any entries added to sys.path by rxconfig.py itself.
+            extra_paths = [
+                p for p in sys.path if p not in orig_sys_path and p != str(Path.cwd())
+            ]
             # Restore the original sys.path.
             sys.path.clear()
-            sys.path.extend(sys_path)
+            sys.path.extend(extra_paths)
+            sys.path.extend(orig_sys_path)

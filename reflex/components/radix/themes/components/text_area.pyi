@@ -239,7 +239,7 @@ class TextArea(RadixThemesComponent, elements.Textarea):
             on_blur: Fired when the input loses focus
             on_key_down: Fired when a key is pressed down
             on_key_up: Fired when a key is released
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -267,5 +267,7 @@ class TextArea(RadixThemesComponent, elements.Textarea):
             The component.
         """
         ...
+
+    def add_style(self): ...
 
 text_area = TextArea.create

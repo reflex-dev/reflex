@@ -1,4 +1,4 @@
-"""Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+"""Scripts classes."""
 
 from typing import Union
 
@@ -17,7 +17,6 @@ class Noscript(BaseHTML):
     """Display the noscript element."""
 
     tag = "noscript"
-    # No unique attributes, only common ones are inherited
 
 
 class Script(BaseHTML):

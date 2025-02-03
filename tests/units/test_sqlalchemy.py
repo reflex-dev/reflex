@@ -59,7 +59,7 @@ def test_automigration(
         id: Mapped[Optional[int]] = mapped_column(primary_key=True, default=None)
 
     # initial table
-    class AlembicThing(ModelBase):  # pyright: ignore[reportGeneralTypeIssues]
+    class AlembicThing(ModelBase):  # pyright: ignore[reportRedeclaration]
         t1: Mapped[str] = mapped_column(default="")
 
     with Model.get_db_engine().connect() as connection:
@@ -78,7 +78,7 @@ def test_automigration(
     model_registry.get_metadata().clear()
 
     # Create column t2, mark t1 as optional with default
-    class AlembicThing(ModelBase):  # pyright: ignore[reportGeneralTypeIssues]
+    class AlembicThing(ModelBase):  # pyright: ignore[reportRedeclaration]
         t1: Mapped[Optional[str]] = mapped_column(default="default")
         t2: Mapped[str] = mapped_column(default="bar")
 
@@ -98,7 +98,7 @@ def test_automigration(
     model_registry.get_metadata().clear()
 
     # Drop column t1
-    class AlembicThing(ModelBase):  # pyright: ignore[reportGeneralTypeIssues]
+    class AlembicThing(ModelBase):  # pyright: ignore[reportRedeclaration]
         t2: Mapped[str] = mapped_column(default="bar")
 
     assert Model.migrate(autogenerate=True)
@@ -127,13 +127,13 @@ def test_automigration(
         assert result[0].b == 4.2
 
     # No-op
-    # assert Model.migrate(autogenerate=True)
-    # assert len(list(versions.glob("*.py"))) == 4
+    # assert Model.migrate(autogenerate=True) #noqa: ERA001
+    # assert len(list(versions.glob("*.py"))) == 4 #noqa: ERA001
 
     # drop table (AlembicSecond)
     model_registry.get_metadata().clear()
 
-    class AlembicThing(ModelBase):  # pyright: ignore[reportGeneralTypeIssues]
+    class AlembicThing(ModelBase):  # pyright: ignore[reportRedeclaration]
         t2: Mapped[str] = mapped_column(default="bar")
 
     assert Model.migrate(autogenerate=True)

@@ -11,10 +11,11 @@ from reflex.event import EventHandler, set_clipboard
 from reflex.state import FrontendEventExceptionState
 from reflex.vars.base import Var
 from reflex.vars.function import ArgsFunctionOperation
+from reflex.vars.object import ObjectVar
 
 
 def on_error_spec(
-    error: Var[Dict[str, str]], info: Var[Dict[str, str]]
+    error: ObjectVar[Dict[str, str]], info: ObjectVar[Dict[str, str]]
 ) -> Tuple[Var[str], Var[str]]:
     """The spec for the on_error event handler.
 

@@ -31,7 +31,7 @@ def get_above_max_version():
 
     """
     semantic_version_list = constants.Bun.VERSION.split(".")
-    semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # type: ignore
+    semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # pyright: ignore [reportArgumentType, reportCallIssue]
     return ".".join(semantic_version_list)
 
 
@@ -122,13 +122,13 @@ def test_validate_invalid_bun_path(mocker):
     Args:
         mocker: Pytest mocker object.
     """
-    mock = mocker.Mock()
-    mocker.patch.object(mock, "bun_path", return_value="/mock/path")
-    mocker.patch("reflex.utils.prerequisites.get_config", mock)
+    mock_path = mocker.Mock()
+    mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
     mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=None)
 
     with pytest.raises(typer.Exit):
         prerequisites.validate_bun()
+    mock_path.samefile.assert_called_once()
 
 
 def test_validate_bun_path_incompatible_version(mocker):
@@ -137,9 +137,8 @@ def test_validate_bun_path_incompatible_version(mocker):
     Args:
         mocker: Pytest mocker object.
     """
-    mock = mocker.Mock()
-    mocker.patch.object(mock, "bun_path", return_value="/mock/path")
-    mocker.patch("reflex.utils.prerequisites.get_config", mock)
+    mock_path = mocker.Mock()
+    mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
     mocker.patch(
         "reflex.utils.prerequisites.get_bun_version",
         return_value=version.parse("0.6.5"),
@@ -270,7 +269,7 @@ def test_unsupported_literals(cls: type):
         ("appname2.io", "AppnameioConfig"),
     ],
 )
-def test_create_config(app_name, expected_config_name, mocker):
+def test_create_config(app_name: str, expected_config_name: str, mocker):
     """Test templates.RXCONFIG is formatted with correct app name and config class name.
 
     Args:
@@ -278,7 +277,7 @@ def test_create_config(app_name, expected_config_name, mocker):
         expected_config_name: Expected config name.
         mocker: Mocker object.
     """
-    mocker.patch("builtins.open")
+    mocker.patch("pathlib.Path.write_text")
     tmpl_mock = mocker.patch("reflex.compiler.templates.RXCONFIG")
     prerequisites.create_config(app_name)
     tmpl_mock.render.assert_called_with(
@@ -298,7 +297,7 @@ def tmp_working_dir(tmp_path):
     Yields:
         subdirectory of tmp_path which is now the current working directory.
     """
-    old_pwd = Path(".").resolve()
+    old_pwd = Path.cwd()
     working_dir = tmp_path / "working_dir"
     working_dir.mkdir()
     os.chdir(working_dir)
@@ -464,7 +463,7 @@ def test_node_install_unix(tmp_path, mocker, machine, system):
     mocker.patch("httpx.stream", return_value=Resp())
     download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
     process = mocker.patch("reflex.utils.processes.new_process")
-    chmod = mocker.patch("reflex.utils.prerequisites.os.chmod")
+    chmod = mocker.patch("pathlib.Path.chmod")
     mocker.patch("reflex.utils.processes.stream_logs")
 
     prerequisites.install_node()
@@ -587,9 +586,7 @@ def test_style_prop_with_event_handler_value(callable):
     }
 
     with pytest.raises(ReflexError):
-        rx.box(
-            style=style,  # type: ignore
-        )
+        rx.box(style=style)  # pyright: ignore [reportArgumentType]
 
 
 def test_is_prod_mode() -> None:

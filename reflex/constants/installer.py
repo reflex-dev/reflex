@@ -37,10 +37,10 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.1.29"
+    VERSION = "1.2.0"
 
     # Min Bun Version
-    MIN_VERSION = "0.7.0"
+    MIN_VERSION = "1.1.0"
 
     # URL to bun install script.
     INSTALL_URL = "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/bun_install.sh"
@@ -178,21 +178,21 @@ class PackageJson(SimpleNamespace):
     PATH = "package.json"
 
     DEPENDENCIES = {
-        "@babel/standalone": "7.26.0",
-        "@emotion/react": "11.13.3",
-        "axios": "1.7.7",
+        "@babel/standalone": "7.26.6",
+        "@emotion/react": "11.14.0",
+        "axios": "1.7.9",
         "json5": "2.2.3",
-        "next": "14.2.16",
+        "next": "15.1.6",
         "next-sitemap": "4.2.3",
-        "next-themes": "0.4.3",
+        "next-themes": "0.4.4",
         "react": "18.3.1",
         "react-dom": "18.3.1",
-        "react-focus-lock": "2.13.2",
+        "react-focus-lock": "2.13.5",
         "socket.io-client": "4.8.1",
         "universal-cookie": "7.2.2",
     }
     DEV_DEPENDENCIES = {
         "autoprefixer": "10.4.20",
-        "postcss": "8.4.49",
+        "postcss": "8.5.1",
         "postcss-import": "16.1.0",
     }

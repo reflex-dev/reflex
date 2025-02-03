@@ -1,4 +1,4 @@
-"""Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
+"""Forms classes."""
 
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from reflex.event import (
     prevent_default,
 )
 from reflex.utils.imports import ImportDict
+from reflex.utils.types import is_optional
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 
@@ -84,7 +85,6 @@ class Datalist(BaseHTML):
     """Display the datalist element."""
 
     tag = "datalist"
-    # No unique attributes, only common ones are inherited
 
 
 class Fieldset(Element):
@@ -102,7 +102,7 @@ class Fieldset(Element):
     name: Var[Union[str, int, bool]]
 
 
-def on_submit_event_spec() -> Tuple[Var[Dict[str, Any]]]:
+def on_submit_event_spec() -> Tuple[Var[dict[str, Any]]]:
     """Event handler spec for the on_submit event.
 
     Returns:
@@ -111,7 +111,7 @@ def on_submit_event_spec() -> Tuple[Var[Dict[str, Any]]]:
     return (FORM_DATA,)
 
 
-def on_submit_string_event_spec() -> Tuple[Var[Dict[str, str]]]:
+def on_submit_string_event_spec() -> Tuple[Var[dict[str, str]]]:
     """Event handler spec for the on_submit event.
 
     Returns:
@@ -153,7 +153,7 @@ class Form(BaseHTML):
     target: Var[Union[str, int, bool]]
 
     # If true, the form will be cleared after submit.
-    reset_on_submit: Var[bool] = False  # type: ignore
+    reset_on_submit: Var[bool] = Var.create(False)
 
     # The name used to make this form's submit handler function unique.
     handle_submit_unique_name: Var[str]
@@ -182,9 +182,7 @@ class Form(BaseHTML):
         props["handle_submit_unique_name"] = ""
         form = super().create(*children, **props)
         form.handle_submit_unique_name = md5(
-            str({**form._get_all_hooks_internal(), **form._get_all_hooks()}).encode(
-                "utf-8"
-            )
+            str(form._get_all_hooks()).encode("utf-8")
         ).hexdigest()
         return form
 
@@ -250,11 +248,14 @@ class Form(BaseHTML):
                     _js_expr=f"getRefValue({ref_var!s})",
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
-        # print(repr(form_refs))
         return form_refs
 
-    def _get_vars(self, include_children: bool = True) -> Iterator[Var]:
-        yield from super()._get_vars(include_children=include_children)
+    def _get_vars(
+        self, include_children: bool = True, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
+        yield from super()._get_vars(
+            include_children=include_children, ignore_ids=ignore_ids
+        )
         yield from self._get_form_refs().values()
 
     def _exclude_props(self) -> list[str]:
@@ -384,6 +385,33 @@ class Input(BaseHTML):
     # Fired when a key is released
     on_key_up: EventHandler[key_event]
 
+    @classmethod
+    def create(cls, *children, **props):
+        """Create an Input component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The component.
+        """
+        from reflex.vars.number import ternary_operation
+
+        value = props.get("value")
+
+        # React expects an empty string(instead of null) for controlled inputs.
+        if value is not None and is_optional(
+            (value_var := Var.create(value))._var_type
+        ):
+            props["value"] = ternary_operation(
+                (value_var != Var.create(None))  # pyright: ignore [reportArgumentType]
+                & (value_var != Var(_js_expr="undefined")),
+                value,
+                Var.create(""),
+            )
+        return super().create(*children, **props)
+
 
 class Label(BaseHTML):
     """Display the label element."""
@@ -401,7 +429,6 @@ class Legend(BaseHTML):
     """Display the legend element."""
 
     tag = "legend"
-    # No unique attributes, only common ones are inherited
 
 
 class Meter(BaseHTML):

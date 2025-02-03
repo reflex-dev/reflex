@@ -1,11 +1,10 @@
 """Export utilities."""
 
-import os
 from pathlib import Path
 from typing import Optional
 
 from reflex import constants
-from reflex.config import get_config
+from reflex.config import environment, get_config
 from reflex.utils import build, console, exec, prerequisites, telemetry
 
 config = get_config()
@@ -15,10 +14,11 @@ def export(
     zipping: bool = True,
     frontend: bool = True,
     backend: bool = True,
-    zip_dest_dir: str = os.getcwd(),
+    zip_dest_dir: str = str(Path.cwd()),
     upload_db_file: bool = False,
     api_url: Optional[str] = None,
     deploy_url: Optional[str] = None,
+    env: constants.Env = constants.Env.PROD,
     loglevel: constants.LogLevel = console._LOG_LEVEL,
 ):
     """Export the app to a zip file.
@@ -31,10 +31,14 @@ def export(
         upload_db_file: Whether to upload the database file. Defaults to False.
         api_url: The API URL to use. Defaults to None.
         deploy_url: The deploy URL to use. Defaults to None.
+        env: The environment to use. Defaults to constants.Env.PROD.
         loglevel: The log level to use. Defaults to console._LOG_LEVEL.
     """
     # Set the log level.
     console.set_log_level(loglevel)
+
+    # Set env mode in the environment
+    environment.REFLEX_ENV_MODE.set(env)
 
     # Override the config url values if provided.
     if api_url is not None:

@@ -4,10 +4,12 @@ from typing import Dict, List, Literal, Union
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
+from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
+from .checkbox import Checkbox
 
 LiteralDirType = Literal["ltr", "rtl"]
 
@@ -53,6 +55,8 @@ class ContextMenuTrigger(RadixThemesComponent):
     _valid_parents: List[str] = ["ContextMenuRoot"]
 
     _invalid_children: List[str] = ["ContextMenuContent"]
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
 
 class ContextMenuContent(RadixThemesComponent):
@@ -152,6 +156,8 @@ class ContextMenuSubTrigger(RadixThemesComponent):
 
     _valid_parents: List[str] = ["ContextMenuContent", "ContextMenuSub"]
 
+    _memoization_mode = MemoizationMode(recursive=False)
+
 
 class ContextMenuSubContent(RadixThemesComponent):
     """The component that pops out when a submenu is open."""
@@ -232,6 +238,15 @@ class ContextMenuSeparator(RadixThemesComponent):
     tag = "ContextMenu.Separator"
 
 
+class ContextMenuCheckbox(Checkbox):
+    """The component that contains the checkbox."""
+
+    tag = "ContextMenu.CheckboxItem"
+
+    # Text to render as shortcut.
+    shortcut: Var[str]
+
+
 class ContextMenu(ComponentNamespace):
     """Menu representing a set of actions, displayed at the origin of a pointer right-click or long-press."""
 
@@ -243,6 +258,7 @@ class ContextMenu(ComponentNamespace):
     sub_content = staticmethod(ContextMenuSubContent.create)
     item = staticmethod(ContextMenuItem.create)
     separator = staticmethod(ContextMenuSeparator.create)
+    checkbox = staticmethod(ContextMenuCheckbox.create)
 
 
 context_menu = ContextMenu()

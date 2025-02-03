@@ -51,27 +51,6 @@ class GridColumnIcons(Enum):
     VideoUri = "video_uri"
 
 
-# @serializer
-# def serialize_gridcolumn_icon(icon: GridColumnIcons) -> str:
-#     """Serialize grid column icon.
-
-#     Args:
-#         icon: the Icon to serialize.
-
-#     Returns:
-#         The serialized value.
-#     """
-#     return "prefix" + str(icon)
-
-
-# class DataEditorColumn(Base):
-#     """Column."""
-
-#     title: str
-#     id: Optional[str] = None
-#     type_: str = "str"
-
-
 class DataEditorTheme(Base):
     """The theme for the DataEditor component."""
 
@@ -186,7 +165,7 @@ class DataEditor(NoSSRComponent):
 
     tag = "DataEditor"
     is_default = True
-    library: str = "@glideapps/glide-data-grid@^6.0.3"
+    library: str | None = "@glideapps/glide-data-grid@^6.0.3"
     lib_dependencies: List[str] = [
         "lodash@^4.17.21",
         "react-responsive-carousel@^3.2.7",
@@ -229,7 +208,7 @@ class DataEditor(NoSSRComponent):
     header_height: Var[int]
 
     # Additional header icons:
-    # header_icons: Var[Any] # (TODO: must be a map of name: svg)
+    # header_icons: Var[Any] # (TODO: must be a map of name: svg) #noqa: ERA001
 
     # The maximum width a column can be automatically sized to.
     max_column_auto_width: Var[int]
@@ -240,7 +219,7 @@ class DataEditor(NoSSRComponent):
     # The minimum width a column can be resized to.
     min_column_width: Var[int]
 
-    # Determins the height of each row.
+    # Determines the height of each row.
     row_height: Var[int]
 
     # Kind of row markers.
@@ -342,6 +321,8 @@ class DataEditor(NoSSRComponent):
         Returns:
             The import dict.
         """
+        if self.library is None:
+            return {}
         return {
             "": f"{format.format_library_name(self.library)}/dist/index.css",
             self.library: "GridCellKind",
@@ -360,10 +341,13 @@ class DataEditor(NoSSRComponent):
         editor_id = get_unique_variable_name()
 
         # Define the name of the getData callback associated with this component and assign to get_cell_content.
-        data_callback = f"getData_{editor_id}"
-        self.get_cell_content = Var(_js_expr=data_callback)  # type: ignore
+        if self.get_cell_content is not None:
+            data_callback = self.get_cell_content._js_expr
+        else:
+            data_callback = f"getData_{editor_id}"
+            self.get_cell_content = Var(_js_expr=data_callback)
 
-        code = [f"function {data_callback}([col, row])" "{"]
+        code = [f"function {data_callback}([col, row]){{"]
 
         columns_path = str(self.columns)
         data_path = str(self.data)
@@ -403,7 +387,8 @@ class DataEditor(NoSSRComponent):
                 raise ValueError(
                     "DataEditor data must be an ArrayVar if rows is not provided."
                 )
-            props["rows"] = data.length() if isinstance(data, Var) else len(data)
+
+            props["rows"] = data.length() if isinstance(data, ArrayVar) else len(data)
 
         if not isinstance(columns, Var) and len(columns):
             if types.is_dataframe(type(data)) or (

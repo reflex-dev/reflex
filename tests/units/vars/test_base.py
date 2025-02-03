@@ -1,8 +1,9 @@
-from typing import Dict, List, Union
+from typing import List, Mapping, Union
 
 import pytest
 
-from reflex.vars.base import figure_out_type
+from reflex.state import State
+from reflex.vars.base import computed_var, figure_out_type
 
 
 class CustomDict(dict[str, str]):
@@ -37,13 +38,26 @@ class ChildGenericDict(GenericDict):
         ("a", str),
         ([1, 2, 3], List[int]),
         ([1, 2.0, "a"], List[Union[int, float, str]]),
-        ({"a": 1, "b": 2}, Dict[str, int]),
-        ({"a": 1, 2: "b"}, Dict[Union[int, str], Union[str, int]]),
+        ({"a": 1, "b": 2}, Mapping[str, int]),
+        ({"a": 1, 2: "b"}, Mapping[Union[int, str], Union[str, int]]),
         (CustomDict(), CustomDict),
         (ChildCustomDict(), ChildCustomDict),
-        (GenericDict({1: 1}), Dict[int, int]),
-        (ChildGenericDict({1: 1}), Dict[int, int]),
+        (GenericDict({1: 1}), Mapping[int, int]),
+        (ChildGenericDict({1: 1}), Mapping[int, int]),
     ],
 )
 def test_figure_out_type(value, expected):
     assert figure_out_type(value) == expected
+
+
+def test_computed_var_replace() -> None:
+    class StateTest(State):
+        @computed_var(cache=True)
+        def cv(self) -> int:
+            return 1
+
+    cv = StateTest.cv
+    assert cv._var_type is int
+
+    replaced = cv._replace(_var_type=float)
+    assert replaced._var_type is float

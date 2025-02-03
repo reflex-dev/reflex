@@ -85,6 +85,8 @@ class RadioCardsItem(RadixThemesComponent):
     # When true, indicates that the user must check the radio item before the owning form can be submitted.
     required: Var[bool]
 
+    _valid_parents: list[str] = ["RadioCardsRoot"]
+
 
 class RadioCards(SimpleNamespace):
     """RadioCards components namespace."""

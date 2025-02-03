@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -115,8 +115,8 @@ class Editor(NoSSRComponent):
     # Alternatively to a string, a dict of your language can be passed to this prop.
     # Please refer to the library docs for this.
     # options: "en" | "da" | "de" | "es" | "fr" | "ja" | "ko" | "pt_br" |
-    #  "ru" | "zh_cn" | "ro" | "pl" | "ckb" | "lv" | "se" | "ua" | "he" | "it"
-    # default : "en"
+    # "ru" | "zh_cn" | "ro" | "pl" | "ckb" | "lv" | "se" | "ua" | "he" | "it"
+    # default: "en".
     lang: Var[
         Union[
             Literal[
@@ -172,7 +172,7 @@ class Editor(NoSSRComponent):
     set_options: Var[Dict]
 
     # Whether all SunEditor plugins should be loaded.
-    # default: True
+    # default: True.
     set_all_plugins: Var[bool]
 
     # Set the content of the editor.
@@ -191,19 +191,19 @@ class Editor(NoSSRComponent):
     set_default_style: Var[str]
 
     # Disable the editor
-    # default: False
+    # default: False.
     disable: Var[bool]
 
     # Hide the editor
-    # default: False
+    # default: False.
     hide: Var[bool]
 
     # Hide the editor toolbar
-    # default: False
+    # default: False.
     hide_toolbar: Var[bool]
 
     # Disable the editor toolbar
-    # default: False
+    # default: False.
     disable_toolbar: Var[bool]
 
     # Fired when the editor content changes.
@@ -244,11 +244,13 @@ class Editor(NoSSRComponent):
         }
 
     @classmethod
-    def create(cls, set_options: Optional[EditorOptions] = None, **props) -> Component:
+    def create(
+        cls, set_options: Optional[EditorOptions] = None, **props: Any
+    ) -> Component:
         """Create an instance of Editor. No children allowed.
 
         Args:
-            set_options(Optional[EditorOptions]): Configuration object to further configure the instance.
+            set_options: Configuration object to further configure the instance.
             **props: Any properties to be passed to the Editor
 
         Returns:

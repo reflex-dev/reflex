@@ -17,7 +17,7 @@ from ..base import RadixThemesComponent
 LiteralTextFieldSize = Literal["1", "2", "3"]
 LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
 
-class TextFieldRoot(elements.Div, RadixThemesComponent):
+class TextFieldRoot(elements.Input, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -120,6 +120,30 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
         type: Optional[Union[Var[str], str]] = None,
         value: Optional[Union[Var[Union[float, int, str]], float, int, str]] = None,
         list: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        accept: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        alt: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        auto_focus: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        capture: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        checked: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        default_checked: Optional[Union[Var[bool], bool]] = None,
+        dirname: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        form: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        form_action: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        form_enc_type: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        form_method: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        form_no_validate: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        form_target: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        max: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        min: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        multiple: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        pattern: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        src: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        step: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        use_map: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_capitalize: Optional[
             Union[Var[Union[bool, int, str]], bool, int, str]
@@ -192,12 +216,12 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
 
         Args:
             *children: The children of the component.
-            size: Text field size "1" - "3"
+            size: Specifies the visible width of a text control
             variant: Variant of text field: "classic" | "surface" | "soft"
             color_scheme: Override theme color for text field
             radius: Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"
             auto_complete: Whether the input should have autocomplete enabled
-            default_value: The value of the input when initially rendered.
+            default_value: The initial value for a text field
             disabled: Disables the input
             max_length: Specifies the maximum number of characters allowed in the input
             min_length: Specifies the minimum number of characters required in the input
@@ -208,12 +232,32 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
             type: Specifies the type of input
             value: Value of the input
             list: References a datalist for suggested options
-            on_change: Fired when the value of the textarea changes.
-            on_focus: Fired when the textarea is focused.
-            on_blur: Fired when the textarea is blurred.
-            on_key_down: Fired when a key is pressed down.
-            on_key_up: Fired when a key is released.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            on_change: Fired when the input value changes
+            on_focus: Fired when the input gains focus
+            on_blur: Fired when the input loses focus
+            on_key_down: Fired when a key is pressed down
+            on_key_up: Fired when a key is released
+            accept: Accepted types of files when the input is file type
+            alt: Alternate text for input type="image"
+            auto_focus: Automatically focuses the input when the page loads
+            capture: Captures media from the user (camera or microphone)
+            checked: Indicates whether the input is checked (for checkboxes and radio buttons)
+            default_checked: The initial value (for checkboxes and radio buttons)
+            dirname: Name part of the input to submit in 'dir' and 'name' pair when form is submitted
+            form: Associates the input with a form (by id)
+            form_action: URL to send the form data to (for type="submit" buttons)
+            form_enc_type: How the form data should be encoded when submitting to the server (for type="submit" buttons)
+            form_method: HTTP method to use for sending form data (for type="submit" buttons)
+            form_no_validate: Bypasses form validation when submitting (for type="submit" buttons)
+            form_target: Specifies where to display the response after submitting the form (for type="submit" buttons)
+            max: Specifies the maximum value for the input
+            min: Specifies the minimum value for the input
+            multiple: Indicates whether multiple values can be entered in an input of the type email or file
+            pattern: Regex pattern the input's value must match to be valid
+            src: URL for image inputs
+            step: Specifies the legal number intervals for an input
+            use_map: Name of the image map used with the input
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
@@ -457,6 +501,30 @@ class TextField(ComponentNamespace):
         type: Optional[Union[Var[str], str]] = None,
         value: Optional[Union[Var[Union[float, int, str]], float, int, str]] = None,
         list: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        accept: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        alt: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        auto_focus: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        capture: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        checked: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        default_checked: Optional[Union[Var[bool], bool]] = None,
+        dirname: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        form: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        form_action: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        form_enc_type: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        form_method: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        form_no_validate: Optional[
+            Union[Var[Union[bool, int, str]], bool, int, str]
+        ] = None,
+        form_target: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        max: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        min: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        multiple: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        pattern: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        src: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        step: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        use_map: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
         auto_capitalize: Optional[
             Union[Var[Union[bool, int, str]], bool, int, str]
@@ -529,12 +597,12 @@ class TextField(ComponentNamespace):
 
         Args:
             *children: The children of the component.
-            size: Text field size "1" - "3"
+            size: Specifies the visible width of a text control
             variant: Variant of text field: "classic" | "surface" | "soft"
             color_scheme: Override theme color for text field
             radius: Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"
             auto_complete: Whether the input should have autocomplete enabled
-            default_value: The value of the input when initially rendered.
+            default_value: The initial value for a text field
             disabled: Disables the input
             max_length: Specifies the maximum number of characters allowed in the input
             min_length: Specifies the minimum number of characters required in the input
@@ -545,12 +613,32 @@ class TextField(ComponentNamespace):
             type: Specifies the type of input
             value: Value of the input
             list: References a datalist for suggested options
-            on_change: Fired when the value of the textarea changes.
-            on_focus: Fired when the textarea is focused.
-            on_blur: Fired when the textarea is blurred.
-            on_key_down: Fired when a key is pressed down.
-            on_key_up: Fired when a key is released.
-            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            on_change: Fired when the input value changes
+            on_focus: Fired when the input gains focus
+            on_blur: Fired when the input loses focus
+            on_key_down: Fired when a key is pressed down
+            on_key_up: Fired when a key is released
+            accept: Accepted types of files when the input is file type
+            alt: Alternate text for input type="image"
+            auto_focus: Automatically focuses the input when the page loads
+            capture: Captures media from the user (camera or microphone)
+            checked: Indicates whether the input is checked (for checkboxes and radio buttons)
+            default_checked: The initial value (for checkboxes and radio buttons)
+            dirname: Name part of the input to submit in 'dir' and 'name' pair when form is submitted
+            form: Associates the input with a form (by id)
+            form_action: URL to send the form data to (for type="submit" buttons)
+            form_enc_type: How the form data should be encoded when submitting to the server (for type="submit" buttons)
+            form_method: HTTP method to use for sending form data (for type="submit" buttons)
+            form_no_validate: Bypasses form validation when submitting (for type="submit" buttons)
+            form_target: Specifies where to display the response after submitting the form (for type="submit" buttons)
+            max: Specifies the maximum value for the input
+            min: Specifies the minimum value for the input
+            multiple: Indicates whether multiple values can be entered in an input of the type email or file
+            pattern: Regex pattern the input's value must match to be valid
+            src: URL for image inputs
+            step: Specifies the legal number intervals for an input
+            use_map: Name of the image map used with the input
+            access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
             context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.

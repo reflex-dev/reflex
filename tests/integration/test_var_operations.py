@@ -7,42 +7,38 @@ from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness
 
-# pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false, reportUnknownMemberType=false
-
 
 def VarOperations():
     """App with var operations."""
-    from typing import Dict, List
-
     import reflex as rx
     from reflex.vars.base import LiteralVar
     from reflex.vars.sequence import ArrayVar
 
     class Object(rx.Base):
-        str: str = "hello"
+        name: str = "hello"
 
     class VarOperationState(rx.State):
-        int_var1: int = 10
-        int_var2: int = 5
-        int_var3: int = 7
-        float_var1: float = 10.5
-        float_var2: float = 5.5
-        list1: List = [1, 2]
-        list2: List = [3, 4]
-        list3: List = ["first", "second", "third"]
-        list4: List = [Object(name="obj_1"), Object(name="obj_2")]
-        str_var1: str = "first"
-        str_var2: str = "second"
-        str_var3: str = "ThIrD"
-        str_var4: str = "a long string"
-        dict1: Dict[int, int] = {1: 2}
-        dict2: Dict[int, int] = {3: 4}
-        html_str: str = "<div>hello</div>"
+        int_var1: rx.Field[int] = rx.field(10)
+        int_var2: rx.Field[int] = rx.field(5)
+        int_var3: rx.Field[int] = rx.field(7)
+        float_var1: rx.Field[float] = rx.field(10.5)
+        float_var2: rx.Field[float] = rx.field(5.5)
+        list1: rx.Field[list] = rx.field([1, 2])
+        list2: rx.Field[list] = rx.field([3, 4])
+        list3: rx.Field[list] = rx.field(["first", "second", "third"])
+        list4: rx.Field[list] = rx.field([Object(name="obj_1"), Object(name="obj_2")])
+        str_var1: rx.Field[str] = rx.field("first")
+        str_var2: rx.Field[str] = rx.field("second")
+        str_var3: rx.Field[str] = rx.field("ThIrD")
+        str_var4: rx.Field[str] = rx.field("a long string")
+        dict1: rx.Field[dict[int, int]] = rx.field({1: 2})
+        dict2: rx.Field[dict[int, int]] = rx.field({3: 4})
+        html_str: rx.Field[str] = rx.field("<div>hello</div>")
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
 
     @rx.memo
-    def memo_comp(list1: List[int], int_var1: int, id: str):
+    def memo_comp(list1: list[int], int_var1: int, id: str):
         return rx.text(list1, int_var1, id=id)
 
     @rx.memo
@@ -378,7 +374,8 @@ def VarOperations():
                 id="str_contains",
             ),
             rx.text(
-                VarOperationState.str_var1 | VarOperationState.str_var1, id="str_or_str"
+                VarOperationState.str_var1 | VarOperationState.str_var1,
+                id="str_or_str",
             ),
             rx.text(
                 VarOperationState.str_var1 & VarOperationState.str_var2,
@@ -394,7 +391,8 @@ def VarOperations():
                 id="str_and_int",
             ),
             rx.text(
-                VarOperationState.str_var1 | VarOperationState.int_var2, id="str_or_int"
+                VarOperationState.str_var1 | VarOperationState.int_var2,
+                id="str_or_int",
             ),
             rx.text(
                 (VarOperationState.str_var1 == VarOperationState.int_var1).to_string(),
@@ -406,7 +404,8 @@ def VarOperations():
             ),
             # STR, LIST
             rx.text(
-                VarOperationState.str_var1 | VarOperationState.list1, id="str_or_list"
+                VarOperationState.str_var1 | VarOperationState.list1,
+                id="str_or_list",
             ),
             rx.text(
                 (VarOperationState.str_var1 & VarOperationState.list1).to_string(),
@@ -422,7 +421,8 @@ def VarOperations():
             ),
             # STR, DICT
             rx.text(
-                VarOperationState.str_var1 | VarOperationState.dict1, id="str_or_dict"
+                VarOperationState.str_var1 | VarOperationState.dict1,
+                id="str_or_dict",
             ),
             rx.text(
                 (VarOperationState.str_var1 & VarOperationState.dict1).to_string(),
@@ -474,7 +474,8 @@ def VarOperations():
                 id="list_neq_list",
             ),
             rx.text(
-                VarOperationState.list1.contains(1).to_string(), id="list_contains"
+                VarOperationState.list1.contains(1).to_string(),
+                id="list_contains",
             ),
             rx.text(VarOperationState.list4.pluck("name").to_string(), id="list_pluck"),
             rx.text(VarOperationState.list1.reverse().to_string(), id="list_reverse"),
@@ -534,7 +535,8 @@ def VarOperations():
                 id="dict_neq_dict",
             ),
             rx.text(
-                VarOperationState.dict1.contains(1).to_string(), id="dict_contains"
+                VarOperationState.dict1.contains(1).to_string(),
+                id="dict_contains",
             ),
             rx.text(VarOperationState.str_var3.lower(), id="str_lower"),
             rx.text(VarOperationState.str_var3.upper(), id="str_upper"),
@@ -571,7 +573,7 @@ def VarOperations():
             ),
             rx.box(
                 rx.foreach(
-                    LiteralVar.create(list(range(0, 3))).to(ArrayVar, List[int]),
+                    LiteralVar.create(list(range(0, 3))).to(ArrayVar, list[int]),
                     lambda x: rx.foreach(
                         ArrayVar.range(x),
                         lambda y: rx.text(VarOperationState.list1[y], as_="p"),
@@ -598,6 +600,11 @@ def VarOperations():
                 ),
                 id="foreach_in_match",
             ),
+            # Literal range var in a foreach
+            rx.box(rx.foreach(range(42, 80, 27), rx.text.span), id="range_in_foreach1"),
+            rx.box(rx.foreach(range(42, 80, 3), rx.text.span), id="range_in_foreach2"),
+            rx.box(rx.foreach(range(42, 20, -6), rx.text.span), id="range_in_foreach3"),
+            rx.box(rx.foreach(range(42, 43, 5), rx.text.span), id="range_in_foreach4"),
         )
 
 
@@ -797,6 +804,11 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("memo_comp_nested", "345"),
         # foreach in a match
         ("foreach_in_match", "first\nsecond\nthird"),
+        # literal range in a foreach
+        ("range_in_foreach1", "4269"),
+        ("range_in_foreach2", "42454851545760636669727578"),
+        ("range_in_foreach3", "42363024"),
+        ("range_in_foreach4", "42"),
     ]
 
     for tag, expected in tests:

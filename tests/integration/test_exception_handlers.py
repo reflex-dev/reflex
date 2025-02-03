@@ -13,6 +13,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from reflex.testing import AppHarness, AppHarnessProd
 
+pytestmark = [pytest.mark.ignore_console_error]
+
 
 def TestApp():
     """A test app for event exception handler integration."""
@@ -37,7 +39,7 @@ def TestApp():
             """
             print(1 / number)
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
 
     @app.add_page
     def index():
@@ -49,12 +51,12 @@ def TestApp():
             ),
             rx.button(
                 "induce_backend_error",
-                on_click=lambda: TestAppState.divide_by_number(0),  # type: ignore
+                on_click=lambda: TestAppState.divide_by_number(0),  # pyright: ignore [reportCallIssue]
                 id="induce-backend-error-btn",
             ),
             rx.button(
                 "induce_react_error",
-                on_click=TestAppState.set_react_error(True),  # type: ignore
+                on_click=TestAppState.set_react_error(True),  # pyright: ignore [reportAttributeAccessIssue]
                 id="induce-react-error-btn",
             ),
             rx.box(

@@ -7,6 +7,7 @@ import dataclasses
 import functools
 import importlib
 import importlib.metadata
+import importlib.util
 import json
 import os
 import platform
@@ -17,32 +18,43 @@ import stat
 import sys
 import tempfile
 import time
+import typing
 import zipfile
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, List, Optional
+from typing import Callable, List, NamedTuple, Optional
 
 import httpx
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
 from redis import Redis as RedisSync
-from redis import exceptions
 from redis.asyncio import Redis
+from redis.exceptions import RedisError
 
 from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, environment, get_config
 from reflex.utils import console, net, path_ops, processes, redir
 from reflex.utils.exceptions import (
-    GeneratedCodeHasNoFunctionDefs,
-    raise_system_package_missing_error,
+    GeneratedCodeHasNoFunctionDefsError,
+    SystemPackageMissingError,
 )
 from reflex.utils.format import format_library_name
 from reflex.utils.registry import _get_npm_registry
 
+if typing.TYPE_CHECKING:
+    from reflex.app import App
+
 CURRENTLY_INSTALLING_NODE = False
+
+
+class AppInfo(NamedTuple):
+    """A tuple containing the app instance and module."""
+
+    app: App
+    module: ModuleType
 
 
 @dataclasses.dataclass(frozen=True)
@@ -75,16 +87,15 @@ def get_web_dir() -> Path:
     return environment.REFLEX_WEB_WORKDIR.get()
 
 
-def _python_version_check():
-    """Emit deprecation warning for deprecated python versions."""
-    # Check for end-of-life python versions.
-    if sys.version_info < (3, 10):
-        console.deprecate(
-            feature_name="Support for Python 3.9 and older",
-            reason="please upgrade to Python 3.10 or newer",
-            deprecation_version="0.6.0",
-            removal_version="0.7.0",
-        )
+def get_states_dir() -> Path:
+    """Get the working directory for the states.
+
+    Can be overridden with REFLEX_STATES_WORKDIR.
+
+    Returns:
+        The working directory.
+    """
+    return environment.REFLEX_STATES_WORKDIR.get()
 
 
 def check_latest_package_version(package_name: str):
@@ -109,8 +120,6 @@ def check_latest_package_version(package_name: str):
             console.warn(
                 f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
             )
-        # Check for depreacted python versions
-        _python_version_check()
     except Exception:
         pass
 
@@ -167,7 +176,7 @@ def get_node_version() -> version.Version | None:
     try:
         result = processes.new_process([node_path, "-v"], run=True)
         # The output will be in the form "vX.Y.Z", but version.parse() can handle it
-        return version.parse(result.stdout)  # type: ignore
+        return version.parse(result.stdout)  # pyright: ignore [reportArgumentType]
     except (FileNotFoundError, TypeError):
         return None
 
@@ -180,7 +189,7 @@ def get_fnm_version() -> version.Version | None:
     """
     try:
         result = processes.new_process([constants.Fnm.EXE, "--version"], run=True)
-        return version.parse(result.stdout.split(" ")[1])  # type: ignore
+        return version.parse(result.stdout.split(" ")[1])  # pyright: ignore [reportOptionalMemberAccess, reportAttributeAccessIssue]
     except (FileNotFoundError, TypeError):
         return None
     except version.InvalidVersion as e:
@@ -196,10 +205,13 @@ def get_bun_version() -> version.Version | None:
     Returns:
         The version of bun.
     """
+    bun_path = path_ops.get_bun_path()
+    if bun_path is None:
+        return None
     try:
         # Run the bun -v command and capture the output
-        result = processes.new_process([str(get_config().bun_path), "-v"], run=True)
-        return version.parse(result.stdout)  # type: ignore
+        result = processes.new_process([str(bun_path), "-v"], run=True)
+        return version.parse(str(result.stdout))  # pyright: ignore [reportArgumentType]
     except FileNotFoundError:
         return None
     except version.InvalidVersion as e:
@@ -243,7 +255,7 @@ def get_package_manager(on_failure_return_none: bool = False) -> str | None:
     """
     npm_path = path_ops.get_npm_path()
     if npm_path is not None:
-        return str(Path(npm_path).resolve())
+        return str(npm_path)
     if on_failure_return_none:
         return None
     raise FileNotFoundError("NPM not found. You may need to run `reflex init`.")
@@ -267,6 +279,22 @@ def windows_npm_escape_hatch() -> bool:
     return environment.REFLEX_USE_NPM.get()
 
 
+def _check_app_name(config: Config):
+    """Check if the app name is set in the config.
+
+    Args:
+        config: The config object.
+
+    Raises:
+        RuntimeError: If the app name is not set in the config.
+    """
+    if not config.app_name:
+        raise RuntimeError(
+            "Cannot get the app module because `app_name` is not set in rxconfig! "
+            "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
+        )
+
+
 def get_app(reload: bool = False) -> ModuleType:
     """Get the app module based on the default config.
 
@@ -277,22 +305,23 @@ def get_app(reload: bool = False) -> ModuleType:
         The app based on the default config.
 
     Raises:
-        RuntimeError: If the app name is not set in the config.
+        Exception: If an error occurs while getting the app module.
     """
     from reflex.utils import telemetry
 
     try:
         environment.RELOAD_CONFIG.set(reload)
         config = get_config()
-        if not config.app_name:
-            raise RuntimeError(
-                "Cannot get the app module because `app_name` is not set in rxconfig! "
-                "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
-            )
-        module = config.module
-        sys.path.insert(0, os.getcwd())
-        app = __import__(module, fromlist=(constants.CompileVars.APP,))
 
+        _check_app_name(config)
+
+        module = config.module
+        sys.path.insert(0, str(Path.cwd()))
+        app = (
+            __import__(module, fromlist=(constants.CompileVars.APP,))
+            if not config.app_module
+            else config.app_module
+        )
         if reload:
             from reflex.state import reload_state_module
 
@@ -301,11 +330,34 @@ def get_app(reload: bool = False) -> ModuleType:
 
             # Reload the app module.
             importlib.reload(app)
-
-        return app
     except Exception as ex:
         telemetry.send_error(ex, context="frontend")
         raise
+    else:
+        return app
+
+
+def get_and_validate_app(reload: bool = False) -> AppInfo:
+    """Get the app instance based on the default config and validate it.
+
+    Args:
+        reload: Re-import the app module from disk
+
+    Returns:
+        The app instance and the app module.
+
+    Raises:
+        RuntimeError: If the app instance is not an instance of rx.App.
+    """
+    from reflex.app import App
+
+    app_module = get_app(reload=reload)
+    app = getattr(app_module, constants.CompileVars.APP)
+    if not isinstance(app, App):
+        raise RuntimeError(
+            "The app instance in the specified app_module_import in rxconfig must be an instance of rx.App."
+        )
+    return AppInfo(app=app, module=app_module)
 
 
 def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
@@ -318,8 +370,7 @@ def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     Returns:
         The compiled app based on the default config.
     """
-    app_module = get_app(reload=reload)
-    app = getattr(app_module, constants.CompileVars.APP)
+    app, app_module = get_and_validate_app(reload=reload)
     # For py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).
     app._apply_decorated_pages()
@@ -333,10 +384,11 @@ def get_redis() -> Redis | None:
     Returns:
         The asynchronous redis client.
     """
-    if isinstance((redis_url_or_options := parse_redis_url()), str):
-        return Redis.from_url(redis_url_or_options)
-    elif isinstance(redis_url_or_options, dict):
-        return Redis(**redis_url_or_options)
+    if (redis_url := parse_redis_url()) is not None:
+        return Redis.from_url(
+            redis_url,
+            retry_on_error=[RedisError],
+        )
     return None
 
 
@@ -346,14 +398,15 @@ def get_redis_sync() -> RedisSync | None:
     Returns:
         The synchronous redis client.
     """
-    if isinstance((redis_url_or_options := parse_redis_url()), str):
-        return RedisSync.from_url(redis_url_or_options)
-    elif isinstance(redis_url_or_options, dict):
-        return RedisSync(**redis_url_or_options)
+    if (redis_url := parse_redis_url()) is not None:
+        return RedisSync.from_url(
+            redis_url,
+            retry_on_error=[RedisError],
+        )
     return None
 
 
-def parse_redis_url() -> str | dict | None:
+def parse_redis_url() -> str | None:
     """Parse the REDIS_URL in config if applicable.
 
     Returns:
@@ -372,16 +425,13 @@ def parse_redis_url() -> str | dict | None:
     return config.redis_url
 
 
-async def get_redis_status() -> bool | None:
+async def get_redis_status() -> dict[str, bool | None]:
     """Checks the status of the Redis connection.
 
     Attempts to connect to Redis and send a ping command to verify connectivity.
 
     Returns:
-        bool or None: The status of the Redis connection:
-            - True: Redis is accessible and responding.
-            - False: Redis is not accessible due to a connection error.
-            - None: Redis not used i.e redis_url is not set in rxconfig.
+        The status of the Redis connection.
     """
     try:
         status = True
@@ -390,10 +440,10 @@ async def get_redis_status() -> bool | None:
             redis_client.ping()
         else:
             status = None
-    except exceptions.RedisError:
+    except RedisError:
         status = False
 
-    return status
+    return {"redis": status}
 
 
 def validate_app_name(app_name: str | None = None) -> str:
@@ -428,6 +478,167 @@ def validate_app_name(app_name: str | None = None) -> str:
     return app_name
 
 
+def rename_path_up_tree(full_path: str | Path, old_name: str, new_name: str) -> Path:
+    """Rename all instances of `old_name` in the path (file and directories) to `new_name`.
+    The renaming stops when we reach the directory containing `rxconfig.py`.
+
+    Args:
+        full_path: The full path to start renaming from.
+        old_name: The name to be replaced.
+        new_name: The replacement name.
+
+    Returns:
+         The updated path after renaming.
+    """
+    current_path = Path(full_path)
+    new_path = None
+
+    while True:
+        directory, base = current_path.parent, current_path.name
+        # Stop renaming when we reach the root dir (which contains rxconfig.py)
+        if current_path.is_dir() and (current_path / "rxconfig.py").exists():
+            new_path = current_path
+            break
+
+        if old_name == base.removesuffix(constants.Ext.PY):
+            new_base = base.replace(old_name, new_name)
+            new_path = directory / new_base
+            current_path.rename(new_path)
+            console.debug(f"Renamed {current_path} -> {new_path}")
+            current_path = new_path
+        else:
+            new_path = current_path
+
+        # Move up the directory tree
+        current_path = directory
+
+    return new_path
+
+
+def rename_app(new_app_name: str, loglevel: constants.LogLevel):
+    """Rename the app directory.
+
+    Args:
+        new_app_name: The new name for the app.
+        loglevel: The log level to use.
+
+    Raises:
+        Exit: If the command is not ran in the root dir or the app module cannot be imported.
+    """
+    # Set the log level.
+    console.set_log_level(loglevel)
+
+    if not constants.Config.FILE.exists():
+        console.error(
+            "No rxconfig.py found. Make sure you are in the root directory of your app."
+        )
+        raise typer.Exit(1)
+
+    sys.path.insert(0, str(Path.cwd()))
+
+    config = get_config()
+    module_path = importlib.util.find_spec(config.module)
+    if module_path is None:
+        console.error(f"Could not find module {config.module}.")
+        raise typer.Exit(1)
+
+    if not module_path.origin:
+        console.error(f"Could not find origin for module {config.module}.")
+        raise typer.Exit(1)
+    console.info(f"Renaming app directory to {new_app_name}.")
+    process_directory(
+        Path.cwd(),
+        config.app_name,
+        new_app_name,
+        exclude_dirs=[constants.Dirs.WEB, constants.Dirs.APP_ASSETS],
+    )
+
+    rename_path_up_tree(Path(module_path.origin), config.app_name, new_app_name)
+
+    console.success(f"App directory renamed to [bold]{new_app_name}[/bold].")
+
+
+def rename_imports_and_app_name(file_path: str | Path, old_name: str, new_name: str):
+    """Rename imports the file using string replacement as well as app_name in rxconfig.py.
+
+    Args:
+        file_path: The file to process.
+        old_name: The old name to replace.
+        new_name: The new name to use.
+    """
+    file_path = Path(file_path)
+    content = file_path.read_text()
+
+    # Replace `from old_name.` or `from old_name` with `from new_name`
+    content = re.sub(
+        rf"\bfrom {re.escape(old_name)}(\b|\.|\s)",
+        lambda match: f"from {new_name}{match.group(1)}",
+        content,
+    )
+
+    # Replace `import old_name` with `import new_name`
+    content = re.sub(
+        rf"\bimport {re.escape(old_name)}\b",
+        f"import {new_name}",
+        content,
+    )
+
+    # Replace `app_name="old_name"` in rx.Config
+    content = re.sub(
+        rf'\bapp_name\s*=\s*["\']{re.escape(old_name)}["\']',
+        f'app_name="{new_name}"',
+        content,
+    )
+
+    # Replace positional argument `"old_name"` in rx.Config
+    content = re.sub(
+        rf'\brx\.Config\(\s*["\']{re.escape(old_name)}["\']',
+        f'rx.Config("{new_name}"',
+        content,
+    )
+
+    file_path.write_text(content)
+
+
+def process_directory(
+    directory: str | Path,
+    old_name: str,
+    new_name: str,
+    exclude_dirs: list | None = None,
+    extensions: list | None = None,
+):
+    """Process files with specified extensions in a directory, excluding specified directories.
+
+    Args:
+        directory: The root directory to process.
+        old_name: The old name to replace.
+        new_name: The new name to use.
+        exclude_dirs: List of directory names to exclude. Defaults to None.
+        extensions: List of file extensions to process.
+    """
+    exclude_dirs = exclude_dirs or []
+    extensions = extensions or [
+        constants.Ext.PY,
+        constants.Ext.MD,
+    ]  # include .md files, typically used in reflex-web.
+    extensions_set = {ext.lstrip(".") for ext in extensions}
+    directory = Path(directory)
+
+    root_exclude_dirs = {directory / exclude_dir for exclude_dir in exclude_dirs}
+
+    files = (
+        p.resolve()
+        for p in directory.glob("**/*")
+        if p.is_file() and p.suffix.lstrip(".") in extensions_set
+    )
+
+    for file_path in files:
+        if not any(
+            file_path.is_relative_to(exclude_dir) for exclude_dir in root_exclude_dirs
+        ):
+            rename_imports_and_app_name(file_path, old_name, new_name)
+
+
 def create_config(app_name: str):
     """Create a new rxconfig file.
 
@@ -438,9 +649,11 @@ def create_config(app_name: str):
     from reflex.compiler import templates
 
     config_name = f"{re.sub(r'[^a-zA-Z]', '', app_name).capitalize()}Config"
-    with open(constants.Config.FILE, "w") as f:
-        console.debug(f"Creating {constants.Config.FILE}")
-        f.write(templates.RXCONFIG.render(app_name=app_name, config_name=config_name))
+
+    console.debug(f"Creating {constants.Config.FILE}")
+    constants.Config.FILE.write_text(
+        templates.RXCONFIG.render(app_name=app_name, config_name=config_name)
+    )
 
 
 def initialize_gitignore(
@@ -494,14 +707,14 @@ def initialize_requirements_txt():
         console.debug(f"Detected encoding for {fp} as {encoding}.")
     try:
         other_requirements_exist = False
-        with open(fp, "r", encoding=encoding) as f:
-            for req in f.readlines():
+        with fp.open("r", encoding=encoding) as f:
+            for req in f:
                 # Check if we have a package name that is reflex
                 if re.match(r"^reflex[^a-zA-Z0-9]", req):
                     console.debug(f"{fp} already has reflex as dependency.")
                     return
                 other_requirements_exist = True
-        with open(fp, "a", encoding=encoding) as f:
+        with fp.open("a", encoding=encoding) as f:
             preceding_newline = "\n" if other_requirements_exist else ""
             f.write(
                 f"{preceding_newline}{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
@@ -592,7 +805,7 @@ def initialize_web_directory():
     """Initialize the web directory on reflex init."""
     console.log("Initializing the web directory.")
 
-    # Re-use the hash if one is already created, so we don't over-write it when running reflex init
+    # Reuse the hash if one is already created, so we don't over-write it when running reflex init
     project_hash = get_project_hash()
 
     path_ops.cp(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
@@ -609,10 +822,14 @@ def initialize_web_directory():
     init_reflex_json(project_hash=project_hash)
 
 
+def _turbopack_flag() -> str:
+    return " --turbopack" if environment.REFLEX_USE_TURBOPACK.get() else ""
+
+
 def _compile_package_json():
     return templates.PACKAGE_JSON.render(
         scripts={
-            "dev": constants.PackageJson.Commands.DEV,
+            "dev": constants.PackageJson.Commands.DEV + _turbopack_flag(),
             "export": constants.PackageJson.Commands.EXPORT,
             "export_sitemap": constants.PackageJson.Commands.EXPORT_SITEMAP,
             "prod": constants.PackageJson.Commands.PROD,
@@ -645,7 +862,7 @@ def initialize_bun_config():
 def init_reflex_json(project_hash: int | None):
     """Write the hash of the Reflex project to a REFLEX_JSON.
 
-    Re-use the hash if one is already created, therefore do not
+    Reuse the hash if one is already created, therefore do not
     overwrite it every time we run the reflex init command
     .
 
@@ -667,7 +884,9 @@ def init_reflex_json(project_hash: int | None):
     path_ops.update_json_file(get_web_dir() / constants.Reflex.JSON, reflex_json)
 
 
-def update_next_config(export=False, transpile_packages: Optional[List[str]] = None):
+def update_next_config(
+    export: bool = False, transpile_packages: Optional[List[str]] = None
+):
     """Update Next.js config from Reflex config.
 
     Args:
@@ -693,13 +912,12 @@ def _update_next_config(
     next_config = {
         "basePath": config.frontend_path or "",
         "compress": config.next_compression,
-        "reactStrictMode": config.react_strict_mode,
         "trailingSlash": True,
         "staticPageGenerationTimeout": config.static_page_generation_timeout,
     }
     if transpile_packages:
         next_config["transpilePackages"] = list(
-            set((format_library_name(p) for p in transpile_packages))
+            {format_library_name(p) for p in transpile_packages}
         )
     if export:
         next_config["output"] = "export"
@@ -732,13 +950,13 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         response.raise_for_status()
 
     # Save the script to a temporary file.
-    script = tempfile.NamedTemporaryFile()
-    with open(script.name, "w") as f:
-        f.write(response.text)
+    script = Path(tempfile.NamedTemporaryFile().name)
+
+    script.write_text(response.text)
 
     # Run the script.
     env = {**os.environ, **env}
-    process = processes.new_process(["bash", f.name, *args], env=env)
+    process = processes.new_process(["bash", str(script), *args], env=env)
     show = processes.show_status if show_status else processes.show_logs
     show(f"Installing {url}", process)
 
@@ -752,14 +970,14 @@ def download_and_extract_fnm_zip():
     # Download the zip file
     url = constants.Fnm.INSTALL_URL
     console.debug(f"Downloading {url}")
-    fnm_zip_file = constants.Fnm.DIR / f"{constants.Fnm.FILENAME}.zip"
+    fnm_zip_file: Path = constants.Fnm.DIR / f"{constants.Fnm.FILENAME}.zip"
     # Function to download and extract the FNM zip release.
     try:
         # Download the FNM zip release.
         # TODO: show progress to improve UX
         response = net.get(url, follow_redirects=True)
         response.raise_for_status()
-        with open(fnm_zip_file, "wb") as output_file:
+        with fnm_zip_file.open("wb") as output_file:
             for chunk in response.iter_bytes():
                 output_file.write(chunk)
 
@@ -807,7 +1025,7 @@ def install_node():
         )
     else:  # All other platforms (Linux, MacOS).
         # Add execute permissions to fnm executable.
-        os.chmod(constants.Fnm.EXE, stat.S_IXUSR)
+        constants.Fnm.EXE.chmod(stat.S_IXUSR)
         # Install node.
         # Specify arm64 arch explicitly for M1s and M2s.
         architecture_arg = (
@@ -830,7 +1048,11 @@ def install_node():
 
 
 def install_bun():
-    """Install bun onto the user's system."""
+    """Install bun onto the user's system.
+
+    Raises:
+        SystemPackageMissingError: If "unzip" is missing.
+    """
     win_supported = is_windows_bun_supported()
     one_drive_in_path = windows_check_onedrive_in_path()
     if constants.IS_WINDOWS and (not win_supported or one_drive_in_path):
@@ -844,9 +1066,7 @@ def install_bun():
             )
 
     # Skip if bun is already installed.
-    if Path(get_config().bun_path).exists() and get_bun_version() == version.parse(
-        constants.Bun.VERSION
-    ):
+    if get_bun_version() == version.parse(constants.Bun.VERSION):
         console.debug("Skipping bun installation as it is already installed.")
         return
 
@@ -867,15 +1087,15 @@ def install_bun():
             show_logs=console.is_debug(),
         )
     else:
-        unzip_path = path_ops.which("unzip")
-        if unzip_path is None:
-            raise_system_package_missing_error("unzip")
+        if path_ops.which("unzip") is None:
+            raise SystemPackageMissingError("unzip")
 
         # Run the bun install script.
         download_and_run(
             constants.Bun.INSTALL_URL,
             f"bun-v{constants.Bun.VERSION}",
             BUN_INSTALL=str(constants.Bun.ROOT_PATH),
+            BUN_VERSION=str(constants.Bun.VERSION),
         )
 
 
@@ -909,7 +1129,7 @@ def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
         The decorated function.
     """
 
-    def _inner_decorator(func):
+    def _inner_decorator(func: Callable):
         def _inner(*args, **kwargs):
             payload = _read_cached_procedure_file(cache_file)
             new_payload = payload_fn(*args, **kwargs)
@@ -925,7 +1145,7 @@ def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
 
 @cached_procedure(
     cache_file=str(get_web_dir() / "reflex.install_frontend_packages.cached"),
-    payload_fn=lambda p, c: f"{sorted(list(p))!r},{c.json()}",
+    payload_fn=lambda p, c: f"{sorted(p)!r},{c.json()}",
 )
 def install_frontend_packages(packages: set[str], config: Config):
     """Installs the base and custom frontend packages.
@@ -969,7 +1189,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     )
 
     processes.run_process_with_fallback(
-        [install_package_manager, "install"],  # type: ignore
+        [install_package_manager, "install"],
         fallback=fallback_command,
         analytics_enabled=True,
         show_status_message="Installing base frontend packages",
@@ -1071,12 +1291,9 @@ def validate_bun():
     Raises:
         Exit: If custom specified bun does not exist or does not meet requirements.
     """
-    # if a custom bun path is provided, make sure its valid
-    # This is specific to non-FHS OS
-    bun_path = get_config().bun_path
-    if path_ops.use_system_bun():
-        bun_path = path_ops.which("bun")
-    if bun_path != constants.Bun.DEFAULT_PATH:
+    bun_path = path_ops.get_bun_path()
+
+    if bun_path and bun_path.samefile(constants.Bun.DEFAULT_PATH):
         console.info(f"Using custom Bun path: {bun_path}")
         bun_version = get_bun_version()
         if not bun_version:
@@ -1094,7 +1311,7 @@ def validate_bun():
             raise typer.Exit(1)
 
 
-def validate_frontend_dependencies(init=True):
+def validate_frontend_dependencies(init: bool = True):
     """Validate frontend dependencies to ensure they meet requirements.
 
     Args:
@@ -1148,11 +1365,12 @@ def ensure_reflex_installation_id() -> Optional[int]:
         if installation_id is None:
             installation_id = random.getrandbits(128)
             installation_id_file.write_text(str(installation_id))
-        # If we get here, installation_id is definitely set
-        return installation_id
     except Exception as e:
         console.debug(f"Failed to ensure reflex installation id: {e}")
         return None
+    else:
+        # If we get here, installation_id is definitely set
+        return installation_id
 
 
 def initialize_reflex_user_directory():
@@ -1173,6 +1391,24 @@ def initialize_frontend_dependencies():
     CURRENTLY_INSTALLING_NODE = False
     # Set up the web directory.
     initialize_web_directory()
+
+
+def check_db_used() -> bool:
+    """Check if the database is used.
+
+    Returns:
+        True if the database is used.
+    """
+    return bool(get_config().db_url)
+
+
+def check_redis_used() -> bool:
+    """Check if Redis is used.
+
+    Returns:
+        True if Redis is used.
+    """
+    return bool(get_config().redis_url)
 
 
 def check_db_initialized() -> bool:
@@ -1246,7 +1482,7 @@ def prompt_for_template_options(templates: list[Template]) -> str:
     )
 
     # Return the template.
-    return templates[int(template)].name
+    return templates[int(template)].name  # pyright: ignore [reportArgumentType]
 
 
 def fetch_app_templates(version: str) -> dict[str, Template]:
@@ -1300,7 +1536,7 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
     for tp in templates_data:
         if tp["hidden"] or tp["code_url"] is None:
             continue
-        known_fields = set(f.name for f in dataclasses.fields(Template))
+        known_fields = {f.name for f in dataclasses.fields(Template)}
         filtered_templates[tp["name"]] = Template(
             **{k: v for k, v in tp.items() if k in known_fields}
         )
@@ -1326,7 +1562,7 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         raise typer.Exit(1) from ose
 
     # Use httpx GET with redirects to download the zip file.
-    zip_file_path = Path(temp_dir) / "template.zip"
+    zip_file_path: Path = Path(temp_dir) / "template.zip"
     try:
         # Note: following redirects can be risky. We only allow this for reflex built templates at the moment.
         response = net.get(template_url, follow_redirects=True)
@@ -1336,9 +1572,8 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         console.error(f"Failed to download the template: {he}")
         raise typer.Exit(1) from he
     try:
-        with open(zip_file_path, "wb") as f:
-            f.write(response.content)
-            console.debug(f"Downloaded the zip to {zip_file_path}")
+        zip_file_path.write_bytes(response.content)
+        console.debug(f"Downloaded the zip to {zip_file_path}")
     except OSError as ose:
         console.error(f"Unable to write the downloaded zip to disk {ose}")
         raise typer.Exit(1) from ose
@@ -1349,18 +1584,21 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
     except OSError as ose:
         console.error(f"Failed to create temp directory for extracting zip: {ose}")
         raise typer.Exit(1) from ose
+
     try:
         zipfile.ZipFile(zip_file_path).extractall(path=unzip_dir)
         # The zip file downloaded from github looks like:
         # repo-name-branch/**/*, so we need to remove the top level directory.
-        if len(subdirs := os.listdir(unzip_dir)) != 1:
-            console.error(f"Expected one directory in the zip, found {subdirs}")
-            raise typer.Exit(1)
-        template_dir = unzip_dir / subdirs[0]
-        console.debug(f"Template folder is located at {template_dir}")
     except Exception as uze:
         console.error(f"Failed to unzip the template: {uze}")
         raise typer.Exit(1) from uze
+
+    if len(subdirs := os.listdir(unzip_dir)) != 1:
+        console.error(f"Expected one directory in the zip, found {subdirs}")
+        raise typer.Exit(1)
+
+    template_dir = unzip_dir / subdirs[0]
+    console.debug(f"Template folder is located at {template_dir}")
 
     # Move the rxconfig file here first.
     path_ops.mv(str(template_dir / constants.Config.FILE), constants.Config.FILE)
@@ -1397,7 +1635,9 @@ def initialize_default_app(app_name: str):
     initialize_app_directory(app_name)
 
 
-def validate_and_create_app_using_remote_template(app_name, template, templates):
+def validate_and_create_app_using_remote_template(
+    app_name: str, template: str, templates: dict[str, Template]
+):
     """Validate and create an app using a remote template.
 
     Args:
@@ -1587,7 +1827,7 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
         generation_hash: The generation hash from reflex.build.
 
     Raises:
-        GeneratedCodeHasNoFunctionDefs: If the fetched code has no function definitions
+        GeneratedCodeHasNoFunctionDefsError: If the fetched code has no function definitions
             (the refactored reflex code is expected to have at least one root function defined).
     """
     # Download the reflex code for the generation.
@@ -1604,17 +1844,17 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
     # Determine the name of the last function, which renders the generated code.
     defined_funcs = re.findall(r"def ([a-zA-Z_]+)\(", resp.text)
     if not defined_funcs:
-        raise GeneratedCodeHasNoFunctionDefs(
+        raise GeneratedCodeHasNoFunctionDefsError(
             f"No function definitions found in generated code from {url!r}."
         )
     render_func_name = defined_funcs[-1]
 
-    def replace_content(_match):
+    def replace_content(_match: re.Match) -> str:
         return "\n".join(
             [
                 resp.text,
                 "",
-                "" "def index() -> rx.Component:",
+                "def index() -> rx.Component:",
                 f"    return {render_func_name}()",
                 "",
                 "",
@@ -1639,7 +1879,7 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
     main_module_path.write_text(main_module_code)
 
 
-def format_address_width(address_width) -> int | None:
+def format_address_width(address_width: str | None) -> int | None:
     """Cast address width to an int.
 
     Args:

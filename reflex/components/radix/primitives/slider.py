@@ -30,11 +30,11 @@ def on_value_event_spec(
     Returns:
         The event handler spec.
     """
-    return (value,)  # type: ignore
+    return (value,)
 
 
 class SliderRoot(SliderComponent):
-    """The Slider component comtaining all slider parts."""
+    """The Slider component containing all slider parts."""
 
     tag = "Root"
     alias = "RadixSliderRoot"
@@ -188,7 +188,7 @@ class Slider(ComponentNamespace):
         else:
             children = [
                 track,
-                #     Foreach.create(props.get("value"), lambda e: SliderThumb.create()),  # foreach doesn't render Thumbs properly
+                #     Foreach.create(props.get("value"), lambda e: SliderThumb.create()),  # foreach doesn't render Thumbs properly # noqa: ERA001
             ]
 
         return SliderRoot.create(*children, **props)
