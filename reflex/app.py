@@ -1559,7 +1559,7 @@ def upload(app: App):
             file_copies.append(
                 UploadFile(
                     file=content_copy,
-                    filename=file.filename,
+                    filename=Path(file.filename).name if file.filename else None,
                     size=file.size,
                     headers=file.headers,
                 )
