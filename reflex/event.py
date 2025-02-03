@@ -20,7 +20,6 @@ from typing import (
     Tuple,
     Type,
     Union,
-    Unpack,
     get_type_hints,
     overload,
 )
@@ -30,6 +29,7 @@ from typing_extensions import (
     TypedDict,
     TypeVar,
     TypeVarTuple,
+    Unpack,
     get_args,
     get_origin,
 )
