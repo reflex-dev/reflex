@@ -1983,7 +1983,7 @@ class ComputedVar(Var[RETURN_TYPE]):
     _initial_value: RETURN_TYPE | types.Unset = dataclasses.field(default=types.Unset())
 
     # Explicit var dependencies to track
-    _static_deps: dict[str, set[str]] = dataclasses.field(default_factory=dict)
+    _static_deps: dict[str | None, set[str]] = dataclasses.field(default_factory=dict)
 
     # Whether var dependencies should be auto-determined
     _auto_deps: bool = dataclasses.field(default=True)
@@ -2053,38 +2053,71 @@ class ComputedVar(Var[RETURN_TYPE]):
 
         object.__setattr__(self, "_update_interval", interval)
 
-        _static_deps = {}
-        if isinstance(deps, dict):
-            # Assume a dict is coming from _replace, so no special processing.
-            _static_deps = deps
-        elif deps is not None:
-            for dep in deps:
-                if isinstance(dep, Var):
-                    state_name = (
-                        all_var_data.state
-                        if (all_var_data := dep._get_all_var_data())
-                        and all_var_data.state
-                        else None
-                    )
-                    if all_var_data is not None:
-                        var_name = all_var_data.field_name
-                    else:
-                        var_name = dep._js_expr
-                    _static_deps.setdefault(state_name, set()).add(var_name)
-                elif isinstance(dep, str) and dep != "":
-                    _static_deps.setdefault(None, set()).add(dep)
-                else:
-                    raise TypeError(
-                        "ComputedVar dependencies must be Var instances or var names (non-empty strings)."
-                    )
         object.__setattr__(
             self,
             "_static_deps",
-            _static_deps,
+            self._calculate_static_deps(deps),
         )
         object.__setattr__(self, "_auto_deps", auto_deps)
 
         object.__setattr__(self, "_fget", fget)
+
+    def _calculate_static_deps(
+        self,
+        deps: Union[List[Union[str, Var]], dict[str | None, set[str]]] | None = None,
+    ) -> dict[str | None, set[str]]:
+        """Calculate the static dependencies of the computed var from user input or existing dependencies.
+
+        Args:
+            deps: The user input dependencies or existing dependencies.
+
+        Returns:
+            The static dependencies.
+        """
+        if isinstance(deps, dict):
+            # Assume a dict is coming from _replace, so no special processing.
+            return deps
+        _static_deps = {}
+        if deps is not None:
+            for dep in deps:
+                _static_deps = self._add_static_dep(dep, _static_deps)
+        return _static_deps
+
+    def _add_static_dep(
+        self, dep: Union[str, Var], deps: dict[str | None, set[str]] | None = None
+    ) -> dict[str | None, set[str]]:
+        """Add a static dependency to the computed var or existing dependency set.
+
+        Args:
+            dep: The dependency to add.
+            deps: The existing dependency set.
+
+        Returns:
+            The updated dependency set.
+
+        Raises:
+            TypeError: If the computed var dependencies are not Var instances or var names.
+        """
+        if deps is None:
+            deps = self._static_deps
+        if isinstance(dep, Var):
+            state_name = (
+                all_var_data.state
+                if (all_var_data := dep._get_all_var_data()) and all_var_data.state
+                else None
+            )
+            if all_var_data is not None:
+                var_name = all_var_data.field_name
+            else:
+                var_name = dep._js_expr
+            deps.setdefault(state_name, set()).add(var_name)
+        elif isinstance(dep, str) and dep != "":
+            deps.setdefault(None, set()).add(dep)
+        else:
+            raise TypeError(
+                "ComputedVar dependencies must be Var instances or var names (non-empty strings)."
+            )
+        return deps
 
     @override
     def _replace(
@@ -2106,6 +2139,8 @@ class ComputedVar(Var[RETURN_TYPE]):
         Raises:
             TypeError: If kwargs contains keys that are not allowed.
         """
+        if "deps" in kwargs:
+            kwargs["deps"] = self._calculate_static_deps(kwargs["deps"])
         field_values = {
             "fget": kwargs.pop("fget", self._fget),
             "initial_value": kwargs.pop("initial_value", self._initial_value),
