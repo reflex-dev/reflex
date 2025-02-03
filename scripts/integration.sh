@@ -14,6 +14,8 @@ shift
 check_ports=${1:-3000 8000}
 shift
 
+ulimit -a
+
 # Start the server in the background
 export TELEMETRY_ENABLED=false
 reflex run --loglevel debug --env "$env_mode" "$@" & pid=$!
