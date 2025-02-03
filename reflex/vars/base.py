@@ -40,6 +40,7 @@ from typing import (
     overload,
 )
 
+from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import ParamSpec, TypeGuard, deprecated, get_type_hints, override
 
 from reflex import constants
@@ -573,7 +574,7 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     @classmethod
-    def create(  # type: ignore[override]
+    def create(  # pyright: ignore[reportOverlappingOverload]
         cls,
         value: bool,
         _var_data: VarData | None = None,
@@ -581,7 +582,7 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     @classmethod
-    def create(  # type: ignore[override]
+    def create(
         cls,
         value: int,
         _var_data: VarData | None = None,
@@ -605,7 +606,7 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     @classmethod
-    def create(
+    def create(  # pyright: ignore[reportOverlappingOverload]
         cls,
         value: None,
         _var_data: VarData | None = None,
@@ -3182,10 +3183,16 @@ def dispatch(
 
 V = TypeVar("V")
 
-BASE_TYPE = TypeVar("BASE_TYPE", bound=Base)
+BASE_TYPE = TypeVar("BASE_TYPE", bound=Base | None)
+SQLA_TYPE = TypeVar("SQLA_TYPE", bound=DeclarativeBase | None)
+
+if TYPE_CHECKING:
+    from _typeshed import DataclassInstance
+
+    DATACLASS_TYPE = TypeVar("DATACLASS_TYPE", bound=DataclassInstance | None)
 
 FIELD_TYPE = TypeVar("FIELD_TYPE")
-MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping)
+MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping | None)
 
 
 class Field(Generic[FIELD_TYPE]):
@@ -3229,6 +3236,18 @@ class Field(Generic[FIELD_TYPE]):
     def __get__(
         self: Field[BASE_TYPE], instance: None, owner: Any
     ) -> ObjectVar[BASE_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: Field[SQLA_TYPE], instance: None, owner: Any
+    ) -> ObjectVar[SQLA_TYPE]: ...
+
+    if TYPE_CHECKING:
+
+        @overload
+        def __get__(
+            self: Field[DATACLASS_TYPE], instance: None, owner: Any
+        ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload
     def __get__(self, instance: None, owner: Any) -> Var[FIELD_TYPE]: ...
