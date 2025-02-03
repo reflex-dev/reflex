@@ -517,8 +517,10 @@ def _generate_component_create_functiondef(
             # Get all prefixes of the type arguments
             all_count_args_type = [
                 ast.Name(
-                    f"EventType[[{', '.join([ast.unparse(arg) for arg in type_args[:i]])}]]"
+                    f"EventType[{', '.join([ast.unparse(arg) for arg in type_args[:i]])}]"
                 )
+                if i > 0
+                else ast.Name("EventType[()]")
                 for i in range(len(type_args) + 1)
             ]
 
@@ -558,7 +560,9 @@ def _generate_component_create_functiondef(
             ]
 
             all_count_args_type = [
-                ast.Name(f"EventType[[{', '.join(arguments_without_var[:i])}]]")
+                ast.Name(f"EventType[{', '.join(arguments_without_var[:i])}]")
+                if i > 0
+                else ast.Name("EventType[()]")
                 for i in range(len(arguments) + 1)
             ]
 

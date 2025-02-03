@@ -1091,7 +1091,7 @@ def _callback_arg_spec(eval_result: Any):
 
 def call_script(
     javascript_code: str | Var[str],
-    callback: EventType | None = None,
+    callback: EventType[Any] | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -1130,7 +1130,7 @@ def call_script(
 
 def call_function(
     javascript_code: str | Var,
-    callback: EventType | None = None,
+    callback: EventType[Any] | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -1164,7 +1164,7 @@ def call_function(
 
 def run_script(
     javascript_code: str | Var,
-    callback: EventType | None = None,
+    callback: EventType[Any] | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -1844,7 +1844,7 @@ class EventCallback(Generic[Unpack[P]]):
         Returns:
             The function with the values.
         """
-        return self.func(*values)  # pyright: ignore [reportCallIssue, reportReturnType]
+        return self.func(*values)  # pyright: ignore [reportArgumentType]
 
     @overload
     def __get__(
@@ -1898,9 +1898,6 @@ class LambdaEventCallback(Protocol[Unpack[P]]):
 
         Args:
             *args: The args to call the lambda with.
-
-        Returns:
-            The result of calling the lambda with the args.
         """
 
 
@@ -1912,7 +1909,7 @@ LambdaOrState = LambdaEventCallback[Unpack[ARGS]] | EventCallback[Unpack[ARGS]]
 
 ItemOrList = V | List[V]
 
-IndividualEventType = BasicEventTypes | LambdaOrState[Unpack[ARGS]] | LambdaOrState[()]
+IndividualEventType = BasicEventTypes | LambdaOrState[Unpack[ARGS]]
 EventType = ItemOrList[IndividualEventType[Unpack[ARGS]]]
 
 
