@@ -210,7 +210,7 @@ jobs:
           poetry run bash scripts/integration.sh ./rx-shout-from-template prod
 
   reflex-web-macos:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     strategy:
       fail-fast: false
       matrix:
