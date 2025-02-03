@@ -136,9 +136,9 @@ def _assert_token(connection_banner, driver):
         driver: Selenium webdriver instance.
     """
     ss = SessionStorage(driver)
-    assert connection_banner._poll_for(
-        lambda: ss.get("token") is not None
-    ), "token not found"
+    assert connection_banner._poll_for(lambda: ss.get("token") is not None), (
+        "token not found"
+    )
 
 
 @pytest.mark.asyncio
@@ -153,7 +153,6 @@ async def test_connection_banner(connection_banner: AppHarness):
     driver = connection_banner.frontend()
 
     _assert_token(connection_banner, driver)
-
     assert connection_banner._poll_for(lambda: not has_error_modal(driver))
 
     delay_button = driver.find_element(By.ID, "delay")

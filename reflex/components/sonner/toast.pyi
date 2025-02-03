@@ -177,7 +177,7 @@ class ToastNamespace(ComponentNamespace):
     @staticmethod
     def __call__(
         message: Union[str, Var] = "", level: Optional[str] = None, **props
-    ) -> "Optional[EventSpec]":
+    ) -> "EventSpec":
         """Send a toast message.
 
         Args:

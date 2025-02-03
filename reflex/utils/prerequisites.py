@@ -912,7 +912,6 @@ def _update_next_config(
     next_config = {
         "basePath": config.frontend_path or "",
         "compress": config.next_compression,
-        "reactStrictMode": config.react_strict_mode,
         "trailingSlash": True,
         "staticPageGenerationTimeout": config.static_page_generation_timeout,
     }
@@ -1855,7 +1854,7 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
             [
                 resp.text,
                 "",
-                "" "def index() -> rx.Component:",
+                "def index() -> rx.Component:",
                 f"    return {render_func_name}()",
                 "",
                 "",

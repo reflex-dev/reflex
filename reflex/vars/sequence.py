@@ -53,7 +53,10 @@ from .number import (
 )
 
 if TYPE_CHECKING:
+    from .base import BASE_TYPE, DATACLASS_TYPE, SQLA_TYPE
+    from .function import FunctionVar
     from .object import ObjectVar
+
 
 STRING_TYPE = TypeVar("STRING_TYPE", default=str)
 
@@ -962,6 +965,24 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
     ) -> ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]]: ...
 
     @overload
+    def __getitem__(
+        self: ARRAY_VAR_OF_LIST_ELEMENT[BASE_TYPE],
+        i: int | NumberVar,
+    ) -> ObjectVar[BASE_TYPE]: ...
+
+    @overload
+    def __getitem__(
+        self: ARRAY_VAR_OF_LIST_ELEMENT[SQLA_TYPE],
+        i: int | NumberVar,
+    ) -> ObjectVar[SQLA_TYPE]: ...
+
+    @overload
+    def __getitem__(
+        self: ARRAY_VAR_OF_LIST_ELEMENT[DATACLASS_TYPE],
+        i: int | NumberVar,
+    ) -> ObjectVar[DATACLASS_TYPE]: ...
+
+    @overload
     def __getitem__(self, i: int | NumberVar) -> Var: ...
 
     def __getitem__(self, i: Any) -> ArrayVar[ARRAY_VAR_TYPE] | Var:
@@ -1646,10 +1667,6 @@ def repeat_array_operation(
         js_expression=f"Array.from({{ length: {count} }}).flatMap(() => {array})",
         var_type=array._var_type,
     )
-
-
-if TYPE_CHECKING:
-    from .function import FunctionVar
 
 
 @var_operation

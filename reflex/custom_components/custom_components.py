@@ -772,7 +772,7 @@ def _validate_project_info():
     pyproject_toml = _get_package_config()
     project = pyproject_toml["project"]
     console.print(
-        f'Double check the information before publishing: {project["name"]} version {project["version"]}'
+        f"Double check the information before publishing: {project['name']} version {project['version']}"
     )
 
     console.print("Update or enter to keep the current information.")
@@ -784,7 +784,7 @@ def _validate_project_info():
     author["name"] = console.ask("Author Name", default=author.get("name", ""))
     author["email"] = console.ask("Author Email", default=author.get("email", ""))
 
-    console.print(f'Current keywords are: {project.get("keywords") or []}')
+    console.print(f"Current keywords are: {project.get('keywords') or []}")
     keyword_action = console.ask(
         "Keep, replace or append?", choices=["k", "r", "a"], default="k"
     )
