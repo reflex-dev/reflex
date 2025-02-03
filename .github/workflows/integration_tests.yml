@@ -242,6 +242,9 @@ jobs:
         run: |
           # Check that npm is home
           npm -v
+          ulimit -a
+          ulimit -n 32768
+          ulimit -a
           poetry run bash scripts/integration.sh ./reflex-web prod
       - name: Measure and upload .web size
         run:
