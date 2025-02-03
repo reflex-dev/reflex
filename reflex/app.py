@@ -151,7 +151,7 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
             position="top-center",
             id="backend_error",
             style={"width": "500px"},
-        )  # pyright: ignore [reportReturnType]
+        )
     else:
         error_message.insert(0, "An error occurred.")
         return window_alert("\n".join(error_message))
