@@ -5,15 +5,11 @@ from typing import Union
 import reflex as rx
 
 
-def svg_logo(
-    color: Union[str, rx.Var[str]] = rx.color_mode_cond("#110F1F", "white"),
-    **props,
-):
+def svg_logo(color: Union[str, rx.Var[str]] = rx.color_mode_cond("#110F1F", "white")):
     """A Reflex logo SVG.
 
     Args:
         color: The color of the logo.
-        props: Extra props to pass to the svg component.
 
     Returns:
         The Reflex logo SVG.
@@ -33,14 +29,11 @@ def svg_logo(
 
     return rx.el.svg(
         *[logo_path(d) for d in paths],
-        rx.el.title("Reflex"),
-        aria_label="Reflex",
-        role="img",
-        width=props.pop("width", "56"),
-        height=props.pop("height", "12"),
+        width="56",
+        height="12",
+        viewBox="0 0 56 12",
         fill=color,
         xmlns="http://www.w3.org/2000/svg",
-        **props,
     )
 
 
