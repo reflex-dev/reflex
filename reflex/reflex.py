@@ -26,6 +26,8 @@ except TypeError:
     # Fallback for older typer versions.
     cli = typer.Typer(add_completion=False)
 
+SHOW_BUILT_WITH_REFLEX_INFO = "https://reflex.dev/docs/hosting/reflex-branding/"
+
 # Get the config.
 config = get_config()
 
@@ -186,6 +188,15 @@ def _run(
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
     if frontend:
+        if not config.show_built_with_reflex:
+            # The sticky badge may be disabled at runtime for team/enterprise tiers.
+            prerequisites.check_config_option_in_tier(
+                option_name="show_built_with_reflex",
+                allowed_tiers=["team", "enterprise"],
+                fallback_value=True,
+                help_link=SHOW_BUILT_WITH_REFLEX_INFO,
+            )
+
         # Get the app module.
         prerequisites.get_compiled_app()
 
@@ -323,6 +334,15 @@ def export(
 
     if prerequisites.needs_reinit(frontend=True):
         _init(name=config.app_name, loglevel=loglevel)
+
+    if frontend and not config.show_built_with_reflex:
+        # The sticky badge may be disabled on export for team/enterprise tiers.
+        prerequisites.check_config_option_in_tier(
+            option_name="show_built_with_reflex",
+            allowed_tiers=["team", "enterprise"],
+            fallback_value=False,
+            help_link=SHOW_BUILT_WITH_REFLEX_INFO,
+        )
 
     export_utils.export(
         zipping=zipping,
@@ -517,6 +537,15 @@ def deploy(
     from reflex.utils import prerequisites
 
     check_version()
+
+    if not config.show_built_with_reflex:
+        # The sticky badge may be disabled on deploy for pro/team/enterprise tiers.
+        prerequisites.check_config_option_in_tier(
+            option_name="show_built_with_reflex",
+            allowed_tiers=["pro", "team", "enterprise"],
+            fallback_value=True,
+            help_link=SHOW_BUILT_WITH_REFLEX_INFO,
+        )
 
     # Set the log level.
     console.set_log_level(loglevel)
