@@ -1904,7 +1904,12 @@ class LambdaEventCallback(Protocol[Unpack[P]]):
 
 ARGS = TypeVarTuple("ARGS")
 
-LambdaOrState = LambdaEventCallback[Unpack[ARGS]] | EventCallback[Unpack[ARGS]]
+
+LAMBDA_OR_STATE = TypeAliasType(
+    "LAMBDA_OR_STATE",
+    LambdaEventCallback[Unpack[ARGS]] | EventCallback[Unpack[ARGS]],
+    type_params=(ARGS,),
+)
 
 ItemOrList = V | List[V]
 
@@ -1912,7 +1917,7 @@ BASIC_EVENT_TYPES = TypeAliasType(
     "BASIC_EVENT_TYPES", EventSpec | EventHandler | Var[Any], type_params=()
 )
 
-IndividualEventType = LambdaOrState[Unpack[ARGS]] | BASIC_EVENT_TYPES
+IndividualEventType = LAMBDA_OR_STATE[Unpack[ARGS]] | BASIC_EVENT_TYPES
 EventType = ItemOrList[IndividualEventType[Unpack[ARGS]]]
 
 
