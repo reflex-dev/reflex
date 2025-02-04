@@ -605,6 +605,20 @@ def VarOperations():
             rx.box(rx.foreach(range(42, 80, 3), rx.text.span), id="range_in_foreach2"),
             rx.box(rx.foreach(range(42, 20, -6), rx.text.span), id="range_in_foreach3"),
             rx.box(rx.foreach(range(42, 43, 5), rx.text.span), id="range_in_foreach4"),
+            # Literal dict in a foreach
+            rx.box(rx.foreach({"a": 1, "b": 2}, rx.text.span), id="dict_in_foreach1"),
+            # State Var dict in a foreach
+            rx.box(
+                rx.foreach(VarOperationState.dict1, rx.text.span),
+                id="dict_in_foreach2",
+            ),
+            rx.box(
+                rx.foreach(
+                    VarOperationState.dict1.merge(VarOperationState.dict2),
+                    rx.text.span,
+                ),
+                id="dict_in_foreach3",
+            ),
         )
 
 
@@ -809,6 +823,9 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("range_in_foreach2", "42454851545760636669727578"),
         ("range_in_foreach3", "42363024"),
         ("range_in_foreach4", "42"),
+        ("dict_in_foreach1", "a1b2"),
+        ("dict_in_foreach2", "12"),
+        ("dict_in_foreach3", "1234"),
     ]
 
     for tag, expected in tests:
