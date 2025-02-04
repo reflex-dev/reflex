@@ -26,6 +26,7 @@ from typing import (
 
 from typing_extensions import (
     Protocol,
+    TypeAliasType,
     TypedDict,
     TypeVar,
     TypeVarTuple,
@@ -1907,7 +1908,11 @@ LambdaOrState = LambdaEventCallback[Unpack[ARGS]] | EventCallback[Unpack[ARGS]]
 
 ItemOrList = V | List[V]
 
-IndividualEventType = LambdaOrState[Unpack[ARGS]] | EventSpec | EventHandler | Var[Any]
+BASIC_EVENT_TYPES = TypeAliasType(
+    "BASIC_EVENT_TYPES", EventSpec | EventHandler | Var[Any], type_params=()
+)
+
+IndividualEventType = LambdaOrState[Unpack[ARGS]] | BASIC_EVENT_TYPES
 EventType = ItemOrList[IndividualEventType[Unpack[ARGS]]]
 
 
