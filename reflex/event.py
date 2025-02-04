@@ -1917,8 +1917,15 @@ BASIC_EVENT_TYPES = TypeAliasType(
     "BASIC_EVENT_TYPES", EventSpec | EventHandler | Var[Any], type_params=()
 )
 
-IndividualEventType = LAMBDA_OR_STATE[Unpack[ARGS]] | BASIC_EVENT_TYPES
-EventType = ItemOrList[IndividualEventType[Unpack[ARGS]]]
+IndividualEventType = TypeAliasType(
+    "IndividualEventType",
+    LAMBDA_OR_STATE[Unpack[ARGS]] | BASIC_EVENT_TYPES,
+    type_params=(ARGS,),
+)
+
+EventType = TypeAliasType(
+    "EventType", ItemOrList[IndividualEventType[Unpack[ARGS]]], type_params=(ARGS,)
+)
 
 
 if TYPE_CHECKING:
