@@ -64,7 +64,7 @@ class Template:
     name: str
     description: str
     code_url: str
-    demo_url: str
+    demo_url: str | None = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1461,7 +1461,7 @@ def prompt_for_template_options(templates: list[Template]) -> str:
     # Show the user the URLs of each template to preview.
     console.print("\nGet started with a template:")
 
-    def format_demo_url_str(url: str) -> str:
+    def format_demo_url_str(url: str | None) -> str:
         return f" ({url})" if url else ""
 
     # Prompt the user to select a template.
