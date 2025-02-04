@@ -468,6 +468,22 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         if not self.api:
             raise ValueError("The app has not been initialized.")
+
+        # For py3.9 compatibility when redis is used, we MUST add any decorator pages
+        # before compiling the app in a thread to avoid event loop error (REF-2172).
+        self._apply_decorated_pages()
+
+        compile_future = concurrent.futures.ThreadPoolExecutor(max_workers=1).submit(
+            self._compile
+        )
+        compile_future.add_done_callback(
+            # Force background compile errors to print eagerly
+            lambda f: f.result()
+        )
+        # Wait for the compile to finish in prod mode to ensure all optional endpoints are mounted.
+        if is_prod_mode():
+            compile_future.result()
+
         return self.api
 
     def _add_default_endpoints(self):
