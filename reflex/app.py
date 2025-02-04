@@ -211,7 +211,7 @@ class UploadFile(StarletteUploadFile):
 
     path: Optional[Path] = dataclasses.field(default=None)
 
-    deprecated_filename: Optional[str] = dataclasses.field(default=None)
+    _deprecated_filename: Optional[str] = dataclasses.field(default=None)
 
     size: Optional[int] = dataclasses.field(default=None)
 
@@ -240,7 +240,7 @@ class UploadFile(StarletteUploadFile):
             deprecation_version="0.7.1",
             removal_version="0.8.0",
         )
-        return self.deprecated_filename
+        return self._deprecated_filename
 
 
 @dataclasses.dataclass(
@@ -1611,7 +1611,7 @@ def upload(app: App):
                 UploadFile(
                     file=content_copy,
                     path=Path(file.filename) if file.filename else None,
-                    deprecated_filename=file.filename,
+                    _deprecated_filename=file.filename,
                     size=file.size,
                     headers=file.headers,
                 )
