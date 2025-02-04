@@ -239,7 +239,7 @@ Reflex se lanzó en diciembre de 2022 con el nombre de Pynecone.
 -   **Discusiones de GitHub**: Una excelente manera de hablar sobre las características que deseas agregar o las cosas que te resultan confusas o necesitan aclaración.
 -   **GitHub Issues**: Las incidencias son una forma excelente de informar de errores. Además, puedes intentar resolver un problema existente y enviar un PR.
 
-Buscamos colaboradores, sin importar su nivel o experiencia. Para contribuir consulta [CONTIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
+Buscamos colaboradores, sin importar su nivel o experiencia. Para contribuir consulta [CONTRIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
 
 ## Licencia
 
