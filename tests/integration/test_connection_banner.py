@@ -120,7 +120,7 @@ def has_cloud_banner(driver: WebDriver) -> bool:
     """
     try:
         driver.find_element(
-            By.XPATH, "//*[ contains(text(), 'You ran out of compute credits.') ]"
+            By.XPATH, "//*[ contains(text(), 'This app is paused') ]"
         )
     except NoSuchElementException:
         return False
