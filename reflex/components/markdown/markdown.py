@@ -6,11 +6,10 @@ import dataclasses
 import textwrap
 from functools import lru_cache
 from hashlib import md5
-from typing import Any, Callable, Dict, Sequence, Union
+from typing import Any, Callable, Dict, Sequence
 
 from reflex.components.component import BaseComponent, Component, CustomComponent
 from reflex.components.tags.tag import Tag
-from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import ARRAY_ISARRAY, ArgsFunctionOperation, DestructuredArg
@@ -166,7 +165,7 @@ class Markdown(Component):
         Returns:
             The markdown component.
         """
-        if len(children) != 1 or not types._isinstance(children[0], Union[str, Var]):
+        if len(children) != 1 or not isinstance(children[0], (str, Var)):
             raise ValueError(
                 "Markdown component must have exactly one child containing the markdown source."
             )

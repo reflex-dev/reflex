@@ -1770,9 +1770,7 @@ class CustomComponent(Component):
         return [
             Var(
                 _js_expr=name,
-                _var_type=(
-                    prop._var_type if types._isinstance(prop, Var) else type(prop)
-                ),
+                _var_type=(prop._var_type if isinstance(prop, Var) else type(prop)),
             ).guess_type()
             for name, prop in self.props.items()
         ]

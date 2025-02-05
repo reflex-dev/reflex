@@ -567,6 +567,11 @@ def _isinstance(obj: Any, cls: GenericType, nested: int = 0) -> bool:
 
     from reflex.vars import LiteralVar, Var
 
+    if cls and is_union(cls):
+        return any(_isinstance(obj, arg, nested=nested) for arg in get_args(cls))
+
+    if cls is Var:
+        return isinstance(obj, Var)
     if isinstance(obj, LiteralVar):
         return _isinstance(obj._var_value, cls, nested=nested)
     if isinstance(obj, Var):
@@ -577,9 +582,6 @@ def _isinstance(obj: Any, cls: GenericType, nested: int = 0) -> bool:
 
     if is_literal(cls):
         return obj in get_args(cls)
-
-    if is_union(cls):
-        return any(_isinstance(obj, arg, nested=nested) for arg in get_args(cls))
 
     origin = get_origin(cls)
 
@@ -758,7 +760,7 @@ def check_prop_in_allowed_types(prop: Any, allowed_types: Iterable) -> bool:
     """
     from reflex.vars import Var
 
-    type_ = prop._var_type if _isinstance(prop, Var) else type(prop)
+    type_ = prop._var_type if isinstance(prop, Var) else type(prop)
     return type_ in allowed_types
 
 
