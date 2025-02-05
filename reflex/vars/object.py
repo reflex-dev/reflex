@@ -267,9 +267,9 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         fixed_type = var_type if isclass(var_type) else get_origin(var_type)
 
         if (
-            (isclass(fixed_type) and not issubclass(fixed_type, Mapping))
+            is_typeddict(fixed_type)
+            or (isclass(fixed_type) and not issubclass(fixed_type, Mapping))
             or (fixed_type in types.UnionTypes)
-            or is_typeddict(fixed_type)
         ):
             attribute_type = get_attribute_access_type(var_type, name)
             if attribute_type is None:
