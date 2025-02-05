@@ -518,6 +518,17 @@ class CodeBlock(Component, MarkdownComponentMap):
         language_in_there = Var.create(typing.get_args(LiteralCodeLanguage)).contains(
             language_var
         )
+        async_load = """
+(async () => {{
+    try {{
+        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{language_var!s}}}`);
+        SyntaxHighlighter.registerLanguage({language_var!s}, module.default);
+    }} catch (error) {{
+        console.error(`Language ${{{language_var!s}}} is not supported for code blocks inside of markdown: `, error);
+        throw new Er
+    }}
+}})();
+"""
         return Var(
             f"""
  if ({language_var!s}) {{
@@ -525,18 +536,15 @@ class CodeBlock(Component, MarkdownComponentMap):
         console.warn(`Language \\`${{{language_var!s}}}\\` is not supported for code blocks inside of markdown.`);
         {language_var!s} = '';
     }} else {{
-        (async () => {{
-            try {{
-                const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{language_var!s}}}`);
-                SyntaxHighlighter.registerLanguage({language_var!s}, module.default);
-            }} catch (error) {{
-                console.error(`Language ${{{language_var!s}}} is not supported for code blocks inside of markdown: `, error);
-                throw new Er
-            }}
-        }})();
+        {async_load!s}
     }}
   }}
-""",
+"""
+            if not isinstance(language_var, LiteralVar)
+            else f"""
+if ({language_var!s}) {{
+    {async_load!s}
+}}""",
             _var_data=VarData(
                 imports={
                     cls.__fields__["library"].default: [
