@@ -191,6 +191,8 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
             isinstance(key, NumberVar) and key._is_strict_float()
         ):
             raise_unsupported_operand_types("[]", (type(self), type(key)))
+        if isinstance(key, str):
+            return self.__getattr__(key)
         return ObjectItemOperation.create(self, key).guess_type()
 
     # NoReturn is used here to catch when key value is Any
