@@ -46,6 +46,7 @@ from reflex.base import Base
 from reflex.constants.compiler import Hooks
 from reflex.utils import console, exceptions, imports, serializers, types
 from reflex.utils.exceptions import (
+    ComputedVarSignatureError,
     UntypedComputedVarError,
     VarAttributeError,
     VarDependencyError,
@@ -2388,6 +2389,10 @@ def computed_var(
         raise VarDependencyError("Cannot track dependencies without caching.")
 
     if fget is not None:
+        sign = inspect.signature(fget)
+        if len(sign.parameters) != 1:
+            raise ComputedVarSignatureError(fget.__name__, signature=str(sign))
+
         return ComputedVar(fget, cache=cache)
 
     def wrapper(fget: Callable[[BASE_STATE], Any]) -> ComputedVar:

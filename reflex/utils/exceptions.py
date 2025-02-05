@@ -91,6 +91,21 @@ class UntypedComputedVarError(ReflexError, TypeError):
         super().__init__(f"Computed var '{var_name}' must have a type annotation.")
 
 
+class ComputedVarSignatureError(ReflexError, TypeError):
+    """Custom TypeError for computed var signature errors."""
+
+    def __init__(self, var_name: str, signature: str):
+        """Initialize the ComputedVarSignatureError.
+
+        Args:
+            var_name: The name of the var.
+            signature: The invalid signature.
+        """
+        super().__init__(
+            f"Computed var `{var_name}{signature}` must have a valid signature. It should only take one parameter: self."
+        )
+
+
 class MissingAnnotationError(ReflexError, TypeError):
     """Custom TypeError for missing annotations."""
 
