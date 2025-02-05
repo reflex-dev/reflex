@@ -102,7 +102,7 @@ lint.pydocstyle.convention = "google"
 "*/blank.py" = ["I001"]
 
 [tool.pytest.ini_options]
-filterwarnings = "ignore::RuntimeWarning"
+filterwarnings = "ignore:fields may not start with an underscore:RuntimeWarning"
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 
