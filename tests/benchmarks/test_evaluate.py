@@ -1,8 +1,9 @@
 import pytest
 
-from .fixtures import _complicated_page
+from .fixtures import _complicated_page, _simple_page
 
 
 @pytest.mark.benchmark
-def test_evaluate_page():
-    _complicated_page()
+@pytest.mark.parametrize("page", [_simple_page, _complicated_page])
+def test_evaluate_page(page):
+    page()
