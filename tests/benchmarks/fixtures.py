@@ -234,5 +234,5 @@ def _complicated_page():
 
 
 @pytest.fixture(params=[_simple_page, _complicated_page])
-def complicated_page(request):
+def evaluated_page(request):
     return request.param()
