@@ -619,6 +619,14 @@ def VarOperations():
                 ),
                 id="dict_in_foreach3",
             ),
+            rx.box(
+                rx.foreach("abcdef", lambda x: rx.text.span(x + " ")),
+                id="str_in_foreach",
+            ),
+            rx.box(
+                rx.foreach(VarOperationState.str_var1, lambda x: rx.text.span(x + " ")),
+                id="str_var_in_foreach",
+            ),
         )
 
 
@@ -826,6 +834,8 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("dict_in_foreach1", "a1b2"),
         ("dict_in_foreach2", "12"),
         ("dict_in_foreach3", "1234"),
+        ("str_in_foreach", "a b c d e f"),
+        ("str_var_in_foreach", "f i r s t"),
     ]
 
     for tag, expected in tests:
