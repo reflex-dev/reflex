@@ -525,7 +525,6 @@ class CodeBlock(Component, MarkdownComponentMap):
         SyntaxHighlighter.registerLanguage({language_var!s}, module.default);
     }} catch (error) {{
         console.error(`Language ${{{language_var!s}}} is not supported for code blocks inside of markdown: `, error);
-        throw new Er
     }}
 }})();
 """
