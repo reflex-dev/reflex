@@ -179,6 +179,7 @@ ComponentStyle = Dict[
     Union[str, Type[BaseComponent], Callable, ComponentNamespace], Any
 ]
 ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
+ComponentChildTypes = (*types.PrimitiveTypes, Var, BaseComponent)
 
 
 def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
@@ -707,12 +708,9 @@ class Component(BaseComponent, ABC):
                 if isinstance(child, (tuple, list)):
                     validate_children(child)
 
-                if isinstance(child, Var):
-                    continue
-
                 # Make sure the child is a valid type.
-                if isinstance(child, dict) or not types._isinstance(
-                    child, ComponentChild
+                if isinstance(child, dict) or not isinstance(
+                    child, ComponentChildTypes
                 ):
                     raise ChildrenTypeError(component=cls.__name__, child=child)
 
