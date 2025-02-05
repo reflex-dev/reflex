@@ -535,7 +535,9 @@ class App(MiddlewareMixin, LifespanMixin):
         Returns:
             The generated component.
         """
-        return component if isinstance(component, Component) else component()
+        from reflex.compiler.compiler import into_component
+
+        return into_component(component)
 
     def add_page(
         self,
