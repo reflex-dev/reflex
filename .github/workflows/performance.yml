@@ -31,4 +31,4 @@ jobs:
         uses: CodSpeedHQ/action@v3
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
-          run: poetry run pytest benchmarks/test_evaluate.py --codspeed
+          run: poetry run pytest tests/benchmarks --codspeed
