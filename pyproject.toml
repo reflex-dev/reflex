@@ -43,14 +43,24 @@ wrapt = [
 packaging = ">=23.1,<25.0"
 reflex-hosting-cli = ">=0.1.29"
 charset-normalizer = ">=3.3.2,<4.0"
-wheel = ">=0.42.0,<1.0"
-build = ">=1.0.3,<2.0"
-setuptools = ">=75.0"
 httpx = ">=0.25.1,<1.0"
-twine = ">=4.0.0,<7.0"
-tomlkit = ">=0.12.4,<1.0"
 lazy_loader = ">=0.4"
 typing_extensions = ">=4.6.0"
+# For custom component subcommand
+wheel = { version = ">=0.42.0,<1.0", optional = true }
+build = { version = ">=1.0.3,<2.0", optional = true }
+setuptools = { version = ">=75.0", optional = true }
+twine = { version = ">=4.0.0,<7.0", optional = true }
+tomlkit = { version = ">=0.12.4,<1.0", optional = true }
+
+[tool.poetry.extras]
+custom_components = [
+    "build",
+    "setuptools",
+    "twine",
+    "tomlkit",
+    "wheel",
+]
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.1.2,<9.0"

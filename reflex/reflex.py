@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import atexit
 from pathlib import Path
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
 import typer
 import typer.core
@@ -12,7 +12,6 @@ from reflex_cli.v2.deployments import check_version, hosting_cli
 
 from reflex import constants
 from reflex.config import environment, get_config
-from reflex.custom_components.custom_components import custom_components_cli
 from reflex.state import reset_disk_state_manager
 from reflex.utils import console, telemetry
 
@@ -627,11 +626,22 @@ cli.add_typer(
     name="cloud",
     help="Subcommands for managing the reflex cloud.",
 )
-cli.add_typer(
-    custom_components_cli,
-    name="component",
-    help="Subcommands for creating and publishing Custom Components.",
-)
+try:
+    from reflex.custom_components.custom_components import custom_components_cli
+
+    cli.add_typer(
+        custom_components_cli,
+        name="component",
+        help="Subcommands for creating and publishing Custom Components.",
+    )
+except ImportError:
+
+    @cli.command()
+    def component(subcommands: Annotated[Optional[list[str]], typer.Argument()] = None):
+        """Subcommands for creating and publishing Custom Components."""
+        console.error(r"To use custom commands, `pip install reflex\[custom_commands]`")
+        raise typer.Exit(1)
+
 
 if __name__ == "__main__":
     cli()

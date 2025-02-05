@@ -109,10 +109,10 @@ tests-mypy = ["mypy (>=1.11.1)", "pytest-mypy-plugins"]
 name = "backports-tarfile"
 version = "1.2.0"
 description = "Backport of CPython tarfile module"
-optional = false
+optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "(platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and python_version <= \"3.11\""
+markers = "extra == \"custom-components\" and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and python_version <= \"3.11\""
 files = [
     {file = "backports.tarfile-1.2.0-py3-none-any.whl", hash = "sha256:77e284d754527b01fb1e6fa8a1afe577858ebe4e9dad8919e34c862cb399bc34"},
     {file = "backports_tarfile-1.2.0.tar.gz", hash = "sha256:d75e02c268746e1b8144c278978b6e98e85de6ad16f8e4b0844a154557eca991"},
@@ -139,10 +139,10 @@ files = [
 name = "build"
 version = "1.2.2.post1"
 description = "A simple, correct Python build frontend"
-optional = false
+optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
+markers = "(python_version <= \"3.11\" or python_version >= \"3.12\") and extra == \"custom-components\""
 files = [
     {file = "build-1.2.2.post1-py3-none-any.whl", hash = "sha256:1d61c0887fa860c01971625baae8bdd338e517b836a2f70dd1f7aa3a6b2fc5b5"},
     {file = "build-1.2.2.post1.tar.gz", hash = "sha256:b36993e92ca9375a219c99e606a122ff365a760a2d4bba0caa09bd5278b608b7"},
@@ -251,7 +251,7 @@ files = [
     {file = "cffi-1.17.1-cp39-cp39-win_amd64.whl", hash = "sha256:d016c76bdd850f3c626af19b0542c9677ba156e4ee4fccfdd7848803533ef662"},
     {file = "cffi-1.17.1.tar.gz", hash = "sha256:1c39c6016c32bc48dd54561950ebd6836e1670f2ae46128f67cf49e789c52824"},
 ]
-markers = {main = "(platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and sys_platform == \"linux\" and platform_python_implementation != \"PyPy\" and (python_version <= \"3.11\" or python_version >= \"3.12\")", dev = "python_version <= \"3.11\" or python_version >= \"3.12\""}
+markers = {main = "extra == \"custom-components\" and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and sys_platform == \"linux\" and platform_python_implementation != \"PyPy\" and (python_version <= \"3.11\" or python_version >= \"3.12\")", dev = "python_version <= \"3.11\" or python_version >= \"3.12\""}
 
 [package.dependencies]
 pycparser = "*"
@@ -399,7 +399,7 @@ files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
 ]
-markers = {main = "(platform_system == \"Windows\" or os_name == \"nt\") and (python_version <= \"3.11\" or python_version >= \"3.12\")", dev = "(python_version <= \"3.11\" or python_version >= \"3.12\") and sys_platform == \"win32\""}
+markers = {main = "(extra == \"custom-components\" or platform_system == \"Windows\") and (python_version <= \"3.11\" or python_version >= \"3.12\") and (os_name == \"nt\" or platform_system == \"Windows\")", dev = "(python_version <= \"3.11\" or python_version >= \"3.12\") and sys_platform == \"win32\""}
 
 [[package]]
 name = "coverage"
@@ -484,10 +484,10 @@ toml = ["tomli"]
 name = "cryptography"
 version = "44.0.0"
 description = "cryptography is a package which provides cryptographic recipes and primitives to Python developers."
-optional = false
+optional = true
 python-versions = "!=3.9.0,!=3.9.1,>=3.7"
 groups = ["main"]
-markers = "(platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and sys_platform == \"linux\" and (python_version <= \"3.11\" or python_version >= \"3.12\")"
+markers = "extra == \"custom-components\" and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and sys_platform == \"linux\" and (python_version <= \"3.11\" or python_version >= \"3.12\")"
 files = [
     {file = "cryptography-44.0.0-cp37-abi3-macosx_10_9_universal2.whl", hash = "sha256:84111ad4ff3f6253820e6d3e58be2cc2a00adb29335d4cacb5ab4d4d34f2a123"},
     {file = "cryptography-44.0.0-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b15492a11f9e1b62ba9d73c210e2416724633167de94607ec6069ef724fad092"},
@@ -591,10 +591,10 @@ files = [
 name = "docutils"
 version = "0.21.2"
 description = "Docutils -- Python Documentation Utilities"
-optional = false
+optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
+markers = "(python_version <= \"3.11\" or python_version >= \"3.12\") and extra == \"custom-components\""
 files = [
     {file = "docutils-0.21.2-py3-none-any.whl", hash = "sha256:dafca5b9e384f0e419294eb4d2ff9fa826435bf15f15b7bd45723e8ad76811b2"},
     {file = "docutils-0.21.2.tar.gz", hash = "sha256:3a6b18732edf182daa3cd12775bbb338cf5691468f91eeeb109deff6ebfa986f"},
@@ -833,10 +833,10 @@ zstd = ["zstandard (>=0.18.0)"]
 name = "id"
 version = "1.5.0"
 description = "A tool for generating OIDC identities"
-optional = false
+optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
+markers = "(python_version <= \"3.11\" or python_version >= \"3.12\") and extra == \"custom-components\""
 files = [
     {file = "id-1.5.0-py3-none-any.whl", hash = "sha256:f1434e1cef91f2cbb8a4ec64663d5a23b9ed43ef44c4c957d02583d61714c658"},
     {file = "id-1.5.0.tar.gz", hash = "sha256:292cb8a49eacbbdbce97244f47a97b4c62540169c976552e497fd57df0734c1d"},
@@ -886,10 +886,10 @@ all = ["flake8 (>=7.1.1)", "mypy (>=1.11.2)", "pytest (>=8.3.2)", "ruff (>=0.6.2
 name = "importlib-metadata"
 version = "8.6.1"
 description = "Read metadata from Python packages"
-optional = false
+optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "(platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and python_version <= \"3.11\" or python_full_version < \"3.10.2\""
+markers = "extra == \"custom-components\" and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\" or python_full_version < \"3.10.2\") and python_version <= \"3.11\""
 files = [
     {file = "importlib_metadata-8.6.1-py3-none-any.whl", hash = "sha256:02a89390c1e15fdfdc0d7c6b25cb3e62650d0494005c97d6f148bf5b9787525e"},
     {file = "importlib_metadata-8.6.1.tar.gz", hash = "sha256:310b41d755445d74569f993ccfc22838295d9fe005425094fad953d7f15c8580"},
@@ -924,10 +924,10 @@ files = [
 name = "jaraco-classes"
 version = "3.4.0"
 description = "Utility functions for Python class constructs"
-optional = false
+optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "(python_version <= \"3.11\" or python_version >= \"3.12\") and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\")"
+markers = "extra == \"custom-components\" and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and (python_version <= \"3.11\" or python_version >= \"3.12\")"
 files = [
     {file = "jaraco.classes-3.4.0-py3-none-any.whl", hash = "sha256:f662826b6bed8cace05e7ff873ce0f9283b5c924470fe664fff1c2f00f581790"},
     {file = "jaraco.classes-3.4.0.tar.gz", hash = "sha256:47a024b51d0239c0dd8c8540c6c7f484be3b8fcf0b2d85c13825780d3b3f3acd"},
@@ -944,10 +944,10 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-ena
 name = "jaraco-context"
 version = "6.0.1"
 description = "Useful decorators and context managers"
-optional = false
+optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "(python_version <= \"3.11\" or python_version >= \"3.12\") and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\")"
+markers = "extra == \"custom-components\" and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and (python_version <= \"3.11\" or python_version >= \"3.12\")"
 files = [
     {file = "jaraco.context-6.0.1-py3-none-any.whl", hash = "sha256:f797fc481b490edb305122c9181830a3a5b76d84ef6d1aef2fb9b47ab956f9e4"},
     {file = "jaraco_context-6.0.1.tar.gz", hash = "sha256:9bae4ea555cf0b14938dc0aee7c9f32ed303aa20a3b73e7dc80111628792d1b3"},
@@ -964,10 +964,10 @@ test = ["portend", "pytest (>=6,!=8.1.*)", "pytest-checkdocs (>=2.4)", "pytest-c
 name = "jaraco-functools"
 version = "4.1.0"
 description = "Functools like those found in stdlib"
-optional = false
+optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "(python_version <= \"3.11\" or python_version >= \"3.12\") and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\")"
+markers = "extra == \"custom-components\" and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and (python_version <= \"3.11\" or python_version >= \"3.12\")"
 files = [
     {file = "jaraco.functools-4.1.0-py3-none-any.whl", hash = "sha256:ad159f13428bc4acbf5541ad6dec511f91573b90fba04df61dafa2a1231cf649"},
     {file = "jaraco_functools-4.1.0.tar.gz", hash = "sha256:70f7e0e2ae076498e212562325e805204fc092d7b4c17e0e86c959e249701a9d"},
@@ -988,10 +988,10 @@ type = ["pytest-mypy"]
 name = "jeepney"
 version = "0.8.0"
 description = "Low-level, pure Python DBus protocol wrapper."
-optional = false
+optional = true
 python-versions = ">=3.7"
 groups = ["main"]
-markers = "(platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and sys_platform == \"linux\" and (python_version <= \"3.11\" or python_version >= \"3.12\")"
+markers = "extra == \"custom-components\" and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and sys_platform == \"linux\" and (python_version <= \"3.11\" or python_version >= \"3.12\")"
 files = [
     {file = "jeepney-0.8.0-py3-none-any.whl", hash = "sha256:c0a454ad016ca575060802ee4d590dd912e35c122fa04e70306de3d076cce755"},
     {file = "jeepney-0.8.0.tar.gz", hash = "sha256:5efe48d255973902f6badc3ce55e2aa6c5c3b3bc642059ef3a91247bcfcc5806"},
@@ -1024,10 +1024,10 @@ i18n = ["Babel (>=2.7)"]
 name = "keyring"
 version = "25.6.0"
 description = "Store and access your passwords safely."
-optional = false
+optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "(python_version <= \"3.11\" or python_version >= \"3.12\") and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\")"
+markers = "extra == \"custom-components\" and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and (python_version <= \"3.11\" or python_version >= \"3.12\")"
 files = [
     {file = "keyring-25.6.0-py3-none-any.whl", hash = "sha256:552a3f7af126ece7ed5c89753650eec89c7eaae8617d0aa4d9ad2b75111266bd"},
     {file = "keyring-25.6.0.tar.gz", hash = "sha256:0b39998aa941431eb3d9b0d4b2460bc773b9df6fed7621c2dfb291a7e0187a66"},
@@ -1208,10 +1208,10 @@ files = [
 name = "more-itertools"
 version = "10.6.0"
 description = "More routines for operating on iterables, beyond itertools"
-optional = false
+optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "(python_version <= \"3.11\" or python_version >= \"3.12\") and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\")"
+markers = "extra == \"custom-components\" and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and (python_version <= \"3.11\" or python_version >= \"3.12\")"
 files = [
     {file = "more-itertools-10.6.0.tar.gz", hash = "sha256:2cd7fad1009c31cc9fb6a035108509e6547547a7a738374f10bd49a09eb3ee3b"},
     {file = "more_itertools-10.6.0-py3-none-any.whl", hash = "sha256:6eb054cb4b6db1473f6e15fcc676a08e4732548acd47c708f0e179c2c7c01e89"},
@@ -1221,10 +1221,10 @@ files = [
 name = "nh3"
 version = "0.2.20"
 description = "Python binding to Ammonia HTML sanitizer Rust crate"
-optional = false
+optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
+markers = "(python_version <= \"3.11\" or python_version >= \"3.12\") and extra == \"custom-components\""
 files = [
     {file = "nh3-0.2.20-cp313-cp313t-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:e1061a4ab6681f6bdf72b110eea0c4e1379d57c9de937db3be4202f7ad6043db"},
     {file = "nh3-0.2.20-cp313-cp313t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:eb4254b1dac4a1ee49919a5b3f1caf9803ea8dada1816d9e8289e63d3cd0dd9a"},
@@ -1688,7 +1688,7 @@ files = [
     {file = "pycparser-2.22-py3-none-any.whl", hash = "sha256:c3702b6d3dd8c7abc1afa565d7e63d53a1d0bd86cdc24edd75470f4de499cfcc"},
     {file = "pycparser-2.22.tar.gz", hash = "sha256:491c8be9c040f5390f5bf44a5b07752bd07f56edf992381b05c701439eec10f6"},
 ]
-markers = {main = "(platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and sys_platform == \"linux\" and platform_python_implementation != \"PyPy\" and (python_version <= \"3.11\" or python_version >= \"3.12\")", dev = "python_version <= \"3.11\" or python_version >= \"3.12\""}
+markers = {main = "extra == \"custom-components\" and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and sys_platform == \"linux\" and platform_python_implementation != \"PyPy\" and (python_version <= \"3.11\" or python_version >= \"3.12\")", dev = "python_version <= \"3.11\" or python_version >= \"3.12\""}
 
 [[package]]
 name = "pydantic"
@@ -1865,10 +1865,10 @@ windows-terminal = ["colorama (>=0.4.6)"]
 name = "pyproject-hooks"
 version = "1.2.0"
 description = "Wrappers to call pyproject.toml-based build backend hooks."
-optional = false
+optional = true
 python-versions = ">=3.7"
 groups = ["main"]
-markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
+markers = "(python_version <= \"3.11\" or python_version >= \"3.12\") and extra == \"custom-components\""
 files = [
     {file = "pyproject_hooks-1.2.0-py3-none-any.whl", hash = "sha256:9e5c6bfa8dcc30091c74b0cf803c81fdd29d94f01992a7707bc97babb1141913"},
     {file = "pyproject_hooks-1.2.0.tar.gz", hash = "sha256:1e859bd5c40fae9448642dd871adf459e5e2084186e8d2c2a79a824c970da1f8"},
@@ -2195,10 +2195,10 @@ files = [
 name = "pywin32-ctypes"
 version = "0.2.3"
 description = "A (partial) reimplementation of pywin32 using ctypes/cffi"
-optional = false
+optional = true
 python-versions = ">=3.6"
 groups = ["main"]
-markers = "(platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and sys_platform == \"win32\" and (python_version <= \"3.11\" or python_version >= \"3.12\")"
+markers = "extra == \"custom-components\" and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and sys_platform == \"win32\" and (python_version <= \"3.11\" or python_version >= \"3.12\")"
 files = [
     {file = "pywin32-ctypes-0.2.3.tar.gz", hash = "sha256:d162dc04946d704503b2edc4d55f3dba5c1d539ead017afa00142c38b9885755"},
     {file = "pywin32_ctypes-0.2.3-py3-none-any.whl", hash = "sha256:8a1513379d709975552d202d942d9837758905c8d01eb82b8bcc30918929e7b8"},
@@ -2272,10 +2272,10 @@ files = [
 name = "readme-renderer"
 version = "44.0"
 description = "readme_renderer is a library for rendering readme descriptions for Warehouse"
-optional = false
+optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
+markers = "(python_version <= \"3.11\" or python_version >= \"3.12\") and extra == \"custom-components\""
 files = [
     {file = "readme_renderer-44.0-py3-none-any.whl", hash = "sha256:2fbca89b81a08526aadf1357a8c2ae889ec05fb03f5da67f9769c9a592166151"},
     {file = "readme_renderer-44.0.tar.gz", hash = "sha256:8712034eabbfa6805cacf1402b4eeb2a73028f72d1166d6f5cb7f9c047c5d1e1"},
@@ -2339,11 +2339,11 @@ description = "Python HTTP for Humans."
 optional = false
 python-versions = ">=3.8"
 groups = ["main", "dev"]
-markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
 files = [
     {file = "requests-2.32.3-py3-none-any.whl", hash = "sha256:70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6"},
     {file = "requests-2.32.3.tar.gz", hash = "sha256:55365417734eb18255590a9ff9eb97e9e1da868d4ccd6402399eaf68af20a760"},
 ]
+markers = {main = "(python_version <= \"3.11\" or python_version >= \"3.12\") and extra == \"custom-components\"", dev = "python_version <= \"3.11\" or python_version >= \"3.12\""}
 
 [package.dependencies]
 certifi = ">=2017.4.17"
@@ -2359,10 +2359,10 @@ use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 name = "requests-toolbelt"
 version = "1.0.0"
 description = "A utility belt for advanced users of python-requests"
-optional = false
+optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 groups = ["main"]
-markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
+markers = "(python_version <= \"3.11\" or python_version >= \"3.12\") and extra == \"custom-components\""
 files = [
     {file = "requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6"},
     {file = "requests_toolbelt-1.0.0-py2.py3-none-any.whl", hash = "sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06"},
@@ -2375,10 +2375,10 @@ requests = ">=2.0.1,<3.0.0"
 name = "rfc3986"
 version = "2.0.0"
 description = "Validating URI References per RFC 3986"
-optional = false
+optional = true
 python-versions = ">=3.7"
 groups = ["main"]
-markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
+markers = "(python_version <= \"3.11\" or python_version >= \"3.12\") and extra == \"custom-components\""
 files = [
     {file = "rfc3986-2.0.0-py2.py3-none-any.whl", hash = "sha256:50b1502b60e289cb37883f3dfd34532b8873c7de9f49bb546641ce9cbd256ebd"},
     {file = "rfc3986-2.0.0.tar.gz", hash = "sha256:97aacf9dbd4bfd829baad6e6309fa6573aaf1be3f6fa735c8ab05e46cecb261c"},
@@ -2441,10 +2441,10 @@ files = [
 name = "secretstorage"
 version = "3.3.3"
 description = "Python bindings to FreeDesktop.org Secret Service API"
-optional = false
+optional = true
 python-versions = ">=3.6"
 groups = ["main"]
-markers = "(platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and sys_platform == \"linux\" and (python_version <= \"3.11\" or python_version >= \"3.12\")"
+markers = "extra == \"custom-components\" and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and sys_platform == \"linux\" and (python_version <= \"3.11\" or python_version >= \"3.12\")"
 files = [
     {file = "SecretStorage-3.3.3-py3-none-any.whl", hash = "sha256:f356e6628222568e3af06f2eba8df495efa13b3b63081dafd4f7d9a7b7bc9f99"},
     {file = "SecretStorage-3.3.3.tar.gz", hash = "sha256:2403533ef369eca6d2ba81718576c5e0f564d5cca1b58f73a8b23e7d4eeebd77"},
@@ -2479,10 +2479,10 @@ websocket-client = ">=1.8,<2.0"
 name = "setuptools"
 version = "75.8.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
-optional = false
+optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
+markers = "(python_version <= \"3.11\" or python_version >= \"3.12\") and extra == \"custom-components\""
 files = [
     {file = "setuptools-75.8.0-py3-none-any.whl", hash = "sha256:e3982f444617239225d675215d51f6ba05f845d4eec313da4418fdbb56fb27e3"},
     {file = "setuptools-75.8.0.tar.gz", hash = "sha256:c5afc8f407c626b8313a86e10311dd3f661c6cd9c09d4bf8c15c0e11f9f2b0e6"},
@@ -2793,7 +2793,6 @@ description = "A lil' TOML parser"
 optional = false
 python-versions = ">=3.8"
 groups = ["main", "dev"]
-markers = "python_version < \"3.11\""
 files = [
     {file = "tomli-2.2.1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:678e4fa69e4575eb77d103de3df8a895e1591b48e740211bd1067378c69e8249"},
     {file = "tomli-2.2.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:023aa114dd824ade0100497eb2318602af309e5a55595f76b626d6d9f3b7b0a6"},
@@ -2828,15 +2827,16 @@ files = [
     {file = "tomli-2.2.1-py3-none-any.whl", hash = "sha256:cb55c73c5f4408779d0cf3eef9f762b9c9f147a77de7b258bef0a5628adc85cc"},
     {file = "tomli-2.2.1.tar.gz", hash = "sha256:cd45e1dc79c835ce60f7404ec8119f2eb06d38b1deba146f07ced3bbc44505ff"},
 ]
+markers = {main = "extra == \"custom-components\" and python_version < \"3.11\"", dev = "python_version < \"3.11\""}
 
 [[package]]
 name = "tomlkit"
 version = "0.13.2"
 description = "Style preserving TOML library"
-optional = false
+optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
+markers = "(python_version <= \"3.11\" or python_version >= \"3.12\") and extra == \"custom-components\""
 files = [
     {file = "tomlkit-0.13.2-py3-none-any.whl", hash = "sha256:7a974427f6e119197f670fbbbeae7bef749a6c14e793db934baefc1b5f03efde"},
     {file = "tomlkit-0.13.2.tar.gz", hash = "sha256:fff5fe59a87295b278abd31bec92c15d9bc4a06885ab12bcea52c71119392e79"},
@@ -2886,10 +2886,10 @@ wsproto = ">=0.14"
 name = "twine"
 version = "6.1.0"
 description = "Collection of utilities for publishing packages on PyPI"
-optional = false
+optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
+markers = "(python_version <= \"3.11\" or python_version >= \"3.12\") and extra == \"custom-components\""
 files = [
     {file = "twine-6.1.0-py3-none-any.whl", hash = "sha256:a47f973caf122930bf0fbbf17f80b83bc1602c9ce393c7845f289a3001dc5384"},
     {file = "twine-6.1.0.tar.gz", hash = "sha256:be324f6272eff91d07ee93f251edf232fc647935dd585ac003539b42404a8dbd"},
@@ -2961,11 +2961,11 @@ description = "HTTP library with thread-safe connection pooling, file post, and 
 optional = false
 python-versions = ">=3.9"
 groups = ["main", "dev"]
-markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
 files = [
     {file = "urllib3-2.3.0-py3-none-any.whl", hash = "sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df"},
     {file = "urllib3-2.3.0.tar.gz", hash = "sha256:f8c5449b3cf0861679ce7e0503c7b44b5ec981bec0d1d3795a07f1ba96f0204d"},
 ]
+markers = {main = "(python_version <= \"3.11\" or python_version >= \"3.12\") and extra == \"custom-components\"", dev = "python_version <= \"3.11\" or python_version >= \"3.12\""}
 
 [package.dependencies]
 pysocks = {version = ">=1.5.6,<1.5.7 || >1.5.7,<2.0", optional = true, markers = "extra == \"socks\""}
@@ -3041,10 +3041,10 @@ test = ["websockets"]
 name = "wheel"
 version = "0.45.1"
 description = "A built-package format for Python"
-optional = false
+optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
+markers = "(python_version <= \"3.11\" or python_version >= \"3.12\") and extra == \"custom-components\""
 files = [
     {file = "wheel-0.45.1-py3-none-any.whl", hash = "sha256:708e7481cc80179af0e556bbf0cc00b8444c7321e2700b8d8580231d13017248"},
     {file = "wheel-0.45.1.tar.gz", hash = "sha256:661e1abd9198507b1409a20c02106d9670b2576e916d58f520316666abca6729"},
@@ -3163,10 +3163,10 @@ h11 = ">=0.9.0,<1"
 name = "zipp"
 version = "3.21.0"
 description = "Backport of pathlib-compatible object wrapper for zip files"
-optional = false
+optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "(platform_machine != \"ppc64le\" and platform_machine != \"s390x\") and python_version <= \"3.11\" or python_full_version < \"3.10.2\""
+markers = "extra == \"custom-components\" and (platform_machine != \"ppc64le\" and platform_machine != \"s390x\" or python_full_version < \"3.10.2\") and python_version <= \"3.11\""
 files = [
     {file = "zipp-3.21.0-py3-none-any.whl", hash = "sha256:ac1bbe05fd2991f160ebce24ffbac5f6d11d83dc90891255885223d42b3cd931"},
     {file = "zipp-3.21.0.tar.gz", hash = "sha256:2c9958f6430a2040341a52eb608ed6dd93ef4392e02ffe219417c1b28b5dd1f4"},
@@ -3180,7 +3180,10 @@ enabler = ["pytest-enabler (>=2.2)"]
 test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-itertools", "pytest (>=6,!=8.1.*)", "pytest-ignore-flaky"]
 type = ["pytest-mypy"]
 
+[extras]
+custom-components = ["build", "setuptools", "tomlkit", "twine", "wheel"]
+
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10, <4.0"
-content-hash = "3b7e6e6e872c68f951f191d85a7d76fe1dd86caf32e2143a53a3152a3686fc7f"
+content-hash = "630d2721b7a45888784962504d4fabf4a83f268050aeadfbe4ccbe769e8d0fd3"
