@@ -2472,8 +2472,8 @@ class ComponentState(State, mixin=True):
         # Save a reference to the dynamic state for pickle/unpickle.
         setattr(reflex.istate.dynamic, state_cls_name, component_state)
         component = component_state.get_component(*children, **props)
-        component.State = component_state
         component = into_component(component)
+        component.State = component_state
         return component
 
 
