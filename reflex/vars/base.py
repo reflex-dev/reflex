@@ -48,6 +48,7 @@ from reflex.base import Base
 from reflex.constants.compiler import Hooks
 from reflex.utils import console, exceptions, imports, serializers, types
 from reflex.utils.exceptions import (
+    ComputedVarSignatureError,
     UntypedComputedVarError,
     VarAttributeError,
     VarDependencyError,
@@ -2602,6 +2603,7 @@ def computed_var(
     Raises:
         ValueError: If caching is disabled and an update interval is set.
         VarDependencyError: If user supplies dependencies without caching.
+        ComputedVarSignatureError: If the getter function has more than one argument.
     """
     if cache is False and interval is not None:
         raise ValueError("Cannot set update interval without caching.")
@@ -2610,6 +2612,10 @@ def computed_var(
         raise VarDependencyError("Cannot track dependencies without caching.")
 
     if fget is not None:
+        sign = inspect.signature(fget)
+        if len(sign.parameters) != 1:
+            raise ComputedVarSignatureError(fget.__name__, signature=str(sign))
+
         if inspect.iscoroutinefunction(fget):
             computed_var_cls = AsyncComputedVar
         else:
