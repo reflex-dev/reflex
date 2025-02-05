@@ -518,7 +518,7 @@ class CodeBlock(Component, MarkdownComponentMap):
         language_in_there = Var.create(typing.get_args(LiteralCodeLanguage)).contains(
             language_var
         )
-        async_load = """
+        async_load = f"""
 (async () => {{
     try {{
         const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{language_var!s}}}`);
