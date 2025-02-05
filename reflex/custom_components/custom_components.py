@@ -12,9 +12,9 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import httpx
-import tomlkit
+import tomlkit  # pyright: ignore[reportMissingImports]
 import typer
-from tomlkit.exceptions import TOMLKitError
+from tomlkit.exceptions import TOMLKitError  # pyright: ignore[reportMissingImports]
 
 from reflex import constants
 from reflex.config import environment, get_config
