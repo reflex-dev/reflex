@@ -192,10 +192,10 @@ def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
         Whether the object satisfies the type hint.
     """
     if isinstance(obj, LiteralVar):
-        return types._isinstance(obj._var_value, type_hint)
+        return types._isinstance(obj._var_value, type_hint, nested=1)
     if isinstance(obj, Var):
         return types._issubclass(obj._var_type, type_hint)
-    return types._isinstance(obj, type_hint)
+    return types._isinstance(obj, type_hint, nested=1)
 
 
 class Component(BaseComponent, ABC):
