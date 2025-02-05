@@ -191,7 +191,7 @@ def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
     Returns:
         Whether the object satisfies the type hint.
     """
-    return types._isinstance(obj, type_hint, nested=0)
+    return types._isinstance(obj, type_hint, nested=1)
 
 
 class Component(BaseComponent, ABC):
