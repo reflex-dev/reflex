@@ -22,7 +22,12 @@ from typing_extensions import is_typeddict
 
 from reflex.utils import types
 from reflex.utils.exceptions import VarAttributeError
-from reflex.utils.types import GenericType, get_attribute_access_type, get_origin
+from reflex.utils.types import (
+    GenericType,
+    get_attribute_access_type,
+    get_origin,
+    safe_issubclass,
+)
 
 from .base import (
     CachedVarOperation,
@@ -268,7 +273,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 
         if (
             is_typeddict(fixed_type)
-            or (isclass(fixed_type) and not issubclass(fixed_type, Mapping))
+            or (isclass(fixed_type) and not safe_issubclass(fixed_type, Mapping))
             or (fixed_type in types.UnionTypes)
         ):
             attribute_type = get_attribute_access_type(var_type, name)
