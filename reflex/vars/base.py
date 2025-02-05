@@ -5,13 +5,13 @@ from __future__ import annotations
 import contextlib
 import dataclasses
 import datetime
-import dis
 import functools
 import inspect
 import json
 import random
 import re
 import string
+import uuid
 import warnings
 from types import CodeType, FunctionType
 from typing import (
@@ -19,6 +19,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
+    Coroutine,
     Dict,
     FrozenSet,
     Generic,
@@ -39,6 +40,7 @@ from typing import (
     overload,
 )
 
+from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import ParamSpec, TypeGuard, deprecated, get_type_hints, override
 
 from reflex import constants
@@ -51,7 +53,6 @@ from reflex.utils.exceptions import (
     VarAttributeError,
     VarDependencyError,
     VarTypeError,
-    VarValueError,
 )
 from reflex.utils.format import format_state_name
 from reflex.utils.imports import (
@@ -574,7 +575,7 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     @classmethod
-    def create(  # type: ignore[override]
+    def create(  # pyright: ignore[reportOverlappingOverload]
         cls,
         value: bool,
         _var_data: VarData | None = None,
@@ -582,7 +583,7 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     @classmethod
-    def create(  # type: ignore[override]
+    def create(
         cls,
         value: int,
         _var_data: VarData | None = None,
@@ -606,7 +607,7 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     @classmethod
-    def create(
+    def create(  # pyright: ignore[reportOverlappingOverload]
         cls,
         value: None,
         _var_data: VarData | None = None,
@@ -1667,17 +1668,92 @@ def figure_out_type(value: Any) -> types.GenericType:
     return type(value)
 
 
-class cached_property_no_lock(functools.cached_property):  # noqa: N801
-    """A special version of functools.cached_property that does not use a lock."""
+GLOBAL_CACHE = {}
+
+
+class cached_property:  # noqa: N801
+    """A cached property that caches the result of the function."""
 
     def __init__(self, func: Callable):
-        """Initialize the cached_property_no_lock.
+        """Initialize the cached_property.
 
         Args:
             func: The function to cache.
         """
-        super().__init__(func)
-        self.lock = contextlib.nullcontext()
+        self._func = func
+        self._attrname = None
+
+    def __set_name__(self, owner: Any, name: str):
+        """Set the name of the cached property.
+
+        Args:
+            owner: The owner of the cached property.
+            name: The name of the cached property.
+
+        Raises:
+            TypeError: If the cached property is assigned to two different names.
+        """
+        if self._attrname is None:
+            self._attrname = name
+
+            original_del = getattr(owner, "__del__", None)
+
+            def delete_property(this: Any):
+                """Delete the cached property.
+
+                Args:
+                    this: The object to delete the cached property from.
+                """
+                cached_field_name = "_reflex_cache_" + name
+                try:
+                    unique_id = object.__getattribute__(this, cached_field_name)
+                except AttributeError:
+                    if original_del is not None:
+                        original_del(this)
+                    return
+                if unique_id in GLOBAL_CACHE:
+                    del GLOBAL_CACHE[unique_id]
+
+                if original_del is not None:
+                    original_del(this)
+
+            owner.__del__ = delete_property
+
+        elif name != self._attrname:
+            raise TypeError(
+                "Cannot assign the same cached_property to two different names "
+                f"({self._attrname!r} and {name!r})."
+            )
+
+    def __get__(self, instance: Any, owner: Type | None = None):
+        """Get the cached property.
+
+        Args:
+            instance: The instance to get the cached property from.
+            owner: The owner of the cached property.
+
+        Returns:
+            The cached property.
+
+        Raises:
+            TypeError: If the class does not have __set_name__.
+        """
+        if self._attrname is None:
+            raise TypeError(
+                "Cannot use cached_property on a class without __set_name__."
+            )
+        cached_field_name = "_reflex_cache_" + self._attrname
+        try:
+            unique_id = object.__getattribute__(instance, cached_field_name)
+        except AttributeError:
+            unique_id = uuid.uuid4().int
+            object.__setattr__(instance, cached_field_name, unique_id)
+        if unique_id not in GLOBAL_CACHE:
+            GLOBAL_CACHE[unique_id] = self._func(instance)
+        return GLOBAL_CACHE[unique_id]
+
+
+cached_property_no_lock = cached_property
 
 
 class CachedVarOperation:
@@ -1908,7 +1984,7 @@ class ComputedVar(Var[RETURN_TYPE]):
     _initial_value: RETURN_TYPE | types.Unset = dataclasses.field(default=types.Unset())
 
     # Explicit var dependencies to track
-    _static_deps: set[str] = dataclasses.field(default_factory=set)
+    _static_deps: dict[str | None, set[str]] = dataclasses.field(default_factory=dict)
 
     # Whether var dependencies should be auto-determined
     _auto_deps: bool = dataclasses.field(default=True)
@@ -1978,37 +2054,81 @@ class ComputedVar(Var[RETURN_TYPE]):
 
         object.__setattr__(self, "_update_interval", interval)
 
-        if deps is None:
-            deps = []
-        else:
-            for dep in deps:
-                if isinstance(dep, Var):
-                    continue
-                if isinstance(dep, str) and dep != "":
-                    continue
-                raise TypeError(
-                    "ComputedVar dependencies must be Var instances or var names (non-empty strings)."
-                )
         object.__setattr__(
             self,
             "_static_deps",
-            {dep._js_expr if isinstance(dep, Var) else dep for dep in deps},
+            self._calculate_static_deps(deps),
         )
         object.__setattr__(self, "_auto_deps", auto_deps)
 
         object.__setattr__(self, "_fget", fget)
 
+    def _calculate_static_deps(
+        self,
+        deps: Union[List[Union[str, Var]], dict[str | None, set[str]]] | None = None,
+    ) -> dict[str | None, set[str]]:
+        """Calculate the static dependencies of the computed var from user input or existing dependencies.
+
+        Args:
+            deps: The user input dependencies or existing dependencies.
+
+        Returns:
+            The static dependencies.
+        """
+        if isinstance(deps, dict):
+            # Assume a dict is coming from _replace, so no special processing.
+            return deps
+        _static_deps = {}
+        if deps is not None:
+            for dep in deps:
+                _static_deps = self._add_static_dep(dep, _static_deps)
+        return _static_deps
+
+    def _add_static_dep(
+        self, dep: Union[str, Var], deps: dict[str | None, set[str]] | None = None
+    ) -> dict[str | None, set[str]]:
+        """Add a static dependency to the computed var or existing dependency set.
+
+        Args:
+            dep: The dependency to add.
+            deps: The existing dependency set.
+
+        Returns:
+            The updated dependency set.
+
+        Raises:
+            TypeError: If the computed var dependencies are not Var instances or var names.
+        """
+        if deps is None:
+            deps = self._static_deps
+        if isinstance(dep, Var):
+            state_name = (
+                all_var_data.state
+                if (all_var_data := dep._get_all_var_data()) and all_var_data.state
+                else None
+            )
+            if all_var_data is not None:
+                var_name = all_var_data.field_name
+            else:
+                var_name = dep._js_expr
+            deps.setdefault(state_name, set()).add(var_name)
+        elif isinstance(dep, str) and dep != "":
+            deps.setdefault(None, set()).add(dep)
+        else:
+            raise TypeError(
+                "ComputedVar dependencies must be Var instances or var names (non-empty strings)."
+            )
+        return deps
+
     @override
     def _replace(
         self,
-        _var_type: Any = None,
         merge_var_data: VarData | None = None,
         **kwargs: Any,
     ) -> Self:
         """Replace the attributes of the ComputedVar.
 
         Args:
-            _var_type: ignored in ComputedVar.
             merge_var_data: VarData to merge into the existing VarData.
             **kwargs: Var fields to update.
 
@@ -2018,6 +2138,8 @@ class ComputedVar(Var[RETURN_TYPE]):
         Raises:
             TypeError: If kwargs contains keys that are not allowed.
         """
+        if "deps" in kwargs:
+            kwargs["deps"] = self._calculate_static_deps(kwargs["deps"])
         field_values = {
             "fget": kwargs.pop("fget", self._fget),
             "initial_value": kwargs.pop("initial_value", self._initial_value),
@@ -2073,6 +2195,13 @@ class ComputedVar(Var[RETURN_TYPE]):
         if last_updated is None:
             return True
         return datetime.datetime.now() - last_updated > self._update_interval
+
+    @overload
+    def __get__(
+        self: ComputedVar[bool],
+        instance: None,
+        owner: Type,
+    ) -> BooleanVar: ...
 
     @overload
     def __get__(
@@ -2158,125 +2287,67 @@ class ComputedVar(Var[RETURN_TYPE]):
                 setattr(instance, self._last_updated_attr, datetime.datetime.now())
             value = getattr(instance, self._cache_attr)
 
+        self._check_deprecated_return_type(instance, value)
+
+        return value
+
+    def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
         if not _isinstance(value, self._var_type):
             console.error(
                 f"Computed var '{type(instance).__name__}.{self._js_expr}' must return"
                 f" type '{self._var_type}', got '{type(value)}'."
             )
 
-        return value
-
     def _deps(
         self,
-        objclass: Type,
+        objclass: Type[BaseState],
         obj: FunctionType | CodeType | None = None,
-        self_name: Optional[str] = None,
-    ) -> set[str]:
+    ) -> dict[str, set[str]]:
         """Determine var dependencies of this ComputedVar.
 
-        Save references to attributes accessed on "self".  Recursively called
-        when the function makes a method call on "self" or define comprehensions
-        or nested functions that may reference "self".
+        Save references to attributes accessed on "self" or other fetched states.
+
+        Recursively called when the function makes a method call on "self" or
+        define comprehensions or nested functions that may reference "self".
 
         Args:
             objclass: the class obj this ComputedVar is attached to.
             obj: the object to disassemble (defaults to the fget function).
-            self_name: if specified, look for this name in LOAD_FAST and LOAD_DEREF instructions.
 
         Returns:
-            A set of variable names accessed by the given obj.
-
-        Raises:
-            VarValueError: if the function references the get_state, parent_state, or substates attributes
-                (cannot track deps in a related state, only implicitly via parent state).
+            A dictionary mapping state names to the set of variable names
+            accessed by the given obj.
         """
+        from .dep_tracking import DependencyTracker
+
+        d = {}
+        if self._static_deps:
+            d.update(self._static_deps)
+            # None is a placeholder for the current state class.
+            if None in d:
+                d[objclass.get_full_name()] = d.pop(None)
+
         if not self._auto_deps:
-            return self._static_deps
-        d = self._static_deps.copy()
+            return d
+
         if obj is None:
             fget = self._fget
             if fget is not None:
                 obj = cast(FunctionType, fget)
             else:
-                return set()
-        with contextlib.suppress(AttributeError):
-            # unbox functools.partial
-            obj = cast(FunctionType, obj.func)  # pyright: ignore [reportAttributeAccessIssue]
-        with contextlib.suppress(AttributeError):
-            # unbox EventHandler
-            obj = cast(FunctionType, obj.fn)  # pyright: ignore [reportAttributeAccessIssue]
+                return d
 
-        if self_name is None and isinstance(obj, FunctionType):
-            try:
-                # the first argument to the function is the name of "self" arg
-                self_name = obj.__code__.co_varnames[0]
-            except (AttributeError, IndexError):
-                self_name = None
-        if self_name is None:
-            # cannot reference attributes on self if method takes no args
-            return set()
-
-        invalid_names = ["get_state", "parent_state", "substates", "get_substate"]
-        self_is_top_of_stack = False
-        for instruction in dis.get_instructions(obj):
-            if (
-                instruction.opname in ("LOAD_FAST", "LOAD_DEREF")
-                and instruction.argval == self_name
-            ):
-                # bytecode loaded the class instance to the top of stack, next load instruction
-                # is referencing an attribute on self
-                self_is_top_of_stack = True
-                continue
-            if self_is_top_of_stack and instruction.opname in (
-                "LOAD_ATTR",
-                "LOAD_METHOD",
-            ):
-                try:
-                    ref_obj = getattr(objclass, instruction.argval)
-                except Exception:
-                    ref_obj = None
-                if instruction.argval in invalid_names:
-                    raise VarValueError(
-                        f"Cached var {self!s} cannot access arbitrary state via `{instruction.argval}`."
-                    )
-                if callable(ref_obj):
-                    # recurse into callable attributes
-                    d.update(
-                        self._deps(
-                            objclass=objclass,
-                            obj=ref_obj,  # pyright: ignore [reportArgumentType]
-                        )
-                    )
-                # recurse into property fget functions
-                elif isinstance(ref_obj, property) and not isinstance(
-                    ref_obj, ComputedVar
-                ):
-                    d.update(
-                        self._deps(
-                            objclass=objclass,
-                            obj=ref_obj.fget,  # pyright: ignore [reportArgumentType]
-                        )
-                    )
-                elif (
-                    instruction.argval in objclass.backend_vars
-                    or instruction.argval in objclass.vars
-                ):
-                    # var access
-                    d.add(instruction.argval)
-            elif instruction.opname == "LOAD_CONST" and isinstance(
-                instruction.argval, CodeType
-            ):
-                # recurse into nested functions / comprehensions, which can reference
-                # instance attributes from the outer scope
-                d.update(
-                    self._deps(
-                        objclass=objclass,
-                        obj=instruction.argval,
-                        self_name=self_name,
-                    )
-                )
-            self_is_top_of_stack = False
-        return d
+        try:
+            return DependencyTracker(
+                func=obj, state_cls=objclass, dependencies=d
+            ).dependencies
+        except Exception as e:
+            console.warn(
+                "Failed to automatically determine dependencies for computed var "
+                f"{objclass.__name__}.{self._js_expr}: {e}. "
+                "Provide static_deps and set auto_deps=False to suppress this warning."
+            )
+            return d
 
     def mark_dirty(self, instance: BaseState) -> None:
         """Mark this ComputedVar as dirty.
@@ -2286,6 +2357,37 @@ class ComputedVar(Var[RETURN_TYPE]):
         """
         with contextlib.suppress(AttributeError):
             delattr(instance, self._cache_attr)
+
+    def add_dependency(self, objclass: Type[BaseState], dep: Var):
+        """Explicitly add a dependency to the ComputedVar.
+
+        After adding the dependency, when the `dep` changes, this computed var
+        will be marked dirty.
+
+        Args:
+            objclass: The class obj this ComputedVar is attached to.
+            dep: The dependency to add.
+
+        Raises:
+            VarDependencyError: If the dependency is not a Var instance with a
+                state and field name
+        """
+        if all_var_data := dep._get_all_var_data():
+            state_name = all_var_data.state
+            if state_name:
+                var_name = all_var_data.field_name
+                if var_name:
+                    self._static_deps.setdefault(state_name, set()).add(var_name)
+                    objclass.get_root_state().get_class_substate(
+                        state_name
+                    )._var_dependencies.setdefault(var_name, set()).add(
+                        (objclass.get_full_name(), self._js_expr)
+                    )
+                    return
+        raise VarDependencyError(
+            "ComputedVar dependencies must be Var instances with a state and "
+            f"field name, got {dep!r}."
+        )
 
     def _determine_var_type(self) -> Type:
         """Get the type of the var.
@@ -2321,6 +2423,126 @@ class DynamicRouteVar(ComputedVar[Union[str, List[str]]]):
     """A ComputedVar that represents a dynamic route."""
 
     pass
+
+
+async def _default_async_computed_var(_self: BaseState) -> Any:
+    return None
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    init=False,
+    slots=True,
+)
+class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
+    """A computed var that wraps a coroutinefunction."""
+
+    _fget: Callable[[BaseState], Coroutine[None, None, RETURN_TYPE]] = (
+        dataclasses.field(default=_default_async_computed_var)
+    )
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[bool],
+        instance: None,
+        owner: Type,
+    ) -> BooleanVar: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[int] | ComputedVar[float],
+        instance: None,
+        owner: Type,
+    ) -> NumberVar: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[str],
+        instance: None,
+        owner: Type,
+    ) -> StringVar: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[Mapping[DICT_KEY, DICT_VAL]],
+        instance: None,
+        owner: Type,
+    ) -> ObjectVar[Mapping[DICT_KEY, DICT_VAL]]: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[list[LIST_INSIDE]],
+        instance: None,
+        owner: Type,
+    ) -> ArrayVar[list[LIST_INSIDE]]: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[tuple[LIST_INSIDE, ...]],
+        instance: None,
+        owner: Type,
+    ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
+
+    @overload
+    def __get__(self, instance: None, owner: Type) -> AsyncComputedVar[RETURN_TYPE]: ...
+
+    @overload
+    def __get__(
+        self, instance: BaseState, owner: Type
+    ) -> Coroutine[None, None, RETURN_TYPE]: ...
+
+    def __get__(
+        self, instance: BaseState | None, owner
+    ) -> Var | Coroutine[None, None, RETURN_TYPE]:
+        """Get the ComputedVar value.
+
+        If the value is already cached on the instance, return the cached value.
+
+        Args:
+            instance: the instance of the class accessing this computed var.
+            owner: the class that this descriptor is attached to.
+
+        Returns:
+            The value of the var for the given instance.
+        """
+        if instance is None:
+            return super(AsyncComputedVar, self).__get__(instance, owner)
+
+        if not self._cache:
+
+            async def _awaitable_result(instance: BaseState = instance) -> RETURN_TYPE:
+                value = await self.fget(instance)
+                self._check_deprecated_return_type(instance, value)
+                return value
+
+            return _awaitable_result()
+        else:
+            # handle caching
+            async def _awaitable_result(instance: BaseState = instance) -> RETURN_TYPE:
+                if not hasattr(instance, self._cache_attr) or self.needs_update(
+                    instance
+                ):
+                    # Set cache attr on state instance.
+                    setattr(instance, self._cache_attr, await self.fget(instance))
+                    # Ensure the computed var gets serialized to redis.
+                    instance._was_touched = True
+                    # Set the last updated timestamp on the state instance.
+                    setattr(instance, self._last_updated_attr, datetime.datetime.now())
+                value = getattr(instance, self._cache_attr)
+                self._check_deprecated_return_type(instance, value)
+                return value
+
+            return _awaitable_result()
+
+    @property
+    def fget(self) -> Callable[[BaseState], Coroutine[None, None, RETURN_TYPE]]:
+        """Get the getter function.
+
+        Returns:
+            The getter function.
+        """
+        return self._fget
 
 
 if TYPE_CHECKING:
@@ -2381,6 +2603,7 @@ def computed_var(
     Raises:
         ValueError: If caching is disabled and an update interval is set.
         VarDependencyError: If user supplies dependencies without caching.
+        ComputedVarSignatureError: If the getter function has more than one argument.
     """
     if cache is False and interval is not None:
         raise ValueError("Cannot set update interval without caching.")
@@ -2393,10 +2616,27 @@ def computed_var(
         if len(sign.parameters) != 1:
             raise ComputedVarSignatureError(fget.__name__, signature=str(sign))
 
-        return ComputedVar(fget, cache=cache)
+        if inspect.iscoroutinefunction(fget):
+            computed_var_cls = AsyncComputedVar
+        else:
+            computed_var_cls = ComputedVar
+        return computed_var_cls(
+            fget,
+            initial_value=initial_value,
+            cache=cache,
+            deps=deps,
+            auto_deps=auto_deps,
+            interval=interval,
+            backend=backend,
+            **kwargs,
+        )
 
     def wrapper(fget: Callable[[BASE_STATE], Any]) -> ComputedVar:
-        return ComputedVar(
+        if inspect.iscoroutinefunction(fget):
+            computed_var_cls = AsyncComputedVar
+        else:
+            computed_var_cls = ComputedVar
+        return computed_var_cls(
             fget,
             initial_value=initial_value,
             cache=cache,
@@ -2982,10 +3222,16 @@ def dispatch(
 
 V = TypeVar("V")
 
-BASE_TYPE = TypeVar("BASE_TYPE", bound=Base)
+BASE_TYPE = TypeVar("BASE_TYPE", bound=Base | None)
+SQLA_TYPE = TypeVar("SQLA_TYPE", bound=DeclarativeBase | None)
+
+if TYPE_CHECKING:
+    from _typeshed import DataclassInstance
+
+    DATACLASS_TYPE = TypeVar("DATACLASS_TYPE", bound=DataclassInstance | None)
 
 FIELD_TYPE = TypeVar("FIELD_TYPE")
-MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping)
+MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping | None)
 
 
 class Field(Generic[FIELD_TYPE]):
@@ -3029,6 +3275,18 @@ class Field(Generic[FIELD_TYPE]):
     def __get__(
         self: Field[BASE_TYPE], instance: None, owner: Any
     ) -> ObjectVar[BASE_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: Field[SQLA_TYPE], instance: None, owner: Any
+    ) -> ObjectVar[SQLA_TYPE]: ...
+
+    if TYPE_CHECKING:
+
+        @overload
+        def __get__(
+            self: Field[DATACLASS_TYPE], instance: None, owner: Any
+        ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload
     def __get__(self, instance: None, owner: Any) -> Var[FIELD_TYPE]: ...

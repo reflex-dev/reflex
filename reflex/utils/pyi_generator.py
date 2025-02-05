@@ -622,7 +622,7 @@ def _generate_component_create_functiondef(
         defaults=[],
     )
 
-    definition = ast.FunctionDef(
+    definition = ast.FunctionDef(  # pyright: ignore [reportCallIssue]
         name="create",
         args=create_args,
         body=[  # pyright: ignore [reportArgumentType]
@@ -684,7 +684,7 @@ def _generate_staticmethod_call_functiondef(
             else []
         ),
     )
-    definition = ast.FunctionDef(
+    definition = ast.FunctionDef(  # pyright: ignore [reportCallIssue]
         name="__call__",
         args=call_args,
         body=[
@@ -699,6 +699,7 @@ def _generate_staticmethod_call_functiondef(
             value=_get_type_hint(
                 typing.get_type_hints(clz.__call__).get("return", None),
                 type_hint_globals,
+                is_optional=False,
             )
         ),
     )

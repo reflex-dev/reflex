@@ -488,7 +488,7 @@ def output_system_info():
         dependencies.append(fnm_info)
 
     if system == "Linux":
-        import distro
+        import distro  # pyright: ignore[reportMissingImports]
 
         os_version = distro.name(pretty=True)
     else:

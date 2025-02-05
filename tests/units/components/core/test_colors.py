@@ -55,13 +55,13 @@ def create_color_var(color):
             Color,
         ),
         (
-            create_color_var(f'{rx.color(ColorState.color, f"{ColorState.shade}")}'),  # pyright: ignore [reportArgumentType]
+            create_color_var(f"{rx.color(ColorState.color, f'{ColorState.shade}')}"),  # pyright: ignore [reportArgumentType]
             f'("var(--"+{color_state_name!s}.color+"-"+{color_state_name!s}.shade+")")',
             str,
         ),
         (
             create_color_var(
-                f'{rx.color(f"{ColorState.color}", f"{ColorState.shade}")}'  # pyright: ignore [reportArgumentType]
+                f"{rx.color(f'{ColorState.color}', f'{ColorState.shade}')}"  # pyright: ignore [reportArgumentType]
             ),
             f'("var(--"+{color_state_name!s}.color+"-"+{color_state_name!s}.shade+")")',
             str,

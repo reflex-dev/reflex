@@ -54,6 +54,8 @@ class Foreach(Component):
             TypeError: If the render function is a ComponentState.
             UntypedVarError: If the iterable is of type Any without a type annotation.
         """
+        from reflex.vars.object import ObjectVar
+
         iterable = LiteralVar.create(iterable)
         if iterable._var_type == Any:
             raise ForeachVarError(
@@ -69,6 +71,9 @@ class Foreach(Component):
             raise TypeError(
                 "Using a ComponentState as `render_fn` inside `rx.foreach` is not supported yet."
             )
+
+        if isinstance(iterable, ObjectVar):
+            iterable = iterable.entries()
 
         component = cls(
             iterable=iterable,
