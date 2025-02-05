@@ -191,10 +191,6 @@ def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
     Returns:
         Whether the object satisfies the type hint.
     """
-    if isinstance(obj, LiteralVar):
-        return types._isinstance(obj._var_value, type_hint, nested=1)
-    if isinstance(obj, Var):
-        return types._issubclass(obj._var_type, type_hint)
     return types._isinstance(obj, type_hint, nested=1)
 
 
@@ -710,6 +706,9 @@ class Component(BaseComponent, ABC):
             for child in children:
                 if isinstance(child, (tuple, list)):
                     validate_children(child)
+
+                if isinstance(child, Var):
+                    continue
 
                 # Make sure the child is a valid type.
                 if isinstance(child, dict) or not types._isinstance(

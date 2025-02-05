@@ -565,6 +565,13 @@ def _isinstance(obj: Any, cls: GenericType, nested: int = 0) -> bool:
     if cls is Any:
         return True
 
+    from reflex.vars import LiteralVar, Var
+
+    if isinstance(obj, LiteralVar):
+        return _isinstance(obj._var_value, cls, nested=nested)
+    if isinstance(obj, Var):
+        return _issubclass(obj._var_type, cls)
+
     if cls is None or cls is type(None):
         return obj is None
 
@@ -614,8 +621,8 @@ def _isinstance(obj: Any, cls: GenericType, nested: int = 0) -> bool:
                     for item, arg in zip(obj, args, strict=True)
                 )
             )
-        if origin in (dict, Breakpoints):
-            return isinstance(obj, dict) and all(
+        if origin in (dict, Mapping, Breakpoints):
+            return isinstance(obj, Mapping) and all(
                 _isinstance(key, args[0], nested=nested - 1)
                 and _isinstance(value, args[1], nested=nested - 1)
                 for key, value in obj.items()
