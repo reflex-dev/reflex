@@ -25,12 +25,12 @@ from typing import (
 )
 
 from typing_extensions import (
-    Concatenate,
-    ParamSpec,
     Protocol,
     TypeAliasType,
     TypedDict,
     TypeVar,
+    TypeVarTuple,
+    Unpack,
     get_args,
     get_origin,
 )
@@ -1092,7 +1092,7 @@ def _callback_arg_spec(eval_result: Any):
 
 def call_script(
     javascript_code: str | Var[str],
-    callback: EventType | None = None,
+    callback: EventType[Any] | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -1131,7 +1131,7 @@ def call_script(
 
 def call_function(
     javascript_code: str | Var,
-    callback: EventType | None = None,
+    callback: EventType[Any] | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -1165,7 +1165,7 @@ def call_function(
 
 def run_script(
     javascript_code: str | Var,
-    callback: EventType | None = None,
+    callback: EventType[Any] | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -1763,8 +1763,8 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
         )
 
 
-P = ParamSpec("P")
-Q = ParamSpec("Q")
+P = TypeVarTuple("P")
+Q = TypeVarTuple("Q")
 T = TypeVar("T")
 V = TypeVar("V")
 V2 = TypeVar("V2")
@@ -1773,10 +1773,10 @@ V4 = TypeVar("V4")
 V5 = TypeVar("V5")
 
 
-class EventCallback(Generic[P, T]):
+class EventCallback(Generic[Unpack[P]]):
     """A descriptor that wraps a function to be used as an event."""
 
-    def __init__(self, func: Callable[Concatenate[Any, P], T]):
+    def __init__(self, func: Callable[[Any, Unpack[P]], Any]):
         """Initialize the descriptor with the function to be wrapped.
 
         Args:
@@ -1804,37 +1804,37 @@ class EventCallback(Generic[P, T]):
 
     @overload
     def __call__(
-        self: EventCallback[Q, T],
-    ) -> EventCallback[Q, T]: ...
+        self: EventCallback[Unpack[Q]],
+    ) -> EventCallback[Unpack[Q]]: ...
 
     @overload
     def __call__(
-        self: EventCallback[Concatenate[V, Q], T], value: V | Var[V]
-    ) -> EventCallback[Q, T]: ...
+        self: EventCallback[V, Unpack[Q]], value: V | Var[V]
+    ) -> EventCallback[Unpack[Q]]: ...
 
     @overload
     def __call__(
-        self: EventCallback[Concatenate[V, V2, Q], T],
+        self: EventCallback[V, V2, Unpack[Q]],
         value: V | Var[V],
         value2: V2 | Var[V2],
-    ) -> EventCallback[Q, T]: ...
+    ) -> EventCallback[Unpack[Q]]: ...
 
     @overload
     def __call__(
-        self: EventCallback[Concatenate[V, V2, V3, Q], T],
+        self: EventCallback[V, V2, V3, Unpack[Q]],
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
-    ) -> EventCallback[Q, T]: ...
+    ) -> EventCallback[Unpack[Q]]: ...
 
     @overload
     def __call__(
-        self: EventCallback[Concatenate[V, V2, V3, V4, Q], T],
+        self: EventCallback[V, V2, V3, V4, Unpack[Q]],
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
         value4: V4 | Var[V4],
-    ) -> EventCallback[Q, T]: ...
+    ) -> EventCallback[Unpack[Q]]: ...
 
     def __call__(self, *values) -> EventCallback:  # pyright: ignore [reportInconsistentOverload]
         """Call the function with the values.
@@ -1845,15 +1845,15 @@ class EventCallback(Generic[P, T]):
         Returns:
             The function with the values.
         """
-        return self.func(*values)  # pyright: ignore [reportCallIssue, reportReturnType]
+        return self.func(*values)  # pyright: ignore [reportArgumentType]
 
     @overload
     def __get__(
-        self: EventCallback[P, T], instance: None, owner: Any
-    ) -> EventCallback[P, T]: ...
+        self: EventCallback[Unpack[P]], instance: None, owner: Any
+    ) -> EventCallback[Unpack[P]]: ...
 
     @overload
-    def __get__(self, instance: Any, owner: Any) -> Callable[P, T]: ...
+    def __get__(self, instance: Any, owner: Any) -> Callable[[Unpack[P]]]: ...
 
     def __get__(self, instance: Any, owner: Any) -> Callable:
         """Get the function with the instance bound to it.
@@ -1871,7 +1871,62 @@ class EventCallback(Generic[P, T]):
         return partial(self.func, instance)
 
 
-G = ParamSpec("G")
+class LambdaEventCallback(Protocol[Unpack[P]]):
+    """A protocol for a lambda event callback."""
+
+    @overload
+    def __call__(self: LambdaEventCallback[()]) -> Any: ...
+
+    @overload
+    def __call__(self: LambdaEventCallback[V], value: Var[V], /) -> Any: ...
+
+    @overload
+    def __call__(
+        self: LambdaEventCallback[V, V2], value: Var[V], value2: Var[V2], /
+    ) -> Any: ...
+
+    @overload
+    def __call__(
+        self: LambdaEventCallback[V, V2, V3],
+        value: Var[V],
+        value2: Var[V2],
+        value3: Var[V3],
+        /,
+    ) -> Any: ...
+
+    def __call__(self, *args: Var) -> Any:
+        """Call the lambda with the args.
+
+        Args:
+            *args: The args to call the lambda with.
+        """
+
+
+ARGS = TypeVarTuple("ARGS")
+
+
+LAMBDA_OR_STATE = TypeAliasType(
+    "LAMBDA_OR_STATE",
+    LambdaEventCallback[Unpack[ARGS]] | EventCallback[Unpack[ARGS]],
+    type_params=(ARGS,),
+)
+
+ItemOrList = V | List[V]
+
+BASIC_EVENT_TYPES = TypeAliasType(
+    "BASIC_EVENT_TYPES", EventSpec | EventHandler | Var[Any], type_params=()
+)
+
+IndividualEventType = TypeAliasType(
+    "IndividualEventType",
+    LAMBDA_OR_STATE[Unpack[ARGS]] | BASIC_EVENT_TYPES,
+    type_params=(ARGS,),
+)
+
+EventType = TypeAliasType(
+    "EventType", ItemOrList[IndividualEventType[Unpack[ARGS]]], type_params=(ARGS,)
+)
+
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -1879,25 +1934,6 @@ if TYPE_CHECKING:
     BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
 else:
     BASE_STATE = TypeVar("BASE_STATE")
-
-StateCallable = TypeAliasType(
-    "StateCallable",
-    Callable[Concatenate[BASE_STATE, G], Any],
-    type_params=(G, BASE_STATE),
-)
-
-IndividualEventType = Union[
-    EventSpec,
-    EventHandler,
-    Callable[G, Any],
-    StateCallable[G, BASE_STATE],
-    EventCallback[G, Any],
-    Var[Any],
-]
-
-ItemOrList = Union[V, List[V]]
-
-EventType = ItemOrList[IndividualEventType[G, BASE_STATE]]
 
 
 class EventNamespace(types.SimpleNamespace):
@@ -1919,24 +1955,26 @@ class EventNamespace(types.SimpleNamespace):
     @staticmethod
     def __call__(
         func: None = None, *, background: bool | None = None
-    ) -> Callable[[Callable[Concatenate[BASE_STATE, P], T]], EventCallback[P, T]]: ...  # pyright: ignore [reportInvalidTypeVarUse]
+    ) -> Callable[
+        [Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]  # pyright: ignore [reportInvalidTypeVarUse]
+    ]: ...
 
     @overload
     @staticmethod
     def __call__(
-        func: Callable[Concatenate[BASE_STATE, P], T],
+        func: Callable[[BASE_STATE, Unpack[P]], Any],
         *,
         background: bool | None = None,
-    ) -> EventCallback[P, T]: ...
+    ) -> EventCallback[Unpack[P]]: ...
 
     @staticmethod
     def __call__(
-        func: Callable[Concatenate[BASE_STATE, P], T] | None = None,
+        func: Callable[[BASE_STATE, Unpack[P]], Any] | None = None,
         *,
         background: bool | None = None,
     ) -> Union[
-        EventCallback[P, T],
-        Callable[[Callable[Concatenate[BASE_STATE, P], T]], EventCallback[P, T]],
+        EventCallback[Unpack[P]],
+        Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]],
     ]:
         """Wrap a function to be used as an event.
 
@@ -1952,8 +1990,8 @@ class EventNamespace(types.SimpleNamespace):
         """
 
         def wrapper(
-            func: Callable[Concatenate[BASE_STATE, P], T],
-        ) -> EventCallback[P, T]:
+            func: Callable[[BASE_STATE, Unpack[P]], T],
+        ) -> EventCallback[Unpack[P]]:
             if background is True:
                 if not inspect.iscoroutinefunction(
                     func

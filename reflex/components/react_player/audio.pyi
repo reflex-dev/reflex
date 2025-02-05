@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional, Union, overload
 
 import reflex
 from reflex.components.react_player.react_player import ReactPlayer
-from reflex.event import BASE_STATE, EventType
+from reflex.event import EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
@@ -34,48 +34,42 @@ class Audio(ReactPlayer):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
-        on_blur: Optional[EventType[[], BASE_STATE]] = None,
-        on_buffer: Optional[EventType[[], BASE_STATE]] = None,
-        on_buffer_end: Optional[EventType[[], BASE_STATE]] = None,
-        on_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_click_preview: Optional[EventType[[], BASE_STATE]] = None,
-        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
-        on_disable_pip: Optional[EventType[[], BASE_STATE]] = None,
-        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_duration: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[float], BASE_STATE]]
-        ] = None,
-        on_enable_pip: Optional[EventType[[], BASE_STATE]] = None,
-        on_ended: Optional[EventType[[], BASE_STATE]] = None,
-        on_error: Optional[EventType[[], BASE_STATE]] = None,
-        on_focus: Optional[EventType[[], BASE_STATE]] = None,
-        on_mount: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
-        on_pause: Optional[EventType[[], BASE_STATE]] = None,
-        on_play: Optional[EventType[[], BASE_STATE]] = None,
-        on_playback_quality_change: Optional[EventType[[], BASE_STATE]] = None,
-        on_playback_rate_change: Optional[EventType[[], BASE_STATE]] = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_buffer: Optional[EventType[()]] = None,
+        on_buffer_end: Optional[EventType[()]] = None,
+        on_click: Optional[EventType[()]] = None,
+        on_click_preview: Optional[EventType[()]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_disable_pip: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_duration: Optional[Union[EventType[()], EventType[float]]] = None,
+        on_enable_pip: Optional[EventType[()]] = None,
+        on_ended: Optional[EventType[()]] = None,
+        on_error: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_pause: Optional[EventType[()]] = None,
+        on_play: Optional[EventType[()]] = None,
+        on_playback_quality_change: Optional[EventType[()]] = None,
+        on_playback_rate_change: Optional[EventType[()]] = None,
         on_progress: Optional[
             Union[
-                EventType[[], BASE_STATE],
-                EventType[
-                    [reflex.components.react_player.react_player.Progress], BASE_STATE
-                ],
+                EventType[()],
+                EventType[reflex.components.react_player.react_player.Progress],
             ]
         ] = None,
-        on_ready: Optional[EventType[[], BASE_STATE]] = None,
-        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
-        on_seek: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[float], BASE_STATE]]
-        ] = None,
-        on_start: Optional[EventType[[], BASE_STATE]] = None,
-        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
+        on_ready: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_seek: Optional[Union[EventType[()], EventType[float]]] = None,
+        on_start: Optional[EventType[()]] = None,
+        on_unmount: Optional[EventType[()]] = None,
         **props,
     ) -> "Audio":
         """Create the component.
