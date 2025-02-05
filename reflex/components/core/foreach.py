@@ -56,7 +56,7 @@ class Foreach(Component):
         """
         from reflex.vars import ArrayVar, ObjectVar, StringVar
 
-        iterable = LiteralVar.create(iterable)
+        iterable = LiteralVar.create(iterable).guess_type()
 
         if iterable._var_type == Any:
             raise ForeachVarError(
