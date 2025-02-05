@@ -23,11 +23,13 @@ def DynamicRoute():
     class DynamicState(rx.State):
         order: List[str] = []
 
+        @rx.event
         def on_load(self):
             page_data = f"{self.router.page.path}-{self.page_id or 'no page id'}"
             print(f"on_load: {page_data}")
             self.order.append(page_data)
 
+        @rx.event
         def on_load_redir(self):
             query_params = self.router.page.params
             page_data = f"on_load_redir-{query_params}"

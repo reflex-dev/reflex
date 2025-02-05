@@ -75,7 +75,6 @@ DEFAULT_IMPORTS = {
         "EventHandler",
         "EventSpec",
         "EventType",
-        "BASE_STATE",
         "KeyInputInfo",
     ],
     "reflex.style": ["Style"],
@@ -502,7 +501,7 @@ def _generate_component_create_functiondef(
 
     def figure_out_return_type(annotation: Any):
         if inspect.isclass(annotation) and issubclass(annotation, inspect._empty):
-            return ast.Name(id="EventType[..., BASE_STATE]")
+            return ast.Name(id="EventType[Any]")
 
         if not isinstance(annotation, str) and get_origin(annotation) is tuple:
             arguments = get_args(annotation)
@@ -518,8 +517,10 @@ def _generate_component_create_functiondef(
             # Get all prefixes of the type arguments
             all_count_args_type = [
                 ast.Name(
-                    f"EventType[[{', '.join([ast.unparse(arg) for arg in type_args[:i]])}], BASE_STATE]"
+                    f"EventType[{', '.join([ast.unparse(arg) for arg in type_args[:i]])}]"
                 )
+                if i > 0
+                else ast.Name("EventType[()]")
                 for i in range(len(type_args) + 1)
             ]
 
@@ -532,7 +533,7 @@ def _generate_component_create_functiondef(
             inside_of_tuple = annotation.removeprefix("Tuple[").removesuffix("]")
 
             if inside_of_tuple == "()":
-                return ast.Name(id="EventType[[], BASE_STATE]")
+                return ast.Name(id="EventType[()]")
 
             arguments = [""]
 
@@ -559,16 +560,16 @@ def _generate_component_create_functiondef(
             ]
 
             all_count_args_type = [
-                ast.Name(
-                    f"EventType[[{', '.join(arguments_without_var[:i])}], BASE_STATE]"
-                )
+                ast.Name(f"EventType[{', '.join(arguments_without_var[:i])}]")
+                if i > 0
+                else ast.Name("EventType[()]")
                 for i in range(len(arguments) + 1)
             ]
 
             return ast.Name(
                 id=f"Union[{', '.join(map(ast.unparse, all_count_args_type))}]"
             )
-        return ast.Name(id="EventType[..., BASE_STATE]")
+        return ast.Name(id="EventType[Any]")
 
     event_triggers = clz().get_event_triggers()
 
