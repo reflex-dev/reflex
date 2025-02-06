@@ -130,7 +130,7 @@ class IterTag(Tag):
                 raise ValueError("The render function must take 2 arguments.")
             component = self.render_fn(arg, index)
 
-        # Nested foreach components, cond must be wrapped in fragments.
+        # Nested foreach components or cond must be wrapped in fragments.
         if isinstance(component, (Foreach, Cond)):
             component = Fragment.create(component)
 
