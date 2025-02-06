@@ -709,6 +709,9 @@ class Config(Base):
     # Whether the app is running in the reflex cloud environment.
     is_reflex_cloud: bool = False
 
+    # Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.momnet".
+    extra_overlay_function: Optional[str] = None
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 
