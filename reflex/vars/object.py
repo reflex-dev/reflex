@@ -269,7 +269,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         if types.is_optional(var_type):
             var_type = get_args(var_type)[0]
 
-        fixed_type = var_type if isclass(var_type) else get_origin(var_type)
+        fixed_type = get_origin(var_type) or var_type
 
         if (
             is_typeddict(fixed_type)
