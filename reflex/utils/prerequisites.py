@@ -1204,6 +1204,7 @@ def install_frontend_packages(packages: set[str], config: Config):
                 "add",
                 "-d",
                 constants.Tailwind.VERSION,
+                *constants.Tailwind.DEPENDENCIES,
                 *((config.tailwind or {}).get("plugins", [])),
             ],
             fallback=fallback_command,
