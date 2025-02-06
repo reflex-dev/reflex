@@ -179,6 +179,7 @@ ComponentStyle = Dict[
     Union[str, Type[BaseComponent], Callable, ComponentNamespace], Any
 ]
 ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
+ComponentChildTypes = (*types.PrimitiveTypes, Var, BaseComponent)
 
 
 def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
@@ -191,11 +192,7 @@ def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
     Returns:
         Whether the object satisfies the type hint.
     """
-    if isinstance(obj, LiteralVar):
-        return types._isinstance(obj._var_value, type_hint)
-    if isinstance(obj, Var):
-        return types._issubclass(obj._var_type, type_hint)
-    return types._isinstance(obj, type_hint)
+    return types._isinstance(obj, type_hint, nested=1)
 
 
 class Component(BaseComponent, ABC):
@@ -712,8 +709,8 @@ class Component(BaseComponent, ABC):
                     validate_children(child)
 
                 # Make sure the child is a valid type.
-                if isinstance(child, dict) or not types._isinstance(
-                    child, ComponentChild
+                if isinstance(child, dict) or not isinstance(
+                    child, ComponentChildTypes
                 ):
                     raise ChildrenTypeError(component=cls.__name__, child=child)
 
@@ -1771,9 +1768,7 @@ class CustomComponent(Component):
         return [
             Var(
                 _js_expr=name,
-                _var_type=(
-                    prop._var_type if types._isinstance(prop, Var) else type(prop)
-                ),
+                _var_type=(prop._var_type if isinstance(prop, Var) else type(prop)),
             ).guess_type()
             for name, prop in self.props.items()
         ]
