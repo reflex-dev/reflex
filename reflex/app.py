@@ -164,9 +164,26 @@ def default_overlay_component() -> Component:
     """
     config = get_config()
 
+    extra_config = config.extra_overlay_function
+    config_overlay = None
+    if extra_config:
+        module, _, function_name = extra_config.rpartition(".")
+        try:
+            module = __import__(module)
+            config_overlay = getattr(module, function_name)()
+        except Exception as e:
+            from reflex.compiler.utils import save_error
+
+            log_path = save_error(e)
+
+            console.error(
+                f"Error loading extra_overlay_function {extra_config}. Error saved to {log_path}"
+            )
+
     return Fragment.create(
         connection_pulser(),
         connection_toaster(),
+        *([config_overlay] if config_overlay else []),
         *([backend_disabled()] if config.is_reflex_cloud else []),
         *codespaces.codespaces_auto_redirect(),
     )
