@@ -2219,10 +2219,10 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: ComputedVar[Mapping[DICT_KEY, DICT_VAL]],
+        self: ComputedVar[MAPPING_TYPE],
         instance: None,
         owner: Type,
-    ) -> ObjectVar[Mapping[DICT_KEY, DICT_VAL]]: ...
+    ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
@@ -2465,10 +2465,10 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: AsyncComputedVar[Mapping[DICT_KEY, DICT_VAL]],
+        self: AsyncComputedVar[MAPPING_TYPE],
         instance: None,
         owner: Type,
-    ) -> ObjectVar[Mapping[DICT_KEY, DICT_VAL]]: ...
+    ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
