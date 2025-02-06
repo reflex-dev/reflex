@@ -266,8 +266,12 @@ def update_directory_tree(src: Path, dest: Path):
     """Recursively copies a directory tree from src to dest.
     Only copies files if the destination file is missing or modified earlier than the source file.
 
-    :param src: Source directory (Path object)
-    :param dest: Destination directory (Path object)
+    Args:
+        src: Source directory
+        dest: Destination directory
+
+    Raises:
+        ValueError: If the source is not a directory
     """
     if not src.is_dir():
         raise ValueError(f"Source {src} is not a directory")
