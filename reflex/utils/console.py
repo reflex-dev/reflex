@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import contextlib
 import inspect
 import shutil
+import time
 from pathlib import Path
 from types import FrameType
 
@@ -317,3 +319,20 @@ def status(*args, **kwargs):
         A new status.
     """
     return _console.status(*args, **kwargs)
+
+
+@contextlib.contextmanager
+def timing(msg: str):
+    """Create a context manager to time a block of code.
+
+    Args:
+        msg: The message to display.
+
+    Yields:
+        None.
+    """
+    start = time.time()
+    try:
+        yield
+    finally:
+        debug(f"[white]\\[timing] {msg}: {time.time() - start:.2f}s[/white]")
