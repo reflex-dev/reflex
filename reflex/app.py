@@ -1017,7 +1017,7 @@ class App(MiddlewareMixin, LifespanMixin):
         )
 
         # try to be somewhat accurate - but still not 100%
-        adhoc_steps_without_executor = 8
+        adhoc_steps_without_executor = 7
         fixed_pages_within_executor = 5
         progress.start()
         task = progress.add_task(
@@ -1097,12 +1097,15 @@ class App(MiddlewareMixin, LifespanMixin):
         progress.advance(task)
 
         # Copy the assets.
-        with console.timing("Copy assets"):
-            path_ops.update_directory_tree(
-                src=Path.cwd() / constants.Dirs.APP_ASSETS,
-                dest=Path.cwd() / prerequisites.get_web_dir() / constants.Dirs.PUBLIC,
-            )
-            progress.advance(task)
+        assets_src = Path.cwd() / constants.Dirs.APP_ASSETS
+        if assets_src.is_dir():
+            with console.timing("Copy assets"):
+                path_ops.update_directory_tree(
+                    src=assets_src,
+                    dest=(
+                        Path.cwd() / prerequisites.get_web_dir() / constants.Dirs.PUBLIC
+                    ),
+                )
 
         # Use a forking process pool, if possible.  Much faster, especially for large sites.
         # Fallback to ThreadPoolExecutor as something that will always work.
