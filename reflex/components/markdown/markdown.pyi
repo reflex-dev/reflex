@@ -11,7 +11,7 @@ from reflex.components.component import Component
 from reflex.event import EventType
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
-from reflex.vars.base import LiteralVar, Var
+from reflex.vars.base import LiteralVar, Var, VarData
 
 _CHILDREN = Var(_js_expr="children", _var_type=str)
 _PROPS = Var(_js_expr="...props")
@@ -32,13 +32,14 @@ def get_base_component_map() -> dict[str, Callable]: ...
 @dataclasses.dataclass()
 class MarkdownComponentMap:
     @classmethod
-    def get_component_map_custom_code(cls) -> str: ...
+    def get_component_map_custom_code(cls) -> Var: ...
     @classmethod
     def create_map_fn_var(
         cls,
         fn_body: Var | None = None,
         fn_args: Sequence[str] | None = None,
         explicit_return: bool | None = None,
+        var_data: VarData | None = None,
     ) -> Var: ...
     @classmethod
     def get_fn_args(cls) -> Sequence[str]: ...
