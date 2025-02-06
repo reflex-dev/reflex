@@ -347,6 +347,47 @@ async def _resolve_delta(delta: Delta) -> Delta:
     return delta
 
 
+# Tracking the import and potential exec history of BaseState subclasses.
+# This is used to reconstruct the state tree for the backend without pickling
+# the classes themselves.
+@dataclasses.dataclass(frozen=True)
+class BaseStateOrigin:
+    """A class to track the origin of BaseState subclasses.
+
+    The origin is either evaluating some page, or importing a module.
+    """
+
+    identifier: str
+    is_module: bool
+
+    @classmethod
+    def from_stack(cls):
+        """Find the most likely import in the stack."""
+        stack = inspect.stack()
+        for frame in stack:
+            if (
+                frame.code_context is not None
+                and any("class " in ctx for ctx in frame.code_context)
+                and frame.function == "<module>"
+            ):
+                return cls(
+                    identifier=inspect.getmodule(frame.frame).__name__,
+                    is_module=True,
+                )
+            if (
+                frame.function == "compile_unevaluated_page"
+                and inspect.getmodule(frame.frame) == reflex.compiler.compiler
+            ):
+                # We hit a page in the compiler that needs to be evaluated
+                return cls(
+                    identifier=frame.frame.f_locals["route"],
+                    is_module=False,
+                )
+
+
+BaseState_import_order: dict[BaseStateOrigin, None] = {}
+
+
 class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
@@ -643,6 +684,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Initialize per-class var dependency tracking.
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
+
+        BaseState_import_order[BaseStateOrigin.from_stack()] = None
 
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
