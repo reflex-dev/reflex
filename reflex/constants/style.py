@@ -14,5 +14,3 @@ class Tailwind(SimpleNamespace):
     CONTENT = ["./pages/**/*.{js,ts,jsx,tsx}", "./utils/**/*.{js,ts,jsx,tsx}"]
     # Relative tailwind style path to root stylesheet in Dirs.STYLES.
     ROOT_STYLE_PATH = "./tailwind.css"
-    # Builtin dependencies
-    DEPENDENCIES = ("@tailwindcss/postcss",)
