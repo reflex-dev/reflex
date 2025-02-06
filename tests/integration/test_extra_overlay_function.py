@@ -1,4 +1,4 @@
-"""Test case for displaying the connection banner when the websocket drops."""
+"""Test case for adding an overlay component defined in the rxconfig."""
 
 from typing import Generator
 
@@ -11,7 +11,6 @@ from reflex.testing import AppHarness, WebDriver
 def ExtraOverlay():
     import reflex as rx
 
-    # Simulate reflex cloud deploy
     rx.config.get_config().extra_overlay_function = "reflex.components.moment.moment"
 
     def index():
