@@ -6,6 +6,7 @@ import json
 import os
 import re
 import shutil
+import stat
 from pathlib import Path
 
 from reflex import constants
@@ -13,6 +14,19 @@ from reflex.config import environment, get_config
 
 # Shorthand for join.
 join = os.linesep.join
+
+
+def chmod_rm(path: Path):
+    """Remove a file or directory with chmod.
+
+    Args:
+        path: The path to the file or directory.
+    """
+    path.chmod(stat.S_IWRITE)
+    if path.is_dir():
+        shutil.rmtree(path)
+    elif path.is_file():
+        path.unlink()
 
 
 def rm(path: str | Path):
@@ -23,7 +37,8 @@ def rm(path: str | Path):
     """
     path = Path(path)
     if path.is_dir():
-        shutil.rmtree(path)
+        # In Python 3.12, onerror is deprecated in favor of onexc
+        shutil.rmtree(path, onerror=lambda _func, _path, _info: chmod_rm(path))
     elif path.is_file():
         path.unlink()
 

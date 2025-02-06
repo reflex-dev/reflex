@@ -178,9 +178,9 @@ class Match(MemoizationLeaf):
         first_case_return = match_cases[0][-1]
         return_type = type(first_case_return)
 
-        if types._isinstance(first_case_return, BaseComponent):
+        if isinstance(first_case_return, BaseComponent):
             return_type = BaseComponent
-        elif types._isinstance(first_case_return, Var):
+        elif isinstance(first_case_return, Var):
             return_type = Var
 
         for index, case in enumerate(match_cases):
@@ -228,8 +228,8 @@ class Match(MemoizationLeaf):
 
         # Validate the match cases (as well as the default case) to have Var return types.
         if any(
-            case for case in match_cases if not types._isinstance(case[-1], Var)
-        ) or not types._isinstance(default, Var):
+            case for case in match_cases if not isinstance(case[-1], Var)
+        ) or not isinstance(default, Var):
             raise ValueError("Return types of match cases should be Vars.")
 
         return Var(

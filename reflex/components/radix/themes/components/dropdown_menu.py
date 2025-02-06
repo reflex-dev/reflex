@@ -4,6 +4,7 @@ from typing import Dict, List, Literal, Union
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
+from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
 
@@ -59,6 +60,8 @@ class DropdownMenuTrigger(RadixThemesTriggerComponent):
     _valid_parents: List[str] = ["DropdownMenuRoot"]
 
     _invalid_children: List[str] = ["DropdownMenuContent"]
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
 
 class DropdownMenuContent(RadixThemesComponent):
@@ -142,6 +145,8 @@ class DropdownMenuSubTrigger(RadixThemesTriggerComponent):
     text_value: Var[str]
 
     _valid_parents: List[str] = ["DropdownMenuContent", "DropdownMenuSub"]
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
 
 class DropdownMenuSub(RadixThemesComponent):

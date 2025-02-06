@@ -25,7 +25,6 @@ from typing import (
     Callable,
     Coroutine,
     Dict,
-    Generic,
     List,
     MutableMapping,
     Optional,
@@ -54,23 +53,28 @@ from reflex.compiler.compiler import ExecutorSafeFunctions, compile_theme
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.error_boundary import ErrorBoundary
 from reflex.components.base.fragment import Fragment
+from reflex.components.base.strict_mode import StrictMode
 from reflex.components.component import (
     Component,
     ComponentStyle,
     evaluate_style_namespaces,
 )
-from reflex.components.core.banner import connection_pulser, connection_toaster
+from reflex.components.core.banner import (
+    backend_disabled,
+    connection_pulser,
+    connection_toaster,
+)
 from reflex.components.core.breakpoints import set_breakpoints
 from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
 )
+from reflex.components.core.sticky import sticky
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
 from reflex.config import environment, get_config
 from reflex.event import (
     _EVENT_FIELDS,
-    BASE_STATE,
     Event,
     EventHandler,
     EventSpec,
@@ -146,7 +150,7 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
             position="top-center",
             id="backend_error",
             style={"width": "500px"},
-        )  # pyright: ignore [reportReturnType]
+        )
     else:
         error_message.insert(0, "An error occurred.")
         return window_alert("\n".join(error_message))
@@ -158,9 +162,29 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay_component, which is a connection_modal.
     """
+    config = get_config()
+
+    extra_config = config.extra_overlay_function
+    config_overlay = None
+    if extra_config:
+        module, _, function_name = extra_config.rpartition(".")
+        try:
+            module = __import__(module)
+            config_overlay = getattr(module, function_name)()
+        except Exception as e:
+            from reflex.compiler.utils import save_error
+
+            log_path = save_error(e)
+
+            console.error(
+                f"Error loading extra_overlay_function {extra_config}. Error saved to {log_path}"
+            )
+
     return Fragment.create(
         connection_pulser(),
         connection_toaster(),
+        *([config_overlay] if config_overlay else []),
+        *([backend_disabled()] if config.is_reflex_cloud else []),
         *codespaces.codespaces_auto_redirect(),
     )
 
@@ -187,7 +211,7 @@ class OverlayFragment(Fragment):
 @dataclasses.dataclass(
     frozen=True,
 )
-class UnevaluatedPage(Generic[BASE_STATE]):
+class UnevaluatedPage:
     """An uncompiled page."""
 
     component: Union[Component, ComponentCallable]
@@ -195,7 +219,7 @@ class UnevaluatedPage(Generic[BASE_STATE]):
     title: Union[Var, str, None]
     description: Union[Var, str, None]
     image: str
-    on_load: Union[EventType[[], BASE_STATE], None]
+    on_load: Union[EventType[()], None]
     meta: List[Dict[str, str]]
 
 
@@ -270,7 +294,7 @@ class App(MiddlewareMixin, LifespanMixin):
     _state_manager: Optional[StateManager] = None
 
     # Mapping from a route to event handlers to trigger when the page loads.
-    _load_events: Dict[str, List[IndividualEventType[[], Any]]] = dataclasses.field(
+    _load_events: Dict[str, List[IndividualEventType[()]]] = dataclasses.field(
         default_factory=dict
     )
 
@@ -535,7 +559,7 @@ class App(MiddlewareMixin, LifespanMixin):
         title: str | Var | None = None,
         description: str | Var | None = None,
         image: str = constants.DefaultPage.IMAGE,
-        on_load: EventType[[], BASE_STATE] | None = None,
+        on_load: EventType[()] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
     ):
         """Add a page to the app.
@@ -639,7 +663,7 @@ class App(MiddlewareMixin, LifespanMixin):
         if save_page:
             self._pages[route] = component
 
-    def get_load_events(self, route: str) -> list[IndividualEventType[[], Any]]:
+    def get_load_events(self, route: str) -> list[IndividualEventType[()]]:
         """Get the load events for a route.
 
         Args:
@@ -701,7 +725,7 @@ class App(MiddlewareMixin, LifespanMixin):
         title: str = constants.Page404.TITLE,
         image: str = constants.Page404.IMAGE,
         description: str = constants.Page404.DESCRIPTION,
-        on_load: EventType[[], BASE_STATE] | None = None,
+        on_load: EventType[()] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
     ):
         """Define a custom 404 page for any url having no match.
@@ -867,6 +891,15 @@ class App(MiddlewareMixin, LifespanMixin):
                 continue
             self._pages[k] = self._add_error_boundary_to_component(component)
 
+    def _setup_sticky_badge(self):
+        """Add the sticky badge to the app."""
+        for k, component in self._pages.items():
+            # Would be nice to share single sticky_badge across all pages, but
+            # it bungles the StatefulComponent compile step.
+            sticky_badge = sticky()
+            sticky_badge._add_style_recursive({})
+            self._pages[k] = Fragment.create(sticky_badge, component)
+
     def _apply_decorated_pages(self):
         """Add @rx.page decorated pages to the app.
 
@@ -901,11 +934,17 @@ class App(MiddlewareMixin, LifespanMixin):
             if not var._cache:
                 continue
             deps = var._deps(objclass=state)
-            for dep in deps:
-                if dep not in state.vars and dep not in state.backend_vars:
-                    raise exceptions.VarDependencyError(
-                        f"ComputedVar {var._js_expr} on state {state.__name__} has an invalid dependency {dep}"
-                    )
+            for state_name, dep_set in deps.items():
+                state_cls = (
+                    state.get_root_state().get_class_substate(state_name)
+                    if state_name != state.get_full_name()
+                    else state
+                )
+                for dep in dep_set:
+                    if dep not in state_cls.vars and dep not in state_cls.backend_vars:
+                        raise exceptions.VarDependencyError(
+                            f"ComputedVar {var._js_expr} on state {state.__name__} has an invalid dependency {state_name}.{dep}"
+                        )
 
         for substate in state.class_subclasses:
             self._validate_var_dependencies(substate)
@@ -943,21 +982,23 @@ class App(MiddlewareMixin, LifespanMixin):
             # If a theme component was provided, wrap the app with it
             app_wrappers[(20, "Theme")] = self.theme
 
+        # Get the env mode.
+        config = get_config()
+
+        if config.react_strict_mode:
+            app_wrappers[(200, "StrictMode")] = StrictMode.create()
+
         should_compile = self._should_compile()
 
-        for route in self._unevaluated_pages:
-            console.debug(f"Evaluating page: {route}")
-            self._compile_page(route, save_page=should_compile)
-
-        # Add the optional endpoints (_upload)
-        self._add_optional_endpoints()
-
         if not should_compile:
-            return
+            for route in self._unevaluated_pages:
+                console.debug(f"Evaluating page: {route}")
+                self._compile_page(route, save_page=should_compile)
 
-        self._validate_var_dependencies()
-        self._setup_overlay_component()
-        self._setup_error_boundary()
+            # Add the optional endpoints (_upload)
+            self._add_optional_endpoints()
+
+            return
 
         # Create a progress bar.
         progress = Progress(
@@ -967,18 +1008,32 @@ class App(MiddlewareMixin, LifespanMixin):
         )
 
         # try to be somewhat accurate - but still not 100%
-        adhoc_steps_without_executor = 6
+        adhoc_steps_without_executor = 7
         fixed_pages_within_executor = 5
         progress.start()
         task = progress.add_task(
             f"[{get_compilation_time()}] Compiling:",
             total=len(self._pages)
+            + (len(self._unevaluated_pages) * 2)
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,
         )
 
-        # Get the env mode.
-        config = get_config()
+        for route in self._unevaluated_pages:
+            console.debug(f"Evaluating page: {route}")
+            self._compile_page(route, save_page=should_compile)
+            progress.advance(task)
+
+        # Add the optional endpoints (_upload)
+        self._add_optional_endpoints()
+
+        self._validate_var_dependencies()
+        self._setup_overlay_component()
+        self._setup_error_boundary()
+        if config.show_built_with_reflex:
+            self._setup_sticky_badge()
+
+        progress.advance(task)
 
         # Store the compile results.
         compile_results = []
@@ -1286,7 +1341,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 ):
                     raise ValueError(
                         f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong argument order."
-                        f"Expected `{required_arg}` as the {required_arg_index+1} argument but got `{list(arg_annotations.keys())[required_arg_index]}`"
+                        f"Expected `{required_arg}` as the {required_arg_index + 1} argument but got `{list(arg_annotations.keys())[required_arg_index]}`"
                     )
 
                 if not issubclass(arg_annotations[required_arg], Exception):

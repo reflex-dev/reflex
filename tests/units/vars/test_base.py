@@ -2,7 +2,8 @@ from typing import List, Mapping, Union
 
 import pytest
 
-from reflex.vars.base import figure_out_type
+from reflex.state import State
+from reflex.vars.base import computed_var, figure_out_type
 
 
 class CustomDict(dict[str, str]):
@@ -47,3 +48,16 @@ class ChildGenericDict(GenericDict):
 )
 def test_figure_out_type(value, expected):
     assert figure_out_type(value) == expected
+
+
+def test_computed_var_replace() -> None:
+    class StateTest(State):
+        @computed_var(cache=True)
+        def cv(self) -> int:
+            return 1
+
+    cv = StateTest.cv
+    assert cv._var_type is int
+
+    replaced = cv._replace(_var_type=float)
+    assert replaced._var_type is float

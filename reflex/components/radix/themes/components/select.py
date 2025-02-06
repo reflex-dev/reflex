@@ -5,6 +5,7 @@ from typing import List, Literal, Union
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
+from reflex.constants.compiler import MemoizationMode
 from reflex.event import no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
 
@@ -68,6 +69,8 @@ class SelectTrigger(RadixThemesComponent):
     placeholder: Var[str]
 
     _valid_parents: List[str] = ["SelectRoot"]
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
 
 class SelectContent(RadixThemesComponent):
@@ -187,6 +190,7 @@ class HighLevelSelect(SelectRoot):
             The select component.
         """
         trigger_prop_list = [
+            "id",
             "placeholder",
             "variant",
             "radius",

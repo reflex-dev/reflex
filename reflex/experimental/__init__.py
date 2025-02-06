@@ -13,15 +13,24 @@ from .client_state import ClientStateVar as ClientStateVar
 from .layout import layout as layout
 from .misc import run_in_thread as run_in_thread
 
-warn(
-    "`rx._x` contains experimental features and might be removed at any time in the future .",
-)
-
-_EMITTED_PROMOTION_WARNINGS = set()
-
 
 class ExperimentalNamespace(SimpleNamespace):
     """Namespace for experimental features."""
+
+    def __getattribute__(self, item: str):
+        """Get attribute from the namespace.
+
+        Args:
+            item: attribute name.
+
+        Returns:
+            The attribute.
+        """
+        warn(
+            "`rx._x` contains experimental features and might be removed at any time in the future.",
+            dedupe=True,
+        )
+        return super().__getattribute__(item)
 
     @property
     def toast(self):
@@ -55,9 +64,10 @@ class ExperimentalNamespace(SimpleNamespace):
         Args:
              component_name: name of the component.
         """
-        if component_name not in _EMITTED_PROMOTION_WARNINGS:
-            _EMITTED_PROMOTION_WARNINGS.add(component_name)
-            warn(f"`rx._x.{component_name}` was promoted to `rx.{component_name}`.")
+        warn(
+            f"`rx._x.{component_name}` was promoted to `rx.{component_name}`.",
+            dedupe=True,
+        )
 
 
 _x = ExperimentalNamespace(

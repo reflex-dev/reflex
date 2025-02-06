@@ -347,7 +347,7 @@ class DataEditor(NoSSRComponent):
             data_callback = f"getData_{editor_id}"
             self.get_cell_content = Var(_js_expr=data_callback)
 
-        code = [f"function {data_callback}([col, row])" "{"]
+        code = [f"function {data_callback}([col, row]){{"]
 
         columns_path = str(self.columns)
         data_path = str(self.data)
@@ -387,7 +387,8 @@ class DataEditor(NoSSRComponent):
                 raise ValueError(
                     "DataEditor data must be an ArrayVar if rows is not provided."
                 )
-            props["rows"] = data.length() if isinstance(data, Var) else len(data)
+
+            props["rows"] = data.length() if isinstance(data, ArrayVar) else len(data)
 
         if not isinstance(columns, Var) and len(columns):
             if types.is_dataframe(type(data)) or (

@@ -12,6 +12,7 @@ from reflex.components.radix.themes.components.icon_button import IconButton
 from reflex.components.radix.themes.layout.box import Box
 from reflex.components.radix.themes.layout.container import Container
 from reflex.components.radix.themes.layout.stack import HStack
+from reflex.constants.compiler import MemoizationMode
 from reflex.event import run_script
 from reflex.experimental import hooks
 from reflex.state import ComponentState
@@ -145,6 +146,8 @@ sidebar_trigger_style = {
 
 class SidebarTrigger(Fragment):
     """A component that renders the sidebar trigger."""
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
     @classmethod
     def create(cls, sidebar: Component, **props):

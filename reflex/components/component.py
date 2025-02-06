@@ -179,6 +179,7 @@ ComponentStyle = Dict[
     Union[str, Type[BaseComponent], Callable, ComponentNamespace], Any
 ]
 ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
+ComponentChildTypes = (*types.PrimitiveTypes, Var, BaseComponent)
 
 
 def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
@@ -191,11 +192,7 @@ def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
     Returns:
         Whether the object satisfies the type hint.
     """
-    if isinstance(obj, LiteralVar):
-        return types._isinstance(obj._var_value, type_hint)
-    if isinstance(obj, Var):
-        return types._issubclass(obj._var_type, type_hint)
-    return types._isinstance(obj, type_hint)
+    return types._isinstance(obj, type_hint, nested=1)
 
 
 class Component(BaseComponent, ABC):
@@ -623,8 +620,7 @@ class Component(BaseComponent, ABC):
         if props is None:
             # Add component props to the tag.
             props = {
-                attr[:-1] if attr.endswith("_") else attr: getattr(self, attr)
-                for attr in self.get_props()
+                attr.removesuffix("_"): getattr(self, attr) for attr in self.get_props()
             }
 
             # Add ref to element if `id` is not None.
@@ -713,8 +709,8 @@ class Component(BaseComponent, ABC):
                     validate_children(child)
 
                 # Make sure the child is a valid type.
-                if isinstance(child, dict) or not types._isinstance(
-                    child, ComponentChild
+                if isinstance(child, dict) or not isinstance(
+                    child, ComponentChildTypes
                 ):
                     raise ChildrenTypeError(component=cls.__name__, child=child)
 
@@ -1772,9 +1768,7 @@ class CustomComponent(Component):
         return [
             Var(
                 _js_expr=name,
-                _var_type=(
-                    prop._var_type if types._isinstance(prop, Var) else type(prop)
-                ),
+                _var_type=(prop._var_type if isinstance(prop, Var) else type(prop)),
             ).guess_type()
             for name, prop in self.props.items()
         ]
@@ -1944,7 +1938,7 @@ class StatefulComponent(BaseComponent):
 
         if not should_memoize:
             # Determine if any Vars have associated data.
-            for prop_var in component._get_vars():
+            for prop_var in component._get_vars(include_children=True):
                 if prop_var._get_all_var_data():
                     should_memoize = True
                     break
@@ -2327,8 +2321,8 @@ class MemoizationLeaf(Component):
         """
         comp = super().create(*children, **props)
         if comp._get_all_hooks():
-            comp._memoization_mode = cls._memoization_mode.copy(
-                update={"disposition": MemoizationDisposition.ALWAYS}
+            comp._memoization_mode = dataclasses.replace(
+                comp._memoization_mode, disposition=MemoizationDisposition.ALWAYS
             )
         return comp
 
@@ -2457,6 +2451,7 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
+    slots=True,
 )
 class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
     """A Var that represents a Component."""

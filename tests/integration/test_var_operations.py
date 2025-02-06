@@ -10,12 +10,18 @@ from reflex.testing import AppHarness
 
 def VarOperations():
     """App with var operations."""
+    from typing import TypedDict
+
     import reflex as rx
     from reflex.vars.base import LiteralVar
     from reflex.vars.sequence import ArrayVar
 
     class Object(rx.Base):
         name: str = "hello"
+
+    class Person(TypedDict):
+        name: str
+        age: int
 
     class VarOperationState(rx.State):
         int_var1: rx.Field[int] = rx.field(10)
@@ -34,6 +40,9 @@ def VarOperations():
         dict1: rx.Field[dict[int, int]] = rx.field({1: 2})
         dict2: rx.Field[dict[int, int]] = rx.field({3: 4})
         html_str: rx.Field[str] = rx.field("<div>hello</div>")
+        people: rx.Field[list[Person]] = rx.field(
+            [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]
+        )
 
     app = rx.App(_state=rx.State)
 
@@ -600,6 +609,42 @@ def VarOperations():
                 ),
                 id="foreach_in_match",
             ),
+            # Literal range var in a foreach
+            rx.box(rx.foreach(range(42, 80, 27), rx.text.span), id="range_in_foreach1"),
+            rx.box(rx.foreach(range(42, 80, 3), rx.text.span), id="range_in_foreach2"),
+            rx.box(rx.foreach(range(42, 20, -6), rx.text.span), id="range_in_foreach3"),
+            rx.box(rx.foreach(range(42, 43, 5), rx.text.span), id="range_in_foreach4"),
+            # Literal dict in a foreach
+            rx.box(rx.foreach({"a": 1, "b": 2}, rx.text.span), id="dict_in_foreach1"),
+            # State Var dict in a foreach
+            rx.box(
+                rx.foreach(VarOperationState.dict1, rx.text.span),
+                id="dict_in_foreach2",
+            ),
+            rx.box(
+                rx.foreach(
+                    VarOperationState.dict1.merge(VarOperationState.dict2),
+                    rx.text.span,
+                ),
+                id="dict_in_foreach3",
+            ),
+            rx.box(
+                rx.foreach("abcdef", lambda x: rx.text.span(x + " ")),
+                id="str_in_foreach",
+            ),
+            rx.box(
+                rx.foreach(VarOperationState.str_var1, lambda x: rx.text.span(x + " ")),
+                id="str_var_in_foreach",
+            ),
+            rx.box(
+                rx.foreach(
+                    VarOperationState.people,
+                    lambda person: rx.text.span(
+                        "Hello " + person["name"], person["age"] + 3
+                    ),
+                ),
+                id="typed_dict_in_foreach",
+            ),
         )
 
 
@@ -799,6 +844,17 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("memo_comp_nested", "345"),
         # foreach in a match
         ("foreach_in_match", "first\nsecond\nthird"),
+        # literal range in a foreach
+        ("range_in_foreach1", "4269"),
+        ("range_in_foreach2", "42454851545760636669727578"),
+        ("range_in_foreach3", "42363024"),
+        ("range_in_foreach4", "42"),
+        ("dict_in_foreach1", "a1b2"),
+        ("dict_in_foreach2", "12"),
+        ("dict_in_foreach3", "1234"),
+        ("str_in_foreach", "a b c d e f"),
+        ("str_var_in_foreach", "f i r s t"),
+        ("typed_dict_in_foreach", "Hello Alice33Hello Bob28"),
     ]
 
     for tag, expected in tests:

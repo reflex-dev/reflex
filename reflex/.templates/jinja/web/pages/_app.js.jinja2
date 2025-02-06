@@ -38,13 +38,13 @@ export default function MyApp({ Component, pageProps }) {
   }, []);
   return (
     <ThemeProvider defaultTheme={ defaultColorMode } attribute="class">
-      <AppWrap>
-        <StateProvider>
-          <EventLoopProvider>
-            <Component {...pageProps} />
-          </EventLoopProvider>
-        </StateProvider>
-      </AppWrap>
+      <StateProvider>
+        <EventLoopProvider>
+            <AppWrap>
+              <Component {...pageProps} />
+            </AppWrap>
+        </EventLoopProvider>
+      </StateProvider>
     </ThemeProvider>
   );
 }

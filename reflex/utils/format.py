@@ -502,7 +502,7 @@ if TYPE_CHECKING:
 
 
 def format_queue_events(
-    events: EventType | None = None,
+    events: EventType[Any] | None = None,
     args_spec: Optional[ArgsSpec] = None,
 ) -> Var[EventChain]:
     """Format a list of event handler / event spec as a javascript callback.

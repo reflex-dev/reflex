@@ -75,6 +75,10 @@ class VarAttributeError(ReflexError, AttributeError):
     """Custom AttributeError for var related errors."""
 
 
+class UntypedVarError(ReflexError, TypeError):
+    """Custom TypeError for untyped var errors."""
+
+
 class UntypedComputedVarError(ReflexError, TypeError):
     """Custom TypeError for untyped computed var errors."""
 
@@ -85,6 +89,19 @@ class UntypedComputedVarError(ReflexError, TypeError):
             var_name: The name of the computed var.
         """
         super().__init__(f"Computed var '{var_name}' must have a type annotation.")
+
+
+class ComputedVarSignatureError(ReflexError, TypeError):
+    """Custom TypeError for computed var signature errors."""
+
+    def __init__(self, var_name: str, signature: str):
+        """Initialize the ComputedVarSignatureError.
+
+        Args:
+            var_name: The name of the var.
+            signature: The invalid signature.
+        """
+        super().__init__(f"Computed var `{var_name}{signature}` cannot take arguments.")
 
 
 class MissingAnnotationError(ReflexError, TypeError):
