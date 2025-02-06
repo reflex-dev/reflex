@@ -25,6 +25,7 @@ def DynamicComponents():
             },
         )
 
+        @rx.event
         def got_clicked(self):
             self.button = rx.button(
                 "Clicked",

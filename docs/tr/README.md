@@ -200,7 +200,7 @@ Daha fazla sayfa ekleyerek çok sayfalı bir uygulama oluşturabilirsiniz.
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy)  &nbsp;   
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Templates](https://reflex.dev/templates/) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy)  &nbsp;   
 
 </div>
 
@@ -229,7 +229,7 @@ Her boyuttaki katkıları memnuniyetle karşılıyoruz! Aşağıda Reflex toplul
 - **GitHub Discussions**: Eklemek istediğiniz özellikler veya kafa karıştırıcı, açıklığa kavuşturulması gereken şeyler hakkında konuşmanın harika bir yolu.
 - **GitHub Issues**: [Issues](https://github.com/reflex-dev/reflex/issues) hataları bildirmenin mükemmel bir yoludur. Ayrıca mevcut bir sorunu deneyip çözebilir ve bir PR (Pull Requests) gönderebilirsiniz.
 
-Beceri düzeyiniz veya deneyiminiz ne olursa olsun aktif olarak katkıda bulunacak kişiler arıyoruz. Katkı sağlamak için katkı sağlama rehberimize bakabilirsiniz: [CONTIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
+Beceri düzeyiniz veya deneyiminiz ne olursa olsun aktif olarak katkıda bulunacak kişiler arıyoruz. Katkı sağlamak için katkı sağlama rehberimize bakabilirsiniz: [CONTRIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
 
 ## Hepsi Katkıda Bulunanlar Sayesinde:
 

@@ -64,7 +64,7 @@ class Template:
     name: str
     description: str
     code_url: str
-    demo_url: str
+    demo_url: str | None = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1293,7 +1293,7 @@ def validate_bun():
     """
     bun_path = path_ops.get_bun_path()
 
-    if bun_path and bun_path.samefile(constants.Bun.DEFAULT_PATH):
+    if bun_path and not bun_path.samefile(constants.Bun.DEFAULT_PATH):
         console.info(f"Using custom Bun path: {bun_path}")
         bun_version = get_bun_version()
         if not bun_version:
@@ -1461,7 +1461,7 @@ def prompt_for_template_options(templates: list[Template]) -> str:
     # Show the user the URLs of each template to preview.
     console.print("\nGet started with a template:")
 
-    def format_demo_url_str(url: str) -> str:
+    def format_demo_url_str(url: str | None) -> str:
         return f" ({url})" if url else ""
 
     # Prompt the user to select a template.

@@ -190,6 +190,7 @@ class HighLevelSelect(SelectRoot):
             The select component.
         """
         trigger_prop_list = [
+            "id",
             "placeholder",
             "variant",
             "radius",
