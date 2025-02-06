@@ -158,6 +158,22 @@ def get_import_dict(lib: str, default: str = "", rest: list[str] | None = None) 
     }
 
 
+def save_error(error: Exception) -> str:
+    """Save the error to a file.
+
+    Args:
+        error: The error to save.
+
+    Returns:
+        The path of the saved error.
+    """
+    timestamp = datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
+    constants.Reflex.LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    log_path = constants.Reflex.LOGS_DIR / f"error_{timestamp}.log"
+    traceback.TracebackException.from_exception(error).print(file=log_path.open("w+"))
+    return str(log_path)
+
+
 def compile_state(state: Type[BaseState]) -> dict:
     """Compile the state of the app.
 
@@ -170,10 +186,7 @@ def compile_state(state: Type[BaseState]) -> dict:
     try:
         initial_state = state(_reflex_internal_init=True).dict(initial=True)
     except Exception as e:
-        timestamp = datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
-        constants.Reflex.LOGS_DIR.mkdir(parents=True, exist_ok=True)
-        log_path = constants.Reflex.LOGS_DIR / f"state_compile_error_{timestamp}.log"
-        traceback.TracebackException.from_exception(e).print(file=log_path.open("w+"))
+        log_path = save_error(e)
         console.warn(
             f"Failed to compile initial state with computed vars. Error log saved to {log_path}"
         )

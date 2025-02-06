@@ -14,7 +14,7 @@ from typing import Optional, Tuple
 import httpx
 import tomlkit
 import typer
-from tomlkit.exceptions import TOMLKitError
+from tomlkit.exceptions import NonExistentKey, TOMLKitError
 
 from reflex import constants
 from reflex.config import environment, get_config
@@ -533,7 +533,13 @@ def _get_version_to_publish() -> str:
     Returns:
         The version to publish.
     """
-    return _get_package_config()["project"]["version"]
+    try:
+        return _get_package_config()["project"]["version"]
+    except NonExistentKey:
+        # Try to get the version from dynamic sources
+        import build.util
+
+        return build.util.project_wheel_metadata(".", isolated=True)["version"]
 
 
 def _ensure_dist_dir(version_to_publish: str, build: bool):
@@ -756,7 +762,7 @@ def _min_validate_project_info():
         )
         raise typer.Exit(code=1)
 
-    if not project.get("version"):
+    if not project.get("version") and "version" not in project.get("dynamic", []):
         console.error(
             f"The project version is not found in {CustomComponents.PYPROJECT_TOML}"
         )
@@ -772,7 +778,7 @@ def _validate_project_info():
     pyproject_toml = _get_package_config()
     project = pyproject_toml["project"]
     console.print(
-        f"Double check the information before publishing: {project['name']} version {project['version']}"
+        f"Double check the information before publishing: {project['name']} version {_get_version_to_publish()}"
     )
 
     console.print("Update or enter to keep the current information.")

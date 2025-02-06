@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Union, overload
 from typing_extensions import TypedDict, TypeVar
 
 from reflex.components.component import NoSSRComponent
-from reflex.event import BASE_STATE, EventType
+from reflex.event import EventType
 from reflex.style import Style
 from reflex.utils import console
 from reflex.vars.base import Var
@@ -65,49 +65,39 @@ class Plotly(NoSSRComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
-        on_after_plot: Optional[EventType[[], BASE_STATE]] = None,
-        on_animated: Optional[EventType[[], BASE_STATE]] = None,
-        on_animating_frame: Optional[EventType[[], BASE_STATE]] = None,
-        on_animation_interrupted: Optional[EventType[[], BASE_STATE]] = None,
-        on_autosize: Optional[EventType[[], BASE_STATE]] = None,
-        on_before_hover: Optional[EventType[[], BASE_STATE]] = None,
-        on_blur: Optional[EventType[[], BASE_STATE]] = None,
-        on_button_clicked: Optional[EventType[[], BASE_STATE]] = None,
-        on_click: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[List[Point]], BASE_STATE]]
-        ] = None,
-        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
-        on_deselect: Optional[EventType[[], BASE_STATE]] = None,
-        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_focus: Optional[EventType[[], BASE_STATE]] = None,
-        on_hover: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[List[Point]], BASE_STATE]]
-        ] = None,
-        on_mount: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
-        on_redraw: Optional[EventType[[], BASE_STATE]] = None,
-        on_relayout: Optional[EventType[[], BASE_STATE]] = None,
-        on_relayouting: Optional[EventType[[], BASE_STATE]] = None,
-        on_restyle: Optional[EventType[[], BASE_STATE]] = None,
-        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
-        on_selected: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[List[Point]], BASE_STATE]]
-        ] = None,
-        on_selecting: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[List[Point]], BASE_STATE]]
-        ] = None,
-        on_transition_interrupted: Optional[EventType[[], BASE_STATE]] = None,
-        on_transitioning: Optional[EventType[[], BASE_STATE]] = None,
-        on_unhover: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[List[Point]], BASE_STATE]]
-        ] = None,
-        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
+        on_after_plot: Optional[EventType[()]] = None,
+        on_animated: Optional[EventType[()]] = None,
+        on_animating_frame: Optional[EventType[()]] = None,
+        on_animation_interrupted: Optional[EventType[()]] = None,
+        on_autosize: Optional[EventType[()]] = None,
+        on_before_hover: Optional[EventType[()]] = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_button_clicked: Optional[EventType[()]] = None,
+        on_click: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_deselect: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_hover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_redraw: Optional[EventType[()]] = None,
+        on_relayout: Optional[EventType[()]] = None,
+        on_relayouting: Optional[EventType[()]] = None,
+        on_restyle: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_selected: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_selecting: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_transition_interrupted: Optional[EventType[()]] = None,
+        on_transitioning: Optional[EventType[()]] = None,
+        on_unhover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_unmount: Optional[EventType[()]] = None,
         **props,
     ) -> "Plotly":
         """Create the Plotly component.

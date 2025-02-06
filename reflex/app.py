@@ -25,7 +25,6 @@ from typing import (
     Callable,
     Coroutine,
     Dict,
-    Generic,
     List,
     MutableMapping,
     Optional,
@@ -76,7 +75,6 @@ from reflex.components.radix import themes
 from reflex.config import environment, get_config
 from reflex.event import (
     _EVENT_FIELDS,
-    BASE_STATE,
     Event,
     EventHandler,
     EventSpec,
@@ -166,9 +164,26 @@ def default_overlay_component() -> Component:
     """
     config = get_config()
 
+    extra_config = config.extra_overlay_function
+    config_overlay = None
+    if extra_config:
+        module, _, function_name = extra_config.rpartition(".")
+        try:
+            module = __import__(module)
+            config_overlay = getattr(module, function_name)()
+        except Exception as e:
+            from reflex.compiler.utils import save_error
+
+            log_path = save_error(e)
+
+            console.error(
+                f"Error loading extra_overlay_function {extra_config}. Error saved to {log_path}"
+            )
+
     return Fragment.create(
         connection_pulser(),
         connection_toaster(),
+        *([config_overlay] if config_overlay else []),
         *([backend_disabled()] if config.is_reflex_cloud else []),
         *codespaces.codespaces_auto_redirect(),
     )
@@ -196,7 +211,7 @@ class OverlayFragment(Fragment):
 @dataclasses.dataclass(
     frozen=True,
 )
-class UnevaluatedPage(Generic[BASE_STATE]):
+class UnevaluatedPage:
     """An uncompiled page."""
 
     component: Union[Component, ComponentCallable]
@@ -204,7 +219,7 @@ class UnevaluatedPage(Generic[BASE_STATE]):
     title: Union[Var, str, None]
     description: Union[Var, str, None]
     image: str
-    on_load: Union[EventType[[], BASE_STATE], None]
+    on_load: Union[EventType[()], None]
     meta: List[Dict[str, str]]
 
 
@@ -279,7 +294,7 @@ class App(MiddlewareMixin, LifespanMixin):
     _state_manager: Optional[StateManager] = None
 
     # Mapping from a route to event handlers to trigger when the page loads.
-    _load_events: Dict[str, List[IndividualEventType[[], Any]]] = dataclasses.field(
+    _load_events: Dict[str, List[IndividualEventType[()]]] = dataclasses.field(
         default_factory=dict
     )
 
@@ -544,7 +559,7 @@ class App(MiddlewareMixin, LifespanMixin):
         title: str | Var | None = None,
         description: str | Var | None = None,
         image: str = constants.DefaultPage.IMAGE,
-        on_load: EventType[[], BASE_STATE] | None = None,
+        on_load: EventType[()] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
     ):
         """Add a page to the app.
@@ -648,7 +663,7 @@ class App(MiddlewareMixin, LifespanMixin):
         if save_page:
             self._pages[route] = component
 
-    def get_load_events(self, route: str) -> list[IndividualEventType[[], Any]]:
+    def get_load_events(self, route: str) -> list[IndividualEventType[()]]:
         """Get the load events for a route.
 
         Args:
@@ -710,7 +725,7 @@ class App(MiddlewareMixin, LifespanMixin):
         title: str = constants.Page404.TITLE,
         image: str = constants.Page404.IMAGE,
         description: str = constants.Page404.DESCRIPTION,
-        on_load: EventType[[], BASE_STATE] | None = None,
+        on_load: EventType[()] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
     ):
         """Define a custom 404 page for any url having no match.

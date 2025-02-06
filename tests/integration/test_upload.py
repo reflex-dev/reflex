@@ -54,12 +54,14 @@ def UploadFile():
             self.large_data = ""
             self.event_order.append("chain_event")
 
+        @rx.event
         async def handle_upload_tertiary(self, files: List[rx.UploadFile]):
             for file in files:
                 (rx.get_upload_dir() / (file.filename or "INVALID")).write_bytes(
                     await file.read()
                 )
 
+        @rx.event
         def do_download(self):
             return rx.download(rx.get_upload_url("test.txt"))
 
@@ -146,8 +148,8 @@ def UploadFile():
             ),
             rx.button(
                 "Upload",
-                on_click=UploadState.handle_upload_tertiary(  # pyright: ignore [reportCallIssue]
-                    rx.upload_files(
+                on_click=UploadState.handle_upload_tertiary(
+                    rx.upload_files(  # pyright: ignore [reportArgumentType]
                         upload_id="tertiary",
                     ),
                 ),

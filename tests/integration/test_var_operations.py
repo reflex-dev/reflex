@@ -10,12 +10,18 @@ from reflex.testing import AppHarness
 
 def VarOperations():
     """App with var operations."""
+    from typing import TypedDict
+
     import reflex as rx
     from reflex.vars.base import LiteralVar
     from reflex.vars.sequence import ArrayVar
 
     class Object(rx.Base):
         name: str = "hello"
+
+    class Person(TypedDict):
+        name: str
+        age: int
 
     class VarOperationState(rx.State):
         int_var1: rx.Field[int] = rx.field(10)
@@ -34,6 +40,9 @@ def VarOperations():
         dict1: rx.Field[dict[int, int]] = rx.field({1: 2})
         dict2: rx.Field[dict[int, int]] = rx.field({3: 4})
         html_str: rx.Field[str] = rx.field("<div>hello</div>")
+        people: rx.Field[list[Person]] = rx.field(
+            [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]
+        )
 
     app = rx.App(_state=rx.State)
 
@@ -627,6 +636,15 @@ def VarOperations():
                 rx.foreach(VarOperationState.str_var1, lambda x: rx.text.span(x + " ")),
                 id="str_var_in_foreach",
             ),
+            rx.box(
+                rx.foreach(
+                    VarOperationState.people,
+                    lambda person: rx.text.span(
+                        "Hello " + person["name"], person["age"] + 3
+                    ),
+                ),
+                id="typed_dict_in_foreach",
+            ),
         )
 
 
@@ -836,6 +854,7 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("dict_in_foreach3", "1234"),
         ("str_in_foreach", "a b c d e f"),
         ("str_var_in_foreach", "f i r s t"),
+        ("typed_dict_in_foreach", "Hello Alice33Hello Bob28"),
     ]
 
     for tag, expected in tests:
