@@ -27,7 +27,6 @@ from typing import (
     List,
     Literal,
     Mapping,
-    Never,
     NoReturn,
     Optional,
     Sequence,
@@ -578,7 +577,7 @@ class Var(Generic[VAR_TYPE]):
     @classmethod
     def create(  # pyright: ignore[reportOverlappingOverload]
         cls,
-        value: Never,
+        value: NoReturn,
         _var_data: VarData | None = None,
     ) -> Var[Any]: ...
 
