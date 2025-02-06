@@ -99,7 +99,15 @@ from reflex.state import (
     _substate_key,
     code_uses_state_contexts,
 )
-from reflex.utils import codespaces, console, exceptions, format, prerequisites, types
+from reflex.utils import (
+    codespaces,
+    console,
+    exceptions,
+    format,
+    path_ops,
+    prerequisites,
+    types,
+)
 from reflex.utils.exec import is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
 
@@ -1008,7 +1016,7 @@ class App(MiddlewareMixin, LifespanMixin):
         )
 
         # try to be somewhat accurate - but still not 100%
-        adhoc_steps_without_executor = 7
+        adhoc_steps_without_executor = 8
         fixed_pages_within_executor = 5
         progress.start()
         task = progress.add_task(
@@ -1085,6 +1093,14 @@ class App(MiddlewareMixin, LifespanMixin):
         )
 
         progress.advance(task)
+
+        # Copy the assets.
+        with console.timing("Copy assets"):
+            path_ops.update_directory_tree(
+                src=Path.cwd() / constants.Dirs.APP_ASSETS,
+                dest=Path.cwd() / prerequisites.get_web_dir() / constants.Dirs.PUBLIC,
+            )
+            progress.advance(task)
 
         # Use a forking process pool, if possible.  Much faster, especially for large sites.
         # Fallback to ThreadPoolExecutor as something that will always work.
