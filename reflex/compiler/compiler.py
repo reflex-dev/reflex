@@ -526,7 +526,7 @@ def remove_tailwind_from_postcss() -> tuple[str, str]:
     code = [
         line
         for line in Path(output_path).read_text().splitlines(keepends=True)
-        if "tailwindcss: " not in line
+        if "@tailwindcss" not in line
     ]
 
     # Compile the config.
