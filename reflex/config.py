@@ -615,13 +615,13 @@ class Config(Base):
     loglevel: constants.LogLevel = constants.LogLevel.DEFAULT
 
     # The port to run the frontend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
-    frontend_port: int = constants.DefaultPorts.FRONTEND_PORT
+    frontend_port: int | None = None
 
     # The path to run the frontend on. For example, "/app" will run the frontend on http://localhost:3000/app
     frontend_path: str = ""
 
     # The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
-    backend_port: int = constants.DefaultPorts.BACKEND_PORT
+    backend_port: int | None = None
 
     # The backend url the frontend will connect to. This must be updated if the backend is hosted elsewhere, or in production.
     api_url: str = f"http://localhost:{backend_port}"
