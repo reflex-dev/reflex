@@ -563,7 +563,7 @@ class EnvironmentVariables:
     REFLEX_CHECK_LATEST_VERSION: EnvVar[bool] = env_var(True)
 
     # In which performance mode to run the app.
-    REFLEX_PERF_MODE: EnvVar[Optional[PerformanceMode]] = env_var(PerformanceMode.WARN)
+    REFLEX_PERF_MODE: EnvVar[PerformanceMode] = env_var(PerformanceMode.WARN)
 
     # The maximum size of the reflex state in kilobytes.
     REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)

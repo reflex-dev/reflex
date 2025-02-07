@@ -7,9 +7,33 @@ from typing import Any, Iterator
 from reflex.components.component import Component, LiteralComponentVar
 from reflex.components.tags import Tag
 from reflex.components.tags.tagless import Tagless
+from reflex.config import PerformanceMode, environment
+from reflex.utils import console
 from reflex.utils.imports import ParsedImportDict
 from reflex.vars import BooleanVar, ObjectVar, Var
 from reflex.vars.base import VarData
+from reflex.vars.sequence import LiteralStringVar
+
+
+def validate_str(value: str):
+    """Validate a string value.
+
+    Args:
+        value: The value to validate.
+
+    Raises:
+        ValueError: If the value is a Var and the performance mode is set to raise.
+    """
+    perf_mode = environment.REFLEX_PERF_MODE.get()
+    if perf_mode != PerformanceMode.OFF and value.startswith("reflex___state"):
+        if perf_mode == PerformanceMode.WARN:
+            console.warn(
+                f"Output includes {value!s} which will be displayed as a string. If you are calling `str` on a Var, consider using .to_string() instead."
+            )
+        elif perf_mode == PerformanceMode.RAISE:
+            raise ValueError(
+                f"Output includes {value!s} which will be displayed as a string. If you are calling `str` on a Var, consider using .to_string() instead."
+            )
 
 
 class Bare(Component):
@@ -28,9 +52,14 @@ class Bare(Component):
             The component.
         """
         if isinstance(contents, Var):
+            if isinstance(contents, LiteralStringVar):
+                validate_str(contents._var_value)
             return cls(contents=contents)
         else:
+            if isinstance(contents, str):
+                validate_str(contents)
             contents = str(contents) if contents is not None else ""
+
         return cls(contents=contents)
 
     def _get_all_hooks_internal(self) -> dict[str, VarData | None]:
