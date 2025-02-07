@@ -1901,7 +1901,7 @@ def test_str_var_in_components(mocker):
         field: int = 1
 
     mocker.patch(
-        "reflex.components.base.bare.performace_mode",
+        "reflex.components.base.bare.get_performance_mode",
         lambda: PerformanceMode.RAISE,
     )
 
@@ -1911,7 +1911,7 @@ def test_str_var_in_components(mocker):
         )
 
     mocker.patch(
-        "reflex.components.base.bare.performace_mode",
+        "reflex.components.base.bare.get_performance_mode",
         lambda: PerformanceMode.OFF,
     )
 
