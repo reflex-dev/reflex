@@ -118,15 +118,12 @@ def change_port(port: int, _type: str) -> int:
 
 def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
     """Change port if the specified port is in use and is not explicitly specified as a CLI arg or config arg.
-    otherwise tell the user the port is in use and exit the app.
-
-    We make an assumption that when port is the default port,then it hasn't been explicitly set since its not straightforward
-    to know whether a port was explicitly provided by the user unless its any other than the default.
+    Otherwise tell the user the port is in use and exit the app.
 
     Args:
         service_name: The frontend or backend.
         port: The provided port.
-        auto_increment: Whether to automatically switch the port.
+        auto_increment: Whether to automatically increment the port.
 
     Returns:
         The port to run the service on.
