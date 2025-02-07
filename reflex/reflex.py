@@ -161,7 +161,7 @@ def _run(
 
     # Find the next available open port if applicable.
     if frontend:
-        autoswitch_frontend = not bool(frontend_port or config.frontend_port)
+        auto_increment_frontend = not bool(frontend_port or config.frontend_port)
         frontend_port = processes.handle_port(
             "frontend",
             (
@@ -169,11 +169,11 @@ def _run(
                 or config.frontend_port
                 or constants.DefaultPorts.FRONTEND_PORT
             ),
-            autoswitch=autoswitch_frontend,
+            auto_increment=auto_increment_frontend,
         )
 
     if backend:
-        autoswitch_backend = not bool(backend_port or config.backend_port)
+        auto_increment_backend = not bool(backend_port or config.backend_port)
 
         backend_port = processes.handle_port(
             "backend",
@@ -182,7 +182,7 @@ def _run(
                 or config.backend_port
                 or constants.DefaultPorts.BACKEND_PORT
             ),
-            autoswitch=autoswitch_backend,
+            auto_increment=auto_increment_backend,
         )
 
     # Apply the new ports to the config.

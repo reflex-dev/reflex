@@ -116,7 +116,7 @@ def change_port(port: int, _type: str) -> int:
     return new_port
 
 
-def handle_port(service_name: str, port: int, autoswitch: bool) -> int:
+def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
     """Change port if the specified port is in use and is not explicitly specified as a CLI arg or config arg.
     otherwise tell the user the port is in use and exit the app.
 
@@ -126,7 +126,7 @@ def handle_port(service_name: str, port: int, autoswitch: bool) -> int:
     Args:
         service_name: The frontend or backend.
         port: The provided port.
-        autoswitch: Whether to automatically switch the port.
+        auto_increment: Whether to automatically switch the port.
 
     Returns:
         The port to run the service on.
@@ -134,12 +134,14 @@ def handle_port(service_name: str, port: int, autoswitch: bool) -> int:
     Raises:
         Exit:when the port is in use.
     """
-    if not is_process_on_port(port):
+    if (process := get_process_on_port(port)) is None:
         return port
-    if autoswitch:
+    if auto_increment:
         return change_port(port, service_name)
     else:
-        console.error(f"{service_name.capitalize()} port: {port} is already in use")
+        console.error(
+            f"{service_name.capitalize()} port: {port} is already in use by PID: {process.pid}."
+        )
         raise typer.Exit()
 
 
