@@ -99,7 +99,15 @@ from reflex.state import (
     _substate_key,
     code_uses_state_contexts,
 )
-from reflex.utils import codespaces, console, exceptions, format, prerequisites, types
+from reflex.utils import (
+    codespaces,
+    console,
+    exceptions,
+    format,
+    path_ops,
+    prerequisites,
+    types,
+)
 from reflex.utils.exec import is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
 
@@ -974,9 +982,10 @@ class App(MiddlewareMixin, LifespanMixin):
         should_compile = self._should_compile()
 
         if not should_compile:
-            for route in self._unevaluated_pages:
-                console.debug(f"Evaluating page: {route}")
-                self._compile_page(route, save_page=should_compile)
+            with console.timing("Evaluate Pages (Backend)"):
+                for route in self._unevaluated_pages:
+                    console.debug(f"Evaluating page: {route}")
+                    self._compile_page(route, save_page=should_compile)
 
             # Add the optional endpoints (_upload)
             self._add_optional_endpoints()
@@ -1002,10 +1011,11 @@ class App(MiddlewareMixin, LifespanMixin):
             + adhoc_steps_without_executor,
         )
 
-        for route in self._unevaluated_pages:
-            console.debug(f"Evaluating page: {route}")
-            self._compile_page(route, save_page=should_compile)
-            progress.advance(task)
+        with console.timing("Evaluate Pages (Frontend)"):
+            for route in self._unevaluated_pages:
+                console.debug(f"Evaluating page: {route}")
+                self._compile_page(route, save_page=should_compile)
+                progress.advance(task)
 
         # Add the optional endpoints (_upload)
         self._add_optional_endpoints()
@@ -1040,13 +1050,13 @@ class App(MiddlewareMixin, LifespanMixin):
             custom_components |= component._get_all_custom_components()
 
         # Perform auto-memoization of stateful components.
-        (
-            stateful_components_path,
-            stateful_components_code,
-            page_components,
-        ) = compiler.compile_stateful_components(self._pages.values())
-
-        progress.advance(task)
+        with console.timing("Auto-memoize StatefulComponents"):
+            (
+                stateful_components_path,
+                stateful_components_code,
+                page_components,
+            ) = compiler.compile_stateful_components(self._pages.values())
+            progress.advance(task)
 
         # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
         if code_uses_state_contexts(stateful_components_code) and self._state is None:
@@ -1068,6 +1078,17 @@ class App(MiddlewareMixin, LifespanMixin):
         )
 
         progress.advance(task)
+
+        # Copy the assets.
+        assets_src = Path.cwd() / constants.Dirs.APP_ASSETS
+        if assets_src.is_dir():
+            with console.timing("Copy assets"):
+                path_ops.update_directory_tree(
+                    src=assets_src,
+                    dest=(
+                        Path.cwd() / prerequisites.get_web_dir() / constants.Dirs.PUBLIC
+                    ),
+                )
 
         # Use a forking process pool, if possible.  Much faster, especially for large sites.
         # Fallback to ThreadPoolExecutor as something that will always work.
@@ -1121,9 +1142,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 _submit_work(compiler.remove_tailwind_from_postcss)
 
             # Wait for all compilation tasks to complete.
-            for future in concurrent.futures.as_completed(result_futures):
-                compile_results.append(future.result())
-                progress.advance(task)
+            with console.timing("Compile to Javascript"):
+                for future in concurrent.futures.as_completed(result_futures):
+                    compile_results.append(future.result())
+                    progress.advance(task)
 
         app_root = self._app_root(app_wrappers=app_wrappers)
 
@@ -1158,7 +1180,8 @@ class App(MiddlewareMixin, LifespanMixin):
         progress.stop()
 
         # Install frontend packages.
-        self._get_frontend_packages(all_imports)
+        with console.timing("Install Frontend Packages"):
+            self._get_frontend_packages(all_imports)
 
         # Setup the next.config.js
         transpile_packages = [
@@ -1184,8 +1207,9 @@ class App(MiddlewareMixin, LifespanMixin):
                     # Remove pages that are no longer in the app.
                     p.unlink()
 
-        for output_path, code in compile_results:
-            compiler_utils.write_page(output_path, code)
+        with console.timing("Write to Disk"):
+            for output_path, code in compile_results:
+                compiler_utils.write_page(output_path, code)
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
