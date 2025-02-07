@@ -74,11 +74,11 @@ class ObjectState(rx.State):
 
 
 @pytest.mark.parametrize("type_", [Base, Bare, SqlaModel, Dataclass])
-def test_var_create(type_: GenericType) -> None:
+def test_var_create(type_: type[Base | Bare | SqlaModel | Dataclass]) -> None:
     my_object = type_()
     var = Var.create(my_object)
     assert var._var_type is type_
-
+    assert isinstance(var, ObjectVar)
     quantity = var.quantity
     assert quantity._var_type is int
 
@@ -94,12 +94,12 @@ def test_literal_create(type_: GenericType) -> None:
 
 
 @pytest.mark.parametrize("type_", [Base, Bare, SqlaModel, Dataclass])
-def test_guess(type_: GenericType) -> None:
+def test_guess(type_: type[Base | Bare | SqlaModel | Dataclass]) -> None:
     my_object = type_()
     var = Var.create(my_object)
     var = var.guess_type()
     assert var._var_type is type_
-
+    assert isinstance(var, ObjectVar)
     quantity = var.quantity
     assert quantity._var_type is int
 

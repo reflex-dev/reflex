@@ -75,9 +75,9 @@ from reflex.utils.types import (
 if TYPE_CHECKING:
     from reflex.state import BaseState
 
-    from .number import BooleanVar, NumberVar
-    from .object import ObjectVar
-    from .sequence import ArrayVar, StringVar
+    from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
+    from .object import LiteralObjectVar, ObjectVar
+    from .sequence import ArrayVar, LiteralArrayVar, LiteralStringVar, StringVar
 
 
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
@@ -577,9 +577,17 @@ class Var(Generic[VAR_TYPE]):
     @classmethod
     def create(  # pyright: ignore[reportOverlappingOverload]
         cls,
+        value: NoReturn,
+        _var_data: VarData | None = None,
+    ) -> Var[Any]: ...
+
+    @overload
+    @classmethod
+    def create(  # pyright: ignore[reportOverlappingOverload]
+        cls,
         value: bool,
         _var_data: VarData | None = None,
-    ) -> BooleanVar: ...
+    ) -> LiteralBooleanVar: ...
 
     @overload
     @classmethod
@@ -587,7 +595,7 @@ class Var(Generic[VAR_TYPE]):
         cls,
         value: int,
         _var_data: VarData | None = None,
-    ) -> NumberVar[int]: ...
+    ) -> LiteralNumberVar[int]: ...
 
     @overload
     @classmethod
@@ -595,7 +603,15 @@ class Var(Generic[VAR_TYPE]):
         cls,
         value: float,
         _var_data: VarData | None = None,
-    ) -> NumberVar[float]: ...
+    ) -> LiteralNumberVar[float]: ...
+
+    @overload
+    @classmethod
+    def create(  # pyright: ignore [reportOverlappingOverload]
+        cls,
+        value: str,
+        _var_data: VarData | None = None,
+    ) -> LiteralStringVar: ...
 
     @overload
     @classmethod
@@ -611,7 +627,7 @@ class Var(Generic[VAR_TYPE]):
         cls,
         value: None,
         _var_data: VarData | None = None,
-    ) -> NoneVar: ...
+    ) -> LiteralNoneVar: ...
 
     @overload
     @classmethod
@@ -619,7 +635,7 @@ class Var(Generic[VAR_TYPE]):
         cls,
         value: MAPPING_TYPE,
         _var_data: VarData | None = None,
-    ) -> ObjectVar[MAPPING_TYPE]: ...
+    ) -> LiteralObjectVar[MAPPING_TYPE]: ...
 
     @overload
     @classmethod
@@ -627,7 +643,7 @@ class Var(Generic[VAR_TYPE]):
         cls,
         value: SEQUENCE_TYPE,
         _var_data: VarData | None = None,
-    ) -> ArrayVar[SEQUENCE_TYPE]: ...
+    ) -> LiteralArrayVar[SEQUENCE_TYPE]: ...
 
     @overload
     @classmethod
