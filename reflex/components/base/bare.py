@@ -17,7 +17,7 @@ from reflex.vars.sequence import LiteralStringVar
 
 
 @once
-def performace_mode():
+def get_performance_mode():
     """Get the performance mode.
 
     Returns:
@@ -35,7 +35,7 @@ def validate_str(value: str):
     Raises:
         ValueError: If the value is a Var and the performance mode is set to raise.
     """
-    perf_mode = performace_mode()
+    perf_mode = get_performance_mode()
     if perf_mode != PerformanceMode.OFF and value.startswith("reflex___state"):
         if perf_mode == PerformanceMode.WARN:
             console.warn(
