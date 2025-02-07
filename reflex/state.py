@@ -347,45 +347,7 @@ async def _resolve_delta(delta: Delta) -> Delta:
     return delta
 
 
-# Tracking the import and potential exec history of BaseState subclasses.
-# This is used to reconstruct the state tree for the backend without pickling
-# the classes themselves.
-@dataclasses.dataclass(frozen=True)
-class BaseStateOrigin:
-    """A class to track the origin of BaseState subclasses.
-
-    The origin is either evaluating some page, or importing a module.
-    """
-
-    identifier: str
-    is_module: bool
-
-    @classmethod
-    def from_stack(cls):
-        """Find the most likely import in the stack."""
-        stack = inspect.stack()
-        for frame in stack:
-            if (
-                frame.code_context is not None
-                and any("class " in ctx for ctx in frame.code_context)
-                and frame.function == "<module>"
-            ):
-                return cls(
-                    identifier=inspect.getmodule(frame.frame).__name__,
-                    is_module=True,
-                )
-            if (
-                frame.function == "compile_unevaluated_page"
-                and inspect.getmodule(frame.frame) == reflex.compiler.compiler
-            ):
-                # We hit a page in the compiler that needs to be evaluated
-                return cls(
-                    identifier=frame.frame.f_locals["route"],
-                    is_module=False,
-                )
-
-
-BaseState_import_order: dict[BaseStateOrigin, None] = {}
+all_base_state_classes: dict[str, None] = {}
 
 
 class BaseState(Base, ABC, extra=pydantic.Extra.allow):
@@ -685,7 +647,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
 
-        BaseState_import_order[BaseStateOrigin.from_stack()] = None
+        all_base_state_classes[cls.get_full_name()] = None
 
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
@@ -4131,6 +4093,7 @@ def reload_state_module(
     for subclass in tuple(state.class_subclasses):
         reload_state_module(module=module, state=subclass)
         if subclass.__module__ == module and module is not None:
+            all_base_state_classes.pop(subclass.get_full_name(), None)
             state.class_subclasses.remove(subclass)
             state._always_dirty_substates.discard(subclass.get_name())
             state._var_dependencies = {}
