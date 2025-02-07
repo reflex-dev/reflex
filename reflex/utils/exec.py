@@ -368,8 +368,14 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
 
     app_module = get_app_module()
 
-    run_backend_prod = f"gunicorn --worker-class {config.gunicorn_worker_class} --max-requests {config.gunicorn_max_requests} --max-requests-jitter {config.gunicorn_max_requests_jitter} --preload --timeout {config.timeout} --log-level critical".split()
-    run_backend_prod_windows = f"uvicorn --limit-max-requests {config.gunicorn_max_requests} --timeout-keep-alive {config.timeout}".split()
+    if config.gunicorn_max_request_disabled:
+        run_backend_prod = f"gunicorn --worker-class {config.gunicorn_worker_class}  --preload --timeout {config.timeout} --log-level critical".split()
+        run_backend_prod_windows = (
+            f"uvicorn --timeout-keep-alive {config.timeout}".split()
+        )
+    else:
+        run_backend_prod = f"gunicorn --worker-class {config.gunicorn_worker_class} --max-requests {config.gunicorn_max_requests} --max-requests-jitter {config.gunicorn_max_requests_jitter} --preload --timeout {config.timeout} --log-level critical".split()
+        run_backend_prod_windows = f"uvicorn --limit-max-requests {config.gunicorn_max_requests} --timeout-keep-alive {config.timeout}".split()
     command = (
         [
             *run_backend_prod_windows,

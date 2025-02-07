@@ -679,6 +679,9 @@ class Config(Base):
     # Number of gunicorn workers from user
     gunicorn_workers: Optional[int] = None
 
+    # To disable gunicorn max requests ( next two config values )
+    gunicorn_max_request_disabled: bool = False
+
     # Number of requests before a worker is restarted
     gunicorn_max_requests: int = 100
 
