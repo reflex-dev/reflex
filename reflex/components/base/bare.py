@@ -9,10 +9,21 @@ from reflex.components.tags import Tag
 from reflex.components.tags.tagless import Tagless
 from reflex.config import PerformanceMode, environment
 from reflex.utils import console
+from reflex.utils.decorator import once
 from reflex.utils.imports import ParsedImportDict
 from reflex.vars import BooleanVar, ObjectVar, Var
 from reflex.vars.base import VarData
 from reflex.vars.sequence import LiteralStringVar
+
+
+@once
+def performace_mode():
+    """Get the performance mode.
+
+    Returns:
+        The performance mode.
+    """
+    return environment.REFLEX_PERF_MODE.get()
 
 
 def validate_str(value: str):
@@ -24,7 +35,7 @@ def validate_str(value: str):
     Raises:
         ValueError: If the value is a Var and the performance mode is set to raise.
     """
-    perf_mode = environment.REFLEX_PERF_MODE.get()
+    perf_mode = performace_mode()
     if perf_mode != PerformanceMode.OFF and value.startswith("reflex___state"):
         if perf_mode == PerformanceMode.WARN:
             console.warn(

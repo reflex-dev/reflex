@@ -1896,18 +1896,25 @@ def test_var_data_with_hooks_value():
     assert var_data == VarData(hooks=["what", "whot", "whott"])
 
 
-def test_str_var_in_components():
-    from reflex.config import environment
-
-    current_performance_mode = environment.REFLEX_PERF_MODE.get()
-    environment.REFLEX_PERF_MODE.set(PerformanceMode.RAISE)
-
+def test_str_var_in_components(mocker):
     class StateWithVar(rx.State):
         field: int = 1
+
+    mocker.patch(
+        "reflex.components.base.bare.performace_mode",
+        lambda: PerformanceMode.RAISE,
+    )
 
     with pytest.raises(ValueError):
         rx.vstack(
             str(StateWithVar.field),
         )
 
-    environment.REFLEX_PERF_MODE.set(current_performance_mode)
+    mocker.patch(
+        "reflex.components.base.bare.performace_mode",
+        lambda: PerformanceMode.OFF,
+    )
+
+    rx.vstack(
+        str(StateWithVar.field),
+    )
