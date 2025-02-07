@@ -630,10 +630,12 @@ class Config(Base):
     backend_port: int | None = None
 
     # The backend url the frontend will connect to. This must be updated if the backend is hosted elsewhere, or in production.
-    api_url: str = f"http://localhost:{backend_port}"
+    api_url: str = f"http://localhost:{constants.DefaultPorts.BACKEND_PORT}"
 
     # The url the frontend will be hosted on.
-    deploy_url: Optional[str] = f"http://localhost:{frontend_port}"
+    deploy_url: Optional[str] = (
+        f"http://localhost:{constants.DefaultPorts.FRONTEND_PORT}"
+    )
 
     # The url the backend will be hosted on.
     backend_host: str = "0.0.0.0"
