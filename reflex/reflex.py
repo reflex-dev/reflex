@@ -289,10 +289,14 @@ def run(
         envvar=environment.REFLEX_BACKEND_ONLY.name,
     ),
     frontend_port: int = typer.Option(
-        config.frontend_port, help="Specify a different frontend port."
+        config.frontend_port,
+        help="Specify a different frontend port.",
+        envvar=environment.REFLEX_FRONTEND_PORT.name,
     ),
     backend_port: int = typer.Option(
-        config.backend_port, help="Specify a different backend port."
+        config.backend_port,
+        help="Specify a different backend port.",
+        envvar=environment.REFLEX_BACKEND_PORT.name,
     ),
     backend_host: str = typer.Option(
         config.backend_host, help="Specify the backend host."

@@ -544,6 +544,12 @@ class EnvironmentVariables:
     # Whether to run the frontend only. Exclusive with REFLEX_BACKEND_ONLY.
     REFLEX_FRONTEND_ONLY: EnvVar[bool] = env_var(False)
 
+    # The port to run the frontend on.
+    REFLEX_FRONTEND_PORT: EnvVar[int] = env_var(None)
+
+    # The port to run the backend on.
+    REFLEX_BACKEND_PORT: EnvVar[int] = env_var(None)
+
     # Reflex internal env to reload the config.
     RELOAD_CONFIG: EnvVar[bool] = env_var(False, internal=True)
 
