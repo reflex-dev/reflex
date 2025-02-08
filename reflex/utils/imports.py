@@ -109,6 +109,9 @@ class ImportVar:
     # whether this import should be rendered or not
     render: Optional[bool] = True
 
+    # The path of the package to import from.
+    package_path: str = "/"
+
     # whether this import package should be added to transpilePackages in next.config.js
     # https://nextjs.org/docs/app/api-reference/next-config-js/transpilePackages
     transpile: Optional[bool] = False

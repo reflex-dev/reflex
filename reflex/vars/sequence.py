@@ -372,6 +372,33 @@ class StringVar(Var[STRING_TYPE], python_types=str):
 
         return string_ge_operation(self, other)
 
+    @overload
+    def replace(  # pyright: ignore [reportOverlappingOverload]
+        self, search_value: StringVar | str, new_value: StringVar | str
+    ) -> StringVar: ...
+
+    @overload
+    def replace(
+        self, search_value: Any, new_value: Any
+    ) -> CustomVarOperationReturn[StringVar]: ...
+
+    def replace(self, search_value: Any, new_value: Any) -> StringVar:  # pyright: ignore [reportInconsistentOverload]
+        """Replace a string with a value.
+
+        Args:
+            search_value: The string to search.
+            new_value: The value to be replaced with.
+
+        Returns:
+            The string replace operation.
+        """
+        if not isinstance(search_value, (StringVar, str)):
+            raise_unsupported_operand_types("replace", (type(self), type(search_value)))
+        if not isinstance(new_value, (StringVar, str)):
+            raise_unsupported_operand_types("replace", (type(self), type(new_value)))
+
+        return string_replace_operation(self, search_value, new_value)
+
 
 @var_operation
 def string_lt_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
@@ -570,7 +597,7 @@ def array_join_operation(array: ArrayVar, sep: StringVar[Any] | str = ""):
 
 @var_operation
 def string_replace_operation(
-    string: StringVar, search_value: StringVar | str, new_value: StringVar | str
+    string: StringVar[Any], search_value: StringVar | str, new_value: StringVar | str
 ):
     """Replace a string with a value.
 
@@ -583,7 +610,7 @@ def string_replace_operation(
         The string replace operation.
     """
     return var_operation_return(
-        js_expression=f"{string}.replace({search_value}, {new_value})",
+        js_expression=f"{string}.replaceAll({search_value}, {new_value})",
         var_type=str,
     )
 

@@ -260,3 +260,33 @@ def find_replace(directory: str | Path, find: str, replace: str):
             text = filepath.read_text(encoding="utf-8")
             text = re.sub(find, replace, text)
             filepath.write_text(text, encoding="utf-8")
+
+
+def update_directory_tree(src: Path, dest: Path):
+    """Recursively copies a directory tree from src to dest.
+    Only copies files if the destination file is missing or modified earlier than the source file.
+
+    Args:
+        src: Source directory
+        dest: Destination directory
+
+    Raises:
+        ValueError: If the source is not a directory
+    """
+    if not src.is_dir():
+        raise ValueError(f"Source {src} is not a directory")
+
+    # Ensure the destination directory exists
+    dest.mkdir(parents=True, exist_ok=True)
+
+    for item in src.iterdir():
+        dest_item = dest / item.name
+
+        if item.is_dir():
+            # Recursively copy subdirectories
+            update_directory_tree(item, dest_item)
+        elif item.is_file() and (
+            not dest_item.exists() or item.stat().st_mtime > dest_item.stat().st_mtime
+        ):
+            # Copy file if it doesn't exist in the destination or is older than the source
+            shutil.copy2(item, dest_item)
