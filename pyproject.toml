@@ -72,6 +72,7 @@ pytest-benchmark = ">=4.0.0,<6.0"
 playwright = ">=1.46.0"
 pytest-playwright = ">=0.5.1"
 pytest-codspeed = "^3.1.2"
+blosc2 = { version = ">=2.7.1", python = ">=3.11" }
 
 [tool.poetry.scripts]
 reflex = "reflex.reflex:cli"
@@ -87,8 +88,37 @@ reportIncompatibleMethodOverride = false
 target-version = "py310"
 output-format = "concise"
 lint.isort.split-on-trailing-comma = false
-lint.select = ["ANN001","B", "C4", "D", "E", "ERA", "F", "FURB", "I", "N", "PERF", "PGH", "PTH", "RUF", "SIM", "T", "TRY", "W"]
-lint.ignore = ["B008", "D205", "E501", "F403", "SIM115", "RUF006", "RUF008", "RUF012", "TRY0"]
+lint.select = [
+  "ANN001",
+  "B",
+  "C4",
+  "D",
+  "E",
+  "ERA",
+  "F",
+  "FURB",
+  "I",
+  "N",
+  "PERF",
+  "PGH",
+  "PTH",
+  "RUF",
+  "SIM",
+  "T",
+  "TRY",
+  "W",
+]
+lint.ignore = [
+  "B008",
+  "D205",
+  "E501",
+  "F403",
+  "SIM115",
+  "RUF006",
+  "RUF008",
+  "RUF012",
+  "TRY0",
+]
 lint.pydocstyle.convention = "google"
 
 [tool.ruff.lint.per-file-ignores]

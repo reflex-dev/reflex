@@ -571,6 +571,12 @@ class EnvironmentVariables:
     # Whether to use the turbopack bundler.
     REFLEX_USE_TURBOPACK: EnvVar[bool] = env_var(True)
 
+    # Whether to compress the reflex state.
+    REFLEX_COMPRESS_STATE: EnvVar[bool] = env_var(False)
+
+    # Threshold for the reflex state compression in bytes.
+    REFLEX_COMPRESS_THRESHOLD: EnvVar[int] = env_var(1024)
+
 
 environment = EnvironmentVariables()
 
