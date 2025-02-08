@@ -2277,7 +2277,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         substate_schema, state = data  # pyright: ignore[reportUnknownVariableType,reportGeneralTypeIssues]
         if substate_schema != state._to_schema():  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
             raise StateSchemaMismatchError()
-        return state  # type: ignore
+        return state  # pyright: ignore[reportUnknownVariableType,reportReturnType]
 
 
 T_STATE = TypeVar("T_STATE", bound=BaseState)
