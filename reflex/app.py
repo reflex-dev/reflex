@@ -1155,8 +1155,6 @@ class App(MiddlewareMixin, LifespanMixin):
                     "content", constants.Tailwind.CONTENT
                 )
                 _submit_work(compiler.compile_tailwind, config.tailwind)
-            else:
-                _submit_work(compiler.remove_tailwind_from_postcss)
 
             # Wait for all compilation tasks to complete.
             with console.timing("Compile to Javascript"):

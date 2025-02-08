@@ -192,7 +192,6 @@ class PackageJson(SimpleNamespace):
         "universal-cookie": "7.2.2",
     }
     DEV_DEPENDENCIES = {
-        "autoprefixer": "10.4.20",
+        "@tailwindcss/postcss": "4.0.4",
         "postcss": "8.5.1",
-        "postcss-import": "16.1.0",
     }
