@@ -368,34 +368,49 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
 
     app_module = get_app_module()
 
-    run_backend_prod = f"gunicorn --worker-class {config.gunicorn_worker_class} --max-requests {config.gunicorn_max_requests} --max-requests-jitter {config.gunicorn_max_requests_jitter} --preload --timeout {config.timeout} --log-level critical".split()
-    run_backend_prod_windows = f"uvicorn --limit-max-requests {config.gunicorn_max_requests} --timeout-keep-alive {config.timeout}".split()
     command = (
         [
-            *run_backend_prod_windows,
-            "--host",
-            host,
-            "--port",
-            str(port),
+            "uvicorn",
+            *(
+                [
+                    "--limit-max-requests",
+                    str(config.gunicorn_max_requests),
+                ]
+                if config.gunicorn_max_requests > 0
+                else []
+            ),
+            *("--timeout-keep-alive", str(config.timeout)),
+            *("--host", host),
+            *("--port", str(port)),
+            *("--workers", str(_get_backend_workers())),
             app_module,
         ]
         if constants.IS_WINDOWS
         else [
-            *run_backend_prod,
-            "--bind",
-            f"{host}:{port}",
-            "--threads",
-            str(_get_backend_workers()),
+            "gunicorn",
+            *("--worker-class", config.gunicorn_worker_class),
+            *(
+                [
+                    "--max-requests",
+                    str(config.gunicorn_max_requests),
+                    "--max-requests-jitter",
+                    str(config.gunicorn_max_requests_jitter),
+                ]
+                if config.gunicorn_max_requests > 0
+                else []
+            ),
+            "--preload",
+            *("--timeout", str(config.timeout)),
+            *("--bind", f"{host}:{port}"),
+            *("--threads", str(_get_backend_workers())),
             f"{app_module}()",
         ]
     )
 
     command += [
-        "--log-level",
-        loglevel.value,
-        "--workers",
-        str(_get_backend_workers()),
+        *("--log-level", loglevel.value),
     ]
+
     processes.new_process(
         command,
         run=True,
