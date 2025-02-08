@@ -2255,6 +2255,27 @@ class ComputedVar(Var[RETURN_TYPE]):
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
 
     @overload
+    def __get__(
+        self: ComputedVar[BASE_TYPE],
+        instance: None,
+        owner: Type,
+    ) -> ObjectVar[BASE_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: ComputedVar[SQLA_TYPE],
+        instance: None,
+        owner: Type,
+    ) -> ObjectVar[SQLA_TYPE]: ...
+
+    if TYPE_CHECKING:
+
+        @overload
+        def __get__(
+            self: ComputedVar[DATACLASS_TYPE], instance: None, owner: Any
+        ) -> ObjectVar[DATACLASS_TYPE]: ...
+
+    @overload
     def __get__(self, instance: None, owner: Type) -> ComputedVar[RETURN_TYPE]: ...
 
     @overload
@@ -2499,6 +2520,27 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
         instance: None,
         owner: Type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[BASE_TYPE],
+        instance: None,
+        owner: Type,
+    ) -> ObjectVar[BASE_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[SQLA_TYPE],
+        instance: None,
+        owner: Type,
+    ) -> ObjectVar[SQLA_TYPE]: ...
+
+    if TYPE_CHECKING:
+
+        @overload
+        def __get__(
+            self: AsyncComputedVar[DATACLASS_TYPE], instance: None, owner: Any
+        ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload
     def __get__(self, instance: None, owner: Type) -> AsyncComputedVar[RETURN_TYPE]: ...
