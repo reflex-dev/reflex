@@ -145,10 +145,7 @@ def _run(
     exec.output_system_info()
 
     # If no --frontend-only and no --backend-only, then turn on frontend and backend both
-    if not frontend and not backend:
-        frontend = True
-        backend = True
-
+    frontend, backend = prerequisites.check_running_mode(frontend, backend)
     if not frontend and backend:
         _skip_compile()
 
@@ -306,10 +303,18 @@ def export(
         True, "--no-zip", help="Disable zip for backend and frontend exports."
     ),
     frontend: bool = typer.Option(
-        True, "--backend-only", help="Export only backend.", show_default=False
+        False,
+        "--frontend-only",
+        help="Export only frontend.",
+        show_default=False,
+        envvar=environment.REFLEX_FRONTEND_ONLY.name,
     ),
     backend: bool = typer.Option(
-        True, "--frontend-only", help="Export only frontend.", show_default=False
+        False,
+        "--backend-only",
+        help="Export only backend.",
+        show_default=False,
+        envvar=environment.REFLEX_BACKEND_ONLY.name,
     ),
     zip_dest_dir: str = typer.Option(
         str(Path.cwd()),
@@ -332,7 +337,9 @@ def export(
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
 
-    if prerequisites.needs_reinit(frontend=True):
+    frontend, backend = prerequisites.check_running_mode(frontend, backend)
+
+    if prerequisites.needs_reinit(frontend=frontend or not backend):
         _init(name=config.app_name, loglevel=loglevel)
 
     if frontend and not config.show_built_with_reflex:

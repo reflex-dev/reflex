@@ -1225,6 +1225,21 @@ def install_frontend_packages(packages: set[str], config: Config):
         )
 
 
+def check_running_mode(frontend: bool, backend: bool) -> tuple[bool, bool]:
+    """Check if the app is running in frontend or backend mode.
+
+    Args:
+        frontend: Whether to run the frontend of the app.
+        backend: Whether to run the backend of the app.
+
+    Returns:
+        The running modes.
+    """
+    if not frontend and not backend:
+        return True, True
+    return frontend, backend
+
+
 def needs_reinit(frontend: bool = True) -> bool:
     """Check if an app needs to be reinitialized.
 
