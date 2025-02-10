@@ -246,12 +246,20 @@ def _compile_components(
         for comp_import in comp_render["dynamic_imports"]
     }
 
+    custom_codes = {
+        comp_import: None
+        for comp_render in component_renders
+        if "custom_code" in comp_render
+        for comp_import in comp_render["custom_code"]
+    }
+
     # Compile the components page.
     return (
         templates.COMPONENTS.render(
             imports=utils.compile_imports(imports),
             components=component_renders,
             dynamic_imports=dynamic_imports,
+            custom_codes=custom_codes,
         ),
         imports,
     )
