@@ -1302,18 +1302,17 @@ def test_app_wrap_compile_theme(
     lines = "".join(app_js_lines)
     assert (
         "function AppWrap({children}) {"
-        "const [addEvents, connectErrors] = useContext(EventLoopContext);"
-        "return (" + ("<StrictMode>" if react_strict_mode else "") + "<ErrorBoundary"
-    ) in lines
-    assert (
-        "<RadixThemesColorModeProvider>"
+        "return ("
+        + ("<StrictMode>" if react_strict_mode else "")
+        + "<RadixThemesColorModeProvider>"
         "<RadixThemesTheme accentColor={\"plum\"} css={{...theme.styles.global[':root'], ...theme.styles.global.body}}>"
         "<Fragment>"
         "{children}"
         "</Fragment>"
         "</RadixThemesTheme>"
         "</RadixThemesColorModeProvider>"
-        "</ErrorBoundary>" + ("</StrictMode>" if react_strict_mode else "") + ")"
+        + ("</StrictMode>" if react_strict_mode else "")
+        + ")"
         "}"
     ) in lines
 
@@ -1366,6 +1365,8 @@ def test_app_wrap_priority(
     ]
     lines = "".join(app_js_lines)
     assert (
+        "function AppWrap({children}) {"
+        "return (" + ("<StrictMode>" if react_strict_mode else "") + "<RadixThemesBox>"
         '<RadixThemesText as={"p"}>'
         "<RadixThemesColorModeProvider>"
         "<Fragment2>"
@@ -1375,14 +1376,7 @@ def test_app_wrap_priority(
         "</Fragment2>"
         "</RadixThemesColorModeProvider>"
         "</RadixThemesText>"
-        "</ErrorBoundary>"
         "</RadixThemesBox>" + ("</StrictMode>" if react_strict_mode else "")
-    ) in lines
-    assert (
-        "function AppWrap({children}) {"
-        "const [addEvents, connectErrors] = useContext(EventLoopContext);"
-        "return (" + ("<StrictMode>" if react_strict_mode else "") + "<RadixThemesBox>"
-        "<ErrorBoundary"
     ) in lines
 
 
