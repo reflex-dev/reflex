@@ -328,6 +328,19 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="success", **kwargs)
 
     @staticmethod
+    def toast_loading(message: str | Var = "", **kwargs: Any):
+        """Display a loading toast message.
+
+        Args:
+            message: The message to display.
+            **kwargs: Additional toast props.
+
+        Returns:
+            The toast event.
+        """
+        return Toaster.send_toast(message, level="loading", **kwargs)
+
+    @staticmethod
     def toast_dismiss(id: Var | str | None = None):
         """Dismiss a toast.
 
@@ -378,6 +391,7 @@ class ToastNamespace(ComponentNamespace):
     warning = staticmethod(Toaster.toast_warning)
     error = staticmethod(Toaster.toast_error)
     success = staticmethod(Toaster.toast_success)
+    loading = staticmethod(Toaster.toast_loading)
     dismiss = staticmethod(Toaster.toast_dismiss)
     __call__ = staticmethod(Toaster.send_toast)
 

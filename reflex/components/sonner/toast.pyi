@@ -70,6 +70,8 @@ class Toaster(Component):
     @staticmethod
     def toast_success(message: str | Var = "", **kwargs: Any): ...
     @staticmethod
+    def toast_loading(message: str | Var = "", **kwargs: Any): ...
+    @staticmethod
     def toast_dismiss(id: Var | str | None = None): ...
     @overload
     @classmethod
@@ -172,6 +174,7 @@ class ToastNamespace(ComponentNamespace):
     warning = staticmethod(Toaster.toast_warning)
     error = staticmethod(Toaster.toast_error)
     success = staticmethod(Toaster.toast_success)
+    loading = staticmethod(Toaster.toast_loading)
     dismiss = staticmethod(Toaster.toast_dismiss)
 
     @staticmethod
