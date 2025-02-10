@@ -1912,7 +1912,7 @@ def test_str_var_in_components(mocker):
 
     mocker.patch(
         "reflex.components.base.bare.get_performance_mode",
-        lambda: PerformanceMode.OFF,
+        return_value=PerformanceMode.OFF,
     )
 
     rx.vstack(
