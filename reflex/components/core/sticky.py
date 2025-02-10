@@ -3,7 +3,7 @@
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.colors import color
 from reflex.components.core.cond import color_mode_cond, cond
-from reflex.components.core.responsive import tablet_and_desktop
+from reflex.components.core.responsive import desktop_only
 from reflex.components.el.elements.inline import A
 from reflex.components.el.elements.media import Path, Rect, Svg
 from reflex.components.radix.themes.typography.text import Text
@@ -87,7 +87,7 @@ class StickyBadge(A):
         """
         return super().create(
             StickyLogo.create(),
-            tablet_and_desktop(StickyLabel.create()),
+            desktop_only(StickyLabel.create()),
             href="https://reflex.dev",
             target="_blank",
             width="auto",

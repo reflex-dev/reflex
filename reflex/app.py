@@ -1040,7 +1040,7 @@ class App(MiddlewareMixin, LifespanMixin):
         self._validate_var_dependencies()
         self._setup_overlay_component()
         self._setup_error_boundary()
-        if config.show_built_with_reflex:
+        if is_prod_mode() and config.show_built_with_reflex:
             self._setup_sticky_badge()
 
         progress.advance(task)
