@@ -1902,7 +1902,7 @@ def test_str_var_in_components(mocker):
 
     mocker.patch(
         "reflex.components.base.bare.get_performance_mode",
-        lambda: PerformanceMode.RAISE,
+        return_value=PerformanceMode.RAISE,
     )
 
     with pytest.raises(ValueError):
