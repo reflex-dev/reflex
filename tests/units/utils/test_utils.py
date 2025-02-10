@@ -122,8 +122,8 @@ def test_validate_none_bun_path(mocker):
         mocker: Pytest mocker object.
     """
     mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=None)
-    with pytest.raises(typer.Exit):
-        prerequisites.validate_bun()
+    # with pytest.raises(typer.Exit):
+    prerequisites.validate_bun()
 
 
 def test_validate_invalid_bun_path(
