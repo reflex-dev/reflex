@@ -1293,7 +1293,13 @@ def validate_bun():
     """
     bun_path = path_ops.get_bun_path()
 
-    if bun_path and not bun_path.samefile(constants.Bun.DEFAULT_PATH):
+    if bun_path is None:
+        console.error(
+            "Could not find bun. Make sure you have bun installed or run `reflex init` to install it."
+        )
+        raise typer.Exit(1)
+
+    if not path_ops.samefile(bun_path, constants.Bun.DEFAULT_PATH):
         console.info(f"Using custom Bun path: {bun_path}")
         bun_version = get_bun_version()
         if not bun_version:

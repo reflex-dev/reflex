@@ -115,6 +115,17 @@ def test_typehint_issubclass(subclass, superclass, expected):
     assert types.typehint_issubclass(subclass, superclass) == expected
 
 
+def test_validate_none_bun_path(mocker):
+    """Test that an error is thrown when a bun path is not specified.
+
+    Args:
+        mocker: Pytest mocker object.
+    """
+    mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=None)
+    with pytest.raises(typer.Exit):
+        prerequisites.validate_bun()
+
+
 def test_validate_invalid_bun_path(mocker):
     """Test that an error is thrown when a custom specified bun path is not valid
     or does not exist.
