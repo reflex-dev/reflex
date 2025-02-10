@@ -126,21 +126,39 @@ def test_validate_none_bun_path(mocker):
         prerequisites.validate_bun()
 
 
-def test_validate_invalid_bun_path(mocker):
+@pytest.mark.parametrize(
+    "exists,samefile",
+    [
+        (False, None),
+        (True, False),
+    ],
+)
+def test_validate_invalid_bun_path(
+    exists,
+    samefile,
+    mocker,
+):
     """Test that an error is thrown when a custom specified bun path is not valid
     or does not exist.
 
     Args:
+        exists: Whether the bun path exists.
+        samefile: Whether the bun path is the same file.
         mocker: Pytest mocker object.
     """
     mock_path = mocker.Mock()
-    mock_path.samefile.return_value = False
+    mock_path.exists.return_value = exists
+    mock_path.samefile.return_value = samefile
     mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
     mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=None)
 
     with pytest.raises(typer.Exit):
         prerequisites.validate_bun()
     mock_path.exists.assert_called_once()
+    if exists:
+        mock_path.samefile.assert_called_once()
+    else:
+        mock_path.samefile.assert_not_called()
 
 
 def test_validate_bun_path_incompatible_version(mocker):
