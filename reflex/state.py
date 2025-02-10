@@ -1033,7 +1033,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 f'Found var "{prop._js_expr}" with type {prop._var_type}.'
             )
         cls._set_var(prop)
-        cls._create_setter(prop)
+        if get_config().state_auto_setters:
+            cls._create_setter(prop)
         cls._set_default_value(prop)
 
     @classmethod
