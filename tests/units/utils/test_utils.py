@@ -140,7 +140,7 @@ def test_validate_invalid_bun_path(mocker):
 
     with pytest.raises(typer.Exit):
         prerequisites.validate_bun()
-    mock_path.samefile.assert_called_once()
+    mock_path.exists.assert_called_once()
 
 
 def test_validate_bun_path_incompatible_version(mocker):
@@ -159,6 +159,8 @@ def test_validate_bun_path_incompatible_version(mocker):
 
     with pytest.raises(typer.Exit):
         prerequisites.validate_bun()
+    mock_path.exists.assert_called_once()
+    mock_path.samefile.assert_called_once()
 
 
 def test_remove_existing_bun_installation(mocker):
