@@ -247,6 +247,22 @@ def find_replace(directory: str | Path, find: str, replace: str):
             filepath.write_text(text, encoding="utf-8")
 
 
+def samefile(file1: Path, file2: Path) -> bool:
+    """Check if two files are the same.
+
+    Args:
+        file1: The first file.
+        file2: The second file.
+
+    Returns:
+        Whether the files are the same. If either file does not exist, returns False.
+    """
+    if file1.exists() and file2.exists():
+        return file1.samefile(file2)
+
+    return False
+
+
 def update_directory_tree(src: Path, dest: Path):
     """Recursively copies a directory tree from src to dest.
     Only copies files if the destination file is missing or modified earlier than the source file.
