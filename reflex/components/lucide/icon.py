@@ -4,7 +4,7 @@ from reflex.components.component import Component
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
-from reflex.vars.sequence import LiteralStringVar
+from reflex.vars.sequence import LiteralStringVar, StringVar
 
 
 class LucideIconComponent(Component):
@@ -40,7 +40,12 @@ class Icon(LucideIconComponent):
             The created component.
         """
         if children:
-            if len(children) == 1 and isinstance(children[0], str):
+            if len(children) == 1:
+                child = Var.create(children[0]).guess_type()
+                if not isinstance(child, StringVar):
+                    raise AttributeError(
+                        f"Icon name must be a string, got {children[0]._var_type if isinstance(children[0], Var) else children[0]}"
+                    )
                 props["tag"] = children[0]
             else:
                 raise AttributeError(
@@ -56,7 +61,10 @@ class Icon(LucideIconComponent):
             else:
                 raise TypeError(f"Icon name must be a string, got {type(tag)}")
         elif isinstance(tag, Var):
-            return DynamicIcon.create(name=tag, **props)
+            tag_stringified = tag.guess_type()
+            if not isinstance(tag_stringified, StringVar):
+                raise TypeError(f"Icon name must be a string, got {tag._var_type}")
+            return DynamicIcon.create(name=tag_stringified.replace("_", "-"), **props)
 
         if (
             not isinstance(tag, str)

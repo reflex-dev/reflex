@@ -107,9 +107,7 @@ class StickyBadge(A):
             default=True,
             global_ref=False,
         )
-        localhost_hostnames = Var.create(
-            ["localhost", "127.0.0.1", "[::1]"]
-        ).guess_type()
+        localhost_hostnames = Var.create(["localhost", "127.0.0.1", "[::1]"])
         is_localhost_expr = localhost_hostnames.contains(
             Var("window.location.hostname", _var_type=str).guess_type(),
         )

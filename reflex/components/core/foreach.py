@@ -54,9 +54,10 @@ class Foreach(Component):
             TypeError: If the render function is a ComponentState.
             UntypedVarError: If the iterable is of type Any without a type annotation.
         """
-        from reflex.vars.object import ObjectVar
+        from reflex.vars import ArrayVar, ObjectVar, StringVar
 
-        iterable = LiteralVar.create(iterable)
+        iterable = LiteralVar.create(iterable).guess_type()
+
         if iterable._var_type == Any:
             raise ForeachVarError(
                 f"Could not foreach over var `{iterable!s}` of type Any. "
@@ -74,6 +75,15 @@ class Foreach(Component):
 
         if isinstance(iterable, ObjectVar):
             iterable = iterable.entries()
+
+        if isinstance(iterable, StringVar):
+            iterable = iterable.split()
+
+        if not isinstance(iterable, ArrayVar):
+            raise ForeachVarError(
+                f"Could not foreach over var `{iterable!s}` of type {iterable._var_type}. "
+                "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
+            )
 
         component = cls(
             iterable=iterable,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import typing
 from typing import ClassVar, Dict, Literal, Optional, Union
 
 from reflex.components.component import Component, ComponentNamespace
@@ -503,7 +504,7 @@ class CodeBlock(Component, MarkdownComponentMap):
         return ["can_copy", "copy_button"]
 
     @classmethod
-    def _get_language_registration_hook(cls, language_var: Var = _LANGUAGE) -> str:
+    def _get_language_registration_hook(cls, language_var: Var = _LANGUAGE) -> Var:
         """Get the hook to register the language.
 
         Args:
@@ -514,21 +515,46 @@ class CodeBlock(Component, MarkdownComponentMap):
         Returns:
             The hook to register the language.
         """
-        return f"""
- if ({language_var!s}) {{
-    (async () => {{
-      try {{
+        language_in_there = Var.create(typing.get_args(LiteralCodeLanguage)).contains(
+            language_var
+        )
+        async_load = f"""
+(async () => {{
+    try {{
         const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{language_var!s}}}`);
         SyntaxHighlighter.registerLanguage({language_var!s}, module.default);
-      }} catch (error) {{
-        console.error(`Error importing language module for ${{{language_var!s}}}:`, error);
-      }}
-    }})();
+    }} catch (error) {{
+        console.error(`Language ${{{language_var!s}}} is not supported for code blocks inside of markdown: `, error);
+    }}
+}})();
+"""
+        return Var(
+            f"""
+ if ({language_var!s}) {{
+    if (!{language_in_there!s}) {{
+        console.warn(`Language \\`${{{language_var!s}}}\\` is not supported for code blocks inside of markdown.`);
+        {language_var!s} = '';
+    }} else {{
+        {async_load!s}
+    }}
   }}
 """
+            if not isinstance(language_var, LiteralVar)
+            else f"""
+if ({language_var!s}) {{
+    {async_load!s}
+}}""",
+            _var_data=VarData(
+                imports={
+                    cls.__fields__["library"].default: [
+                        ImportVar(tag="PrismAsyncLight", alias="SyntaxHighlighter")
+                    ]
+                },
+            ),
+        )
 
     @classmethod
-    def get_component_map_custom_code(cls) -> str:
+    def get_component_map_custom_code(cls) -> Var:
         """Get the custom code for the component.
 
         Returns:

@@ -6,13 +6,12 @@ import dataclasses
 import textwrap
 from functools import lru_cache
 from hashlib import md5
-from typing import Any, Callable, Dict, Sequence, Union
+from typing import Any, Callable, Dict, Sequence
 
 from reflex.components.component import BaseComponent, Component, CustomComponent
 from reflex.components.tags.tag import Tag
-from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars.base import LiteralVar, Var
+from reflex.vars.base import LiteralVar, Var, VarData
 from reflex.vars.function import ARRAY_ISARRAY, ArgsFunctionOperation, DestructuredArg
 from reflex.vars.number import ternary_operation
 
@@ -83,13 +82,13 @@ class MarkdownComponentMap:
     _explicit_return: bool = dataclasses.field(default=False)
 
     @classmethod
-    def get_component_map_custom_code(cls) -> str:
+    def get_component_map_custom_code(cls) -> Var:
         """Get the custom code for the component map.
 
         Returns:
             The custom code for the component map.
         """
-        return ""
+        return Var("")
 
     @classmethod
     def create_map_fn_var(
@@ -97,6 +96,7 @@ class MarkdownComponentMap:
         fn_body: Var | None = None,
         fn_args: Sequence[str] | None = None,
         explicit_return: bool | None = None,
+        var_data: VarData | None = None,
     ) -> Var:
         """Create a function Var for the component map.
 
@@ -104,6 +104,7 @@ class MarkdownComponentMap:
             fn_body: The formatted component as a string.
             fn_args: The function arguments.
             explicit_return: Whether to use explicit return syntax.
+            var_data: The var data for the function.
 
         Returns:
             The function Var for the component map.
@@ -116,6 +117,7 @@ class MarkdownComponentMap:
             args_names=(DestructuredArg(fields=tuple(fn_args)),),
             return_expr=fn_body,
             explicit_return=explicit_return,
+            _var_data=var_data,
         )
 
     @classmethod
@@ -166,7 +168,7 @@ class Markdown(Component):
         Returns:
             The markdown component.
         """
-        if len(children) != 1 or not types._isinstance(children[0], Union[str, Var]):
+        if len(children) != 1 or not isinstance(children[0], (str, Var)):
             raise ValueError(
                 "Markdown component must have exactly one child containing the markdown source."
             )
@@ -239,6 +241,15 @@ class Markdown(Component):
                 component(_MOCK_ARG)._get_all_imports()
                 for component in self.component_map.values()
             ],
+            *(
+                [inline_code_var_data.old_school_imports()]
+                if (
+                    inline_code_var_data
+                    := self._get_inline_code_fn_var()._get_all_var_data()
+                )
+                is not None
+                else []
+            ),
         ]
 
     def _get_tag_map_fn_var(self, tag: str) -> Var:
@@ -278,12 +289,20 @@ class Markdown(Component):
             self._get_map_fn_custom_code_from_children(self.get_component("code"))
         )
 
-        codeblock_custom_code = "\n".join(custom_code_list)
+        var_data = VarData.merge(
+            *[
+                code._get_all_var_data()
+                for code in custom_code_list
+                if isinstance(code, Var)
+            ]
+        )
+
+        codeblock_custom_code = "\n".join(map(str, custom_code_list))
 
         # Format the code to handle inline and block code.
         formatted_code = f"""
 const match = (className || '').match(/language-(?<lang>.*)/);
-const {_LANGUAGE!s} = match ? match[1] : '';
+let {_LANGUAGE!s} = match ? match[1] : '';
 {codeblock_custom_code};
             return inline ? (
                 {self.format_component("code")}
@@ -302,6 +321,7 @@ const {_LANGUAGE!s} = match ? match[1] : '';
             ),
             fn_body=Var(_js_expr=formatted_code),
             explicit_return=True,
+            var_data=var_data,
         )
 
     def get_component(self, tag: str, **props) -> Component:
@@ -381,7 +401,7 @@ const {_LANGUAGE!s} = match ? match[1] : '';
 
     def _get_map_fn_custom_code_from_children(
         self, component: BaseComponent
-    ) -> list[str]:
+    ) -> list[str | Var]:
         """Recursively get markdown custom code from children components.
 
         Args:
@@ -390,7 +410,7 @@ const {_LANGUAGE!s} = match ? match[1] : '';
         Returns:
             A list of markdown custom code strings.
         """
-        custom_code_list = []
+        custom_code_list: list[str | Var] = []
         if isinstance(component, MarkdownComponentMap):
             custom_code_list.append(component.get_component_map_custom_code())
 
