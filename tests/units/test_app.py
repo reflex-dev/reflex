@@ -1299,21 +1299,23 @@ def test_app_wrap_compile_theme(
     app_js_lines = [
         line.strip() for line in app_js_contents.splitlines() if line.strip()
     ]
+    lines = "".join(app_js_lines)
     assert (
         "function AppWrap({children}) {"
-        "return ("
-        + ("<StrictMode>" if react_strict_mode else "")
-        + "<RadixThemesColorModeProvider>"
+        "const [addEvents, connectErrors] = useContext(EventLoopContext);"
+        "return (" + ("<StrictMode>" if react_strict_mode else "") + "<ErrorBoundary"
+    ) in lines
+    assert (
+        "<RadixThemesColorModeProvider>"
         "<RadixThemesTheme accentColor={\"plum\"} css={{...theme.styles.global[':root'], ...theme.styles.global.body}}>"
         "<Fragment>"
         "{children}"
         "</Fragment>"
         "</RadixThemesTheme>"
         "</RadixThemesColorModeProvider>"
-        + ("</StrictMode>" if react_strict_mode else "")
-        + ")"
+        "</ErrorBoundary>" + ("</StrictMode>" if react_strict_mode else "") + ")"
         "}"
-    ) in "".join(app_js_lines)
+    ) in lines
 
 
 @pytest.mark.parametrize(
@@ -1362,9 +1364,8 @@ def test_app_wrap_priority(
     app_js_lines = [
         line.strip() for line in app_js_contents.splitlines() if line.strip()
     ]
+    lines = "".join(app_js_lines)
     assert (
-        "function AppWrap({children}) {"
-        "return (" + ("<StrictMode>" if react_strict_mode else "") + "<RadixThemesBox>"
         '<RadixThemesText as={"p"}>'
         "<RadixThemesColorModeProvider>"
         "<Fragment2>"
@@ -1374,9 +1375,15 @@ def test_app_wrap_priority(
         "</Fragment2>"
         "</RadixThemesColorModeProvider>"
         "</RadixThemesText>"
-        "</RadixThemesBox>" + ("</StrictMode>" if react_strict_mode else "") + ")"
-        "}"
-    ) in "".join(app_js_lines)
+        "</ErrorBoundary>"
+        "</RadixThemesBox>" + ("</StrictMode>" if react_strict_mode else "")
+    ) in lines
+    assert (
+        "function AppWrap({children}) {"
+        "const [addEvents, connectErrors] = useContext(EventLoopContext);"
+        "return (" + ("<StrictMode>" if react_strict_mode else "") + "<RadixThemesBox>"
+        "<ErrorBoundary"
+    ) in lines
 
 
 def test_app_state_determination():
