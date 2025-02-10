@@ -178,7 +178,8 @@ def extra_overlay_function() -> Optional[Component]:
         module, _, function_name = extra_config.rpartition(".")
         try:
             module = __import__(module)
-            config_overlay = getattr(module, function_name)()
+            config_overlay = Fragment.create(getattr(module, function_name)())
+            config_overlay._get_all_imports()
         except Exception as e:
             from reflex.compiler.utils import save_error
 
@@ -290,7 +291,9 @@ class App(MiddlewareMixin, LifespanMixin):
     app_wraps: Dict[tuple[int, str], Callable[[bool], Optional[Component]]] = (
         dataclasses.field(
             default_factory=lambda: {
-                (55, "ErrorBoundary"): lambda stateful: default_error_boundary(),
+                (55, "ErrorBoundary"): (
+                    lambda stateful: default_error_boundary() if stateful else None
+                ),
                 (5, "Overlay"): (
                     lambda stateful: default_overlay_component() if stateful else None
                 ),
@@ -1073,6 +1076,13 @@ class App(MiddlewareMixin, LifespanMixin):
             # Add the custom components from the page to the set.
             custom_components |= component._get_all_custom_components()
 
+        # Add the app wraps to the app.
+        for key, app_wrap in self.app_wraps.items():
+            component = app_wrap(self._state is not None)
+            if component is not None:
+                app_wrappers[key] = component
+                custom_components |= component._get_all_custom_components()
+
         if self.error_boundary:
             console.deprecate(
                 feature_name="App.error_boundary",
@@ -1081,13 +1091,6 @@ class App(MiddlewareMixin, LifespanMixin):
                 removal_version="0.8.0",
             )
             app_wrappers[(55, "ErrorBoundary")] = self.error_boundary()
-
-        # Add the app wraps to the app.
-        for key, app_wrap in self.app_wraps.items():
-            component = app_wrap(self._state is not None)
-            if component is not None:
-                app_wrappers[key] = component
-                custom_components |= component._get_all_custom_components()
 
         # Perform auto-memoization of stateful components.
         with console.timing("Auto-memoize StatefulComponents"):
