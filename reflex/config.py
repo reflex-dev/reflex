@@ -23,6 +23,7 @@ from typing import (
     Set,
     TypeVar,
     get_args,
+    get_origin,
 )
 
 from typing_extensions import Annotated, get_type_hints
@@ -304,6 +305,15 @@ def interpret_env_var_value(
         return interpret_path_env(value, field_name)
     elif field_type is ExistingPath:
         return interpret_existing_path_env(value, field_name)
+    elif get_origin(field_type) is list:
+        return [
+            interpret_env_var_value(
+                v,
+                get_args(field_type)[0],
+                f"{field_name}[{i}]",
+            )
+            for i, v in enumerate(value.split(":"))
+        ]
     elif inspect.isclass(field_type) and issubclass(field_type, enum.Enum):
         return interpret_enum_env(value, field_type, field_name)
 
@@ -387,7 +397,11 @@ class EnvVar(Generic[T]):
         else:
             if isinstance(value, enum.Enum):
                 value = value.value
-            os.environ[self.name] = str(value)
+            if isinstance(value, list):
+                str_value = ":".join(str(v) for v in value)
+            else:
+                str_value = str(value)
+            os.environ[self.name] = str_value
 
 
 class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
@@ -570,6 +584,12 @@ class EnvironmentVariables:
 
     # Whether to use the turbopack bundler.
     REFLEX_USE_TURBOPACK: EnvVar[bool] = env_var(True)
+
+    # Additional paths to include in the hot reload. Separated by a colon.
+    REFLEX_HOT_RELOAD_INCLUDE_PATHS: EnvVar[List[Path]] = env_var([])
+
+    # Paths to exclude from the hot reload. Takes precedence over include paths. Separated by a colon.
+    REFLEX_HOT_RELOAD_EXCLUDE_PATHS: EnvVar[List[Path]] = env_var([])
 
 
 environment = EnvironmentVariables()
