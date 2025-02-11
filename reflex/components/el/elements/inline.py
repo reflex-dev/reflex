@@ -1,10 +1,22 @@
 """Inline classes."""
 
-from typing import Union
+from typing import Literal, Union
 
 from reflex.vars.base import Var
 
 from .base import BaseHTML
+
+ReferrerPolicy = Literal[
+    "",
+    "no-referrer",
+    "no-referrer-when-downgrade",
+    "origin",
+    "origin-when-cross-origin",
+    "same-origin",
+    "strict-origin",
+    "strict-origin-when-cross-origin",
+    "unsafe-url",
+]
 
 
 class A(BaseHTML):  # Inherits common attributes from BaseMeta
@@ -13,31 +25,28 @@ class A(BaseHTML):  # Inherits common attributes from BaseMeta
     tag = "a"
 
     # Specifies that the target (the file specified in the href attribute) will be downloaded when a user clicks on the hyperlink.
-    download: Var[Union[str, int, bool]]
+    download: Var[Union[str, bool]]
 
     # Specifies the URL of the page the link goes to
-    href: Var[Union[str, int, bool]]
+    href: Var[str]
 
     # Specifies the language of the linked document
-    href_lang: Var[Union[str, int, bool]]
+    href_lang: Var[str]
 
     # Specifies what media/device the linked document is optimized for
-    media: Var[Union[str, int, bool]]
+    media: Var[str]
 
     # Specifies which referrer is sent when fetching the resource
-    ping: Var[Union[str, int, bool]]
+    ping: Var[str]
 
     # Specifies the relationship between the current document and the linked document
-    referrer_policy: Var[Union[str, int, bool]]
+    referrer_policy: Var[ReferrerPolicy]
 
     # Specifies the relationship between the linked document and the current document
-    rel: Var[Union[str, int, bool]]
-
-    # Specifies the shape of the area
-    shape: Var[Union[str, int, bool]]
+    rel: Var[str]
 
     # Specifies where to open the linked document
-    target: Var[Union[str, int, bool]]
+    target: Var[Union[str, Literal["_self", "_blank", "_parent", "_top"]]]
 
 
 class Abbr(BaseHTML):
@@ -88,7 +97,7 @@ class Data(BaseHTML):
     tag = "data"
 
     # Specifies the machine-readable translation of the data element.
-    value: Var[Union[str, int, bool]]
+    value: Var[Union[str, int, float]]
 
 
 class Dfn(BaseHTML):
@@ -127,7 +136,7 @@ class Q(BaseHTML):
     tag = "q"
 
     # Specifies the source URL of the quote.
-    cite: Var[Union[str, int, bool]]
+    cite: Var[str]
 
 
 class Rp(BaseHTML):
@@ -196,7 +205,7 @@ class Time(BaseHTML):
     tag = "time"
 
     # Specifies the date and/or time of the element.
-    date_time: Var[Union[str, int, bool]]
+    date_time: Var[str]
 
 
 class U(BaseHTML):

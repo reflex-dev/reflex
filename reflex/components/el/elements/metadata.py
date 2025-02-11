@@ -1,8 +1,10 @@
 """Metadata classes."""
 
-from typing import List, Union
+from typing import List
 
 from reflex.components.el.element import Element
+from reflex.components.el.elements.inline import ReferrerPolicy
+from reflex.components.el.elements.media import CrossOrigin
 from reflex.vars.base import Var
 
 from .base import BaseHTML
@@ -14,8 +16,8 @@ class Base(BaseHTML):
     tag = "base"
 
     tag = "base"
-    href: Var[Union[str, int, bool]]
-    target: Var[Union[str, int, bool]]
+    href: Var[str]
+    target: Var[str]
 
 
 class Head(BaseHTML):
@@ -30,31 +32,31 @@ class Link(BaseHTML):
     tag = "link"
 
     # Specifies the CORS settings for the linked resource
-    cross_origin: Var[Union[str, int, bool]]
+    cross_origin: Var[CrossOrigin]
 
     # Specifies the URL of the linked document/resource
-    href: Var[Union[str, int, bool]]
+    href: Var[str]
 
     # Specifies the language of the text in the linked document
-    href_lang: Var[Union[str, int, bool]]
+    href_lang: Var[str]
 
     # Allows a browser to check the fetched link for integrity
-    integrity: Var[Union[str, int, bool]]
+    integrity: Var[str]
 
     # Specifies on what device the linked document will be displayed
-    media: Var[Union[str, int, bool]]
+    media: Var[str]
 
     # Specifies the referrer policy of the linked document
-    referrer_policy: Var[Union[str, int, bool]]
+    referrer_policy: Var[ReferrerPolicy]
 
     # Specifies the relationship between the current document and the linked one
-    rel: Var[Union[str, int, bool]]
+    rel: Var[str]
 
     # Specifies the sizes of icons for visual media
-    sizes: Var[Union[str, int, bool]]
+    sizes: Var[str]
 
     # Specifies the MIME type of the linked document
-    type: Var[Union[str, int, bool]]
+    type: Var[str]
 
 
 class Meta(BaseHTML):  # Inherits common attributes from BaseHTML
@@ -63,16 +65,16 @@ class Meta(BaseHTML):  # Inherits common attributes from BaseHTML
     tag = "meta"  # The HTML tag for this element is <meta>
 
     # Specifies the character encoding for the HTML document
-    char_set: Var[Union[str, int, bool]]
+    char_set: Var[str]
 
     # Defines the content of the metadata
-    content: Var[Union[str, int, bool]]
+    content: Var[str]
 
     # Provides an HTTP header for the information/value of the content attribute
-    http_equiv: Var[Union[str, int, bool]]
+    http_equiv: Var[str]
 
     # Specifies a name for the metadata
-    name: Var[Union[str, int, bool]]
+    name: Var[str]
 
 
 class Title(Element):
@@ -87,7 +89,7 @@ class StyleEl(Element):
 
     tag = "style"
 
-    media: Var[Union[str, int, bool]]
+    media: Var[str]
 
     special_props: List[Var] = [Var(_js_expr="suppressHydrationWarning")]
 

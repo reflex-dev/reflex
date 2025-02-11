@@ -70,7 +70,7 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
     value: Var[Union[str, int, float]]
 
     # References a datalist for suggested options
-    list: Var[Union[str, int, bool]]
+    list: Var[str]
 
     # Fired when the value of the textarea changes.
     on_change: EventHandler[input_event]

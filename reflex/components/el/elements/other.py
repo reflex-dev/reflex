@@ -1,7 +1,5 @@
 """Other classes."""
 
-from typing import Union
-
 from reflex.vars.base import Var
 
 from .base import BaseHTML
@@ -13,7 +11,7 @@ class Details(BaseHTML):
     tag = "details"
 
     # Indicates whether the details will be visible (expanded) to the user
-    open: Var[Union[str, int, bool]]
+    open: Var[bool]
 
 
 class Dialog(BaseHTML):
@@ -22,7 +20,7 @@ class Dialog(BaseHTML):
     tag = "dialog"
 
     # Indicates whether the dialog is active and can be interacted with
-    open: Var[Union[str, int, bool]]
+    open: Var[bool]
 
 
 class Summary(BaseHTML):
@@ -67,7 +65,7 @@ class Html(BaseHTML):
     tag = "html"
 
     # Specifies the URL of the document's cache manifest (obsolete in HTML5)
-    manifest: Var[Union[str, int, bool]]
+    manifest: Var[str]
 
 
 details = Details.create

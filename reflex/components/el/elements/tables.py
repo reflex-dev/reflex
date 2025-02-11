@@ -1,6 +1,6 @@
 """Tables classes."""
 
-from typing import Union
+from typing import Literal
 
 from reflex.vars.base import Var
 
@@ -12,20 +12,14 @@ class Caption(BaseHTML):
 
     tag = "caption"
 
-    # Alignment of the caption
-    align: Var[Union[str, int, bool]]
-
 
 class Col(BaseHTML):
     """Display the col element."""
 
     tag = "col"
 
-    # Alignment of the content within the column
-    align: Var[Union[str, int, bool]]
-
     # Number of columns the col element spans
-    span: Var[Union[str, int, bool]]
+    span: Var[int]
 
 
 class Colgroup(BaseHTML):
@@ -33,11 +27,8 @@ class Colgroup(BaseHTML):
 
     tag = "colgroup"
 
-    # Alignment of the content within the column group
-    align: Var[Union[str, int, bool]]
-
     # Number of columns the colgroup element spans
-    span: Var[Union[str, int, bool]]
+    span: Var[int]
 
 
 class Table(BaseHTML):
@@ -46,19 +37,16 @@ class Table(BaseHTML):
     tag = "table"
 
     # Alignment of the table
-    align: Var[Union[str, int, bool]]
+    align: Var[Literal["left", "center", "right"]]
 
     # Provides a summary of the table's purpose and structure
-    summary: Var[Union[str, int, bool]]
+    summary: Var[str]
 
 
 class Tbody(BaseHTML):
     """Display the tbody element."""
 
     tag = "tbody"
-
-    # Alignment of the content within the table body
-    align: Var[Union[str, int, bool]]
 
 
 class Td(BaseHTML):
@@ -67,25 +55,22 @@ class Td(BaseHTML):
     tag = "td"
 
     # Alignment of the content within the table cell
-    align: Var[Union[str, int, bool]]
+    align: Var[Literal["left", "center", "right", "justify", "char"]]
 
     # Number of columns a cell should span
-    col_span: Var[Union[str, int, bool]]
+    col_span: Var[int]
 
     # IDs of the headers associated with this cell
-    headers: Var[Union[str, int, bool]]
+    headers: Var[str]
 
     # Number of rows a cell should span
-    row_span: Var[Union[str, int, bool]]
+    row_span: Var[int]
 
 
 class Tfoot(BaseHTML):
     """Display the tfoot element."""
 
     tag = "tfoot"
-
-    # Alignment of the content within the table footer
-    align: Var[Union[str, int, bool]]
 
 
 class Th(BaseHTML):
@@ -94,19 +79,19 @@ class Th(BaseHTML):
     tag = "th"
 
     # Alignment of the content within the table header cell
-    align: Var[Union[str, int, bool]]
+    align: Var[Literal["left", "center", "right", "justify", "char"]]
 
     # Number of columns a header cell should span
-    col_span: Var[Union[str, int, bool]]
+    col_span: Var[int]
 
     # IDs of the headers associated with this header cell
-    headers: Var[Union[str, int, bool]]
+    headers: Var[str]
 
     # Number of rows a header cell should span
-    row_span: Var[Union[str, int, bool]]
+    row_span: Var[int]
 
     # Scope of the header cell (row, col, rowgroup, colgroup)
-    scope: Var[Union[str, int, bool]]
+    scope: Var[str]
 
 
 class Thead(BaseHTML):
@@ -114,17 +99,11 @@ class Thead(BaseHTML):
 
     tag = "thead"
 
-    # Alignment of the content within the table header
-    align: Var[Union[str, int, bool]]
-
 
 class Tr(BaseHTML):
     """Display the tr element."""
 
     tag = "tr"
-
-    # Alignment of the content within the table row
-    align: Var[Union[str, int, bool]]
 
 
 caption = Caption.create
