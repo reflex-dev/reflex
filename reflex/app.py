@@ -164,11 +164,11 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
         return window_alert("\n".join(error_message))
 
 
-def default_overlay_component() -> Component:
-    """Default overlay_component attribute for App.
+def extra_overlay_function() -> Optional[Component]:
+    """Extra overlay function to add to the overlay component.
 
     Returns:
-        The default overlay_component, which is a connection_modal.
+        The extra overlay function.
     """
     config = get_config()
 
@@ -178,7 +178,8 @@ def default_overlay_component() -> Component:
         module, _, function_name = extra_config.rpartition(".")
         try:
             module = __import__(module)
-            config_overlay = getattr(module, function_name)()
+            config_overlay = Fragment.create(getattr(module, function_name)())
+            config_overlay._get_all_imports()
         except Exception as e:
             from reflex.compiler.utils import save_error
 
@@ -188,13 +189,27 @@ def default_overlay_component() -> Component:
                 f"Error loading extra_overlay_function {extra_config}. Error saved to {log_path}"
             )
 
-    return Fragment.create(
-        connection_pulser(),
-        connection_toaster(),
-        *([config_overlay] if config_overlay else []),
-        *([backend_disabled()] if config.is_reflex_cloud else []),
-        *codespaces.codespaces_auto_redirect(),
-    )
+    return config_overlay
+
+
+def default_overlay_component() -> Component:
+    """Default overlay_component attribute for App.
+
+    Returns:
+        The default overlay_component, which is a connection_modal.
+    """
+    config = get_config()
+    from reflex.components.component import memo
+
+    def default_overlay_components():
+        return Fragment.create(
+            connection_pulser(),
+            connection_toaster(),
+            *([backend_disabled()] if config.is_reflex_cloud else []),
+            *codespaces.codespaces_auto_redirect(),
+        )
+
+    return Fragment.create(memo(default_overlay_components)())
 
 
 def default_error_boundary(*children: Component) -> Component:
@@ -266,11 +281,26 @@ class App(MiddlewareMixin, LifespanMixin):
 
     # A component that is present on every page (defaults to the Connection Error banner).
     overlay_component: Optional[Union[Component, ComponentCallable]] = (
-        dataclasses.field(default_factory=default_overlay_component)
+        dataclasses.field(default=None)
     )
 
     # Error boundary component to wrap the app with.
-    error_boundary: Optional[ComponentCallable] = default_error_boundary
+    error_boundary: Optional[ComponentCallable] = dataclasses.field(default=None)
+
+    # App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
+    app_wraps: Dict[tuple[int, str], Callable[[bool], Optional[Component]]] = (
+        dataclasses.field(
+            default_factory=lambda: {
+                (55, "ErrorBoundary"): (
+                    lambda stateful: default_error_boundary() if stateful else None
+                ),
+                (5, "Overlay"): (
+                    lambda stateful: default_overlay_component() if stateful else None
+                ),
+                (4, "ExtraOverlay"): lambda stateful: extra_overlay_function(),
+            }
+        )
+    )
 
     # Components to add to the head of every page.
     head_components: List[Component] = dataclasses.field(default_factory=list)
@@ -880,25 +910,6 @@ class App(MiddlewareMixin, LifespanMixin):
         for k, component in self._pages.items():
             self._pages[k] = self._add_overlay_to_component(component)
 
-    def _add_error_boundary_to_component(self, component: Component) -> Component:
-        if self.error_boundary is None:
-            return component
-
-        component = self.error_boundary(*component.children)
-
-        return component
-
-    def _setup_error_boundary(self):
-        """If a State is not used and no error_boundary is specified, do not render the error boundary."""
-        if self._state is None and self.error_boundary is default_error_boundary:
-            self.error_boundary = None
-
-        for k, component in self._pages.items():
-            # Skip the 404 page
-            if k == constants.Page404.SLUG:
-                continue
-            self._pages[k] = self._add_error_boundary_to_component(component)
-
     def _setup_sticky_badge(self):
         """Add the sticky badge to the app."""
         for k, component in self._pages.items():
@@ -1039,7 +1050,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
         self._validate_var_dependencies()
         self._setup_overlay_component()
-        self._setup_error_boundary()
         if is_prod_mode() and config.show_built_with_reflex:
             self._setup_sticky_badge()
 
@@ -1065,6 +1075,22 @@ class App(MiddlewareMixin, LifespanMixin):
 
             # Add the custom components from the page to the set.
             custom_components |= component._get_all_custom_components()
+
+        # Add the app wraps to the app.
+        for key, app_wrap in self.app_wraps.items():
+            component = app_wrap(self._state is not None)
+            if component is not None:
+                app_wrappers[key] = component
+                custom_components |= component._get_all_custom_components()
+
+        if self.error_boundary:
+            console.deprecate(
+                feature_name="App.error_boundary",
+                reason="Use app_wraps instead.",
+                deprecation_version="0.7.1",
+                removal_version="0.8.0",
+            )
+            app_wrappers[(55, "ErrorBoundary")] = self.error_boundary()
 
         # Perform auto-memoization of stateful components.
         with console.timing("Auto-memoize StatefulComponents"):

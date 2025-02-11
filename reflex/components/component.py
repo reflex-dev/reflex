@@ -23,6 +23,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import Self
+
 import reflex.state
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
@@ -685,7 +687,7 @@ class Component(BaseComponent, ABC):
         }
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(cls, *children, **props) -> Self:
         """Create the component.
 
         Args:
