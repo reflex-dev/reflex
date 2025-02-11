@@ -24,6 +24,7 @@ from datetime import datetime
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, List, NamedTuple, Optional
+from urllib.parse import urlparse
 
 import httpx
 import typer
@@ -1679,9 +1680,11 @@ def validate_and_create_app_using_remote_template(
 
         template_url = templates[template].code_url
     else:
+        template_parsed_url = urlparse(template)
         # Check if the template is a github repo.
-        if template.startswith("https://github.com"):
-            template_url = f"{template.strip('/').replace('.git', '')}/archive/main.zip"
+        if template_parsed_url.hostname == "github.com":
+            path = template_parsed_url.path.strip("/").removesuffix(".git")
+            template_url = f"https://github.com/{path}/archive/main.zip"
         else:
             console.error(f"Template `{template}` not found or invalid.")
             raise typer.Exit(1)
