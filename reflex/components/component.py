@@ -1792,9 +1792,6 @@ class CustomComponent(Component):
             include_children=include_children, ignore_ids=ignore_ids
         )
         yield from filter(lambda prop: isinstance(prop, Var), self.props.values())
-        yield from self.get_component(self)._get_vars(
-            include_children=include_children, ignore_ids=ignore_ids
-        )
 
     @lru_cache(maxsize=None)  # noqa: B019
     def get_component(self) -> Component:
