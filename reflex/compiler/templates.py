@@ -48,9 +48,7 @@ class ReflexJinjaEnvironment(Environment):
 
     def __init__(self) -> None:
         """Set default environment."""
-        extensions = ["jinja2.ext.debug"]
         super().__init__(
-            extensions=extensions,
             trim_blocks=True,
             lstrip_blocks=True,
             auto_reload=False,
