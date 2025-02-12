@@ -46,10 +46,26 @@ def render_multiple_pages(app, num: int):
     class State(rx.State):
         """The app state."""
 
-        position: str
-        college: str
-        age: Tuple[int, int] = (18, 50)
-        salary: Tuple[int, int] = (0, 25000000)
+        position: rx.Field[str]
+        college: rx.Field[str]
+        age: rx.Field[Tuple[int, int]] = rx.field((18, 50))
+        salary: rx.Field[Tuple[int, int]] = rx.field((0, 25000000))
+
+        @rx.event
+        def set_position(self, value: str):
+            self.position = value
+
+        @rx.event
+        def set_college(self, value: str):
+            self.college = value
+
+        @rx.event
+        def set_age(self, value: list[int]):
+            self.age = (value[0], value[1])
+
+        @rx.event
+        def set_salary(self, value: list[int]):
+            self.salary = (value[0], value[1])
 
     comp1 = rx.center(
         rx.theme_panel(),
@@ -74,13 +90,13 @@ def render_multiple_pages(app, num: int):
                 rx.select(
                     ["C", "PF", "SF", "PG", "SG"],
                     placeholder="Select a position. (All)",
-                    on_change=State.set_position,  # pyright: ignore [reportAttributeAccessIssue]
+                    on_change=State.set_position,
                     size="3",
                 ),
                 rx.select(
                     college,
                     placeholder="Select a college. (All)",
-                    on_change=State.set_college,  # pyright: ignore [reportAttributeAccessIssue]
+                    on_change=State.set_college,
                     size="3",
                 ),
             ),
@@ -95,7 +111,7 @@ def render_multiple_pages(app, num: int):
                         default_value=[18, 50],
                         min=18,
                         max=50,
-                        on_value_commit=State.set_age,  # pyright: ignore [reportAttributeAccessIssue]
+                        on_value_commit=State.set_age,
                     ),
                     align_items="left",
                     width="100%",
@@ -110,7 +126,7 @@ def render_multiple_pages(app, num: int):
                         default_value=[0, 25000000],
                         min=0,
                         max=25000000,
-                        on_value_commit=State.set_salary,  # pyright: ignore [reportAttributeAccessIssue]
+                        on_value_commit=State.set_salary,
                     ),
                     align_items="left",
                     width="100%",
