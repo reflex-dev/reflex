@@ -355,6 +355,9 @@ class App(MiddlewareMixin, LifespanMixin):
         [Exception], Union[EventSpec, List[EventSpec], None]
     ] = default_backend_exception_handler
 
+    # Put the toast provider in the app wrap.
+    bundle_toaster: bool = True
+
     @property
     def api(self) -> FastAPI | None:
         """Get the backend api.
@@ -1010,6 +1013,10 @@ class App(MiddlewareMixin, LifespanMixin):
         should_compile = self._should_compile()
 
         if not should_compile:
+            if self.bundle_toaster:
+                from reflex.components.sonner.toast import Toaster
+
+                Toaster.is_used = True
             with console.timing("Evaluate Pages (Backend)"):
                 for route in self._unevaluated_pages:
                     console.debug(f"Evaluating page: {route}")
@@ -1038,6 +1045,20 @@ class App(MiddlewareMixin, LifespanMixin):
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,
         )
+
+        if self.bundle_toaster:
+            from reflex.components.component import memo
+            from reflex.components.sonner.toast import toast
+
+            internal_toast_provider = toast.provider()
+
+            @memo
+            def memoized_toast_provider():
+                return internal_toast_provider
+
+            toast_provider = Fragment.create(memoized_toast_provider())
+
+            app_wrappers[(1, "ToasterProvider")] = toast_provider
 
         with console.timing("Evaluate Pages (Frontend)"):
             for route in self._unevaluated_pages:
@@ -1081,7 +1102,9 @@ class App(MiddlewareMixin, LifespanMixin):
             component = app_wrap(self._state is not None)
             if component is not None:
                 app_wrappers[key] = component
-                custom_components |= component._get_all_custom_components()
+
+        for component in app_wrappers.values():
+            custom_components |= component._get_all_custom_components()
 
         if self.error_boundary:
             console.deprecate(
