@@ -97,6 +97,7 @@ from reflex.state import (
     StateManager,
     StateUpdate,
     _substate_key,
+    all_base_state_classes,
     code_uses_state_contexts,
 )
 from reflex.utils import (
@@ -113,6 +114,7 @@ from reflex.utils.imports import ImportVar
 
 if TYPE_CHECKING:
     from reflex.vars import Var
+
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -321,6 +323,9 @@ class App(MiddlewareMixin, LifespanMixin):
 
     # A map from a page route to the component to render. Users should use `add_page`.
     _pages: Dict[str, Component] = dataclasses.field(default_factory=dict)
+
+    # A mapping of pages which created states as they were being evaluated.
+    _stateful_pages: Dict[str, None] = dataclasses.field(default_factory=dict)
 
     # The backend API object.
     _api: FastAPI | None = None
@@ -539,8 +544,10 @@ class App(MiddlewareMixin, LifespanMixin):
         """Add optional api endpoints (_upload)."""
         if not self.api:
             return
-
-        if Upload.is_used:
+        upload_is_used_marker = (
+            prerequisites.get_web_dir() / "backend" / "upload_is_used"
+        )
+        if Upload.is_used or upload_is_used_marker.exists():
             # To upload files.
             self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
 
@@ -550,6 +557,9 @@ class App(MiddlewareMixin, LifespanMixin):
                 StaticFiles(directory=get_upload_dir()),
                 name="uploaded_files",
             )
+
+            upload_is_used_marker.parent.mkdir(parents=True, exist_ok=True)
+            upload_is_used_marker.touch()
         if codespaces.is_running_in_codespaces():
             self.api.get(str(constants.Endpoint.AUTH_CODESPACE))(
                 codespaces.auth_codespace
@@ -692,12 +702,18 @@ class App(MiddlewareMixin, LifespanMixin):
             route: The route of the page to compile.
             save_page: If True, the compiled page is saved to self._pages.
         """
+        n_states_before = len(all_base_state_classes)
         component, enable_state = compiler.compile_unevaluated_page(
             route, self._unevaluated_pages[route], self._state, self.style, self.theme
         )
 
+        # Indicate that the app should use state.
         if enable_state:
             self._enable_state()
+
+        # Indicate that evaluating this page creates one or more state classes.
+        if len(all_base_state_classes) > n_states_before:
+            self._stateful_pages[route] = None
 
         # Add the page.
         self._check_routes_conflict(route)
@@ -986,6 +1002,19 @@ class App(MiddlewareMixin, LifespanMixin):
 
         def get_compilation_time() -> str:
             return str(datetime.now().time()).split(".")[0]
+
+        should_compile = self._should_compile()
+        backend_dir = prerequisites.get_web_dir() / "backend"
+        if not should_compile and backend_dir.exists():
+            enable_state_marker = backend_dir / "enable_state"
+            if enable_state_marker.exists():
+                stateful_pages = json.load(enable_state_marker.open("r"))
+                for route in stateful_pages:
+                    console.info(f"BE Evaluating stateful page: {route}")
+                    self._compile_page(route, save_page=False)
+                self._enable_state()
+            self._add_optional_endpoints()
+            return
 
         # Render a default 404 page if the user didn't supply one
         if constants.Page404.SLUG not in self._unevaluated_pages:
@@ -1276,6 +1305,12 @@ class App(MiddlewareMixin, LifespanMixin):
         with console.timing("Write to Disk"):
             for output_path, code in compile_results:
                 compiler_utils.write_page(output_path, code)
+
+        # Pickle dynamic states
+        if self._state is not None:
+            enable_state = prerequisites.get_web_dir() / "backend" / "enable_state"
+            enable_state.parent.mkdir(parents=True, exist_ok=True)
+            json.dump(list(self._stateful_pages), enable_state.open("w"))
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
