@@ -651,7 +651,7 @@ def test_create_filters_none_props(test_component):
 
     # Assert that the style prop is present in the component's props
     assert str(component.style["color"]) == '"white"'
-    assert str(component.style["text-align"]) == '"center"'
+    assert str(component.style["textAlign"]) == '"center"'
 
 
 @pytest.mark.parametrize(
