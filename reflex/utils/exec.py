@@ -297,6 +297,8 @@ def get_reload_paths() -> Sequence[Path]:
             if all(not path.samefile(exclude) for exclude in exclude_dirs)
         )
 
+    console.debug(f"Reload paths: {list(map(str, reload_paths))}")
+
     return reload_paths
 
 
