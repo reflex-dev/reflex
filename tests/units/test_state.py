@@ -2591,10 +2591,7 @@ def test_mutable_copy(mutable_state: MutableTestState, copy_func: Callable):
         assert getattr(ms_copy, attr) is not getattr(mutable_state, attr)
     ms_copy.custom.array.append(42)
     assert "custom" in ms_copy.dirty_vars
-    if copy_func is copy.copy:
-        assert "custom" in mutable_state.dirty_vars
-    else:
-        assert not mutable_state.dirty_vars
+    assert not mutable_state.dirty_vars
 
 
 @pytest.mark.parametrize(
