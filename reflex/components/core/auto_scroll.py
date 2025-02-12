@@ -5,7 +5,7 @@ from __future__ import annotations
 from reflex.components.el.elements.typography import Div
 from reflex.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex.utils.imports import ImportDict
-from reflex.vars.base import Var
+from reflex.vars.base import Var, get_unique_variable_name
 
 
 class AutoScroll(Div):
@@ -25,9 +25,8 @@ class AutoScroll(Div):
             An AutoScroll component.
         """
         props.setdefault("overflow", "auto")
-        custom_attrs = props.pop("custom_attrs", {})
-        custom_attrs["ref"] = Var("containerRef")
-        return super().create(*children, **props, custom_attrs=custom_attrs)
+        props.setdefault("id", get_unique_variable_name())
+        return super().create(*children, **props)
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports required for the component.
@@ -43,15 +42,16 @@ class AutoScroll(Div):
         Returns:
             The hooks required for the component.
         """
+        ref_name = self.get_ref()
         return [
             "const containerRef = useRef(null);",
             "const wasNearBottom = useRef(false);",
             "const hadScrollbar = useRef(false);",
-            """
-const checkIfNearBottom = () => {
-    if (!containerRef.current) return;
+            f"""
+const checkIfNearBottom = () => {{
+    if (!{ref_name}.current) return;
 
-    const container = containerRef.current;
+    const container = {ref_name}.current;
     const nearBottomThreshold = 50; // pixels from bottom to trigger auto-scroll
 
     const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
@@ -60,34 +60,35 @@ const checkIfNearBottom = () => {
 
     // Track if container had a scrollbar
     hadScrollbar.current = container.scrollHeight > container.clientHeight;
-};
+}};
 """,
-            """
-const scrollToBottomIfNeeded = () => {
-    if (!containerRef.current) return;
+            f"""
+const scrollToBottomIfNeeded = () => {{
+    if (!{ref_name}.current) return;
 
-    const container = containerRef.current;
+    const container = {ref_name}.current;
     const hasScrollbarNow = container.scrollHeight > container.clientHeight;
 
     // Scroll if:
     // 1. User was near bottom, OR
     // 2. Container didn't have scrollbar before but does now
-    if (wasNearBottom.current || (!hadScrollbar.current && hasScrollbarNow)) {
+    if (wasNearBottom.current || (!hadScrollbar.current && hasScrollbarNow)) {{
       container.scrollTop = container.scrollHeight;
-    }
+    }}
 
     // Update scrollbar state for next check
-    hadScrollbar.current = hasScrollbarNow;};
+    hadScrollbar.current = hasScrollbarNow;
+}};
 """,
-            """
-  useEffect(() => {
-    const container = containerRef.current;
+            f"""
+useEffect(() => {{
+    const container = {ref_name}.current;
     if (!container) return;
 
     // Create ResizeObserver to detect height changes
-    const resizeObserver = new ResizeObserver(() => {
-      scrollToBottomIfNeeded();
-    });
+    const resizeObserver = new ResizeObserver(() => {{
+        scrollToBottomIfNeeded();
+    }});
 
     // Track scroll position before height changes
     container.addEventListener('scroll', checkIfNearBottom);
@@ -98,11 +99,11 @@ const scrollToBottomIfNeeded = () => {
     // Observe container for size changes
     resizeObserver.observe(container);
 
-    return () => {
-      container.removeEventListener('scroll', checkIfNearBottom);
-      resizeObserver.disconnect();
-    };
-  });
+    return () => {{
+        container.removeEventListener('scroll', checkIfNearBottom);
+        resizeObserver.disconnect();
+    }};
+}});
 """,
         ]
 
