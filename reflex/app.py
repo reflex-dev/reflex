@@ -30,6 +30,7 @@ from typing import (
     Optional,
     Set,
     Type,
+    TypeVar,
     Union,
     get_args,
     get_type_hints,
@@ -1077,7 +1078,7 @@ class App(MiddlewareMixin, LifespanMixin):
         progress.advance(task)
 
         # Store the compile results.
-        compile_results = []
+        compile_results: list[tuple[str, str]] = []
 
         progress.advance(task)
 
@@ -1159,7 +1160,25 @@ class App(MiddlewareMixin, LifespanMixin):
         # Use a forking process pool, if possible.  Much faster, especially for large sites.
         # Fallback to ThreadPoolExecutor as something that will always work.
         executor = None
-        if (
+        if environment.REFLEX_COMPILE_USE_MAIN_THREAD.get():
+            T = TypeVar("T")
+
+            class MainThreadExecutor:
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, *args):
+                    pass
+
+                def submit(
+                    self, fn: Callable[..., T], *args, **kwargs
+                ) -> concurrent.futures.Future[T]:
+                    future_job = concurrent.futures.Future()
+                    future_job.set_result(fn(*args, **kwargs))
+                    return future_job
+
+            executor = MainThreadExecutor()
+        elif (
             platform.system() in ("Linux", "Darwin")
             and (number_of_processes := environment.REFLEX_COMPILE_PROCESSES.get())
             is not None
@@ -1179,9 +1198,9 @@ class App(MiddlewareMixin, LifespanMixin):
         ExecutorSafeFunctions.STATE = self._state
 
         with executor:
-            result_futures = []
+            result_futures: list[concurrent.futures.Future[tuple[str, str]]] = []
 
-            def _submit_work(fn: Callable, *args, **kwargs):
+            def _submit_work(fn: Callable[..., tuple[str, str]], *args, **kwargs):
                 f = executor.submit(fn, *args, **kwargs)
                 result_futures.append(f)
 
@@ -1236,10 +1255,12 @@ class App(MiddlewareMixin, LifespanMixin):
         progress.advance(task)
 
         # Compile custom components.
-        *custom_components_result, custom_components_imports = (
-            compiler.compile_components(custom_components)
-        )
-        compile_results.append(custom_components_result)
+        (
+            custom_components_output,
+            custom_components_result,
+            custom_components_imports,
+        ) = compiler.compile_components(custom_components)
+        compile_results.append((custom_components_output, custom_components_result))
         all_imports.update(custom_components_imports)
 
         progress.advance(task)
