@@ -237,7 +237,7 @@ def format_style_key(key: str) -> Tuple[str, ...]:
     Returns:
         Tuple of css style names corresponding to the key provided.
     """
-    key = format.to_camel_case(key, allow_hyphens=True)
+    key = format.to_camel_case(key)
     return STYLE_PROP_SHORTHAND_MAPPING.get(key, (key,))
 
 
