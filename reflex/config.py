@@ -628,6 +628,7 @@ class Config(Base):
         """Pydantic config for the config."""
 
         validate_assignment = True
+        use_enum_values = False
 
     # The name of the app (should match the name of the app directory).
     app_name: str
@@ -757,6 +758,9 @@ class Config(Base):
         kwargs.update(env_kwargs)
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
+
+        # Set the log level for this process
+        console.set_log_level(self.loglevel)
 
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS
