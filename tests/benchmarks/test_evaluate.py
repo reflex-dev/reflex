@@ -1,6 +1,11 @@
-import pytest
+from typing import Callable
+
+from pytest_codspeed import BenchmarkFixture
+
+from reflex.components.component import Component
 
 
-@pytest.mark.benchmark
-def test_evaluate_page(unevaluated_page):
-    unevaluated_page()
+def test_evaluate_page(
+    unevaluated_page: Callable[[], Component], benchmark: BenchmarkFixture
+):
+    benchmark(unevaluated_page)
