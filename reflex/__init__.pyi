@@ -34,6 +34,7 @@ from .components.component import Component as Component
 from .components.component import ComponentNamespace as ComponentNamespace
 from .components.component import NoSSRComponent as NoSSRComponent
 from .components.component import memo as memo
+from .components.core.auto_scroll import auto_scroll as auto_scroll
 from .components.core.banner import connection_banner as connection_banner
 from .components.core.banner import connection_modal as connection_modal
 from .components.core.breakpoints import breakpoints as breakpoints
