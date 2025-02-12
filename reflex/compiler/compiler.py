@@ -508,7 +508,7 @@ def compile_tailwind(
         The compiled Tailwind config.
     """
     # Get the path for the output file.
-    output_path = get_web_dir() / constants.Tailwind.CONFIG
+    output_path = str((get_web_dir() / constants.Tailwind.CONFIG).absolute())
 
     # Compile the config.
     code = _compile_tailwind(config)
