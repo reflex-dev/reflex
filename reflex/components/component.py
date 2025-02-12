@@ -351,12 +351,16 @@ class Component(BaseComponent, ABC):
             if field.name not in props:
                 continue
 
+            field_type = types.value_inside_optional(
+                types.get_field_type(cls, field.name)
+            )
+
             # Set default values for any props.
-            if types._issubclass(field.type_, Var):
+            if types._issubclass(field_type, Var):
                 field.required = False
                 if field.default is not None:
                     field.default = LiteralVar.create(field.default)
-            elif types._issubclass(field.type_, EventHandler):
+            elif types._issubclass(field_type, EventHandler):
                 field.required = False
 
         # Ensure renamed props from parent classes are applied to the subclass.
@@ -420,7 +424,9 @@ class Component(BaseComponent, ABC):
                 field_type = EventChain
             elif key in props:
                 # Set the field type.
-                field_type = fields[key].type_
+                field_type = types.value_inside_optional(
+                    types.get_field_type(type(self), key)
+                )
 
             else:
                 continue
@@ -442,7 +448,10 @@ class Component(BaseComponent, ABC):
                 try:
                     kwargs[key] = determine_key(value)
 
-                    expected_type = fields[key].outer_type_.__args__[0]
+                    expected_type = types.get_args(
+                        types.get_field_type(type(self), key)
+                    )[0]
+
                     # validate literal fields.
                     types.validate_literal(
                         key, value, expected_type, type(self).__name__
@@ -457,7 +466,7 @@ class Component(BaseComponent, ABC):
                 except TypeError:
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
-                    expected_type = fields[key].outer_type_
+                    expected_type = types.get_field_type(type(self), key)
                 if types.is_union(passed_type):
                     # We need to check all possible types in the union.
                     passed_types = (
@@ -569,8 +578,11 @@ class Component(BaseComponent, ABC):
 
         # Look for component specific triggers,
         # e.g. variable declared as EventHandler types.
-        for field in self.get_fields().values():
-            if types._issubclass(field.outer_type_, EventHandler):
+        for name, field in self.get_fields().items():
+            if types._issubclass(
+                types.value_inside_optional(types.get_field_type(type(self), name)),
+                EventHandler,
+            ):
                 args_spec = None
                 annotation = field.annotation
                 if (metadata := getattr(annotation, "__metadata__", None)) is not None:
@@ -681,9 +693,11 @@ class Component(BaseComponent, ABC):
         """
         return {
             name
-            for name, field in cls.get_fields().items()
+            for name in cls.get_fields()
             if name in cls.get_props()
-            and types._issubclass(field.outer_type_, Component)
+            and types._issubclass(
+                types.value_inside_optional(types.get_field_type(cls, name)), Component
+            )
         }
 
     @classmethod
