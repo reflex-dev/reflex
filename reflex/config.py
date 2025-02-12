@@ -26,8 +26,12 @@ from typing import (
     get_origin,
 )
 
+from reflex_cli.constants.hosting import Hosting
 from typing_extensions import Annotated, get_type_hints
 
+from reflex import constants
+from reflex.base import Base
+from reflex.utils import console
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
 from reflex.utils.types import GenericType, is_union, value_inside_optional
 
@@ -36,11 +40,11 @@ try:
 except ModuleNotFoundError:
     import pydantic
 
-from reflex_cli.constants.hosting import Hosting
 
-from reflex import constants
-from reflex.base import Base
-from reflex.utils import console
+try:
+    from dotenv import load_dotenv  # pyright: ignore [reportMissingImports]
+except ImportError:
+    load_dotenv = None
 
 
 class DBConfig(Base):
@@ -624,6 +628,7 @@ class Config(Base):
         """Pydantic config for the config."""
 
         validate_assignment = True
+        use_enum_values = False
 
     # The name of the app (should match the name of the app directory).
     app_name: str
@@ -754,6 +759,9 @@ class Config(Base):
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
 
+        # Set the log level for this process
+        console.set_log_level(self.loglevel)
+
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS
             and not self.redis_url
@@ -793,16 +801,15 @@ class Config(Base):
         Returns:
             The updated config values.
         """
-        if self.env_file:
-            try:
-                from dotenv import load_dotenv  # pyright: ignore [reportMissingImports]
-
-                # load env file if exists
-                load_dotenv(self.env_file, override=True)
-            except ImportError:
+        env_file = self.env_file or os.environ.get("ENV_FILE", None)
+        if env_file:
+            if load_dotenv is None:
                 console.error(
                     """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
                 )
+            else:
+                # load env file if exists
+                load_dotenv(env_file, override=True)
 
         updated_values = {}
         # Iterate over the fields.
