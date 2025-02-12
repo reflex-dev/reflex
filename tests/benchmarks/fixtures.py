@@ -374,10 +374,10 @@ def _stateful_page():
 
 
 @pytest.fixture(params=[_simple_page, _complicated_page, _stateful_page])
-def unevaluated_page(request):
+def unevaluated_page(request: pytest.FixtureRequest):
     return request.param
 
 
 @pytest.fixture(params=[_simple_page, _complicated_page, _stateful_page])
-def evaluated_page(request):
+def evaluated_page(request: pytest.FixtureRequest):
     return request.param()
