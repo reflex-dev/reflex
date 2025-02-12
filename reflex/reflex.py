@@ -127,8 +127,8 @@ def _run(
     env: constants.Env = constants.Env.DEV,
     frontend: bool = True,
     backend: bool = True,
-    frontend_port: int = config.frontend_port,
-    backend_port: int = config.backend_port,
+    frontend_port: int | None = None,
+    backend_port: int | None = None,
     backend_host: str = config.backend_host,
     loglevel: constants.LogLevel = config.loglevel,
 ):
@@ -158,17 +158,28 @@ def _run(
 
     # Find the next available open port if applicable.
     if frontend:
+        auto_increment_frontend = not bool(frontend_port or config.frontend_port)
         frontend_port = processes.handle_port(
             "frontend",
-            frontend_port,
-            constants.DefaultPorts.FRONTEND_PORT,
+            (
+                frontend_port
+                or config.frontend_port
+                or constants.DefaultPorts.FRONTEND_PORT
+            ),
+            auto_increment=auto_increment_frontend,
         )
 
     if backend:
+        auto_increment_backend = not bool(backend_port or config.backend_port)
+
         backend_port = processes.handle_port(
             "backend",
-            backend_port,
-            constants.DefaultPorts.BACKEND_PORT,
+            (
+                backend_port
+                or config.backend_port
+                or constants.DefaultPorts.BACKEND_PORT
+            ),
+            auto_increment=auto_increment_backend,
         )
 
     # Apply the new ports to the config.
@@ -246,7 +257,7 @@ def _run(
     # Start the frontend and backend.
     with processes.run_concurrently_context(*commands):
         # In dev mode, run the backend on the main thread.
-        if backend and env == constants.Env.DEV:
+        if backend and backend_port and env == constants.Env.DEV:
             backend_cmd(
                 backend_host, int(backend_port), loglevel.subprocess_level(), frontend
             )
@@ -275,10 +286,14 @@ def run(
         envvar=environment.REFLEX_BACKEND_ONLY.name,
     ),
     frontend_port: int = typer.Option(
-        config.frontend_port, help="Specify a different frontend port."
+        config.frontend_port,
+        help="Specify a different frontend port.",
+        envvar=environment.REFLEX_FRONTEND_PORT.name,
     ),
     backend_port: int = typer.Option(
-        config.backend_port, help="Specify a different backend port."
+        config.backend_port,
+        help="Specify a different backend port.",
+        envvar=environment.REFLEX_BACKEND_PORT.name,
     ),
     backend_host: str = typer.Option(
         config.backend_host, help="Specify the backend host."

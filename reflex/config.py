@@ -562,6 +562,12 @@ class EnvironmentVariables:
     # Whether to run the frontend only. Exclusive with REFLEX_BACKEND_ONLY.
     REFLEX_FRONTEND_ONLY: EnvVar[bool] = env_var(False)
 
+    # The port to run the frontend on.
+    REFLEX_FRONTEND_PORT: EnvVar[int | None] = env_var(None)
+
+    # The port to run the backend on.
+    REFLEX_BACKEND_PORT: EnvVar[int | None] = env_var(None)
+
     # Reflex internal env to reload the config.
     RELOAD_CONFIG: EnvVar[bool] = env_var(False, internal=True)
 
@@ -640,19 +646,21 @@ class Config(Base):
     loglevel: constants.LogLevel = constants.LogLevel.DEFAULT
 
     # The port to run the frontend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
-    frontend_port: int = constants.DefaultPorts.FRONTEND_PORT
+    frontend_port: int | None = None
 
     # The path to run the frontend on. For example, "/app" will run the frontend on http://localhost:3000/app
     frontend_path: str = ""
 
     # The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
-    backend_port: int = constants.DefaultPorts.BACKEND_PORT
+    backend_port: int | None = None
 
     # The backend url the frontend will connect to. This must be updated if the backend is hosted elsewhere, or in production.
-    api_url: str = f"http://localhost:{backend_port}"
+    api_url: str = f"http://localhost:{constants.DefaultPorts.BACKEND_PORT}"
 
     # The url the frontend will be hosted on.
-    deploy_url: Optional[str] = f"http://localhost:{frontend_port}"
+    deploy_url: Optional[str] = (
+        f"http://localhost:{constants.DefaultPorts.FRONTEND_PORT}"
+    )
 
     # The url the backend will be hosted on.
     backend_host: str = "0.0.0.0"
