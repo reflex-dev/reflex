@@ -278,7 +278,7 @@ def get_reload_paths() -> Sequence[Path]:
             if path.name.startswith("__"):
                 # ignore things like __pycache__
                 return True
-        return path.name not in (".gitignore", "uploaded_files")
+        return path.name in (".gitignore", "uploaded_files")
 
     reload_paths = (
         tuple(
