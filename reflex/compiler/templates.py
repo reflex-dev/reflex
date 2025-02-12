@@ -53,6 +53,7 @@ class ReflexJinjaEnvironment(Environment):
             extensions=extensions,
             trim_blocks=True,
             lstrip_blocks=True,
+            auto_reload=False,
         )
         self.filters["json_dumps"] = json_dumps
         self.filters["react_setter"] = lambda state: f"set{state.capitalize()}"
