@@ -22,6 +22,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncIterator,
+    BinaryIO,
     Callable,
     Coroutine,
     Dict,
@@ -35,12 +36,15 @@ from typing import (
     get_type_hints,
 )
 
-from fastapi import FastAPI, HTTPException, Request, UploadFile
+from fastapi import FastAPI, HTTPException, Request
+from fastapi import UploadFile as FastAPIUploadFile
 from fastapi.middleware import cors
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
+from starlette.datastructures import Headers
+from starlette.datastructures import UploadFile as StarletteUploadFile
 from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
 
@@ -229,6 +233,53 @@ class OverlayFragment(Fragment):
     """Alias for Fragment, used to wrap the overlay_component."""
 
     pass
+
+
+@dataclasses.dataclass(frozen=True)
+class UploadFile(StarletteUploadFile):
+    """A file uploaded to the server.
+
+    Args:
+        file: The standard Python file object (non-async).
+        filename: The original file name.
+        size: The size of the file in bytes.
+        headers: The headers of the request.
+    """
+
+    file: BinaryIO
+
+    path: Optional[Path] = dataclasses.field(default=None)
+
+    _deprecated_filename: Optional[str] = dataclasses.field(default=None)
+
+    size: Optional[int] = dataclasses.field(default=None)
+
+    headers: Headers = dataclasses.field(default_factory=Headers)
+
+    @property
+    def name(self) -> Optional[str]:
+        """Get the name of the uploaded file.
+
+        Returns:
+            The name of the uploaded file.
+        """
+        if self.path:
+            return self.path.name
+
+    @property
+    def filename(self) -> Optional[str]:
+        """Get the filename of the uploaded file.
+
+        Returns:
+            The filename of the uploaded file.
+        """
+        console.deprecate(
+            feature_name="UploadFile.filename",
+            reason="Use UploadFile.name instead.",
+            deprecation_version="0.7.1",
+            removal_version="0.8.0",
+        )
+        return self._deprecated_filename
 
 
 @dataclasses.dataclass(
@@ -1585,7 +1636,7 @@ def upload(app: App):
         The upload function.
     """
 
-    async def upload_file(request: Request, files: List[UploadFile]):
+    async def upload_file(request: Request, files: List[FastAPIUploadFile]):
         """Upload a file.
 
         Args:
@@ -1661,7 +1712,8 @@ def upload(app: App):
             file_copies.append(
                 UploadFile(
                     file=content_copy,
-                    filename=file.filename,
+                    path=Path(file.filename.lstrip("/")) if file.filename else None,
+                    _deprecated_filename=file.filename,
                     size=file.size,
                     headers=file.headers,
                 )
