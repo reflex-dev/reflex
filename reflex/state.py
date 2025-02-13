@@ -1742,6 +1742,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Yields:
             StateUpdate object
+
+        Raises:
+            ValueError: If a string value is received for an int or float type and cannot be converted.
         """
         from reflex.utils import telemetry
 
@@ -1779,12 +1782,25 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     hinted_args, (Base, BaseModelV1, BaseModelV2)
                 ):
                     payload[arg] = hinted_args(**value)
-            if isinstance(value, list) and (hinted_args is set or hinted_args is Set):
+            elif isinstance(value, list) and (hinted_args is set or hinted_args is Set):
                 payload[arg] = set(value)
-            if isinstance(value, list) and (
+            elif isinstance(value, list) and (
                 hinted_args is tuple or hinted_args is Tuple
             ):
                 payload[arg] = tuple(value)
+            elif isinstance(value, str) and (
+                hinted_args is int or hinted_args is float
+            ):
+                try:
+                    payload[arg] = hinted_args(value)
+                except ValueError:
+                    raise ValueError(
+                        f"Received a string value ({value}) for {arg} but expected a {hinted_args}"
+                    ) from None
+                else:
+                    console.warn(
+                        f"Received a string value ({value}) for {arg} but expected a {hinted_args}. A simple conversion was successful."
+                    )
 
         # Wrap the function in a try/except block.
         try:
