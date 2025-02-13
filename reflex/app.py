@@ -504,7 +504,7 @@ class App(MiddlewareMixin, LifespanMixin):
         if not self.api:
             return
         upload_is_used_marker = (
-            prerequisites.get_web_dir() / "backend" / "upload_is_used"
+            prerequisites.get_backend_dir() / constants.Dirs.UPLOAD_IS_USED
         )
         if Upload.is_used or upload_is_used_marker.exists():
             # To upload files.
@@ -982,11 +982,12 @@ class App(MiddlewareMixin, LifespanMixin):
             return str(datetime.now().time()).split(".")[0]
 
         should_compile = self._should_compile()
-        backend_dir = prerequisites.get_web_dir() / "backend"
+        backend_dir = prerequisites.get_backend_dir()
         if not should_compile and backend_dir.exists():
-            enable_state_marker = backend_dir / "enable_state"
-            if enable_state_marker.exists():
-                stateful_pages = json.load(enable_state_marker.open("r"))
+            stateful_pages_marker = backend_dir / constants.Dirs.STATEFUL_PAGES
+            if stateful_pages_marker.exists():
+                with stateful_pages_marker.open("r") as f:
+                    stateful_pages = json.load(f)
                 for route in stateful_pages:
                     console.info(f"BE Evaluating stateful page: {route}")
                     self._compile_page(route, save_page=False)
@@ -1235,9 +1236,12 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Pickle dynamic states
         if self._state is not None:
-            enable_state = prerequisites.get_web_dir() / "backend" / "enable_state"
-            enable_state.parent.mkdir(parents=True, exist_ok=True)
-            json.dump(list(self._stateful_pages), enable_state.open("w"))
+            stateful_pages_marker = (
+                prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
+            )
+            stateful_pages_marker.parent.mkdir(parents=True, exist_ok=True)
+            with stateful_pages_marker.open("w") as f:
+                json.dump(list(self._stateful_pages), f)
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:

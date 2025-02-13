@@ -98,6 +98,15 @@ def get_states_dir() -> Path:
     return environment.REFLEX_STATES_WORKDIR.get()
 
 
+def get_backend_dir() -> Path:
+    """Get the working directory for the backend.
+
+    Returns:
+        The working directory.
+    """
+    return get_web_dir() / constants.Dirs.BACKEND
+
+
 def check_latest_package_version(package_name: str):
     """Check if the latest version of the package is installed.
 
