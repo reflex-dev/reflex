@@ -2475,6 +2475,8 @@ class ComponentState(State, mixin=True):
         Returns:
             A new instance of the Component with an independent copy of the State.
         """
+        from reflex.compiler.compiler import into_component
+
         cls._per_component_state_instance_count += 1
         state_cls_name = f"{cls.__name__}_n{cls._per_component_state_instance_count}"
         component_state = type(
@@ -2486,6 +2488,7 @@ class ComponentState(State, mixin=True):
         # Save a reference to the dynamic state for pickle/unpickle.
         setattr(reflex.istate.dynamic, state_cls_name, component_state)
         component = component_state.get_component(*children, **props)
+        component = into_component(component)
         component.State = component_state
         return component
 
