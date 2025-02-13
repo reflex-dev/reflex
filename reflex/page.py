@@ -6,7 +6,7 @@ from collections import defaultdict
 from typing import Any, Callable, Dict, List
 
 from reflex.config import get_config
-from reflex.event import BASE_STATE, EventType
+from reflex.event import EventType
 
 DECORATED_PAGES: Dict[str, List] = defaultdict(list)
 
@@ -18,7 +18,7 @@ def page(
     description: str | None = None,
     meta: list[Any] | None = None,
     script_tags: list[Any] | None = None,
-    on_load: EventType[[], BASE_STATE] | None = None,
+    on_load: EventType[()] | None = None,
 ):
     """Decorate a function as a page.
 

@@ -14,6 +14,7 @@ from typing import (
     Any,
     AsyncGenerator,
     Callable,
+    ClassVar,
     Dict,
     List,
     Optional,
@@ -1173,13 +1174,17 @@ def test_conditional_computed_vars():
 
     ms = MainState()
     # Initially there are no dirty computed vars.
-    assert ms._dirty_computed_vars(from_vars={"flag"}) == {"rendered_var"}
-    assert ms._dirty_computed_vars(from_vars={"t2"}) == {"rendered_var"}
-    assert ms._dirty_computed_vars(from_vars={"t1"}) == {"rendered_var"}
+    assert ms._dirty_computed_vars(from_vars={"flag"}) == {
+        (MainState.get_full_name(), "rendered_var")
+    }
+    assert ms._dirty_computed_vars(from_vars={"t2"}) == {
+        (MainState.get_full_name(), "rendered_var")
+    }
+    assert ms._dirty_computed_vars(from_vars={"t1"}) == {
+        (MainState.get_full_name(), "rendered_var")
+    }
     assert ms.computed_vars["rendered_var"]._deps(objclass=MainState) == {
-        "flag",
-        "t1",
-        "t2",
+        MainState.get_full_name(): {"flag", "t1", "t2"}
     }
 
 
@@ -1375,7 +1380,10 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
         assert isinstance(HandlerState.handler, functools.partial)
 
     s = HandlerState()
-    assert "cached_x_side_effect" in s._computed_var_dependencies["x"]
+    assert (
+        HandlerState.get_full_name(),
+        "cached_x_side_effect",
+    ) in s._var_dependencies["x"]
     assert s.cached_x_side_effect == 1
     assert s.x == 43
     s.handler()
@@ -1465,15 +1473,15 @@ def test_computed_var_dependencies():
             return [z in self._z for z in range(5)]
 
     cs = ComputedState()
-    assert cs._computed_var_dependencies["v"] == {
-        "comp_v",
-        "comp_v_backend",
-        "comp_v_via_property",
+    assert cs._var_dependencies["v"] == {
+        (ComputedState.get_full_name(), "comp_v"),
+        (ComputedState.get_full_name(), "comp_v_backend"),
+        (ComputedState.get_full_name(), "comp_v_via_property"),
     }
-    assert cs._computed_var_dependencies["w"] == {"comp_w"}
-    assert cs._computed_var_dependencies["x"] == {"comp_x"}
-    assert cs._computed_var_dependencies["y"] == {"comp_y"}
-    assert cs._computed_var_dependencies["_z"] == {"comp_z"}
+    assert cs._var_dependencies["w"] == {(ComputedState.get_full_name(), "comp_w")}
+    assert cs._var_dependencies["x"] == {(ComputedState.get_full_name(), "comp_x")}
+    assert cs._var_dependencies["y"] == {(ComputedState.get_full_name(), "comp_y")}
+    assert cs._var_dependencies["_z"] == {(ComputedState.get_full_name(), "comp_z")}
 
 
 def test_backend_method():
@@ -1620,7 +1628,7 @@ async def test_state_with_invalid_yield(capsys, mock_app):
                         id="backend_error",
                         position="top-center",
                         style={"width": "500px"},
-                    )  # pyright: ignore [reportCallIssue, reportArgumentType]
+                    )
                 ],
                 token="",
             )
@@ -3192,7 +3200,7 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
 RxState = State
 
 
-def test_potentially_dirty_substates():
+def test_potentially_dirty_states():
     """Test that potentially_dirty_substates returns the correct substates.
 
     Even if the name "State" is shadowed, it should still work correctly.
@@ -3208,13 +3216,19 @@ def test_potentially_dirty_substates():
         def bar(self) -> str:
             return ""
 
-    assert RxState._potentially_dirty_substates() == set()
-    assert State._potentially_dirty_substates() == set()
-    assert C1._potentially_dirty_substates() == set()
+    assert RxState._get_potentially_dirty_states() == set()
+    assert State._get_potentially_dirty_states() == set()
+    assert C1._get_potentially_dirty_states() == set()
 
 
-def test_router_var_dep() -> None:
-    """Test that router var dependencies are correctly tracked."""
+@pytest.mark.asyncio
+async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
+    """Test that router var dependencies are correctly tracked.
+
+    Args:
+        state_manager: A state manager.
+        token: A token.
+    """
 
     class RouterVarParentState(State):
         """A parent state for testing router var dependency."""
@@ -3231,30 +3245,27 @@ def test_router_var_dep() -> None:
     foo = RouterVarDepState.computed_vars["foo"]
     State._init_var_dependency_dicts()
 
-    assert foo._deps(objclass=RouterVarDepState) == {"router"}
-    assert RouterVarParentState._potentially_dirty_substates() == {RouterVarDepState}
-    assert RouterVarParentState._substate_var_dependencies == {
-        "router": {RouterVarDepState.get_name()}
+    assert foo._deps(objclass=RouterVarDepState) == {
+        RouterVarDepState.get_full_name(): {"router"}
     }
-    assert RouterVarDepState._computed_var_dependencies == {
-        "router": {"foo"},
-    }
+    assert (RouterVarDepState.get_full_name(), "foo") in State._var_dependencies[
+        "router"
+    ]
 
-    rx_state = State()
-    parent_state = RouterVarParentState()
-    state = RouterVarDepState()
-
-    # link states
-    rx_state.substates = {RouterVarParentState.get_name(): parent_state}
-    parent_state.parent_state = rx_state
-    state.parent_state = parent_state
-    parent_state.substates = {RouterVarDepState.get_name(): state}
+    # Get state from state manager.
+    state_manager.state = State
+    rx_state = await state_manager.get_state(_substate_key(token, State))
+    assert RouterVarParentState.get_name() in rx_state.substates
+    parent_state = rx_state.substates[RouterVarParentState.get_name()]
+    assert RouterVarDepState.get_name() in parent_state.substates
+    state = parent_state.substates[RouterVarDepState.get_name()]
 
     assert state.dirty_vars == set()
 
     # Reassign router var
     state.router = state.router
-    assert state.dirty_vars == {"foo", "router"}
+    assert rx_state.dirty_vars == {"router"}
+    assert state.dirty_vars == {"foo"}
     assert parent_state.dirty_substates == {RouterVarDepState.get_name()}
 
 
@@ -3813,3 +3824,128 @@ async def test_get_var_value(state_manager: StateManager, substate_token: str):
     # Generic Var with no state
     with pytest.raises(UnretrievableVarValueError):
         await state.get_var_value(rx.Var("undefined"))
+
+
+@pytest.mark.asyncio
+async def test_async_computed_var_get_state(mock_app: rx.App, token: str):
+    """A test where an async computed var depends on a var in another state.
+
+    Args:
+        mock_app: An app that will be returned by `get_app()`
+        token: A token.
+    """
+
+    class Parent(BaseState):
+        """A root state like rx.State."""
+
+        parent_var: int = 0
+
+    class Child2(Parent):
+        """An unconnected child state."""
+
+        pass
+
+    class Child3(Parent):
+        """A child state with a computed var causing it to be pre-fetched.
+
+        If child3_var gets set to a value, and `get_state` erroneously
+        re-fetches it from redis, the value will be lost.
+        """
+
+        child3_var: int = 0
+
+        @rx.var(cache=True)
+        def v(self) -> int:
+            return self.child3_var
+
+    class Child(Parent):
+        """A state simulating UpdateVarsInternalState."""
+
+        @rx.var(cache=True)
+        async def v(self) -> int:
+            p = await self.get_state(Parent)
+            child3 = await self.get_state(Child3)
+            return child3.child3_var + p.parent_var
+
+    mock_app.state_manager.state = mock_app._state = Parent
+
+    # Get the top level state via unconnected sibling.
+    root = await mock_app.state_manager.get_state(_substate_key(token, Child))
+    # Set value in parent_var to assert it does not get refetched later.
+    root.parent_var = 1
+
+    if isinstance(mock_app.state_manager, StateManagerRedis):
+        # When redis is used, only states with uncached computed vars are pre-fetched.
+        assert Child2.get_name() not in root.substates
+        assert Child3.get_name() not in root.substates
+
+    # Get the unconnected sibling state, which will be used to `get_state` other instances.
+    child = root.get_substate(Child.get_full_name().split("."))
+
+    # Get an uncached child state.
+    child2 = await child.get_state(Child2)
+    assert child2.parent_var == 1
+
+    # Set value on already-cached Child3 state (prefetched because it has a Computed Var).
+    child3 = await child.get_state(Child3)
+    child3.child3_var = 1
+
+    assert await child.v == 2
+    assert await child.v == 2
+    root.parent_var = 2
+    assert await child.v == 3
+
+
+class Table(rx.ComponentState):
+    """A table state."""
+
+    data: ClassVar[Var]
+
+    @rx.var(cache=True, auto_deps=False)
+    async def rows(self) -> List[Dict[str, Any]]:
+        """Computed var over the given rows.
+
+        Returns:
+            The data rows.
+        """
+        return await self.get_var_value(self.data)
+
+    @classmethod
+    def get_component(cls, data: Var) -> rx.Component:
+        """Get the component for the table.
+
+        Args:
+            data: The data var.
+
+        Returns:
+            The component.
+        """
+        cls.data = data
+        cls.computed_vars["rows"].add_dependency(cls, data)
+        return rx.foreach(data, lambda d: rx.text(d.to_string()))
+
+
+@pytest.mark.asyncio
+async def test_async_computed_var_get_var_value(mock_app: rx.App, token: str):
+    """A test where an async computed var depends on a var in another state.
+
+    Args:
+        mock_app: An app that will be returned by `get_app()`
+        token: A token.
+    """
+
+    class OtherState(rx.State):
+        """A state with a var."""
+
+        data: List[Dict[str, Any]] = [{"foo": "bar"}]
+
+    mock_app.state_manager.state = mock_app._state = rx.State
+    comp = Table.create(data=OtherState.data)
+    state = await mock_app.state_manager.get_state(_substate_key(token, OtherState))
+    other_state = await state.get_state(OtherState)
+    assert comp.State is not None
+    comp_state = await state.get_state(comp.State)
+    assert comp_state.dirty_vars == set()
+
+    other_state.data.append({"foo": "baz"})
+    assert "rows" in comp_state.dirty_vars

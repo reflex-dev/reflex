@@ -252,6 +252,7 @@ def test_env_var():
         BLUBB: EnvVar[str] = env_var("default")
         INTERNAL: EnvVar[str] = env_var("default", internal=True)
         BOOLEAN: EnvVar[bool] = env_var(False)
+        LIST: EnvVar[list[int]] = env_var([1, 2, 3])
 
     assert TestEnv.BLUBB.get() == "default"
     assert TestEnv.BLUBB.name == "BLUBB"
@@ -280,3 +281,11 @@ def test_env_var():
     assert TestEnv.BOOLEAN.get() is False
     TestEnv.BOOLEAN.set(None)
     assert "BOOLEAN" not in os.environ
+
+    assert TestEnv.LIST.get() == [1, 2, 3]
+    assert TestEnv.LIST.name == "LIST"
+    TestEnv.LIST.set([4, 5, 6])
+    assert os.environ.get("LIST") == "4:5:6"
+    assert TestEnv.LIST.get() == [4, 5, 6]
+    TestEnv.LIST.set(None)
+    assert "LIST" not in os.environ

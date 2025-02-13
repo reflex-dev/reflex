@@ -8,9 +8,10 @@ from typing import Any, Dict, List, Optional, Union, overload
 from typing_extensions import TypedDict, TypeVar
 
 from reflex.components.component import NoSSRComponent
-from reflex.event import BASE_STATE, EventType
+from reflex.event import EventType
 from reflex.style import Style
 from reflex.utils import console
+from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var
 
 try:
@@ -65,51 +66,805 @@ class Plotly(NoSSRComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
-        on_after_plot: Optional[EventType[[], BASE_STATE]] = None,
-        on_animated: Optional[EventType[[], BASE_STATE]] = None,
-        on_animating_frame: Optional[EventType[[], BASE_STATE]] = None,
-        on_animation_interrupted: Optional[EventType[[], BASE_STATE]] = None,
-        on_autosize: Optional[EventType[[], BASE_STATE]] = None,
-        on_before_hover: Optional[EventType[[], BASE_STATE]] = None,
-        on_blur: Optional[EventType[[], BASE_STATE]] = None,
-        on_button_clicked: Optional[EventType[[], BASE_STATE]] = None,
-        on_click: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[List[Point]], BASE_STATE]]
-        ] = None,
-        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
-        on_deselect: Optional[EventType[[], BASE_STATE]] = None,
-        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_focus: Optional[EventType[[], BASE_STATE]] = None,
-        on_hover: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[List[Point]], BASE_STATE]]
-        ] = None,
-        on_mount: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
-        on_redraw: Optional[EventType[[], BASE_STATE]] = None,
-        on_relayout: Optional[EventType[[], BASE_STATE]] = None,
-        on_relayouting: Optional[EventType[[], BASE_STATE]] = None,
-        on_restyle: Optional[EventType[[], BASE_STATE]] = None,
-        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
-        on_selected: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[List[Point]], BASE_STATE]]
-        ] = None,
-        on_selecting: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[List[Point]], BASE_STATE]]
-        ] = None,
-        on_transition_interrupted: Optional[EventType[[], BASE_STATE]] = None,
-        on_transitioning: Optional[EventType[[], BASE_STATE]] = None,
-        on_unhover: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[List[Point]], BASE_STATE]]
-        ] = None,
-        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
+        on_after_plot: Optional[EventType[()]] = None,
+        on_animated: Optional[EventType[()]] = None,
+        on_animating_frame: Optional[EventType[()]] = None,
+        on_animation_interrupted: Optional[EventType[()]] = None,
+        on_autosize: Optional[EventType[()]] = None,
+        on_before_hover: Optional[EventType[()]] = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_button_clicked: Optional[EventType[()]] = None,
+        on_click: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_deselect: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_hover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_redraw: Optional[EventType[()]] = None,
+        on_relayout: Optional[EventType[()]] = None,
+        on_relayouting: Optional[EventType[()]] = None,
+        on_restyle: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_selected: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_selecting: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_transition_interrupted: Optional[EventType[()]] = None,
+        on_transitioning: Optional[EventType[()]] = None,
+        on_unhover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_unmount: Optional[EventType[()]] = None,
         **props,
     ) -> "Plotly":
+        """Create the Plotly component.
+
+        Args:
+            *children: The children of the component.
+            data: The figure to display. This can be a plotly figure or a plotly data json.
+            layout: The layout of the graph.
+            template: The template for visual appearance of the graph.
+            config: The config of the graph.
+            use_resize_handler: If true, the graph will resize when the window is resized.
+            on_after_plot: Fired after the plot is redrawn.
+            on_animated: Fired after the plot was animated.
+            on_animating_frame: Fired while animating a single frame (does not currently pass data through).
+            on_animation_interrupted: Fired when an animation is interrupted (to start a new animation for example).
+            on_autosize: Fired when the plot is responsively sized.
+            on_before_hover: Fired whenever mouse moves over a plot.
+            on_button_clicked: Fired when a plotly UI button is clicked.
+            on_click: Fired when the plot is clicked.
+            on_deselect: Fired when a selection is cleared (via double click).
+            on_double_click: Fired when the plot is double clicked.
+            on_hover: Fired when a plot element is hovered over.
+            on_relayout: Fired after the plot is laid out (zoom, pan, etc).
+            on_relayouting: Fired while the plot is being laid out.
+            on_restyle: Fired after the plot style is changed.
+            on_redraw: Fired after the plot is redrawn.
+            on_selected: Fired after selecting plot elements.
+            on_selecting: Fired while dragging a selection.
+            on_transitioning: Fired while an animation is occurring.
+            on_transition_interrupted: Fired when a transition is stopped early.
+            on_unhover: Fired when a hovered element is no longer hovered.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the component.
+
+        Returns:
+            The Plotly component.
+        """
+        ...
+
+CREATE_PLOTLY_COMPONENT: ImportDict
+
+def dynamic_plotly_import(name: str, package: str) -> str: ...
+
+class PlotlyBasic(Plotly):
+    def add_imports(self) -> ImportDict | list[ImportDict]: ...
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        data: Optional[Union[Figure, Var[Figure]]] = None,  # type: ignore
+        layout: Optional[Union[Dict, Var[Dict]]] = None,
+        template: Optional[Union[Template, Var[Template]]] = None,  # type: ignore
+        config: Optional[Union[Dict, Var[Dict]]] = None,
+        use_resize_handler: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_after_plot: Optional[EventType[()]] = None,
+        on_animated: Optional[EventType[()]] = None,
+        on_animating_frame: Optional[EventType[()]] = None,
+        on_animation_interrupted: Optional[EventType[()]] = None,
+        on_autosize: Optional[EventType[()]] = None,
+        on_before_hover: Optional[EventType[()]] = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_button_clicked: Optional[EventType[()]] = None,
+        on_click: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_deselect: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_hover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_redraw: Optional[EventType[()]] = None,
+        on_relayout: Optional[EventType[()]] = None,
+        on_relayouting: Optional[EventType[()]] = None,
+        on_restyle: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_selected: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_selecting: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_transition_interrupted: Optional[EventType[()]] = None,
+        on_transitioning: Optional[EventType[()]] = None,
+        on_unhover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_unmount: Optional[EventType[()]] = None,
+        **props,
+    ) -> "PlotlyBasic":
+        """Create the Plotly component.
+
+        Args:
+            *children: The children of the component.
+            data: The figure to display. This can be a plotly figure or a plotly data json.
+            layout: The layout of the graph.
+            template: The template for visual appearance of the graph.
+            config: The config of the graph.
+            use_resize_handler: If true, the graph will resize when the window is resized.
+            on_after_plot: Fired after the plot is redrawn.
+            on_animated: Fired after the plot was animated.
+            on_animating_frame: Fired while animating a single frame (does not currently pass data through).
+            on_animation_interrupted: Fired when an animation is interrupted (to start a new animation for example).
+            on_autosize: Fired when the plot is responsively sized.
+            on_before_hover: Fired whenever mouse moves over a plot.
+            on_button_clicked: Fired when a plotly UI button is clicked.
+            on_click: Fired when the plot is clicked.
+            on_deselect: Fired when a selection is cleared (via double click).
+            on_double_click: Fired when the plot is double clicked.
+            on_hover: Fired when a plot element is hovered over.
+            on_relayout: Fired after the plot is laid out (zoom, pan, etc).
+            on_relayouting: Fired while the plot is being laid out.
+            on_restyle: Fired after the plot style is changed.
+            on_redraw: Fired after the plot is redrawn.
+            on_selected: Fired after selecting plot elements.
+            on_selecting: Fired while dragging a selection.
+            on_transitioning: Fired while an animation is occurring.
+            on_transition_interrupted: Fired when a transition is stopped early.
+            on_unhover: Fired when a hovered element is no longer hovered.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the component.
+
+        Returns:
+            The Plotly component.
+        """
+        ...
+
+class PlotlyCartesian(Plotly):
+    def add_imports(self) -> ImportDict | list[ImportDict]: ...
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        data: Optional[Union[Figure, Var[Figure]]] = None,  # type: ignore
+        layout: Optional[Union[Dict, Var[Dict]]] = None,
+        template: Optional[Union[Template, Var[Template]]] = None,  # type: ignore
+        config: Optional[Union[Dict, Var[Dict]]] = None,
+        use_resize_handler: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_after_plot: Optional[EventType[()]] = None,
+        on_animated: Optional[EventType[()]] = None,
+        on_animating_frame: Optional[EventType[()]] = None,
+        on_animation_interrupted: Optional[EventType[()]] = None,
+        on_autosize: Optional[EventType[()]] = None,
+        on_before_hover: Optional[EventType[()]] = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_button_clicked: Optional[EventType[()]] = None,
+        on_click: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_deselect: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_hover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_redraw: Optional[EventType[()]] = None,
+        on_relayout: Optional[EventType[()]] = None,
+        on_relayouting: Optional[EventType[()]] = None,
+        on_restyle: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_selected: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_selecting: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_transition_interrupted: Optional[EventType[()]] = None,
+        on_transitioning: Optional[EventType[()]] = None,
+        on_unhover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_unmount: Optional[EventType[()]] = None,
+        **props,
+    ) -> "PlotlyCartesian":
+        """Create the Plotly component.
+
+        Args:
+            *children: The children of the component.
+            data: The figure to display. This can be a plotly figure or a plotly data json.
+            layout: The layout of the graph.
+            template: The template for visual appearance of the graph.
+            config: The config of the graph.
+            use_resize_handler: If true, the graph will resize when the window is resized.
+            on_after_plot: Fired after the plot is redrawn.
+            on_animated: Fired after the plot was animated.
+            on_animating_frame: Fired while animating a single frame (does not currently pass data through).
+            on_animation_interrupted: Fired when an animation is interrupted (to start a new animation for example).
+            on_autosize: Fired when the plot is responsively sized.
+            on_before_hover: Fired whenever mouse moves over a plot.
+            on_button_clicked: Fired when a plotly UI button is clicked.
+            on_click: Fired when the plot is clicked.
+            on_deselect: Fired when a selection is cleared (via double click).
+            on_double_click: Fired when the plot is double clicked.
+            on_hover: Fired when a plot element is hovered over.
+            on_relayout: Fired after the plot is laid out (zoom, pan, etc).
+            on_relayouting: Fired while the plot is being laid out.
+            on_restyle: Fired after the plot style is changed.
+            on_redraw: Fired after the plot is redrawn.
+            on_selected: Fired after selecting plot elements.
+            on_selecting: Fired while dragging a selection.
+            on_transitioning: Fired while an animation is occurring.
+            on_transition_interrupted: Fired when a transition is stopped early.
+            on_unhover: Fired when a hovered element is no longer hovered.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the component.
+
+        Returns:
+            The Plotly component.
+        """
+        ...
+
+class PlotlyGeo(Plotly):
+    def add_imports(self) -> ImportDict | list[ImportDict]: ...
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        data: Optional[Union[Figure, Var[Figure]]] = None,  # type: ignore
+        layout: Optional[Union[Dict, Var[Dict]]] = None,
+        template: Optional[Union[Template, Var[Template]]] = None,  # type: ignore
+        config: Optional[Union[Dict, Var[Dict]]] = None,
+        use_resize_handler: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_after_plot: Optional[EventType[()]] = None,
+        on_animated: Optional[EventType[()]] = None,
+        on_animating_frame: Optional[EventType[()]] = None,
+        on_animation_interrupted: Optional[EventType[()]] = None,
+        on_autosize: Optional[EventType[()]] = None,
+        on_before_hover: Optional[EventType[()]] = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_button_clicked: Optional[EventType[()]] = None,
+        on_click: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_deselect: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_hover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_redraw: Optional[EventType[()]] = None,
+        on_relayout: Optional[EventType[()]] = None,
+        on_relayouting: Optional[EventType[()]] = None,
+        on_restyle: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_selected: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_selecting: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_transition_interrupted: Optional[EventType[()]] = None,
+        on_transitioning: Optional[EventType[()]] = None,
+        on_unhover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_unmount: Optional[EventType[()]] = None,
+        **props,
+    ) -> "PlotlyGeo":
+        """Create the Plotly component.
+
+        Args:
+            *children: The children of the component.
+            data: The figure to display. This can be a plotly figure or a plotly data json.
+            layout: The layout of the graph.
+            template: The template for visual appearance of the graph.
+            config: The config of the graph.
+            use_resize_handler: If true, the graph will resize when the window is resized.
+            on_after_plot: Fired after the plot is redrawn.
+            on_animated: Fired after the plot was animated.
+            on_animating_frame: Fired while animating a single frame (does not currently pass data through).
+            on_animation_interrupted: Fired when an animation is interrupted (to start a new animation for example).
+            on_autosize: Fired when the plot is responsively sized.
+            on_before_hover: Fired whenever mouse moves over a plot.
+            on_button_clicked: Fired when a plotly UI button is clicked.
+            on_click: Fired when the plot is clicked.
+            on_deselect: Fired when a selection is cleared (via double click).
+            on_double_click: Fired when the plot is double clicked.
+            on_hover: Fired when a plot element is hovered over.
+            on_relayout: Fired after the plot is laid out (zoom, pan, etc).
+            on_relayouting: Fired while the plot is being laid out.
+            on_restyle: Fired after the plot style is changed.
+            on_redraw: Fired after the plot is redrawn.
+            on_selected: Fired after selecting plot elements.
+            on_selecting: Fired while dragging a selection.
+            on_transitioning: Fired while an animation is occurring.
+            on_transition_interrupted: Fired when a transition is stopped early.
+            on_unhover: Fired when a hovered element is no longer hovered.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the component.
+
+        Returns:
+            The Plotly component.
+        """
+        ...
+
+class PlotlyGl3d(Plotly):
+    def add_imports(self) -> ImportDict | list[ImportDict]: ...
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        data: Optional[Union[Figure, Var[Figure]]] = None,  # type: ignore
+        layout: Optional[Union[Dict, Var[Dict]]] = None,
+        template: Optional[Union[Template, Var[Template]]] = None,  # type: ignore
+        config: Optional[Union[Dict, Var[Dict]]] = None,
+        use_resize_handler: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_after_plot: Optional[EventType[()]] = None,
+        on_animated: Optional[EventType[()]] = None,
+        on_animating_frame: Optional[EventType[()]] = None,
+        on_animation_interrupted: Optional[EventType[()]] = None,
+        on_autosize: Optional[EventType[()]] = None,
+        on_before_hover: Optional[EventType[()]] = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_button_clicked: Optional[EventType[()]] = None,
+        on_click: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_deselect: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_hover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_redraw: Optional[EventType[()]] = None,
+        on_relayout: Optional[EventType[()]] = None,
+        on_relayouting: Optional[EventType[()]] = None,
+        on_restyle: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_selected: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_selecting: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_transition_interrupted: Optional[EventType[()]] = None,
+        on_transitioning: Optional[EventType[()]] = None,
+        on_unhover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_unmount: Optional[EventType[()]] = None,
+        **props,
+    ) -> "PlotlyGl3d":
+        """Create the Plotly component.
+
+        Args:
+            *children: The children of the component.
+            data: The figure to display. This can be a plotly figure or a plotly data json.
+            layout: The layout of the graph.
+            template: The template for visual appearance of the graph.
+            config: The config of the graph.
+            use_resize_handler: If true, the graph will resize when the window is resized.
+            on_after_plot: Fired after the plot is redrawn.
+            on_animated: Fired after the plot was animated.
+            on_animating_frame: Fired while animating a single frame (does not currently pass data through).
+            on_animation_interrupted: Fired when an animation is interrupted (to start a new animation for example).
+            on_autosize: Fired when the plot is responsively sized.
+            on_before_hover: Fired whenever mouse moves over a plot.
+            on_button_clicked: Fired when a plotly UI button is clicked.
+            on_click: Fired when the plot is clicked.
+            on_deselect: Fired when a selection is cleared (via double click).
+            on_double_click: Fired when the plot is double clicked.
+            on_hover: Fired when a plot element is hovered over.
+            on_relayout: Fired after the plot is laid out (zoom, pan, etc).
+            on_relayouting: Fired while the plot is being laid out.
+            on_restyle: Fired after the plot style is changed.
+            on_redraw: Fired after the plot is redrawn.
+            on_selected: Fired after selecting plot elements.
+            on_selecting: Fired while dragging a selection.
+            on_transitioning: Fired while an animation is occurring.
+            on_transition_interrupted: Fired when a transition is stopped early.
+            on_unhover: Fired when a hovered element is no longer hovered.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the component.
+
+        Returns:
+            The Plotly component.
+        """
+        ...
+
+class PlotlyGl2d(Plotly):
+    def add_imports(self) -> ImportDict | list[ImportDict]: ...
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        data: Optional[Union[Figure, Var[Figure]]] = None,  # type: ignore
+        layout: Optional[Union[Dict, Var[Dict]]] = None,
+        template: Optional[Union[Template, Var[Template]]] = None,  # type: ignore
+        config: Optional[Union[Dict, Var[Dict]]] = None,
+        use_resize_handler: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_after_plot: Optional[EventType[()]] = None,
+        on_animated: Optional[EventType[()]] = None,
+        on_animating_frame: Optional[EventType[()]] = None,
+        on_animation_interrupted: Optional[EventType[()]] = None,
+        on_autosize: Optional[EventType[()]] = None,
+        on_before_hover: Optional[EventType[()]] = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_button_clicked: Optional[EventType[()]] = None,
+        on_click: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_deselect: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_hover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_redraw: Optional[EventType[()]] = None,
+        on_relayout: Optional[EventType[()]] = None,
+        on_relayouting: Optional[EventType[()]] = None,
+        on_restyle: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_selected: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_selecting: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_transition_interrupted: Optional[EventType[()]] = None,
+        on_transitioning: Optional[EventType[()]] = None,
+        on_unhover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_unmount: Optional[EventType[()]] = None,
+        **props,
+    ) -> "PlotlyGl2d":
+        """Create the Plotly component.
+
+        Args:
+            *children: The children of the component.
+            data: The figure to display. This can be a plotly figure or a plotly data json.
+            layout: The layout of the graph.
+            template: The template for visual appearance of the graph.
+            config: The config of the graph.
+            use_resize_handler: If true, the graph will resize when the window is resized.
+            on_after_plot: Fired after the plot is redrawn.
+            on_animated: Fired after the plot was animated.
+            on_animating_frame: Fired while animating a single frame (does not currently pass data through).
+            on_animation_interrupted: Fired when an animation is interrupted (to start a new animation for example).
+            on_autosize: Fired when the plot is responsively sized.
+            on_before_hover: Fired whenever mouse moves over a plot.
+            on_button_clicked: Fired when a plotly UI button is clicked.
+            on_click: Fired when the plot is clicked.
+            on_deselect: Fired when a selection is cleared (via double click).
+            on_double_click: Fired when the plot is double clicked.
+            on_hover: Fired when a plot element is hovered over.
+            on_relayout: Fired after the plot is laid out (zoom, pan, etc).
+            on_relayouting: Fired while the plot is being laid out.
+            on_restyle: Fired after the plot style is changed.
+            on_redraw: Fired after the plot is redrawn.
+            on_selected: Fired after selecting plot elements.
+            on_selecting: Fired while dragging a selection.
+            on_transitioning: Fired while an animation is occurring.
+            on_transition_interrupted: Fired when a transition is stopped early.
+            on_unhover: Fired when a hovered element is no longer hovered.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the component.
+
+        Returns:
+            The Plotly component.
+        """
+        ...
+
+class PlotlyMapbox(Plotly):
+    def add_imports(self) -> ImportDict | list[ImportDict]: ...
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        data: Optional[Union[Figure, Var[Figure]]] = None,  # type: ignore
+        layout: Optional[Union[Dict, Var[Dict]]] = None,
+        template: Optional[Union[Template, Var[Template]]] = None,  # type: ignore
+        config: Optional[Union[Dict, Var[Dict]]] = None,
+        use_resize_handler: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_after_plot: Optional[EventType[()]] = None,
+        on_animated: Optional[EventType[()]] = None,
+        on_animating_frame: Optional[EventType[()]] = None,
+        on_animation_interrupted: Optional[EventType[()]] = None,
+        on_autosize: Optional[EventType[()]] = None,
+        on_before_hover: Optional[EventType[()]] = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_button_clicked: Optional[EventType[()]] = None,
+        on_click: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_deselect: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_hover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_redraw: Optional[EventType[()]] = None,
+        on_relayout: Optional[EventType[()]] = None,
+        on_relayouting: Optional[EventType[()]] = None,
+        on_restyle: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_selected: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_selecting: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_transition_interrupted: Optional[EventType[()]] = None,
+        on_transitioning: Optional[EventType[()]] = None,
+        on_unhover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_unmount: Optional[EventType[()]] = None,
+        **props,
+    ) -> "PlotlyMapbox":
+        """Create the Plotly component.
+
+        Args:
+            *children: The children of the component.
+            data: The figure to display. This can be a plotly figure or a plotly data json.
+            layout: The layout of the graph.
+            template: The template for visual appearance of the graph.
+            config: The config of the graph.
+            use_resize_handler: If true, the graph will resize when the window is resized.
+            on_after_plot: Fired after the plot is redrawn.
+            on_animated: Fired after the plot was animated.
+            on_animating_frame: Fired while animating a single frame (does not currently pass data through).
+            on_animation_interrupted: Fired when an animation is interrupted (to start a new animation for example).
+            on_autosize: Fired when the plot is responsively sized.
+            on_before_hover: Fired whenever mouse moves over a plot.
+            on_button_clicked: Fired when a plotly UI button is clicked.
+            on_click: Fired when the plot is clicked.
+            on_deselect: Fired when a selection is cleared (via double click).
+            on_double_click: Fired when the plot is double clicked.
+            on_hover: Fired when a plot element is hovered over.
+            on_relayout: Fired after the plot is laid out (zoom, pan, etc).
+            on_relayouting: Fired while the plot is being laid out.
+            on_restyle: Fired after the plot style is changed.
+            on_redraw: Fired after the plot is redrawn.
+            on_selected: Fired after selecting plot elements.
+            on_selecting: Fired while dragging a selection.
+            on_transitioning: Fired while an animation is occurring.
+            on_transition_interrupted: Fired when a transition is stopped early.
+            on_unhover: Fired when a hovered element is no longer hovered.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the component.
+
+        Returns:
+            The Plotly component.
+        """
+        ...
+
+class PlotlyFinance(Plotly):
+    def add_imports(self) -> ImportDict | list[ImportDict]: ...
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        data: Optional[Union[Figure, Var[Figure]]] = None,  # type: ignore
+        layout: Optional[Union[Dict, Var[Dict]]] = None,
+        template: Optional[Union[Template, Var[Template]]] = None,  # type: ignore
+        config: Optional[Union[Dict, Var[Dict]]] = None,
+        use_resize_handler: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_after_plot: Optional[EventType[()]] = None,
+        on_animated: Optional[EventType[()]] = None,
+        on_animating_frame: Optional[EventType[()]] = None,
+        on_animation_interrupted: Optional[EventType[()]] = None,
+        on_autosize: Optional[EventType[()]] = None,
+        on_before_hover: Optional[EventType[()]] = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_button_clicked: Optional[EventType[()]] = None,
+        on_click: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_deselect: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_hover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_redraw: Optional[EventType[()]] = None,
+        on_relayout: Optional[EventType[()]] = None,
+        on_relayouting: Optional[EventType[()]] = None,
+        on_restyle: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_selected: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_selecting: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_transition_interrupted: Optional[EventType[()]] = None,
+        on_transitioning: Optional[EventType[()]] = None,
+        on_unhover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_unmount: Optional[EventType[()]] = None,
+        **props,
+    ) -> "PlotlyFinance":
+        """Create the Plotly component.
+
+        Args:
+            *children: The children of the component.
+            data: The figure to display. This can be a plotly figure or a plotly data json.
+            layout: The layout of the graph.
+            template: The template for visual appearance of the graph.
+            config: The config of the graph.
+            use_resize_handler: If true, the graph will resize when the window is resized.
+            on_after_plot: Fired after the plot is redrawn.
+            on_animated: Fired after the plot was animated.
+            on_animating_frame: Fired while animating a single frame (does not currently pass data through).
+            on_animation_interrupted: Fired when an animation is interrupted (to start a new animation for example).
+            on_autosize: Fired when the plot is responsively sized.
+            on_before_hover: Fired whenever mouse moves over a plot.
+            on_button_clicked: Fired when a plotly UI button is clicked.
+            on_click: Fired when the plot is clicked.
+            on_deselect: Fired when a selection is cleared (via double click).
+            on_double_click: Fired when the plot is double clicked.
+            on_hover: Fired when a plot element is hovered over.
+            on_relayout: Fired after the plot is laid out (zoom, pan, etc).
+            on_relayouting: Fired while the plot is being laid out.
+            on_restyle: Fired after the plot style is changed.
+            on_redraw: Fired after the plot is redrawn.
+            on_selected: Fired after selecting plot elements.
+            on_selecting: Fired while dragging a selection.
+            on_transitioning: Fired while an animation is occurring.
+            on_transition_interrupted: Fired when a transition is stopped early.
+            on_unhover: Fired when a hovered element is no longer hovered.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the component.
+
+        Returns:
+            The Plotly component.
+        """
+        ...
+
+class PlotlyStrict(Plotly):
+    def add_imports(self) -> ImportDict | list[ImportDict]: ...
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        data: Optional[Union[Figure, Var[Figure]]] = None,  # type: ignore
+        layout: Optional[Union[Dict, Var[Dict]]] = None,
+        template: Optional[Union[Template, Var[Template]]] = None,  # type: ignore
+        config: Optional[Union[Dict, Var[Dict]]] = None,
+        use_resize_handler: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        on_after_plot: Optional[EventType[()]] = None,
+        on_animated: Optional[EventType[()]] = None,
+        on_animating_frame: Optional[EventType[()]] = None,
+        on_animation_interrupted: Optional[EventType[()]] = None,
+        on_autosize: Optional[EventType[()]] = None,
+        on_before_hover: Optional[EventType[()]] = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_button_clicked: Optional[EventType[()]] = None,
+        on_click: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_deselect: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_hover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_redraw: Optional[EventType[()]] = None,
+        on_relayout: Optional[EventType[()]] = None,
+        on_relayouting: Optional[EventType[()]] = None,
+        on_restyle: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_selected: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_selecting: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_transition_interrupted: Optional[EventType[()]] = None,
+        on_transitioning: Optional[EventType[()]] = None,
+        on_unhover: Optional[Union[EventType[()], EventType[List[Point]]]] = None,
+        on_unmount: Optional[EventType[()]] = None,
+        **props,
+    ) -> "PlotlyStrict":
         """Create the Plotly component.
 
         Args:

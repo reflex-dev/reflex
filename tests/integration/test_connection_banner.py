@@ -119,9 +119,7 @@ def has_cloud_banner(driver: WebDriver) -> bool:
         True if the banner is displayed, False otherwise.
     """
     try:
-        driver.find_element(
-            By.XPATH, "//*[ contains(text(), 'You ran out of compute credits.') ]"
-        )
+        driver.find_element(By.XPATH, "//*[ contains(text(), 'This app is paused') ]")
     except NoSuchElementException:
         return False
     else:
@@ -136,9 +134,9 @@ def _assert_token(connection_banner, driver):
         driver: Selenium webdriver instance.
     """
     ss = SessionStorage(driver)
-    assert connection_banner._poll_for(
-        lambda: ss.get("token") is not None
-    ), "token not found"
+    assert connection_banner._poll_for(lambda: ss.get("token") is not None), (
+        "token not found"
+    )
 
 
 @pytest.mark.asyncio
@@ -153,7 +151,6 @@ async def test_connection_banner(connection_banner: AppHarness):
     driver = connection_banner.frontend()
 
     _assert_token(connection_banner, driver)
-
     assert connection_banner._poll_for(lambda: not has_error_modal(driver))
 
     delay_button = driver.find_element(By.ID, "delay")

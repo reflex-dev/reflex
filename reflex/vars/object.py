@@ -27,7 +27,7 @@ from reflex.utils.types import (
     GenericType,
     get_attribute_access_type,
     get_origin,
-    unionize,
+    safe_issubclass,
 )
 
 from .base import (
@@ -191,10 +191,14 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         Returns:
             The item from the object.
         """
+        from .sequence import LiteralStringVar
+
         if not isinstance(key, (StringVar, str, int, NumberVar)) or (
             isinstance(key, NumberVar) and key._is_strict_float()
         ):
             raise_unsupported_operand_types("[]", (type(self), type(key)))
+        if isinstance(key, str) and isinstance(Var.create(key), LiteralStringVar):
+            return self.__getattr__(key)
         return ObjectItemOperation.create(self, key).guess_type()
 
     # NoReturn is used here to catch when key value is Any
@@ -258,12 +262,12 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         if types.is_optional(var_type):
             var_type = get_args(var_type)[0]
 
-        fixed_type = var_type if isclass(var_type) else get_origin(var_type)
+        fixed_type = get_origin(var_type) or var_type
 
         if (
-            (isclass(fixed_type) and not issubclass(fixed_type, Mapping))
+            is_typeddict(fixed_type)
+            or (isclass(fixed_type) and not safe_issubclass(fixed_type, Mapping))
             or (fixed_type in types.UnionTypes)
-            or is_typeddict(fixed_type)
         ):
             attribute_type = get_attribute_access_type(var_type, name)
             if attribute_type is None:

@@ -30,24 +30,46 @@ def foreach(
     Returns:
         The foreach component.
 
-    Raises:
-        ForeachVarError: If the iterable is of type Any.
-    """
-    iterable = LiteralVar.create(iterable).guess_type()
-    if isinstance(iterable, ObjectVar):
-        iterable = iterable.items()
+        Raises:
+            ForeachVarError: If the iterable is of type Any.
+            TypeError: If the render function is a ComponentState.
+            UntypedVarError: If the iterable is of type Any without a type annotation.
+        """
+        from reflex.vars import ArrayVar, ObjectVar, StringVar
 
-    if not isinstance(iterable, ArrayVar):
-        raise ForeachVarError(
-            f"Could not foreach over var `{iterable!s}` of type {iterable._var_type!s}. "
-            "(If you are trying to foreach over a state var, add a type annotation to the var). "
-            "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
-        )
+        iterable = LiteralVar.create(iterable).guess_type()
 
-    return iterable.foreach(render_fn)
+        if iterable._var_type == Any:
+            raise ForeachVarError(
+                f"Could not foreach over var `{iterable!s}` of type Any. "
+                "(If you are trying to foreach over a state var, add a type annotation to the var). "
+                "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
+            )
 
+        if (
+            hasattr(render_fn, "__qualname__")
+            and render_fn.__qualname__ == ComponentState.create.__qualname__
+        ):
+            raise TypeError(
+                "Using a ComponentState as `render_fn` inside `rx.foreach` is not supported yet."
+            )
+
+        if isinstance(iterable, ObjectVar):
+            iterable = iterable.entries()
+
+        if isinstance(iterable, StringVar):
+            iterable = iterable.split()
+
+        if not isinstance(iterable, ArrayVar):
+            raise ForeachVarError(
+                f"Could not foreach over var `{iterable!s}` of type {iterable._var_type}. "
+                "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
+            )
+
+        return iterable.foreach(render_fn)
+        
 
 class Foreach:
-    """Create a list of components from an iterable."""
+    """Create a foreach component."""
 
     create = staticmethod(foreach)

@@ -276,9 +276,9 @@ def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
     assert app._pages.keys() == {"test/[dynamic]"}
     assert "dynamic" in app._state.computed_vars
     assert app._state.computed_vars["dynamic"]._deps(objclass=EmptyState) == {
-        constants.ROUTER
+        EmptyState.get_full_name(): {constants.ROUTER},
     }
-    assert constants.ROUTER in app._state()._computed_var_dependencies
+    assert constants.ROUTER in app._state()._var_dependencies
 
 
 def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool):
@@ -896,6 +896,7 @@ class DynamicState(BaseState):
     loaded: int = 0
     counter: int = 0
 
+    @rx.event
     def on_load(self):
         """Event handler for page on_load, should trigger for all navigation events."""
         self.loaded = self.loaded + 1
@@ -994,9 +995,9 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     assert arg_name in app._state.vars
     assert arg_name in app._state.computed_vars
     assert app._state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
-        constants.ROUTER
+        DynamicState.get_full_name(): {constants.ROUTER},
     }
-    assert constants.ROUTER in app._state()._computed_var_dependencies
+    assert constants.ROUTER in app._state()._var_dependencies
 
     substate_token = _substate_key(token, DynamicState)
     sid = "mock_sid"
@@ -1269,12 +1270,23 @@ def compilable_app(tmp_path) -> Generator[tuple[App, Path], None, None]:
         yield app, web_dir
 
 
-def test_app_wrap_compile_theme(compilable_app: tuple[App, Path]):
+@pytest.mark.parametrize(
+    "react_strict_mode",
+    [True, False],
+)
+def test_app_wrap_compile_theme(
+    react_strict_mode: bool, compilable_app: tuple[App, Path], mocker
+):
     """Test that the radix theme component wraps the app.
 
     Args:
+        react_strict_mode: Whether to use React Strict Mode.
         compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
     """
+    conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
+    mocker.patch("reflex.config._get_config", return_value=conf)
+
     app, web_dir = compilable_app
     app.theme = rx.theme(accent_color="plum")
     app._compile()
@@ -1282,27 +1294,44 @@ def test_app_wrap_compile_theme(compilable_app: tuple[App, Path]):
     app_js_lines = [
         line.strip() for line in app_js_contents.splitlines() if line.strip()
     ]
+    lines = "".join(app_js_lines)
     assert (
         "function AppWrap({children}) {"
         "return ("
-        "<RadixThemesColorModeProvider>"
+        + ("<StrictMode>" if react_strict_mode else "")
+        + "<RadixThemesColorModeProvider>"
         "<RadixThemesTheme accentColor={\"plum\"} css={{...theme.styles.global[':root'], ...theme.styles.global.body}}>"
+        "<Fragment>"
+        "<MemoizedToastProvider/>"
         "<Fragment>"
         "{children}"
         "</Fragment>"
+        "</Fragment>"
         "</RadixThemesTheme>"
         "</RadixThemesColorModeProvider>"
-        ")"
+        + ("</StrictMode>" if react_strict_mode else "")
+        + ")"
         "}"
-    ) in "".join(app_js_lines)
+    ) in lines
 
 
-def test_app_wrap_priority(compilable_app: tuple[App, Path]):
+@pytest.mark.parametrize(
+    "react_strict_mode",
+    [True, False],
+)
+def test_app_wrap_priority(
+    react_strict_mode: bool, compilable_app: tuple[App, Path], mocker
+):
     """Test that the app wrap components are wrapped in the correct order.
 
     Args:
+        react_strict_mode: Whether to use React Strict Mode.
         compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
     """
+    conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
+    mocker.patch("reflex.config._get_config", return_value=conf)
+
     app, web_dir = compilable_app
 
     class Fragment1(Component):
@@ -1332,23 +1361,24 @@ def test_app_wrap_priority(compilable_app: tuple[App, Path]):
     app_js_lines = [
         line.strip() for line in app_js_contents.splitlines() if line.strip()
     ]
+    lines = "".join(app_js_lines)
     assert (
         "function AppWrap({children}) {"
-        "return ("
-        "<RadixThemesBox>"
+        "return (" + ("<StrictMode>" if react_strict_mode else "") + "<RadixThemesBox>"
         '<RadixThemesText as={"p"}>'
         "<RadixThemesColorModeProvider>"
         "<Fragment2>"
         "<Fragment>"
+        "<MemoizedToastProvider/>"
+        "<Fragment>"
         "{children}"
+        "</Fragment>"
         "</Fragment>"
         "</Fragment2>"
         "</RadixThemesColorModeProvider>"
         "</RadixThemesText>"
-        "</RadixThemesBox>"
-        ")"
-        "}"
-    ) in "".join(app_js_lines)
+        "</RadixThemesBox>" + ("</StrictMode>" if react_strict_mode else "")
+    ) in lines
 
 
 def test_app_state_determination():
@@ -1549,6 +1579,16 @@ def test_app_with_valid_var_dependencies(compilable_app: tuple[App, Path]):
         @computed_var(deps=["_backend", "base", foo])
         def bar(self) -> str:
             return "bar"
+
+    class Child1(ValidDepState):
+        @computed_var(deps=["base", ValidDepState.bar])
+        def other(self) -> str:
+            return "other"
+
+    class Child2(ValidDepState):
+        @computed_var(deps=["base", Child1.other])
+        def other(self) -> str:
+            return "other"
 
     app._state = ValidDepState
     app._compile()

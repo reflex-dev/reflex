@@ -8,6 +8,7 @@ from pandas import DataFrame
 
 import reflex as rx
 from reflex.base import Base
+from reflex.config import PerformanceMode
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.state import BaseState
 from reflex.utils.exceptions import (
@@ -1914,9 +1915,9 @@ def cv_fget(state: BaseState) -> int:
 @pytest.mark.parametrize(
     "deps,expected",
     [
-        (["a"], {"a"}),
-        (["b"], {"b"}),
-        ([ComputedVar(fget=cv_fget)], {"cv_fget"}),
+        (["a"], {None: {"a"}}),
+        (["b"], {None: {"b"}}),
+        ([ComputedVar(fget=cv_fget)], {None: {"cv_fget"}}),
     ],
 )
 def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
@@ -1964,6 +1965,28 @@ def test_to_string_operation():
     assert single_var._var_type == Email
 
 
+@pytest.mark.asyncio
+async def test_async_computed_var():
+    side_effect_counter = 0
+
+    class AsyncComputedVarState(BaseState):
+        v: int = 1
+
+        @computed_var(cache=True)
+        async def async_computed_var(self) -> int:
+            nonlocal side_effect_counter
+            side_effect_counter += 1
+            return self.v + 1
+
+    my_state = AsyncComputedVarState()
+    assert await my_state.async_computed_var == 2
+    assert await my_state.async_computed_var == 2
+    my_state.v = 2
+    assert await my_state.async_computed_var == 3
+    assert await my_state.async_computed_var == 3
+    assert side_effect_counter == 2
+
+
 def test_var_data_hooks():
     var_data_str = VarData(hooks="what")
     var_data_list = VarData(hooks=["what"])
@@ -1978,3 +2001,27 @@ def test_var_data_hooks():
 def test_var_data_with_hooks_value():
     var_data = VarData(hooks={"what": VarData(hooks={"whot": VarData(hooks="whott")})})
     assert var_data == VarData(hooks=["what", "whot", "whott"])
+
+
+def test_str_var_in_components(mocker):
+    class StateWithVar(rx.State):
+        field: int = 1
+
+    mocker.patch(
+        "reflex.components.base.bare.get_performance_mode",
+        return_value=PerformanceMode.RAISE,
+    )
+
+    with pytest.raises(ValueError):
+        rx.vstack(
+            str(StateWithVar.field),
+        )
+
+    mocker.patch(
+        "reflex.components.base.bare.get_performance_mode",
+        return_value=PerformanceMode.OFF,
+    )
+
+    rx.vstack(
+        str(StateWithVar.field),
+    )

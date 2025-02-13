@@ -25,9 +25,8 @@ from typing import (
 )
 
 from typing_extensions import (
-    Concatenate,
-    ParamSpec,
     Protocol,
+    Self,
     TypeAliasType,
     TypedDict,
     TypeVar,
@@ -112,7 +111,7 @@ class EventActionsMixin:
     event_actions: Dict[str, Union[bool, int]] = dataclasses.field(default_factory=dict)
 
     @property
-    def stop_propagation(self):
+    def stop_propagation(self) -> Self:
         """Stop the event from bubbling up the DOM tree.
 
         Returns:
@@ -124,7 +123,7 @@ class EventActionsMixin:
         )
 
     @property
-    def prevent_default(self):
+    def prevent_default(self) -> Self:
         """Prevent the default behavior of the event.
 
         Returns:
@@ -135,7 +134,7 @@ class EventActionsMixin:
             event_actions={"preventDefault": True, **self.event_actions},
         )
 
-    def throttle(self, limit_ms: int):
+    def throttle(self, limit_ms: int) -> Self:
         """Throttle the event handler.
 
         Args:
@@ -149,7 +148,7 @@ class EventActionsMixin:
             event_actions={"throttle": limit_ms, **self.event_actions},
         )
 
-    def debounce(self, delay_ms: int):
+    def debounce(self, delay_ms: int) -> Self:
         """Debounce the event handler.
 
         Args:
@@ -164,7 +163,7 @@ class EventActionsMixin:
         )
 
     @property
-    def temporal(self):
+    def temporal(self) -> Self:
         """Do not queue the event if the backend is down.
 
         Returns:
@@ -334,7 +333,7 @@ class EventSpec(EventActionsMixin):
         arg = None
         try:
             for arg in args:
-                values.append(LiteralVar.create(value=arg))  # noqa: PERF401
+                values.append(LiteralVar.create(value=arg))  # noqa: PERF401, RUF100
         except TypeError as e:
             raise EventHandlerTypeError(
                 f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
@@ -1100,7 +1099,7 @@ def _callback_arg_spec(eval_result: Any):
 
 def call_script(
     javascript_code: str | Var[str],
-    callback: EventType | None = None,
+    callback: EventType[Any] | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -1139,7 +1138,7 @@ def call_script(
 
 def call_function(
     javascript_code: str | Var,
-    callback: EventType | None = None,
+    callback: EventType[Any] | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -1173,7 +1172,7 @@ def call_function(
 
 def run_script(
     javascript_code: str | Var,
-    callback: EventType | None = None,
+    callback: EventType[Any] | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
@@ -1771,8 +1770,8 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
         )
 
 
-P = ParamSpec("P")
-Q = ParamSpec("Q")
+P = TypeVarTuple("P")
+Q = TypeVarTuple("Q")
 T = TypeVar("T")
 V = TypeVar("V")
 V2 = TypeVar("V2")
@@ -1781,10 +1780,10 @@ V4 = TypeVar("V4")
 V5 = TypeVar("V5")
 
 
-class EventCallback(Generic[P, T]):
+class EventCallback(Generic[Unpack[P]], EventActionsMixin):
     """A descriptor that wraps a function to be used as an event."""
 
-    def __init__(self, func: Callable[Concatenate[Any, P], T]):
+    def __init__(self, func: Callable[[Any, Unpack[P]], Any]):
         """Initialize the descriptor with the function to be wrapped.
 
         Args:
@@ -1792,88 +1791,39 @@ class EventCallback(Generic[P, T]):
         """
         self.func = func
 
-    def throttle(self, limit_ms: int):
-        """Throttle the event handler.
-
-        Args:
-            limit_ms: The time in milliseconds to throttle the event handler.
-
-        Returns:
-            New EventHandler-like with throttle set to limit_ms.
-        """
-        return self
-
-    def debounce(self, delay_ms: int):
-        """Debounce the event handler.
-
-        Args:
-            delay_ms: The time in milliseconds to debounce the event handler.
-
-        Returns:
-            New EventHandler-like with debounce set to delay_ms.
-        """
-        return self
-
-    @property
-    def temporal(self):
-        """Do not queue the event if the backend is down.
-
-        Returns:
-            New EventHandler-like with temporal set to True.
-        """
-        return self
-
-    @property
-    def prevent_default(self):
-        """Prevent default behavior.
-
-        Returns:
-            The event callback with prevent default behavior.
-        """
-        return self
-
-    @property
-    def stop_propagation(self):
-        """Stop event propagation.
-
-        Returns:
-            The event callback with stop propagation behavior.
-        """
-        return self
+    @overload
+    def __call__(
+        self: EventCallback[Unpack[Q]],
+    ) -> EventCallback[Unpack[Q]]: ...
 
     @overload
     def __call__(
-        self: EventCallback[Q, T],
-    ) -> EventCallback[Q, T]: ...
+        self: EventCallback[V, Unpack[Q]], value: V | Var[V]
+    ) -> EventCallback[Unpack[Q]]: ...
 
     @overload
     def __call__(
-        self: EventCallback[Concatenate[V, Q], T], value: V | Var[V]
-    ) -> EventCallback[Q, T]: ...
-
-    @overload
-    def __call__(
-        self: EventCallback[Concatenate[V, V2, Q], T],
+        self: EventCallback[V, V2, Unpack[Q]],
         value: V | Var[V],
         value2: V2 | Var[V2],
-    ) -> EventCallback[Q, T]: ...
+    ) -> EventCallback[Unpack[Q]]: ...
 
     @overload
     def __call__(
-        self: EventCallback[Concatenate[V, V2, V3, Q], T],
+        self: EventCallback[V, V2, V3, Unpack[Q]],
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
-    ) -> EventCallback[Q, T]: ...
+    ) -> EventCallback[Unpack[Q]]: ...
 
     @overload
     def __call__(
-        self: EventCallback[Concatenate[V, V2, V3, V4, Q], T],
+        self: EventCallback[V, V2, V3, V4, Unpack[Q]],
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
         value4: V4 | Var[V4],
-    ) -> EventCallback[Q, T]: ...
+    ) -> EventCallback[Unpack[Q]]: ...
 
     def __call__(self, *values) -> EventCallback:  # pyright: ignore [reportInconsistentOverload]
         """Call the function with the values.
@@ -1884,15 +1834,15 @@ class EventCallback(Generic[P, T]):
         Returns:
             The function with the values.
         """
-        return self.func(*values)  # pyright: ignore [reportCallIssue, reportReturnType]
+        return self.func(*values)  # pyright: ignore [reportArgumentType]
 
     @overload
     def __get__(
-        self: EventCallback[P, T], instance: None, owner: Any
-    ) -> EventCallback[P, T]: ...
+        self: EventCallback[Unpack[P]], instance: None, owner: Any
+    ) -> EventCallback[Unpack[P]]: ...
 
     @overload
-    def __get__(self, instance: Any, owner: Any) -> Callable[P, T]: ...
+    def __get__(self, instance: Any, owner: Any) -> Callable[[Unpack[P]]]: ...
 
     def __get__(self, instance: Any, owner: Any) -> Callable:
         """Get the function with the instance bound to it.
@@ -1910,7 +1860,62 @@ class EventCallback(Generic[P, T]):
         return partial(self.func, instance)
 
 
-G = ParamSpec("G")
+class LambdaEventCallback(Protocol[Unpack[P]]):
+    """A protocol for a lambda event callback."""
+
+    @overload
+    def __call__(self: LambdaEventCallback[()]) -> Any: ...
+
+    @overload
+    def __call__(self: LambdaEventCallback[V], value: Var[V], /) -> Any: ...
+
+    @overload
+    def __call__(
+        self: LambdaEventCallback[V, V2], value: Var[V], value2: Var[V2], /
+    ) -> Any: ...
+
+    @overload
+    def __call__(
+        self: LambdaEventCallback[V, V2, V3],
+        value: Var[V],
+        value2: Var[V2],
+        value3: Var[V3],
+        /,
+    ) -> Any: ...
+
+    def __call__(self, *args: Var) -> Any:
+        """Call the lambda with the args.
+
+        Args:
+            *args: The args to call the lambda with.
+        """
+
+
+ARGS = TypeVarTuple("ARGS")
+
+
+LAMBDA_OR_STATE = TypeAliasType(
+    "LAMBDA_OR_STATE",
+    LambdaEventCallback[Unpack[ARGS]] | EventCallback[Unpack[ARGS]],
+    type_params=(ARGS,),
+)
+
+ItemOrList = V | List[V]
+
+BASIC_EVENT_TYPES = TypeAliasType(
+    "BASIC_EVENT_TYPES", EventSpec | EventHandler | Var[Any], type_params=()
+)
+
+IndividualEventType = TypeAliasType(
+    "IndividualEventType",
+    LAMBDA_OR_STATE[Unpack[ARGS]] | BASIC_EVENT_TYPES,
+    type_params=(ARGS,),
+)
+
+EventType = TypeAliasType(
+    "EventType", ItemOrList[IndividualEventType[Unpack[ARGS]]], type_params=(ARGS,)
+)
+
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -1918,25 +1923,6 @@ if TYPE_CHECKING:
     BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
 else:
     BASE_STATE = TypeVar("BASE_STATE")
-
-StateCallable = TypeAliasType(
-    "StateCallable",
-    Callable[Concatenate[BASE_STATE, G], Any],
-    type_params=(G, BASE_STATE),
-)
-
-IndividualEventType = Union[
-    EventSpec,
-    EventHandler,
-    Callable[G, Any],
-    StateCallable[G, BASE_STATE],
-    EventCallback[G, Any],
-    Var[Any],
-]
-
-ItemOrList = Union[V, List[V]]
-
-EventType = ItemOrList[IndividualEventType[G, BASE_STATE]]
 
 
 class EventNamespace(types.SimpleNamespace):
@@ -1958,24 +1944,26 @@ class EventNamespace(types.SimpleNamespace):
     @staticmethod
     def __call__(
         func: None = None, *, background: bool | None = None
-    ) -> Callable[[Callable[Concatenate[BASE_STATE, P], T]], EventCallback[P, T]]: ...  # pyright: ignore [reportInvalidTypeVarUse]
+    ) -> Callable[
+        [Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]  # pyright: ignore [reportInvalidTypeVarUse]
+    ]: ...
 
     @overload
     @staticmethod
     def __call__(
-        func: Callable[Concatenate[BASE_STATE, P], T],
+        func: Callable[[BASE_STATE, Unpack[P]], Any],
         *,
         background: bool | None = None,
-    ) -> EventCallback[P, T]: ...
+    ) -> EventCallback[Unpack[P]]: ...
 
     @staticmethod
     def __call__(
-        func: Callable[Concatenate[BASE_STATE, P], T] | None = None,
+        func: Callable[[BASE_STATE, Unpack[P]], Any] | None = None,
         *,
         background: bool | None = None,
     ) -> Union[
-        EventCallback[P, T],
-        Callable[[Callable[Concatenate[BASE_STATE, P], T]], EventCallback[P, T]],
+        EventCallback[Unpack[P]],
+        Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]],
     ]:
         """Wrap a function to be used as an event.
 
@@ -1991,8 +1979,8 @@ class EventNamespace(types.SimpleNamespace):
         """
 
         def wrapper(
-            func: Callable[Concatenate[BASE_STATE, P], T],
-        ) -> EventCallback[P, T]:
+            func: Callable[[BASE_STATE, Unpack[P]], T],
+        ) -> EventCallback[Unpack[P]]:
             if background is True:
                 if not inspect.iscoroutinefunction(
                     func

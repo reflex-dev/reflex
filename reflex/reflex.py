@@ -26,6 +26,8 @@ except TypeError:
     # Fallback for older typer versions.
     cli = typer.Typer(add_completion=False)
 
+SHOW_BUILT_WITH_REFLEX_INFO = "https://reflex.dev/docs/hosting/reflex-branding/"
+
 # Get the config.
 config = get_config()
 
@@ -125,8 +127,8 @@ def _run(
     env: constants.Env = constants.Env.DEV,
     frontend: bool = True,
     backend: bool = True,
-    frontend_port: int = config.frontend_port,
-    backend_port: int = config.backend_port,
+    frontend_port: int | None = None,
+    backend_port: int | None = None,
     backend_host: str = config.backend_host,
     loglevel: constants.LogLevel = config.loglevel,
 ):
@@ -143,10 +145,7 @@ def _run(
     exec.output_system_info()
 
     # If no --frontend-only and no --backend-only, then turn on frontend and backend both
-    if not frontend and not backend:
-        frontend = True
-        backend = True
-
+    frontend, backend = prerequisites.check_running_mode(frontend, backend)
     if not frontend and backend:
         _skip_compile()
 
@@ -159,17 +158,28 @@ def _run(
 
     # Find the next available open port if applicable.
     if frontend:
+        auto_increment_frontend = not bool(frontend_port or config.frontend_port)
         frontend_port = processes.handle_port(
             "frontend",
-            frontend_port,
-            constants.DefaultPorts.FRONTEND_PORT,
+            (
+                frontend_port
+                or config.frontend_port
+                or constants.DefaultPorts.FRONTEND_PORT
+            ),
+            auto_increment=auto_increment_frontend,
         )
 
     if backend:
+        auto_increment_backend = not bool(backend_port or config.backend_port)
+
         backend_port = processes.handle_port(
             "backend",
-            backend_port,
-            constants.DefaultPorts.BACKEND_PORT,
+            (
+                backend_port
+                or config.backend_port
+                or constants.DefaultPorts.BACKEND_PORT
+            ),
+            auto_increment=auto_increment_backend,
         )
 
     # Apply the new ports to the config.
@@ -186,6 +196,15 @@ def _run(
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
     if frontend:
+        if not config.show_built_with_reflex:
+            # The sticky badge may be disabled at runtime for team/enterprise tiers.
+            prerequisites.check_config_option_in_tier(
+                option_name="show_built_with_reflex",
+                allowed_tiers=["team", "enterprise"],
+                fallback_value=True,
+                help_link=SHOW_BUILT_WITH_REFLEX_INFO,
+            )
+
         # Get the app module.
         prerequisites.get_compiled_app()
 
@@ -238,7 +257,7 @@ def _run(
     # Start the frontend and backend.
     with processes.run_concurrently_context(*commands):
         # In dev mode, run the backend on the main thread.
-        if backend and env == constants.Env.DEV:
+        if backend and backend_port and env == constants.Env.DEV:
             backend_cmd(
                 backend_host, int(backend_port), loglevel.subprocess_level(), frontend
             )
@@ -267,10 +286,14 @@ def run(
         envvar=environment.REFLEX_BACKEND_ONLY.name,
     ),
     frontend_port: int = typer.Option(
-        config.frontend_port, help="Specify a different frontend port."
+        config.frontend_port,
+        help="Specify a different frontend port.",
+        envvar=environment.REFLEX_FRONTEND_PORT.name,
     ),
     backend_port: int = typer.Option(
-        config.backend_port, help="Specify a different backend port."
+        config.backend_port,
+        help="Specify a different backend port.",
+        envvar=environment.REFLEX_BACKEND_PORT.name,
     ),
     backend_host: str = typer.Option(
         config.backend_host, help="Specify the backend host."
@@ -295,10 +318,18 @@ def export(
         True, "--no-zip", help="Disable zip for backend and frontend exports."
     ),
     frontend: bool = typer.Option(
-        True, "--backend-only", help="Export only backend.", show_default=False
+        False,
+        "--frontend-only",
+        help="Export only frontend.",
+        show_default=False,
+        envvar=environment.REFLEX_FRONTEND_ONLY.name,
     ),
     backend: bool = typer.Option(
-        True, "--frontend-only", help="Export only frontend.", show_default=False
+        False,
+        "--backend-only",
+        help="Export only backend.",
+        show_default=False,
+        envvar=environment.REFLEX_BACKEND_ONLY.name,
     ),
     zip_dest_dir: str = typer.Option(
         str(Path.cwd()),
@@ -321,8 +352,19 @@ def export(
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
 
-    if prerequisites.needs_reinit(frontend=True):
+    frontend, backend = prerequisites.check_running_mode(frontend, backend)
+
+    if prerequisites.needs_reinit(frontend=frontend or not backend):
         _init(name=config.app_name, loglevel=loglevel)
+
+    if frontend and not config.show_built_with_reflex:
+        # The sticky badge may be disabled on export for team/enterprise tiers.
+        prerequisites.check_config_option_in_tier(
+            option_name="show_built_with_reflex",
+            allowed_tiers=["team", "enterprise"],
+            fallback_value=False,
+            help_link=SHOW_BUILT_WITH_REFLEX_INFO,
+        )
 
     export_utils.export(
         zipping=zipping,
@@ -517,6 +559,15 @@ def deploy(
     from reflex.utils import prerequisites
 
     check_version()
+
+    if not config.show_built_with_reflex:
+        # The sticky badge may be disabled on deploy for pro/team/enterprise tiers.
+        prerequisites.check_config_option_in_tier(
+            option_name="show_built_with_reflex",
+            allowed_tiers=["pro", "team", "enterprise"],
+            fallback_value=True,
+            help_link=SHOW_BUILT_WITH_REFLEX_INFO,
+        )
 
     # Set the log level.
     console.set_log_level(loglevel)

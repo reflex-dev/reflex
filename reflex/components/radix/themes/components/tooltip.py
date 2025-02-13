@@ -3,6 +3,7 @@
 from typing import Dict, Literal, Union
 
 from reflex.components.component import Component
+from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.utils import format
 from reflex.vars.base import Var
@@ -93,6 +94,8 @@ class Tooltip(RadixThemesComponent):
 
     # Fired when the pointer is down outside the tooltip.
     on_pointer_down_outside: EventHandler[no_args_event_spec]
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
     @classmethod
     def create(cls, *children, **props) -> Component:

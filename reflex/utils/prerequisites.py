@@ -23,7 +23,8 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, List, NamedTuple, Optional
+from typing import Any, Callable, List, NamedTuple, Optional
+from urllib.parse import urlparse
 
 import httpx
 import typer
@@ -64,7 +65,7 @@ class Template:
     name: str
     description: str
     code_url: str
-    demo_url: str
+    demo_url: str | None = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -912,7 +913,6 @@ def _update_next_config(
     next_config = {
         "basePath": config.frontend_path or "",
         "compress": config.next_compression,
-        "reactStrictMode": config.react_strict_mode,
         "trailingSlash": True,
         "staticPageGenerationTimeout": config.static_page_generation_timeout,
     }
@@ -1226,6 +1226,21 @@ def install_frontend_packages(packages: set[str], config: Config):
         )
 
 
+def check_running_mode(frontend: bool, backend: bool) -> tuple[bool, bool]:
+    """Check if the app is running in frontend or backend mode.
+
+    Args:
+        frontend: Whether to run the frontend of the app.
+        backend: Whether to run the backend of the app.
+
+    Returns:
+        The running modes.
+    """
+    if not frontend and not backend:
+        return True, True
+    return frontend, backend
+
+
 def needs_reinit(frontend: bool = True) -> bool:
     """Check if an app needs to be reinitialized.
 
@@ -1294,10 +1309,13 @@ def validate_bun():
     """
     bun_path = path_ops.get_bun_path()
 
-    if bun_path and bun_path.samefile(constants.Bun.DEFAULT_PATH):
+    if bun_path is None:
+        return
+
+    if not path_ops.samefile(bun_path, constants.Bun.DEFAULT_PATH):
         console.info(f"Using custom Bun path: {bun_path}")
         bun_version = get_bun_version()
-        if not bun_version:
+        if bun_version is None:
             console.error(
                 "Failed to obtain bun version. Make sure the specified bun path in your config is correct."
             )
@@ -1462,7 +1480,7 @@ def prompt_for_template_options(templates: list[Template]) -> str:
     # Show the user the URLs of each template to preview.
     console.print("\nGet started with a template:")
 
-    def format_demo_url_str(url: str) -> str:
+    def format_demo_url_str(url: str | None) -> str:
         return f" ({url})" if url else ""
 
     # Prompt the user to select a template.
@@ -1662,9 +1680,11 @@ def validate_and_create_app_using_remote_template(
 
         template_url = templates[template].code_url
     else:
+        template_parsed_url = urlparse(template)
         # Check if the template is a github repo.
-        if template.startswith("https://github.com"):
-            template_url = f"{template.strip('/').replace('.git', '')}/archive/main.zip"
+        if template_parsed_url.hostname == "github.com":
+            path = template_parsed_url.path.strip("/").removesuffix(".git")
+            template_url = f"https://github.com/{path}/archive/main.zip"
         else:
             console.error(f"Template `{template}` not found or invalid.")
             raise typer.Exit(1)
@@ -1855,7 +1875,7 @@ def initialize_main_module_index_from_generation(app_name: str, generation_hash:
             [
                 resp.text,
                 "",
-                "" "def index() -> rx.Component:",
+                "def index() -> rx.Component:",
                 f"    return {render_func_name}()",
                 "",
                 "",
@@ -1979,3 +1999,40 @@ def is_generation_hash(template: str) -> bool:
         True if the template is composed of 32 or more hex characters.
     """
     return re.match(r"^[0-9a-f]{32,}$", template) is not None
+
+
+def check_config_option_in_tier(
+    option_name: str,
+    allowed_tiers: list[str],
+    fallback_value: Any,
+    help_link: str | None = None,
+):
+    """Check if a config option is allowed for the authenticated user's current tier.
+
+    Args:
+        option_name: The name of the option to check.
+        allowed_tiers: The tiers that are allowed to use the option.
+        fallback_value: The fallback value if the option is not allowed.
+        help_link: The help link to show to a user that is authenticated.
+    """
+    from reflex_cli.v2.utils import hosting
+
+    config = get_config()
+    authenticated_token = hosting.authenticated_token()
+    if not authenticated_token[0]:
+        the_remedy = (
+            "You are currently logged out. Run `reflex login` to access this option."
+        )
+        current_tier = "anonymous"
+    else:
+        current_tier = authenticated_token[1].get("tier", "").lower()
+        the_remedy = (
+            f"Your current subscription tier is `{current_tier}`. "
+            f"Please upgrade to {allowed_tiers} to access this option. "
+        )
+        if help_link:
+            the_remedy += f"See {help_link} for more information."
+    if current_tier not in allowed_tiers:
+        console.warn(f"Config option `{option_name}` is restricted. {the_remedy}")
+        setattr(config, option_name, fallback_value)
+        config._set_persistent(**{option_name: fallback_value})

@@ -64,6 +64,7 @@ from .number import (
 if TYPE_CHECKING:
     from .function import FunctionVar
 
+
 STRING_TYPE = TypeVar("STRING_TYPE", default=str)
 ARRAY_VAR_TYPE = TypeVar("ARRAY_VAR_TYPE", bound=Union[Set, Tuple, Sequence])
 OTHER_ARRAY_VAR_TYPE = TypeVar(
@@ -337,7 +338,7 @@ def string_replace_operation(
         The string replace operation.
     """
     return var_operation_return(
-        js_expression=f"{string}.replace({search_value}, {new_value})",
+        js_expression=f"{string}.replaceAll({search_value}, {new_value})",
         var_type=str,
     )
 

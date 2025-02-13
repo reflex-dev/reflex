@@ -98,6 +98,7 @@ GenericType = Union[Type, _GenericAlias]
 # Valid state var types.
 JSONType = {str, int, float, bool}
 PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
+PrimitiveTypes = (int, float, bool, str, list, dict, set, tuple)
 StateVar = Union[PrimitiveType, Base, None]
 StateIterVar = Union[list, set, tuple]
 
@@ -561,13 +562,13 @@ def does_obj_satisfy_typed_dict(obj: Any, cls: GenericType) -> bool:
     return required_keys.issubset(required_keys)
 
 
-def _isinstance(obj: Any, cls: GenericType, nested: bool = False) -> bool:
+def _isinstance(obj: Any, cls: GenericType, nested: int = 0) -> bool:
     """Check if an object is an instance of a class.
 
     Args:
         obj: The object to check.
         cls: The class to check against.
-        nested: Whether the check is nested.
+        nested: How many levels deep to check.
 
     Returns:
         Whether the object is an instance of the class.
@@ -575,14 +576,23 @@ def _isinstance(obj: Any, cls: GenericType, nested: bool = False) -> bool:
     if cls is Any:
         return True
 
+    from reflex.vars import LiteralVar, Var
+
+    if cls is Var:
+        return isinstance(obj, Var)
+    if isinstance(obj, LiteralVar):
+        return _isinstance(obj._var_value, cls, nested=nested)
+    if isinstance(obj, Var):
+        return _issubclass(obj._var_type, cls)
+
     if cls is None or cls is type(None):
         return obj is None
 
+    if cls and is_union(cls):
+        return any(_isinstance(obj, arg, nested=nested) for arg in get_args(cls))
+
     if is_literal(cls):
         return obj in get_args(cls)
-
-    if is_union(cls):
-        return any(_isinstance(obj, arg) for arg in get_args(cls))
 
     origin = get_origin(cls)
 
@@ -606,38 +616,40 @@ def _isinstance(obj: Any, cls: GenericType, nested: bool = False) -> bool:
         # cls is a simple generic class
         return isinstance(obj, origin)
 
-    if nested and args:
+    if nested > 0 and args:
         if origin is list:
             return isinstance(obj, list) and all(
-                _isinstance(item, args[0]) for item in obj
+                _isinstance(item, args[0], nested=nested - 1) for item in obj
             )
         if origin is tuple:
             if args[-1] is Ellipsis:
                 return isinstance(obj, tuple) and all(
-                    _isinstance(item, args[0]) for item in obj
+                    _isinstance(item, args[0], nested=nested - 1) for item in obj
                 )
             return (
                 isinstance(obj, tuple)
                 and len(obj) == len(args)
                 and all(
-                    _isinstance(item, arg) for item, arg in zip(obj, args, strict=True)
+                    _isinstance(item, arg, nested=nested - 1)
+                    for item, arg in zip(obj, args, strict=True)
                 )
             )
-        if origin in (dict, Breakpoints):
-            return isinstance(obj, dict) and all(
-                _isinstance(key, args[0]) and _isinstance(value, args[1])
+        if origin in (dict, Mapping, Breakpoints):
+            return isinstance(obj, Mapping) and all(
+                _isinstance(key, args[0], nested=nested - 1)
+                and _isinstance(value, args[1], nested=nested - 1)
                 for key, value in obj.items()
             )
         if origin is set:
             return isinstance(obj, set) and all(
-                _isinstance(item, args[0]) for item in obj
+                _isinstance(item, args[0], nested=nested - 1) for item in obj
             )
 
     if args:
         from reflex.vars import Field
 
         if origin is Field:
-            return _isinstance(obj, args[0])
+            return _isinstance(obj, args[0], nested=nested)
 
     return isinstance(obj, get_base_class(cls))
 
@@ -759,7 +771,7 @@ def check_prop_in_allowed_types(prop: Any, allowed_types: Iterable) -> bool:
     """
     from reflex.vars import Var
 
-    type_ = prop._var_type if _isinstance(prop, Var) else type(prop)
+    type_ = prop._var_type if isinstance(prop, Var) else type(prop)
     return type_ in allowed_types
 
 

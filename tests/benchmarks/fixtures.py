@@ -213,10 +213,86 @@ def side_bar():
     )
 
 
+class NestedElement(rx.Base):
+    """A nested element."""
+
+    identifier: str
+    value: list[int]
+
+
+class BenchmarkState(rx.State):
+    """State for the benchmark."""
+
+    counter: rx.Field[int] = rx.field(17)
+
+    current_key: rx.Field[str] = rx.field("key_2")
+
+    @rx.event
+    def increment(self):
+        """Increment the counter."""
+        self.counter = self.counter + 1
+
+    @rx.event
+    def decrement(self):
+        """Decrement the counter."""
+        self.counter = self.counter - 1
+
+    @rx.var
+    def elements(self) -> list[int]:
+        """List of elements.
+
+        Returns:
+            List of elements.
+        """
+        if self.counter < 0:
+            return list(range(0))
+        return list(range(self.counter))
+
+    @rx.var
+    def nested_elements(self) -> list[NestedElement]:
+        """List of nested elements.
+
+        Returns:
+            List of nested elements.
+        """
+        return [
+            NestedElement(
+                identifier=str(i),
+                value=list(range(i)),
+            )
+            for i in range(self.counter)
+        ]
+
+    @rx.var
+    def show_odd(self) -> bool:
+        """Check if the counter is odd.
+
+        Returns:
+            True if the counter is odd, False otherwise.
+        """
+        return self.counter % 2 == 1
+
+    @rx.var
+    def show_even(self) -> bool:
+        """Check if the counter is even.
+
+        Returns:
+            True if the counter is even, False otherwise.
+        """
+        return self.counter % 2 == 0
+
+
 LOREM_IPSUM = "Lorem ipsum dolor sit amet, dolor ut dolore pariatur aliqua enim tempor sed. Labore excepteur sed exercitation. Ullamco aliquip lorem sunt enim in incididunt. Magna anim officia sint cillum labore. Ut eu non dolore minim nostrud magna eu, aute ex in incididunt irure eu. Fugiat et magna magna est excepteur eiusmod minim. Quis eiusmod et non pariatur dolor veniam incididunt, eiusmod irure enim sed dolor lorem pariatur do. Occaecat duis irure excepteur dolore. Proident ut laborum pariatur sit sit, nisi nostrud voluptate magna commodo laborum esse velit. Voluptate non minim deserunt adipiscing irure deserunt cupidatat. Laboris veniam commodo incididunt veniam lorem occaecat, fugiat ipsum dolor cupidatat. Ea officia sed eu excepteur culpa adipiscing, tempor consectetur ullamco eu. Anim ex proident nulla sunt culpa, voluptate veniam proident est adipiscing sint elit velit. Laboris adipiscing est culpa cillum magna. Sit veniam nulla nulla, aliqua eiusmod commodo lorem cupidatat commodo occaecat. Fugiat cillum dolor incididunt mollit eiusmod sint. Non lorem dolore labore excepteur minim laborum sed. Irure nisi do lorem nulla sunt commodo, deserunt quis mollit consectetur minim et esse est, proident nostrud officia enim sed reprehenderit. Magna cillum consequat aute reprehenderit duis sunt ullamco. Labore qui mollit voluptate. Duis dolor sint aute amet aliquip officia, est non mollit tempor enim quis fugiat, eu do culpa consectetur magna. Do ullamco aliqua voluptate culpa excepteur reprehenderit reprehenderit. Occaecat nulla sit est magna. Deserunt ea voluptate veniam cillum. Amet cupidatat duis est tempor fugiat ex eu, officia est sunt consectetur labore esse exercitation. Nisi cupidatat irure est nisi. Officia amet eu veniam reprehenderit. In amet incididunt tempor commodo ea labore. Mollit dolor aliquip excepteur, voluptate aute occaecat id officia proident. Ullamco est amet tempor. Proident aliquip proident mollit do aliquip ipsum, culpa quis aute id irure. Velit excepteur cillum cillum ut cupidatat. Occaecat qui elit esse nulla minim. Consequat velit id ad pariatur tempor. Eiusmod deserunt aliqua ex sed quis non. Dolor sint commodo ex in deserunt nostrud excepteur, pariatur ex aliqua anim adipiscing amet proident. Laboris eu laborum magna lorem ipsum fugiat velit."
 
 
-def complicated_page():
+def _simple_page():
+    return rx.box(
+        rx.heading("Simple Page", size="1"),
+        rx.text(LOREM_IPSUM),
+    )
+
+
+def _complicated_page():
     return rx.hstack(
         side_bar(),
         rx.box(
@@ -226,6 +302,82 @@ def complicated_page():
     )
 
 
-@pytest.mark.benchmark
-def test_component_init():
-    complicated_page()
+def _counter():
+    return (
+        rx.text(BenchmarkState.counter),
+        rx.button("Increment", on_click=BenchmarkState.increment),
+        rx.button("Decrement", on_click=BenchmarkState.decrement),
+        rx.cond(
+            BenchmarkState.counter < 0,
+            rx.text("Counter is negative"),
+            rx.fragment(
+                rx.cond(
+                    BenchmarkState.show_odd,
+                    rx.text("Counter is odd"),
+                ),
+                rx.cond(
+                    BenchmarkState.show_even,
+                    rx.text("Counter is even"),
+                ),
+            ),
+        ),
+    )
+
+
+def _show_key():
+    return rx.match(
+        BenchmarkState.current_key,
+        (
+            "key_1",
+            rx.text("Key 1"),
+        ),
+        (
+            "key_2",
+            rx.text("Key 2"),
+        ),
+        (
+            "key_3",
+            rx.text("Key 3"),
+        ),
+        rx.text("Key not found"),
+    )
+
+
+def _simple_foreach():
+    return rx.foreach(
+        BenchmarkState.elements,
+        lambda elem: rx.text(elem),
+    )
+
+
+def _render_nested_element(elem: NestedElement, idx):
+    return (
+        rx.text(f"{idx} {elem.identifier}"),
+        rx.foreach(elem.value, lambda value: rx.text(value)),
+    )
+
+
+def _nested_foreach():
+    return rx.foreach(
+        BenchmarkState.nested_elements,
+        _render_nested_element,
+    )
+
+
+def _stateful_page():
+    return rx.hstack(
+        _counter(),
+        _show_key(),
+        _simple_foreach(),
+        _nested_foreach(),
+    )
+
+
+@pytest.fixture(params=[_simple_page, _complicated_page, _stateful_page])
+def unevaluated_page(request: pytest.FixtureRequest):
+    return request.param
+
+
+@pytest.fixture(params=[_simple_page, _complicated_page, _stateful_page])
+def evaluated_page(request: pytest.FixtureRequest):
+    return request.param()
