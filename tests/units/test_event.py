@@ -474,7 +474,7 @@ def test_event_bound_method() -> None:
             print(arg)
 
     class Wrapper:
-        def get_handler(self, arg: str):
+        def get_handler(self, arg: Var[str]):
             return S.e(arg)
 
     w = Wrapper()

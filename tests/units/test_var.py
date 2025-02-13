@@ -8,6 +8,7 @@ from pandas import DataFrame
 
 import reflex as rx
 from reflex.base import Base
+from reflex.config import PerformanceMode
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.state import BaseState
 from reflex.utils.exceptions import (
@@ -1893,3 +1894,27 @@ def test_var_data_hooks():
 def test_var_data_with_hooks_value():
     var_data = VarData(hooks={"what": VarData(hooks={"whot": VarData(hooks="whott")})})
     assert var_data == VarData(hooks=["what", "whot", "whott"])
+
+
+def test_str_var_in_components(mocker):
+    class StateWithVar(rx.State):
+        field: int = 1
+
+    mocker.patch(
+        "reflex.components.base.bare.get_performance_mode",
+        return_value=PerformanceMode.RAISE,
+    )
+
+    with pytest.raises(ValueError):
+        rx.vstack(
+            str(StateWithVar.field),
+        )
+
+    mocker.patch(
+        "reflex.components.base.bare.get_performance_mode",
+        return_value=PerformanceMode.OFF,
+    )
+
+    rx.vstack(
+        str(StateWithVar.field),
+    )

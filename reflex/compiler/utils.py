@@ -119,24 +119,34 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
     validate_imports(collapsed_import_dict)
     import_dicts = []
     for lib, fields in collapsed_import_dict.items():
-        default, rest = compile_import_statement(fields)
-
         # prevent lib from being rendered on the page if all imports are non rendered kind
         if not any(f.render for f in fields):
             continue
 
-        if not lib:
-            if default:
-                raise ValueError("No default field allowed for empty library.")
-            if rest is None or len(rest) == 0:
-                raise ValueError("No fields to import.")
-            import_dicts.extend(get_import_dict(module) for module in sorted(rest))
-            continue
+        lib_paths: dict[str, list[ImportVar]] = {}
 
-        # remove the version before rendering the package imports
-        lib = format.format_library_name(lib)
+        for field in fields:
+            lib_paths.setdefault(field.package_path, []).append(field)
 
-        import_dicts.append(get_import_dict(lib, default, rest))
+        compiled = {
+            path: compile_import_statement(fields) for path, fields in lib_paths.items()
+        }
+
+        for path, (default, rest) in compiled.items():
+            if not lib:
+                if default:
+                    raise ValueError("No default field allowed for empty library.")
+                if rest is None or len(rest) == 0:
+                    raise ValueError("No fields to import.")
+                import_dicts.extend(get_import_dict(module) for module in sorted(rest))
+                continue
+
+            # remove the version before rendering the package imports
+            formatted_lib = format.format_library_name(lib) + (
+                path if path != "/" else ""
+            )
+
+            import_dicts.append(get_import_dict(formatted_lib, default, rest))
     return import_dicts
 
 
@@ -158,6 +168,22 @@ def get_import_dict(lib: str, default: str = "", rest: list[str] | None = None) 
     }
 
 
+def save_error(error: Exception) -> str:
+    """Save the error to a file.
+
+    Args:
+        error: The error to save.
+
+    Returns:
+        The path of the saved error.
+    """
+    timestamp = datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
+    constants.Reflex.LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    log_path = constants.Reflex.LOGS_DIR / f"error_{timestamp}.log"
+    traceback.TracebackException.from_exception(error).print(file=log_path.open("w+"))
+    return str(log_path)
+
+
 def compile_state(state: Type[BaseState]) -> dict:
     """Compile the state of the app.
 
@@ -170,10 +196,7 @@ def compile_state(state: Type[BaseState]) -> dict:
     try:
         initial_state = state(_reflex_internal_init=True).dict(initial=True)
     except Exception as e:
-        timestamp = datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
-        constants.Reflex.LOGS_DIR.mkdir(parents=True, exist_ok=True)
-        log_path = constants.Reflex.LOGS_DIR / f"state_compile_error_{timestamp}.log"
-        traceback.TracebackException.from_exception(e).print(file=log_path.open("w+"))
+        log_path = save_error(e)
         console.warn(
             f"Failed to compile initial state with computed vars. Error log saved to {log_path}"
         )

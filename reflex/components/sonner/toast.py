@@ -8,6 +8,7 @@ from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
 from reflex.components.props import NoExtrasAllowedProps, PropsBase
+from reflex.constants.base import Dirs
 from reflex.event import EventSpec, run_script
 from reflex.style import Style, resolved_color_mode
 from reflex.utils import format
@@ -27,7 +28,10 @@ LiteralPosition = Literal[
     "bottom-right",
 ]
 
-toast_ref = Var(_js_expr="refs['__toast']")
+toast_ref = Var(
+    _js_expr="refs['__toast']",
+    _var_data=VarData(imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]}),
+)
 
 
 class ToastAction(Base):
@@ -328,6 +332,19 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="success", **kwargs)
 
     @staticmethod
+    def toast_loading(message: str | Var = "", **kwargs: Any):
+        """Display a loading toast message.
+
+        Args:
+            message: The message to display.
+            **kwargs: Additional toast props.
+
+        Returns:
+            The toast event.
+        """
+        return Toaster.send_toast(message, level="loading", **kwargs)
+
+    @staticmethod
     def toast_dismiss(id: Var | str | None = None):
         """Dismiss a toast.
 
@@ -378,6 +395,7 @@ class ToastNamespace(ComponentNamespace):
     warning = staticmethod(Toaster.toast_warning)
     error = staticmethod(Toaster.toast_error)
     success = staticmethod(Toaster.toast_success)
+    loading = staticmethod(Toaster.toast_loading)
     dismiss = staticmethod(Toaster.toast_dismiss)
     __call__ = staticmethod(Toaster.send_toast)
 

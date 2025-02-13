@@ -48,6 +48,7 @@ from reflex.base import Base
 from reflex.constants.compiler import Hooks
 from reflex.utils import console, exceptions, imports, serializers, types
 from reflex.utils.exceptions import (
+    ComputedVarSignatureError,
     UntypedComputedVarError,
     VarAttributeError,
     VarDependencyError,
@@ -74,9 +75,9 @@ from reflex.utils.types import (
 if TYPE_CHECKING:
     from reflex.state import BaseState
 
-    from .number import BooleanVar, NumberVar
-    from .object import ObjectVar
-    from .sequence import ArrayVar, StringVar
+    from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
+    from .object import LiteralObjectVar, ObjectVar
+    from .sequence import ArrayVar, LiteralArrayVar, LiteralStringVar, StringVar
 
 
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
@@ -576,9 +577,17 @@ class Var(Generic[VAR_TYPE]):
     @classmethod
     def create(  # pyright: ignore[reportOverlappingOverload]
         cls,
+        value: NoReturn,
+        _var_data: VarData | None = None,
+    ) -> Var[Any]: ...
+
+    @overload
+    @classmethod
+    def create(  # pyright: ignore[reportOverlappingOverload]
+        cls,
         value: bool,
         _var_data: VarData | None = None,
-    ) -> BooleanVar: ...
+    ) -> LiteralBooleanVar: ...
 
     @overload
     @classmethod
@@ -586,7 +595,7 @@ class Var(Generic[VAR_TYPE]):
         cls,
         value: int,
         _var_data: VarData | None = None,
-    ) -> NumberVar[int]: ...
+    ) -> LiteralNumberVar[int]: ...
 
     @overload
     @classmethod
@@ -594,7 +603,15 @@ class Var(Generic[VAR_TYPE]):
         cls,
         value: float,
         _var_data: VarData | None = None,
-    ) -> NumberVar[float]: ...
+    ) -> LiteralNumberVar[float]: ...
+
+    @overload
+    @classmethod
+    def create(  # pyright: ignore [reportOverlappingOverload]
+        cls,
+        value: str,
+        _var_data: VarData | None = None,
+    ) -> LiteralStringVar: ...
 
     @overload
     @classmethod
@@ -610,7 +627,7 @@ class Var(Generic[VAR_TYPE]):
         cls,
         value: None,
         _var_data: VarData | None = None,
-    ) -> NoneVar: ...
+    ) -> LiteralNoneVar: ...
 
     @overload
     @classmethod
@@ -618,7 +635,7 @@ class Var(Generic[VAR_TYPE]):
         cls,
         value: MAPPING_TYPE,
         _var_data: VarData | None = None,
-    ) -> ObjectVar[MAPPING_TYPE]: ...
+    ) -> LiteralObjectVar[MAPPING_TYPE]: ...
 
     @overload
     @classmethod
@@ -626,7 +643,7 @@ class Var(Generic[VAR_TYPE]):
         cls,
         value: SEQUENCE_TYPE,
         _var_data: VarData | None = None,
-    ) -> ArrayVar[SEQUENCE_TYPE]: ...
+    ) -> LiteralArrayVar[SEQUENCE_TYPE]: ...
 
     @overload
     @classmethod
@@ -934,7 +951,7 @@ class Var(Generic[VAR_TYPE]):
         """
         actual_name = self._var_field_name
 
-        def setter(state: BaseState, value: Any):
+        def setter(state: Any, value: Any):
             """Get the setter for the var.
 
             Args:
@@ -951,6 +968,8 @@ class Var(Generic[VAR_TYPE]):
                     )
             else:
                 setattr(state, actual_name, value)
+
+        setter.__annotations__["value"] = self._var_type
 
         setter.__qualname__ = self._get_setter_name()
 
@@ -2218,10 +2237,10 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: ComputedVar[Mapping[DICT_KEY, DICT_VAL]],
+        self: ComputedVar[MAPPING_TYPE],
         instance: None,
         owner: Type,
-    ) -> ObjectVar[Mapping[DICT_KEY, DICT_VAL]]: ...
+    ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
@@ -2236,6 +2255,27 @@ class ComputedVar(Var[RETURN_TYPE]):
         instance: None,
         owner: Type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
+
+    @overload
+    def __get__(
+        self: ComputedVar[BASE_TYPE],
+        instance: None,
+        owner: Type,
+    ) -> ObjectVar[BASE_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: ComputedVar[SQLA_TYPE],
+        instance: None,
+        owner: Type,
+    ) -> ObjectVar[SQLA_TYPE]: ...
+
+    if TYPE_CHECKING:
+
+        @overload
+        def __get__(
+            self: ComputedVar[DATACLASS_TYPE], instance: None, owner: Any
+        ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload
     def __get__(self, instance: None, owner: Type) -> ComputedVar[RETURN_TYPE]: ...
@@ -2464,10 +2504,10 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: AsyncComputedVar[Mapping[DICT_KEY, DICT_VAL]],
+        self: AsyncComputedVar[MAPPING_TYPE],
         instance: None,
         owner: Type,
-    ) -> ObjectVar[Mapping[DICT_KEY, DICT_VAL]]: ...
+    ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
@@ -2482,6 +2522,27 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
         instance: None,
         owner: Type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[BASE_TYPE],
+        instance: None,
+        owner: Type,
+    ) -> ObjectVar[BASE_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[SQLA_TYPE],
+        instance: None,
+        owner: Type,
+    ) -> ObjectVar[SQLA_TYPE]: ...
+
+    if TYPE_CHECKING:
+
+        @overload
+        def __get__(
+            self: AsyncComputedVar[DATACLASS_TYPE], instance: None, owner: Any
+        ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload
     def __get__(self, instance: None, owner: Type) -> AsyncComputedVar[RETURN_TYPE]: ...
@@ -2602,6 +2663,7 @@ def computed_var(
     Raises:
         ValueError: If caching is disabled and an update interval is set.
         VarDependencyError: If user supplies dependencies without caching.
+        ComputedVarSignatureError: If the getter function has more than one argument.
     """
     if cache is False and interval is not None:
         raise ValueError("Cannot set update interval without caching.")
@@ -2610,6 +2672,10 @@ def computed_var(
         raise VarDependencyError("Cannot track dependencies without caching.")
 
     if fget is not None:
+        sign = inspect.signature(fget)
+        if len(sign.parameters) != 1:
+            raise ComputedVarSignatureError(fget.__name__, signature=str(sign))
+
         if inspect.iscoroutinefunction(fget):
             computed_var_cls = AsyncComputedVar
         else:

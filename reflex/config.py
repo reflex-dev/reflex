@@ -10,6 +10,7 @@ import os
 import sys
 import threading
 import urllib.parse
+from functools import lru_cache
 from importlib.util import find_spec
 from pathlib import Path
 from types import ModuleType
@@ -23,10 +24,15 @@ from typing import (
     Set,
     TypeVar,
     get_args,
+    get_origin,
 )
 
+from reflex_cli.constants.hosting import Hosting
 from typing_extensions import Annotated, get_type_hints
 
+from reflex import constants
+from reflex.base import Base
+from reflex.utils import console
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
 from reflex.utils.types import GenericType, is_union, value_inside_optional
 
@@ -35,11 +41,11 @@ try:
 except ModuleNotFoundError:
     import pydantic
 
-from reflex_cli.constants.hosting import Hosting
 
-from reflex import constants
-from reflex.base import Base
-from reflex.utils import console
+try:
+    from dotenv import load_dotenv  # pyright: ignore [reportMissingImports]
+except ImportError:
+    load_dotenv = None
 
 
 class DBConfig(Base):
@@ -304,6 +310,15 @@ def interpret_env_var_value(
         return interpret_path_env(value, field_name)
     elif field_type is ExistingPath:
         return interpret_existing_path_env(value, field_name)
+    elif get_origin(field_type) is list:
+        return [
+            interpret_env_var_value(
+                v,
+                get_args(field_type)[0],
+                f"{field_name}[{i}]",
+            )
+            for i, v in enumerate(value.split(":"))
+        ]
     elif inspect.isclass(field_type) and issubclass(field_type, enum.Enum):
         return interpret_enum_env(value, field_type, field_name)
 
@@ -387,7 +402,24 @@ class EnvVar(Generic[T]):
         else:
             if isinstance(value, enum.Enum):
                 value = value.value
-            os.environ[self.name] = str(value)
+            if isinstance(value, list):
+                str_value = ":".join(str(v) for v in value)
+            else:
+                str_value = str(value)
+            os.environ[self.name] = str_value
+
+
+@lru_cache()
+def get_type_hints_environment(cls: type) -> dict[str, Any]:
+    """Get the type hints for the environment variables.
+
+    Args:
+        cls: The class.
+
+    Returns:
+        The type hints.
+    """
+    return get_type_hints(cls)
 
 
 class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
@@ -416,7 +448,9 @@ class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
         """
         self.name = name
 
-    def __get__(self, instance: Any, owner: Any):
+    def __get__(
+        self, instance: EnvironmentVariables, owner: type[EnvironmentVariables]
+    ):
         """Get the EnvVar instance.
 
         Args:
@@ -426,7 +460,7 @@ class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
         Returns:
             The EnvVar instance.
         """
-        type_ = get_args(get_type_hints(owner)[self.name])[0]
+        type_ = get_args(get_type_hints_environment(owner)[self.name])[0]
         env_name = self.name
         if self.internal:
             env_name = f"__{env_name}"
@@ -544,6 +578,12 @@ class EnvironmentVariables:
     # Whether to run the frontend only. Exclusive with REFLEX_BACKEND_ONLY.
     REFLEX_FRONTEND_ONLY: EnvVar[bool] = env_var(False)
 
+    # The port to run the frontend on.
+    REFLEX_FRONTEND_PORT: EnvVar[int | None] = env_var(None)
+
+    # The port to run the backend on.
+    REFLEX_BACKEND_PORT: EnvVar[int | None] = env_var(None)
+
     # Reflex internal env to reload the config.
     RELOAD_CONFIG: EnvVar[bool] = env_var(False, internal=True)
 
@@ -563,13 +603,19 @@ class EnvironmentVariables:
     REFLEX_CHECK_LATEST_VERSION: EnvVar[bool] = env_var(True)
 
     # In which performance mode to run the app.
-    REFLEX_PERF_MODE: EnvVar[Optional[PerformanceMode]] = env_var(PerformanceMode.WARN)
+    REFLEX_PERF_MODE: EnvVar[PerformanceMode] = env_var(PerformanceMode.WARN)
 
     # The maximum size of the reflex state in kilobytes.
     REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
 
     # Whether to use the turbopack bundler.
     REFLEX_USE_TURBOPACK: EnvVar[bool] = env_var(True)
+
+    # Additional paths to include in the hot reload. Separated by a colon.
+    REFLEX_HOT_RELOAD_INCLUDE_PATHS: EnvVar[List[Path]] = env_var([])
+
+    # Paths to exclude from the hot reload. Takes precedence over include paths. Separated by a colon.
+    REFLEX_HOT_RELOAD_EXCLUDE_PATHS: EnvVar[List[Path]] = env_var([])
 
 
 environment = EnvironmentVariables()
@@ -604,6 +650,7 @@ class Config(Base):
         """Pydantic config for the config."""
 
         validate_assignment = True
+        use_enum_values = False
 
     # The name of the app (should match the name of the app directory).
     app_name: str
@@ -615,19 +662,21 @@ class Config(Base):
     loglevel: constants.LogLevel = constants.LogLevel.DEFAULT
 
     # The port to run the frontend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
-    frontend_port: int = constants.DefaultPorts.FRONTEND_PORT
+    frontend_port: int | None = None
 
     # The path to run the frontend on. For example, "/app" will run the frontend on http://localhost:3000/app
     frontend_path: str = ""
 
     # The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
-    backend_port: int = constants.DefaultPorts.BACKEND_PORT
+    backend_port: int | None = None
 
     # The backend url the frontend will connect to. This must be updated if the backend is hosted elsewhere, or in production.
-    api_url: str = f"http://localhost:{backend_port}"
+    api_url: str = f"http://localhost:{constants.DefaultPorts.BACKEND_PORT}"
 
     # The url the frontend will be hosted on.
-    deploy_url: Optional[str] = f"http://localhost:{frontend_port}"
+    deploy_url: Optional[str] = (
+        f"http://localhost:{constants.DefaultPorts.FRONTEND_PORT}"
+    )
 
     # The url the backend will be hosted on.
     backend_host: str = "0.0.0.0"
@@ -679,7 +728,7 @@ class Config(Base):
     # Number of gunicorn workers from user
     gunicorn_workers: Optional[int] = None
 
-    # Number of requests before a worker is restarted
+    # Number of requests before a worker is restarted; set to 0 to disable
     gunicorn_max_requests: int = 100
 
     # Variance limit for max requests; gunicorn only
@@ -709,6 +758,9 @@ class Config(Base):
     # Whether the app is running in the reflex cloud environment.
     is_reflex_cloud: bool = False
 
+    # Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.momnet".
+    extra_overlay_function: Optional[str] = None
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 
@@ -730,6 +782,9 @@ class Config(Base):
         kwargs.update(env_kwargs)
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
+
+        # Set the log level for this process
+        console.set_log_level(self.loglevel)
 
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS
@@ -770,16 +825,15 @@ class Config(Base):
         Returns:
             The updated config values.
         """
-        if self.env_file:
-            try:
-                from dotenv import load_dotenv  # pyright: ignore [reportMissingImports]
-
-                # load env file if exists
-                load_dotenv(self.env_file, override=True)
-            except ImportError:
+        env_file = self.env_file or os.environ.get("ENV_FILE", None)
+        if env_file:
+            if load_dotenv is None:
                 console.error(
                     """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
                 )
+            else:
+                # load env file if exists
+                load_dotenv(env_file, override=True)
 
         updated_values = {}
         # Iterate over the fields.

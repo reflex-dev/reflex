@@ -11,6 +11,7 @@ from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.layout.box import Box
 from reflex.style import Style
 from reflex.vars import Var
+from reflex.vars.base import LiteralVar
 
 
 @pytest.mark.parametrize(
@@ -99,7 +100,9 @@ def test_create_shiki_code_block(
 
     applied_styles = component.style
     for key, value in expected_styles.items():
-        assert Var.create(applied_styles[key])._var_value == value
+        var = Var.create(applied_styles[key])
+        assert isinstance(var, LiteralVar)
+        assert var._var_value == value
 
 
 @pytest.mark.parametrize(

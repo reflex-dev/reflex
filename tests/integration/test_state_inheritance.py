@@ -59,6 +59,7 @@ def StateInheritance():
         def computed_mixin(self) -> str:
             return "computed_mixin"
 
+        @rx.event
         def on_click_mixin(self):
             return rx.call_script("alert('clicked')")
 
@@ -70,6 +71,7 @@ def StateInheritance():
         def computed_other_mixin(self) -> str:
             return self.other_mixin
 
+        @rx.event
         def on_click_other_mixin(self):
             self.other_mixin_clicks += 1
             self.other_mixin = (

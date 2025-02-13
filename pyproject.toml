@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "reflex"
-version = "0.7.0dev1"
+version = "0.7.1dev1"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [
@@ -61,7 +61,7 @@ dill = ">=0.3.8"
 toml = ">=0.10.2,<1.0"
 pytest-asyncio = ">=0.24.0"
 pytest-cov = ">=4.0.0,<7.0"
-ruff = "0.9.3"
+ruff = "0.9.6"
 pandas = ">=2.1.1,<3.0"
 pillow = ">=10.0.0,<12.0"
 plotly = ">=5.13.0,<6.0"
@@ -102,6 +102,7 @@ lint.pydocstyle.convention = "google"
 "*/blank.py" = ["I001"]
 
 [tool.pytest.ini_options]
+filterwarnings = "ignore:fields may not start with an underscore:RuntimeWarning"
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 

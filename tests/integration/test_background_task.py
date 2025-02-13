@@ -20,7 +20,11 @@ def BackgroundTask():
     class State(rx.State):
         counter: int = 0
         _task_id: int = 0
-        iterations: int = 10
+        iterations: rx.Field[int] = rx.field(10)
+
+        @rx.event
+        def set_iterations(self, value: str):
+            self.iterations = int(value)
 
         @rx.event(background=True)
         async def handle_event(self):
@@ -125,8 +129,8 @@ def BackgroundTask():
             rx.input(
                 id="iterations",
                 placeholder="Iterations",
-                value=State.iterations.to_string(),  # pyright: ignore [reportAttributeAccessIssue]
-                on_change=State.set_iterations,  # pyright: ignore [reportAttributeAccessIssue]
+                value=State.iterations.to_string(),
+                on_change=State.set_iterations,
             ),
             rx.button(
                 "Delayed Increment",
