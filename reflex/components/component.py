@@ -1291,7 +1291,7 @@ class Component(BaseComponent, ABC):
         event_imports = Imports.EVENTS if self.event_triggers else {}
 
         # Collect imports from Vars used directly by this component.
-        var_datas = [var._get_all_var_data() for var in self._get_vars()]
+        var_datas = tuple(map(Var._get_all_var_data, self._get_vars()))
         var_imports: List[ImmutableParsedImportDict] = [
             var_data.imports for var_data in var_datas if var_data is not None
         ]
