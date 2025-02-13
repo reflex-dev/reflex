@@ -27,7 +27,7 @@ from typing_extensions import TypeAliasType, TypeVar
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
 from reflex.constants.colors import Color
-from reflex.utils.exceptions import VarTypeError
+from reflex.utils.exceptions import UntypedVarError, VarTypeError
 from reflex.utils.types import GenericType, get_origin
 from reflex.vars.base import (
     CachedVarOperation,
@@ -1020,8 +1020,17 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
                 "Using a ComponentState as `render_fn` inside `rx.foreach` is not supported yet."
             )
 
+        def invoke_fn(*args):
+            try:
+                return fn(*args)
+            except UntypedVarError as e:
+                raise UntypedVarError(
+                    f"Could not foreach over var `{self!s}` without a type annotation. "
+                    "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
+                ) from e
+
         if num_args == 0:
-            fn_result = fn()  # pyright: ignore [reportCallIssue]
+            fn_result = invoke_fn()
             return_value = Var.create(fn_result)
             simple_function_var: FunctionVar[ReflexCallable[[], ANOTHER_ARRAY_VAR]] = (
                 ArgsFunctionOperation.create(
@@ -1049,7 +1058,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
         )
 
         if required_num_args < 2:
-            fn_result = fn(first_arg)  # pyright: ignore [reportCallIssue]
+            fn_result = invoke_fn(first_arg)
 
             return_value = Var.create(fn_result)
 
@@ -1072,7 +1081,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
             ).guess_type(),
         )
 
-        fn_result = fn(first_arg, second_arg)  # pyright: ignore [reportCallIssue]
+        fn_result = invoke_fn(first_arg, second_arg)
 
         return_value = Var.create(fn_result)
 

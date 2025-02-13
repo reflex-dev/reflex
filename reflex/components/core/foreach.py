@@ -34,8 +34,6 @@ def foreach(
         TypeError: If the render function is a ComponentState.
         UntypedVarError: If the iterable is of type Any without a type annotation.
     """
-    from reflex.state import ComponentState
-
     iterable = LiteralVar.create(iterable).guess_type()
 
     if isinstance(iterable, ObjectVar):
@@ -48,14 +46,6 @@ def foreach(
         raise ForeachVarError(
             f"Could not foreach over var `{iterable!s}` of type {iterable._var_type}. "
             "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
-        )
-
-    if (
-        hasattr(render_fn, "__qualname__")
-        and render_fn.__qualname__ == ComponentState.create.__qualname__
-    ):
-        raise TypeError(
-            "Using a ComponentState as `render_fn` inside `rx.foreach` is not supported yet."
         )
 
     return iterable.foreach(render_fn)
