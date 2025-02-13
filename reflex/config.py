@@ -484,6 +484,11 @@ class PerformanceMode(enum.Enum):
 class EnvironmentVariables:
     """Environment variables class to instantiate environment variables."""
 
+    # Indicate the current command that was invoked in the reflex CLI.
+    REFLEX_COMPILE_CONTEXT: EnvVar[constants.CompileContext] = env_var(
+        constants.CompileContext.UNDEFINED, internal=True
+    )
+
     # Whether to use npm over bun to install frontend packages.
     REFLEX_USE_NPM: EnvVar[bool] = env_var(False)
 
@@ -529,7 +534,7 @@ class EnvironmentVariables:
     REFLEX_COMPILE_THREADS: EnvVar[Optional[int]] = env_var(None)
 
     # The directory to store reflex dependencies.
-    REFLEX_DIR: EnvVar[Path] = env_var(Path(constants.Reflex.DIR))
+    REFLEX_DIR: EnvVar[Path] = env_var(constants.Reflex.DIR)
 
     # Whether to print the SQL queries if the log level is INFO or lower.
     SQLALCHEMY_ECHO: EnvVar[bool] = env_var(False)
@@ -737,7 +742,7 @@ class Config(Base):
     env_file: Optional[str] = None
 
     # Whether to display the sticky "Built with Reflex" badge on all pages.
-    show_built_with_reflex: bool = True
+    show_built_with_reflex: Optional[bool] = None
 
     # Whether the app is running in the reflex cloud environment.
     is_reflex_cloud: bool = False

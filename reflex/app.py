@@ -108,7 +108,7 @@ from reflex.utils import (
     prerequisites,
     types,
 )
-from reflex.utils.exec import is_prod_mode, is_testing_env
+from reflex.utils.exec import get_compile_context, is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
 
 if TYPE_CHECKING:
@@ -198,14 +198,17 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay_component, which is a connection_modal.
     """
-    config = get_config()
     from reflex.components.component import memo
 
     def default_overlay_components():
         return Fragment.create(
             connection_pulser(),
             connection_toaster(),
-            *([backend_disabled()] if config.is_reflex_cloud else []),
+            *(
+                [backend_disabled()]
+                if get_compile_context() == constants.CompileContext.DEPLOY
+                else []
+            ),
             *codespaces.codespaces_auto_redirect(),
         )
 
@@ -1071,6 +1074,16 @@ class App(MiddlewareMixin, LifespanMixin):
 
         self._validate_var_dependencies()
         self._setup_overlay_component()
+
+        if config.show_built_with_reflex is None:
+            if (
+                get_compile_context() == constants.CompileContext.DEPLOY
+                and prerequisites.get_user_tier() in ["pro", "team", "enterprise"]
+            ):
+                config.show_built_with_reflex = False
+            else:
+                config.show_built_with_reflex = True
+
         if is_prod_mode() and config.show_built_with_reflex:
             self._setup_sticky_badge()
 
