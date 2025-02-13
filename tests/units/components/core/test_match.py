@@ -1,10 +1,10 @@
-from typing import List, Mapping, Tuple
+import re
+from typing import Tuple
 
 import pytest
 
 import reflex as rx
-from reflex.components.component import Component
-from reflex.components.core.match import Match
+from reflex.components.core.match import match
 from reflex.state import BaseState
 from reflex.utils.exceptions import MatchTypeError
 from reflex.vars.base import Var
@@ -16,75 +16,6 @@ class MatchState(BaseState):
     value: int = 0
     num: int = 5
     string: str = "random string"
-
-
-def test_match_components():
-    """Test matching cases with return values as components."""
-    match_case_tuples = (
-        (1, rx.text("first value")),
-        (2, 3, rx.text("second value")),
-        ([1, 2], rx.text("third value")),
-        ("random", rx.text("fourth value")),
-        ({"foo": "bar"}, rx.text("fifth value")),
-        (MatchState.num + 1, rx.text("sixth value")),
-        rx.text("default value"),
-    )
-    match_comp = Match.create(MatchState.value, *match_case_tuples)
-
-    assert isinstance(match_comp, Component)
-    match_dict = match_comp.render()
-    assert match_dict["name"] == "Fragment"
-
-    [match_child] = match_dict["children"]
-
-    assert match_child["name"] == "match"
-    assert str(match_child["cond"]) == f"{MatchState.get_name()}.value"
-
-    match_cases = match_child["match_cases"]
-    assert len(match_cases) == 6
-
-    assert match_cases[0][0]._js_expr == "1"
-    assert match_cases[0][0]._var_type is int
-    first_return_value_render = match_cases[0][1]
-    assert first_return_value_render["name"] == "RadixThemesText"
-    assert first_return_value_render["children"][0]["contents"] == '{"first value"}'
-
-    assert match_cases[1][0]._js_expr == "2"
-    assert match_cases[1][0]._var_type is int
-    assert match_cases[1][1]._js_expr == "3"
-    assert match_cases[1][1]._var_type is int
-    second_return_value_render = match_cases[1][2]
-    assert second_return_value_render["name"] == "RadixThemesText"
-    assert second_return_value_render["children"][0]["contents"] == '{"second value"}'
-
-    assert match_cases[2][0]._js_expr == "[1, 2]"
-    assert match_cases[2][0]._var_type == List[int]
-    third_return_value_render = match_cases[2][1]
-    assert third_return_value_render["name"] == "RadixThemesText"
-    assert third_return_value_render["children"][0]["contents"] == '{"third value"}'
-
-    assert match_cases[3][0]._js_expr == '"random"'
-    assert match_cases[3][0]._var_type is str
-    fourth_return_value_render = match_cases[3][1]
-    assert fourth_return_value_render["name"] == "RadixThemesText"
-    assert fourth_return_value_render["children"][0]["contents"] == '{"fourth value"}'
-
-    assert match_cases[4][0]._js_expr == '({ ["foo"] : "bar" })'
-    assert match_cases[4][0]._var_type == Mapping[str, str]
-    fifth_return_value_render = match_cases[4][1]
-    assert fifth_return_value_render["name"] == "RadixThemesText"
-    assert fifth_return_value_render["children"][0]["contents"] == '{"fifth value"}'
-
-    assert match_cases[5][0]._js_expr == f"({MatchState.get_name()}.num + 1)"
-    assert match_cases[5][0]._var_type is int
-    fifth_return_value_render = match_cases[5][1]
-    assert fifth_return_value_render["name"] == "RadixThemesText"
-    assert fifth_return_value_render["children"][0]["contents"] == '{"sixth value"}'
-
-    default = match_child["default"]
-
-    assert default["name"] == "RadixThemesText"
-    assert default["children"][0]["contents"] == '{"default value"}'
 
 
 @pytest.mark.parametrize(
@@ -137,7 +68,7 @@ def test_match_vars(cases, expected):
         cases: The match cases.
         expected: The expected var full name.
     """
-    match_comp = Match.create(MatchState.value, *cases)
+    match_comp = match(MatchState.value, *cases)  # pyright: ignore[reportCallIssue]
     assert isinstance(match_comp, Var)
     assert str(match_comp) == expected
 
@@ -146,18 +77,14 @@ def test_match_on_component_without_default():
     """Test that matching cases with return values as components returns a Fragment
     as the default case if not provided.
     """
-    from reflex.components.base.fragment import Fragment
-
     match_case_tuples = (
         (1, rx.text("first value")),
         (2, 3, rx.text("second value")),
     )
 
-    match_comp = Match.create(MatchState.value, *match_case_tuples)
-    assert isinstance(match_comp, Component)
-    default = match_comp.render()["children"][0]["default"]
+    match_comp = match(MatchState.value, *match_case_tuples)
 
-    assert isinstance(default, dict) and default["name"] == Fragment.__name__
+    assert isinstance(match_comp, Var)
 
 
 def test_match_on_var_no_default():
@@ -172,7 +99,7 @@ def test_match_on_var_no_default():
         ValueError,
         match="For cases with return types as Vars, a default case must be provided",
     ):
-        Match.create(MatchState.value, *match_case_tuples)
+        match(MatchState.value, *match_case_tuples)
 
 
 @pytest.mark.parametrize(
@@ -205,7 +132,7 @@ def test_match_default_not_last_arg(match_case):
         ValueError,
         match="rx.match should have tuples of cases and a default case as the last argument.",
     ):
-        Match.create(MatchState.value, *match_case)
+        match(MatchState.value, *match_case)  # pyright: ignore[reportCallIssue]
 
 
 @pytest.mark.parametrize(
@@ -235,7 +162,7 @@ def test_match_case_tuple_elements(match_case):
         ValueError,
         match="A case tuple should have at least a match case element and a return value.",
     ):
-        Match.create(MatchState.value, *match_case)
+        match(MatchState.value, *match_case)  # pyright: ignore[reportCallIssue]
 
 
 @pytest.mark.parametrize(
@@ -251,8 +178,7 @@ def test_match_case_tuple_elements(match_case):
                 (MatchState.num + 1, "black"),
                 rx.text("default value"),
             ),
-            'Match cases should have the same return types. Case 3 with return value `"red"` of type '
-            "<class 'reflex.vars.sequence.LiteralStringVar'> is not <class 'reflex.components.component.BaseComponent'>",
+            "Match cases should have the same return types. Expected return types to be of type Component or Var[Component]. Return type of case 3 is <class 'str'>. Return type of case 4 is <class 'str'>. Return type of case 5 is <class 'str'>",
         ),
         (
             (
@@ -264,8 +190,7 @@ def test_match_case_tuple_elements(match_case):
                 ([1, 2], rx.text("third value")),
                 rx.text("default value"),
             ),
-            'Match cases should have the same return types. Case 3 with return value `<RadixThemesText as={"p"}> {"first value"} </RadixThemesText>` '
-            "of type <class 'reflex.components.radix.themes.typography.text.Text'> is not <class 'reflex.vars.base.Var'>",
+            "Match cases should have the same return types. Expected return types to be of type Component or Var[Component]. Return type of case 0 is <class 'str'>. Return type of case 1 is <class 'str'>. Return type of case 2 is <class 'str'>",
         ),
     ],
 )
@@ -276,8 +201,8 @@ def test_match_different_return_types(cases: Tuple, error_msg: str):
         cases: The match cases.
         error_msg: Expected error message.
     """
-    with pytest.raises(MatchTypeError, match=error_msg):
-        Match.create(MatchState.value, *cases)
+    with pytest.raises(MatchTypeError, match=re.escape(error_msg)):
+        match(MatchState.value, *cases)  # pyright: ignore[reportCallIssue]
 
 
 @pytest.mark.parametrize(
@@ -309,9 +234,9 @@ def test_match_multiple_default_cases(match_case):
         match_case: the cases to match.
     """
     with pytest.raises(ValueError, match="rx.match can only have one default case."):
-        Match.create(MatchState.value, *match_case)
+        match(MatchState.value, *match_case)  # pyright: ignore[reportCallIssue]
 
 
 def test_match_no_cond():
     with pytest.raises(ValueError):
-        _ = Match.create(None)
+        _ = match(None)  # pyright: ignore[reportCallIssue]

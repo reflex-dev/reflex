@@ -17,16 +17,13 @@ from .breakpoints import set_breakpoints as set_breakpoints
 from .clipboard import Clipboard as Clipboard
 from .clipboard import clipboard as clipboard
 from .colors import color as color
-from .cond import Cond as Cond
 from .cond import color_mode_cond as color_mode_cond
 from .cond import cond as cond
 from .debounce import DebounceInput as DebounceInput
 from .debounce import debounce_input as debounce_input
-from .foreach import Foreach as Foreach
 from .foreach import foreach as foreach
 from .html import Html as Html
 from .html import html as html
-from .match import Match as Match
 from .match import match as match
 from .responsive import desktop_only as desktop_only
 from .responsive import mobile_and_tablet as mobile_and_tablet

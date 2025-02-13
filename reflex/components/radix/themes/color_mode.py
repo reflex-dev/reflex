@@ -20,7 +20,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Literal, Optional, Union, get_args
 
 from reflex.components.component import BaseComponent
-from reflex.components.core.cond import Cond, color_mode_cond, cond
+from reflex.components.core.cond import color_mode_cond, cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.dropdown_menu import dropdown_menu
 from reflex.components.radix.themes.components.switch import Switch
@@ -40,28 +40,23 @@ DEFAULT_LIGHT_ICON: Icon = Icon.create(tag="sun")
 DEFAULT_DARK_ICON: Icon = Icon.create(tag="moon")
 
 
-class ColorModeIcon(Cond):
-    """Displays the current color mode as an icon."""
+def color_mode_icon(
+    light_component: BaseComponent | None = None,
+    dark_component: BaseComponent | None = None,
+):
+    """Create a color mode icon component.
 
-    @classmethod
-    def create(
-        cls,
-        light_component: BaseComponent | None = None,
-        dark_component: BaseComponent | None = None,
-    ):
-        """Create an icon component based on color_mode.
+    Args:
+        light_component: The component to render in light mode.
+        dark_component: The component to render in dark mode.
 
-        Args:
-            light_component: the component to display when color mode is default
-            dark_component: the component to display when color mode is dark (non-default)
-
-        Returns:
-            The conditionally rendered component
-        """
-        return color_mode_cond(
-            light=light_component or DEFAULT_LIGHT_ICON,
-            dark=dark_component or DEFAULT_DARK_ICON,
-        )
+    Returns:
+        The color mode icon component.
+    """
+    return color_mode_cond(
+        light=light_component or DEFAULT_LIGHT_ICON,
+        dark=dark_component or DEFAULT_DARK_ICON,
+    )
 
 
 LiteralPosition = Literal["top-left", "top-right", "bottom-left", "bottom-right"]
@@ -144,7 +139,7 @@ class ColorModeIconButton(IconButton):
 
         if allow_system:
 
-            def color_mode_item(_color_mode: str):
+            def color_mode_item(_color_mode: Literal["light", "dark", "system"]):
                 return dropdown_menu.item(
                     _color_mode.title(), on_click=set_color_mode(_color_mode)
                 )
@@ -152,7 +147,7 @@ class ColorModeIconButton(IconButton):
             return dropdown_menu.root(
                 dropdown_menu.trigger(
                     super().create(
-                        ColorModeIcon.create(),
+                        color_mode_icon(),
                     ),
                     **props,
                 ),
@@ -163,7 +158,7 @@ class ColorModeIconButton(IconButton):
                 ),
             )
         return IconButton.create(
-            ColorModeIcon.create(),
+            color_mode_icon(),
             on_click=toggle_color_mode,
             **props,
         )
@@ -197,7 +192,7 @@ class ColorModeSwitch(Switch):
 class ColorModeNamespace(Var):
     """Namespace for color mode components."""
 
-    icon = staticmethod(ColorModeIcon.create)
+    icon = staticmethod(color_mode_icon)
     button = staticmethod(ColorModeIconButton.create)
     switch = staticmethod(ColorModeSwitch.create)
 

@@ -68,10 +68,8 @@ try:
         from selenium.webdriver.remote.webelement import (  # pyright: ignore [reportMissingImports]
             WebElement,
         )
-
-    has_selenium = True
 except ImportError:
-    has_selenium = False
+    webdriver = None
 
 # The timeout (minutes) to check for the port.
 DEFAULT_TIMEOUT = 15
@@ -296,11 +294,13 @@ class AppHarness:
                 if p not in before_decorated_pages
             ]
         self.app_instance = self.app_module.app
-        if self.app_instance and isinstance(
-            self.app_instance._state_manager, StateManagerRedis
-        ):
+        if self.app_instance is None:
+            raise RuntimeError("App was not initialized.")
+        if isinstance(self.app_instance._state_manager, StateManagerRedis):
             # Create our own redis connection for testing.
-            self.state_manager = StateManagerRedis.create(self.app_instance._state)  # pyright: ignore [reportArgumentType]
+            if self.app_instance._state is None:
+                raise RuntimeError("App state is not initialized.")
+            self.state_manager = StateManagerRedis.create(self.app_instance._state)
         else:
             self.state_manager = (
                 self.app_instance._state_manager if self.app_instance else None
@@ -615,7 +615,7 @@ class AppHarness:
         Raises:
             RuntimeError: when selenium is not importable or frontend is not running
         """
-        if not has_selenium:
+        if webdriver is None:
             raise RuntimeError(
                 "Frontend functionality requires `selenium` to be installed, "
                 "and it could not be imported."

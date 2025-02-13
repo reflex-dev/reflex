@@ -65,8 +65,7 @@ from reflex.vars.base import (
     Var,
     cached_property_no_lock,
 )
-from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar
-from reflex.vars.number import ternary_operation
+from reflex.vars.function import FunctionStringVar
 from reflex.vars.object import ObjectVar
 from reflex.vars.sequence import LiteralArrayVar
 
@@ -889,10 +888,8 @@ class Component(BaseComponent, ABC):
             children: The children of the component.
 
         """
+        from reflex.components.base.bare import Bare
         from reflex.components.base.fragment import Fragment
-        from reflex.components.core.cond import Cond
-        from reflex.components.core.foreach import Foreach
-        from reflex.components.core.match import Match
 
         no_valid_parents_defined = all(child._valid_parents == [] for child in children)
         if (
@@ -903,9 +900,7 @@ class Component(BaseComponent, ABC):
             return
 
         comp_name = type(self).__name__
-        allowed_components = [
-            comp.__name__ for comp in (Fragment, Foreach, Cond, Match)
-        ]
+        allowed_components = [comp.__name__ for comp in (Fragment,)]
 
         def validate_child(child: Any):
             child_name = type(child).__name__
@@ -915,24 +910,39 @@ class Component(BaseComponent, ABC):
                 for c in child.children:
                     validate_child(c)
 
-            if isinstance(child, Cond):
-                validate_child(child.comp1)
-                validate_child(child.comp2)
-
-            if isinstance(child, Match):
-                for cases in child.match_cases:
-                    validate_child(cases[-1])
-                validate_child(child.default)
+            if (
+                isinstance(child, Bare)
+                and child.contents is not None
+                and isinstance(child.contents, Var)
+            ):
+                var_data = child.contents._get_all_var_data()
+                if var_data is not None:
+                    for c in var_data.components:
+                        validate_child(c)
 
             if self._invalid_children and child_name in self._invalid_children:
                 raise ValueError(
                     f"The component `{comp_name}` cannot have `{child_name}` as a child component"
                 )
 
-            if self._valid_children and child_name not in [
-                *self._valid_children,
-                *allowed_components,
-            ]:
+            valid_children = self._valid_children + allowed_components
+
+            def child_is_in_valid(child_component: Any):
+                if type(child_component).__name__ in valid_children:
+                    return True
+
+                if (
+                    not isinstance(child_component, Bare)
+                    or child_component.contents is None
+                    or not isinstance(child_component.contents, Var)
+                    or (var_data := child_component.contents._get_all_var_data())
+                    is None
+                ):
+                    return False
+
+                return all(child_is_in_valid(c) for c in var_data.components)
+
+            if self._valid_children and not child_is_in_valid(child):
                 valid_child_list = ", ".join(
                     [f"`{v_child}`" for v_child in self._valid_children]
                 )
@@ -1918,8 +1928,6 @@ class StatefulComponent(BaseComponent):
         Returns:
             The stateful component or None if the component should not be memoized.
         """
-        from reflex.components.core.foreach import Foreach
-
         if component._memoization_mode.disposition == MemoizationDisposition.NEVER:
             # Never memoize this component.
             return None
@@ -1948,10 +1956,6 @@ class StatefulComponent(BaseComponent):
                 # Skip BaseComponent and StatefulComponent children.
                 if not isinstance(child, Component):
                     continue
-                # Always consider Foreach something that must be memoized by the parent.
-                if isinstance(child, Foreach):
-                    should_memoize = True
-                    break
                 child = cls._child_var(child)
                 if isinstance(child, Var) and child._get_all_var_data():
                     should_memoize = True
@@ -2001,18 +2005,9 @@ class StatefulComponent(BaseComponent):
             The Var from the child component or the child itself (for regular cases).
         """
         from reflex.components.base.bare import Bare
-        from reflex.components.core.cond import Cond
-        from reflex.components.core.foreach import Foreach
-        from reflex.components.core.match import Match
 
         if isinstance(child, Bare):
             return child.contents
-        if isinstance(child, Cond):
-            return child.cond
-        if isinstance(child, Foreach):
-            return child.iterable
-        if isinstance(child, Match):
-            return child.cond
         return child
 
     @classmethod
@@ -2359,53 +2354,6 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
             return render_dict_to_var(tag.render(), imported_names)
         return Var.create(tag)
 
-    if "iterable" in tag:
-        function_return = Var.create(
-            [
-                render_dict_to_var(child.render(), imported_names)
-                for child in tag["children"]
-            ]
-        )
-
-        func = ArgsFunctionOperation.create(
-            (tag["arg_var_name"], tag["index_var_name"]),
-            function_return,
-        )
-
-        return FunctionStringVar.create("Array.prototype.map.call").call(
-            tag["iterable"]
-            if not isinstance(tag["iterable"], ObjectVar)
-            else tag["iterable"].items(),
-            func,
-        )
-
-    if tag["name"] == "match":
-        element = tag["cond"]
-
-        conditionals = render_dict_to_var(tag["default"], imported_names)
-
-        for case in tag["match_cases"][::-1]:
-            condition = case[0].to_string() == element.to_string()
-            for pattern in case[1:-1]:
-                condition = condition | (pattern.to_string() == element.to_string())
-
-            conditionals = ternary_operation(
-                condition,
-                render_dict_to_var(case[-1], imported_names),
-                conditionals,
-            )
-
-        return conditionals
-
-    if "cond" in tag:
-        return ternary_operation(
-            tag["cond"],
-            render_dict_to_var(tag["true_value"], imported_names),
-            render_dict_to_var(tag["false_value"], imported_names)
-            if tag["false_value"] is not None
-            else Var.create(None),
-        )
-
     props = {}
 
     special_props = []
@@ -2485,17 +2433,14 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
                     "@emotion/react": [
                         ImportVar(tag="jsx"),
                     ],
-                }
-            ),
-            VarData(
-                imports=self._var_value._get_all_imports(),
-            ),
-            VarData(
-                imports={
                     "react": [
                         ImportVar(tag="Fragment"),
                     ],
-                }
+                },
+                components=(self._var_value,),
+            ),
+            VarData(
+                imports=self._var_value._get_all_imports(),
             ),
         )
 

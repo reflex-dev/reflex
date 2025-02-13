@@ -17,45 +17,68 @@ def LifespanApp():
 
     import reflex as rx
 
-    lifespan_task_global = 0
-    lifespan_context_global = 0
+    def create_tasks():
+        lifespan_task_global = 0
+        lifespan_context_global = 0
 
-    @asynccontextmanager
-    async def lifespan_context(app, inc: int = 1):
-        global lifespan_context_global
-        print(f"Lifespan context entered: {app}.")
-        lifespan_context_global += inc  # pyright: ignore[reportUnboundVariable]
-        try:
-            yield
-        finally:
-            print("Lifespan context exited.")
-            lifespan_context_global += inc
-
-    async def lifespan_task(inc: int = 1):
-        global lifespan_task_global
-        print("Lifespan global started.")
-        try:
-            while True:
-                lifespan_task_global += inc  # pyright: ignore[reportUnboundVariable, reportPossiblyUnboundVariable]
-                await asyncio.sleep(0.1)
-        except asyncio.CancelledError as ce:
-            print(f"Lifespan global cancelled: {ce}.")
-            lifespan_task_global = 0
-
-    class LifespanState(rx.State):
-        interval: int = 100
-
-        @rx.var(cache=False)
-        def task_global(self) -> int:
-            return lifespan_task_global
-
-        @rx.var(cache=False)
-        def context_global(self) -> int:
+        def lifespan_context_global_getter():
             return lifespan_context_global
 
-        @rx.event
-        def tick(self, date):
-            pass
+        def lifespan_task_global_getter():
+            return lifespan_task_global
+
+        @asynccontextmanager
+        async def lifespan_context(app, inc: int = 1):
+            nonlocal lifespan_context_global
+            print(f"Lifespan context entered: {app}.")
+            lifespan_context_global += inc
+            try:
+                yield
+            finally:
+                print("Lifespan context exited.")
+                lifespan_context_global += inc
+
+        async def lifespan_task(inc: int = 1):
+            nonlocal lifespan_task_global
+            print("Lifespan global started.")
+            try:
+                while True:
+                    lifespan_task_global += inc
+                    await asyncio.sleep(0.1)
+            except asyncio.CancelledError as ce:
+                print(f"Lifespan global cancelled: {ce}.")
+                lifespan_task_global = 0
+
+        class LifespanState(rx.State):
+            interval: int = 100
+
+            @rx.var(cache=False)
+            def task_global(self) -> int:
+                return lifespan_task_global
+
+            @rx.var(cache=False)
+            def context_global(self) -> int:
+                return lifespan_context_global
+
+            @rx.event
+            def tick(self, date):
+                pass
+
+        return (
+            lifespan_task,
+            lifespan_context,
+            LifespanState,
+            lifespan_task_global_getter,
+            lifespan_context_global_getter,
+        )
+
+    (
+        lifespan_task,
+        lifespan_context,
+        LifespanState,
+        lifespan_task_global_getter,
+        lifespan_context_global_getter,
+    ) = create_tasks()
 
     def index():
         return rx.vstack(
@@ -113,13 +136,16 @@ async def test_lifespan(lifespan_app: AppHarness):
     task_global = driver.find_element(By.ID, "task_global")
 
     assert context_global.text == "2"
-    assert lifespan_app.app_module.lifespan_context_global == 2
+    assert lifespan_app.app_module.lifespan_context_global_getter() == 2
 
     original_task_global_text = task_global.text
     original_task_global_value = int(original_task_global_text)
     lifespan_app.poll_for_content(task_global, exp_not_equal=original_task_global_text)
     driver.find_element(By.ID, "toggle-tick").click()  # avoid teardown errors
-    assert lifespan_app.app_module.lifespan_task_global > original_task_global_value
+    assert (
+        lifespan_app.app_module.lifespan_task_global_getter()
+        > original_task_global_value
+    )
     assert int(task_global.text) > original_task_global_value
 
     # Kill the backend
@@ -129,5 +155,5 @@ async def test_lifespan(lifespan_app: AppHarness):
         lifespan_app.backend_thread.join()
 
     # Check that the lifespan tasks have been cancelled
-    assert lifespan_app.app_module.lifespan_task_global == 0
-    assert lifespan_app.app_module.lifespan_context_global == 4
+    assert lifespan_app.app_module.lifespan_task_global_getter() == 0
+    assert lifespan_app.app_module.lifespan_context_global_getter() == 4

@@ -16,7 +16,7 @@ from itertools import chain
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
-from typing import Any, Callable, Iterable, Sequence, Type, get_args, get_origin
+from typing import Any, Callable, Iterable, Sequence, Type, cast, get_args, get_origin
 
 from reflex.components.component import Component
 from reflex.utils import types as rx_types
@@ -230,7 +230,9 @@ def _generate_imports(
     """
     return [
         *[
-            ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])  # pyright: ignore [reportCallIssue]
+            ast.ImportFrom(
+                module=name, names=[ast.alias(name=val) for val in values], level=0
+            )
             for name, values in DEFAULT_IMPORTS.items()
         ],
         ast.Import([ast.alias("reflex")]),
@@ -429,18 +431,15 @@ def type_to_ast(typ: Any, cls: type) -> ast.AST:
         return ast.Name(id=base_name)
 
     # Convert all type arguments recursively
-    arg_nodes = [type_to_ast(arg, cls) for arg in args]
+    arg_nodes = cast(list[ast.expr], [type_to_ast(arg, cls) for arg in args])
 
     # Special case for single-argument types (like List[T] or Optional[T])
     if len(arg_nodes) == 1:
         slice_value = arg_nodes[0]
     else:
-        slice_value = ast.Tuple(elts=arg_nodes, ctx=ast.Load())  # pyright: ignore [reportArgumentType]
-
+        slice_value = ast.Tuple(elts=arg_nodes, ctx=ast.Load())
     return ast.Subscript(
-        value=ast.Name(id=base_name),
-        slice=ast.Index(value=slice_value),  # pyright: ignore [reportArgumentType]
-        ctx=ast.Load(),
+        value=ast.Name(id=base_name), slice=slice_value, ctx=ast.Load()
     )
 
 
@@ -635,7 +634,7 @@ def _generate_component_create_functiondef(
                 ),
             ),
             ast.Expr(
-                value=ast.Constant(value=Ellipsis),
+                value=ast.Constant(...),
             ),
         ],
         decorator_list=[
@@ -646,8 +645,8 @@ def _generate_component_create_functiondef(
                 else [ast.Name(id="classmethod")]
             ),
         ],
-        lineno=node.lineno if node is not None else None,  # pyright: ignore [reportArgumentType]
         returns=ast.Constant(value=clz.__name__),
+        lineno=node.lineno if node is not None else None,  # pyright: ignore[reportArgumentType]
     )
     return definition
 
@@ -695,7 +694,6 @@ def _generate_staticmethod_call_functiondef(
             ),
         ],
         decorator_list=[ast.Name(id="staticmethod")],
-        lineno=node.lineno if node is not None else None,  # pyright: ignore [reportArgumentType]
         returns=ast.Constant(
             value=_get_type_hint(
                 typing.get_type_hints(clz.__call__).get("return", None),
@@ -703,6 +701,7 @@ def _generate_staticmethod_call_functiondef(
                 is_optional=False,
             )
         ),
+        lineno=node.lineno if node is not None else None,  # pyright: ignore[reportArgumentType]
     )
     return definition
 
@@ -723,6 +722,9 @@ def _generate_namespace_call_functiondef(
 
     Returns:
         The create functiondef node for the ast.
+
+    Raises:
+        TypeError: If the __call__ method does not have a __func__.
     """
     # add the imports needed by get_type_hint later
     type_hint_globals.update(
@@ -737,7 +739,12 @@ def _generate_namespace_call_functiondef(
     # Determine which class is wrapped by the namespace __call__ method
     component_clz = clz.__call__.__self__
 
-    if clz.__call__.__func__.__name__ != "create":  # pyright: ignore [reportFunctionMemberAccess]
+    func = getattr(clz.__call__, "__func__", None)
+
+    if func is None:
+        raise TypeError(f"__call__ method on {clz_name} does not have a __func__")
+
+    if func.__name__ != "create":
         return None
 
     definition = _generate_component_create_functiondef(
@@ -920,7 +927,7 @@ class StubGenerator(ast.NodeTransformer):
             node.body.append(call_definition)
         if not node.body:
             # We should never return an empty body.
-            node.body.append(ast.Expr(value=ast.Constant(value=Ellipsis)))
+            node.body.append(ast.Expr(value=ast.Constant(...)))
         self.current_class = None
         return node
 
@@ -947,9 +954,9 @@ class StubGenerator(ast.NodeTransformer):
             if node.name.startswith("_") and node.name != "__call__":
                 return None  # remove private methods
 
-            if node.body[-1] != ast.Expr(value=ast.Constant(value=Ellipsis)):
+            if node.body[-1] != ast.Expr(value=ast.Constant(...)):
                 # Blank out the function body for public functions.
-                node.body = [ast.Expr(value=ast.Constant(value=Ellipsis))]
+                node.body = [ast.Expr(value=ast.Constant(...))]
         return node
 
     def visit_Assign(self, node: ast.Assign) -> ast.Assign | None:

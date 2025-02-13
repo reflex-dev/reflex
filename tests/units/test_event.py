@@ -6,6 +6,7 @@ import reflex as rx
 from reflex.constants.compiler import Hooks, Imports
 from reflex.event import (
     Event,
+    EventActionsMixin,
     EventChain,
     EventHandler,
     EventSpec,
@@ -410,6 +411,7 @@ def test_event_actions():
 
 def test_event_actions_on_state():
     class EventActionState(BaseState):
+        @rx.event
         def handler(self):
             pass
 
@@ -417,7 +419,8 @@ def test_event_actions_on_state():
     assert isinstance(handler, EventHandler)
     assert not handler.event_actions
 
-    sp_handler = EventActionState.handler.stop_propagation  # pyright: ignore [reportFunctionMemberAccess]
+    sp_handler = EventActionState.handler.stop_propagation
+    assert isinstance(sp_handler, EventActionsMixin)
     assert sp_handler.event_actions == {"stopPropagation": True}
     # should NOT affect other references to the handler
     assert not handler.event_actions

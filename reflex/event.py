@@ -600,14 +600,16 @@ stop_propagation = EventChain(events=[], args_spec=no_args_event_spec).stop_prop
 prevent_default = EventChain(events=[], args_spec=no_args_event_spec).prevent_default
 
 
-T = TypeVar("T")
-U = TypeVar("U")
+EVENT_T = TypeVar("EVENT_T")
+EVENT_U = TypeVar("EVENT_U")
+
+Ts = TypeVarTuple("Ts")
 
 
-class IdentityEventReturn(Generic[T], Protocol):
+class IdentityEventReturn(Generic[Unpack[Ts]], Protocol):
     """Protocol for an identity event return."""
 
-    def __call__(self, *values: Var[T]) -> Tuple[Var[T], ...]:
+    def __call__(self, *values: Unpack[Ts]) -> tuple[Unpack[Ts]]:
         """Return the input values.
 
         Args:
@@ -620,22 +622,26 @@ class IdentityEventReturn(Generic[T], Protocol):
 
 
 @overload
-def passthrough_event_spec(  # pyright: ignore [reportOverlappingOverload]
-    event_type: Type[T], /
-) -> Callable[[Var[T]], Tuple[Var[T]]]: ...
+def passthrough_event_spec(
+    event_type: Type[EVENT_T], /
+) -> IdentityEventReturn[Var[EVENT_T]]: ...
 
 
 @overload
 def passthrough_event_spec(
-    event_type_1: Type[T], event_type2: Type[U], /
-) -> Callable[[Var[T], Var[U]], Tuple[Var[T], Var[U]]]: ...
+    event_type_1: Type[EVENT_T], event_type2: Type[EVENT_U], /
+) -> IdentityEventReturn[Var[EVENT_T], Var[EVENT_U]]: ...
 
 
 @overload
-def passthrough_event_spec(*event_types: Type[T]) -> IdentityEventReturn[T]: ...
+def passthrough_event_spec(
+    *event_types: Unpack[tuple[Type[EVENT_T]]],
+) -> IdentityEventReturn[Unpack[tuple[Var[EVENT_T], ...]]]: ...
 
 
-def passthrough_event_spec(*event_types: Type[T]) -> IdentityEventReturn[T]:  # pyright: ignore [reportInconsistentOverload]
+def passthrough_event_spec(  # pyright: ignore[reportInconsistentOverload]
+    *event_types: Type[EVENT_T],
+) -> IdentityEventReturn[Unpack[tuple[Var[EVENT_T], ...]]]:
     """A helper function that returns the input event as output.
 
     Args:
@@ -645,7 +651,7 @@ def passthrough_event_spec(*event_types: Type[T]) -> IdentityEventReturn[T]:  # 
         A function that returns the input event as output.
     """
 
-    def inner(*values: Var[T]) -> Tuple[Var[T], ...]:
+    def inner(*values: Var[EVENT_T]) -> Tuple[Var[EVENT_T], ...]:
         return values
 
     inner_type = tuple(Var[event_type] for event_type in event_types)
@@ -780,7 +786,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
         return None
 
     fn.__qualname__ = name
-    fn.__signature__ = sig  # pyright: ignore [reportFunctionMemberAccess]
+    fn.__signature__ = sig  # pyright: ignore[reportFunctionMemberAccess]
     return EventSpec(
         handler=EventHandler(fn=fn, state_full_name=FRONTEND_EVENT_STATE),
         args=tuple(

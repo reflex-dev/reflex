@@ -1457,13 +1457,10 @@ def test_instantiate_all_components():
     # These components all have required arguments and cannot be trivially instantiated.
     untested_components = {
         "Card",
-        "Cond",
         "DebounceInput",
-        "Foreach",
         "FormControl",
         "Html",
         "Icon",
-        "Match",
         "Markdown",
         "MultiSelect",
         "Option",
@@ -2156,14 +2153,11 @@ def test_add_style_foreach():
     page = rx.vstack(rx.foreach(Var.range(3), lambda i: StyledComponent.create(i)))
     page._add_style_recursive(Style())
 
-    # Expect only a single child of the foreach on the python side
-    assert len(page.children[0].children) == 1
-
     # Expect the style to be added to the child of the foreach
-    assert 'css={({ ["color"] : "red" })}' in str(page.children[0].children[0])
+    assert '({ ["css"] : ({ ["color"] : "red" }) }),' in str(page.children[0])
 
     # Expect only one instance of this CSS dict in the rendered page
-    assert str(page).count('css={({ ["color"] : "red" })}') == 1
+    assert str(page).count('({ ["css"] : ({ ["color"] : "red" }) }),') == 1
 
 
 class TriggerState(rx.State):

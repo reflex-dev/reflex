@@ -828,7 +828,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
         if isinstance(code, Var):
             return string_replace_operation(
                 code, StringVar(_js_expr=f"/{regex_pattern}/g", _var_type=str), ""
-            )
+            ).guess_type()
         if isinstance(code, str):
             return re.sub(regex_pattern, "", code)
 

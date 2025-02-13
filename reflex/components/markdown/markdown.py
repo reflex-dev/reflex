@@ -114,8 +114,8 @@ class MarkdownComponentMap:
         explicit_return = explicit_return or cls._explicit_return
 
         return ArgsFunctionOperation.create(
-            args_names=(DestructuredArg(fields=tuple(fn_args)),),
-            return_expr=fn_body,
+            (DestructuredArg(fields=tuple(fn_args)),),
+            fn_body,
             explicit_return=explicit_return,
             _var_data=var_data,
         )

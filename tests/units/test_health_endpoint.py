@@ -122,9 +122,12 @@ async def test_health(
     # Call the async health function
     response = await health()
 
-    print(json.loads(response.body))  # pyright: ignore [reportArgumentType]
+    body = response.body
+    assert isinstance(body, bytes)
+
+    print(json.loads(body))
     print(expected_status)
 
     # Verify the response content and status code
     assert response.status_code == expected_code
-    assert json.loads(response.body) == expected_status  # pyright: ignore [reportArgumentType]
+    assert json.loads(body) == expected_status

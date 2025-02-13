@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import inspect
 import json
-import os
 import re
-from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from reflex import constants
 from reflex.constants.state import FRONTEND_EVENT_STATE
@@ -136,22 +135,6 @@ def wrap(
     return f"{open * num}{text}{close * num}"
 
 
-def indent(text: str, indent_level: int = 2) -> str:
-    """Indent the given text by the given indent level.
-
-    Args:
-        text: The text to indent.
-        indent_level: The indent level.
-
-    Returns:
-        The indented text.
-    """
-    lines = text.splitlines()
-    if len(lines) < 2:
-        return text
-    return os.linesep.join(f"{' ' * indent_level}{line}" for line in lines) + os.linesep
-
-
 def to_snake_case(text: str) -> str:
     """Convert a string to snake case.
 
@@ -239,80 +222,6 @@ def make_default_page_title(app_name: str, route: str) -> str:
     return to_title_case(title)
 
 
-def _escape_js_string(string: str) -> str:
-    """Escape the string for use as a JS string literal.
-
-    Args:
-        string: The string to escape.
-
-    Returns:
-        The escaped string.
-    """
-
-    # TODO: we may need to re-vist this logic after new Var API is implemented.
-    def escape_outside_segments(segment: str):
-        """Escape backticks in segments outside of `${}`.
-
-        Args:
-            segment: The part of the string to escape.
-
-        Returns:
-            The escaped or unescaped segment.
-        """
-        if segment.startswith("${") and segment.endswith("}"):
-            # Return the `${}` segment unchanged
-            return segment
-        else:
-            # Escape backticks in the segment
-            segment = segment.replace(r"\`", "`")
-            segment = segment.replace("`", r"\`")
-            return segment
-
-    # Split the string into parts, keeping the `${}` segments
-    parts = re.split(r"(\$\{.*?\})", string)
-    escaped_parts = [escape_outside_segments(part) for part in parts]
-    escaped_string = "".join(escaped_parts)
-    return escaped_string
-
-
-def _wrap_js_string(string: str) -> str:
-    """Wrap string so it looks like {`string`}.
-
-    Args:
-        string: The string to wrap.
-
-    Returns:
-        The wrapped string.
-    """
-    string = wrap(string, "`")
-    string = wrap(string, "{")
-    return string
-
-
-def format_string(string: str) -> str:
-    """Format the given string as a JS string literal..
-
-    Args:
-        string: The string to format.
-
-    Returns:
-        The formatted string.
-    """
-    return _wrap_js_string(_escape_js_string(string))
-
-
-def format_var(var: Var) -> str:
-    """Format the given Var as a javascript value.
-
-    Args:
-        var: The Var to format.
-
-    Returns:
-        The formatted Var.
-    """
-    return str(var)
-
-
 def format_route(route: str, format_case: bool = True) -> str:
     """Format the given route.
 
@@ -333,40 +242,6 @@ def format_route(route: str, format_case: bool = True) -> str:
         return constants.PageNames.INDEX_ROUTE
 
     return route
-
-
-def format_match(
-    cond: str | Var,
-    match_cases: List[List[Var]],
-    default: Var,
-) -> str:
-    """Format a match expression whose return type is a Var.
-
-    Args:
-        cond: The condition.
-        match_cases: The list of cases to match.
-        default: The default case.
-
-    Returns:
-        The formatted match expression
-
-    """
-    switch_code = f"(() => {{ switch (JSON.stringify({cond})) {{"
-
-    for case in match_cases:
-        conditions = case[:-1]
-        return_value = case[-1]
-
-        case_conditions = " ".join(
-            [f"case JSON.stringify({condition!s}):" for condition in conditions]
-        )
-        case_code = f"{case_conditions}  return ({return_value!s});  break;"
-        switch_code += case_code
-
-    switch_code += f"default:  return ({default!s});  break;"
-    switch_code += "};})()"
-
-    return switch_code
 
 
 def format_prop(

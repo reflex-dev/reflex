@@ -607,8 +607,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if cls._item_is_event_handler(name, fn)
         }
 
-        for mixin in cls._mixins():  # pyright: ignore [reportAssignmentType]
-            for name, value in mixin.__dict__.items():
+        for mixin_class in cls._mixins():
+            for name, value in mixin_class.__dict__.items():
                 if name in cls.inherited_vars:
                     continue
                 if is_computed_var(value):
@@ -619,7 +619,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     cls.computed_vars[newcv._js_expr] = newcv
                     cls.vars[newcv._js_expr] = newcv
                     continue
-                if types.is_backend_base_variable(name, mixin):  # pyright: ignore [reportArgumentType]
+                if types.is_backend_base_variable(name, mixin_class):
                     cls.backend_vars[name] = copy.deepcopy(value)
                     continue
                 if events.get(name) is not None:
@@ -3653,6 +3653,9 @@ def get_state_manager() -> StateManager:
     return prerequisites.get_and_validate_app().app.state_manager
 
 
+DATACLASS_FIELDS = getattr(dataclasses, "_FIELDS", "__dataclass_fields__")
+
+
 class MutableProxy(wrapt.ObjectProxy):
     """A proxy for a mutable object that tracks changes."""
 
@@ -3724,12 +3727,7 @@ class MutableProxy(wrapt.ObjectProxy):
                 cls.__dataclass_proxies__[wrapper_cls_name] = type(
                     wrapper_cls_name,
                     (cls,),
-                    {
-                        dataclasses._FIELDS: getattr(  # pyright: ignore [reportAttributeAccessIssue]
-                            wrapped_cls,
-                            dataclasses._FIELDS,  # pyright: ignore [reportAttributeAccessIssue]
-                        ),
-                    },
+                    {DATACLASS_FIELDS: getattr(wrapped_cls, DATACLASS_FIELDS)},
                 )
             cls = cls.__dataclass_proxies__[wrapper_cls_name]
         return super().__new__(cls)
@@ -3878,11 +3876,11 @@ class MutableProxy(wrapt.ObjectProxy):
             if (
                 isinstance(self.__wrapped__, Base)
                 and __name not in self.__never_wrap_base_attrs__
-                and hasattr(value, "__func__")
+                and (value_func := getattr(value, "__func__", None))
             ):
                 # Wrap methods called on Base subclasses, which might do _anything_
                 return wrapt.FunctionWrapper(
-                    functools.partial(value.__func__, self),  # pyright: ignore [reportFunctionMemberAccess]
+                    functools.partial(value_func, self),
                     self._wrap_recursive_decorator,
                 )
 

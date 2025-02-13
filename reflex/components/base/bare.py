@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Iterator
 
-from reflex.components.component import Component, LiteralComponentVar
+from reflex.components.component import Component, ComponentStyle
 from reflex.components.tags import Tag
 from reflex.components.tags.tagless import Tagless
 from reflex.config import PerformanceMode, environment
@@ -12,7 +12,7 @@ from reflex.utils import console
 from reflex.utils.decorator import once
 from reflex.utils.imports import ParsedImportDict
 from reflex.vars import BooleanVar, ObjectVar, Var
-from reflex.vars.base import VarData
+from reflex.vars.base import GLOBAL_CACHE, VarData
 from reflex.vars.sequence import LiteralStringVar
 
 
@@ -80,8 +80,11 @@ class Bare(Component):
             The hooks for the component.
         """
         hooks = super()._get_all_hooks_internal()
-        if isinstance(self.contents, LiteralComponentVar):
-            hooks |= self.contents._var_value._get_all_hooks_internal()
+        if isinstance(self.contents, Var):
+            var_data = self.contents._get_all_var_data()
+            if var_data:
+                for component in var_data.components:
+                    hooks |= component._get_all_hooks_internal()
         return hooks
 
     def _get_all_hooks(self) -> dict[str, VarData | None]:
@@ -91,18 +94,24 @@ class Bare(Component):
             The hooks for the component.
         """
         hooks = super()._get_all_hooks()
-        if isinstance(self.contents, LiteralComponentVar):
-            hooks |= self.contents._var_value._get_all_hooks()
+        if isinstance(self.contents, Var):
+            var_data = self.contents._get_all_var_data()
+            if var_data:
+                for component in var_data.components:
+                    hooks |= component._get_all_hooks()
         return hooks
 
-    def _get_all_imports(self) -> ParsedImportDict:
+    def _get_all_imports(self, collapse: bool = False) -> ParsedImportDict:
         """Include the imports for the component.
+
+        Args:
+            collapse: Whether to collapse the imports.
 
         Returns:
             The imports for the component.
         """
-        imports = super()._get_all_imports()
-        if isinstance(self.contents, LiteralComponentVar):
+        imports = super()._get_all_imports(collapse=collapse)
+        if isinstance(self.contents, Var):
             var_data = self.contents._get_all_var_data()
             if var_data:
                 imports |= {k: list(v) for k, v in var_data.imports}
@@ -115,8 +124,11 @@ class Bare(Component):
             The dynamic imports.
         """
         dynamic_imports = super()._get_all_dynamic_imports()
-        if isinstance(self.contents, LiteralComponentVar):
-            dynamic_imports |= self.contents._var_value._get_all_dynamic_imports()
+        if isinstance(self.contents, Var):
+            var_data = self.contents._get_all_var_data()
+            if var_data:
+                for component in var_data.components:
+                    dynamic_imports |= component._get_all_dynamic_imports()
         return dynamic_imports
 
     def _get_all_custom_code(self) -> set[str]:
@@ -126,9 +138,27 @@ class Bare(Component):
             The custom code.
         """
         custom_code = super()._get_all_custom_code()
-        if isinstance(self.contents, LiteralComponentVar):
-            custom_code |= self.contents._var_value._get_all_custom_code()
+        if isinstance(self.contents, Var):
+            var_data = self.contents._get_all_var_data()
+            if var_data:
+                for component in var_data.components:
+                    custom_code |= component._get_all_custom_code()
         return custom_code
+
+    def _get_all_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        """Get the components that should be wrapped in the app.
+
+        Returns:
+            The components that should be wrapped in the app.
+        """
+        app_wrap_components = super()._get_all_app_wrap_components()
+        if isinstance(self.contents, Var):
+            var_data = self.contents._get_all_var_data()
+            if var_data:
+                for component in var_data.components:
+                    if isinstance(component, Component):
+                        app_wrap_components |= component._get_all_app_wrap_components()
+        return app_wrap_components
 
     def _get_all_refs(self) -> set[str]:
         """Get the refs for the children of the component.
@@ -137,8 +167,11 @@ class Bare(Component):
             The refs for the children.
         """
         refs = super()._get_all_refs()
-        if isinstance(self.contents, LiteralComponentVar):
-            refs |= self.contents._var_value._get_all_refs()
+        if isinstance(self.contents, Var):
+            var_data = self.contents._get_all_var_data()
+            if var_data:
+                for component in var_data.components:
+                    refs |= component._get_all_refs()
         return refs
 
     def _render(self) -> Tag:
@@ -147,6 +180,30 @@ class Bare(Component):
                 return Tagless(contents=f"{{{self.contents.to_string()!s}}}")
             return Tagless(contents=f"{{{self.contents!s}}}")
         return Tagless(contents=str(self.contents))
+
+    def _add_style_recursive(
+        self, style: ComponentStyle, theme: Component | None = None
+    ) -> Component:
+        """Add style to the component and its children.
+
+        Args:
+            style: The style to add.
+            theme: The theme to add.
+
+        Returns:
+            The component with the style added.
+        """
+        new_self = super()._add_style_recursive(style, theme)
+        if isinstance(self.contents, Var):
+            var_data = self.contents._get_all_var_data()
+            if var_data:
+                for component in var_data.components:
+                    if isinstance(component, Component):
+                        component._add_style_recursive(style, theme)
+
+        GLOBAL_CACHE.clear()
+
+        return new_self
 
     def _get_vars(
         self, include_children: bool = False, ignore_ids: set[int] | None = None

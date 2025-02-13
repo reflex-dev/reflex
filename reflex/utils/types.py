@@ -7,6 +7,7 @@ import dataclasses
 import inspect
 import sys
 import types
+from collections import abc
 from functools import cached_property, lru_cache, wraps
 from typing import (
     TYPE_CHECKING,
@@ -23,6 +24,7 @@ from typing import (
     Sequence,
     Tuple,
     Type,
+    TypeVar,
     Union,
     _GenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     get_args,
@@ -31,6 +33,7 @@ from typing import (
 from typing import get_origin as get_origin_og
 
 import sqlalchemy
+import typing_extensions
 from typing_extensions import is_typeddict
 
 import reflex
@@ -68,13 +71,13 @@ else:
 
 
 # Potential GenericAlias types for isinstance checks.
-GenericAliasTypes = [_GenericAlias]
+_GenericAliasTypes: list[type] = [_GenericAlias]
 
 with contextlib.suppress(ImportError):
     # For newer versions of Python.
     from types import GenericAlias
 
-    GenericAliasTypes.append(GenericAlias)
+    _GenericAliasTypes.append(GenericAlias)
 
 with contextlib.suppress(ImportError):
     # For older versions of Python.
@@ -82,9 +85,9 @@ with contextlib.suppress(ImportError):
         _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     )
 
-    GenericAliasTypes.append(_SpecialGenericAlias)
+    _GenericAliasTypes.append(_SpecialGenericAlias)
 
-GenericAliasTypes = tuple(GenericAliasTypes)
+GenericAliasTypes = tuple(_GenericAliasTypes)
 
 # Potential Union types for isinstance checks (UnionType added in py3.10).
 UnionTypes = (Union, types.UnionType) if hasattr(types, "UnionType") else (Union,)
@@ -183,7 +186,7 @@ def is_generic_alias(cls: GenericType) -> bool:
     return isinstance(cls, GenericAliasTypes)  # pyright: ignore [reportArgumentType]
 
 
-def unionize(*args: GenericType) -> Type:
+def unionize(*args: GenericType) -> GenericType:
     """Unionize the types.
 
     Args:
@@ -417,7 +420,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
 
 
 @lru_cache()
-def get_base_class(cls: GenericType) -> Type:
+def get_base_class(cls: GenericType) -> Type | tuple[Type, ...]:
     """Get the base class of a class.
 
     Args:
@@ -437,7 +440,14 @@ def get_base_class(cls: GenericType) -> Type:
         return type(get_args(cls)[0])
 
     if is_union(cls):
-        return tuple(get_base_class(arg) for arg in get_args(cls))  # pyright: ignore [reportReturnType]
+        base_classes = []
+        for arg in get_args(cls):
+            sub_base_classes = get_base_class(arg)
+            if isinstance(sub_base_classes, tuple):
+                base_classes.extend(sub_base_classes)
+            else:
+                base_classes.append(sub_base_classes)
+        return tuple(base_classes)
 
     return get_base_class(cls.__origin__) if is_generic_alias(cls) else cls
 
@@ -847,18 +857,22 @@ StateBases = get_base_class(StateVar)
 StateIterBases = get_base_class(StateIterVar)
 
 
-def safe_issubclass(cls: Type, cls_check: Type | Tuple[Type, ...]):
-    """Check if a class is a subclass of another class. Returns False if internal error occurs.
+def safe_issubclass(cls: Any, class_or_tuple: Any, /) -> bool:
+    """Check if a class is a subclass of another class or a tuple of classes.
 
     Args:
         cls: The class to check.
-        cls_check: The class to check against.
+        class_or_tuple: The class or tuple of classes to check against.
 
     Returns:
-        Whether the class is a subclass of the other class.
+        Whether the class is a subclass of the other class or tuple of classes.
     """
+    if cls is class_or_tuple or (
+        isinstance(class_or_tuple, tuple) and cls in class_or_tuple
+    ):
+        return True
     try:
-        return issubclass(cls, cls_check)
+        return issubclass(cls, class_or_tuple)
     except TypeError:
         return False
 
@@ -873,17 +887,32 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
     Returns:
         Whether the type hint is a subclass of the other type hint.
     """
+    if isinstance(possible_subclass, Sequence) and isinstance(
+        possible_superclass, Sequence
+    ):
+        return all(
+            typehint_issubclass(subclass, superclass)
+            for subclass, superclass in zip(
+                possible_subclass, possible_superclass, strict=False
+            )
+        )
+    if possible_subclass is possible_superclass:
+        return True
     if possible_superclass is Any:
         return True
     if possible_subclass is Any:
         return False
+    if isinstance(
+        possible_subclass, (TypeVar, typing_extensions.TypeVar)
+    ) or isinstance(possible_superclass, (TypeVar, typing_extensions.TypeVar)):
+        return True
 
     provided_type_origin = get_origin(possible_subclass)
     accepted_type_origin = get_origin(possible_superclass)
 
     if provided_type_origin is None and accepted_type_origin is None:
         # In this case, we are dealing with a non-generic type, so we can use issubclass
-        return issubclass(possible_subclass, possible_superclass)
+        return safe_issubclass(possible_subclass, possible_superclass)
 
     # Remove this check when Python 3.10 is the minimum supported version
     if hasattr(types, "UnionType"):
@@ -898,24 +927,64 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
     provided_args = get_args(possible_subclass)
     accepted_args = get_args(possible_superclass)
 
-    if accepted_type_origin is Union:
-        if provided_type_origin is not Union:
-            return any(
-                typehint_issubclass(possible_subclass, accepted_arg)
-                for accepted_arg in accepted_args
-            )
+    if provided_type_origin is Union:
         return all(
-            any(
-                typehint_issubclass(provided_arg, accepted_arg)
-                for accepted_arg in accepted_args
-            )
+            typehint_issubclass(provided_arg, possible_superclass)
             for provided_arg in provided_args
         )
 
+    if accepted_type_origin is Union:
+        return any(
+            typehint_issubclass(possible_subclass, accepted_arg)
+            for accepted_arg in accepted_args
+        )
+
+    # Check specifically for Sequence and Iterable
+    if (accepted_type_origin or possible_superclass) in (
+        Sequence,
+        abc.Sequence,
+        Iterable,
+        abc.Iterable,
+    ):
+        iterable_type = accepted_args[0] if accepted_args else Any
+
+        if provided_type_origin is None:
+            if not safe_issubclass(
+                possible_subclass, (accepted_type_origin or possible_superclass)
+            ):
+                return False
+
+            if safe_issubclass(possible_subclass, str) and not isinstance(
+                iterable_type, TypeVar
+            ):
+                return typehint_issubclass(str, iterable_type)
+            return True
+
+        if not safe_issubclass(
+            provided_type_origin, (accepted_type_origin or possible_superclass)
+        ):
+            return False
+
+        if not isinstance(iterable_type, (TypeVar, typing_extensions.TypeVar)):
+            if provided_type_origin in (list, tuple, set):
+                # Ensure all specific types are compatible with accepted types
+                return all(
+                    typehint_issubclass(provided_arg, iterable_type)
+                    for provided_arg in provided_args
+                    if provided_arg is not ...  # Ellipsis in Tuples
+                )
+            if possible_subclass is dict:
+                # Ensure all specific types are compatible with accepted types
+                return all(
+                    typehint_issubclass(provided_arg, iterable_type)
+                    for provided_arg in provided_args[:1]
+                )
+        return True
+
     # Check if the origin of both types is the same (e.g., list for List[int])
-    # This probably should be issubclass instead of ==
-    if (provided_type_origin or possible_subclass) != (
-        accepted_type_origin or possible_superclass
+    if not safe_issubclass(
+        provided_type_origin or possible_subclass,
+        accepted_type_origin or possible_superclass,
     ):
         return False
 
@@ -927,5 +996,21 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
         for provided_arg, accepted_arg in zip(
             provided_args, accepted_args, strict=False
         )
-        if accepted_arg is not Any
+        if accepted_arg is not Any and not isinstance(accepted_arg, TypeVar)
     )
+
+
+def safe_typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> bool:
+    """Check if a type hint is a subclass of another type hint.
+
+    Args:
+        possible_subclass: The type hint to check.
+        possible_superclass: The type hint to check against.
+
+    Returns:
+        Whether the type hint is a subclass of the other type hint.
+    """
+    try:
+        return typehint_issubclass(possible_subclass, possible_superclass)
+    except Exception:
+        return False

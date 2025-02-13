@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Iterable, Literal, Union
 
 from reflex.components.component import Component, ComponentNamespace
-from reflex.components.core.foreach import Foreach
+from reflex.components.core.foreach import foreach
 from reflex.components.el.elements.typography import Li, Ol, Ul
 from reflex.components.lucide.icon import Icon
 from reflex.components.markdown.markdown import MarkdownComponentMap
@@ -70,7 +70,7 @@ class BaseList(Component, MarkdownComponentMap):
 
         if not children and items is not None:
             if isinstance(items, Var):
-                children = [Foreach.create(items, ListItem.create)]
+                children = [foreach(items, ListItem.create)]
             else:
                 children = [ListItem.create(item) for item in items]
         props["direction"] = "column"

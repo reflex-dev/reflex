@@ -9,7 +9,7 @@ import unittest.mock
 import uuid
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
-from typing import Generator, List, Tuple, Type
+from typing import Generator, List, Tuple, Type, cast
 from unittest.mock import AsyncMock
 
 import pytest
@@ -31,9 +31,8 @@ from reflex.app import (
 )
 from reflex.components import Component
 from reflex.components.base.fragment import Fragment
-from reflex.components.core.cond import Cond
 from reflex.components.radix.themes.typography.text import Text
-from reflex.event import Event
+from reflex.event import Event, EventHandler
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
 from reflex.state import (
@@ -916,7 +915,7 @@ class DynamicState(BaseState):
         """
         return self.dynamic
 
-    on_load_internal = OnLoadInternalState.on_load_internal.fn  # pyright: ignore [reportFunctionMemberAccess]
+    on_load_internal = cast(EventHandler, OnLoadInternalState.on_load_internal).fn
 
 
 def test_dynamic_arg_shadow(
@@ -1189,7 +1188,7 @@ async def test_process_events(mocker, token: str):
         pass
 
     assert (await app.state_manager.get_state(event.substate_token)).value == 5
-    assert app._postprocess.call_count == 6  # pyright: ignore [reportFunctionMemberAccess]
+    assert getattr(app._postprocess, "call_count", None) == 6
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()
@@ -1227,10 +1226,6 @@ def test_overlay_component(
         assert app.overlay_component is not None
         generated_component = app._generate_component(app.overlay_component)
         assert isinstance(generated_component, OverlayFragment)
-        assert isinstance(
-            generated_component.children[0],
-            Cond,  # ConnectionModal is a Cond under the hood
-        )
     else:
         assert app.overlay_component is not None
         assert isinstance(
@@ -1246,8 +1241,8 @@ def test_overlay_component(
 
     if exp_page_child is not None:
         assert len(page.children) == 3
-        children_types = (type(child) for child in page.children)
-        assert exp_page_child in children_types  # pyright: ignore [reportOperatorIssue]
+        children_types = [type(child) for child in page.children]
+        assert exp_page_child in children_types
     else:
         assert len(page.children) == 2
 
