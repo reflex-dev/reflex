@@ -1208,7 +1208,7 @@ class Component(BaseComponent, ABC):
         Returns:
             True if the dependency should be transpiled.
         """
-        return (
+        return bool(self.transpile_packages) and (
             dep in self.transpile_packages
             or format.format_library_name(dep or "") in self.transpile_packages
         )
@@ -1291,10 +1291,10 @@ class Component(BaseComponent, ABC):
         event_imports = Imports.EVENTS if self.event_triggers else {}
 
         # Collect imports from Vars used directly by this component.
-        var_datas = [var._get_all_var_data() for var in self._get_vars()]
-        var_imports: List[ImmutableParsedImportDict] = [
+        var_datas = (var._get_all_var_data() for var in self._get_vars())
+        var_imports: Iterator[ImmutableParsedImportDict] = (
             var_data.imports for var_data in var_datas if var_data is not None
-        ]
+        )
 
         added_import_dicts: list[ParsedImportDict] = []
         for clz in self._iter_parent_classes_with_method("add_imports"):
@@ -1566,8 +1566,24 @@ class Component(BaseComponent, ABC):
             An import var.
         """
         # If the tag is dot-qualified, only import the left-most name.
-        tag = self.tag.partition(".")[0] if self.tag else None
-        alias = self.alias.partition(".")[0] if self.alias else None
+        tag = (
+            (
+                self.tag[:tag_index]
+                if (tag_index := self.tag.find(".")) != -1
+                else self.tag
+            )
+            if self.tag
+            else None
+        )
+        alias = (
+            (
+                self.alias[:alias_index]
+                if (alias_index := self.alias.find(".")) != -1
+                else self.alias
+            )
+            if self.alias
+            else None
+        )
         return ImportVar(
             tag=tag,
             is_default=self.is_default,
@@ -2090,13 +2106,19 @@ class StatefulComponent(BaseComponent):
             A list of var names created by the hook declaration.
         """
         # Ensure that the hook is a var declaration.
-        var_decl = hook.partition("=")[0].strip()
+        var_decl = (
+            hook[:hook_index] if (hook_index := hook.find("=")) != -1 else hook
+        ).strip()
+
         if not any(var_decl.startswith(kw) for kw in ["const ", "let ", "var "]):
             return []
 
         # Extract the var name from the declaration.
-        _, _, var_name = var_decl.partition(" ")
-        var_name = var_name.strip()
+        var_name = (
+            var_decl[var_decl_index + 1 :]
+            if (var_decl_index := var_decl.find(" ")) != -1
+            else ""
+        ).strip()
 
         # Break up array and object destructuring if used.
         if var_name.startswith("[") or var_name.startswith("{"):
@@ -2426,13 +2448,18 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
 
     contents = tag["contents"][1:-1] if tag["contents"] else None
 
-    raw_tag_name = tag.get("name")
+    raw_tag_name: str = tag["name"]
     tag_name = Var(raw_tag_name or "Fragment")
 
     tag_name = (
         Var.create(raw_tag_name)
         if raw_tag_name
-        and raw_tag_name.split(".")[0] not in imported_names
+        and (
+            raw_tag_name[:raw_tag_name_index]
+            if (raw_tag_name_index := raw_tag_name.find(".")) != -1
+            else raw_tag_name
+        )
+        not in imported_names
         and raw_tag_name.lower() == raw_tag_name
         else tag_name
     )
