@@ -10,6 +10,7 @@ import os
 import sys
 import threading
 import urllib.parse
+from functools import lru_cache
 from importlib.util import find_spec
 from pathlib import Path
 from types import ModuleType
@@ -408,6 +409,19 @@ class EnvVar(Generic[T]):
             os.environ[self.name] = str_value
 
 
+@lru_cache()
+def get_type_hints_environment(cls: type) -> dict[str, Any]:
+    """Get the type hints for the environment variables.
+
+    Args:
+        cls: The class.
+
+    Returns:
+        The type hints.
+    """
+    return get_type_hints(cls)
+
+
 class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
     """Descriptor for environment variables."""
 
@@ -434,7 +448,9 @@ class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
         """
         self.name = name
 
-    def __get__(self, instance: Any, owner: Any):
+    def __get__(
+        self, instance: EnvironmentVariables, owner: type[EnvironmentVariables]
+    ):
         """Get the EnvVar instance.
 
         Args:
@@ -444,7 +460,7 @@ class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
         Returns:
             The EnvVar instance.
         """
-        type_ = get_args(get_type_hints(owner)[self.name])[0]
+        type_ = get_args(get_type_hints_environment(owner)[self.name])[0]
         env_name = self.name
         if self.internal:
             env_name = f"__{env_name}"
