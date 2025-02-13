@@ -1903,61 +1903,6 @@ def _or_operation(a: Var, b: Var):
     )
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    slots=True,
-)
-class CallableVar(Var):
-    """Decorate a Var-returning function to act as both a Var and a function.
-
-    This is used as a compatibility shim for replacing Var objects in the
-    API with functions that return a family of Var.
-    """
-
-    fn: Callable[..., Var] = dataclasses.field(
-        default_factory=lambda: lambda: Var(_js_expr="undefined")
-    )
-    original_var: Var = dataclasses.field(
-        default_factory=lambda: Var(_js_expr="undefined")
-    )
-
-    def __init__(self, fn: Callable[..., Var]):
-        """Initialize a CallableVar.
-
-        Args:
-            fn: The function to decorate (must return Var)
-        """
-        original_var = fn()
-        super(CallableVar, self).__init__(
-            _js_expr=original_var._js_expr,
-            _var_type=original_var._var_type,
-            _var_data=VarData.merge(original_var._get_all_var_data()),
-        )
-        object.__setattr__(self, "fn", fn)
-        object.__setattr__(self, "original_var", original_var)
-
-    def __call__(self, *args: Any, **kwargs: Any) -> Var:
-        """Call the decorated function.
-
-        Args:
-            *args: The args to pass to the function.
-            **kwargs: The kwargs to pass to the function.
-
-        Returns:
-            The Var returned from calling the function.
-        """
-        return self.fn(*args, **kwargs)
-
-    def __hash__(self) -> int:
-        """Calculate the hash of the object.
-
-        Returns:
-            The hash of the object.
-        """
-        return hash((type(self).__name__, self.original_var))
-
-
 RETURN_TYPE = TypeVar("RETURN_TYPE")
 
 DICT_KEY = TypeVar("DICT_KEY")
