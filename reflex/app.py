@@ -1610,7 +1610,7 @@ def upload(app: App):
             file_copies.append(
                 UploadFile(
                     file=content_copy,
-                    path=Path(file.filename) if file.filename else None,
+                    path=Path(file.filename.lstrip("/")) if file.filename else None,
                     _deprecated_filename=file.filename,
                     size=file.size,
                     headers=file.headers,
