@@ -28,6 +28,7 @@ from reflex.utils.types import (
     get_attribute_access_type,
     get_origin,
     safe_issubclass,
+    unionize,
 )
 
 from .base import (

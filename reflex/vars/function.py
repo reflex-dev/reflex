@@ -1880,11 +1880,11 @@ def _generate_overloads_for_function_var_call(maximum_args: int = 4) -> str:
         ):
             for return_type, return_type_var in return_type_mapping.items():
                 required_args = [
-                    f"arg{j + 1}: Union[V" f"{j + 1}, Var[V{j + 1}]]"
+                    f"arg{j + 1}: Union[V{j + 1}, Var[V{j + 1}]]"
                     for j in range(number_of_required_args)
                 ]
                 optional_args = [
-                    f"arg{j + 1}: Union[V" f"{j + 1}, Var[V{j + 1}], Unset] = Unset()"
+                    f"arg{j + 1}: Union[V{j + 1}, Var[V{j + 1}], Unset] = Unset()"
                     for j in range(
                         number_of_required_args,
                         number_of_required_args + number_of_optional_args,

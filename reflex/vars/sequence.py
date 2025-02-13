@@ -473,7 +473,7 @@ def array_length_operation(array: Var[ARRAY_VAR_TYPE]):
 
 @var_operation
 def string_split_operation(
-    string: Var[str], sep: VarWithDefault[str] = VarWithDefault("")
+    string: Var[STRING_TYPE], sep: VarWithDefault[STRING_TYPE] = VarWithDefault("")
 ):
     """Split a string.
 

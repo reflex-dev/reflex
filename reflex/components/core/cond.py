@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Union, overload
+from typing import Any, TypeVar, Union, overload
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import BaseComponent, Component
@@ -13,14 +13,20 @@ from reflex.vars.number import ternary_operation
 
 
 @overload
-def cond(condition: Any, c1: Component, c2: Any = None) -> Component: ...
+def cond(
+    condition: Any, c1: BaseComponent | Var[BaseComponent], c2: Any = None, /
+) -> Var[Component]: ...
+
+
+T = TypeVar("T")
+V = TypeVar("V")
 
 
 @overload
-def cond(condition: Any, c1: Any, c2: Any) -> Var: ...
+def cond(condition: Any, c1: T | Var[T], c2: V | Var[V], /) -> Var[T | V]: ...
 
 
-def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
+def cond(condition: Any, c1: Any, c2: Any = None, /) -> Var:
     """Create a conditional component or Prop.
 
     Args:
@@ -59,14 +65,17 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
 
 
 @overload
-def color_mode_cond(light: Component, dark: Component | None = None) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
+def color_mode_cond(
+    light: BaseComponent | Var[BaseComponent],
+    dark: BaseComponent | Var[BaseComponent] | None = ...,
+) -> Var[Component]: ...
 
 
 @overload
-def color_mode_cond(light: Any, dark: Any = None) -> Var: ...
+def color_mode_cond(light: T | Var[T], dark: V | Var[V]) -> Var[T | V]: ...
 
 
-def color_mode_cond(light: Any, dark: Any = None) -> Var | Component:
+def color_mode_cond(light: Any, dark: Any = None) -> Var:
     """Create a component or Prop based on color_mode.
 
     Args:

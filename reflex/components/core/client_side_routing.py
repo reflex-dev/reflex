@@ -41,7 +41,7 @@ class ClientSideRouting(Component):
         return ""
 
 
-def wait_for_client_redirect(component: Component) -> Component:
+def wait_for_client_redirect(component: Component) -> Var[Component]:
     """Wait for a redirect to occur before rendering a component.
 
     This prevents the 404 page from flashing while the redirect is happening.
@@ -53,9 +53,9 @@ def wait_for_client_redirect(component: Component) -> Component:
         The conditionally rendered component.
     """
     return cond(
-        condition=route_not_found,
-        c1=component,
-        c2=ClientSideRouting.create(),
+        route_not_found,
+        component,
+        ClientSideRouting.create(),
     )
 
 

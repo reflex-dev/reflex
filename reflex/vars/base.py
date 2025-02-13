@@ -2403,14 +2403,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         self: ComputedVar[SEQUENCE_TYPE],
         instance: None,
         owner: Type,
-    ) -> ArrayVar[list[LIST_INSIDE]]: ...
-
-    @overload
-    def __get__(
-        self: ComputedVar[tuple[LIST_INSIDE, ...]],
-        instance: None,
-        owner: Type,
-    ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
+    ) -> ArrayVar[SEQUENCE_TYPE]: ...
 
     @overload
     def __get__(self, instance: None, owner: Type) -> ComputedVar[RETURN_TYPE]: ...
@@ -2646,17 +2639,10 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: AsyncComputedVar[list[LIST_INSIDE]],
+        self: AsyncComputedVar[SEQUENCE_TYPE],
         instance: None,
         owner: Type,
-    ) -> ArrayVar[list[LIST_INSIDE]]: ...
-
-    @overload
-    def __get__(
-        self: AsyncComputedVar[tuple[LIST_INSIDE, ...]],
-        instance: None,
-        owner: Type,
-    ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
+    ) -> ArrayVar[SEQUENCE_TYPE]: ...
 
     @overload
     def __get__(

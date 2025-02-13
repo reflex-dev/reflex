@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from typing import Callable, Iterable
 
+from reflex.vars import ArrayVar, ObjectVar, StringVar
 from reflex.vars.base import LiteralVar, Var
-from reflex.vars.object import ObjectVar
-from reflex.vars.sequence import ArrayVar
 
 
 class ForeachVarError(TypeError):
@@ -30,44 +29,37 @@ def foreach(
     Returns:
         The foreach component.
 
-        Raises:
-            ForeachVarError: If the iterable is of type Any.
-            TypeError: If the render function is a ComponentState.
-            UntypedVarError: If the iterable is of type Any without a type annotation.
-        """
-        from reflex.vars import ArrayVar, ObjectVar, StringVar
+    Raises:
+        ForeachVarError: If the iterable is of type Any.
+        TypeError: If the render function is a ComponentState.
+        UntypedVarError: If the iterable is of type Any without a type annotation.
+    """
+    from reflex.state import ComponentState
 
-        iterable = LiteralVar.create(iterable).guess_type()
+    iterable = LiteralVar.create(iterable).guess_type()
 
-        if iterable._var_type == Any:
-            raise ForeachVarError(
-                f"Could not foreach over var `{iterable!s}` of type Any. "
-                "(If you are trying to foreach over a state var, add a type annotation to the var). "
-                "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
-            )
+    if isinstance(iterable, ObjectVar):
+        iterable = iterable.entries()
 
-        if (
-            hasattr(render_fn, "__qualname__")
-            and render_fn.__qualname__ == ComponentState.create.__qualname__
-        ):
-            raise TypeError(
-                "Using a ComponentState as `render_fn` inside `rx.foreach` is not supported yet."
-            )
+    if isinstance(iterable, StringVar):
+        iterable = iterable.split()
 
-        if isinstance(iterable, ObjectVar):
-            iterable = iterable.entries()
+    if not isinstance(iterable, ArrayVar):
+        raise ForeachVarError(
+            f"Could not foreach over var `{iterable!s}` of type {iterable._var_type}. "
+            "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
+        )
 
-        if isinstance(iterable, StringVar):
-            iterable = iterable.split()
+    if (
+        hasattr(render_fn, "__qualname__")
+        and render_fn.__qualname__ == ComponentState.create.__qualname__
+    ):
+        raise TypeError(
+            "Using a ComponentState as `render_fn` inside `rx.foreach` is not supported yet."
+        )
 
-        if not isinstance(iterable, ArrayVar):
-            raise ForeachVarError(
-                f"Could not foreach over var `{iterable!s}` of type {iterable._var_type}. "
-                "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
-            )
+    return iterable.foreach(render_fn)
 
-        return iterable.foreach(render_fn)
-        
 
 class Foreach:
     """Create a foreach component."""
