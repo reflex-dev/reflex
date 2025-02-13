@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Dict, Iterable, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple, Type, Union
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -545,30 +545,47 @@ def purge_web_pages_dir():
 
 
 if TYPE_CHECKING:
-    from reflex.app import UnevaluatedPage
-
-    COMPONENT_TYPE = Union[Component, Var, Tuple[Union[Component, Var], ...]]
-    COMPONENT_TYPE_OR_CALLABLE = Union[COMPONENT_TYPE, Callable[[], COMPONENT_TYPE]]
+    from reflex.app import ComponentCallable, UnevaluatedPage
 
 
-def componentify_unevaluated(
-    possible_component: COMPONENT_TYPE_OR_CALLABLE,
-) -> Component:
-    """Convert a possible component to a component.
+def _into_component_once(component: Component | ComponentCallable) -> Component | None:
+    """Convert a component to a Component.
 
     Args:
-        possible_component: The possible component to convert.
+        component: The component to convert.
 
     Returns:
-        The component.
+        The converted component.
     """
-    if isinstance(possible_component, Var):
-        return Fragment.create(possible_component)
-    if isinstance(possible_component, tuple):
-        return Fragment.create(*possible_component)
-    if isinstance(possible_component, Component):
-        return possible_component
-    return componentify_unevaluated(possible_component())
+    if isinstance(component, Component):
+        return component
+    if isinstance(component, (Var, int, float, str)):
+        return Fragment.create(component)
+    if isinstance(component, Sequence):
+        return Fragment.create(*component)
+    return None
+
+
+def into_component(component: Component | ComponentCallable) -> Component:
+    """Convert a component to a Component.
+
+    Args:
+        component: The component to convert.
+
+    Returns:
+        The converted component.
+
+    Raises:
+        TypeError: If the component is not a Component.
+    """
+    if (converted := _into_component_once(component)) is not None:
+        return converted
+    if (
+        callable(component)
+        and (converted := _into_component_once(component())) is not None
+    ):
+        return converted
+    raise TypeError(f"Expected a Component, got {type(component)}")
 
 
 def compile_unevaluated_page(
@@ -591,7 +608,7 @@ def compile_unevaluated_page(
         The compiled component and whether state should be enabled.
     """
     # Generate the component if it is a callable.
-    component = componentify_unevaluated(page.component)
+    component = into_component(page.component)
 
     component._add_style_recursive(style or {}, theme)
 
@@ -696,7 +713,7 @@ class ExecutorSafeFunctions:
             The route, compiled component, and compiled page.
         """
         component, enable_state = compile_unevaluated_page(
-            route, cls.UNCOMPILED_PAGES[route]
+            route, cls.UNCOMPILED_PAGES[route], cls.STATE, style, theme
         )
         return route, component, compile_page(route, component, cls.STATE)
 
