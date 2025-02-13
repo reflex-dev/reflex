@@ -17,6 +17,7 @@ from reflex.components.radix.themes.components.dialog import (
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.components.sonner.toast import Toaster, ToastProps
+from reflex.config import environment
 from reflex.constants import Dirs, Hooks, Imports
 from reflex.constants.compiler import CompileVars
 from reflex.utils.imports import ImportVar
@@ -109,6 +110,17 @@ class ConnectionToaster(Toaster):
             id=toast_id,
         )  # pyright: ignore [reportCallIssue]
 
+        if environment.DOES_BACKEND_COLD_START.get():
+            error_message = Var.create("Backend is starting.")
+            toast_var = Var(
+                f"toast.loading({error_message!s}, {{...toast_props, description: '', closeButton: false, onDismiss: () => setUserDismissed(true)}},)"
+            )
+        else:
+            error_message = Var.create(f"Cannot connect to server: {connection_error}.")
+            toast_var = Var(
+                f"toast.error({error_message!s}, {{...toast_props, onDismiss: () => setUserDismissed(true)}},)"
+            )
+
         individual_hooks = [
             f"const toast_props = {LiteralVar.create(props)!s};",
             "const [userDismissed, setUserDismissed] = useState(false);",
@@ -127,10 +139,7 @@ class ConnectionToaster(Toaster):
 () => {{
     if ({has_too_many_connection_errors!s}) {{
         if (!userDismissed) {{
-            toast.error(
-                `Cannot connect to server: ${{{connection_error}}}.`,
-                {{...toast_props, onDismiss: () => setUserDismissed(true)}},
-            )
+            {toast_var!s}
         }}
     }} else {{
         toast.dismiss("{toast_id}");

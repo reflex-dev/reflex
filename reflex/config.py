@@ -601,6 +601,9 @@ class EnvironmentVariables:
     # Paths to exclude from the hot reload. Takes precedence over include paths. Separated by a colon.
     REFLEX_HOT_RELOAD_EXCLUDE_PATHS: EnvVar[List[Path]] = env_var([])
 
+    # Enables different behavior for when the backend would do a cold start if it was inactive.
+    DOES_BACKEND_COLD_START: EnvVar[bool] = env_var(False)
+
 
 environment = EnvironmentVariables()
 
