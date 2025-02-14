@@ -523,6 +523,8 @@ def write_page(path: str | Path, code: str):
     """
     path = Path(path)
     path_ops.mkdir(path.parent)
+    if path.read_text(encoding="utf-8") == code:
+        return
     path.write_text(code, encoding="utf-8")
 
 
