@@ -684,6 +684,15 @@ class Component(BaseComponent, ABC):
         """
         return set()
 
+    @classmethod
+    def _are_fields_known(cls) -> bool:
+        """Check if all fields are known at compile time. True for most components.
+
+        Returns:
+            Whether all fields are known at compile time.
+        """
+        return True
+
     @lru_cache(maxsize=None)  # noqa: B019
     def _get_components_in_props(self) -> Sequence[BaseComponent]:
         """Get the components in the props.
@@ -691,6 +700,14 @@ class Component(BaseComponent, ABC):
         Yields:
             The components in the props.
         """
+        if self._are_fields_known():
+            return tuple(
+                component
+                for name, field in self.get_fields().items()
+                if name in self.get_props()
+                and types._issubclass(field.outer_type_, Component)
+                for component in _components_from(getattr(self, name))
+            )
         return [
             component
             for prop in self.get_props()
@@ -1686,6 +1703,15 @@ class CustomComponent(Component):
             # Set the prop.
             self.props[camel_cased_key] = value
             setattr(self, camel_cased_key, value)
+
+    @classmethod
+    def _are_fields_known(cls) -> bool:
+        """Check if the fields are known.
+
+        Returns:
+            Whether the fields are known.
+        """
+        return False
 
     def __eq__(self, other: Any) -> bool:
         """Check if the component is equal to another.
