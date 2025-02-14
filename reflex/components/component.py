@@ -711,8 +711,8 @@ class Component(BaseComponent, ABC):
     def _get_components_in_props(self) -> Sequence[BaseComponent]:
         """Get the components in the props.
 
-        Yields:
-            The components in the props.
+        Returns:
+            The components in the props
         """
         if self._are_fields_known():
             return [
