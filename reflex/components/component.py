@@ -1787,6 +1787,32 @@ class CustomComponent(Component):
             include_children=include_children, ignore_ids=ignore_ids
         )
         yield from filter(lambda prop: isinstance(prop, Var), self.props.values())
+        # When any components are passed as props, ensure their vars are inspected for statefulness.
+        for c in self.component_props.values():
+            if c.tag is not None:
+                yield from c._get_vars(include_children=True, ignore_ids=ignore_ids)
+
+    def _get_all_custom_code(self) -> set[str]:
+        """Get custom code for any components passed as props.
+
+        Returns:
+            The custom code.
+        """
+        custom_code = super()._get_all_custom_code()
+        for prop in self.component_props.values():
+            custom_code |= prop._get_all_custom_code()
+        return custom_code
+
+    def _get_all_refs(self) -> set[str]:
+        """Get the refs for any components passed as props.
+
+        Returns:
+            The refs for the children.
+        """
+        refs = super()._get_all_refs()
+        for prop in self.component_props.values():
+            refs |= prop._get_all_refs()
+        return refs
 
     @lru_cache(maxsize=None)  # noqa: B019
     def get_component(self) -> Component:
@@ -2484,6 +2510,7 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
             ),
             VarData(
                 imports=self._var_value._get_all_imports(),
+                hooks=self._var_value._get_all_hooks(),
             ),
             VarData(
                 imports={
