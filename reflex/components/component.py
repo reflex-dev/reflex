@@ -690,9 +690,13 @@ class Component(BaseComponent, ABC):
         Yields:
             The components in the props.
         """
-        for prop in self.get_props():
-            value = getattr(self, prop)
-            yield from _components_from(value)
+        yield from (
+            component
+            for prop in self.get_props()
+            if (value := getattr(self, prop)) is not None
+            and isinstance(value, (BaseComponent, Var))
+            for component in _components_from(value)
+        )
 
     @classmethod
     def create(cls, *children, **props) -> Self:
