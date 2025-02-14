@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterator
+from typing import Any, Iterator, Sequence
 
-from reflex.components.component import Component, ComponentStyle
+from reflex.components.component import BaseComponent, Component, ComponentStyle
 from reflex.components.tags import Tag
 from reflex.components.tags.tagless import Tagless
 from reflex.config import PerformanceMode, environment
@@ -47,6 +47,11 @@ def validate_str(value: str):
             )
 
 
+def _components_from_var(var: Var) -> Sequence[BaseComponent]:
+    var_data = var._get_all_var_data()
+    return var_data.components if var_data else ()
+
+
 class Bare(Component):
     """A component with no tag."""
 
@@ -81,10 +86,8 @@ class Bare(Component):
         """
         hooks = super()._get_all_hooks_internal()
         if isinstance(self.contents, Var):
-            var_data = self.contents._get_all_var_data()
-            if var_data:
-                for component in var_data.components:
-                    hooks |= component._get_all_hooks_internal()
+            for component in _components_from_var(self.contents):
+                hooks |= component._get_all_hooks_internal()
         return hooks
 
     def _get_all_hooks(self) -> dict[str, VarData | None]:
@@ -95,10 +98,8 @@ class Bare(Component):
         """
         hooks = super()._get_all_hooks()
         if isinstance(self.contents, Var):
-            var_data = self.contents._get_all_var_data()
-            if var_data:
-                for component in var_data.components:
-                    hooks |= component._get_all_hooks()
+            for component in _components_from_var(self.contents):
+                hooks |= component._get_all_hooks()
         return hooks
 
     def _get_all_imports(self, collapse: bool = False) -> ParsedImportDict:
@@ -125,10 +126,8 @@ class Bare(Component):
         """
         dynamic_imports = super()._get_all_dynamic_imports()
         if isinstance(self.contents, Var):
-            var_data = self.contents._get_all_var_data()
-            if var_data:
-                for component in var_data.components:
-                    dynamic_imports |= component._get_all_dynamic_imports()
+            for component in _components_from_var(self.contents):
+                dynamic_imports |= component._get_all_dynamic_imports()
         return dynamic_imports
 
     def _get_all_custom_code(self) -> set[str]:
@@ -139,10 +138,8 @@ class Bare(Component):
         """
         custom_code = super()._get_all_custom_code()
         if isinstance(self.contents, Var):
-            var_data = self.contents._get_all_var_data()
-            if var_data:
-                for component in var_data.components:
-                    custom_code |= component._get_all_custom_code()
+            for component in _components_from_var(self.contents):
+                custom_code |= component._get_all_custom_code()
         return custom_code
 
     def _get_all_app_wrap_components(self) -> dict[tuple[int, str], Component]:
@@ -153,11 +150,9 @@ class Bare(Component):
         """
         app_wrap_components = super()._get_all_app_wrap_components()
         if isinstance(self.contents, Var):
-            var_data = self.contents._get_all_var_data()
-            if var_data:
-                for component in var_data.components:
-                    if isinstance(component, Component):
-                        app_wrap_components |= component._get_all_app_wrap_components()
+            for component in _components_from_var(self.contents):
+                if isinstance(component, Component):
+                    app_wrap_components |= component._get_all_app_wrap_components()
         return app_wrap_components
 
     def _get_all_refs(self) -> set[str]:
@@ -168,10 +163,8 @@ class Bare(Component):
         """
         refs = super()._get_all_refs()
         if isinstance(self.contents, Var):
-            var_data = self.contents._get_all_var_data()
-            if var_data:
-                for component in var_data.components:
-                    refs |= component._get_all_refs()
+            for component in _components_from_var(self.contents):
+                refs |= component._get_all_refs()
         return refs
 
     def _render(self) -> Tag:
@@ -198,12 +191,10 @@ class Bare(Component):
         are_components_touched = False
 
         if isinstance(self.contents, Var):
-            var_data = self.contents._get_all_var_data()
-            if var_data:
-                for component in var_data.components:
-                    if isinstance(component, Component):
-                        component._add_style_recursive(style, theme)
-                        are_components_touched = True
+            for component in _components_from_var(self.contents):
+                if isinstance(component, Component):
+                    component._add_style_recursive(style, theme)
+                    are_components_touched = True
 
         if are_components_touched:
             GLOBAL_CACHE.clear()
