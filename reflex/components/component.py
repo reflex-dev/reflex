@@ -693,7 +693,6 @@ class Component(BaseComponent, ABC):
         """
         return True
 
-    @lru_cache(maxsize=None)  # noqa: B019
     def _get_components_in_props(self) -> Sequence[BaseComponent]:
         """Get the components in the props.
 
