@@ -73,6 +73,7 @@ from reflex.utils.types import (
 )
 
 if TYPE_CHECKING:
+    from reflex.components.component import BaseComponent
     from reflex.state import BaseState
 
     from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
@@ -129,6 +130,9 @@ class VarData:
     # Position of the hook in the component
     position: Hooks.HookPosition | None = None
 
+    # Components that are part of this var
+    components: Tuple[BaseComponent, ...] = dataclasses.field(default_factory=tuple)
+
     def __init__(
         self,
         state: str = "",
@@ -137,6 +141,7 @@ class VarData:
         hooks: Mapping[str, VarData | None] | Sequence[str] | str | None = None,
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
+        components: Iterable[BaseComponent] | None = None,
     ):
         """Initialize the var data.
 
@@ -147,6 +152,7 @@ class VarData:
             hooks: Hooks that need to be present in the component to render this var.
             deps: Dependencies of the var for useCallback.
             position: Position of the hook in the component.
+            components: Components that are part of this var.
         """
         if isinstance(hooks, str):
             hooks = [hooks]
@@ -161,6 +167,7 @@ class VarData:
         object.__setattr__(self, "hooks", tuple(hooks or {}))
         object.__setattr__(self, "deps", tuple(deps or []))
         object.__setattr__(self, "position", position or None)
+        object.__setattr__(self, "components", tuple(components or []))
 
         if hooks and any(hooks.values()):
             merged_var_data = VarData.merge(self, *hooks.values())
@@ -171,6 +178,7 @@ class VarData:
                 object.__setattr__(self, "hooks", merged_var_data.hooks)
                 object.__setattr__(self, "deps", merged_var_data.deps)
                 object.__setattr__(self, "position", merged_var_data.position)
+                object.__setattr__(self, "components", merged_var_data.components)
 
     def old_school_imports(self) -> ImportDict:
         """Return the imports as a mutable dict.
@@ -239,17 +247,19 @@ class VarData:
         else:
             position = None
 
-        if state or _imports or hooks or field_name or deps or position:
-            return VarData(
-                state=state,
-                field_name=field_name,
-                imports=_imports,
-                hooks=hooks,
-                deps=deps,
-                position=position,
-            )
+        components = tuple(
+            component for var_data in all_var_datas for component in var_data.components
+        )
 
-        return None
+        return VarData(
+            state=state,
+            field_name=field_name,
+            imports=_imports,
+            hooks=hooks,
+            deps=deps,
+            position=position,
+            components=components,
+        )
 
     def __bool__(self) -> bool:
         """Check if the var data is non-empty.
@@ -264,6 +274,7 @@ class VarData:
             or self.field_name
             or self.deps
             or self.position
+            or self.components
         )
 
     @classmethod
