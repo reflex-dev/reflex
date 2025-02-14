@@ -481,6 +481,14 @@ class PerformanceMode(enum.Enum):
     OFF = "off"
 
 
+class ExecutorType(enum.Enum):
+    """Executor for compiling the frontend."""
+
+    THREAD = "thread"
+    PROCESS = "process"
+    MAIN_THREAD = "main_thread"
+
+
 class EnvironmentVariables:
     """Environment variables class to instantiate environment variables."""
 
@@ -522,8 +530,7 @@ class EnvironmentVariables:
         Path(constants.Dirs.UPLOADED_FILES)
     )
 
-    # Whether to use the main thread for compiling the frontend. Takes precedence over other compile options.
-    REFLEX_COMPILE_USE_MAIN_THREAD: EnvVar[bool] = env_var(False)
+    REFLEX_COMPILE_EXECUTOR: EnvVar[Optional[ExecutorType]] = env_var(None)
 
     # Whether to use separate processes to compile the frontend and how many. If not set, defaults to thread executor.
     REFLEX_COMPILE_PROCESSES: EnvVar[Optional[int]] = env_var(None)
