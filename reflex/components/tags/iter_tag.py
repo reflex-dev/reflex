@@ -134,6 +134,10 @@ class IterTag(Tag):
         if isinstance(component, (Foreach, Cond)):
             component = Fragment.create(component)
 
+        # If the component is a tuple, unpack and wrap it in a fragment.
+        if isinstance(component, tuple):
+            component = Fragment.create(*component)
+
         # Set the component key.
         if component.key is None:
             component.key = index

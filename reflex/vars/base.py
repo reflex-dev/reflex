@@ -75,9 +75,9 @@ from reflex.utils.types import (
 if TYPE_CHECKING:
     from reflex.state import BaseState
 
-    from .number import BooleanVar, NumberVar
-    from .object import ObjectVar
-    from .sequence import ArrayVar, StringVar
+    from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
+    from .object import LiteralObjectVar, ObjectVar
+    from .sequence import ArrayVar, LiteralArrayVar, LiteralStringVar, StringVar
 
 
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
@@ -577,9 +577,17 @@ class Var(Generic[VAR_TYPE]):
     @classmethod
     def create(  # pyright: ignore[reportOverlappingOverload]
         cls,
+        value: NoReturn,
+        _var_data: VarData | None = None,
+    ) -> Var[Any]: ...
+
+    @overload
+    @classmethod
+    def create(  # pyright: ignore[reportOverlappingOverload]
+        cls,
         value: bool,
         _var_data: VarData | None = None,
-    ) -> BooleanVar: ...
+    ) -> LiteralBooleanVar: ...
 
     @overload
     @classmethod
@@ -587,7 +595,7 @@ class Var(Generic[VAR_TYPE]):
         cls,
         value: int,
         _var_data: VarData | None = None,
-    ) -> NumberVar[int]: ...
+    ) -> LiteralNumberVar[int]: ...
 
     @overload
     @classmethod
@@ -595,7 +603,15 @@ class Var(Generic[VAR_TYPE]):
         cls,
         value: float,
         _var_data: VarData | None = None,
-    ) -> NumberVar[float]: ...
+    ) -> LiteralNumberVar[float]: ...
+
+    @overload
+    @classmethod
+    def create(  # pyright: ignore [reportOverlappingOverload]
+        cls,
+        value: str,
+        _var_data: VarData | None = None,
+    ) -> LiteralStringVar: ...
 
     @overload
     @classmethod
@@ -611,7 +627,7 @@ class Var(Generic[VAR_TYPE]):
         cls,
         value: None,
         _var_data: VarData | None = None,
-    ) -> NoneVar: ...
+    ) -> LiteralNoneVar: ...
 
     @overload
     @classmethod
@@ -619,7 +635,7 @@ class Var(Generic[VAR_TYPE]):
         cls,
         value: MAPPING_TYPE,
         _var_data: VarData | None = None,
-    ) -> ObjectVar[MAPPING_TYPE]: ...
+    ) -> LiteralObjectVar[MAPPING_TYPE]: ...
 
     @overload
     @classmethod
@@ -627,7 +643,7 @@ class Var(Generic[VAR_TYPE]):
         cls,
         value: SEQUENCE_TYPE,
         _var_data: VarData | None = None,
-    ) -> ArrayVar[SEQUENCE_TYPE]: ...
+    ) -> LiteralArrayVar[SEQUENCE_TYPE]: ...
 
     @overload
     @classmethod
@@ -935,7 +951,7 @@ class Var(Generic[VAR_TYPE]):
         """
         actual_name = self._var_field_name
 
-        def setter(state: BaseState, value: Any):
+        def setter(state: Any, value: Any):
             """Get the setter for the var.
 
             Args:
@@ -952,6 +968,8 @@ class Var(Generic[VAR_TYPE]):
                     )
             else:
                 setattr(state, actual_name, value)
+
+        setter.__annotations__["value"] = self._var_type
 
         setter.__qualname__ = self._get_setter_name()
 
@@ -1885,61 +1903,6 @@ def _or_operation(a: Var, b: Var):
     )
 
 
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    slots=True,
-)
-class CallableVar(Var):
-    """Decorate a Var-returning function to act as both a Var and a function.
-
-    This is used as a compatibility shim for replacing Var objects in the
-    API with functions that return a family of Var.
-    """
-
-    fn: Callable[..., Var] = dataclasses.field(
-        default_factory=lambda: lambda: Var(_js_expr="undefined")
-    )
-    original_var: Var = dataclasses.field(
-        default_factory=lambda: Var(_js_expr="undefined")
-    )
-
-    def __init__(self, fn: Callable[..., Var]):
-        """Initialize a CallableVar.
-
-        Args:
-            fn: The function to decorate (must return Var)
-        """
-        original_var = fn()
-        super(CallableVar, self).__init__(
-            _js_expr=original_var._js_expr,
-            _var_type=original_var._var_type,
-            _var_data=VarData.merge(original_var._get_all_var_data()),
-        )
-        object.__setattr__(self, "fn", fn)
-        object.__setattr__(self, "original_var", original_var)
-
-    def __call__(self, *args: Any, **kwargs: Any) -> Var:
-        """Call the decorated function.
-
-        Args:
-            *args: The args to pass to the function.
-            **kwargs: The kwargs to pass to the function.
-
-        Returns:
-            The Var returned from calling the function.
-        """
-        return self.fn(*args, **kwargs)
-
-    def __hash__(self) -> int:
-        """Calculate the hash of the object.
-
-        Returns:
-            The hash of the object.
-        """
-        return hash((type(self).__name__, self.original_var))
-
-
 RETURN_TYPE = TypeVar("RETURN_TYPE")
 
 DICT_KEY = TypeVar("DICT_KEY")
@@ -2239,6 +2202,27 @@ class ComputedVar(Var[RETURN_TYPE]):
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
 
     @overload
+    def __get__(
+        self: ComputedVar[BASE_TYPE],
+        instance: None,
+        owner: Type,
+    ) -> ObjectVar[BASE_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: ComputedVar[SQLA_TYPE],
+        instance: None,
+        owner: Type,
+    ) -> ObjectVar[SQLA_TYPE]: ...
+
+    if TYPE_CHECKING:
+
+        @overload
+        def __get__(
+            self: ComputedVar[DATACLASS_TYPE], instance: None, owner: Any
+        ) -> ObjectVar[DATACLASS_TYPE]: ...
+
+    @overload
     def __get__(self, instance: None, owner: Type) -> ComputedVar[RETURN_TYPE]: ...
 
     @overload
@@ -2483,6 +2467,27 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
         instance: None,
         owner: Type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[BASE_TYPE],
+        instance: None,
+        owner: Type,
+    ) -> ObjectVar[BASE_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[SQLA_TYPE],
+        instance: None,
+        owner: Type,
+    ) -> ObjectVar[SQLA_TYPE]: ...
+
+    if TYPE_CHECKING:
+
+        @overload
+        def __get__(
+            self: AsyncComputedVar[DATACLASS_TYPE], instance: None, owner: Any
+        ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload
     def __get__(self, instance: None, owner: Type) -> AsyncComputedVar[RETURN_TYPE]: ...

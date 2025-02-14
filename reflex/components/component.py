@@ -23,6 +23,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import Self
+
 import reflex.state
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
@@ -49,13 +51,7 @@ from reflex.event import (
 )
 from reflex.style import Style, format_as_emotion
 from reflex.utils import format, imports, types
-from reflex.utils.imports import (
-    ImmutableParsedImportDict,
-    ImportDict,
-    ImportVar,
-    ParsedImportDict,
-    parse_imports,
-)
+from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import VarData
 from reflex.vars.base import (
     CachedVarOperation,
@@ -179,6 +175,7 @@ ComponentStyle = Dict[
     Union[str, Type[BaseComponent], Callable, ComponentNamespace], Any
 ]
 ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
+ComponentChildTypes = (*types.PrimitiveTypes, Var, BaseComponent)
 
 
 def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
@@ -191,11 +188,7 @@ def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
     Returns:
         Whether the object satisfies the type hint.
     """
-    if isinstance(obj, LiteralVar):
-        return types._isinstance(obj._var_value, type_hint)
-    if isinstance(obj, Var):
-        return types._issubclass(obj._var_type, type_hint)
-    return types._isinstance(obj, type_hint)
+    return types._isinstance(obj, type_hint, nested=1)
 
 
 class Component(BaseComponent, ABC):
@@ -688,7 +681,7 @@ class Component(BaseComponent, ABC):
         }
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(cls, *children, **props) -> Self:
         """Create the component.
 
         Args:
@@ -712,8 +705,8 @@ class Component(BaseComponent, ABC):
                     validate_children(child)
 
                 # Make sure the child is a valid type.
-                if isinstance(child, dict) or not types._isinstance(
-                    child, ComponentChild
+                if isinstance(child, dict) or not isinstance(
+                    child, ComponentChildTypes
                 ):
                     raise ChildrenTypeError(component=cls.__name__, child=child)
 
@@ -1209,7 +1202,7 @@ class Component(BaseComponent, ABC):
         Returns:
             True if the dependency should be transpiled.
         """
-        return (
+        return bool(self.transpile_packages) and (
             dep in self.transpile_packages
             or format.format_library_name(dep or "") in self.transpile_packages
         )
@@ -1292,9 +1285,10 @@ class Component(BaseComponent, ABC):
         event_imports = Imports.EVENTS if self.event_triggers else {}
 
         # Collect imports from Vars used directly by this component.
-        var_datas = [var._get_all_var_data() for var in self._get_vars()]
-        var_imports: List[ImmutableParsedImportDict] = [
-            var_data.imports for var_data in var_datas if var_data is not None
+        var_imports = [
+            var_data.imports
+            for var in self._get_vars()
+            if (var_data := var._get_all_var_data()) is not None
         ]
 
         added_import_dicts: list[ParsedImportDict] = []
@@ -1771,9 +1765,7 @@ class CustomComponent(Component):
         return [
             Var(
                 _js_expr=name,
-                _var_type=(
-                    prop._var_type if types._isinstance(prop, Var) else type(prop)
-                ),
+                _var_type=(prop._var_type if isinstance(prop, Var) else type(prop)),
             ).guess_type()
             for name, prop in self.props.items()
         ]
@@ -1795,9 +1787,6 @@ class CustomComponent(Component):
             include_children=include_children, ignore_ids=ignore_ids
         )
         yield from filter(lambda prop: isinstance(prop, Var), self.props.values())
-        yield from self.get_component(self)._get_vars(
-            include_children=include_children, ignore_ids=ignore_ids
-        )
 
     @lru_cache(maxsize=None)  # noqa: B019
     def get_component(self) -> Component:

@@ -9,9 +9,12 @@ from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
 from reflex.components.props import NoExtrasAllowedProps, PropsBase
+from reflex.constants.base import Dirs
 from reflex.event import EventSpec, EventType
 from reflex.style import Style
+from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serializer
+from reflex.vars import VarData
 from reflex.vars.base import Var
 
 LiteralPosition = Literal[
@@ -22,7 +25,10 @@ LiteralPosition = Literal[
     "bottom-center",
     "bottom-right",
 ]
-toast_ref = Var(_js_expr="refs['__toast']")
+toast_ref = Var(
+    _js_expr="refs['__toast']",
+    _var_data=VarData(imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]}),
+)
 
 class ToastAction(Base):
     label: str
@@ -69,6 +75,8 @@ class Toaster(Component):
     def toast_error(message: str | Var = "", **kwargs: Any): ...
     @staticmethod
     def toast_success(message: str | Var = "", **kwargs: Any): ...
+    @staticmethod
+    def toast_loading(message: str | Var = "", **kwargs: Any): ...
     @staticmethod
     def toast_dismiss(id: Var | str | None = None): ...
     @overload
@@ -172,6 +180,7 @@ class ToastNamespace(ComponentNamespace):
     warning = staticmethod(Toaster.toast_warning)
     error = staticmethod(Toaster.toast_error)
     success = staticmethod(Toaster.toast_success)
+    loading = staticmethod(Toaster.toast_loading)
     dismiss = staticmethod(Toaster.toast_dismiss)
 
     @staticmethod

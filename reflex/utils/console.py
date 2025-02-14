@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import contextlib
 import inspect
+import os
 import shutil
+import time
 from pathlib import Path
 from types import FrameType
 
@@ -58,6 +61,9 @@ def set_log_level(log_level: LogLevel):
             f"log_level must be a LogLevel enum value, got {log_level} of type {type(log_level)} instead."
         )
     global _LOG_LEVEL
+    if log_level != _LOG_LEVEL:
+        # Set the loglevel persistenly for subprocesses.
+        os.environ["LOGLEVEL"] = log_level.value
     _LOG_LEVEL = log_level
 
 
@@ -317,3 +323,20 @@ def status(*args, **kwargs):
         A new status.
     """
     return _console.status(*args, **kwargs)
+
+
+@contextlib.contextmanager
+def timing(msg: str):
+    """Create a context manager to time a block of code.
+
+    Args:
+        msg: The message to display.
+
+    Yields:
+        None.
+    """
+    start = time.time()
+    try:
+        yield
+    finally:
+        debug(f"[white]\\[timing] {msg}: {time.time() - start:.2f}s[/white]")

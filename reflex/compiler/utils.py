@@ -119,24 +119,34 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
     validate_imports(collapsed_import_dict)
     import_dicts = []
     for lib, fields in collapsed_import_dict.items():
-        default, rest = compile_import_statement(fields)
-
         # prevent lib from being rendered on the page if all imports are non rendered kind
         if not any(f.render for f in fields):
             continue
 
-        if not lib:
-            if default:
-                raise ValueError("No default field allowed for empty library.")
-            if rest is None or len(rest) == 0:
-                raise ValueError("No fields to import.")
-            import_dicts.extend(get_import_dict(module) for module in sorted(rest))
-            continue
+        lib_paths: dict[str, list[ImportVar]] = {}
 
-        # remove the version before rendering the package imports
-        lib = format.format_library_name(lib)
+        for field in fields:
+            lib_paths.setdefault(field.package_path, []).append(field)
 
-        import_dicts.append(get_import_dict(lib, default, rest))
+        compiled = {
+            path: compile_import_statement(fields) for path, fields in lib_paths.items()
+        }
+
+        for path, (default, rest) in compiled.items():
+            if not lib:
+                if default:
+                    raise ValueError("No default field allowed for empty library.")
+                if rest is None or len(rest) == 0:
+                    raise ValueError("No fields to import.")
+                import_dicts.extend(get_import_dict(module) for module in sorted(rest))
+                continue
+
+            # remove the version before rendering the package imports
+            formatted_lib = format.format_library_name(lib) + (
+                path if path != "/" else ""
+            )
+
+            import_dicts.append(get_import_dict(formatted_lib, default, rest))
     return import_dicts
 
 
@@ -513,6 +523,8 @@ def write_page(path: str | Path, code: str):
     """
     path = Path(path)
     path_ops.mkdir(path.parent)
+    if path.exists() and path.read_text(encoding="utf-8") == code:
+        return
     path.write_text(code, encoding="utf-8")
 
 

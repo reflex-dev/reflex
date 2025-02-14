@@ -43,6 +43,7 @@ import reflex.utils.exec
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
+from reflex.components.component import CustomComponent
 from reflex.config import environment
 from reflex.state import (
     BaseState,
@@ -254,6 +255,7 @@ class AppHarness:
         # disable telemetry reporting for tests
 
         os.environ["TELEMETRY_ENABLED"] = "false"
+        CustomComponent.create().get_component.cache_clear()
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
             app_globals = self._get_globals_from_signature(self.app_source)

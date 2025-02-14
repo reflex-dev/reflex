@@ -12,7 +12,7 @@ from reflex.utils.exceptions import ReflexError
 from reflex.utils.imports import ImportVar
 from reflex.utils.types import get_origin
 from reflex.vars import VarData
-from reflex.vars.base import CallableVar, LiteralVar, Var
+from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import FunctionVar
 from reflex.vars.object import ObjectVar
 
@@ -48,7 +48,6 @@ def _color_mode_var(_js_expr: str, _var_type: Type = str) -> Var:
     ).guess_type()
 
 
-@CallableVar
 def set_color_mode(
     new_color_mode: LiteralColorMode | Var[LiteralColorMode] | None = None,
 ) -> Var[EventChain]:

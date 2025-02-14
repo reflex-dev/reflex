@@ -24,6 +24,7 @@ from datetime import datetime
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, List, NamedTuple, Optional
+from urllib.parse import urlparse
 
 import httpx
 import typer
@@ -1234,6 +1235,21 @@ def install_frontend_packages(packages: set[str], config: Config):
         )
 
 
+def check_running_mode(frontend: bool, backend: bool) -> tuple[bool, bool]:
+    """Check if the app is running in frontend or backend mode.
+
+    Args:
+        frontend: Whether to run the frontend of the app.
+        backend: Whether to run the backend of the app.
+
+    Returns:
+        The running modes.
+    """
+    if not frontend and not backend:
+        return True, True
+    return frontend, backend
+
+
 def needs_reinit(frontend: bool = True) -> bool:
     """Check if an app needs to be reinitialized.
 
@@ -1302,10 +1318,13 @@ def validate_bun():
     """
     bun_path = path_ops.get_bun_path()
 
-    if bun_path and not bun_path.samefile(constants.Bun.DEFAULT_PATH):
+    if bun_path is None:
+        return
+
+    if not path_ops.samefile(bun_path, constants.Bun.DEFAULT_PATH):
         console.info(f"Using custom Bun path: {bun_path}")
         bun_version = get_bun_version()
-        if not bun_version:
+        if bun_version is None:
             console.error(
                 "Failed to obtain bun version. Make sure the specified bun path in your config is correct."
             )
@@ -1670,9 +1689,11 @@ def validate_and_create_app_using_remote_template(
 
         template_url = templates[template].code_url
     else:
+        template_parsed_url = urlparse(template)
         # Check if the template is a github repo.
-        if template.startswith("https://github.com"):
-            template_url = f"{template.strip('/').replace('.git', '')}/archive/main.zip"
+        if template_parsed_url.hostname == "github.com":
+            path = template_parsed_url.path.strip("/").removesuffix(".git")
+            template_url = f"https://github.com/{path}/archive/main.zip"
         else:
             console.error(f"Template `{template}` not found or invalid.")
             raise typer.Exit(1)

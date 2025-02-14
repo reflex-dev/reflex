@@ -26,6 +26,7 @@ from typing import (
 
 from typing_extensions import (
     Protocol,
+    Self,
     TypeAliasType,
     TypedDict,
     TypeVar,
@@ -110,7 +111,7 @@ class EventActionsMixin:
     event_actions: Dict[str, Union[bool, int]] = dataclasses.field(default_factory=dict)
 
     @property
-    def stop_propagation(self):
+    def stop_propagation(self) -> Self:
         """Stop the event from bubbling up the DOM tree.
 
         Returns:
@@ -122,7 +123,7 @@ class EventActionsMixin:
         )
 
     @property
-    def prevent_default(self):
+    def prevent_default(self) -> Self:
         """Prevent the default behavior of the event.
 
         Returns:
@@ -133,7 +134,7 @@ class EventActionsMixin:
             event_actions={"preventDefault": True, **self.event_actions},
         )
 
-    def throttle(self, limit_ms: int):
+    def throttle(self, limit_ms: int) -> Self:
         """Throttle the event handler.
 
         Args:
@@ -147,7 +148,7 @@ class EventActionsMixin:
             event_actions={"throttle": limit_ms, **self.event_actions},
         )
 
-    def debounce(self, delay_ms: int):
+    def debounce(self, delay_ms: int) -> Self:
         """Debounce the event handler.
 
         Args:
@@ -162,7 +163,7 @@ class EventActionsMixin:
         )
 
     @property
-    def temporal(self):
+    def temporal(self) -> Self:
         """Do not queue the event if the backend is down.
 
         Returns:
@@ -1773,7 +1774,7 @@ V4 = TypeVar("V4")
 V5 = TypeVar("V5")
 
 
-class EventCallback(Generic[Unpack[P]]):
+class EventCallback(Generic[Unpack[P]], EventActionsMixin):
     """A descriptor that wraps a function to be used as an event."""
 
     def __init__(self, func: Callable[[Any, Unpack[P]], Any]):
@@ -1783,24 +1784,6 @@ class EventCallback(Generic[Unpack[P]]):
             func: The function to be wrapped.
         """
         self.func = func
-
-    @property
-    def prevent_default(self):
-        """Prevent default behavior.
-
-        Returns:
-            The event callback with prevent default behavior.
-        """
-        return self
-
-    @property
-    def stop_propagation(self):
-        """Stop event propagation.
-
-        Returns:
-            The event callback with stop propagation behavior.
-        """
-        return self
 
     @overload
     def __call__(
