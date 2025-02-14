@@ -1634,7 +1634,7 @@ class CustomComponent(Component):
         component_fn = kwargs.get("component_fn")
 
         # Set the props.
-        props_types = typing.get_type_hints(component_fn)
+        props_types = typing.get_type_hints(component_fn) if component_fn else {}
         props = {key: value for key, value in kwargs.items() if key in props_types}
         kwargs = {key: value for key, value in kwargs.items() if key not in props_types}
 
