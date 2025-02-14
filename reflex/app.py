@@ -1173,11 +1173,11 @@ class App(MiddlewareMixin, LifespanMixin):
 
         executor_type = environment.REFLEX_COMPILE_EXECUTOR.get()
 
+        reflex_compile_processes = environment.REFLEX_COMPILE_PROCESSES.get()
+        reflex_compile_threads = environment.REFLEX_COMPILE_THREADS.get()
         # By default, use the main thread. Unless the user has specified a different executor.
         # Using a process pool is much faster, but not supported on all platforms. It's gated behind a flag.
         if executor_type is None:
-            reflex_compile_processes = environment.REFLEX_COMPILE_PROCESSES.get()
-            reflex_compile_threads = environment.REFLEX_COMPILE_THREADS.get()
             if (
                 platform.system() not in ("Linux", "Darwin")
                 and reflex_compile_processes is not None
@@ -1188,8 +1188,28 @@ class App(MiddlewareMixin, LifespanMixin):
                 platform.system() in ("Linux", "Darwin")
                 and reflex_compile_processes is not None
             ):
+                if reflex_compile_processes == 0:
+                    console.warn(
+                        "Number of processes must be greater than 0. If you want to use the default number of processes, set REFLEX_COMPILE_EXECUTOR to 'process'. Defaulting to None."
+                    )
+                    reflex_compile_processes = None
+                elif reflex_compile_processes < 0:
+                    console.warn(
+                        "Number of processes must be greater than 0. Defaulting to None."
+                    )
+                    reflex_compile_processes = None
                 executor_type = ExecutorType.PROCESS
             elif reflex_compile_threads is not None:
+                if reflex_compile_threads == 0:
+                    console.warn(
+                        "Number of threads must be greater than 0. If you want to use the default number of threads, set REFLEX_COMPILE_EXECUTOR to 'thread'. Defaulting to None."
+                    )
+                    reflex_compile_threads = None
+                elif reflex_compile_threads < 0:
+                    console.warn(
+                        "Number of threads must be greater than 0. Defaulting to None."
+                    )
+                    reflex_compile_threads = None
                 executor_type = ExecutorType.THREAD
             else:
                 executor_type = ExecutorType.MAIN_THREAD
@@ -1197,12 +1217,12 @@ class App(MiddlewareMixin, LifespanMixin):
         match executor_type:
             case ExecutorType.PROCESS:
                 executor = concurrent.futures.ProcessPoolExecutor(
-                    max_workers=environment.REFLEX_COMPILE_PROCESSES.get() or None,
+                    max_workers=reflex_compile_processes,
                     mp_context=multiprocessing.get_context("fork"),
                 )
             case ExecutorType.THREAD:
                 executor = concurrent.futures.ThreadPoolExecutor(
-                    max_workers=environment.REFLEX_COMPILE_THREADS.get() or None
+                    max_workers=reflex_compile_threads
                 )
             case ExecutorType.MAIN_THREAD:
                 T = TypeVar("T")
