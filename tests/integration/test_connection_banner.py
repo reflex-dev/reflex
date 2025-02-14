@@ -8,26 +8,17 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
 from reflex import constants
+from reflex.config import environment
 from reflex.testing import AppHarness, WebDriver
 
 from .utils import SessionStorage
 
 
-def ConnectionBanner(
-    compile_context: constants.CompileContext = constants.CompileContext.RUN,
-):
-    """App with a connection banner.
-
-    Args:
-        compile_context: The value used to set the compile context.
-    """
+def ConnectionBanner():
+    """App with a connection banner."""
     import asyncio
 
     import reflex as rx
-    from reflex.config import environment
-
-    # Simulate reflex cloud deploy
-    environment.REFLEX_COMPILE_CONTEXT.set(compile_context)
 
     class State(rx.State):
         foo: int = 0
@@ -82,11 +73,11 @@ def connection_banner(
     Yields:
         running AppHarness instance
     """
+    environment.REFLEX_COMPILE_CONTEXT.set(simulate_compile_context)
+
     with AppHarness.create(
         root=tmp_path,
-        app_source=functools.partial(
-            ConnectionBanner, compile_context=simulate_compile_context
-        ),
+        app_source=functools.partial(ConnectionBanner),
         app_name=(
             "connection_banner_reflex_cloud"
             if simulate_compile_context == constants.CompileContext.DEPLOY
