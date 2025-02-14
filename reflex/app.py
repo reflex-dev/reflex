@@ -1173,8 +1173,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
         executor_type = environment.REFLEX_COMPILE_EXECUTOR.get()
 
-        # Use a forking process pool, if possible.  Much faster, especially for large sites.
-        # Fallback to ThreadPoolExecutor as something that will always work.
+        # By default, use the main thread. Unless the user has specified a different executor.
+        # Using a process pool is much faster, but not supported on all platforms. It's gated behind a flag.
         if executor_type is None:
             reflex_compile_processes = environment.REFLEX_COMPILE_PROCESSES.get()
             reflex_compile_threads = environment.REFLEX_COMPILE_THREADS.get()
