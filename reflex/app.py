@@ -1197,12 +1197,12 @@ class App(MiddlewareMixin, LifespanMixin):
         match executor_type:
             case ExecutorType.PROCESS:
                 executor = concurrent.futures.ProcessPoolExecutor(
-                    max_workers=environment.REFLEX_COMPILE_PROCESSES.get(),
+                    max_workers=environment.REFLEX_COMPILE_PROCESSES.get() or None,
                     mp_context=multiprocessing.get_context("fork"),
                 )
             case ExecutorType.THREAD:
                 executor = concurrent.futures.ThreadPoolExecutor(
-                    max_workers=environment.REFLEX_COMPILE_THREADS.get()
+                    max_workers=environment.REFLEX_COMPILE_THREADS.get() or None
                 )
             case ExecutorType.MAIN_THREAD:
                 T = TypeVar("T")
