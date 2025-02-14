@@ -693,6 +693,21 @@ class Component(BaseComponent, ABC):
         """
         return True
 
+    @lru_cache(maxsize=None)
+    @classmethod
+    def _get_component_prop_names(cls) -> Set[str]:
+        """Get the names of the component props. NOTE: This assumes all fields are known.
+
+        Returns:
+            The names of the component props.
+        """
+        return {
+            name
+            for name, field in cls.get_fields().items()
+            if name in cls.get_props()
+            and types._issubclass(field.outer_type_, Component)
+        }
+
     def _get_components_in_props(self) -> Sequence[BaseComponent]:
         """Get the components in the props.
 
@@ -700,13 +715,11 @@ class Component(BaseComponent, ABC):
             The components in the props.
         """
         if self._are_fields_known():
-            return tuple(
+            return [
                 component
-                for name, field in self.get_fields().items()
-                if name in self.get_props()
-                and types._issubclass(field.outer_type_, Component)
+                for name in self._get_component_prop_names()
                 for component in _components_from(getattr(self, name))
-            )
+            ]
         return [
             component
             for prop in self.get_props()
