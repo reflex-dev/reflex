@@ -11,12 +11,11 @@ import functools
 import inspect
 import io
 import json
-import multiprocessing
-import platform
 import sys
 import traceback
 from datetime import datetime
 from pathlib import Path
+from timeit import default_timer as timer
 from types import SimpleNamespace
 from typing import (
     TYPE_CHECKING,
@@ -76,7 +75,7 @@ from reflex.components.core.client_side_routing import (
 from reflex.components.core.sticky import sticky
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
-from reflex.config import environment, get_config
+from reflex.config import ExecutorType, environment, get_config
 from reflex.event import (
     _EVENT_FIELDS,
     Event,
@@ -1114,10 +1113,23 @@ class App(MiddlewareMixin, LifespanMixin):
             app_wrappers[(1, "ToasterProvider")] = toast_provider
 
         with console.timing("Evaluate Pages (Frontend)"):
+            performance_metrics: list[tuple[str, float]] = []
             for route in self._unevaluated_pages:
                 console.debug(f"Evaluating page: {route}")
+                start = timer()
                 self._compile_page(route, save_page=should_compile)
+                end = timer()
+                performance_metrics.append((route, end - start))
                 progress.advance(task)
+            console.debug(
+                "Slowest pages:\n"
+                + "\n".join(
+                    f"{route}: {time * 1000:.1f}ms"
+                    for route, time in sorted(
+                        performance_metrics, key=lambda x: x[1], reverse=True
+                    )[:10]
+                )
+            )
 
         # Add the optional endpoints (_upload)
         self._add_optional_endpoints()
@@ -1130,7 +1142,7 @@ class App(MiddlewareMixin, LifespanMixin):
         progress.advance(task)
 
         # Store the compile results.
-        compile_results = []
+        compile_results: list[tuple[str, str]] = []
 
         progress.advance(task)
 
@@ -1209,33 +1221,19 @@ class App(MiddlewareMixin, LifespanMixin):
                     ),
                 )
 
-        # Use a forking process pool, if possible.  Much faster, especially for large sites.
-        # Fallback to ThreadPoolExecutor as something that will always work.
-        executor = None
-        if (
-            platform.system() in ("Linux", "Darwin")
-            and (number_of_processes := environment.REFLEX_COMPILE_PROCESSES.get())
-            is not None
-        ):
-            executor = concurrent.futures.ProcessPoolExecutor(
-                max_workers=number_of_processes or None,
-                mp_context=multiprocessing.get_context("fork"),
-            )
-        else:
-            executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=environment.REFLEX_COMPILE_THREADS.get() or None
-            )
+        executor = ExecutorType.get_executor_from_environment()
 
         for route, component in zip(self._pages, page_components, strict=True):
             ExecutorSafeFunctions.COMPONENTS[route] = component
 
         ExecutorSafeFunctions.STATE = self._state
 
-        with executor:
-            result_futures = []
+        with console.timing("Compile to Javascript"), executor as executor:
+            result_futures: list[concurrent.futures.Future[tuple[str, str]]] = []
 
-            def _submit_work(fn: Callable, *args, **kwargs):
+            def _submit_work(fn: Callable[..., tuple[str, str]], *args, **kwargs):
                 f = executor.submit(fn, *args, **kwargs)
+                f.add_done_callback(lambda _: progress.advance(task))
                 result_futures.append(f)
 
             # Compile the pre-compiled pages.
@@ -1261,10 +1259,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 _submit_work(compiler.remove_tailwind_from_postcss)
 
             # Wait for all compilation tasks to complete.
-            with console.timing("Compile to Javascript"):
-                for future in concurrent.futures.as_completed(result_futures):
-                    compile_results.append(future.result())
-                    progress.advance(task)
+            compile_results.extend(
+                future.result()
+                for future in concurrent.futures.as_completed(result_futures)
+            )
 
         app_root = self._app_root(app_wrappers=app_wrappers)
 
@@ -1289,10 +1287,12 @@ class App(MiddlewareMixin, LifespanMixin):
         progress.advance(task)
 
         # Compile custom components.
-        *custom_components_result, custom_components_imports = (
-            compiler.compile_components(custom_components)
-        )
-        compile_results.append(custom_components_result)
+        (
+            custom_components_output,
+            custom_components_result,
+            custom_components_imports,
+        ) = compiler.compile_components(custom_components)
+        compile_results.append((custom_components_output, custom_components_result))
         all_imports.update(custom_components_imports)
 
         progress.advance(task)
