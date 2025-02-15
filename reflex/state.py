@@ -115,9 +115,9 @@ from reflex.utils.serializers import serializer
 from reflex.utils.types import (
     _isinstance,
     get_origin,
-    is_optional,
     is_union,
     override,
+    true_type_for_pydantic_field,
     value_inside_optional,
 )
 from reflex.vars import VarData
@@ -293,7 +293,7 @@ if TYPE_CHECKING:
     from pydantic.v1.fields import ModelField
 
 
-def _unwrap_field_type(type_: Type) -> Type:
+def _unwrap_field_type(type_: types.GenericType) -> Type:
     """Unwrap rx.Field type annotations.
 
     Args:
@@ -324,7 +324,7 @@ def get_var_for_field(cls: Type[BaseState], f: ModelField):
     return dispatch(
         field_name=field_name,
         var_data=VarData.from_state(cls, f.name),
-        result_var_type=_unwrap_field_type(f.outer_type_),
+        result_var_type=_unwrap_field_type(true_type_for_pydantic_field(f)),
     )
 
 
@@ -1368,9 +1368,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         if name in fields:
             field = fields[name]
-            field_type = _unwrap_field_type(field.outer_type_)
-            if field.allow_none and not is_optional(field_type):
-                field_type = Union[field_type, None]
+            field_type = _unwrap_field_type(true_type_for_pydantic_field(field))
             if not _isinstance(value, field_type):
                 console.error(
                     f"Expected field '{type(self).__name__}.{name}' to receive type '{field_type}',"
