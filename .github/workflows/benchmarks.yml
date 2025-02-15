@@ -70,56 +70,6 @@ jobs:
         env:
           GITHUB_SHA: ${{ github.sha }}
 
-  simple-apps-benchmarks: # This app tests the compile times of various compoonents and pages
-    if: github.event.pull_request.merged == true
-    env:
-      OUTPUT_FILE: benchmarks.json
-    timeout-minutes: 50
-    strategy:
-      # Prioritize getting more information out of the workflow (even if something fails)
-      fail-fast: false
-      matrix:
-        # Show OS combos first in GUI
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.10.16", "3.11.11", "3.12.8"]
-        exclude:
-          - os: windows-latest
-            python-version: "3.10.16"
-          - os: windows-latest
-            python-version: "3.11.11"
-          # keep only one python version for MacOS
-          - os: macos-latest
-            python-version: "3.10.16"
-          - os: macos-latest
-            python-version: "3.11.11"
-        include:
-          - os: windows-latest
-            python-version: "3.10.11"
-          - os: windows-latest
-            python-version: "3.11.9"
-
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup_build_env
-        with:
-          python-version: ${{ matrix.python-version }}
-          run-poetry-install: true
-          create-venv-at-path: .venv
-      - name: Run benchmark tests
-        env:
-          APP_HARNESS_HEADLESS: 1
-          PYTHONUNBUFFERED: 1
-        run: |
-          poetry run pytest -v benchmarks/ --benchmark-json=${{ env.OUTPUT_FILE }} -s
-      - name: Upload benchmark results
-        # Only run if the database creds are available in this context.
-        run:
-          poetry run python benchmarks/benchmark_compile_times.py --os "${{ matrix.os }}"
-          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --benchmark-json "${{ env.OUTPUT_FILE }}" --branch-name "${{ github.head_ref || github.ref_name }}"
-          --event-type "${{ github.event_name }}" --pr-id "${{ github.event.pull_request.id }}"
-
   reflex-dist-size: # This job is used to calculate the size of the Reflex distribution (wheel file)
     if: github.event.pull_request.merged == true
     timeout-minutes: 30
