@@ -216,9 +216,6 @@ def run_backend(
         frontend_present: Whether the frontend is present.
     """
     web_dir = get_web_dir()
-    # Create a .nocompile file to skip compile for backend.
-    if web_dir.exists():
-        (web_dir / constants.NOCOMPILE_FILE).touch()
 
     if not frontend_present:
         notify_backend()
@@ -227,6 +224,9 @@ def run_backend(
     if should_use_granian():
         run_granian_backend(host, port, loglevel)
     else:
+        # Create a .nocompile file to skip compile for backend.
+        if web_dir.exists():
+            (web_dir / constants.NOCOMPILE_FILE).touch()
         run_uvicorn_backend(host, port, loglevel)
 
 

@@ -15,6 +15,7 @@ from reflex.config import environment, get_config
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.state import reset_disk_state_manager
 from reflex.utils import console, telemetry
+from reflex.utils.exec import should_use_granian
 
 # Disable typer+rich integration for help panels
 typer.core.rich = None  # pyright: ignore [reportPrivateImportUsage]
@@ -206,7 +207,9 @@ def _run(
             )
 
         # Get the app module.
-        prerequisites.get_compiled_app()
+        if not should_use_granian():
+            # Granian fails if the app is already imported.
+            prerequisites.get_compiled_app()
 
     # Warn if schema is not up to date.
     prerequisites.check_schema_up_to_date()
