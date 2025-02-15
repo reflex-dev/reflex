@@ -35,7 +35,7 @@ uploaded_files_url_prefix = Var(
     ),
 ).to(str)
 
-def get_upload_url(file_path: str) -> Var[str]: ...
+def get_upload_url(file_path: str | Var[str]) -> Var[str]: ...
 
 class UploadFilesProvider(Component):
     @overload

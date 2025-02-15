@@ -147,7 +147,7 @@ uploaded_files_url_prefix = Var(
 ).to(str)
 
 
-def get_upload_url(file_path: str) -> Var[str]:
+def get_upload_url(file_path: str | Var[str]) -> Var[str]:
     """Get the URL of an uploaded file.
 
     Args:
@@ -158,7 +158,7 @@ def get_upload_url(file_path: str) -> Var[str]:
     """
     Upload.is_used = True
 
-    return uploaded_files_url_prefix + "/" + file_path
+    return Var.create(f"{uploaded_files_url_prefix}/{file_path}")
 
 
 def _on_drop_spec(files: Var) -> Tuple[Var[Any]]:
