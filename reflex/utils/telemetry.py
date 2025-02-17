@@ -6,14 +6,15 @@ import asyncio
 import dataclasses
 import multiprocessing
 import platform
+import sys
 import warnings
 from contextlib import suppress
 
 from reflex.config import environment
 
-try:
+if sys.version_info >= (3, 11):
     from datetime import UTC, datetime
-except ImportError:
+else:
     from datetime import datetime
 
     UTC = None

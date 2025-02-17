@@ -15,7 +15,7 @@ repos:
     rev: v2.3.0
     hooks:
       - id: codespell
-        args: ["reflex"]
+        args: ["reflex", "te"]
 
   # Run pyi check before pyright because pyright can fail if pyi files are wrong.
   - repo: local

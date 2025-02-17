@@ -239,8 +239,8 @@ class DependencyTracker:
         """
         # Get the original source code and eval it to get the Var.
         module = inspect.getmodule(self.func)
-        positions0 = self._getting_var_instructions[0].positions
-        positions1 = self._getting_var_instructions[-1].positions
+        positions0 = self._getting_var_instructions[0].positions  # type: ignore[attr-defined]
+        positions1 = self._getting_var_instructions[-1].positions  # type: ignore[attr-defined]
         if module is None or positions0 is None or positions1 is None:
             raise VarValueError(
                 f"Cannot determine the source code for the var in {self.func!r}."
