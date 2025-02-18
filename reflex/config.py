@@ -19,6 +19,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
     Dict,
@@ -29,22 +30,17 @@ from typing import (
     TypeVar,
     get_args,
     get_origin,
+    get_type_hints,
 )
 
+import pydantic.v1 as pydantic
 from reflex_cli.constants.hosting import Hosting
-from typing_extensions import Annotated, get_type_hints
 
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
 from reflex.utils.types import GenericType, is_union, value_inside_optional
-
-try:
-    import pydantic.v1 as pydantic
-except ModuleNotFoundError:
-    import pydantic
-
 
 try:
     from dotenv import load_dotenv  # pyright: ignore [reportMissingImports]

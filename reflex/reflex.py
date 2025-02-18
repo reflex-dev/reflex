@@ -20,11 +20,8 @@ from reflex.utils import console, telemetry
 typer.core.rich = None  # pyright: ignore [reportPrivateImportUsage]
 
 # Create the app.
-try:
-    cli = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
-except TypeError:
-    # Fallback for older typer versions.
-    cli = typer.Typer(add_completion=False)
+cli = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
+
 
 SHOW_BUILT_WITH_REFLEX_INFO = "https://reflex.dev/docs/hosting/reflex-branding/"
 
