@@ -23,105 +23,88 @@ class SegmentedControlRoot(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        size: Optional[
-            Union[
-                Breakpoints[str, Literal["1", "2", "3"]],
-                Literal["1", "2", "3"],
-                Var[
-                    Union[
-                        Breakpoints[str, Literal["1", "2", "3"]], Literal["1", "2", "3"]
-                    ]
-                ],
+        size: Breakpoints[str, Literal["1", "2", "3"]]
+        | Literal["1", "2", "3"]
+        | Var[Breakpoints[str, Literal["1", "2", "3"]] | Literal["1", "2", "3"]]
+        | None = None,
+        variant: Literal["classic", "surface"]
+        | Var[Literal["classic", "surface"]]
+        | None = None,
+        type: Literal["multiple", "single"]
+        | Var[Literal["multiple", "single"]]
+        | None = None,
+        color_scheme: Literal[
+            "amber",
+            "blue",
+            "bronze",
+            "brown",
+            "crimson",
+            "cyan",
+            "gold",
+            "grass",
+            "gray",
+            "green",
+            "indigo",
+            "iris",
+            "jade",
+            "lime",
+            "mint",
+            "orange",
+            "pink",
+            "plum",
+            "purple",
+            "red",
+            "ruby",
+            "sky",
+            "teal",
+            "tomato",
+            "violet",
+            "yellow",
+        ]
+        | Var[
+            Literal[
+                "amber",
+                "blue",
+                "bronze",
+                "brown",
+                "crimson",
+                "cyan",
+                "gold",
+                "grass",
+                "gray",
+                "green",
+                "indigo",
+                "iris",
+                "jade",
+                "lime",
+                "mint",
+                "orange",
+                "pink",
+                "plum",
+                "purple",
+                "red",
+                "ruby",
+                "sky",
+                "teal",
+                "tomato",
+                "violet",
+                "yellow",
             ]
-        ] = None,
-        variant: Optional[
-            Union[Literal["classic", "surface"], Var[Literal["classic", "surface"]]]
-        ] = None,
-        type: Optional[
-            Union[Literal["multiple", "single"], Var[Literal["multiple", "single"]]]
-        ] = None,
-        color_scheme: Optional[
-            Union[
-                Literal[
-                    "amber",
-                    "blue",
-                    "bronze",
-                    "brown",
-                    "crimson",
-                    "cyan",
-                    "gold",
-                    "grass",
-                    "gray",
-                    "green",
-                    "indigo",
-                    "iris",
-                    "jade",
-                    "lime",
-                    "mint",
-                    "orange",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "red",
-                    "ruby",
-                    "sky",
-                    "teal",
-                    "tomato",
-                    "violet",
-                    "yellow",
-                ],
-                Var[
-                    Literal[
-                        "amber",
-                        "blue",
-                        "bronze",
-                        "brown",
-                        "crimson",
-                        "cyan",
-                        "gold",
-                        "grass",
-                        "gray",
-                        "green",
-                        "indigo",
-                        "iris",
-                        "jade",
-                        "lime",
-                        "mint",
-                        "orange",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "red",
-                        "ruby",
-                        "sky",
-                        "teal",
-                        "tomato",
-                        "violet",
-                        "yellow",
-                    ]
-                ],
-            ]
-        ] = None,
-        radius: Optional[
-            Union[
-                Literal["full", "large", "medium", "none", "small"],
-                Var[Literal["full", "large", "medium", "none", "small"]],
-            ]
-        ] = None,
-        default_value: Optional[
-            Union[Var[Union[list[str], str]], list[str], str]
-        ] = None,
-        value: Optional[Union[Var[Union[list[str], str]], list[str], str]] = None,
-        style: Optional[Style] = None,
-        key: Optional[Any] = None,
-        id: Optional[Any] = None,
-        class_name: Optional[Any] = None,
-        autofocus: Optional[bool] = None,
-        custom_attrs: Optional[dict[str, Union[Var, Any]]] = None,
+        ]
+        | None = None,
+        radius: Literal["full", "large", "medium", "none", "small"]
+        | Var[Literal["full", "large", "medium", "none", "small"]]
+        | None = None,
+        default_value: Var[list[str] | str] | list[str] | str | None = None,
+        value: Var[list[str] | str] | list[str] | str | None = None,
+        style: Style | None = None,
+        key: Any | None = None,
+        id: Any | None = None,
+        class_name: Any | None = None,
+        autofocus: bool | None = None,
+        custom_attrs: dict[str, Var | Any] | None = None,
         on_blur: Optional[EventType[()]] = None,
-        on_change: Optional[
-            Union[EventType[()], EventType[Union[str, list[str]]]]
-        ] = None,
+        on_change: Optional[EventType[()] | EventType[Union[str, list[str]]]] = None,
         on_click: Optional[EventType[()]] = None,
         on_context_menu: Optional[EventType[()]] = None,
         on_double_click: Optional[EventType[()]] = None,
@@ -172,13 +155,13 @@ class SegmentedControlItem(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Optional[Union[Var[str], str]] = None,
-        style: Optional[Style] = None,
-        key: Optional[Any] = None,
-        id: Optional[Any] = None,
-        class_name: Optional[Any] = None,
-        autofocus: Optional[bool] = None,
-        custom_attrs: Optional[dict[str, Union[Var, Any]]] = None,
+        value: Var[str] | str | None = None,
+        style: Style | None = None,
+        key: Any | None = None,
+        id: Any | None = None,
+        class_name: Any | None = None,
+        autofocus: bool | None = None,
+        custom_attrs: dict[str, Var | Any] | None = None,
         on_blur: Optional[EventType[()]] = None,
         on_click: Optional[EventType[()]] = None,
         on_context_menu: Optional[EventType[()]] = None,

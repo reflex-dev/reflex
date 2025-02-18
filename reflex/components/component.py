@@ -73,7 +73,7 @@ class BaseComponent(Base, ABC):
     children: list[BaseComponent] = []
 
     # The library that the component is based on.
-    library: Optional[str] = None
+    library: str | None = None
 
     # List here the non-react dependency needed by `library`
     lib_dependencies: list[str] = []
@@ -82,7 +82,7 @@ class BaseComponent(Base, ABC):
     transpile_packages: list[str] = []
 
     # The tag to use when rendering the component.
-    tag: Optional[str] = None
+    tag: str | None = None
 
     @abstractmethod
     def render(self) -> dict:
@@ -172,7 +172,7 @@ def evaluate_style_namespaces(style: ComponentStyle) -> dict:
 ComponentStyle = dict[
     Union[str, Type[BaseComponent], Callable, ComponentNamespace], Any
 ]
-ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
+ComponentChild = types.PrimitiveType | Var | BaseComponent
 ComponentChildTypes = (*types.PrimitiveTypes, Var, BaseComponent)
 
 
@@ -196,13 +196,13 @@ class Component(BaseComponent, ABC):
     style: Style = Style()
 
     # A mapping from event triggers to event chains.
-    event_triggers: dict[str, Union[EventChain, Var]] = {}
+    event_triggers: dict[str, EventChain | Var] = {}
 
     # The alias for the tag.
-    alias: Optional[str] = None
+    alias: str | None = None
 
     # Whether the import is default or named.
-    is_default: Optional[bool] = False
+    is_default: bool | None = False
 
     # A unique key for the component.
     key: Any = None
@@ -232,7 +232,7 @@ class Component(BaseComponent, ABC):
     _rename_props: dict[str, str] = {}
 
     # custom attribute
-    custom_attrs: dict[str, Union[Var, Any]] = {}
+    custom_attrs: dict[str, Var | Any] = {}
 
     # When to memoize this component and its children.
     _memoization_mode: MemoizationMode = MemoizationMode()
@@ -775,7 +775,7 @@ class Component(BaseComponent, ABC):
         return component_style
 
     def _add_style_recursive(
-        self, style: ComponentStyle, theme: Optional[Component] = None
+        self, style: ComponentStyle, theme: Component | None = None
     ) -> Component:
         """Add additional style to the component and its children.
 

@@ -39,9 +39,9 @@ class EditorButtonList(list, enum.Enum):
     ]
 
 class EditorOptions(Base):
-    default_tag: Optional[str]
-    mode: Optional[str]
-    rtl: Optional[bool]
+    default_tag: str | None
+    mode: str | None
+    rtl: bool | None
     button_list: Optional[list[Union[list[str], str]]]
 
 def on_blur_spec(e: Var, content: Var[str]) -> tuple[Var[str]]: ...
@@ -56,79 +56,74 @@ class Editor(NoSSRComponent):
     def create(  # type: ignore
         cls,
         *children,
-        lang: Optional[
-            Union[
-                Literal[
-                    "ckb",
-                    "da",
-                    "de",
-                    "en",
-                    "es",
-                    "fr",
-                    "he",
-                    "it",
-                    "ja",
-                    "ko",
-                    "lv",
-                    "pl",
-                    "pt_br",
-                    "ro",
-                    "ru",
-                    "se",
-                    "ua",
-                    "zh_cn",
-                ],
-                Var[
-                    Union[
-                        Literal[
-                            "ckb",
-                            "da",
-                            "de",
-                            "en",
-                            "es",
-                            "fr",
-                            "he",
-                            "it",
-                            "ja",
-                            "ko",
-                            "lv",
-                            "pl",
-                            "pt_br",
-                            "ro",
-                            "ru",
-                            "se",
-                            "ua",
-                            "zh_cn",
-                        ],
-                        dict,
-                    ]
-                ],
-                dict,
+        lang: Literal[
+            "ckb",
+            "da",
+            "de",
+            "en",
+            "es",
+            "fr",
+            "he",
+            "it",
+            "ja",
+            "ko",
+            "lv",
+            "pl",
+            "pt_br",
+            "ro",
+            "ru",
+            "se",
+            "ua",
+            "zh_cn",
+        ]
+        | Var[
+            Literal[
+                "ckb",
+                "da",
+                "de",
+                "en",
+                "es",
+                "fr",
+                "he",
+                "it",
+                "ja",
+                "ko",
+                "lv",
+                "pl",
+                "pt_br",
+                "ro",
+                "ru",
+                "se",
+                "ua",
+                "zh_cn",
             ]
-        ] = None,
-        name: Optional[Union[Var[str], str]] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
-        width: Optional[Union[Var[str], str]] = None,
-        height: Optional[Union[Var[str], str]] = None,
-        placeholder: Optional[Union[Var[str], str]] = None,
-        auto_focus: Optional[Union[Var[bool], bool]] = None,
-        set_options: Optional[Union[Dict, Var[Dict]]] = None,
-        set_all_plugins: Optional[Union[Var[bool], bool]] = None,
-        set_contents: Optional[Union[Var[str], str]] = None,
-        append_contents: Optional[Union[Var[str], str]] = None,
-        set_default_style: Optional[Union[Var[str], str]] = None,
-        disable: Optional[Union[Var[bool], bool]] = None,
-        hide: Optional[Union[Var[bool], bool]] = None,
-        hide_toolbar: Optional[Union[Var[bool], bool]] = None,
-        disable_toolbar: Optional[Union[Var[bool], bool]] = None,
-        style: Optional[Style] = None,
-        key: Optional[Any] = None,
-        id: Optional[Any] = None,
-        class_name: Optional[Any] = None,
-        autofocus: Optional[bool] = None,
-        custom_attrs: Optional[dict[str, Union[Var, Any]]] = None,
-        on_blur: Optional[Union[EventType[()], EventType[str]]] = None,
-        on_change: Optional[Union[EventType[()], EventType[str]]] = None,
+            | dict
+        ]
+        | dict
+        | None = None,
+        name: Var[str] | str | None = None,
+        default_value: Var[str] | str | None = None,
+        width: Var[str] | str | None = None,
+        height: Var[str] | str | None = None,
+        placeholder: Var[str] | str | None = None,
+        auto_focus: Var[bool] | bool | None = None,
+        set_options: Dict | Var[Dict] | None = None,
+        set_all_plugins: Var[bool] | bool | None = None,
+        set_contents: Var[str] | str | None = None,
+        append_contents: Var[str] | str | None = None,
+        set_default_style: Var[str] | str | None = None,
+        disable: Var[bool] | bool | None = None,
+        hide: Var[bool] | bool | None = None,
+        hide_toolbar: Var[bool] | bool | None = None,
+        disable_toolbar: Var[bool] | bool | None = None,
+        style: Style | None = None,
+        key: Any | None = None,
+        id: Any | None = None,
+        class_name: Any | None = None,
+        autofocus: bool | None = None,
+        custom_attrs: dict[str, Var | Any] | None = None,
+        on_blur: Optional[EventType[()] | EventType[str]] = None,
+        on_change: Optional[EventType[()] | EventType[str]] = None,
         on_click: Optional[EventType[()]] = None,
         on_context_menu: Optional[EventType[()]] = None,
         on_copy: Optional[EventType[()]] = None,
@@ -136,7 +131,7 @@ class Editor(NoSSRComponent):
         on_double_click: Optional[EventType[()]] = None,
         on_focus: Optional[EventType[()]] = None,
         on_input: Optional[EventType[()]] = None,
-        on_load: Optional[Union[EventType[()], EventType[bool]]] = None,
+        on_load: Optional[EventType[()] | EventType[bool]] = None,
         on_mount: Optional[EventType[()]] = None,
         on_mouse_down: Optional[EventType[()]] = None,
         on_mouse_enter: Optional[EventType[()]] = None,
@@ -146,12 +141,12 @@ class Editor(NoSSRComponent):
         on_mouse_over: Optional[EventType[()]] = None,
         on_mouse_up: Optional[EventType[()]] = None,
         on_paste: Optional[
-            Union[EventType[()], EventType[str], EventType[str, bool]]
+            EventType[()] | EventType[str] | EventType[str, bool]
         ] = None,
         on_scroll: Optional[EventType[()]] = None,
         on_unmount: Optional[EventType[()]] = None,
-        toggle_code_view: Optional[Union[EventType[()], EventType[bool]]] = None,
-        toggle_full_screen: Optional[Union[EventType[()], EventType[bool]]] = None,
+        toggle_code_view: Optional[EventType[()] | EventType[bool]] = None,
+        toggle_full_screen: Optional[EventType[()] | EventType[bool]] = None,
         **props,
     ) -> "Editor":
         """Create an instance of Editor. No children allowed.

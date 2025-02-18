@@ -10,7 +10,7 @@ import signal
 import subprocess
 from concurrent import futures
 from pathlib import Path
-from typing import Callable, Generator, Optional, Tuple, Union
+from typing import Callable, Generator, Tuple
 
 import psutil
 import typer
@@ -50,7 +50,7 @@ def get_num_workers() -> int:
     return (os.cpu_count() or 1) * 2 + 1
 
 
-def get_process_on_port(port: int) -> Optional[psutil.Process]:
+def get_process_on_port(port: int) -> psutil.Process | None:
     """Get the process on the given port.
 
     Args:
@@ -202,7 +202,7 @@ def new_process(
 
 @contextlib.contextmanager
 def run_concurrently_context(
-    *fns: Union[Callable, Tuple],
+    *fns: Callable | Tuple,
 ) -> Generator[list[futures.Future], None, None]:
     """Run functions concurrently in a thread pool.
 
@@ -240,7 +240,7 @@ def run_concurrently_context(
             executor.shutdown(wait=False)
 
 
-def run_concurrently(*fns: Union[Callable, Tuple]) -> None:
+def run_concurrently(*fns: Callable | Tuple) -> None:
     """Run functions concurrently in a thread pool.
 
     Args:

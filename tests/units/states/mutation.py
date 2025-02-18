@@ -189,12 +189,12 @@ class MutableTestState(BaseState):
         [1, 2, 3],
         {"key": "value"},
     ]
-    hashmap: dict[str, Union[List, str, dict[str, Union[str, Dict]]]] = {
+    hashmap: dict[str, Union[List, str, dict[str, str | Dict]]] = {
         "key": ["list", "of", "values"],
         "another_key": "another_value",
         "third_key": {"key": "value"},
     }
-    test_set: set[Union[str, int]] = {1, 2, 3, 4, "five"}
+    test_set: set[str | int] = {1, 2, 3, 4, "five"}
     custom: CustomVar = CustomVar()
     _be_custom: CustomVar = CustomVar()
     sqla_model: MutableSQLAModel = MutableSQLAModel(

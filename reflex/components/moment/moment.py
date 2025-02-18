@@ -2,7 +2,7 @@
 
 import dataclasses
 from datetime import date, datetime, time, timedelta
-from typing import Optional, Union
+from typing import Union
 
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventHandler, passthrough_event_spec
@@ -14,15 +14,15 @@ from reflex.vars.base import LiteralVar, Var
 class MomentDelta:
     """A delta used for add/subtract prop in Moment."""
 
-    years: Optional[int] = dataclasses.field(default=None)
-    quarters: Optional[int] = dataclasses.field(default=None)
-    months: Optional[int] = dataclasses.field(default=None)
-    weeks: Optional[int] = dataclasses.field(default=None)
-    days: Optional[int] = dataclasses.field(default=None)
-    hours: Optional[int] = dataclasses.field(default=None)
-    minutes: Optional[int] = dataclasses.field(default=None)
-    seconds: Optional[int] = dataclasses.field(default=None)
-    milliseconds: Optional[int] = dataclasses.field(default=None)
+    years: int | None = dataclasses.field(default=None)
+    quarters: int | None = dataclasses.field(default=None)
+    months: int | None = dataclasses.field(default=None)
+    weeks: int | None = dataclasses.field(default=None)
+    days: int | None = dataclasses.field(default=None)
+    hours: int | None = dataclasses.field(default=None)
+    minutes: int | None = dataclasses.field(default=None)
+    seconds: int | None = dataclasses.field(default=None)
+    milliseconds: int | None = dataclasses.field(default=None)
 
 
 class Moment(NoSSRComponent):

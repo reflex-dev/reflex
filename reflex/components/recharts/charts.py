@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any
 
 from reflex.components.component import Component
 from reflex.components.recharts.general import ResponsiveContainer
@@ -25,10 +25,10 @@ class ChartBase(RechartsCharts):
     """A component that wraps a Recharts charts."""
 
     # The width of chart container. String or Integer
-    width: Var[Union[str, int]] = Var.create("100%")
+    width: Var[str | int] = Var.create("100%")
 
     # The height of chart container.
-    height: Var[Union[str, int]] = Var.create("100%")
+    height: Var[str | int] = Var.create("100%")
 
     # The customized event handler of click on the component in this chart
     on_click: EventHandler[no_args_event_spec]
@@ -130,7 +130,7 @@ class AreaChart(CategoricalChartBase):
     alias = "RechartsAreaChart"
 
     # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'. Default: "auto"
-    base_value: Var[Union[int, LiteralComposedChartBaseValue]]
+    base_value: Var[int | LiteralComposedChartBaseValue]
 
     # Valid children components
     _valid_children: list[str] = [
@@ -156,10 +156,10 @@ class BarChart(CategoricalChartBase):
     alias = "RechartsBarChart"
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number. Default: "10%"
-    bar_category_gap: Var[Union[str, int]]
+    bar_category_gap: Var[str | int]
 
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number. Default: 4
-    bar_gap: Var[Union[str, int]]
+    bar_gap: Var[str | int]
 
     # The width of all the bars in the chart. Number
     bar_size: Var[int]
@@ -218,10 +218,10 @@ class ComposedChart(CategoricalChartBase):
     alias = "RechartsComposedChart"
 
     # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'. Default: "auto"
-    base_value: Var[Union[int, LiteralComposedChartBaseValue]]
+    base_value: Var[int | LiteralComposedChartBaseValue]
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number. Default: "10%"
-    bar_category_gap: Var[Union[str, int]]
+    bar_category_gap: Var[str | int]
 
     # The gap between two bars in the same category. Default: 4
     bar_gap: Var[int]
@@ -296,10 +296,10 @@ class RadarChart(ChartBase):
     margin: Var[dict[str, Any]]
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"
-    cx: Var[Union[int, str]]
+    cx: Var[int | str]
 
     # The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage. Default: "50%"
-    cy: Var[Union[int, str]]
+    cy: Var[int | str]
 
     # The angle of first radial direction line. Default: 90
     start_angle: Var[int]
@@ -308,10 +308,10 @@ class RadarChart(ChartBase):
     end_angle: Var[int]
 
     # The inner radius of first circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: 0
-    inner_radius: Var[Union[int, str]]
+    inner_radius: Var[int | str]
 
     # The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: "80%"
-    outer_radius: Var[Union[int, str]]
+    outer_radius: Var[int | str]
 
     # Valid children components
     _valid_children: list[str] = [
@@ -323,7 +323,7 @@ class RadarChart(ChartBase):
         "Radar",
     ]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+    def get_event_triggers(self) -> dict[str, Var | Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -350,10 +350,10 @@ class RadialBarChart(ChartBase):
     margin: Var[dict[str, Any]]
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"
-    cx: Var[Union[int, str]]
+    cx: Var[int | str]
 
     # The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage. Default: "50%"
-    cy: Var[Union[int, str]]
+    cy: Var[int | str]
 
     # The angle of first radial direction line. Default: 0
     start_angle: Var[int]
@@ -362,13 +362,13 @@ class RadialBarChart(ChartBase):
     end_angle: Var[int]
 
     # The inner radius of first circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: "30%"
-    inner_radius: Var[Union[int, str]]
+    inner_radius: Var[int | str]
 
     # The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage. Default: "100%"
-    outer_radius: Var[Union[int, str]]
+    outer_radius: Var[int | str]
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number. Default: "10%"
-    bar_category_gap: Var[Union[int, str]]
+    bar_category_gap: Var[int | str]
 
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number. Default: 4
     bar_gap: Var[str]
@@ -412,7 +412,7 @@ class ScatterChart(ChartBase):
         "Scatter",
     ]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+    def get_event_triggers(self) -> dict[str, Var | Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -444,7 +444,7 @@ class FunnelChart(ChartBase):
     margin: Var[dict[str, Any]]
 
     # The stroke color of each bar. String | Object
-    stroke: Var[Union[str, Color]]
+    stroke: Var[str | Color]
 
     # Valid children components
     _valid_children: list[str] = ["Legend", "GraphingTooltip", "Funnel"]
@@ -458,16 +458,16 @@ class Treemap(RechartsCharts):
     alias = "RechartsTreemap"
 
     # The width of chart container. String or Integer. Default: "100%"
-    width: Var[Union[str, int]] = Var.create("100%")
+    width: Var[str | int] = Var.create("100%")
 
     # The height of chart container. String or Integer. Default: "100%"
-    height: Var[Union[str, int]] = Var.create("100%")
+    height: Var[str | int] = Var.create("100%")
 
     # data of treemap. Array
     data: Var[list[dict[str, Any]]]
 
     # The key of a group of data which should be unique in a treemap. String | Number. Default: "value"
-    data_key: Var[Union[str, int]]
+    data_key: Var[str | int]
 
     # The key of each sector's name. String. Default: "name"
     name_key: Var[str]

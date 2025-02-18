@@ -29,7 +29,6 @@ from typing import (
     Optional,
     Type,
     TypeVar,
-    Union,
 )
 
 import psutil
@@ -77,8 +76,7 @@ DEFAULT_TIMEOUT = 15
 POLL_INTERVAL = 0.25
 FRONTEND_POPEN_ARGS = {}
 T = TypeVar("T")
-TimeoutType = Optional[Union[int, float]]
-
+TimeoutType = int | float | None
 if platform.system() == "Windows":
     FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
     FRONTEND_POPEN_ARGS["shell"] = True
@@ -123,14 +121,14 @@ class AppHarness:
     ]
     app_path: Path
     app_module_path: Path
-    app_module: Optional[types.ModuleType] = None
-    app_instance: Optional[reflex.App] = None
-    frontend_process: Optional[subprocess.Popen] = None
-    frontend_url: Optional[str] = None
-    frontend_output_thread: Optional[threading.Thread] = None
-    backend_thread: Optional[threading.Thread] = None
-    backend: Optional[uvicorn.Server] = None
-    state_manager: Optional[StateManager] = None
+    app_module: types.ModuleType | None = None
+    app_instance: reflex.App | None = None
+    frontend_process: subprocess.Popen | None = None
+    frontend_url: str | None = None
+    frontend_output_thread: threading.Thread | None = None
+    backend_thread: threading.Thread | None = None
+    backend: uvicorn.Server | None = None
+    state_manager: StateManager | None = None
     _frontends: list["WebDriver"] = dataclasses.field(default_factory=list)
     _decorated_pages: list = dataclasses.field(default_factory=list)
 
@@ -141,7 +139,7 @@ class AppHarness:
         app_source: Optional[
             Callable[[], None] | types.ModuleType | str | functools.partial[Any]
         ] = None,
-        app_name: Optional[str] = None,
+        app_name: str | None = None,
     ) -> "AppHarness":
         """Create an AppHarness instance at root.
 
@@ -767,7 +765,7 @@ class AppHarness:
         element: "WebElement",
         timeout: TimeoutType = None,
         exp_not_equal: str = "",
-    ) -> Optional[str]:
+    ) -> str | None:
         """Poll element.get_attribute("value") for change.
 
         Args:
@@ -903,8 +901,8 @@ class AppHarnessProd(AppHarness):
     handling. Additionally, the backend runs in multi-worker mode.
     """
 
-    frontend_thread: Optional[threading.Thread] = None
-    frontend_server: Optional[Subdir404TCPServer] = None
+    frontend_thread: threading.Thread | None = None
+    frontend_server: Subdir404TCPServer | None = None
 
     def _run_frontend(self):
         web_root = (

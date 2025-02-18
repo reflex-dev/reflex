@@ -54,15 +54,15 @@ class EditorOptions(Base):
 
     # Specifies default tag name of the editor.
     # default: 'p' {String}
-    default_tag: Optional[str] = None
+    default_tag: str | None = None
 
     # The mode of the editor ('classic', 'inline', 'balloon', 'balloon-always').
     # default: 'classic' {String}
-    mode: Optional[str] = None
+    mode: str | None = None
 
     # If true, the editor is set to RTL(Right To Left) mode.
     # default: false {Boolean}
-    rtl: Optional[bool] = None
+    rtl: bool | None = None
 
     # List of buttons to use in the toolbar.
     button_list: Optional[list[Union[list[str], str]]]
@@ -245,7 +245,7 @@ class Editor(NoSSRComponent):
 
     @classmethod
     def create(
-        cls, set_options: Optional[EditorOptions] = None, **props: Any
+        cls, set_options: EditorOptions | None = None, **props: Any
     ) -> Component:
         """Create an instance of Editor. No children allowed.
 

@@ -49,10 +49,10 @@ class DBConfig(Base):
     """Database config."""
 
     engine: str
-    username: Optional[str] = ""
-    password: Optional[str] = ""
-    host: Optional[str] = ""
-    port: Optional[int] = None
+    username: str | None = ""
+    password: str | None = ""
+    host: str | None = ""
+    port: int | None = None
     database: str
 
     @classmethod
@@ -358,7 +358,7 @@ class EnvVar(Generic[T]):
         """
         return interpret_env_var_value(value, self.type_, self.name)
 
-    def getenv(self) -> Optional[T]:
+    def getenv(self) -> T | None:
         """Get the interpreted environment variable value.
 
         Returns:
@@ -590,16 +590,16 @@ class EnvironmentVariables:
     REFLEX_USE_NPM: EnvVar[bool] = env_var(False)
 
     # The npm registry to use.
-    NPM_CONFIG_REGISTRY: EnvVar[Optional[str]] = env_var(None)
+    NPM_CONFIG_REGISTRY: EnvVar[str | None] = env_var(None)
 
     # Whether to use Granian for the backend. Otherwise, use Uvicorn.
     REFLEX_USE_GRANIAN: EnvVar[bool] = env_var(False)
 
     # The username to use for authentication on python package repository. Username and password must both be provided.
-    TWINE_USERNAME: EnvVar[Optional[str]] = env_var(None)
+    TWINE_USERNAME: EnvVar[str | None] = env_var(None)
 
     # The password to use for authentication on python package repository. Username and password must both be provided.
-    TWINE_PASSWORD: EnvVar[Optional[str]] = env_var(None)
+    TWINE_PASSWORD: EnvVar[str | None] = env_var(None)
 
     # Whether to use the system installed bun. If set to false, bun will be bundled with the app.
     REFLEX_USE_SYSTEM_BUN: EnvVar[bool] = env_var(False)
@@ -624,13 +624,13 @@ class EnvironmentVariables:
         Path(constants.Dirs.UPLOADED_FILES)
     )
 
-    REFLEX_COMPILE_EXECUTOR: EnvVar[Optional[ExecutorType]] = env_var(None)
+    REFLEX_COMPILE_EXECUTOR: EnvVar[ExecutorType | None] = env_var(None)
 
     # Whether to use separate processes to compile the frontend and how many. If not set, defaults to thread executor.
-    REFLEX_COMPILE_PROCESSES: EnvVar[Optional[int]] = env_var(None)
+    REFLEX_COMPILE_PROCESSES: EnvVar[int | None] = env_var(None)
 
     # Whether to use separate threads to compile the frontend and how many. Defaults to `min(32, os.cpu_count() + 4)`.
-    REFLEX_COMPILE_THREADS: EnvVar[Optional[int]] = env_var(None)
+    REFLEX_COMPILE_THREADS: EnvVar[int | None] = env_var(None)
 
     # The directory to store reflex dependencies.
     REFLEX_DIR: EnvVar[Path] = env_var(Path(constants.Reflex.DIR))
@@ -744,7 +744,7 @@ class Config(Base):
     app_name: str
 
     # The path to the app module.
-    app_module_import: Optional[str] = None
+    app_module_import: str | None = None
 
     # The log level to use.
     loglevel: constants.LogLevel = constants.LogLevel.DEFAULT
@@ -762,21 +762,19 @@ class Config(Base):
     api_url: str = f"http://localhost:{constants.DefaultPorts.BACKEND_PORT}"
 
     # The url the frontend will be hosted on.
-    deploy_url: Optional[str] = (
-        f"http://localhost:{constants.DefaultPorts.FRONTEND_PORT}"
-    )
+    deploy_url: str | None = f"http://localhost:{constants.DefaultPorts.FRONTEND_PORT}"
 
     # The url the backend will be hosted on.
     backend_host: str = "0.0.0.0"
 
     # The database url used by rx.Model.
-    db_url: Optional[str] = "sqlite:///reflex.db"
+    db_url: str | None = "sqlite:///reflex.db"
 
     # The async database url used by rx.Model.
-    async_db_url: Optional[str] = None
+    async_db_url: str | None = None
 
     # The redis url
-    redis_url: Optional[str] = None
+    redis_url: str | None = None
 
     # Telemetry opt-in.
     telemetry_enabled: bool = True
@@ -814,7 +812,7 @@ class Config(Base):
     gunicorn_worker_class: str = "uvicorn.workers.UvicornH11Worker"
 
     # Number of gunicorn workers from user
-    gunicorn_workers: Optional[int] = None
+    gunicorn_workers: int | None = None
 
     # Number of requests before a worker is restarted; set to 0 to disable
     gunicorn_max_requests: int = 100
@@ -838,7 +836,7 @@ class Config(Base):
     _non_default_attributes: set[str] = pydantic.PrivateAttr(set())
 
     # Path to file containing key-values pairs to override in the environment; Dotenv format.
-    env_file: Optional[str] = None
+    env_file: str | None = None
 
     # Whether to display the sticky "Built with Reflex" badge on all pages.
     show_built_with_reflex: bool = True
@@ -847,7 +845,7 @@ class Config(Base):
     is_reflex_cloud: bool = False
 
     # Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.momnet".
-    extra_overlay_function: Optional[str] = None
+    extra_overlay_function: str | None = None
 
     def __init__(self, *args, **kwargs):
         """Initialize the config values.

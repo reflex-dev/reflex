@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 from collections import defaultdict
-from typing import DefaultDict, Optional, Union
+from typing import DefaultDict, Union
 
 
 def merge_imports(
@@ -95,26 +95,26 @@ class ImportVar:
     """An import var."""
 
     # The name of the import tag.
-    tag: Optional[str]
+    tag: str | None
 
     # whether the import is default or named.
-    is_default: Optional[bool] = False
+    is_default: bool | None = False
 
     # The tag alias.
-    alias: Optional[str] = None
+    alias: str | None = None
 
     # Whether this import need to install the associated lib
-    install: Optional[bool] = True
+    install: bool | None = True
 
     # whether this import should be rendered or not
-    render: Optional[bool] = True
+    render: bool | None = True
 
     # The path of the package to import from.
     package_path: str = "/"
 
     # whether this import package should be added to transpilePackages in next.config.js
     # https://nextjs.org/docs/app/api-reference/next-config-js/transpilePackages
-    transpile: Optional[bool] = False
+    transpile: bool | None = False
 
     @property
     def name(self) -> str:
@@ -131,7 +131,7 @@ class ImportVar:
             return self.tag or ""
 
 
-ImportTypes = Union[str, ImportVar, list[Union[str, ImportVar]], list[ImportVar]]
+ImportTypes = Union[str, ImportVar, list[str | ImportVar], list[ImportVar]]
 ImportDict = dict[str, ImportTypes]
 ParsedImportDict = dict[str, list[ImportVar]]
 ImmutableParsedImportDict = tuple[tuple[str, tuple[ImportVar, ...]], ...]

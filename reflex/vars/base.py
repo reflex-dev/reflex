@@ -368,7 +368,7 @@ class Var(Generic[VAR_TYPE]):
     _var_type: types.GenericType = dataclasses.field(default=Any)
 
     # Extra metadata associated with the Var
-    _var_data: Optional[VarData] = dataclasses.field(default=None)
+    _var_data: VarData | None = dataclasses.field(default=None)
 
     def __str__(self) -> str:
         """String representation of the var. Guaranteed to be a valid Javascript expression.
@@ -908,7 +908,7 @@ class Var(Generic[VAR_TYPE]):
             return args[0] if args else None
         if issubclass(type_, str):
             return ""
-        if issubclass(type_, types.get_args(Union[int, float])):
+        if issubclass(type_, types.get_args(int | float)):
             return 0
         if issubclass(type_, bool):
             return False
@@ -1549,7 +1549,7 @@ def serialize_literal(value: LiteralVar):
     return value._var_value
 
 
-def get_python_literal(value: Union[LiteralVar, Any]) -> Any | None:
+def get_python_literal(value: LiteralVar | Any) -> Any | None:
     """Get the Python literal value.
 
     Args:
@@ -1582,7 +1582,7 @@ def var_operation(
 ) -> Callable[P, BooleanVar]: ...
 
 
-NUMBER_T = TypeVar("NUMBER_T", int, float, Union[int, float])
+NUMBER_T = TypeVar("NUMBER_T", int, float, int | float)
 
 
 @overload
@@ -1956,7 +1956,7 @@ class ComputedVar(Var[RETURN_TYPE]):
     _auto_deps: bool = dataclasses.field(default=True)
 
     # Interval at which the computed var should be updated
-    _update_interval: Optional[datetime.timedelta] = dataclasses.field(default=None)
+    _update_interval: datetime.timedelta | None = dataclasses.field(default=None)
 
     _fget: Callable[[BaseState], RETURN_TYPE] = dataclasses.field(
         default_factory=lambda: lambda _: None
@@ -1967,9 +1967,9 @@ class ComputedVar(Var[RETURN_TYPE]):
         fget: Callable[[BASE_STATE], RETURN_TYPE],
         initial_value: RETURN_TYPE | types.Unset = types.Unset(),
         cache: bool = True,
-        deps: Optional[list[Union[str, Var]]] = None,
+        deps: Optional[list[str | Var]] = None,
         auto_deps: bool = True,
-        interval: Optional[Union[int, datetime.timedelta]] = None,
+        interval: int | datetime.timedelta | None = None,
         backend: bool | None = None,
         **kwargs,
     ):
@@ -2031,7 +2031,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     def _calculate_static_deps(
         self,
-        deps: Union[list[Union[str, Var]], dict[str | None, set[str]]] | None = None,
+        deps: Union[list[str | Var], dict[str | None, set[str]]] | None = None,
     ) -> dict[str | None, set[str]]:
         """Calculate the static dependencies of the computed var from user input or existing dependencies.
 
@@ -2051,7 +2051,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         return _static_deps
 
     def _add_static_dep(
-        self, dep: Union[str, Var], deps: dict[str | None, set[str]] | None = None
+        self, dep: str | Var, deps: dict[str | None, set[str]] | None = None
     ) -> dict[str | None, set[str]]:
         """Add a static dependency to the computed var or existing dependency set.
 
@@ -2562,9 +2562,9 @@ def computed_var(
     fget: None = None,
     initial_value: Any | types.Unset = types.Unset(),
     cache: bool = True,
-    deps: Optional[list[Union[str, Var]]] = None,
+    deps: Optional[list[str | Var]] = None,
     auto_deps: bool = True,
-    interval: Optional[Union[datetime.timedelta, int]] = None,
+    interval: datetime.timedelta | int | None = None,
     backend: bool | None = None,
     **kwargs,
 ) -> Callable[[Callable[[BASE_STATE], RETURN_TYPE]], ComputedVar[RETURN_TYPE]]: ...  # pyright: ignore [reportInvalidTypeVarUse]
@@ -2575,9 +2575,9 @@ def computed_var(
     fget: Callable[[BASE_STATE], RETURN_TYPE],
     initial_value: RETURN_TYPE | types.Unset = types.Unset(),
     cache: bool = True,
-    deps: Optional[list[Union[str, Var]]] = None,
+    deps: Optional[list[str | Var]] = None,
     auto_deps: bool = True,
-    interval: Optional[Union[datetime.timedelta, int]] = None,
+    interval: datetime.timedelta | int | None = None,
     backend: bool | None = None,
     **kwargs,
 ) -> ComputedVar[RETURN_TYPE]: ...
@@ -2587,9 +2587,9 @@ def computed_var(
     fget: Callable[[BASE_STATE], Any] | None = None,
     initial_value: Any | types.Unset = types.Unset(),
     cache: bool = True,
-    deps: Optional[list[Union[str, Var]]] = None,
+    deps: Optional[list[str | Var]] = None,
     auto_deps: bool = True,
-    interval: Optional[Union[datetime.timedelta, int]] = None,
+    interval: datetime.timedelta | int | None = None,
     backend: bool | None = None,
     **kwargs,
 ) -> ComputedVar | Callable[[Callable[[BASE_STATE], Any]], ComputedVar]:

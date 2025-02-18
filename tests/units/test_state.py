@@ -10,7 +10,7 @@ import os
 import sys
 import threading
 from textwrap import dedent
-from typing import Any, AsyncGenerator, Callable, ClassVar, Optional, Set, Tuple, Union
+from typing import Any, AsyncGenerator, Callable, ClassVar, Set, Tuple
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -2706,7 +2706,7 @@ class Custom1(Base):
 class Custom2(Base):
     """A custom class with a Custom1 field."""
 
-    c1: Optional[Custom1] = None
+    c1: Custom1 | None = None
     c1r: Custom1
 
     def set_c1r_foo(self, val: str):
@@ -2721,7 +2721,7 @@ class Custom2(Base):
 class Custom3(Base):
     """A custom class with a Custom2 field."""
 
-    c2: Optional[Custom2] = None
+    c2: Custom2 | None = None
     c2r: Custom2
 
 
@@ -2729,12 +2729,12 @@ def test_state_union_optional():
     """Test that state can be defined with Union and Optional vars."""
 
     class UnionState(BaseState):
-        int_float: Union[int, float] = 0
-        opt_int: Optional[int]
-        c3: Optional[Custom3]
+        int_float: int | float = 0
+        opt_int: int | None
+        c3: Custom3 | None
         c3i: Custom3  # implicitly required
         c3r: Custom3 = Custom3(c2r=Custom2(c1r=Custom1(foo="")))
-        custom_union: Union[Custom1, Custom2, Custom3] = Custom1(foo="")
+        custom_union: Custom1 | Custom2 | Custom3 = Custom1(foo="")
 
     assert str(UnionState.c3.c2) == f'{UnionState.c3!s}?.["c2"]'  # pyright: ignore [reportOptionalMemberAccess]
     assert str(UnionState.c3.c2.c1) == f'{UnionState.c3!s}?.["c2"]?.["c1"]'  # pyright: ignore [reportOptionalMemberAccess]
@@ -3538,8 +3538,8 @@ def test_fallback_pickle():
     """Test that state serialization will fall back to dill."""
 
     class DillState(BaseState):
-        _o: Optional[Obj] = None
-        _f: Optional[Callable] = None
+        _o: Obj | None = None
+        _f: Callable | None = None
         _g: Any = None
 
     state = DillState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
@@ -3690,7 +3690,7 @@ class UpcastState(rx.State):
         assert isinstance(o, Object)
         self.passed = True
 
-    def rx_base_or_none(self, o: Optional[Object]):  # noqa: D102
+    def rx_base_or_none(self, o: Object | None):  # noqa: D102
         if o is not None:
             assert isinstance(o, Object)
         self.passed = True

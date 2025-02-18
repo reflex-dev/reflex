@@ -243,7 +243,7 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
     """Base class for immutable vars that are the result of a function call."""
 
     _func: Optional[FunctionVar[ReflexCallable[P, R]]] = dataclasses.field(default=None)
-    _args: tuple[Union[Var, Any], ...] = dataclasses.field(default_factory=tuple)
+    _args: tuple[Var | Any, ...] = dataclasses.field(default_factory=tuple)
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -306,7 +306,7 @@ class DestructuredArg:
     """Class for destructured arguments."""
 
     fields: tuple[str, ...] = ()
-    rest: Optional[str] = None
+    rest: str | None = None
 
     def to_javascript(self) -> str:
         """Convert the destructured argument to JavaScript.
@@ -327,8 +327,8 @@ class DestructuredArg:
 class FunctionArgs:
     """Class for function arguments."""
 
-    args: tuple[Union[str, DestructuredArg], ...] = ()
-    rest: Optional[str] = None
+    args: tuple[str | DestructuredArg, ...] = ()
+    rest: str | None = None
 
 
 def format_args_function_operation(
@@ -367,7 +367,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
     """Base class for immutable function defined via arguments and return expression."""
 
     _args: FunctionArgs = dataclasses.field(default_factory=FunctionArgs)
-    _return_expr: Union[Var, Any] = dataclasses.field(default=None)
+    _return_expr: Var | Any = dataclasses.field(default=None)
     _explicit_return: bool = dataclasses.field(default=False)
 
     @cached_property_no_lock
@@ -384,7 +384,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
     @classmethod
     def create(
         cls,
-        args_names: Sequence[Union[str, DestructuredArg]],
+        args_names: Sequence[str | DestructuredArg],
         return_expr: Var | Any,
         rest: str | None = None,
         explicit_return: bool = False,
@@ -424,7 +424,7 @@ class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
     """Base class for immutable function defined via arguments and return expression with the builder pattern."""
 
     _args: FunctionArgs = dataclasses.field(default_factory=FunctionArgs)
-    _return_expr: Union[Var, Any] = dataclasses.field(default=None)
+    _return_expr: Var | Any = dataclasses.field(default=None)
     _explicit_return: bool = dataclasses.field(default=False)
 
     @cached_property_no_lock
@@ -441,7 +441,7 @@ class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
     @classmethod
     def create(
         cls,
-        args_names: Sequence[Union[str, DestructuredArg]],
+        args_names: Sequence[str | DestructuredArg],
         return_expr: Var | Any,
         rest: str | None = None,
         explicit_return: bool = False,

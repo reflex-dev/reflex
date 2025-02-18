@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import atexit
 from pathlib import Path
-from typing import Optional
 
 import typer
 import typer.core
@@ -504,12 +503,12 @@ def deploy(
         "--env",
         help="The environment variables to set: <key>=<value>. For multiple envs, repeat this option, e.g. --env k1=v2 --env k2=v2.",
     ),
-    vmtype: Optional[str] = typer.Option(
+    vmtype: str | None = typer.Option(
         None,
         "--vmtype",
         help="Vm type id. Run `reflex cloud vmtypes` to get options.",
     ),
-    hostname: Optional[str] = typer.Option(
+    hostname: str | None = typer.Option(
         None,
         "--hostname",
         help="The hostname of the frontend.",
@@ -518,7 +517,7 @@ def deploy(
         True,
         help="Whether to list configuration options and ask for confirmation.",
     ),
-    envfile: Optional[str] = typer.Option(
+    envfile: str | None = typer.Option(
         None,
         "--envfile",
         help="The path to an env file to use. Will override any envs set manually.",
@@ -526,22 +525,22 @@ def deploy(
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
-    project: Optional[str] = typer.Option(
+    project: str | None = typer.Option(
         None,
         "--project",
         help="project id to deploy to",
     ),
-    project_name: Optional[str] = typer.Option(
+    project_name: str | None = typer.Option(
         None,
         "--project-name",
         help="The name of the project to deploy to.",
     ),
-    token: Optional[str] = typer.Option(
+    token: str | None = typer.Option(
         None,
         "--token",
         help="token to use for auth",
     ),
-    config_path: Optional[str] = typer.Option(
+    config_path: str | None = typer.Option(
         None,
         "--config",
         help="path to the config file",

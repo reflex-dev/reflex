@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, List, Mapping, Optional, Sequence
+from typing import Any, List, Mapping, Sequence
 
 from reflex.event import EventChain
 from reflex.utils import format, types
@@ -90,7 +90,7 @@ class Tag:
             if rendered_value is not None:
                 yield field.name, rendered_value
 
-    def add_props(self, **kwargs: Optional[Any]) -> Tag:
+    def add_props(self, **kwargs: Any | None) -> Tag:
         """Add props to the tag.
 
         Args:
@@ -128,7 +128,7 @@ class Tag:
         return self
 
     @staticmethod
-    def is_valid_prop(prop: Optional[Var]) -> bool:
+    def is_valid_prop(prop: Var | None) -> bool:
         """Check if the prop is valid.
 
         Args:

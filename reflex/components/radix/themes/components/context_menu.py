@@ -89,19 +89,19 @@ class ContextMenuContent(RadixThemesComponent):
     side: Var[LiteralSideType]
 
     # The distance in pixels from the trigger. Defaults to 0.
-    side_offset: Var[Union[float, int]]
+    side_offset: Var[float | int]
 
     # The preferred alignment against the trigger. May change when collisions occur. Defaults to "center".
     align: Var[LiteralAlignType]
 
     # An offset in pixels from the "start" or "end" alignment options.
-    align_offset: Var[Union[float, int]]
+    align_offset: Var[float | int]
 
     # When true, overrides the side and align preferences to prevent collisions with boundary edges. Defaults to True.
     avoid_collisions: Var[bool]
 
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-    collision_padding: Var[Union[float, int, dict[str, Union[float, int]]]]
+    collision_padding: Var[Union[float, int, dict[str, float | int]]]
 
     # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
     sticky: Var[LiteralStickyType]
@@ -174,16 +174,16 @@ class ContextMenuSubContent(RadixThemesComponent):
     force_mount: Var[bool]
 
     # The distance in pixels from the trigger. Defaults to 0.
-    side_offset: Var[Union[float, int]]
+    side_offset: Var[float | int]
 
     # An offset in pixels from the "start" or "end" alignment options.
-    align_offset: Var[Union[float, int]]
+    align_offset: Var[float | int]
 
     # When true, overrides the side and align preferences to prevent collisions with boundary edges. Defaults to True.
     avoid_collisions: Var[bool]
 
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-    collision_padding: Var[Union[float, int, dict[str, Union[float, int]]]]
+    collision_padding: Var[Union[float, int, dict[str, float | int]]]
 
     # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
     sticky: Var[LiteralStickyType]

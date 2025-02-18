@@ -1,7 +1,7 @@
 """rx.match."""
 
 import textwrap
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List
 
 from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
@@ -27,7 +27,7 @@ class Match(MemoizationLeaf):
     default: Any
 
     @classmethod
-    def create(cls, cond: Any, *cases) -> Union[Component, Var]:
+    def create(cls, cond: Any, *cases) -> Component | Var:
         """Create a Match Component.
 
         Args:
@@ -75,9 +75,7 @@ class Match(MemoizationLeaf):
         return match_cond_var
 
     @classmethod
-    def _process_cases(
-        cls, cases: List
-    ) -> tuple[List, Optional[Union[Var, BaseComponent]]]:
+    def _process_cases(cls, cases: List) -> tuple[List, Var | BaseComponent | None]:
         """Process the list of match cases and the catchall default case.
 
         Args:
@@ -196,8 +194,8 @@ class Match(MemoizationLeaf):
         cls,
         match_cond_var: Var,
         match_cases: list[list[Var]],
-        default: Optional[Union[Var, BaseComponent]],
-    ) -> Union[Component, Var]:
+        default: Var | BaseComponent | None,
+    ) -> Component | Var:
         """Create and return the match condition var or component.
 
         Args:

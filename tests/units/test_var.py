@@ -1,7 +1,7 @@
 import json
 import math
 import typing
-from typing import List, Mapping, Optional, Union, cast
+from typing import List, Mapping, cast
 
 import pytest
 from pandas import DataFrame
@@ -424,12 +424,12 @@ class Bar(rx.Base):
     ("var", "var_type"),
     [
         (Var(_js_expr="").to(Foo | Bar), Foo | Bar),
-        (Var(_js_expr="").to(Foo | Bar).bar, Union[int, str]),
-        (Var(_js_expr="").to(Union[Foo, Bar]), Union[Foo, Bar]),
-        (Var(_js_expr="").to(Union[Foo, Bar]).baz, str),
+        (Var(_js_expr="").to(Foo | Bar).bar, int | str),
+        (Var(_js_expr="").to(Foo | Bar), Foo | Bar),
+        (Var(_js_expr="").to(Foo | Bar).baz, str),
         (
-            Var(_js_expr="").to(Union[Foo, Bar]).foo,
-            Union[int, None],
+            Var(_js_expr="").to(Foo | Bar).foo,
+            int | None,
         ),
     ],
 )
@@ -963,7 +963,7 @@ def test_function_var():
 
 def test_var_operation():
     @var_operation
-    def add(a: Union[NumberVar, int], b: Union[NumberVar, int]):
+    def add(a: NumberVar | int, b: NumberVar | int):
         return var_operation_return(js_expression=f"({a} + {b})", var_type=int)
 
     assert str(add(1, 2)) == "(1 + 2)"
@@ -1813,7 +1813,7 @@ def cv_fget(state: BaseState) -> int:
         ([ComputedVar(fget=cv_fget)], {None: {"cv_fget"}}),
     ],
 )
-def test_computed_var_deps(deps: list[Union[str, Var]], expected: set[str]):
+def test_computed_var_deps(deps: list[str | Var], expected: set[str]):
     @computed_var(deps=deps)
     def test_var(state) -> int:
         return 1
@@ -1841,7 +1841,7 @@ def test_to_string_operation():
     class Email(str): ...
 
     class TestState(BaseState):
-        optional_email: Optional[Email] = None
+        optional_email: Email | None = None
         email: Email = Email("test@reflex.dev")
 
     assert (
@@ -1852,7 +1852,7 @@ def test_to_string_operation():
     assert my_state.email == "test@reflex.dev"
 
     assert cast(Var, TestState.email)._var_type == Email
-    assert cast(Var, TestState.optional_email)._var_type == Optional[Email]
+    assert cast(Var, TestState.optional_email)._var_type == Email | None
 
     single_var = Var.create(Email())
     assert single_var._var_type == Email

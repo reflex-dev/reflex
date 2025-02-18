@@ -1,4 +1,4 @@
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 import pytest
 
@@ -30,13 +30,13 @@ def test_validate_literal_error_msg(params, allowed_value_str, value_str):
         (list[int], Any, True),
         (int, int, True),
         (int, object, True),
-        (int, Union[int, str], True),
-        (int, Union[str, int], True),
-        (str, Union[str, int], True),
-        (str, Union[int, str], True),
-        (int, Union[str, float, int], True),
-        (int, Union[str, float], False),
-        (int, Union[float, str], False),
+        (int, int | str, True),
+        (int, str | int, True),
+        (str, str | int, True),
+        (str, int | str, True),
+        (int, str | float | int, True),
+        (int, str | float, False),
+        (int, float | str, False),
         (int, str, False),
         (int, list[int], False),
     ],
@@ -79,8 +79,8 @@ class ChildGenericDict(GenericDict):
         (float, False),
         (tuple[int], True),
         (list[int], True),
-        (Union[int, str], True),
-        (Union[str, int], True),
+        (int | str, True),
+        (str | int, True),
         (dict[str, int], True),
         (CustomDict, True),
         (ChildCustomDict, True),

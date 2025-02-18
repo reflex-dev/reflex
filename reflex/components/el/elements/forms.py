@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from hashlib import md5
-from typing import Any, Iterator, Literal, Union
+from typing import Any, Iterator, Literal
 
 from jinja2 import Environment
 
@@ -80,7 +80,7 @@ class Button(BaseHTML):
     type: Var[ButtonType]
 
     # Value of the button, used when sending form data
-    value: Var[Union[str, int, float]]
+    value: Var[str | int | float]
 
 
 class Datalist(BaseHTML):
@@ -321,7 +321,7 @@ class Input(BaseHTML):
     default_checked: Var[bool]
 
     # The initial value for a text field
-    default_value: Var[Union[str, int, float]]
+    default_value: Var[str | int | float]
 
     # Disables the input
     disabled: Var[bool]
@@ -348,16 +348,16 @@ class Input(BaseHTML):
     list: Var[str]
 
     # Specifies the maximum value for the input
-    max: Var[Union[str, int, float]]
+    max: Var[str | int | float]
 
     # Specifies the maximum number of characters allowed in the input
-    max_length: Var[Union[int, float]]
+    max_length: Var[int | float]
 
     # Specifies the minimum number of characters required in the input
-    min_length: Var[Union[int, float]]
+    min_length: Var[int | float]
 
     # Specifies the minimum value for the input
-    min: Var[Union[str, int, float]]
+    min: Var[str | int | float]
 
     # Indicates whether multiple values can be entered in an input of the type email or file
     multiple: Var[bool]
@@ -378,19 +378,19 @@ class Input(BaseHTML):
     required: Var[bool]
 
     # Specifies the visible width of a text control
-    size: Var[Union[int, float]]
+    size: Var[int | float]
 
     # URL for image inputs
     src: Var[str]
 
     # Specifies the legal number intervals for an input
-    step: Var[Union[str, int, float]]
+    step: Var[str | int | float]
 
     # Specifies the type of input
     type: Var[HTMLInputTypeAttribute]
 
     # Value of the input
-    value: Var[Union[str, int, float]]
+    value: Var[str | int | float]
 
     # Fired when the input value changes
     on_change: EventHandler[input_event]
@@ -462,22 +462,22 @@ class Meter(BaseHTML):
     form: Var[str]
 
     # High limit of range (above this is considered high value)
-    high: Var[Union[int, float]]
+    high: Var[int | float]
 
     # Low limit of range (below this is considered low value)
-    low: Var[Union[int, float]]
+    low: Var[int | float]
 
     # Maximum value of the range
-    max: Var[Union[int, float]]
+    max: Var[int | float]
 
     # Minimum value of the range
-    min: Var[Union[int, float]]
+    min: Var[int | float]
 
     # Optimum value in the range
-    optimum: Var[Union[int, float]]
+    optimum: Var[int | float]
 
     # Current value of the meter
-    value: Var[Union[int, float]]
+    value: Var[int | float]
 
 
 class Optgroup(BaseHTML):
@@ -507,7 +507,7 @@ class Option(BaseHTML):
     selected: Var[bool]
 
     # Value to be sent as form data
-    value: Var[Union[str, int, float]]
+    value: Var[str | int | float]
 
 
 class Output(BaseHTML):
@@ -534,10 +534,10 @@ class Progress(BaseHTML):
     form: Var[str]
 
     # Maximum value of the progress indicator
-    max: Var[Union[str, int, float]]
+    max: Var[str | int | float]
 
     # Current value of the progress indicator
-    value: Var[Union[str, int, float]]
+    value: Var[str | int | float]
 
 
 class Select(BaseHTML):

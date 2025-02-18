@@ -165,7 +165,7 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
         return window_alert("\n".join(error_message))
 
 
-def extra_overlay_function() -> Optional[Component]:
+def extra_overlay_function() -> Component | None:
     """Extra overlay function to add to the overlay component.
 
     Returns:
@@ -245,16 +245,16 @@ class UploadFile(StarletteUploadFile):
 
     file: BinaryIO
 
-    path: Optional[Path] = dataclasses.field(default=None)
+    path: Path | None = dataclasses.field(default=None)
 
-    _deprecated_filename: Optional[str] = dataclasses.field(default=None)
+    _deprecated_filename: str | None = dataclasses.field(default=None)
 
-    size: Optional[int] = dataclasses.field(default=None)
+    size: int | None = dataclasses.field(default=None)
 
     headers: Headers = dataclasses.field(default_factory=Headers)
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         """Get the name of the uploaded file.
 
         Returns:
@@ -264,7 +264,7 @@ class UploadFile(StarletteUploadFile):
             return self.path.name
 
     @property
-    def filename(self) -> Optional[str]:
+    def filename(self) -> str | None:
         """Get the filename of the uploaded file.
 
         Returns:
@@ -285,10 +285,10 @@ class UploadFile(StarletteUploadFile):
 class UnevaluatedPage:
     """An uncompiled page."""
 
-    component: Union[Component, ComponentCallable]
+    component: Component | ComponentCallable
     route: str
-    title: Union[Var, str, None]
-    description: Union[Var, str, None]
+    title: Var | str | None
+    description: Var | str | None
     image: str
     on_load: Union[EventType[()], None]
     meta: list[dict[str, str]]
@@ -317,7 +317,7 @@ class App(MiddlewareMixin, LifespanMixin):
     """
 
     # The global [theme](https://reflex.dev/docs/styling/theming/#theme) for the entire app.
-    theme: Optional[Component] = dataclasses.field(
+    theme: Component | None = dataclasses.field(
         default_factory=lambda: themes.theme(accent_color="blue")
     )
 
@@ -328,15 +328,15 @@ class App(MiddlewareMixin, LifespanMixin):
     stylesheets: list[str] = dataclasses.field(default_factory=list)
 
     # A component that is present on every page (defaults to the Connection Error banner).
-    overlay_component: Optional[Union[Component, ComponentCallable]] = (
-        dataclasses.field(default=None)
+    overlay_component: Component | ComponentCallable | None = dataclasses.field(
+        default=None
     )
 
     # Error boundary component to wrap the app with.
-    error_boundary: Optional[ComponentCallable] = dataclasses.field(default=None)
+    error_boundary: ComponentCallable | None = dataclasses.field(default=None)
 
     # App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
-    app_wraps: dict[tuple[int, str], Callable[[bool], Optional[Component]]] = (
+    app_wraps: dict[tuple[int, str], Callable[[bool], Component | None]] = (
         dataclasses.field(
             default_factory=lambda: {
                 (55, "ErrorBoundary"): (
@@ -354,10 +354,10 @@ class App(MiddlewareMixin, LifespanMixin):
     head_components: list[Component] = dataclasses.field(default_factory=list)
 
     # The Socket.IO AsyncServer instance.
-    sio: Optional[AsyncServer] = None
+    sio: AsyncServer | None = None
 
     # The language to add to the html root tag of every page.
-    html_lang: Optional[str] = None
+    html_lang: str | None = None
 
     # Attributes to add to the html root tag of every page.
     html_custom_attrs: Optional[dict[str, str]] = None
@@ -377,7 +377,7 @@ class App(MiddlewareMixin, LifespanMixin):
     _state: Optional[Type[BaseState]] = None
 
     # Class to manage many client states.
-    _state_manager: Optional[StateManager] = None
+    _state_manager: StateManager | None = None
 
     # Mapping from a route to event handlers to trigger when the page loads.
     _load_events: dict[str, list[IndividualEventType[()]]] = dataclasses.field(
@@ -385,10 +385,10 @@ class App(MiddlewareMixin, LifespanMixin):
     )
 
     # Admin dashboard to view and manage the database.
-    admin_dash: Optional[AdminDash] = None
+    admin_dash: AdminDash | None = None
 
     # The async server name space.
-    _event_namespace: Optional[EventNamespace] = None
+    _event_namespace: EventNamespace | None = None
 
     # Background tasks that are currently running.
     _background_tasks: set[asyncio.Task] = dataclasses.field(default_factory=set)
@@ -1485,7 +1485,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
                 valid = bool(
                     return_type == EventSpec
-                    or return_type == Optional[EventSpec]
+                    or return_type == EventSpec | None
                     or return_type == list[EventSpec]
                     or return_type == inspect.Signature.empty
                     or return_type is None

@@ -1,5 +1,3 @@
-from typing import Union
-
 import pydantic.v1
 import pytest
 
@@ -132,7 +130,7 @@ def display_nested_list_element(element: ArrayVar[list[str]], index: NumberVar[i
 
 
 def display_color_index_tuple(color):
-    assert color._var_type == Union[int, str]
+    assert color._var_type == int | str
     return box(text(color))
 
 

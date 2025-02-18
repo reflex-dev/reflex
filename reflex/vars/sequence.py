@@ -807,7 +807,7 @@ class ConcatVarOperation(CachedVarOperation, StringVar[str]):
         Returns:
             The name of the var.
         """
-        list_of_strs: list[Union[str, Var]] = []
+        list_of_strs: list[str | Var] = []
         last_string = ""
         for var in self._var_value:
             if isinstance(var, LiteralStringVar):
@@ -1338,7 +1338,7 @@ ARRAY_VAR_OF_LIST_ELEMENT = ArrayVar[Sequence[LIST_ELEMENT]]
 class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
     """Base class for immutable literal array vars."""
 
-    _var_value: Sequence[Union[Var, Any]] = dataclasses.field(default=())
+    _var_value: Sequence[Var | Any] = dataclasses.field(default=())
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:

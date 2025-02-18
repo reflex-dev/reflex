@@ -62,7 +62,7 @@ class PopoverContent(elements.Div, RadixThemesComponent):
     avoid_collisions: Var[bool]
 
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-    collision_padding: Var[Union[float, int, dict[str, Union[float, int]]]]
+    collision_padding: Var[Union[float, int, dict[str, float | int]]]
 
     # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
     sticky: Var[Literal["partial", "always"]]

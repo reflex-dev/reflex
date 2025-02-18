@@ -1,7 +1,5 @@
 """Wrapping of the next-video component."""
 
-from typing import Optional
-
 from reflex.components.component import Component
 from reflex.vars.base import Var
 
@@ -17,7 +15,7 @@ class Video(NextComponent):
     # the URL
     src: Var[str]
 
-    as_: Optional[Component]
+    as_: Component | None
 
     @classmethod
     def create(cls, *children, **props) -> NextComponent:

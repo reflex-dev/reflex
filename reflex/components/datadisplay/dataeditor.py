@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, Literal, Optional, TypedDict, Union
+from typing import Any, Dict, Literal, Optional, TypedDict
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -52,38 +52,38 @@ class GridColumnIcons(Enum):
 class DataEditorTheme(Base):
     """The theme for the DataEditor component."""
 
-    accent_color: Optional[str] = None
-    accent_fg: Optional[str] = None
-    accent_light: Optional[str] = None
-    base_font_style: Optional[str] = None
-    bg_bubble: Optional[str] = None
-    bg_bubble_selected: Optional[str] = None
-    bg_cell: Optional[str] = None
-    bg_cell_medium: Optional[str] = None
-    bg_header: Optional[str] = None
-    bg_header_has_focus: Optional[str] = None
-    bg_header_hovered: Optional[str] = None
-    bg_icon_header: Optional[str] = None
-    bg_search_result: Optional[str] = None
-    border_color: Optional[str] = None
-    cell_horizontal_padding: Optional[int] = None
-    cell_vertical_padding: Optional[int] = None
-    drilldown_border: Optional[str] = None
-    editor_font_size: Optional[str] = None
-    fg_icon_header: Optional[str] = None
-    font_family: Optional[str] = None
-    header_bottom_border_color: Optional[str] = None
-    header_font_style: Optional[str] = None
-    horizontal_border_color: Optional[str] = None
-    line_height: Optional[int] = None
-    link_color: Optional[str] = None
-    text_bubble: Optional[str] = None
-    text_dark: Optional[str] = None
-    text_group_header: Optional[str] = None
-    text_header: Optional[str] = None
-    text_header_selected: Optional[str] = None
-    text_light: Optional[str] = None
-    text_medium: Optional[str] = None
+    accent_color: str | None = None
+    accent_fg: str | None = None
+    accent_light: str | None = None
+    base_font_style: str | None = None
+    bg_bubble: str | None = None
+    bg_bubble_selected: str | None = None
+    bg_cell: str | None = None
+    bg_cell_medium: str | None = None
+    bg_header: str | None = None
+    bg_header_has_focus: str | None = None
+    bg_header_hovered: str | None = None
+    bg_icon_header: str | None = None
+    bg_search_result: str | None = None
+    border_color: str | None = None
+    cell_horizontal_padding: int | None = None
+    cell_vertical_padding: int | None = None
+    drilldown_border: str | None = None
+    editor_font_size: str | None = None
+    fg_icon_header: str | None = None
+    font_family: str | None = None
+    header_bottom_border_color: str | None = None
+    header_font_style: str | None = None
+    horizontal_border_color: str | None = None
+    line_height: int | None = None
+    link_color: str | None = None
+    text_bubble: str | None = None
+    text_dark: str | None = None
+    text_group_header: str | None = None
+    text_header: str | None = None
+    text_header_selected: str | None = None
+    text_light: str | None = None
+    text_medium: str | None = None
 
 
 class Bounds(TypedDict):
@@ -121,7 +121,7 @@ class GridSelectionCurrent(TypedDict):
 class GridSelection(TypedDict):
     """The grid selection."""
 
-    current: Optional[GridSelectionCurrent]
+    current: GridSelectionCurrent | None
     columns: CompatSelection
     rows: CompatSelection
 
@@ -155,7 +155,7 @@ class GridColumn(TypedDict):
     """The grid column."""
 
     title: str
-    group: Optional[str]
+    group: str | None
 
 
 class DataEditor(NoSSRComponent):
@@ -257,7 +257,7 @@ class DataEditor(NoSSRComponent):
     scroll_offset_y: Var[int]
 
     # global theme
-    theme: Var[Union[DataEditorTheme, Dict]]
+    theme: Var[DataEditorTheme | Dict]
 
     # Fired when a cell is activated.
     on_cell_activated: EventHandler[passthrough_event_spec(tuple[int, int])]
@@ -301,7 +301,7 @@ class DataEditor(NoSSRComponent):
 
     # Fired when editing is finished.
     on_finished_editing: EventHandler[
-        passthrough_event_spec(Union[GridCell, None], tuple[int, int])
+        passthrough_event_spec(GridCell | None, tuple[int, int])
     ]
 
     # Fired when a row is appended.

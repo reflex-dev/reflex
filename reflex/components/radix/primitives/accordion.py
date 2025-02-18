@@ -196,10 +196,10 @@ class AccordionItem(AccordionComponent):
     disabled: Var[bool]
 
     # The header of the accordion item.
-    header: Var[Union[Component, str]]
+    header: Var[Component | str]
 
     # The content of the accordion item.
-    content: Var[Union[Component, str, None]] = Var.create(None)
+    content: Var[Component | str | None] = Var.create(None)
 
     _valid_children: list[str] = [
         "AccordionHeader",

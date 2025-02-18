@@ -97,7 +97,7 @@ class EventActionsMixin:
     """Mixin for DOM event actions."""
 
     # Whether to `preventDefault` or `stopPropagation` on the event.
-    event_actions: dict[str, Union[bool, int]] = dataclasses.field(default_factory=dict)
+    event_actions: dict[str, bool | int] = dataclasses.field(default_factory=dict)
 
     @property
     def stop_propagation(self) -> Self:
@@ -264,7 +264,7 @@ class EventSpec(EventActionsMixin):
     def __init__(
         self,
         handler: EventHandler,
-        event_actions: dict[str, Union[bool, int]] | None = None,
+        event_actions: dict[str, bool | int] | None = None,
         client_handler_name: str = "",
         args: tuple[tuple[Var, Var], ...] = (),
     ):
@@ -390,7 +390,7 @@ class CallableEventSpec(EventSpec):
 class EventChain(EventActionsMixin):
     """Container for a chain of events that will be executed in order."""
 
-    events: Sequence[Union[EventSpec, EventVar, EventCallback]] = dataclasses.field(
+    events: Sequence[EventSpec | EventVar | EventCallback] = dataclasses.field(
         default_factory=list
     )
 
@@ -398,16 +398,16 @@ class EventChain(EventActionsMixin):
         default=None
     )
 
-    invocation: Optional[Var] = dataclasses.field(default=None)
+    invocation: Var | None = dataclasses.field(default=None)
 
     @classmethod
     def create(
         cls,
         value: EventType,
         args_spec: ArgsSpec | Sequence[ArgsSpec],
-        key: Optional[str] = None,
+        key: str | None = None,
         **event_chain_kwargs,
-    ) -> Union[EventChain, Var]:
+    ) -> EventChain | Var:
         """Create an event chain from a variety of input types.
 
         Args:
@@ -449,7 +449,7 @@ class EventChain(EventActionsMixin):
 
         # If the input is a list of event handlers, create an event chain.
         if isinstance(value, List):
-            events: list[Union[EventSpec, EventVar]] = []
+            events: list[EventSpec | EventVar] = []
             for v in value:
                 if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
@@ -665,11 +665,11 @@ def passthrough_event_spec(*event_types: Type[T]) -> IdentityEventReturn[T]:  # 
 class FileUpload:
     """Class to represent a file upload."""
 
-    upload_id: Optional[str] = None
-    on_upload_progress: Optional[Union[EventHandler, Callable]] = None
+    upload_id: str | None = None
+    on_upload_progress: EventHandler | Callable | None = None
 
     @staticmethod
-    def on_upload_progress_args_spec(_prog: Var[dict[str, Union[int, float, bool]]]):
+    def on_upload_progress_args_spec(_prog: Var[dict[str, int | float | bool]]):
         """Args spec for on_upload_progress event handler.
 
         Returns:
@@ -1000,7 +1000,7 @@ def set_clipboard(content: Union[str, Var[str]]) -> EventSpec:
 
 def download(
     url: str | Var | None = None,
-    filename: Optional[str | Var] = None,
+    filename: str | Var | None = None,
     data: str | bytes | Var | None = None,
 ) -> EventSpec:
     """Download the file at a given path or with the specified data.
@@ -1201,7 +1201,7 @@ def get_hydrate_event(state: BaseState) -> str:
 def call_event_handler(
     event_callback: EventHandler | EventSpec,
     event_spec: ArgsSpec | Sequence[ArgsSpec],
-    key: Optional[str] = None,
+    key: str | None = None,
 ) -> EventSpec:
     """Call an event handler to get the event spec.
 
@@ -1450,7 +1450,7 @@ def check_fn_match_arg_spec(
 def call_event_fn(
     fn: Callable,
     arg_spec: ArgsSpec | Sequence[ArgsSpec],
-    key: Optional[str] = None,
+    key: str | None = None,
 ) -> list[EventSpec] | Var:
     """Call a function to a list of event specs.
 

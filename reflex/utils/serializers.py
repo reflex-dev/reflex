@@ -14,7 +14,6 @@ from typing import (
     Any,
     Callable,
     Literal,
-    Optional,
     Set,
     Type,
     TypeVar,
@@ -113,22 +112,22 @@ def serializer(
 @overload
 def serialize(
     value: Any, get_type: Literal[True]
-) -> tuple[Optional[SerializedType], Optional[types.GenericType]]: ...
+) -> tuple[SerializedType | None, types.GenericType | None]: ...
 
 
 @overload
-def serialize(value: Any, get_type: Literal[False]) -> Optional[SerializedType]: ...
+def serialize(value: Any, get_type: Literal[False]) -> SerializedType | None: ...
 
 
 @overload
-def serialize(value: Any) -> Optional[SerializedType]: ...
+def serialize(value: Any) -> SerializedType | None: ...
 
 
 def serialize(
     value: Any, get_type: bool = False
 ) -> Union[
-    Optional[SerializedType],
-    tuple[Optional[SerializedType], Optional[types.GenericType]],
+    SerializedType | None,
+    tuple[SerializedType | None, types.GenericType | None],
 ]:
     """Serialize the value to a JSON string.
 
@@ -162,7 +161,7 @@ def serialize(
 
 
 @functools.lru_cache
-def get_serializer(type_: Type) -> Optional[Serializer]:
+def get_serializer(type_: Type) -> Serializer | None:
     """Get the serializer for the type.
 
     Args:
@@ -186,7 +185,7 @@ def get_serializer(type_: Type) -> Optional[Serializer]:
 
 
 @functools.lru_cache
-def get_serializer_type(type_: Type) -> Optional[Type]:
+def get_serializer_type(type_: Type) -> Type | None:
     """Get the converted type for the type after serializing.
 
     Args:

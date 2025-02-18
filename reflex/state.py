@@ -366,7 +366,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     _potentially_dirty_states: ClassVar[set[str]] = set()
 
     # The parent state.
-    parent_state: Optional[BaseState] = None
+    parent_state: BaseState | None = None
 
     # The substates of the state.
     substates: Dict[str, BaseState] = {}
@@ -664,9 +664,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         )
 
     @classmethod
-    def _evaluate(
-        cls, f: Callable[[Self], Any], of_type: Union[type, None] = None
-    ) -> Var:
+    def _evaluate(cls, f: Callable[[Self], Any], of_type: type | None = None) -> Var:
         """Evaluate a function to a ComputedVar. Experimental.
 
         Args:
@@ -1349,7 +1347,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             field = fields[name]
             field_type = _unwrap_field_type(field.outer_type_)
             if field.allow_none and not is_optional(field_type):
-                field_type = Union[field_type, None]
+                field_type = field_type | None
             if not _isinstance(value, field_type):
                 console.error(
                     f"Expected field '{type(self).__name__}.{name}' to receive type '{field_type}',"
@@ -1696,7 +1694,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 return StateUpdate()
 
             event_specs_correct_type = cast(
-                Union[list[Union[EventSpec, EventHandler]], None],
+                Union[list[EventSpec | EventHandler], None],
                 [event_specs] if isinstance(event_specs, EventSpec) else event_specs,
             )
             fixed_events = fix_events(
@@ -2144,7 +2142,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         def _field_tuple(
             field_name: str,
-        ) -> tuple[str, str, Any, Union[bool, None], Any]:
+        ) -> tuple[str, str, Any, bool | None, Any]:
             model_field = cls.__fields__[field_name]
             return (
                 field_name,
@@ -2351,7 +2349,7 @@ class OnLoadInternalState(State):
         self.is_hydrated = False
         return [
             *fix_events(
-                cast(list[Union[EventSpec, EventHandler]], load_events),
+                cast(list[EventSpec | EventHandler], load_events),
                 self.router.session.client_token,
                 router_data=self.router_data,
             ),

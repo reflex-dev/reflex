@@ -4,7 +4,7 @@
 # Style based on https://ui.shadcn.com/docs/components/drawer
 from __future__ import annotations
 
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
@@ -58,7 +58,7 @@ class DrawerRoot(DrawerComponent):
     handle_only: Var[bool]
 
     # Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account.
-    snap_points: Optional[list[Union[str, float]]]
+    snap_points: Optional[list[str | float]]
 
     # Index of a snapPoint from which the overlay fade should be applied. Defaults to the last snap point.
     fade_from_index: Var[int]

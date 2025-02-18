@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
@@ -403,8 +403,8 @@ class Position(NoExtrasAllowedProps):
 class ShikiDecorations(NoExtrasAllowedProps):
     """Decorations for the code block."""
 
-    start: Union[int, Position]
-    end: Union[int, Position]
+    start: int | Position
+    end: int | Position
     tag_name: str = "span"
     properties: dict[str, Any] = {}
     always_wrap: bool = False
@@ -415,7 +415,7 @@ class ShikiBaseTransformers(Base):
 
     library: str
     fns: list[FunctionStringVar]
-    style: Optional[Style]
+    style: Style | None
 
 
 class ShikiJsTransformer(ShikiBaseTransformers):
@@ -425,7 +425,7 @@ class ShikiJsTransformer(ShikiBaseTransformers):
     fns: list[FunctionStringVar] = [
         FunctionStringVar.create(fn) for fn in SHIKIJS_TRANSFORMER_FNS
     ]
-    style: Optional[Style] = Style(
+    style: Style | None = Style(
         {
             "code": {"line-height": "1.7", "font-size": "0.875em", "display": "grid"},
             # Diffs
@@ -717,7 +717,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
     can_copy: bool = False
 
     # copy_button: A custom copy button to override the default one.
-    copy_button: Optional[Union[Component, bool]] = None
+    copy_button: Component | bool | None = None
 
     @classmethod
     def create(

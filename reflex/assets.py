@@ -2,7 +2,6 @@
 
 import inspect
 from pathlib import Path
-from typing import Optional
 
 from reflex import constants
 from reflex.config import EnvironmentVariables
@@ -11,7 +10,7 @@ from reflex.config import EnvironmentVariables
 def asset(
     path: str,
     shared: bool = False,
-    subfolder: Optional[str] = None,
+    subfolder: str | None = None,
     _stack_level: int = 1,
 ) -> str:
     """Add an asset to the app, either shared as a symlink or local.

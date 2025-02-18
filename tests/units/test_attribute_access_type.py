@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import typing
-from typing import Optional, Type, Union
+from typing import Type
 
 import attrs
 import pydantic.v1
@@ -81,9 +81,9 @@ class SQLAClass(SQLABase):
     str_list: Mapped[list[str]] = mapped_column(
         sqlalchemy.types.ARRAY(item_type=sqlalchemy.String)
     )
-    optional_int: Mapped[Optional[int]] = mapped_column(nullable=True)
+    optional_int: Mapped[int | None] = mapped_column(nullable=True)
     sqla_tag_id: Mapped[int] = mapped_column(sqlalchemy.ForeignKey(SQLATag.id))
-    sqla_tag: Mapped[Optional[SQLATag]] = relationship()
+    sqla_tag: Mapped[SQLATag | None] = relationship()
     labels: Mapped[list[SQLALabel]] = relationship(back_populates="test")
     # do not use lower case dict here!
     # https://github.com/sqlalchemy/sqlalchemy/issues/9902
@@ -99,7 +99,7 @@ class SQLAClass(SQLABase):
         return self.name
 
     @hybrid_property
-    def str_or_int_property(self) -> Union[str, int]:
+    def str_or_int_property(self) -> str | int:
         """String or int property.
 
         Returns:
@@ -108,7 +108,7 @@ class SQLAClass(SQLABase):
         return self.name
 
     @hybrid_property
-    def first_label(self) -> Optional[SQLALabel]:
+    def first_label(self) -> SQLALabel | None:
         """First label property.
 
         Returns:
@@ -130,9 +130,9 @@ class SQLAClassDataclass(MappedAsDataclass, SQLABase):
     str_list: Mapped[list[str]] = mapped_column(
         sqlalchemy.types.ARRAY(item_type=sqlalchemy.String)
     )
-    optional_int: Mapped[Optional[int]] = mapped_column(nullable=True)
+    optional_int: Mapped[int | None] = mapped_column(nullable=True)
     sqla_tag_id: Mapped[int] = mapped_column(sqlalchemy.ForeignKey(SQLATag.id))
-    sqla_tag: Mapped[Optional[SQLATag]] = relationship()
+    sqla_tag: Mapped[SQLATag | None] = relationship()
     labels: Mapped[list[SQLALabel]] = relationship(back_populates="test_dataclass")
     # do not use lower case dict here!
     # https://github.com/sqlalchemy/sqlalchemy/issues/9902
@@ -153,7 +153,7 @@ class SQLAClassDataclass(MappedAsDataclass, SQLABase):
         return self.name
 
     @hybrid_property
-    def str_or_int_property(self) -> Union[str, int]:
+    def str_or_int_property(self) -> str | int:
         """String or int property.
 
         Returns:
@@ -162,7 +162,7 @@ class SQLAClassDataclass(MappedAsDataclass, SQLABase):
         return self.name
 
     @hybrid_property
-    def first_label(self) -> Optional[SQLALabel]:
+    def first_label(self) -> SQLALabel | None:
         """First label property.
 
         Returns:
@@ -174,13 +174,13 @@ class SQLAClassDataclass(MappedAsDataclass, SQLABase):
 class ModelClass(rx.Model):
     """Test reflex model."""
 
-    no_default: Optional[int] = sqlmodel.Field(nullable=True)
+    no_default: int | None = sqlmodel.Field(nullable=True)
     count: int = 0
     name: str = "test"
     int_list: list[int] = []
     str_list: list[str] = []
-    optional_int: Optional[int] = None
-    sqla_tag: Optional[SQLATag] = None
+    optional_int: int | None = None
+    sqla_tag: SQLATag | None = None
     labels: list[SQLALabel] = []
     dict_str_str: dict[str, str] = {}
     default_factory: list[int] = sqlmodel.Field(default_factory=list)
@@ -195,7 +195,7 @@ class ModelClass(rx.Model):
         return self.name
 
     @property
-    def str_or_int_property(self) -> Union[str, int]:
+    def str_or_int_property(self) -> str | int:
         """String or int property.
 
         Returns:
@@ -204,7 +204,7 @@ class ModelClass(rx.Model):
         return self.name
 
     @property
-    def first_label(self) -> Optional[SQLALabel]:
+    def first_label(self) -> SQLALabel | None:
         """First label property.
 
         Returns:
@@ -216,13 +216,13 @@ class ModelClass(rx.Model):
 class BaseClass(rx.Base):
     """Test rx.Base class."""
 
-    no_default: Optional[int] = pydantic.v1.Field(required=False)
+    no_default: int | None = pydantic.v1.Field(required=False)
     count: int = 0
     name: str = "test"
     int_list: list[int] = []
     str_list: list[str] = []
-    optional_int: Optional[int] = None
-    sqla_tag: Optional[SQLATag] = None
+    optional_int: int | None = None
+    sqla_tag: SQLATag | None = None
     labels: list[SQLALabel] = []
     dict_str_str: dict[str, str] = {}
     default_factory: list[int] = pydantic.v1.Field(default_factory=list)
@@ -237,7 +237,7 @@ class BaseClass(rx.Base):
         return self.name
 
     @property
-    def str_or_int_property(self) -> Union[str, int]:
+    def str_or_int_property(self) -> str | int:
         """String or int property.
 
         Returns:
@@ -246,7 +246,7 @@ class BaseClass(rx.Base):
         return self.name
 
     @property
-    def first_label(self) -> Optional[SQLALabel]:
+    def first_label(self) -> SQLALabel | None:
         """First label property.
 
         Returns:
@@ -262,8 +262,8 @@ class BareClass:
     name: str = "test"
     int_list: list[int] = []
     str_list: list[str] = []
-    optional_int: Optional[int] = None
-    sqla_tag: Optional[SQLATag] = None
+    optional_int: int | None = None
+    sqla_tag: SQLATag | None = None
     labels: list[SQLALabel] = []
     dict_str_str: dict[str, str] = {}
 
@@ -277,7 +277,7 @@ class BareClass:
         return self.name
 
     @property
-    def str_or_int_property(self) -> Union[str, int]:
+    def str_or_int_property(self) -> str | int:
         """String or int property.
 
         Returns:
@@ -286,7 +286,7 @@ class BareClass:
         return self.name
 
     @property
-    def first_label(self) -> Optional[SQLALabel]:
+    def first_label(self) -> SQLALabel | None:
         """First label property.
 
         Returns:
@@ -303,8 +303,8 @@ class AttrClass:
     name: str = "test"
     int_list: list[int] = []
     str_list: list[str] = []
-    optional_int: Optional[int] = None
-    sqla_tag: Optional[SQLATag] = None
+    optional_int: int | None = None
+    sqla_tag: SQLATag | None = None
     labels: list[SQLALabel] = []
     dict_str_str: dict[str, str] = {}
     default_factory: list[int] = attrs.field(factory=list)
@@ -319,7 +319,7 @@ class AttrClass:
         return self.name
 
     @property
-    def str_or_int_property(self) -> Union[str, int]:
+    def str_or_int_property(self) -> str | int:
         """String or int property.
 
         Returns:
@@ -328,7 +328,7 @@ class AttrClass:
         return self.name
 
     @property
-    def first_label(self) -> Optional[SQLALabel]:
+    def first_label(self) -> SQLALabel | None:
         """First label property.
 
         Returns:
@@ -355,13 +355,13 @@ class AttrClass:
         pytest.param("name", str, id="str"),
         pytest.param("int_list", (list[int], typing.List[int]), id="list[int]"),
         pytest.param("str_list", (list[str], typing.List[str]), id="list[str]"),
-        pytest.param("optional_int", Optional[int], id="Optional[int]"),
-        pytest.param("sqla_tag", Optional[SQLATag], id="Optional[SQLATag]"),
+        pytest.param("optional_int", int | None, id="int | None"),
+        pytest.param("sqla_tag", SQLATag | None, id="SQLATag | None"),
         pytest.param("labels", list[SQLALabel], id="list[SQLALabel]"),
         pytest.param("dict_str_str", dict[str, str], id="dict[str, str]"),
         pytest.param("str_property", str, id="str_property"),
-        pytest.param("str_or_int_property", Union[str, int], id="str_or_int_property"),
-        pytest.param("first_label", Optional[SQLALabel], id="first_label"),
+        pytest.param("str_or_int_property", str | int, id="str_or_int_property"),
+        pytest.param("first_label", SQLALabel | None, id="first_label"),
     ],
 )
 def test_get_attribute_access_type(cls: type, attr: str, expected: GenericType) -> None:
@@ -413,4 +413,4 @@ def test_get_attribute_access_type_no_default(cls: type) -> None:
     Args:
         cls: Class to test.
     """
-    assert get_attribute_access_type(cls, "no_default") == Optional[int]
+    assert get_attribute_access_type(cls, "no_default") == int | None

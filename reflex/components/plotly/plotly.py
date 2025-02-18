@@ -41,26 +41,26 @@ ItemOrList = Union[T, list[T]]
 class BBox(TypedDict):
     """Bounding box for a point in a plotly graph."""
 
-    x0: Union[float, int, None]
-    x1: Union[float, int, None]
-    y0: Union[float, int, None]
-    y1: Union[float, int, None]
-    z0: Union[float, int, None]
-    z1: Union[float, int, None]
+    x0: float | int | None
+    x1: float | int | None
+    y0: float | int | None
+    y1: float | int | None
+    z0: float | int | None
+    z1: float | int | None
 
 
 class Point(TypedDict):
     """A point in a plotly graph."""
 
-    x: Union[float, int, None]
-    y: Union[float, int, None]
-    z: Union[float, int, None]
-    lat: Union[float, int, None]
-    lon: Union[float, int, None]
-    curveNumber: Union[int, None]
-    pointNumber: Union[int, None]
+    x: float | int | None
+    y: float | int | None
+    z: float | int | None
+    lat: float | int | None
+    lon: float | int | None
+    curveNumber: int | None
+    pointNumber: int | None
     pointNumbers: Union[list[int], None]
-    pointIndex: Union[int, None]
+    pointIndex: int | None
     markerColor: Union[
         ItemOrList[
             ItemOrList[
@@ -86,7 +86,7 @@ class Point(TypedDict):
         ],
         None,
     ]
-    bbox: Union[BBox, None]
+    bbox: BBox | None
 
 
 class Plotly(NoSSRComponent):

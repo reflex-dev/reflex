@@ -72,9 +72,9 @@ class Template:
 class CpuInfo:
     """Model to save cpu info."""
 
-    manufacturer_id: Optional[str]
-    model_name: Optional[str]
-    address_width: Optional[int]
+    manufacturer_id: str | None
+    model_name: str | None
+    address_width: int | None
 
 
 def get_web_dir() -> Path:
@@ -1361,7 +1361,7 @@ def validate_frontend_dependencies(init: bool = True):
         validate_bun()
 
 
-def ensure_reflex_installation_id() -> Optional[int]:
+def ensure_reflex_installation_id() -> int | None:
     """Ensures that a reflex distinct id has been generated and stored in the reflex directory.
 
     Returns:

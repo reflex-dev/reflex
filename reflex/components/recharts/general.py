@@ -31,16 +31,16 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
     aspect: Var[int]
 
     # The width of chart container. Can be a number or string. Default: "100%"
-    width: Var[Union[int, str]]
+    width: Var[int | str]
 
     # The height of chart container. Can be a number or string. Default: "100%"
-    height: Var[Union[int, str]]
+    height: Var[int | str]
 
     # The minimum width of chart container. Number or string.
-    min_width: Var[Union[int, str]]
+    min_width: Var[int | str]
 
     # The minimum height of chart container. Number or string.
-    min_height: Var[Union[int, str]]
+    min_height: Var[int | str]
 
     # If specified a positive number, debounced function will be used to handle the resize event. Default: 0
     debounce: Var[int]
@@ -227,7 +227,7 @@ class LabelList(Recharts):
     alias = "RechartsLabelList"
 
     # The key of a group of label values in data.
-    data_key: Var[Union[str, int]]
+    data_key: Var[str | int]
 
     # The position of each label relative to it view box. "Top" | "left" | "right" | "bottom" | "inside" | "outside" | "insideLeft" | "insideRight" | "insideTop" | "insideBottom" | "insideTopLeft" | "insideBottomLeft" | "insideTopRight" | "insideBottomRight" | "insideStart" | "insideEnd" | "end" | "center"
     position: Var[LiteralPosition]
@@ -236,10 +236,10 @@ class LabelList(Recharts):
     offset: Var[int]
 
     # The fill color of each label. Default: rx.color("gray", 10)
-    fill: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 10))
+    fill: Var[str | Color] = LiteralVar.create(Color("gray", 10))
 
     # The stroke color of each label. Default: "none"
-    stroke: Var[Union[str, Color]] = LiteralVar.create("none")
+    stroke: Var[str | Color] = LiteralVar.create("none")
 
 
 class Cell(Recharts):

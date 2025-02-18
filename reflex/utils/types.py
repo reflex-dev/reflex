@@ -19,7 +19,6 @@ from typing import (
     List,
     Literal,
     Mapping,
-    Optional,
     Sequence,
     Tuple,
     Type,
@@ -53,14 +52,14 @@ GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
 UnionTypes = (Union, types.UnionType) if hasattr(types, "UnionType") else (Union,)
 
 # Union of generic types.
-GenericType = Union[Type, _GenericAlias]
+GenericType = Type | _GenericAlias
 
 # Valid state var types.
 JSONType = {str, int, float, bool}
 PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
 PrimitiveTypes = (int, float, bool, str, list, dict, set, tuple)
-StateVar = Union[PrimitiveType, Base, None]
-StateIterVar = Union[list, set, tuple]
+StateVar = PrimitiveType | Base | None
+StateIterVar = list | set | tuple
 
 if TYPE_CHECKING:
     from reflex.vars.base import Var
@@ -299,7 +298,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             and field.default_factory is None
         ):
             # Ensure frontend uses null coalescing when accessing.
-            type_ = Optional[type_]
+            type_ = type_ | None
         return type_
     elif isinstance(cls, type) and issubclass(cls, DeclarativeBase):
         insp = sqlalchemy.inspect(cls)
@@ -322,7 +321,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                             type_ = PrimitiveToAnnotation[type_]
                         type_ = type_[item_type]  # pyright: ignore [reportIndexIssue]
                 if column.nullable:
-                    type_ = Optional[type_]
+                    type_ = type_ | None
                 return type_
         if name in insp.all_orm_descriptors:
             descriptor = insp.all_orm_descriptors[name]
@@ -333,7 +332,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                 if isinstance(prop, Relationship):
                     type_ = prop.mapper.class_
                     # TODO: check for nullable?
-                    type_ = list[type_] if prop.uselist else Optional[type_]
+                    type_ = list[type_] if prop.uselist else type_ | None
                     return type_
             if isinstance(attr, AssociationProxyInstance):
                 return list[

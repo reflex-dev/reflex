@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Optional, Sequence, Type, Union
+from typing import TYPE_CHECKING, Iterable, Optional, Sequence, Type
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -352,8 +352,8 @@ def _compile_tailwind(
 
 def compile_document_root(
     head_components: list[Component],
-    html_lang: Optional[str] = None,
-    html_custom_attrs: Optional[dict[str, Union[Var, str]]] = None,
+    html_lang: str | None = None,
+    html_custom_attrs: Optional[dict[str, Var | str]] = None,
 ) -> tuple[str, str]:
     """Compile the document root.
 

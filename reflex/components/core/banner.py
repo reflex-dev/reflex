@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from reflex import constants
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
@@ -167,7 +165,7 @@ class ConnectionBanner(Component):
     """A connection banner component."""
 
     @classmethod
-    def create(cls, comp: Optional[Component] = None) -> Component:
+    def create(cls, comp: Component | None = None) -> Component:
         """Create a connection banner component.
 
         Args:
@@ -197,7 +195,7 @@ class ConnectionModal(Component):
     """A connection status modal window."""
 
     @classmethod
-    def create(cls, comp: Optional[Component] = None) -> Component:
+    def create(cls, comp: Component | None = None) -> Component:
         """Create a connection banner component.
 
         Args:
