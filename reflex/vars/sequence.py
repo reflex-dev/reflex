@@ -1635,8 +1635,6 @@ def is_tuple_type(t: GenericType) -> bool:
     Returns:
         Whether the type is a tuple type.
     """
-    if inspect.isclass(t):
-        return issubclass(t, tuple)
     return get_origin(t) is tuple
 
 
