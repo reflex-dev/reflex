@@ -426,6 +426,15 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         return self._event_namespace
 
+    @property
+    def pages(self) -> Dict[str, Component]:
+        """Get the compiled pages.
+
+        Returns:
+            The compiled pages.
+        """
+        return self._pages
+
     def __post_init__(self):
         """Initialize the app.
 
