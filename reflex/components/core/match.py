@@ -21,7 +21,7 @@ class Match(MemoizationLeaf):
     cond: Var[Any]
 
     # The list of match cases to be matched.
-    match_cases: List[Any] = []
+    match_cases: list[Any] = []
 
     # The catchall case to match.
     default: Any
@@ -125,7 +125,7 @@ class Match(MemoizationLeaf):
         return case_element
 
     @classmethod
-    def _process_match_cases(cls, cases: List) -> List[List[Var]]:
+    def _process_match_cases(cls, cases: List) -> list[list[Var]]:
         """Process the individual match cases.
 
         Args:
@@ -166,7 +166,7 @@ class Match(MemoizationLeaf):
         return match_cases
 
     @classmethod
-    def _validate_return_types(cls, match_cases: List[List[Var]]) -> None:
+    def _validate_return_types(cls, match_cases: list[list[Var]]) -> None:
         """Validate that match cases have the same return types.
 
         Args:
@@ -195,7 +195,7 @@ class Match(MemoizationLeaf):
     def _create_match_cond_var_or_component(
         cls,
         match_cond_var: Var,
-        match_cases: List[List[Var]],
+        match_cases: list[list[Var]],
         default: Optional[Union[Var, BaseComponent]],
     ) -> Union[Component, Var]:
         """Create and return the match condition var or component.

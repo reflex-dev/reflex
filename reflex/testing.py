@@ -26,7 +26,6 @@ from typing import (
     AsyncIterator,
     Callable,
     Coroutine,
-    List,
     Optional,
     Type,
     TypeVar,
@@ -198,7 +197,7 @@ class AppHarness:
             f"{self.app_name}___{self.app_name}___" + state_cls_name
         )
 
-    def get_full_state_name(self, path: List[str]) -> str:
+    def get_full_state_name(self, path: list[str]) -> str:
         """Get the full state name for the given state class name.
 
         Args:
@@ -596,7 +595,7 @@ class AppHarness:
         driver_clz: Optional[Type["WebDriver"]] = None,
         driver_kwargs: dict[str, Any] | None = None,
         driver_options: ArgOptions | None = None,
-        driver_option_args: List[str] | None = None,
+        driver_option_args: list[str] | None = None,
         driver_option_capabilities: dict[str, Any] | None = None,
     ) -> "WebDriver":
         """Get a selenium webdriver instance pointed at the app.

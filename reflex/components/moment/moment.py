@@ -2,7 +2,7 @@
 
 import dataclasses
 from datetime import date, datetime, time, timedelta
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventHandler, passthrough_event_spec
@@ -31,7 +31,7 @@ class Moment(NoSSRComponent):
     tag: str | None = "Moment"
     is_default = True
     library: str | None = "react-moment"
-    lib_dependencies: List[str] = ["moment"]
+    lib_dependencies: list[str] = ["moment"]
 
     # How often the date update (how often time update / 0 to disable).
     interval: Var[int]

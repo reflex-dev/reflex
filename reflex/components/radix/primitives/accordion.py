@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Literal, Tuple, Union
+from typing import Any, Literal, Tuple, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
@@ -72,7 +72,7 @@ class AccordionComponent(RadixPrimitiveComponent):
         return ["color_scheme", "variant"]
 
 
-def on_value_change(value: Var[str | List[str]]) -> Tuple[Var[str | List[str]]]:
+def on_value_change(value: Var[str | list[str]]) -> Tuple[Var[str | list[str]]]:
     """Handle the on_value_change event.
 
     Args:
@@ -95,10 +95,10 @@ class AccordionRoot(AccordionComponent):
     type: Var[LiteralAccordionType]
 
     # The value of the item to expand.
-    value: Var[Union[str, List[str]]]
+    value: Var[Union[str, list[str]]]
 
     # The default value of the item to expand.
-    default_value: Var[Union[str, List[str]]]
+    default_value: Var[Union[str, list[str]]]
 
     # Whether or not the accordion is collapsible.
     collapsible: Var[bool]
@@ -124,7 +124,7 @@ class AccordionRoot(AccordionComponent):
     # Whether to show divider lines between items.
     show_dividers: Var[bool]
 
-    _valid_children: List[str] = ["AccordionItem"]
+    _valid_children: list[str] = ["AccordionItem"]
 
     # Fired when the opened the accordions changes.
     on_value_change: EventHandler[on_value_change]
@@ -201,13 +201,13 @@ class AccordionItem(AccordionComponent):
     # The content of the accordion item.
     content: Var[Union[Component, str, None]] = Var.create(None)
 
-    _valid_children: List[str] = [
+    _valid_children: list[str] = [
         "AccordionHeader",
         "AccordionTrigger",
         "AccordionContent",
     ]
 
-    _valid_parents: List[str] = ["AccordionRoot"]
+    _valid_parents: list[str] = ["AccordionRoot"]
 
     @classmethod
     def create(

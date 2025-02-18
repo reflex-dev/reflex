@@ -10,7 +10,7 @@ import signal
 import subprocess
 from concurrent import futures
 from pathlib import Path
-from typing import Callable, Generator, List, Optional, Tuple, Union
+from typing import Callable, Generator, Optional, Tuple, Union
 
 import psutil
 import typer
@@ -335,7 +335,7 @@ def show_status(
             status.update(f"{message} {line}")
 
 
-def show_progress(message: str, process: subprocess.Popen, checkpoints: List[str]):
+def show_progress(message: str, process: subprocess.Popen, checkpoints: list[str]):
     """Show a progress bar for a process.
 
     Args:

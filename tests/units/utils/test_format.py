@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import json
-from typing import Any, List
+from typing import Any
 
 import plotly.graph_objects as go
 import pytest
@@ -334,7 +334,7 @@ def test_format_route(route: str, format_case: bool, expected: bool):
 )
 def test_format_match(
     condition: str,
-    match_cases: List[List[Var]],
+    match_cases: list[list[Var]],
     default: Var,
     expected: str,
 ):

@@ -11,7 +11,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
-    List,
     Literal,
     NoReturn,
     Sequence,
@@ -253,12 +252,12 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         return string_contains_operation(self, other)
 
     @overload
-    def split(self, separator: StringVar | str = "") -> ArrayVar[List[str]]: ...
+    def split(self, separator: StringVar | str = "") -> ArrayVar[list[str]]: ...
 
     @overload
     def split(self, separator: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
-    def split(self, separator: Any = "") -> ArrayVar[List[str]]:
+    def split(self, separator: Any = "") -> ArrayVar[list[str]]:
         """Split the string.
 
         Args:
@@ -810,7 +809,7 @@ class ConcatVarOperation(CachedVarOperation, StringVar[str]):
         Returns:
             The name of the var.
         """
-        list_of_strs: List[Union[str, Var]] = []
+        list_of_strs: list[Union[str, Var]] = []
         last_string = ""
         for var in self._var_value:
             if isinstance(var, LiteralStringVar):
@@ -1018,9 +1017,9 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
     @overload
     def __getitem__(
-        self: ARRAY_VAR_OF_LIST_ELEMENT[List[INNER_ARRAY_VAR]],
+        self: ARRAY_VAR_OF_LIST_ELEMENT[list[INNER_ARRAY_VAR]],
         i: int | NumberVar,
-    ) -> ArrayVar[List[INNER_ARRAY_VAR]]: ...
+    ) -> ArrayVar[list[INNER_ARRAY_VAR]]: ...
 
     @overload
     def __getitem__(
@@ -1088,7 +1087,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
     @overload
     @classmethod
-    def range(cls, stop: int | NumberVar, /) -> ArrayVar[List[int]]: ...
+    def range(cls, stop: int | NumberVar, /) -> ArrayVar[list[int]]: ...
 
     @overload
     @classmethod
@@ -1098,7 +1097,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         end: int | NumberVar,
         step: int | NumberVar = 1,
         /,
-    ) -> ArrayVar[List[int]]: ...
+    ) -> ArrayVar[list[int]]: ...
 
     @overload
     @classmethod
@@ -1107,7 +1106,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         first_endpoint: int | NumberVar,
         second_endpoint: int | NumberVar | None = None,
         step: int | NumberVar | None = None,
-    ) -> ArrayVar[List[int]]: ...
+    ) -> ArrayVar[list[int]]: ...
 
     @classmethod
     def range(
@@ -1115,7 +1114,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         first_endpoint: int | NumberVar,
         second_endpoint: int | NumberVar | None = None,
         step: int | NumberVar | None = None,
-    ) -> ArrayVar[List[int]]:
+    ) -> ArrayVar[list[int]]:
         """Create a range of numbers.
 
         Args:
@@ -1438,7 +1437,7 @@ def string_split_operation(string: StringVar[Any], sep: StringVar | str = ""):
         The split string.
     """
     return var_operation_return(
-        js_expression=f"{string}.split({sep})", var_type=List[str]
+        js_expression=f"{string}.split({sep})", var_type=list[str]
     )
 
 
@@ -1683,7 +1682,7 @@ def array_range_operation(
     """
     return var_operation_return(
         js_expression=f"Array.from({{ length: Math.ceil(({stop!s} - {start!s}) / {step!s}) }}, (_, i) => {start!s} + i * {step!s})",
-        var_type=List[int],
+        var_type=list[int],
     )
 
 
@@ -1749,7 +1748,7 @@ def repeat_array_operation(
 def map_array_operation(
     array: ArrayVar[ARRAY_VAR_TYPE],
     function: FunctionVar,
-) -> CustomVarOperationReturn[List[Any]]:
+) -> CustomVarOperationReturn[list[Any]]:
     """Map a function over an array.
 
     Args:
@@ -1760,7 +1759,7 @@ def map_array_operation(
         The mapped array.
     """
     return var_operation_return(
-        js_expression=f"{array}.map({function})", var_type=List[Any]
+        js_expression=f"{array}.map({function})", var_type=list[Any]
     )
 
 

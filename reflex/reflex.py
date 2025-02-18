@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import atexit
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import typer
 import typer.core
@@ -493,13 +493,13 @@ def deploy(
         "--app-id",
         help="The ID of the App to deploy over.",
     ),
-    regions: List[str] = typer.Option(
+    regions: list[str] = typer.Option(
         [],
         "-r",
         "--region",
         help="The regions to deploy to. `reflex cloud regions` For multiple envs, repeat this option, e.g. --region sjc --region iad",
     ),
-    envs: List[str] = typer.Option(
+    envs: list[str] = typer.Option(
         [],
         "--env",
         help="The environment variables to set: <key>=<value>. For multiple envs, repeat this option, e.g. --env k1=v2 --env k2=v2.",

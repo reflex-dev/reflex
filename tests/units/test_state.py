@@ -16,7 +16,6 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
-    List,
     Optional,
     Set,
     Tuple,
@@ -121,8 +120,8 @@ class TestState(BaseState):
     num2: float = 3.14
     key: str
     map_key: str = "a"
-    array: List[float] = [1, 2, 3.14]
-    mapping: Dict[str, List[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
+    array: list[float] = [1, 2, 3.14]
+    mapping: Dict[str, list[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
     obj: Object = Object()
     complex: Dict[int, Object] = {1: Object(), 2: Object()}
     fig: Figure = Figure()
@@ -952,7 +951,7 @@ def test_add_var():
     # New instances get an actual value with the default
     assert DynamicState().dynamic_int == 42
 
-    ds1.add_var("dynamic_list", List[int], [5, 10])
+    ds1.add_var("dynamic_list", list[int], [5, 10])
     assert ds1.dynamic_list.equals(DynamicState.dynamic_list)  # pyright: ignore [reportAttributeAccessIssue]
     ds2 = DynamicState()
     assert ds2.dynamic_list == [5, 10]
@@ -1393,8 +1392,8 @@ def test_computed_var_dependencies():
         v: int = 0
         w: int = 0
         x: int = 0
-        y: List[int] = [1, 2, 3]
-        _z: List[int] = [1, 2, 3]
+        y: list[int] = [1, 2, 3]
+        _z: list[int] = [1, 2, 3]
 
         @property
         def testprop(self) -> int:
@@ -1459,7 +1458,7 @@ def test_computed_var_dependencies():
             return [round(y) for y in self.y]
 
         @rx.var
-        def comp_z(self) -> List[bool]:
+        def comp_z(self) -> list[bool]:
             """Comprehension accesses attribute.
 
             Returns:
@@ -2048,8 +2047,8 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
 class BackgroundTaskState(BaseState):
     """A state with a background task."""
 
-    order: List[str] = []
-    dict_list: Dict[str, List[int]] = {"foo": [1, 2, 3]}
+    order: list[str] = []
+    dict_list: Dict[str, list[int]] = {"foo": [1, 2, 3]}
     dc: ModelDC = ModelDC()
 
     def __init__(self, **kwargs):  # noqa: D107
@@ -2057,7 +2056,7 @@ class BackgroundTaskState(BaseState):
         self.router_data = {"simulate": "hydrate"}
 
     @rx.var(cache=False)
-    def computed_order(self) -> List[str]:
+    def computed_order(self) -> list[str]:
         """Get the order as a computed var.
 
         Returns:
@@ -2642,14 +2641,14 @@ def test_duplicate_substate_class(mocker):
 class Foo(Base):
     """A class containing a list of str."""
 
-    tags: List[str] = ["123", "456"]
+    tags: list[str] = ["123", "456"]
 
 
 def test_json_dumps_with_mutables():
     """Test that json.dumps works with Base vars inside mutable types."""
 
     class MutableContainsBase(BaseState):
-        items: List[Foo] = [Foo()]
+        items: list[Foo] = [Foo()]
 
     dict_val = MutableContainsBase().dict()
     assert isinstance(dict_val[MutableContainsBase.get_full_name()]["items"][0], Foo)
@@ -2668,7 +2667,7 @@ def test_reset_with_mutables():
     copied_default = copy.deepcopy(default)
 
     class MutableResetState(BaseState):
-        items: List[List[int]] = default
+        items: list[list[int]] = default
 
     instance = MutableResetState()
     assert instance.items.__wrapped__ is not default  # pyright: ignore [reportAttributeAccessIssue]
@@ -3890,7 +3889,7 @@ class Table(rx.ComponentState):
     data: ClassVar[Var]
 
     @rx.var(cache=True, auto_deps=False)
-    async def rows(self) -> List[Dict[str, Any]]:
+    async def rows(self) -> list[Dict[str, Any]]:
         """Computed var over the given rows.
 
         Returns:
@@ -3925,7 +3924,7 @@ async def test_async_computed_var_get_var_value(mock_app: rx.App, token: str):
     class OtherState(rx.State):
         """A state with a var."""
 
-        data: List[Dict[str, Any]] = [{"foo": "bar"}]
+        data: list[Dict[str, Any]] = [{"foo": "bar"}]
 
     mock_app.state_manager.state = mock_app._state = rx.State
     comp = Table.create(data=OtherState.data)

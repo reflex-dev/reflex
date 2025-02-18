@@ -23,7 +23,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, List, NamedTuple, Optional
+from typing import Any, Callable, NamedTuple, Optional
 from urllib.parse import urlparse
 
 import httpx
@@ -886,7 +886,7 @@ def init_reflex_json(project_hash: int | None):
 
 
 def update_next_config(
-    export: bool = False, transpile_packages: Optional[List[str]] = None
+    export: bool = False, transpile_packages: Optional[list[str]] = None
 ):
     """Update Next.js config from Reflex config.
 
@@ -908,7 +908,7 @@ def update_next_config(
 
 
 def _update_next_config(
-    config: Config, export: bool = False, transpile_packages: Optional[List[str]] = None
+    config: Config, export: bool = False, transpile_packages: Optional[list[str]] = None
 ):
     next_config = {
         "basePath": config.frontend_path or "",

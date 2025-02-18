@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple, TypedDict, TypeVar, Union
+from typing import Any, Dict, Tuple, TypedDict, TypeVar, Union
 
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond
@@ -21,7 +21,7 @@ except ImportError:
     Template = Any
 
 
-def _event_points_data_signature(e0: Var) -> Tuple[Var[List[Point]]]:
+def _event_points_data_signature(e0: Var) -> Tuple[Var[list[Point]]]:
     """For plotly events with event data containing a point array.
 
     Args:
@@ -35,7 +35,7 @@ def _event_points_data_signature(e0: Var) -> Tuple[Var[List[Point]]]:
 
 T = TypeVar("T")
 
-ItemOrList = Union[T, List[T]]
+ItemOrList = Union[T, list[T]]
 
 
 class BBox(TypedDict):
@@ -59,7 +59,7 @@ class Point(TypedDict):
     lon: Union[float, int, None]
     curveNumber: Union[int, None]
     pointNumber: Union[int, None]
-    pointNumbers: Union[List[int], None]
+    pointNumbers: Union[list[int], None]
     pointIndex: Union[int, None]
     markerColor: Union[
         ItemOrList[
@@ -94,7 +94,7 @@ class Plotly(NoSSRComponent):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: List[str] = ["plotly.js@2.35.3"]
+    lib_dependencies: list[str] = ["plotly.js@2.35.3"]
 
     tag = "Plot"
 

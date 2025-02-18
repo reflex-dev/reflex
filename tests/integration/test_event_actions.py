@@ -14,12 +14,12 @@ from reflex.testing import AppHarness, WebDriver
 
 def TestEventAction():
     """App for testing event_actions."""
-    from typing import List, Optional
+    from typing import Optional
 
     import reflex as rx
 
     class EventActionState(rx.State):
-        order: List[str]
+        order: list[str]
 
         def on_click(self, ev):
             self.order.append(f"on_click:{ev}")

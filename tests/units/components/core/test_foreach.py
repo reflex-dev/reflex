@@ -1,4 +1,4 @@
-from typing import Dict, List, Set, Tuple, Union
+from typing import Dict, Set, Tuple, Union
 
 import pydantic.v1
 import pytest
@@ -29,21 +29,21 @@ class ForEachTag(Base):
 class ForEachState(BaseState):
     """A state for testing the ForEach component."""
 
-    colors_list: List[str] = ["red", "yellow"]
-    nested_colors_list: List[List[str]] = [["red", "yellow"], ["blue", "green"]]
-    colors_dict_list: List[Dict[str, str]] = [
+    colors_list: list[str] = ["red", "yellow"]
+    nested_colors_list: list[list[str]] = [["red", "yellow"], ["blue", "green"]]
+    colors_dict_list: list[Dict[str, str]] = [
         {
             "name": "red",
         },
         {"name": "yellow"},
     ]
-    colors_nested_dict_list: List[Dict[str, List[str]]] = [{"shades": ["light-red"]}]
+    colors_nested_dict_list: list[Dict[str, list[str]]] = [{"shades": ["light-red"]}]
     primary_color: Dict[str, str] = {"category": "primary", "name": "red"}
-    color_with_shades: Dict[str, List[str]] = {
+    color_with_shades: Dict[str, list[str]] = {
         "red": ["orange", "yellow"],
         "yellow": ["orange", "green"],
     }
-    nested_colors_with_shades: Dict[str, Dict[str, List[Dict[str, str]]]] = {
+    nested_colors_with_shades: Dict[str, Dict[str, list[Dict[str, str]]]] = {
         "primary": {"red": [{"shade": "dark"}]}
     }
     color_tuple: Tuple[str, str] = (
@@ -87,7 +87,7 @@ def display_color_name(color):
 
 
 def display_shade(color):
-    assert color._var_type == Dict[str, List[str]]
+    assert color._var_type == Dict[str, list[str]]
     return box(text(color["shades"][0]))
 
 
@@ -97,12 +97,12 @@ def display_primary_colors(color):
 
 
 def display_color_with_shades(color):
-    assert color._var_type == Tuple[str, List[str]]
+    assert color._var_type == Tuple[str, list[str]]
     return box(text(color[0]), text(color[1][0]))
 
 
 def display_nested_color_with_shades(color):
-    assert color._var_type == Tuple[str, Dict[str, List[Dict[str, str]]]]
+    assert color._var_type == Tuple[str, Dict[str, list[Dict[str, str]]]]
     return box(text(color[0]), text(color[1]["red"][0]["shade"]))
 
 
@@ -111,7 +111,7 @@ def show_shade(item):
 
 
 def display_nested_color_with_shades_v2(color):
-    assert color._var_type == Tuple[str, Dict[str, List[Dict[str, str]]]]
+    assert color._var_type == Tuple[str, Dict[str, list[Dict[str, str]]]]
     return box(text(foreach(color[1], show_shade)))
 
 
@@ -125,8 +125,8 @@ def display_colors_set(color):
     return box(text(color))
 
 
-def display_nested_list_element(element: ArrayVar[List[str]], index: NumberVar[int]):
-    assert element._var_type == List[str]
+def display_nested_list_element(element: ArrayVar[list[str]], index: NumberVar[int]):
+    assert element._var_type == list[str]
     assert index._var_type is int
     return box(text(element[index]))
 

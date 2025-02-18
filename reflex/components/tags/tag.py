@@ -44,10 +44,10 @@ class Tag:
     contents: str = ""
 
     # Special props that aren't key value pairs.
-    special_props: List[Var] = dataclasses.field(default_factory=list)
+    special_props: list[Var] = dataclasses.field(default_factory=list)
 
     # The children components.
-    children: List[Any] = dataclasses.field(default_factory=list)
+    children: list[Any] = dataclasses.field(default_factory=list)
 
     def __post_init__(self):
         """Post initialize the tag."""

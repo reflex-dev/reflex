@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import (
     Any,
     Callable,
-    List,
     Literal,
     Optional,
     Set,
@@ -370,7 +369,7 @@ def serialize_color(color: Color) -> str:
 with contextlib.suppress(ImportError):
     from pandas import DataFrame
 
-    def format_dataframe_values(df: DataFrame) -> List[List[Any]]:
+    def format_dataframe_values(df: DataFrame) -> list[list[Any]]:
         """Format dataframe values to a list of lists.
 
         Args:

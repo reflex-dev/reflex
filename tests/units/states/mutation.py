@@ -143,7 +143,7 @@ class CustomVar(rx.Base):
     """A Base model with multiple fields."""
 
     foo: str = ""
-    array: List[str] = []
+    array: list[str] = []
     hashmap: Dict[str, str] = {}
     test_set: Set[str] = set()
     custom: OtherBase = OtherBase()
@@ -161,7 +161,7 @@ class MutableSQLAModel(MutableSQLABase):
     __tablename__: str = "mutable_test_state"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    strlist: Mapped[List[str]] = mapped_column(ARRAY(String))
+    strlist: Mapped[list[str]] = mapped_column(ARRAY(String))
     hashmap: Mapped[Dict[str, str]] = mapped_column(JSON)
     test_set: Mapped[Set[str]] = mapped_column(ARRAY(String))
 
@@ -169,7 +169,7 @@ class MutableSQLAModel(MutableSQLABase):
 @serializer
 def serialize_mutable_sqla_model(
     model: MutableSQLAModel,
-) -> Dict[str, Union[List[str], Dict[str, str]]]:
+) -> Dict[str, Union[list[str], Dict[str, str]]]:
     """Serialize the MutableSQLAModel.
 
     Args:
@@ -184,7 +184,7 @@ def serialize_mutable_sqla_model(
 class MutableTestState(BaseState):
     """A test state."""
 
-    array: List[Union[str, int, List, Dict[str, str]]] = [
+    array: list[Union[str, int, List, Dict[str, str]]] = [
         "value",
         [1, 2, 3],
         {"key": "value"},

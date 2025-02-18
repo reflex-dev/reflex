@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Type, Union
+from typing import Dict, Optional, Type, Union
 
 import attrs
 import pydantic.v1
@@ -74,16 +74,16 @@ class SQLAClass(SQLABase):
     id: Mapped[int] = mapped_column(primary_key=True)
     count: Mapped[int] = mapped_column()
     name: Mapped[str] = mapped_column()
-    int_list: Mapped[List[int]] = mapped_column(
+    int_list: Mapped[list[int]] = mapped_column(
         sqlalchemy.types.ARRAY(item_type=sqlalchemy.INTEGER)
     )
-    str_list: Mapped[List[str]] = mapped_column(
+    str_list: Mapped[list[str]] = mapped_column(
         sqlalchemy.types.ARRAY(item_type=sqlalchemy.String)
     )
     optional_int: Mapped[Optional[int]] = mapped_column(nullable=True)
     sqla_tag_id: Mapped[int] = mapped_column(sqlalchemy.ForeignKey(SQLATag.id))
     sqla_tag: Mapped[Optional[SQLATag]] = relationship()
-    labels: Mapped[List[SQLALabel]] = relationship(back_populates="test")
+    labels: Mapped[list[SQLALabel]] = relationship(back_populates="test")
     # do not use lower case dict here!
     # https://github.com/sqlalchemy/sqlalchemy/issues/9902
     dict_str_str: Mapped[Dict[str, str]] = mapped_column()
@@ -123,20 +123,20 @@ class SQLAClassDataclass(MappedAsDataclass, SQLABase):
     no_default: Mapped[int] = mapped_column(nullable=True)
     count: Mapped[int] = mapped_column()
     name: Mapped[str] = mapped_column()
-    int_list: Mapped[List[int]] = mapped_column(
+    int_list: Mapped[list[int]] = mapped_column(
         sqlalchemy.types.ARRAY(item_type=sqlalchemy.INTEGER)
     )
-    str_list: Mapped[List[str]] = mapped_column(
+    str_list: Mapped[list[str]] = mapped_column(
         sqlalchemy.types.ARRAY(item_type=sqlalchemy.String)
     )
     optional_int: Mapped[Optional[int]] = mapped_column(nullable=True)
     sqla_tag_id: Mapped[int] = mapped_column(sqlalchemy.ForeignKey(SQLATag.id))
     sqla_tag: Mapped[Optional[SQLATag]] = relationship()
-    labels: Mapped[List[SQLALabel]] = relationship(back_populates="test_dataclass")
+    labels: Mapped[list[SQLALabel]] = relationship(back_populates="test_dataclass")
     # do not use lower case dict here!
     # https://github.com/sqlalchemy/sqlalchemy/issues/9902
     dict_str_str: Mapped[Dict[str, str]] = mapped_column()
-    default_factory: Mapped[List[int]] = mapped_column(
+    default_factory: Mapped[list[int]] = mapped_column(
         sqlalchemy.types.ARRAY(item_type=sqlalchemy.INTEGER),
         default_factory=list,
     )
@@ -176,13 +176,13 @@ class ModelClass(rx.Model):
     no_default: Optional[int] = sqlmodel.Field(nullable=True)
     count: int = 0
     name: str = "test"
-    int_list: List[int] = []
-    str_list: List[str] = []
+    int_list: list[int] = []
+    str_list: list[str] = []
     optional_int: Optional[int] = None
     sqla_tag: Optional[SQLATag] = None
-    labels: List[SQLALabel] = []
+    labels: list[SQLALabel] = []
     dict_str_str: Dict[str, str] = {}
-    default_factory: List[int] = sqlmodel.Field(default_factory=list)
+    default_factory: list[int] = sqlmodel.Field(default_factory=list)
 
     @property
     def str_property(self) -> str:
@@ -218,13 +218,13 @@ class BaseClass(rx.Base):
     no_default: Optional[int] = pydantic.v1.Field(required=False)
     count: int = 0
     name: str = "test"
-    int_list: List[int] = []
-    str_list: List[str] = []
+    int_list: list[int] = []
+    str_list: list[str] = []
     optional_int: Optional[int] = None
     sqla_tag: Optional[SQLATag] = None
-    labels: List[SQLALabel] = []
+    labels: list[SQLALabel] = []
     dict_str_str: Dict[str, str] = {}
-    default_factory: List[int] = pydantic.v1.Field(default_factory=list)
+    default_factory: list[int] = pydantic.v1.Field(default_factory=list)
 
     @property
     def str_property(self) -> str:
@@ -259,11 +259,11 @@ class BareClass:
 
     count: int = 0
     name: str = "test"
-    int_list: List[int] = []
-    str_list: List[str] = []
+    int_list: list[int] = []
+    str_list: list[str] = []
     optional_int: Optional[int] = None
     sqla_tag: Optional[SQLATag] = None
-    labels: List[SQLALabel] = []
+    labels: list[SQLALabel] = []
     dict_str_str: Dict[str, str] = {}
 
     @property
@@ -300,13 +300,13 @@ class AttrClass:
 
     count: int = 0
     name: str = "test"
-    int_list: List[int] = []
-    str_list: List[str] = []
+    int_list: list[int] = []
+    str_list: list[str] = []
     optional_int: Optional[int] = None
     sqla_tag: Optional[SQLATag] = None
-    labels: List[SQLALabel] = []
+    labels: list[SQLALabel] = []
     dict_str_str: Dict[str, str] = {}
-    default_factory: List[int] = attrs.field(factory=list)
+    default_factory: list[int] = attrs.field(factory=list)
 
     @property
     def str_property(self) -> str:
@@ -352,11 +352,11 @@ class AttrClass:
     [
         pytest.param("count", int, id="int"),
         pytest.param("name", str, id="str"),
-        pytest.param("int_list", List[int], id="List[int]"),
-        pytest.param("str_list", List[str], id="List[str]"),
+        pytest.param("int_list", list[int], id="list[int]"),
+        pytest.param("str_list", list[str], id="list[str]"),
         pytest.param("optional_int", Optional[int], id="Optional[int]"),
         pytest.param("sqla_tag", Optional[SQLATag], id="Optional[SQLATag]"),
-        pytest.param("labels", List[SQLALabel], id="List[SQLALabel]"),
+        pytest.param("labels", list[SQLALabel], id="list[SQLALabel]"),
         pytest.param("dict_str_str", Dict[str, str], id="Dict[str, str]"),
         pytest.param("str_property", str, id="str_property"),
         pytest.param("str_or_int_property", Union[str, int], id="str_or_int_property"),
@@ -389,7 +389,7 @@ def test_get_attribute_access_type_default_factory(cls: type) -> None:
     Args:
         cls: Class to test.
     """
-    assert get_attribute_access_type(cls, "default_factory") == List[int]
+    assert get_attribute_access_type(cls, "default_factory") == list[int]
 
 
 @pytest.mark.parametrize(

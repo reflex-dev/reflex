@@ -431,7 +431,7 @@ def type_to_ast(typ: Any, cls: type) -> ast.AST:
     # Convert all type arguments recursively
     arg_nodes = [type_to_ast(arg, cls) for arg in args]
 
-    # Special case for single-argument types (like List[T] or Optional[T])
+    # Special case for single-argument types (like list[T] or Optional[T])
     if len(arg_nodes) == 1:
         slice_value = arg_nodes[0]
     else:

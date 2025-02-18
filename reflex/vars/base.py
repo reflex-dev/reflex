@@ -103,8 +103,8 @@ class VarSubclassEntry:
     python_types: Tuple[GenericType, ...]
 
 
-_var_subclasses: List[VarSubclassEntry] = []
-_var_literal_subclasses: List[Tuple[Type[LiteralVar], VarSubclassEntry]] = []
+_var_subclasses: list[VarSubclassEntry] = []
+_var_literal_subclasses: list[Tuple[Type[LiteralVar], VarSubclassEntry]] = []
 
 
 @dataclasses.dataclass(
@@ -1200,7 +1200,7 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     @classmethod
-    def range(cls, stop: int | NumberVar, /) -> ArrayVar[List[int]]: ...
+    def range(cls, stop: int | NumberVar, /) -> ArrayVar[list[int]]: ...
 
     @overload
     @classmethod
@@ -1210,7 +1210,7 @@ class Var(Generic[VAR_TYPE]):
         end: int | NumberVar,
         step: int | NumberVar = 1,
         /,
-    ) -> ArrayVar[List[int]]: ...
+    ) -> ArrayVar[list[int]]: ...
 
     @classmethod
     def range(
@@ -1218,7 +1218,7 @@ class Var(Generic[VAR_TYPE]):
         first_endpoint: int | NumberVar,
         second_endpoint: int | NumberVar | None = None,
         step: int | NumberVar | None = None,
-    ) -> ArrayVar[List[int]]:
+    ) -> ArrayVar[list[int]]:
         """Create a range of numbers.
 
         Args:
@@ -1676,7 +1676,7 @@ def figure_out_type(value: Any) -> types.GenericType:
     if has_args(type_):
         return type_
     if isinstance(value, list):
-        return List[unionize(*(figure_out_type(v) for v in value))]
+        return list[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, set):
         return Set[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, tuple):
@@ -1967,7 +1967,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         fget: Callable[[BASE_STATE], RETURN_TYPE],
         initial_value: RETURN_TYPE | types.Unset = types.Unset(),
         cache: bool = True,
-        deps: Optional[List[Union[str, Var]]] = None,
+        deps: Optional[list[Union[str, Var]]] = None,
         auto_deps: bool = True,
         interval: Optional[Union[int, datetime.timedelta]] = None,
         backend: bool | None = None,
@@ -2031,7 +2031,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     def _calculate_static_deps(
         self,
-        deps: Union[List[Union[str, Var]], dict[str | None, set[str]]] | None = None,
+        deps: Union[list[Union[str, Var]], dict[str | None, set[str]]] | None = None,
     ) -> dict[str | None, set[str]]:
         """Calculate the static dependencies of the computed var from user input or existing dependencies.
 
@@ -2406,7 +2406,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         return self._fget
 
 
-class DynamicRouteVar(ComputedVar[Union[str, List[str]]]):
+class DynamicRouteVar(ComputedVar[Union[str, list[str]]]):
     """A ComputedVar that represents a dynamic route."""
 
     pass
@@ -2562,7 +2562,7 @@ def computed_var(
     fget: None = None,
     initial_value: Any | types.Unset = types.Unset(),
     cache: bool = True,
-    deps: Optional[List[Union[str, Var]]] = None,
+    deps: Optional[list[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
     backend: bool | None = None,
@@ -2575,7 +2575,7 @@ def computed_var(
     fget: Callable[[BASE_STATE], RETURN_TYPE],
     initial_value: RETURN_TYPE | types.Unset = types.Unset(),
     cache: bool = True,
-    deps: Optional[List[Union[str, Var]]] = None,
+    deps: Optional[list[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
     backend: bool | None = None,
@@ -2587,7 +2587,7 @@ def computed_var(
     fget: Callable[[BASE_STATE], Any] | None = None,
     initial_value: Any | types.Unset = types.Unset(),
     cache: bool = True,
-    deps: Optional[List[Union[str, Var]]] = None,
+    deps: Optional[list[Union[str, Var]]] = None,
     auto_deps: bool = True,
     interval: Optional[Union[datetime.timedelta, int]] = None,
     backend: bool | None = None,
@@ -3269,10 +3269,10 @@ class Field(Generic[FIELD_TYPE]):
 
     @overload
     def __get__(
-        self: Field[List[V]] | Field[Set[V]] | Field[Tuple[V, ...]],
+        self: Field[list[V]] | Field[Set[V]] | Field[Tuple[V, ...]],
         instance: None,
         owner: Any,
-    ) -> ArrayVar[List[V]]: ...
+    ) -> ArrayVar[list[V]]: ...
 
     @overload
     def __get__(

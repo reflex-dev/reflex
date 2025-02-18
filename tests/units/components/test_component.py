@@ -1,5 +1,5 @@
 from contextlib import nullcontext
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, Optional, Type, Union
 
 import pytest
 
@@ -105,7 +105,7 @@ def component2() -> Type[Component]:
 
     class TestComponent2(Component):
         # A test list prop.
-        arr: Var[List[str]]
+        arr: Var[list[str]]
 
         on_prop_event: EventHandler[on_prop_event_spec]
 
@@ -120,7 +120,7 @@ def component2() -> Type[Component]:
                 "on_open": passthrough_event_spec(bool),
                 "on_close": passthrough_event_spec(bool),
                 "on_user_visited_count_changed": passthrough_event_spec(int),
-                "on_user_list_changed": passthrough_event_spec(List[str]),
+                "on_user_list_changed": passthrough_event_spec(list[str]),
             }
 
         def _get_imports(self) -> ParsedImportDict:
@@ -173,11 +173,11 @@ def component5() -> Type[Component]:
     class TestComponent5(Component):
         tag = "RandomComponent"
 
-        _invalid_children: List[str] = ["Text"]
+        _invalid_children: list[str] = ["Text"]
 
-        _valid_children: List[str] = ["Text"]
+        _valid_children: list[str] = ["Text"]
 
-        _valid_parents: List[str] = ["Text"]
+        _valid_parents: list[str] = ["Text"]
 
     return TestComponent5
 
@@ -193,7 +193,7 @@ def component6() -> Type[Component]:
     class TestComponent6(Component):
         tag = "RandomComponent"
 
-        _invalid_children: List[str] = ["Text"]
+        _invalid_children: list[str] = ["Text"]
 
     return TestComponent6
 
@@ -209,7 +209,7 @@ def component7() -> Type[Component]:
     class TestComponent7(Component):
         tag = "RandomComponent"
 
-        _valid_children: List[str] = ["Text"]
+        _valid_children: list[str] = ["Text"]
 
     return TestComponent7
 
@@ -1247,9 +1247,9 @@ class ComponentNestedVar(Component):
     """A component with nested Var types."""
 
     dict_of_dict: Var[Dict[str, Dict[str, str]]]
-    list_of_list: Var[List[List[str]]]
-    list_of_list_of_list: Var[List[List[List[str]]]]
-    list_of_dict: Var[List[Dict[str, str]]]
+    list_of_list: Var[list[list[str]]]
+    list_of_list_of_list: Var[list[list[list[str]]]]
+    list_of_dict: Var[list[Dict[str, str]]]
 
 
 class EventState(rx.State):
@@ -1885,13 +1885,13 @@ def test_component_add_imports(tags):
     class TestBase(Component):
         def add_imports(  # pyright: ignore [reportIncompatibleMethodOverride]
             self,
-        ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
+        ) -> Dict[str, Union[str, ImportVar, list[str], list[ImportVar]]]:
             return {"foo": "bar"}
 
     class Test(TestBase):
         def add_imports(
             self,
-        ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
+        ) -> Dict[str, Union[str, ImportVar, list[str], list[ImportVar]]]:
             return {"react": (tags[0] if len(tags) == 1 else tags)}
 
     baseline = Reference.create()

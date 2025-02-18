@@ -17,7 +17,7 @@ class Gridjs(Component):
 
     library = "gridjs-react@6.1.1"
 
-    lib_dependencies: List[str] = ["gridjs@6.2.0"]
+    lib_dependencies: list[str] = ["gridjs@6.2.0"]
 
 
 class DataTable(Gridjs):
@@ -115,11 +115,11 @@ class DataTable(Gridjs):
         if isinstance(self.data, Var) and types.is_dataframe(self.data._var_type):
             self.columns = self.data._replace(
                 _js_expr=f"{self.data._js_expr}.columns",
-                _var_type=List[Any],
+                _var_type=list[Any],
             )
             self.data = self.data._replace(
                 _js_expr=f"{self.data._js_expr}.data",
-                _var_type=List[List[Any]],
+                _var_type=list[list[Any]],
             )
         if types.is_dataframe(type(self.data)):
             # If given a pandas df break up the data and columns

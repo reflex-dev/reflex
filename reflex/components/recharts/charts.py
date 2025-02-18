@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Union
 
 from reflex.components.component import Component
 from reflex.components.recharts.general import ResponsiveContainer
@@ -104,7 +104,7 @@ class CategoricalChartBase(ChartBase):
     """A component that wraps a Categorical Recharts charts."""
 
     # The source data, in which each element is an object.
-    data: Var[List[Dict[str, Any]]]
+    data: Var[list[Dict[str, Any]]]
 
     # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
     margin: Var[Dict[str, Any]]
@@ -133,7 +133,7 @@ class AreaChart(CategoricalChartBase):
     base_value: Var[Union[int, LiteralComposedChartBaseValue]]
 
     # Valid children components
-    _valid_children: List[str] = [
+    _valid_children: list[str] = [
         "XAxis",
         "YAxis",
         "ReferenceArea",
@@ -174,7 +174,7 @@ class BarChart(CategoricalChartBase):
     reverse_stack_order: Var[bool]
 
     # Valid children components
-    _valid_children: List[str] = [
+    _valid_children: list[str] = [
         "XAxis",
         "YAxis",
         "ReferenceArea",
@@ -196,7 +196,7 @@ class LineChart(CategoricalChartBase):
     alias = "RechartsLineChart"
 
     # Valid children components
-    _valid_children: List[str] = [
+    _valid_children: list[str] = [
         "XAxis",
         "YAxis",
         "ReferenceArea",
@@ -233,7 +233,7 @@ class ComposedChart(CategoricalChartBase):
     reverse_stack_order: Var[bool]
 
     # Valid children components
-    _valid_children: List[str] = [
+    _valid_children: list[str] = [
         "XAxis",
         "YAxis",
         "ReferenceArea",
@@ -260,7 +260,7 @@ class PieChart(ChartBase):
     margin: Var[Dict[str, Any]]
 
     # Valid children components
-    _valid_children: List[str] = [
+    _valid_children: list[str] = [
         "PolarAngleAxis",
         "PolarRadiusAxis",
         "PolarGrid",
@@ -290,7 +290,7 @@ class RadarChart(ChartBase):
     alias = "RechartsRadarChart"
 
     # The source data, in which each element is an object.
-    data: Var[List[Dict[str, Any]]]
+    data: Var[list[Dict[str, Any]]]
 
     # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}. Default: {"top": 0, "right": 0, "left": 0, "bottom": 0}
     margin: Var[Dict[str, Any]]
@@ -314,7 +314,7 @@ class RadarChart(ChartBase):
     outer_radius: Var[Union[int, str]]
 
     # Valid children components
-    _valid_children: List[str] = [
+    _valid_children: list[str] = [
         "PolarAngleAxis",
         "PolarRadiusAxis",
         "PolarGrid",
@@ -344,7 +344,7 @@ class RadialBarChart(ChartBase):
     alias = "RechartsRadialBarChart"
 
     # The source data which each element is an object.
-    data: Var[List[Dict[str, Any]]]
+    data: Var[list[Dict[str, Any]]]
 
     # The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "left": 5 "bottom": 5}
     margin: Var[Dict[str, Any]]
@@ -377,7 +377,7 @@ class RadialBarChart(ChartBase):
     bar_size: Var[int]
 
     # Valid children components
-    _valid_children: List[str] = [
+    _valid_children: list[str] = [
         "PolarAngleAxis",
         "PolarRadiusAxis",
         "PolarGrid",
@@ -398,7 +398,7 @@ class ScatterChart(ChartBase):
     margin: Var[Dict[str, Any]]
 
     # Valid children components
-    _valid_children: List[str] = [
+    _valid_children: list[str] = [
         "XAxis",
         "YAxis",
         "ZAxis",
@@ -447,7 +447,7 @@ class FunnelChart(ChartBase):
     stroke: Var[Union[str, Color]]
 
     # Valid children components
-    _valid_children: List[str] = ["Legend", "GraphingTooltip", "Funnel"]
+    _valid_children: list[str] = ["Legend", "GraphingTooltip", "Funnel"]
 
 
 class Treemap(RechartsCharts):
@@ -464,7 +464,7 @@ class Treemap(RechartsCharts):
     height: Var[Union[str, int]] = Var.create("100%")
 
     # data of treemap. Array
-    data: Var[List[Dict[str, Any]]]
+    data: Var[list[Dict[str, Any]]]
 
     # The key of a group of data which should be unique in a treemap. String | Number. Default: "value"
     data_key: Var[Union[str, int]]

@@ -25,7 +25,6 @@ from typing import (
     Callable,
     Coroutine,
     Dict,
-    List,
     MutableMapping,
     Optional,
     Set,
@@ -293,7 +292,7 @@ class UnevaluatedPage:
     description: Union[Var, str, None]
     image: str
     on_load: Union[EventType[()], None]
-    meta: List[Dict[str, str]]
+    meta: list[Dict[str, str]]
 
 
 @dataclasses.dataclass()
@@ -327,7 +326,7 @@ class App(MiddlewareMixin, LifespanMixin):
     style: ComponentStyle = dataclasses.field(default_factory=dict)
 
     # A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
-    stylesheets: List[str] = dataclasses.field(default_factory=list)
+    stylesheets: list[str] = dataclasses.field(default_factory=list)
 
     # A component that is present on every page (defaults to the Connection Error banner).
     overlay_component: Optional[Union[Component, ComponentCallable]] = (
@@ -353,7 +352,7 @@ class App(MiddlewareMixin, LifespanMixin):
     )
 
     # Components to add to the head of every page.
-    head_components: List[Component] = dataclasses.field(default_factory=list)
+    head_components: list[Component] = dataclasses.field(default_factory=list)
 
     # The Socket.IO AsyncServer instance.
     sio: Optional[AsyncServer] = None
@@ -382,7 +381,7 @@ class App(MiddlewareMixin, LifespanMixin):
     _state_manager: Optional[StateManager] = None
 
     # Mapping from a route to event handlers to trigger when the page loads.
-    _load_events: Dict[str, List[IndividualEventType[()]]] = dataclasses.field(
+    _load_events: Dict[str, list[IndividualEventType[()]]] = dataclasses.field(
         default_factory=dict
     )
 
@@ -402,7 +401,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     # Backend Error Handler Function
     backend_exception_handler: Callable[
-        [Exception], Union[EventSpec, List[EventSpec], None]
+        [Exception], Union[EventSpec, list[EventSpec], None]
     ] = default_backend_exception_handler
 
     # Put the toast provider in the app wrap.
@@ -1488,7 +1487,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 valid = bool(
                     return_type == EventSpec
                     or return_type == Optional[EventSpec]
-                    or return_type == List[EventSpec]
+                    or return_type == list[EventSpec]
                     or return_type == inspect.Signature.empty
                     or return_type is None
                 )
@@ -1496,7 +1495,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 if not valid:
                     raise ValueError(
                         f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong return type."
-                        f"Expected `Union[EventSpec, List[EventSpec], None]` but got `{return_type}`"
+                        f"Expected `Union[EventSpec, list[EventSpec], None]` but got `{return_type}`"
                     )
 
 
@@ -1636,7 +1635,7 @@ def upload(app: App):
         The upload function.
     """
 
-    async def upload_file(request: Request, files: List[FastAPIUploadFile]):
+    async def upload_file(request: Request, files: list[FastAPIUploadFile]):
         """Upload a file.
 
         Args:
@@ -1676,7 +1675,7 @@ def upload(app: App):
         # get handler function
         func = getattr(type(current_state), handler.split(".")[-1])
 
-        # check if there exists any handler args with annotation, List[UploadFile]
+        # check if there exists any handler args with annotation, list[UploadFile]
         if isinstance(func, EventHandler):
             if func.is_background:
                 raise UploadTypeError(
@@ -1696,7 +1695,7 @@ def upload(app: App):
         if not handler_upload_param:
             raise UploadValueError(
                 f"`{handler}` handler should have a parameter annotated as "
-                "List[rx.UploadFile]"
+                "list[rx.UploadFile]"
             )
 
         # Make a copy of the files as they are closed after the request.

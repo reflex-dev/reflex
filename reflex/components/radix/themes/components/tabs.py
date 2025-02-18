@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
@@ -94,7 +94,7 @@ class TabsTrigger(RadixThemesComponent):
     # The color of the line under the tab when active.
     color_scheme: Var[LiteralAccentColor]
 
-    _valid_parents: List[str] = ["TabsList"]
+    _valid_parents: list[str] = ["TabsList"]
 
     _memoization_mode = MemoizationMode(recursive=False)
 

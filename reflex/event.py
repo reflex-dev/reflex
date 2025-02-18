@@ -451,7 +451,7 @@ class EventChain(EventActionsMixin):
 
         # If the input is a list of event handlers, create an event chain.
         if isinstance(value, List):
-            events: List[Union[EventSpec, EventVar]] = []
+            events: list[Union[EventSpec, EventVar]] = []
             for v in value:
                 if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
@@ -1885,7 +1885,7 @@ LAMBDA_OR_STATE = TypeAliasType(
     type_params=(ARGS,),
 )
 
-ItemOrList = V | List[V]
+ItemOrList = V | list[V]
 
 BASIC_EVENT_TYPES = TypeAliasType(
     "BASIC_EVENT_TYPES", EventSpec | EventHandler | Var[Any], type_params=()

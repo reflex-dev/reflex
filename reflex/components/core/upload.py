@@ -86,7 +86,7 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     id_var = LiteralStringVar.create(id_)
     return Var(
         _js_expr=f"(filesById[{id_var!s}] ? filesById[{id_var!s}].map((f) => (f.path || f.name)) : [])",
-        _var_type=List[str],
+        _var_type=list[str],
         _var_data=VarData.merge(
             upload_files_context_var_data, id_var._get_all_var_data()
         ),

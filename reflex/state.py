@@ -26,7 +26,6 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
-    List,
     Optional,
     Sequence,
     Set,
@@ -707,7 +706,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return getattr(cls, unique_var_name)
 
     @classmethod
-    def _mixins(cls) -> List[Type]:
+    def _mixins(cls) -> list[Type]:
         """Get the mixin classes of the state.
 
         Returns:
@@ -1194,7 +1193,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return inner_func
 
         def arglist_factory(param: str):
-            def inner_func(self: BaseState) -> List[str]:
+            def inner_func(self: BaseState) -> list[str]:
                 return self.router.page.params.get(param, [])
 
             return inner_func
@@ -1697,7 +1696,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 return StateUpdate()
 
             event_specs_correct_type = cast(
-                Union[List[Union[EventSpec, EventHandler]], None],
+                Union[list[Union[EventSpec, EventHandler]], None],
                 [event_specs] if isinstance(event_specs, EventSpec) else event_specs,
             )
             fixed_events = fix_events(
@@ -2755,7 +2754,7 @@ class StateUpdate:
     delta: Delta = dataclasses.field(default_factory=dict)
 
     # Events to be added to the event queue.
-    events: List[Event] = dataclasses.field(default_factory=list)
+    events: list[Event] = dataclasses.field(default_factory=list)
 
     # Whether this is the final state update for the event.
     final: bool = True

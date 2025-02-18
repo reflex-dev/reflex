@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Union
 
 from reflex.components.component import MemoizationLeaf
 from reflex.constants.colors import Color
@@ -49,7 +49,7 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
     on_resize: EventHandler[no_args_event_spec]
 
     # Valid children components
-    _valid_children: List[str] = [
+    _valid_children: list[str] = [
         "AreaChart",
         "BarChart",
         "LineChart",
@@ -92,7 +92,7 @@ class Legend(Recharts):
     icon_type: Var[LiteralIconType]
 
     # The source data of the content to be displayed in the legend, usually calculated internally. Default: []
-    payload: Var[List[Dict[str, Any]]]
+    payload: Var[list[Dict[str, Any]]]
 
     # The width of chart container, usually calculated internally.
     chart_width: Var[int]

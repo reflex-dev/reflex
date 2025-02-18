@@ -72,16 +72,16 @@ class BaseComponent(Base, ABC):
     """
 
     # The children nested within the component.
-    children: List[BaseComponent] = []
+    children: list[BaseComponent] = []
 
     # The library that the component is based on.
     library: Optional[str] = None
 
     # List here the non-react dependency needed by `library`
-    lib_dependencies: List[str] = []
+    lib_dependencies: list[str] = []
 
     # List here the dependencies that need to be transpiled by Next.js
-    transpile_packages: List[str] = []
+    transpile_packages: list[str] = []
 
     # The tag to use when rendering the component.
     tag: Optional[str] = None
@@ -216,19 +216,19 @@ class Component(BaseComponent, ABC):
     class_name: Any = None
 
     # Special component props.
-    special_props: List[Var] = []
+    special_props: list[Var] = []
 
     # Whether the component should take the focus once the page is loaded
     autofocus: bool = False
 
     # components that cannot be children
-    _invalid_children: List[str] = []
+    _invalid_children: list[str] = []
 
     # only components that are allowed as children
-    _valid_children: List[str] = []
+    _valid_children: list[str] = []
 
     # only components that are allowed as parent
-    _valid_parents: List[str] = []
+    _valid_parents: list[str] = []
 
     # props to change the name of
     _rename_props: Dict[str, str] = {}
@@ -527,7 +527,7 @@ class Component(BaseComponent, ABC):
         if isinstance(class_name, (List, tuple)):
             if any(isinstance(c, Var) for c in class_name):
                 kwargs["class_name"] = LiteralArrayVar.create(
-                    class_name, _var_type=List[str]
+                    class_name, _var_type=list[str]
                 ).join(" ")
             else:
                 kwargs["class_name"] = " ".join(class_name)
@@ -876,7 +876,7 @@ class Component(BaseComponent, ABC):
                 if prop.startswith(old_prop):
                     rendered_dict["props"][ix] = prop.replace(old_prop, new_prop, 1)
 
-    def _validate_component_children(self, children: List[Component]):
+    def _validate_component_children(self, children: list[Component]):
         """Validate the children components.
 
         Args:
@@ -986,7 +986,7 @@ class Component(BaseComponent, ABC):
             Each var referenced by the component (props, styles, event handlers).
         """
         ignore_ids = ignore_ids or set()
-        vars: List[Var] | None = getattr(self, "__vars", None)
+        vars: list[Var] | None = getattr(self, "__vars", None)
         if vars is not None:
             yield from vars
         vars = self.__vars = []
@@ -1181,7 +1181,7 @@ class Component(BaseComponent, ABC):
         # Return the dynamic imports
         return dynamic_imports
 
-    def _get_props_imports(self) -> List[ParsedImportDict]:
+    def _get_props_imports(self) -> list[ParsedImportDict]:
         """Get the imports needed for components props.
 
         Returns:
@@ -1756,7 +1756,7 @@ class CustomComponent(Component):
         """
         return super()._render(props=self.props)
 
-    def get_prop_vars(self) -> List[Var]:
+    def get_prop_vars(self) -> list[Var]:
         """Get the prop vars.
 
         Returns:

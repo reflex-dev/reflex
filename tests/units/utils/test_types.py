@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Literal, Tuple, Union
+from typing import Any, Dict, Literal, Tuple, Union
 
 import pytest
 
@@ -27,7 +27,7 @@ def test_validate_literal_error_msg(params, allowed_value_str, value_str):
     [
         (int, Any, True),
         (Tuple[int], Any, True),
-        (List[int], Any, True),
+        (list[int], Any, True),
         (int, int, True),
         (int, object, True),
         (int, Union[int, str], True),
@@ -38,7 +38,7 @@ def test_validate_literal_error_msg(params, allowed_value_str, value_str):
         (int, Union[str, float], False),
         (int, Union[float, str], False),
         (int, str, False),
-        (int, List[int], False),
+        (int, list[int], False),
     ],
 )
 def test_issubclass(
@@ -78,7 +78,7 @@ class ChildGenericDict(GenericDict):
         (str, False),
         (float, False),
         (Tuple[int], True),
-        (List[int], True),
+        (list[int], True),
         (Union[int, str], True),
         (Union[str, int], True),
         (Dict[str, int], True),

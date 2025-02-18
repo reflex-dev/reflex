@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Dict, List, Literal, Union
+from typing import Dict, Literal, Union
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
@@ -43,7 +43,7 @@ class DropdownMenuRoot(RadixThemesComponent):
     # The reading direction of submenus when applicable. If omitted, inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode.
     dir: Var[LiteralDirType]
 
-    _invalid_children: List[str] = ["DropdownMenuItem"]
+    _invalid_children: list[str] = ["DropdownMenuItem"]
 
     # Fired when the open state changes.
     on_open_change: EventHandler[passthrough_event_spec(bool)]
@@ -57,9 +57,9 @@ class DropdownMenuTrigger(RadixThemesTriggerComponent):
     # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
     as_child: Var[bool]
 
-    _valid_parents: List[str] = ["DropdownMenuRoot"]
+    _valid_parents: list[str] = ["DropdownMenuRoot"]
 
-    _invalid_children: List[str] = ["DropdownMenuContent"]
+    _invalid_children: list[str] = ["DropdownMenuContent"]
 
     _memoization_mode = MemoizationMode(recursive=False)
 
@@ -144,7 +144,7 @@ class DropdownMenuSubTrigger(RadixThemesTriggerComponent):
     # Optional text used for typeahead purposes. By default the typeahead behavior will use the .textContent of the item. Use this when the content is complex, or you have non-textual content inside.
     text_value: Var[str]
 
-    _valid_parents: List[str] = ["DropdownMenuContent", "DropdownMenuSub"]
+    _valid_parents: list[str] = ["DropdownMenuContent", "DropdownMenuSub"]
 
     _memoization_mode = MemoizationMode(recursive=False)
 
@@ -196,7 +196,7 @@ class DropdownMenuSubContent(RadixThemesComponent):
     # Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
     hide_when_detached: Var[bool]
 
-    _valid_parents: List[str] = ["DropdownMenuSub"]
+    _valid_parents: list[str] = ["DropdownMenuSub"]
 
     # Fired when the escape key is pressed.
     on_escape_key_down: EventHandler[no_args_event_spec]
@@ -231,7 +231,7 @@ class DropdownMenuItem(RadixThemesComponent):
     # Optional text used for typeahead purposes. By default the typeahead behavior will use the .textContent of the item. Use this when the content is complex, or you have non-textual content inside.
     text_value: Var[str]
 
-    _valid_parents: List[str] = ["DropdownMenuContent", "DropdownMenuSubContent"]
+    _valid_parents: list[str] = ["DropdownMenuContent", "DropdownMenuSubContent"]
 
     # Fired when the item is selected.
     on_select: EventHandler[no_args_event_spec]

@@ -24,7 +24,6 @@ from typing import (
     Callable,
     Dict,
     Generic,
-    List,
     Optional,
     Set,
     TypeVar,
@@ -703,10 +702,10 @@ class EnvironmentVariables:
     REFLEX_USE_TURBOPACK: EnvVar[bool] = env_var(True)
 
     # Additional paths to include in the hot reload. Separated by a colon.
-    REFLEX_HOT_RELOAD_INCLUDE_PATHS: EnvVar[List[Path]] = env_var([])
+    REFLEX_HOT_RELOAD_INCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
 
     # Paths to exclude from the hot reload. Takes precedence over include paths. Separated by a colon.
-    REFLEX_HOT_RELOAD_EXCLUDE_PATHS: EnvVar[List[Path]] = env_var([])
+    REFLEX_HOT_RELOAD_EXCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
 
 
 environment = EnvironmentVariables()
@@ -791,7 +790,7 @@ class Config(Base):
     static_page_generation_timeout: int = 60
 
     # List of origins that are allowed to connect to the backend API.
-    cors_allowed_origins: List[str] = ["*"]
+    cors_allowed_origins: list[str] = ["*"]
 
     # Tailwind config.
     tailwind: Optional[Dict[str, Any]] = {"plugins": ["@tailwindcss/typography"]}
@@ -806,7 +805,7 @@ class Config(Base):
     react_strict_mode: bool = True
 
     # Additional frontend packages to install.
-    frontend_packages: List[str] = []
+    frontend_packages: list[str] = []
 
     # The hosting service backend URL.
     cp_backend_url: str = Hosting.HOSTING_SERVICE

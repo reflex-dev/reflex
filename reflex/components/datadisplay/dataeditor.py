@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional, Tuple, TypedDict, Union
+from typing import Any, Dict, Literal, Optional, Tuple, TypedDict, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -148,7 +148,7 @@ class GroupHeaderClickedEventArgs(TypedDict):
 class GridCell(TypedDict):
     """The grid cell."""
 
-    span: Optional[List[int]]
+    span: Optional[list[int]]
 
 
 class GridColumn(TypedDict):
@@ -164,7 +164,7 @@ class DataEditor(NoSSRComponent):
     tag = "DataEditor"
     is_default = True
     library: str | None = "@glideapps/glide-data-grid@^6.0.3"
-    lib_dependencies: List[str] = [
+    lib_dependencies: list[str] = [
         "lodash@^4.17.21",
         "react-responsive-carousel@^3.2.7",
     ]
@@ -173,10 +173,10 @@ class DataEditor(NoSSRComponent):
     rows: Var[int]
 
     # Headers of the columns for the data grid.
-    columns: Var[List[Dict[str, Any]]]
+    columns: Var[list[Dict[str, Any]]]
 
     # The data.
-    data: Var[List[List[Any]]]
+    data: Var[list[list[Any]]]
 
     # The name of the callback used to find the data to display.
     get_cell_content: Var[str]

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 from collections import defaultdict
-from typing import DefaultDict, Dict, List, Optional, Tuple, Union
+from typing import DefaultDict, Dict, Optional, Tuple, Union
 
 
 def merge_imports(
@@ -18,7 +18,7 @@ def merge_imports(
     Returns:
         The merged import dicts.
     """
-    all_imports: DefaultDict[str, List[ImportVar]] = defaultdict(list)
+    all_imports: DefaultDict[str, list[ImportVar]] = defaultdict(list)
     for import_dict in imports:
         for lib, fields in (
             import_dict if isinstance(import_dict, tuple) else import_dict.items()
@@ -131,7 +131,7 @@ class ImportVar:
             return self.tag or ""
 
 
-ImportTypes = Union[str, ImportVar, List[Union[str, ImportVar]], List[ImportVar]]
+ImportTypes = Union[str, ImportVar, list[Union[str, ImportVar]], list[ImportVar]]
 ImportDict = Dict[str, ImportTypes]
-ParsedImportDict = Dict[str, List[ImportVar]]
+ParsedImportDict = Dict[str, list[ImportVar]]
 ImmutableParsedImportDict = Tuple[Tuple[str, Tuple[ImportVar, ...]], ...]

@@ -6,7 +6,7 @@ import inspect
 import json
 import os
 import re
-from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from reflex import constants
 from reflex.constants.state import FRONTEND_EVENT_STATE
@@ -337,7 +337,7 @@ def format_route(route: str, format_case: bool = True) -> str:
 
 def format_match(
     cond: str | Var,
-    match_cases: List[List[Var]],
+    match_cases: list[list[Var]],
     default: Var,
 ) -> str:
     """Format a match expression whose return type is a Var.
