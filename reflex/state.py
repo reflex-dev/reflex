@@ -109,7 +109,7 @@ if TYPE_CHECKING:
     from reflex.components.component import Component
 
 
-Delta = Dict[str, Any]
+Delta = dict[str, Any]
 var = computed_var
 
 
@@ -1905,7 +1905,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self.dirty_vars.intersection(frontend_computed_vars)
         )
 
-        subdelta: Dict[str, Any] = {
+        subdelta: dict[str, Any] = {
             prop: self.get_value(prop)
             for prop in delta_vars
             if not types.is_backend_base_variable(prop, type(self))
@@ -2849,13 +2849,13 @@ class StateManagerMemory(StateManager):
     """A state manager that stores states in memory."""
 
     # The mapping of client ids to states.
-    states: Dict[str, BaseState] = {}
+    states: dict[str, BaseState] = {}
 
     # The mutex ensures the dict of mutexes is updated exclusively
     _state_manager_lock = asyncio.Lock()
 
     # The dict of mutexes for each client
-    _states_locks: Dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
+    _states_locks: dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
 
     class Config:  # pyright: ignore [reportIncompatibleVariableOverride]
         """The Pydantic config."""
@@ -2964,13 +2964,13 @@ class StateManagerDisk(StateManager):
     """A state manager that stores states in memory."""
 
     # The mapping of client ids to states.
-    states: Dict[str, BaseState] = {}
+    states: dict[str, BaseState] = {}
 
     # The mutex ensures the dict of mutexes is updated exclusively
     _state_manager_lock = asyncio.Lock()
 
     # The dict of mutexes for each client
-    _states_locks: Dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
+    _states_locks: dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
 
     # The token expiration time (s).
     token_expiration: int = pydantic.Field(default_factory=_default_token_expiration)
@@ -3681,7 +3681,7 @@ class MutableProxy(wrapt.ObjectProxy):
     )
 
     # Dynamically generated classes for tracking dataclass mutations.
-    __dataclass_proxies__: Dict[type, type] = {}
+    __dataclass_proxies__: dict[type, type] = {}
 
     def __new__(cls, wrapped: Any, *args, **kwargs) -> MutableProxy:
         """Create a proxy instance for a mutable object that tracks changes.
